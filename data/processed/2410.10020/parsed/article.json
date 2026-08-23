@@ -1,0 +1,1385 @@
+{
+ "paper_id": "2410.10020",
+ "title": "Adaptive Reasoning and Acting in Medical Language Agents",
+ "abstract_text": "This paper presents an innovative large language model (LLM) agent framework for enhancing diagnostic accuracy in simulated clinical environments using the AgentClinic benchmark. The proposed automatic correction enables doctor agents to iteratively refine their reasoning and actions following incorrect diagnoses, fostering improved decision-making over time. Experiments show that the implementation of the adaptive LLM-based doctor agents achieve correct diagnoses through dynamic interactions with simulated patients. The evaluations highlight the capacity of autonomous agents to adapt and improve in complex medical scenarios. Future enhancements will focus on refining the algorithm and expanding its applicability across a wider range of tasks and different large language models.",
+ "body_text": "IntroductionLarge language models (LLMs) have emerged as powerful statistical tools capable of predicting the next word, phrase, or even entire paragraphs based on the given input [1]. The effectiveness of these models can significantly depend on the prompts they receive [2]. One notable feature of LLMs is in-context learning, allowing them to grasp new tasks from a few examples provided within the prompt during inference [3]. This leads to the practice known as prompt engineering, which involves crafting and refining input prompts to elicit the desired responses from these models [4].The application of large language models (LLMs) in healthcare has demonstrated significant potential, with models achieving remarkable results on tasks such as the GPT-4 [5] achieves the average accuracy of around 83.15 from the United States Medical Licensing Examination (USMLE) self assessment dataset in [6]. However, in real-world clinical practice, diagnosis is a dynamic process involving continuous patient interaction, ordering of medical tests, and decision-making under uncertainty. Simulated clinical environments offer a valuable way to evaluate these models in more interactive, adaptive settings that reflect the realities of patient care.In this paper, we leverage AgentClinic [7], a multimodal benchmark designed to simulate clinical environments, to assess the performance of LLM agents in diagnosing patients through iterative doctor-patient dialogue, medical test interpretation, and bias management. AgentClinic [7] features four agents: the Doctor Agent, responsible for gathering information and making diagnoses; the Patient Agent, which simulates real-world patient interactions; the Measurement Agent, which provides test results; and the Moderator Agent, which evaluates the accuracy of the diagnosis. This setup allows for a detailed analysis of how LLM agents perform in sequential decision-making processes.A key focus of this work is on handling cases where the doctor agent fails to provide an accurate diagnosis. We propose an automatic correction framework that enables the doctor agent to iteratively refine its reasoning after an incorrect diagnosis, ultimately arriving at the correct diagnosis through subsequent interactions. This framework introduces an adaptive feedback loop that adjusts the decision-making process of the doctor agent, allowing it to learn from its mistakes and correct itself over time.Our contributions are as follows: Firstly, We introduce a robust adaptation mechanism for doctor agents that reason/act and observe, enabling them to improve diagnostic accuracy after initial failures. This system guides the doctor agent through a process of adaptive reasoning, helping it to correct earlier mistakes and reach a proper diagnosis. Secondly, we evaluate this framework in the AgentClinic [7] environment, demonstrating how it enhances the doctor agent's ability to recover from incorrect diagnoses and improves overall diagnostic performance through adaptive learning.Our work highlights the potential of autonomous agents in healthcare, showcasing how they can enhance diagnostic processes by enabling the doctor language agent to iteratively refine its reasoning and ultimately arrive at a correct diagnosis.\nSimulated clinical environmentThe AgentClinic benchmark [7] is a simulated clinical environment designed to evaluate the performance of AI models, particularly large language models (LLMs), in tasks that require real-time decision-making and patient interaction, mimicking the complexities of clinical settings. Unlike traditional static medical question-answering tests, this benchmark incorporates a more dynamic and interactive approach by simulating dialogues between patient and doctor agents, along with medical exams and tests, through multimodal agents.In AgentClinic [7], four main agents simulate the clinical environment: (1) Doctor Agent: The model being evaluated for its diagnostic abilities. This agent begins with minimal context about a patient's condition and must interact with the patient agent to gather relevant information. It can ask a limited number of questions, request specific medical tests via the measurement agent, and ultimately provide a diagnosis. This setup simulates the process of sequential medical decisionmaking, requiring the doctor agent to operate under realistic clinical constraints, such as finite time and limited diagnostic resources. (2) Patient Agent: The patient agent holds information about symptoms, medical history, and lifestyle but does not know the final diagnosis. Its role is to provide responses that emulate real patient behavior during doctor-patient consultations. The patient agent can exhibit cognitive and implicit biases, affecting its interaction with the doctor agent. These biases emulate real-world patient biases, such as self-diagnosis based on internet research or distrust of the doctor based on implicit factors. (3) Measurement Agent: This agent simulates diagnostic tests, providing realistic medical readings based on the patient's condition. For example, it can deliver results from an electrocardiogram, blood pressure readings, or imaging tests like X-rays. The doctor agent can request specific tests, and the measurement agent responds with results that match the patient's simulated condition, contributing to the decision-making process. (4) Moderator Agent: This agent evaluates the doctor agent's performance, determining whether the correct diagnosis has been made based on the information gathered during the interaction. The moderator ensures the dialogue is parsed correctly and compares the diagnosis with the actual medical condition to assess the accuracy of the doctor agent.AgentClinic [7] also includes biases in the behavior of both patient and doctor agents, allowing researchers to study the impact of cognitive and implicit biases on medical decision-making. The benchmark introduces various patient types, with 107 patient agents having unique family histories, age groups, diseases, and lifestyle habits.\nAutonomous Agent ArchitectureLet a simulated clinical environment be denoted as a function f that maps a state s ∈ V and an action a ∈ V to an observation o ∈ V, where V is a set of vocabulary. Let π θ be an LLM agent over a pre-trained set of parameters θ. Let s 0 be the initial state of the environment f , we aim to produce a sequence of actions (a 0 , a 1 , a 2 , . . . ), where a i ∈ V for i ∈ Z, from a doctor LLM agent to change the state to a terminal state that indicates the patient is correctly diagnosed.The architecture of the main idea of our work is shown in Figure 1. A desire is provided to an agent to motivate it to solve a specific task in a given environment. The agent can perform an action to interact with the environment, causing the state of the environment to change. The agent then receives an observation that describes the status of the environment and a reward signal. The action may be proposed from two different processes: the reasoning process determines the next action based on the current progress; and the adaptation process summarizes previous progress to provide a better plan towards maximizing the reward.We present a novel algorithm in Algorithm 1. Initially, we have the initial state s 0 which provides instructions, presents exemplars, and describes the environment and the goal for a specific task. π θ is an LLM agent with a set of parameters θ. τ = {s 0 , a 0 , o 1 , . . . } is a sequence of the concatenation of state, action, and observation, where s k , a k , and o k are sequences of tokens representing the k-th state, action, and observation for k ∈ Z, respectively. The return R(τ ) is a string indicating whether the task is completed or not. ep is a variable indicating the number of trials. The environment is reinitialized at each trial.Initially, for the doctor agent, we have the initial state s 0 which contains some context about what is known about the patient as well as a brief objective. π θ is an LLM agent with a set of parameters θ. τ = {s 0 , a 0 , o 1 , . . . } is a sequence of the concatenation of state, action, and observation, where s k , a k , and o k are sequences of tokens representing the k-th state, action, and observation for k ∈ Z, respectively. The return R(τ ) is a string indicating whether the task is completed or not. ep is a variable indicating the number of trials. The environment is reinitialized at each trial. At the first time step k = 0, the action is then sampled froma 1 0 ∼ π θ (a 1 0 |s 1 0 ),(1)where a 1 0 is a sequence of tokens which represents the first action in the first trial, s 1 0 is a sequence of tokens which represents the first state in the first trial, the subscript 0 indicates the first time step, and the superscript 1 indicates the first trail. The observation in the first trial, o 1  1 , is a sequence of tokens obtained from the response of either a patient agent or a measurement agent. The observation can be represented by executing the action a 1 0 in the environment f at state s 1 0 as o 1  1 = f (s 1 0 , a 1 0 ).(2) A new state s 1  1 is formed by concatenating the action a 1 0 and the observation o 1 1 after state s 1 0 as s 1  1 = {s 1 0 , a 1 0 , o 1 1 }.(3) If a maximum time step is reached or the doctor agent provides an incorrect diagnosis, the task fails and the return R(τ ) is concatenated with self correction to form the initial state in the next trial s 2 0 ass 2 0 = {R(τ )},(4)where τ = {s 0 , a 0 , o 1 , a 1 , o 2 , . . . o 50 }. In the next trial, a sequence of tokens is generated from the LLM byt 2 0 ∼ π θ (t 2 0 |s 2 0 ),(5)We call t ep 0 at the ep-th trial for ep &gt; 1 as the adaptation from the (ep -1)-th trail and t ep 0 indicates the correction of the (ep -1)-th failed trail to improve the next trail. In the next step, we propose to replace the initial state in the second trial with the initial state from the first trail to remove the dialogue from the previous trial such that the context length is reduced. We call this step compression. By performing compression, the first action in the second trail will only be conditioned on the initial state in the first trail s 1 0 and the adaptation from the first trail t 2 0 asa 2 0 ∼ π θ (a 2 0 |s 2 0 , t 2 0 ).(6)Algorithm 1 Adaptive reasoning and acting Initialize the world state s 0 as a text of exemplars and task, where each token ∈ V ocab.Let π θ be a LLM agent over a pre-trained set of parameters θ. Let a trajectory τ = {s 0 , a 0 , o 1 , . . . } be a sequence of state, action, and observation. Let R(τ ) be the return for trajectory τ . Let ep = 1. While R(τ ) ̸ = \"OK\" do Let k = 0.While k &lt; 50 || R(τ ) = \"OK\" do If ep &gt; 1 and k = 0, then generate adaptationt ep k ∼ π θ (t ep k |s ep k ). Compression step: If k = 0, then s ep 0 = s 0 . If ep &gt; 1, then generate action a ep k ∼ π θ (a ep k |s ep k , t ep 0 ). If ep = 1, then generate action a ep k ∼ π θ (a ep k |s ep k ). Get observation o ep k+1 = f (s ep k , a ep k ). Let s ep k+1 = {s ep k , a ep k , o ep k+1 }. k := k + 1Concatenate R(τ ) with \"New plan: \". s ep+1 0 = {s ep k , R(τ )} ep := ep + 1\nExperimental resultsWe conducted experiments on the MedQA dataset from [7], utilizing 15 scenarios with a maximum of 20 inferences, without bias or image requests, employing GPT-4 [5] as the patient, measurement, and moderator language agent. In the first experiment, we used both GPT-4 [5] and GPT-3.5 [8] as the doctor language agent policy π θ to compare the diagnostic results from these two different models. In each step of the sequence of play, the doctor agent, based on the given context state s 0 , takes action a 0 which can be either to consult the patient agent or invoke the measurement agent, whose replies become the observation o 1 . Now based on this added context, the doctor agent takes the next action a 1 and the cycle continues till the doctor makes the diagnosis or fails, which is the return R(τ ). This medical self-adaptive language agent is presented in Figure 2.The results are presented in Table 1. Now, for the first case in the MedQA simulated clinical environment, the GPT-4 [5] doctor π gpt-4 comes with the right diagnosis as show in in the clinical consultation dialogue of Figure 3. However, the GPT-3.5 [8] doctor π gpt-3.5 in the same case fails to get to the correct diagnosis as shown in the clinical consultation dialogue of Figure 4. Therefore, per our algorithm, a correction or adaptation t 0 is added to the initial context s 0 as an exemplar and the cycle is repeated. As shown in Figure 5, by adding the reflection, \"If the patient has symptoms such as double vision, difficulty climbing stairs, and upper limb weakness, perform an Acetylcholine Receptor Antibody Test instead of an MRI of the brain and spine.\", to the system prompt of the doctor agent, the π gpt-3.5 doctor agent can correctly diagnose Myasthenia Gravis from the patient with 1 test and 12 questions, which is less than the π gpt-4 doctor agent in Figure 3 with 1 test and 19 questions.  \nConclusionIn this paper, we have explored the capabilities of large language model (LLM) agents in a simulated clinical environment through the MedQA simulated clinical environment in AgentClinic [7]. By leveraging the power of in-context learning together with reason/act and observe, we introduced an automatic correction mechanism for doctor agents, enabling them to enhance their diagnostic accuracy after initial failures. Our experiments demonstrated that this framework can help the LLM doctor agent to achieve correct diagnoses over time, even in the face of complex patient interactions and decision-making scenarios.The results from our evaluations highlight the significant potential of autonomous agents in healthcare settings, particularly in mimicking the dynamic nature of clinical practice. As we advance the field of Figure 3: The clinical consultation dialogue of the first case in the MedQA simulated clinical environment in [7] from a GPT-4 [5] doctor, patient, measurement, and moderator language agent. The doctor correctly diagnosed the patient with Myasthenia Gravis. AI in medicine, our findings underscore the importance of developing intelligent systems that can learn from experience and continuously improve their performance.For future work, we aim to extend the framework's applicability by incorporating a wider variety of tasks, such as differential diagnosis and treatment recommendations, to assess the versatility of the LLMs in dynamic clinical interactions. Furthermore, we intend to explore the performance of various large language models, comparing their capabilities in the AgentClinic framework. This comparative analysis will help identify the most Figure 4: The clinical consultation dialogue of the first case in the MedQA simulated clinical environment in [7] from a GPT-3.5 [8] doctor language agent and GPT-4 patient, measurement, and moderator language agent. The doctor misdiagnosed the patient with Guillain-Barré Syndrome, but the patient actually has Myasthenia Gravis. effective models for specific diagnostic tasks and provide insights into their strengths and limitations in healthcare settings. By continuously improving our algorithms and expanding the tasks performed by the agents, we seek to develop more sophisticated autonomous systems that can significantly contribute to enhancing patient care and clinical decision-making.Figure 5: The clinical consultation dialogue of the first case in the MedQA simulated clinical environment in [7] from a GPT-3.5 [8] doctor language agent and GPT-4 patient, measurement, and moderator language agent using our proposed method. The doctor correctly diagnosed the patient with Myasthenia Gravis with 1 test and 12 questions, which is less than the doctor agent in Firgure 3 with 1 test and 19 questions.Figure 1 :1Figure 1: An architecture towards autonomous agent. Created with BioRender.com.\nFigure 2 :2Figure 2: Medical Self-Adaptive Language Agent. Created with BioRender.com.\nTable 1 :1Diagnosis result of different language models from the MedQA simulated clinical environ-ment in [7]Task numberCorrect answerGPT-4 [5]GPT-3.5 [8]1Myasthenia gravisCorrectGuillain-Barré Syndrome2Progressive multifocal encephalopathyCorrectNo answer3Hirschsprung diseaseCongestive Heart FailureCorrect4Diffuse large B-cell lymphomaCorrectHodgkin's lymphoma5Acute interstitial nephritisCorrectPyelonephritis6Pes anserine bursitisPatellar tendinitisPatellofemoral Pain Syndrome7Situational syncopeCorrectNo answer8Congenital Rubella InfectionCHARGE SyndromeBlue Rubber Bleb Nevus Syndrome9Phyllodes tumorFibroadenoma of the breastbreast cancer10EndometritisCorrectCorrect11HemorrhoidsCorrectRectal Prolapse12Complex partial seizureCorrectCorrect13Posterior hip dislocationCorrectCorrect14Hirschsprung's diseaseCorrectCorrectRupture of theSprain of the15flexor digitorum profundus tendondistal interphalangeal joint of the right ring fingerNo answerat its point of insertionwith possible ligament injury",
+ "sections": [
+  {
+   "title": "Introduction",
+   "text": "Large language models (LLMs) have emerged as powerful statistical tools capable of predicting the next word, phrase, or even entire paragraphs based on the given input [1]. The effectiveness of these models can significantly depend on the prompts they receive [2]. One notable feature of LLMs is in-context learning, allowing them to grasp new tasks from a few examples provided within the prompt during inference [3]. This leads to the practice known as prompt engineering, which involves crafting and refining input prompts to elicit the desired responses from these models [4].The application of large language models (LLMs) in healthcare has demonstrated significant potential, with models achieving remarkable results on tasks such as the GPT-4 [5] achieves the average accuracy of around 83.15 from the United States Medical Licensing Examination (USMLE) self assessment dataset in [6]. However, in real-world clinical practice, diagnosis is a dynamic process involving continuous patient interaction, ordering of medical tests, and decision-making under uncertainty. Simulated clinical environments offer a valuable way to evaluate these models in more interactive, adaptive settings that reflect the realities of patient care.In this paper, we leverage AgentClinic [7], a multimodal benchmark designed to simulate clinical environments, to assess the performance of LLM agents in diagnosing patients through iterative doctor-patient dialogue, medical test interpretation, and bias management. AgentClinic [7] features four agents: the Doctor Agent, responsible for gathering information and making diagnoses; the Patient Agent, which simulates real-world patient interactions; the Measurement Agent, which provides test results; and the Moderator Agent, which evaluates the accuracy of the diagnosis. This setup allows for a detailed analysis of how LLM agents perform in sequential decision-making processes.A key focus of this work is on handling cases where the doctor agent fails to provide an accurate diagnosis. We propose an automatic correction framework that enables the doctor agent to iteratively refine its reasoning after an incorrect diagnosis, ultimately arriving at the correct diagnosis through subsequent interactions. This framework introduces an adaptive feedback loop that adjusts the decision-making process of the doctor agent, allowing it to learn from its mistakes and correct itself over time.Our contributions are as follows: Firstly, We introduce a robust adaptation mechanism for doctor agents that reason/act and observe, enabling them to improve diagnostic accuracy after initial failures. This system guides the doctor agent through a process of adaptive reasoning, helping it to correct earlier mistakes and reach a proper diagnosis. Secondly, we evaluate this framework in the AgentClinic [7] environment, demonstrating how it enhances the doctor agent's ability to recover from incorrect diagnoses and improves overall diagnostic performance through adaptive learning.Our work highlights the potential of autonomous agents in healthcare, showcasing how they can enhance diagnostic processes by enabling the doctor language agent to iteratively refine its reasoning and ultimately arrive at a correct diagnosis.",
+   "level": 1,
+   "path_id": "1",
+   "parent_section_id": null,
+   "order_in_parent": 0,
+   "section_id": "sec-1"
+  },
+  {
+   "title": "Simulated clinical environment",
+   "text": "The AgentClinic benchmark [7] is a simulated clinical environment designed to evaluate the performance of AI models, particularly large language models (LLMs), in tasks that require real-time decision-making and patient interaction, mimicking the complexities of clinical settings. Unlike traditional static medical question-answering tests, this benchmark incorporates a more dynamic and interactive approach by simulating dialogues between patient and doctor agents, along with medical exams and tests, through multimodal agents.In AgentClinic [7], four main agents simulate the clinical environment: (1) Doctor Agent: The model being evaluated for its diagnostic abilities. This agent begins with minimal context about a patient's condition and must interact with the patient agent to gather relevant information. It can ask a limited number of questions, request specific medical tests via the measurement agent, and ultimately provide a diagnosis. This setup simulates the process of sequential medical decisionmaking, requiring the doctor agent to operate under realistic clinical constraints, such as finite time and limited diagnostic resources. (2) Patient Agent: The patient agent holds information about symptoms, medical history, and lifestyle but does not know the final diagnosis. Its role is to provide responses that emulate real patient behavior during doctor-patient consultations. The patient agent can exhibit cognitive and implicit biases, affecting its interaction with the doctor agent. These biases emulate real-world patient biases, such as self-diagnosis based on internet research or distrust of the doctor based on implicit factors. (3) Measurement Agent: This agent simulates diagnostic tests, providing realistic medical readings based on the patient's condition. For example, it can deliver results from an electrocardiogram, blood pressure readings, or imaging tests like X-rays. The doctor agent can request specific tests, and the measurement agent responds with results that match the patient's simulated condition, contributing to the decision-making process. (4) Moderator Agent: This agent evaluates the doctor agent's performance, determining whether the correct diagnosis has been made based on the information gathered during the interaction. The moderator ensures the dialogue is parsed correctly and compares the diagnosis with the actual medical condition to assess the accuracy of the doctor agent.AgentClinic [7] also includes biases in the behavior of both patient and doctor agents, allowing researchers to study the impact of cognitive and implicit biases on medical decision-making. The benchmark introduces various patient types, with 107 patient agents having unique family histories, age groups, diseases, and lifestyle habits.",
+   "level": 2,
+   "path_id": "2",
+   "parent_section_id": null,
+   "order_in_parent": 1,
+   "section_id": "sec-2"
+  },
+  {
+   "title": "Autonomous Agent Architecture",
+   "text": "Let a simulated clinical environment be denoted as a function f that maps a state s ∈ V and an action a ∈ V to an observation o ∈ V, where V is a set of vocabulary. Let π θ be an LLM agent over a pre-trained set of parameters θ. Let s 0 be the initial state of the environment f , we aim to produce a sequence of actions (a 0 , a 1 , a 2 , . . . ), where a i ∈ V for i ∈ Z, from a doctor LLM agent to change the state to a terminal state that indicates the patient is correctly diagnosed.The architecture of the main idea of our work is shown in Figure 1. A desire is provided to an agent to motivate it to solve a specific task in a given environment. The agent can perform an action to interact with the environment, causing the state of the environment to change. The agent then receives an observation that describes the status of the environment and a reward signal. The action may be proposed from two different processes: the reasoning process determines the next action based on the current progress; and the adaptation process summarizes previous progress to provide a better plan towards maximizing the reward.We present a novel algorithm in Algorithm 1. Initially, we have the initial state s 0 which provides instructions, presents exemplars, and describes the environment and the goal for a specific task. π θ is an LLM agent with a set of parameters θ. τ = {s 0 , a 0 , o 1 , . . . } is a sequence of the concatenation of state, action, and observation, where s k , a k , and o k are sequences of tokens representing the k-th state, action, and observation for k ∈ Z, respectively. The return R(τ ) is a string indicating whether the task is completed or not. ep is a variable indicating the number of trials. The environment is reinitialized at each trial.Initially, for the doctor agent, we have the initial state s 0 which contains some context about what is known about the patient as well as a brief objective. π θ is an LLM agent with a set of parameters θ. τ = {s 0 , a 0 , o 1 , . . . } is a sequence of the concatenation of state, action, and observation, where s k , a k , and o k are sequences of tokens representing the k-th state, action, and observation for k ∈ Z, respectively. The return R(τ ) is a string indicating whether the task is completed or not. ep is a variable indicating the number of trials. The environment is reinitialized at each trial. At the first time step k = 0, the action is then sampled froma 1 0 ∼ π θ (a 1 0 |s 1 0 ),(1)where a 1 0 is a sequence of tokens which represents the first action in the first trial, s 1 0 is a sequence of tokens which represents the first state in the first trial, the subscript 0 indicates the first time step, and the superscript 1 indicates the first trail. The observation in the first trial, o 1  1 , is a sequence of tokens obtained from the response of either a patient agent or a measurement agent. The observation can be represented by executing the action a 1 0 in the environment f at state s 1 0 as o 1  1 = f (s 1 0 , a 1 0 ).(2) A new state s 1  1 is formed by concatenating the action a 1 0 and the observation o 1 1 after state s 1 0 as s 1  1 = {s 1 0 , a 1 0 , o 1 1 }.(3) If a maximum time step is reached or the doctor agent provides an incorrect diagnosis, the task fails and the return R(τ ) is concatenated with self correction to form the initial state in the next trial s 2 0 ass 2 0 = {R(τ )},(4)where τ = {s 0 , a 0 , o 1 , a 1 , o 2 , . . . o 50 }. In the next trial, a sequence of tokens is generated from the LLM byt 2 0 ∼ π θ (t 2 0 |s 2 0 ),(5)We call t ep 0 at the ep-th trial for ep &gt; 1 as the adaptation from the (ep -1)-th trail and t ep 0 indicates the correction of the (ep -1)-th failed trail to improve the next trail. In the next step, we propose to replace the initial state in the second trial with the initial state from the first trail to remove the dialogue from the previous trial such that the context length is reduced. We call this step compression. By performing compression, the first action in the second trail will only be conditioned on the initial state in the first trail s 1 0 and the adaptation from the first trail t 2 0 asa 2 0 ∼ π θ (a 2 0 |s 2 0 , t 2 0 ).(6)Algorithm 1 Adaptive reasoning and acting Initialize the world state s 0 as a text of exemplars and task, where each token ∈ V ocab.Let π θ be a LLM agent over a pre-trained set of parameters θ. Let a trajectory τ = {s 0 , a 0 , o 1 , . . . } be a sequence of state, action, and observation. Let R(τ ) be the return for trajectory τ . Let ep = 1. While R(τ ) ̸ = \"OK\" do Let k = 0.While k &lt; 50 || R(τ ) = \"OK\" do If ep &gt; 1 and k = 0, then generate adaptationt ep k ∼ π θ (t ep k |s ep k ). Compression step: If k = 0, then s ep 0 = s 0 . If ep &gt; 1, then generate action a ep k ∼ π θ (a ep k |s ep k , t ep 0 ). If ep = 1, then generate action a ep k ∼ π θ (a ep k |s ep k ). Get observation o ep k+1 = f (s ep k , a ep k ). Let s ep k+1 = {s ep k , a ep k , o ep k+1 }. k := k + 1Concatenate R(τ ) with \"New plan: \". s ep+1 0 = {s ep k , R(τ )} ep := ep + 1",
+   "level": 3,
+   "path_id": "3",
+   "parent_section_id": null,
+   "order_in_parent": 2,
+   "section_id": "sec-3"
+  },
+  {
+   "title": "Experimental results",
+   "text": "We conducted experiments on the MedQA dataset from [7], utilizing 15 scenarios with a maximum of 20 inferences, without bias or image requests, employing GPT-4 [5] as the patient, measurement, and moderator language agent. In the first experiment, we used both GPT-4 [5] and GPT-3.5 [8] as the doctor language agent policy π θ to compare the diagnostic results from these two different models. In each step of the sequence of play, the doctor agent, based on the given context state s 0 , takes action a 0 which can be either to consult the patient agent or invoke the measurement agent, whose replies become the observation o 1 . Now based on this added context, the doctor agent takes the next action a 1 and the cycle continues till the doctor makes the diagnosis or fails, which is the return R(τ ). This medical self-adaptive language agent is presented in Figure 2.The results are presented in Table 1. Now, for the first case in the MedQA simulated clinical environment, the GPT-4 [5] doctor π gpt-4 comes with the right diagnosis as show in in the clinical consultation dialogue of Figure 3. However, the GPT-3.5 [8] doctor π gpt-3.5 in the same case fails to get to the correct diagnosis as shown in the clinical consultation dialogue of Figure 4. Therefore, per our algorithm, a correction or adaptation t 0 is added to the initial context s 0 as an exemplar and the cycle is repeated. As shown in Figure 5, by adding the reflection, \"If the patient has symptoms such as double vision, difficulty climbing stairs, and upper limb weakness, perform an Acetylcholine Receptor Antibody Test instead of an MRI of the brain and spine.\", to the system prompt of the doctor agent, the π gpt-3.5 doctor agent can correctly diagnose Myasthenia Gravis from the patient with 1 test and 12 questions, which is less than the π gpt-4 doctor agent in Figure 3 with 1 test and 19 questions.",
+   "level": 4,
+   "path_id": "4",
+   "parent_section_id": null,
+   "order_in_parent": 3,
+   "section_id": "sec-4"
+  },
+  {
+   "title": "Conclusion",
+   "text": "In this paper, we have explored the capabilities of large language model (LLM) agents in a simulated clinical environment through the MedQA simulated clinical environment in AgentClinic [7]. By leveraging the power of in-context learning together with reason/act and observe, we introduced an automatic correction mechanism for doctor agents, enabling them to enhance their diagnostic accuracy after initial failures. Our experiments demonstrated that this framework can help the LLM doctor agent to achieve correct diagnoses over time, even in the face of complex patient interactions and decision-making scenarios.The results from our evaluations highlight the significant potential of autonomous agents in healthcare settings, particularly in mimicking the dynamic nature of clinical practice. As we advance the field of Figure 3: The clinical consultation dialogue of the first case in the MedQA simulated clinical environment in [7] from a GPT-4 [5] doctor, patient, measurement, and moderator language agent. The doctor correctly diagnosed the patient with Myasthenia Gravis. AI in medicine, our findings underscore the importance of developing intelligent systems that can learn from experience and continuously improve their performance.For future work, we aim to extend the framework's applicability by incorporating a wider variety of tasks, such as differential diagnosis and treatment recommendations, to assess the versatility of the LLMs in dynamic clinical interactions. Furthermore, we intend to explore the performance of various large language models, comparing their capabilities in the AgentClinic framework. This comparative analysis will help identify the most Figure 4: The clinical consultation dialogue of the first case in the MedQA simulated clinical environment in [7] from a GPT-3.5 [8] doctor language agent and GPT-4 patient, measurement, and moderator language agent. The doctor misdiagnosed the patient with Guillain-Barré Syndrome, but the patient actually has Myasthenia Gravis. effective models for specific diagnostic tasks and provide insights into their strengths and limitations in healthcare settings. By continuously improving our algorithms and expanding the tasks performed by the agents, we seek to develop more sophisticated autonomous systems that can significantly contribute to enhancing patient care and clinical decision-making.Figure 5: The clinical consultation dialogue of the first case in the MedQA simulated clinical environment in [7] from a GPT-3.5 [8] doctor language agent and GPT-4 patient, measurement, and moderator language agent using our proposed method. The doctor correctly diagnosed the patient with Myasthenia Gravis with 1 test and 12 questions, which is less than the doctor agent in Firgure 3 with 1 test and 19 questions.",
+   "level": 5,
+   "path_id": "5",
+   "parent_section_id": null,
+   "order_in_parent": 4,
+   "section_id": "sec-5"
+  },
+  {
+   "title": "Figure 1 :",
+   "text": "1Figure 1: An architecture towards autonomous agent. Created with BioRender.com.",
+   "level": 1,
+   "path_id": "1~2",
+   "parent_section_id": null,
+   "order_in_parent": 5,
+   "section_id": "sec-1~2"
+  },
+  {
+   "title": "Figure 2 :",
+   "text": "2Figure 2: Medical Self-Adaptive Language Agent. Created with BioRender.com.",
+   "level": 1,
+   "path_id": "1~3",
+   "parent_section_id": null,
+   "order_in_parent": 6,
+   "section_id": "sec-1~3"
+  },
+  {
+   "title": "Table 1 :",
+   "text": "1Diagnosis result of different language models from the MedQA simulated clinical environ-ment in [7]Task numberCorrect answerGPT-4 [5]GPT-3.5 [8]1Myasthenia gravisCorrectGuillain-Barré Syndrome2Progressive multifocal encephalopathyCorrectNo answer3Hirschsprung diseaseCongestive Heart FailureCorrect4Diffuse large B-cell lymphomaCorrectHodgkin's lymphoma5Acute interstitial nephritisCorrectPyelonephritis6Pes anserine bursitisPatellar tendinitisPatellofemoral Pain Syndrome7Situational syncopeCorrectNo answer8Congenital Rubella InfectionCHARGE SyndromeBlue Rubber Bleb Nevus Syndrome9Phyllodes tumorFibroadenoma of the breastbreast cancer10EndometritisCorrectCorrect11HemorrhoidsCorrectRectal Prolapse12Complex partial seizureCorrectCorrect13Posterior hip dislocationCorrectCorrect14Hirschsprung's diseaseCorrectCorrectRupture of theSprain of the15flexor digitorum profundus tendondistal interphalangeal joint of the right ring fingerNo answerat its point of insertionwith possible ligament injury",
+   "level": 1,
+   "path_id": "1~4",
+   "parent_section_id": null,
+   "order_in_parent": 7,
+   "section_id": "sec-1~4"
+  }
+ ],
+ "citations": [
+  {
+   "raw_text": "Using large language models in psychology\n\t\t\n\t\t\tDorottyaDemszky\n\t\t\n\t\t\n\t\t\tDiyiYang\n\t\t\n\t\t\n\t\t\tDavidSYeager\n\t\t\n\t\t\n\t\t\tChristopherJBryan\n\t\t\n\t\t\n\t\t\tMargarettClapper\n\t\t\n\t\t\n\t\t\tSusannahChandhok\n\t\t\n\t\t\n\t\t\tJohannesCEichstaedt\n\t\t\n\t\t\n\t\t\tCameronHecht\n\t\t\n\t\t\n\t\t\tJeremyJamieson\n\t\t\n\t\t\n\t\t\tMeghannJohnson\n\t\t\n\t\n\t\n\t\tNature Reviews Psychology\n\t\t\n\t\t\t2\n\t\t\t11\n\t\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Using large language models in psychology",
+   "anchors": [
+    {
+     "ref_id": "b0",
+     "section_path_id": "1",
+     "quote": "[1]",
+     "offset": 168
+    }
+   ]
+  },
+  {
+   "raw_text": "Prompt engineering guidelines for llms in requirements engineering\n\t\t\n\t\t\tSimonArvidsson\n\t\t\n\t\t\n\t\t\tJohanAxell\n\t\t\n\t\t\n\t\t\t2023\n\t\t\n\t\t\n\t\t\tUniversity of Gothenburg and Chalmers University of Technology\n\t\t\n\t\n\tBachelor&apos;s thesis",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b1",
+     "section_path_id": "1",
+     "quote": "[2]",
+     "offset": 260
+    }
+   ]
+  },
+  {
+   "raw_text": "ShervinMinaee\n\t\t\n\t\t\n\t\t\tTomasMikolov\n\t\t\n\t\t\n\t\t\tNarjesNikzad\n\t\t\n\t\t\n\t\t\tMeysamChenaghlu\n\t\t\n\t\t\n\t\t\tRichardSocher\n\t\t\n\t\t\n\t\t\tXavierAmatriain\n\t\t\n\t\t\n\t\t\tJianfengGao\n\t\t\n\t\tarXiv:2402.06196\n\t\tLarge language models: A survey\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2402.06196",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b2",
+     "section_path_id": "1",
+     "quote": "[3]",
+     "offset": 414
+    }
+   ]
+  },
+  {
+   "raw_text": "Prompt engineering for chatgpt: a quick guide to techniques, tips, and best practices\n\t\t\n\t\t\tSabitEkin\n\t\t\n\t\n\t\n\t\tAuthorea Preprints\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Prompt engineering for chatgpt: a quick guide to techniques, tips, and best practices",
+   "anchors": [
+    {
+     "ref_id": "b3",
+     "section_path_id": "1",
+     "quote": "[4]",
+     "offset": 576
+    }
+   ]
+  },
+  {
+   "raw_text": "JoshAchiam\n\t\t\n\t\t\n\t\t\tStevenAdler\n\t\t\n\t\t\n\t\t\tSandhiniAgarwal\n\t\t\n\t\t\n\t\t\tLamaAhmad\n\t\t\n\t\t\n\t\t\tIlgeAkkaya\n\t\t\n\t\t\n\t\t\tFlorenciaLeoni Aleman\n\t\t\n\t\t\n\t\t\tDiogoAlmeida\n\t\t\n\t\t\n\t\t\tJankoAltenschmidt\n\t\t\n\t\t\n\t\t\tSamAltman\n\t\t\n\t\tarXiv:2303.08774\n\t\tShyamal Anadkat, et al. Gpt-4 technical report\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2303.08774",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b4",
+     "section_path_id": "1",
+     "quote": "[5]",
+     "offset": 750
+    },
+    {
+     "ref_id": "b4",
+     "section_path_id": "4",
+     "quote": "[5]",
+     "offset": 160
+    },
+    {
+     "ref_id": "b4",
+     "section_path_id": "4",
+     "quote": "[5]",
+     "offset": 267
+    },
+    {
+     "ref_id": "b4",
+     "section_path_id": "4",
+     "quote": "[5]",
+     "offset": 988
+    },
+    {
+     "ref_id": "b4",
+     "section_path_id": "5",
+     "quote": "[5]",
+     "offset": 951
+    }
+   ]
+  },
+  {
+   "raw_text": "Capabilities of gpt-4 on medical challenge problems\n\t\t\n\t\t\tHarshaNori\n\t\t\n\t\t\n\t\t\tNicholasKing\n\t\t\n\t\t\n\t\t\tScottMayerMckinney\n\t\t\n\t\t\n\t\t\tDeanCarignan\n\t\t\n\t\t\n\t\t\tEricHorvitz\n\t\t\n\t\tarXiv:2303.13375\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2303.13375",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b5",
+     "section_path_id": "1",
+     "quote": "[6]",
+     "offset": 888
+    }
+   ]
+  },
+  {
+   "raw_text": "Agentclinic: a multimodal agent benchmark to evaluate ai in simulated clinical environments\n\t\t\n\t\t\tSamuelSchmidgall\n\t\t\n\t\t\n\t\t\tRojinZiaei\n\t\t\n\t\t\n\t\t\tCarlHarris\n\t\t\n\t\t\n\t\t\tEduardoReis\n\t\t\n\t\t\n\t\t\tJeffreyJopling\n\t\t\n\t\t\n\t\t\tMichaelMoor\n\t\t\n\t\tarXiv:2405.07960\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2405.07960",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b6",
+     "section_path_id": "1",
+     "quote": "[7]",
+     "offset": 1273
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "1",
+     "quote": "[7]",
+     "offset": 1513
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "1",
+     "quote": "[7]",
+     "offset": 2831
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "2",
+     "quote": "[7]",
+     "offset": 26
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "2",
+     "quote": "[7]",
+     "offset": 546
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "2",
+     "quote": "[7]",
+     "offset": 2455
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "4",
+     "quote": "[7]",
+     "offset": 51
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "5",
+     "quote": "[7]",
+     "offset": 186
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "5",
+     "quote": "[7]",
+     "offset": 934
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "5",
+     "quote": "[7]",
+     "offset": 1793
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "5",
+     "quote": "[7]",
+     "offset": 2489
+    }
+   ]
+  },
+  {
+   "raw_text": "Language models are few-shot learners\n\t\t\n\t\t\tTom B Brown\n\t\t\n\t\tarXiv:2005.14165\n\t\t\n\t\t\t2020\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2005.14165",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b7",
+     "section_path_id": "4",
+     "quote": "[8]",
+     "offset": 283
+    },
+    {
+     "ref_id": "b7",
+     "section_path_id": "4",
+     "quote": "[8]",
+     "offset": 1121
+    },
+    {
+     "ref_id": "b7",
+     "section_path_id": "5",
+     "quote": "[8]",
+     "offset": 1812
+    },
+    {
+     "ref_id": "b7",
+     "section_path_id": "5",
+     "quote": "[8]",
+     "offset": 2508
+    }
+   ]
+  }
+ ],
+ "layout_json": null,
+ "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">Adaptive Reasoning and Acting in Medical Language Agents</title>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability status=\"unknown\"><licence/></availability>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Abhishek</forename><surname>Dutta</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Department of Electrical and Computer Engineering</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of Connecticut Storrs</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<postCode>06269</postCode>\n\t\t\t\t\t\t\t\t\t<region>CT</region>\n\t\t\t\t\t\t\t\t\t<country key=\"US\">USA</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author role=\"corresp\">\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Yen-Che</forename><surname>Hsiao</surname></persName>\n\t\t\t\t\t\t\t<email>yen-che.hsiao@uconn.edu</email>\n\t\t\t\t\t\t\t<affiliation key=\"aff1\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Department of Electrical and Computer Engineering</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of Connecticut Storrs</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<postCode>06269</postCode>\n\t\t\t\t\t\t\t\t\t<region>CT</region>\n\t\t\t\t\t\t\t\t\t<country key=\"US\">USA</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">Adaptive Reasoning and Acting in Medical Language Agents</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date/>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">9B3C422906F2AABD5B6497C3D25F0A9F</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.0\" ident=\"GROBID\" when=\"2026-08-21T15:07+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.0</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>This paper presents an innovative large language model (LLM) agent framework for enhancing diagnostic accuracy in simulated clinical environments using the AgentClinic benchmark. The proposed automatic correction enables doctor agents to iteratively refine their reasoning and actions following incorrect diagnoses, fostering improved decision-making over time. Experiments show that the implementation of the adaptive LLM-based doctor agents achieve correct diagnoses through dynamic interactions with simulated patients. The evaluations highlight the capacity of autonomous agents to adapt and improve in complex medical scenarios. Future enhancements will focus on refining the algorithm and expanding its applicability across a wider range of tasks and different large language models.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"8\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"9\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"1\">Introduction</head><p>Large language models (LLMs) have emerged as powerful statistical tools capable of predicting the next word, phrase, or even entire paragraphs based on the given input <ref type=\"bibr\" target=\"#b0\">[1]</ref>. The effectiveness of these models can significantly depend on the prompts they receive <ref type=\"bibr\" target=\"#b1\">[2]</ref>. One notable feature of LLMs is in-context learning, allowing them to grasp new tasks from a few examples provided within the prompt during inference <ref type=\"bibr\" target=\"#b2\">[3]</ref>. This leads to the practice known as prompt engineering, which involves crafting and refining input prompts to elicit the desired responses from these models <ref type=\"bibr\" target=\"#b3\">[4]</ref>.</p><p>The application of large language models (LLMs) in healthcare has demonstrated significant potential, with models achieving remarkable results on tasks such as the GPT-4 <ref type=\"bibr\" target=\"#b4\">[5]</ref> achieves the average accuracy of around 83.15 from the United States Medical Licensing Examination (USMLE) self assessment dataset in <ref type=\"bibr\" target=\"#b5\">[6]</ref>. However, in real-world clinical practice, diagnosis is a dynamic process involving continuous patient interaction, ordering of medical tests, and decision-making under uncertainty. Simulated clinical environments offer a valuable way to evaluate these models in more interactive, adaptive settings that reflect the realities of patient care.</p><p>In this paper, we leverage AgentClinic <ref type=\"bibr\" target=\"#b6\">[7]</ref>, a multimodal benchmark designed to simulate clinical environments, to assess the performance of LLM agents in diagnosing patients through iterative doctor-patient dialogue, medical test interpretation, and bias management. AgentClinic <ref type=\"bibr\" target=\"#b6\">[7]</ref> features four agents: the Doctor Agent, responsible for gathering information and making diagnoses; the Patient Agent, which simulates real-world patient interactions; the Measurement Agent, which provides test results; and the Moderator Agent, which evaluates the accuracy of the diagnosis. This setup allows for a detailed analysis of how LLM agents perform in sequential decision-making processes.</p><p>A key focus of this work is on handling cases where the doctor agent fails to provide an accurate diagnosis. We propose an automatic correction framework that enables the doctor agent to iteratively refine its reasoning after an incorrect diagnosis, ultimately arriving at the correct diagnosis through subsequent interactions. This framework introduces an adaptive feedback loop that adjusts the decision-making process of the doctor agent, allowing it to learn from its mistakes and correct itself over time.</p><p>Our contributions are as follows: Firstly, We introduce a robust adaptation mechanism for doctor agents that reason/act and observe, enabling them to improve diagnostic accuracy after initial failures. This system guides the doctor agent through a process of adaptive reasoning, helping it to correct earlier mistakes and reach a proper diagnosis. Secondly, we evaluate this framework in the AgentClinic <ref type=\"bibr\" target=\"#b6\">[7]</ref> environment, demonstrating how it enhances the doctor agent's ability to recover from incorrect diagnoses and improves overall diagnostic performance through adaptive learning.</p><p>Our work highlights the potential of autonomous agents in healthcare, showcasing how they can enhance diagnostic processes by enabling the doctor language agent to iteratively refine its reasoning and ultimately arrive at a correct diagnosis.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2\">Simulated clinical environment</head><p>The AgentClinic benchmark <ref type=\"bibr\" target=\"#b6\">[7]</ref> is a simulated clinical environment designed to evaluate the performance of AI models, particularly large language models (LLMs), in tasks that require real-time decision-making and patient interaction, mimicking the complexities of clinical settings. Unlike traditional static medical question-answering tests, this benchmark incorporates a more dynamic and interactive approach by simulating dialogues between patient and doctor agents, along with medical exams and tests, through multimodal agents.</p><p>In AgentClinic <ref type=\"bibr\" target=\"#b6\">[7]</ref>, four main agents simulate the clinical environment: (1) Doctor Agent: The model being evaluated for its diagnostic abilities. This agent begins with minimal context about a patient's condition and must interact with the patient agent to gather relevant information. It can ask a limited number of questions, request specific medical tests via the measurement agent, and ultimately provide a diagnosis. This setup simulates the process of sequential medical decisionmaking, requiring the doctor agent to operate under realistic clinical constraints, such as finite time and limited diagnostic resources. (2) Patient Agent: The patient agent holds information about symptoms, medical history, and lifestyle but does not know the final diagnosis. Its role is to provide responses that emulate real patient behavior during doctor-patient consultations. The patient agent can exhibit cognitive and implicit biases, affecting its interaction with the doctor agent. These biases emulate real-world patient biases, such as self-diagnosis based on internet research or distrust of the doctor based on implicit factors. (3) Measurement Agent: This agent simulates diagnostic tests, providing realistic medical readings based on the patient's condition. For example, it can deliver results from an electrocardiogram, blood pressure readings, or imaging tests like X-rays. The doctor agent can request specific tests, and the measurement agent responds with results that match the patient's simulated condition, contributing to the decision-making process. (4) Moderator Agent: This agent evaluates the doctor agent's performance, determining whether the correct diagnosis has been made based on the information gathered during the interaction. The moderator ensures the dialogue is parsed correctly and compares the diagnosis with the actual medical condition to assess the accuracy of the doctor agent.</p><p>AgentClinic <ref type=\"bibr\" target=\"#b6\">[7]</ref> also includes biases in the behavior of both patient and doctor agents, allowing researchers to study the impact of cognitive and implicit biases on medical decision-making. The benchmark introduces various patient types, with 107 patient agents having unique family histories, age groups, diseases, and lifestyle habits.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3\">Autonomous Agent Architecture</head><p>Let a simulated clinical environment be denoted as a function f that maps a state s ∈ V and an action a ∈ V to an observation o ∈ V, where V is a set of vocabulary. Let π θ be an LLM agent over a pre-trained set of parameters θ. Let s 0 be the initial state of the environment f , we aim to produce a sequence of actions (a 0 , a 1 , a 2 , . . . ), where a i ∈ V for i ∈ Z, from a doctor LLM agent to change the state to a terminal state that indicates the patient is correctly diagnosed.</p><p>The architecture of the main idea of our work is shown in Figure <ref type=\"figure\" target=\"#fig_0\">1</ref>. A desire is provided to an agent to motivate it to solve a specific task in a given environment. The agent can perform an action to interact with the environment, causing the state of the environment to change. The agent then receives an observation that describes the status of the environment and a reward signal. The action may be proposed from two different processes: the reasoning process determines the next action based on the current progress; and the adaptation process summarizes previous progress to provide a better plan towards maximizing the reward.</p><p>We present a novel algorithm in Algorithm 1. Initially, we have the initial state s 0 which provides instructions, presents exemplars, and describes the environment and the goal for a specific task. π θ is an LLM agent with a set of parameters θ. τ = {s 0 , a 0 , o 1 , . . . } is a sequence of the concatenation of state, action, and observation, where s k , a k , and o k are sequences of tokens representing the k-th state, action, and observation for k ∈ Z, respectively. The return R(τ ) is a string indicating whether the task is completed or not. ep is a variable indicating the number of trials. The environment is reinitialized at each trial.</p><p>Initially, for the doctor agent, we have the initial state s 0 which contains some context about what is known about the patient as well as a brief objective. π θ is an LLM agent with a set of parameters θ. τ = {s 0 , a 0 , o 1 , . . . } is a sequence of the concatenation of state, action, and observation, where s k , a k , and o k are sequences of tokens representing the k-th state, action, and observation for k ∈ Z, respectively. The return R(τ ) is a string indicating whether the task is completed or not. ep is a variable indicating the number of trials. The environment is reinitialized at each trial. At the first time step k = 0, the action is then sampled from</p><formula xml:id=\"formula_0\">a 1 0 ∼ π θ (a 1 0 |s 1 0 ),<label>(1)</label></formula><p>where a 1 0 is a sequence of tokens which represents the first action in the first trial, s 1 0 is a sequence of tokens which represents the first state in the first trial, the subscript 0 indicates the first time step, and the superscript 1 indicates the first trail. The observation in the first trial, o 1  1 , is a sequence of tokens obtained from the response of either a patient agent or a measurement agent. The observation can be represented by executing the action a 1 0 in the environment f at state s 1 0 as o 1  1 = f (s 1 0 , a 1 0 ).</p><p>(2) A new state s 1  1 is formed by concatenating the action a 1 0 and the observation o 1 1 after state s 1 0 as s 1  1 = {s 1 0 , a 1 0 , o 1 1 }.</p><p>(3) If a maximum time step is reached or the doctor agent provides an incorrect diagnosis, the task fails and the return R(τ ) is concatenated with self correction to form the initial state in the next trial s 2 0 as</p><formula xml:id=\"formula_1\">s 2 0 = {R(τ )},<label>(4)</label></formula><p>where τ = {s 0 , a 0 , o 1 , a 1 , o 2 , . . . o 50 }. In the next trial, a sequence of tokens is generated from the LLM by</p><formula xml:id=\"formula_2\">t 2 0 ∼ π θ (t 2 0 |s 2 0 ),<label>(5)</label></formula><p>We call t ep 0 at the ep-th trial for ep &gt; 1 as the adaptation from the (ep -1)-th trail and t ep 0 indicates the correction of the (ep -1)-th failed trail to improve the next trail. In the next step, we propose to replace the initial state in the second trial with the initial state from the first trail to remove the dialogue from the previous trial such that the context length is reduced. We call this step compression. By performing compression, the first action in the second trail will only be conditioned on the initial state in the first trail s 1 0 and the adaptation from the first trail t 2 0 as</p><formula xml:id=\"formula_3\">a 2 0 ∼ π θ (a 2 0 |s 2 0 , t 2 0 ).<label>(6)</label></formula><p>Algorithm 1 Adaptive reasoning and acting Initialize the world state s 0 as a text of exemplars and task, where each token ∈ V ocab.</p><p>Let π θ be a LLM agent over a pre-trained set of parameters θ. Let a trajectory τ = {s 0 , a 0 , o 1 , . . . } be a sequence of state, action, and observation. Let R(τ ) be the return for trajectory τ . Let ep = 1. While R(τ ) ̸ = \"OK\" do Let k = 0.</p><p>While k &lt; 50 || R(τ ) = \"OK\" do If ep &gt; 1 and k = 0, then generate adaptation</p><formula xml:id=\"formula_4\">t ep k ∼ π θ (t ep k |s ep k ). Compression step: If k = 0, then s ep 0 = s 0 . If ep &gt; 1, then generate action a ep k ∼ π θ (a ep k |s ep k , t ep 0 ). If ep = 1, then generate action a ep k ∼ π θ (a ep k |s ep k ). Get observation o ep k+1 = f (s ep k , a ep k ). Let s ep k+1 = {s ep k , a ep k , o ep k+1 }. k := k + 1</formula><p>Concatenate R(τ ) with \"New plan: \". s ep+1 0 = {s ep k , R(τ )} ep := ep + 1</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4\">Experimental results</head><p>We conducted experiments on the MedQA dataset from <ref type=\"bibr\" target=\"#b6\">[7]</ref>, utilizing 15 scenarios with a maximum of 20 inferences, without bias or image requests, employing GPT-4 <ref type=\"bibr\" target=\"#b4\">[5]</ref> as the patient, measurement, and moderator language agent. In the first experiment, we used both GPT-4 <ref type=\"bibr\" target=\"#b4\">[5]</ref> and GPT-3.5 <ref type=\"bibr\" target=\"#b7\">[8]</ref> as the doctor language agent policy π θ to compare the diagnostic results from these two different models. In each step of the sequence of play, the doctor agent, based on the given context state s 0 , takes action a 0 which can be either to consult the patient agent or invoke the measurement agent, whose replies become the observation o 1 . Now based on this added context, the doctor agent takes the next action a 1 and the cycle continues till the doctor makes the diagnosis or fails, which is the return R(τ ). This medical self-adaptive language agent is presented in Figure <ref type=\"figure\" target=\"#fig_1\">2</ref>.</p><p>The results are presented in Table <ref type=\"table\" target=\"#tab_0\">1</ref>. Now, for the first case in the MedQA simulated clinical environment, the GPT-4 <ref type=\"bibr\" target=\"#b4\">[5]</ref> doctor π gpt-4 comes with the right diagnosis as show in in the clinical consultation dialogue of Figure <ref type=\"figure\">3</ref>. However, the GPT-3.5 <ref type=\"bibr\" target=\"#b7\">[8]</ref> doctor π gpt-3.5 in the same case fails to get to the correct diagnosis as shown in the clinical consultation dialogue of Figure <ref type=\"figure\">4</ref>. Therefore, per our algorithm, a correction or adaptation t 0 is added to the initial context s 0 as an exemplar and the cycle is repeated. As shown in Figure <ref type=\"figure\">5</ref>, by adding the reflection, \"If the patient has symptoms such as double vision, difficulty climbing stairs, and upper limb weakness, perform an Acetylcholine Receptor Antibody Test instead of an MRI of the brain and spine.\", to the system prompt of the doctor agent, the π gpt-3.5 doctor agent can correctly diagnose Myasthenia Gravis from the patient with 1 test and 12 questions, which is less than the π gpt-4 doctor agent in Figure <ref type=\"figure\">3</ref> with 1 test and 19 questions.  </p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"5\">Conclusion</head><p>In this paper, we have explored the capabilities of large language model (LLM) agents in a simulated clinical environment through the MedQA simulated clinical environment in AgentClinic <ref type=\"bibr\" target=\"#b6\">[7]</ref>. By leveraging the power of in-context learning together with reason/act and observe, we introduced an automatic correction mechanism for doctor agents, enabling them to enhance their diagnostic accuracy after initial failures. Our experiments demonstrated that this framework can help the LLM doctor agent to achieve correct diagnoses over time, even in the face of complex patient interactions and decision-making scenarios.</p><p>The results from our evaluations highlight the significant potential of autonomous agents in healthcare settings, particularly in mimicking the dynamic nature of clinical practice. As we advance the field of Figure <ref type=\"figure\">3</ref>: The clinical consultation dialogue of the first case in the MedQA simulated clinical environment in <ref type=\"bibr\" target=\"#b6\">[7]</ref> from a GPT-4 <ref type=\"bibr\" target=\"#b4\">[5]</ref> doctor, patient, measurement, and moderator language agent. The doctor correctly diagnosed the patient with Myasthenia Gravis. AI in medicine, our findings underscore the importance of developing intelligent systems that can learn from experience and continuously improve their performance.</p><p>For future work, we aim to extend the framework's applicability by incorporating a wider variety of tasks, such as differential diagnosis and treatment recommendations, to assess the versatility of the LLMs in dynamic clinical interactions. Furthermore, we intend to explore the performance of various large language models, comparing their capabilities in the AgentClinic framework. This comparative analysis will help identify the most Figure <ref type=\"figure\">4</ref>: The clinical consultation dialogue of the first case in the MedQA simulated clinical environment in <ref type=\"bibr\" target=\"#b6\">[7]</ref> from a GPT-3.5 <ref type=\"bibr\" target=\"#b7\">[8]</ref> doctor language agent and GPT-4 patient, measurement, and moderator language agent. The doctor misdiagnosed the patient with Guillain-Barré Syndrome, but the patient actually has Myasthenia Gravis. effective models for specific diagnostic tasks and provide insights into their strengths and limitations in healthcare settings. By continuously improving our algorithms and expanding the tasks performed by the agents, we seek to develop more sophisticated autonomous systems that can significantly contribute to enhancing patient care and clinical decision-making.</p><p>Figure <ref type=\"figure\">5</ref>: The clinical consultation dialogue of the first case in the MedQA simulated clinical environment in <ref type=\"bibr\" target=\"#b6\">[7]</ref> from a GPT-3.5 <ref type=\"bibr\" target=\"#b7\">[8]</ref> doctor language agent and GPT-4 patient, measurement, and moderator language agent using our proposed method. The doctor correctly diagnosed the patient with Myasthenia Gravis with 1 test and 12 questions, which is less than the doctor agent in Firgure 3 with 1 test and 19 questions.</p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: An architecture towards autonomous agent. Created with BioRender.com.</figDesc><graphic coords=\"3,110.72,72.00,388.08,172.20\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_1\"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Medical Self-Adaptive Language Agent. Created with BioRender.com.</figDesc><graphic coords=\"5,110.72,72.02,388.00,156.14\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_0\"><head>Table 1 :</head><label>1</label><figDesc>Diagnosis result of different language models from the MedQA simulated clinical environ-</figDesc><table><row><cell>ment in [7]</cell><cell></cell><cell></cell><cell></cell></row><row><cell>Task number</cell><cell>Correct answer</cell><cell>GPT-4 [5]</cell><cell>GPT-3.5 [8]</cell></row><row><cell>1</cell><cell>Myasthenia gravis</cell><cell>Correct</cell><cell>Guillain-Barré Syndrome</cell></row><row><cell>2</cell><cell>Progressive multifocal encephalopathy</cell><cell>Correct</cell><cell>No answer</cell></row><row><cell>3</cell><cell>Hirschsprung disease</cell><cell>Congestive Heart Failure</cell><cell>Correct</cell></row><row><cell>4</cell><cell>Diffuse large B-cell lymphoma</cell><cell>Correct</cell><cell>Hodgkin's lymphoma</cell></row><row><cell>5</cell><cell>Acute interstitial nephritis</cell><cell>Correct</cell><cell>Pyelonephritis</cell></row><row><cell>6</cell><cell>Pes anserine bursitis</cell><cell>Patellar tendinitis</cell><cell>Patellofemoral Pain Syndrome</cell></row><row><cell>7</cell><cell>Situational syncope</cell><cell>Correct</cell><cell>No answer</cell></row><row><cell>8</cell><cell>Congenital Rubella Infection</cell><cell>CHARGE Syndrome</cell><cell>Blue Rubber Bleb Nevus Syndrome</cell></row><row><cell>9</cell><cell>Phyllodes tumor</cell><cell>Fibroadenoma of the breast</cell><cell>breast cancer</cell></row><row><cell>10</cell><cell>Endometritis</cell><cell>Correct</cell><cell>Correct</cell></row><row><cell>11</cell><cell>Hemorrhoids</cell><cell>Correct</cell><cell>Rectal Prolapse</cell></row><row><cell>12</cell><cell>Complex partial seizure</cell><cell>Correct</cell><cell>Correct</cell></row><row><cell>13</cell><cell>Posterior hip dislocation</cell><cell>Correct</cell><cell>Correct</cell></row><row><cell>14</cell><cell>Hirschsprung's disease</cell><cell>Correct</cell><cell>Correct</cell></row><row><cell></cell><cell>Rupture of the</cell><cell>Sprain of the</cell><cell></cell></row><row><cell>15</cell><cell>flexor digitorum profundus tendon</cell><cell>distal interphalangeal joint of the right ring finger</cell><cell>No answer</cell></row><row><cell></cell><cell>at its point of insertion</cell><cell>with possible ligament injury</cell><cell></cell></row></table></figure>\n\t\t</body>\n\t\t<back>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Using large language models in psychology</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dorottya</forename><surname>Demszky</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Diyi</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">David</forename><forename type=\"middle\">S</forename><surname>Yeager</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Christopher</forename><forename type=\"middle\">J</forename><surname>Bryan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Margarett</forename><surname>Clapper</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Susannah</forename><surname>Chandhok</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Johannes</forename><forename type=\"middle\">C</forename><surname>Eichstaedt</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Cameron</forename><surname>Hecht</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jeremy</forename><surname>Jamieson</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Meghann</forename><surname>Johnson</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Nature Reviews Psychology</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">2</biblScope>\n\t\t\t<biblScope unit=\"issue\">11</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"688\" to=\"701\" />\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Prompt engineering guidelines for llms in requirements engineering</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Simon</forename><surname>Arvidsson</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Johan</forename><surname>Axell</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t\t<respStmt>\n\t\t\t<orgName>University of Gothenburg and Chalmers University of Technology</orgName>\n\t\t</respStmt>\n\t</monogr>\n\t<note type=\"report_type\">Bachelor&apos;s thesis</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shervin</forename><surname>Minaee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Tomas</forename><surname>Mikolov</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Narjes</forename><surname>Nikzad</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Meysam</forename><surname>Chenaghlu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Richard</forename><surname>Socher</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xavier</forename><surname>Amatriain</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jianfeng</forename><surname>Gao</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2402.06196</idno>\n\t\t<title level=\"m\">Large language models: A survey</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Prompt engineering for chatgpt: a quick guide to techniques, tips, and best practices</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Sabit</forename><surname>Ekin</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Authorea Preprints</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Josh</forename><surname>Achiam</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Steven</forename><surname>Adler</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Sandhini</forename><surname>Agarwal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Lama</forename><surname>Ahmad</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ilge</forename><surname>Akkaya</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Florencia</forename><surname>Leoni Aleman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Diogo</forename><surname>Almeida</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Janko</forename><surname>Altenschmidt</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Sam</forename><surname>Altman</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2303.08774</idno>\n\t\t<title level=\"m\">Shyamal Anadkat, et al. Gpt-4 technical report</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Capabilities of gpt-4 on medical challenge problems</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Harsha</forename><surname>Nori</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Nicholas</forename><surname>King</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Scott</forename><forename type=\"middle\">Mayer</forename><surname>Mckinney</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dean</forename><surname>Carignan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Eric</forename><surname>Horvitz</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2303.13375</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Agentclinic: a multimodal agent benchmark to evaluate ai in simulated clinical environments</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Samuel</forename><surname>Schmidgall</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Rojin</forename><surname>Ziaei</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Carl</forename><surname>Harris</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Eduardo</forename><surname>Reis</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jeffrey</forename><surname>Jopling</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Michael</forename><surname>Moor</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2405.07960</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b7\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Language models are few-shot learners</title>\n\t\t<author>\n\t\t\t<persName><surname>Tom B Brown</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2005.14165</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2020\">2020</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+ "pdf_hash": "94222c76f0cc3b682d263c47fbb9ff7869a0c7458fb7821e56fa73b1ebddd89a",
+ "tables": [
+  {
+   "table_id": "tab_0",
+   "section_path_id": "1~4",
+   "section_ordinal": 7,
+   "caption": "Table 1 :",
+   "coordinates": null,
+   "cells": [
+    {
+     "row": 0,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "ment in [7]",
+     "coordinates": null,
+     "span": {
+      "start": 89,
+      "end": 100
+     },
+     "digest": "31b1c119b2309a142c7d561e8532d3e12565bee292909d048736060dc81511fb"
+    },
+    {
+     "row": 0,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 100,
+      "end": 100
+     },
+     "digest": "7e8d5b72d290ba59f0edbe3d6f961eea1a534c250a6ef2cac5b85c0c2111735f"
+    },
+    {
+     "row": 0,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 100,
+      "end": 100
+     },
+     "digest": "5dbad9eed60d7ef498ff00ca6d522d5dcd4cdf962b95572a85b53e5e9504f672"
+    },
+    {
+     "row": 0,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 100,
+      "end": 100
+     },
+     "digest": "bcefada4c9114a6e28b376eff9066967f9b688cc5c478112fab089f214867698"
+    },
+    {
+     "row": 1,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Task number",
+     "coordinates": null,
+     "span": {
+      "start": 100,
+      "end": 111
+     },
+     "digest": "bed13a8c94b659a6f938f80172617862caccafcf78833e9b59ec4195ad68d682"
+    },
+    {
+     "row": 1,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct answer",
+     "coordinates": null,
+     "span": {
+      "start": 111,
+      "end": 125
+     },
+     "digest": "ec8bdac9ae694dbbda75e1f6efef00773cd05a45a72fb2c49cc6edef2d53a46a"
+    },
+    {
+     "row": 1,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "GPT-4 [5]",
+     "coordinates": null,
+     "span": {
+      "start": 125,
+      "end": 134
+     },
+     "digest": "93a4cabaa3dfd3d7224cda4ae7365c43a900bd96b31c61443b90c1b102ab73cc"
+    },
+    {
+     "row": 1,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "GPT-3.5 [8]",
+     "coordinates": null,
+     "span": {
+      "start": 134,
+      "end": 145
+     },
+     "digest": "19a8573bd010a2ef46c3ffbb39c3b7e24461b6b6682bf468bdcee712e84ecac3"
+    },
+    {
+     "row": 2,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "1",
+     "coordinates": null,
+     "span": {
+      "start": 145,
+      "end": 146
+     },
+     "digest": "98a6d2bd9a1b9a6f2f513717a1cec561e9c461fa6fe909278bb3252a7f87ee57"
+    },
+    {
+     "row": 2,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Myasthenia gravis",
+     "coordinates": null,
+     "span": {
+      "start": 146,
+      "end": 163
+     },
+     "digest": "4f143a10ae1d35b9a56f8db1f10400d5b20edfc43fe4cdbb98e007b9bb183f68"
+    },
+    {
+     "row": 2,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 163,
+      "end": 170
+     },
+     "digest": "68ecbf52ea23c7ee5dd6569acd11e4758ddb9c8c95d79397c5361e2927e720b4"
+    },
+    {
+     "row": 2,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Guillain-Barré Syndrome",
+     "coordinates": null,
+     "span": {
+      "start": 170,
+      "end": 193
+     },
+     "digest": "7c66723a55309b681500af3823a1ecb6ceea448a22f2c3c75c21539e3b1961f2"
+    },
+    {
+     "row": 3,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "2",
+     "coordinates": null,
+     "span": {
+      "start": 193,
+      "end": 194
+     },
+     "digest": "2d28870ad347605db128c80f39432ccb6a3fe179269d99f71dad4d22adfe5425"
+    },
+    {
+     "row": 3,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Progressive multifocal encephalopathy",
+     "coordinates": null,
+     "span": {
+      "start": 194,
+      "end": 231
+     },
+     "digest": "b020be4bac5eb33ab94e1dde9e42cc406e96b144d0fe3421b138bd3f10ce08a7"
+    },
+    {
+     "row": 3,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 231,
+      "end": 238
+     },
+     "digest": "5bd4fb670743b7ebab2baba72e3e0f8e22e7e6f0c594dfe45a55ebe34121851a"
+    },
+    {
+     "row": 3,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "No answer",
+     "coordinates": null,
+     "span": {
+      "start": 238,
+      "end": 247
+     },
+     "digest": "71edc32da8be32ad62103023a35a1f8d610fd934e9fb7e795056201e8f109b75"
+    },
+    {
+     "row": 4,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "3",
+     "coordinates": null,
+     "span": {
+      "start": 247,
+      "end": 248
+     },
+     "digest": "b287839e2b1cce95e57e99df4fd9668613bf77ac99abdb9737d8faf35876659b"
+    },
+    {
+     "row": 4,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Hirschsprung disease",
+     "coordinates": null,
+     "span": {
+      "start": 248,
+      "end": 268
+     },
+     "digest": "b076db56753f8dcd26f73ef4bc795bc3d5b1258136f7a8aef595e35748f6887b"
+    },
+    {
+     "row": 4,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Congestive Heart Failure",
+     "coordinates": null,
+     "span": {
+      "start": 268,
+      "end": 292
+     },
+     "digest": "be0f4c0e424e1cc3528a502c981d8716f872b2bbe0192125ad4f7293300c203d"
+    },
+    {
+     "row": 4,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 292,
+      "end": 299
+     },
+     "digest": "52bfa68798729a5257d4c411b8101e7848bebb41c57fce390740c79667515826"
+    },
+    {
+     "row": 5,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "4",
+     "coordinates": null,
+     "span": {
+      "start": 299,
+      "end": 300
+     },
+     "digest": "94415967da68e00e795c38c231ea5b75f9c26cfdadde75c93559729b2903bf68"
+    },
+    {
+     "row": 5,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Diffuse large B-cell lymphoma",
+     "coordinates": null,
+     "span": {
+      "start": 300,
+      "end": 329
+     },
+     "digest": "934f8ac1830beda252c5dba0365115905628d12af45c9f20b240169e1fd3ae18"
+    },
+    {
+     "row": 5,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 329,
+      "end": 336
+     },
+     "digest": "024313ef570b64b8085909b4dfb109251ed46a01c40b65df1988b980b3d65264"
+    },
+    {
+     "row": 5,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Hodgkin's lymphoma",
+     "coordinates": null,
+     "span": {
+      "start": 336,
+      "end": 354
+     },
+     "digest": "c7c812bff133b522bd0131b5ece6b83e915827781cc3c68e8d73a443f52e87e3"
+    },
+    {
+     "row": 6,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "5",
+     "coordinates": null,
+     "span": {
+      "start": 354,
+      "end": 355
+     },
+     "digest": "be946edfbf3a32bd2a26a56e68b8382a2dc5a82679def6cfcb1b9706313dee69"
+    },
+    {
+     "row": 6,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Acute interstitial nephritis",
+     "coordinates": null,
+     "span": {
+      "start": 355,
+      "end": 383
+     },
+     "digest": "f4fae11161cba560b1d80ac9de541c668da434d5217295559357f2dc025551a5"
+    },
+    {
+     "row": 6,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 383,
+      "end": 390
+     },
+     "digest": "3b81c2d428b19ca31b8d8fb72bc2397c09b779501f5888d70aa0c46e809d5560"
+    },
+    {
+     "row": 6,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Pyelonephritis",
+     "coordinates": null,
+     "span": {
+      "start": 390,
+      "end": 404
+     },
+     "digest": "94889dad2e812b9691dce38a8a155e5ab00e46989506bbf516d0c46c1bedbea1"
+    },
+    {
+     "row": 7,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "6",
+     "coordinates": null,
+     "span": {
+      "start": 404,
+      "end": 405
+     },
+     "digest": "45ae4999c2c1a512ef0f9b62903431c61d2ab47546c68e7b36ab518f054d6516"
+    },
+    {
+     "row": 7,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Pes anserine bursitis",
+     "coordinates": null,
+     "span": {
+      "start": 405,
+      "end": 426
+     },
+     "digest": "acc4777059bdd7d354edc16d90bfbfab1a70ed8906877235397b66e22398604b"
+    },
+    {
+     "row": 7,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Patellar tendinitis",
+     "coordinates": null,
+     "span": {
+      "start": 426,
+      "end": 445
+     },
+     "digest": "c1012d1d5feb499ebba0a741465f8fde39c7f7ee44ff1bc231f77cc711c108ff"
+    },
+    {
+     "row": 7,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Patellofemoral Pain Syndrome",
+     "coordinates": null,
+     "span": {
+      "start": 445,
+      "end": 473
+     },
+     "digest": "c6e17a63e98f8a7212c2ac803663681acbdc99e76d1e6bb02e3f937280471f86"
+    },
+    {
+     "row": 8,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "7",
+     "coordinates": null,
+     "span": {
+      "start": 473,
+      "end": 474
+     },
+     "digest": "a7c200543f6e25b1e737d29354141bea81652bd6c2384a4e15043ab8335929e8"
+    },
+    {
+     "row": 8,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Situational syncope",
+     "coordinates": null,
+     "span": {
+      "start": 474,
+      "end": 493
+     },
+     "digest": "cf37a24da25f794125ec61bd3e3fb10e7306d38fc5ddad866955fe6c2d33b8c8"
+    },
+    {
+     "row": 8,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 493,
+      "end": 500
+     },
+     "digest": "ee3a315aaf33087cbb5aa20d45c169f0f07e1bf32b12ae88d0e3ca3dd5dfeba2"
+    },
+    {
+     "row": 8,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "No answer",
+     "coordinates": null,
+     "span": {
+      "start": 500,
+      "end": 509
+     },
+     "digest": "fe4e54a5157dddaad264d1d87b85d03526d7d38f4bfe35ea076e88a5514dd5ab"
+    },
+    {
+     "row": 9,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "8",
+     "coordinates": null,
+     "span": {
+      "start": 509,
+      "end": 510
+     },
+     "digest": "780ed83377a14656d1df9e4441fbd564f4db973126af2d42e67da7558a1819a0"
+    },
+    {
+     "row": 9,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Congenital Rubella Infection",
+     "coordinates": null,
+     "span": {
+      "start": 510,
+      "end": 538
+     },
+     "digest": "6bd2dcea19971299dc317add04b2b4dc405f00d91aaae0242308de32d1297ca2"
+    },
+    {
+     "row": 9,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "CHARGE Syndrome",
+     "coordinates": null,
+     "span": {
+      "start": 538,
+      "end": 553
+     },
+     "digest": "8874a402763b16002797ace932ca892cdd18e939205a26b243e4d1e6d058f467"
+    },
+    {
+     "row": 9,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Blue Rubber Bleb Nevus Syndrome",
+     "coordinates": null,
+     "span": {
+      "start": 553,
+      "end": 584
+     },
+     "digest": "f9f413f9b5d3ea1bcdfda9b18dafb216223cb5f5226c603f311b9ea1397498a9"
+    },
+    {
+     "row": 10,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "9",
+     "coordinates": null,
+     "span": {
+      "start": 584,
+      "end": 585
+     },
+     "digest": "2cd3d3cccd8076dea4b93a254ec115ee6855acbbb209727da097527a140bc054"
+    },
+    {
+     "row": 10,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Phyllodes tumor",
+     "coordinates": null,
+     "span": {
+      "start": 585,
+      "end": 600
+     },
+     "digest": "c2187e3005f982b37073e363c5f2554ab98fd3c6ff2e7ef900fcfba9d3d751a7"
+    },
+    {
+     "row": 10,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Fibroadenoma of the breast",
+     "coordinates": null,
+     "span": {
+      "start": 600,
+      "end": 626
+     },
+     "digest": "d7163e9c92576471f63ba25c5babe8d8dbed48f9459c05470433d2ec568aaadc"
+    },
+    {
+     "row": 10,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "breast cancer",
+     "coordinates": null,
+     "span": {
+      "start": 626,
+      "end": 639
+     },
+     "digest": "1881dfe8aaf88a9c290ce8edbe1d9b5a1e1faf614cc1974baab4afd98f37944c"
+    },
+    {
+     "row": 11,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "10",
+     "coordinates": null,
+     "span": {
+      "start": 639,
+      "end": 641
+     },
+     "digest": "ad3c4b8eec6e36a8b36f620148e34406812d61594094bf12a9d66a79516ab0ee"
+    },
+    {
+     "row": 11,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Endometritis",
+     "coordinates": null,
+     "span": {
+      "start": 641,
+      "end": 653
+     },
+     "digest": "64e204a972b083638009023841f22dbd7430d91e1c8df86b0a20dfb16a73998e"
+    },
+    {
+     "row": 11,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 653,
+      "end": 660
+     },
+     "digest": "327fd89e6810928c42eae8cefde6bd28fe88dfcc54012ef1838f5136d0a88965"
+    },
+    {
+     "row": 11,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 660,
+      "end": 667
+     },
+     "digest": "9ace87534b9dd5c7bef2d65ca8e14cb12a100b407f669b04cc074a970bd5d4a1"
+    },
+    {
+     "row": 12,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "11",
+     "coordinates": null,
+     "span": {
+      "start": 667,
+      "end": 669
+     },
+     "digest": "f4837e730bcbb1a6a478ee244bd96d4e523112e30ade2580dc4f8f935bfaeb2c"
+    },
+    {
+     "row": 12,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Hemorrhoids",
+     "coordinates": null,
+     "span": {
+      "start": 669,
+      "end": 680
+     },
+     "digest": "42f5a4903d651255c2f6dc2eb6d3c464f77cac0a8ce6bbdf5c8e212644938aaf"
+    },
+    {
+     "row": 12,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 680,
+      "end": 687
+     },
+     "digest": "08be18dcff6e47f5ec570f21154f16af53d32755603cab065440723806d067a4"
+    },
+    {
+     "row": 12,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Rectal Prolapse",
+     "coordinates": null,
+     "span": {
+      "start": 687,
+      "end": 702
+     },
+     "digest": "905aba5fd5beedf2c308b48b9243aa49258da44cedf7bddfa225cfae81f21446"
+    },
+    {
+     "row": 13,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "12",
+     "coordinates": null,
+     "span": {
+      "start": 702,
+      "end": 704
+     },
+     "digest": "372d347897ca5de94bb139d614cc4f816a3ef497309904090ad15501899a8553"
+    },
+    {
+     "row": 13,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Complex partial seizure",
+     "coordinates": null,
+     "span": {
+      "start": 704,
+      "end": 727
+     },
+     "digest": "a804da2209bf4c296208cac5fc44450989e4907808c8088677838d7d2645df0b"
+    },
+    {
+     "row": 13,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 727,
+      "end": 734
+     },
+     "digest": "f8fa80e9329c30d06b3f476a7af64c33061800a99d6567275f8c3f768af39de7"
+    },
+    {
+     "row": 13,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 734,
+      "end": 741
+     },
+     "digest": "0643b7c3d1deca7922b7a86b4d37b8e86c02e6ffc9fab698db1d4e5e1139ed10"
+    },
+    {
+     "row": 14,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "13",
+     "coordinates": null,
+     "span": {
+      "start": 741,
+      "end": 743
+     },
+     "digest": "ddb4014ef6b7642204acef2c568a0f8e387708b2b9fbb4e720ddd3498e0a6788"
+    },
+    {
+     "row": 14,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Posterior hip dislocation",
+     "coordinates": null,
+     "span": {
+      "start": 743,
+      "end": 768
+     },
+     "digest": "293a580a3824a6289ab5b729259ed071480fb737945bbd3b1f5d2e3597c29bb3"
+    },
+    {
+     "row": 14,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 768,
+      "end": 775
+     },
+     "digest": "cca49b39f7f4b9631876ee3316f10e70d5a7ca2ba12b0ce96c1228d14c82befa"
+    },
+    {
+     "row": 14,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 775,
+      "end": 782
+     },
+     "digest": "328932680b7f03947eac7c967f1ff7f5508862ae5a2de8d576af4c107d0949e3"
+    },
+    {
+     "row": 15,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "14",
+     "coordinates": null,
+     "span": {
+      "start": 782,
+      "end": 784
+     },
+     "digest": "b1e2ce341d61ff01e2d69afe4e901eab99e52c5b60bcf2a54ad4a8da3bdacfbb"
+    },
+    {
+     "row": 15,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Hirschsprung's disease",
+     "coordinates": null,
+     "span": {
+      "start": 784,
+      "end": 806
+     },
+     "digest": "8b8f24ce20c4d3939bd42c14e54ff98cf7f558f07a674bdfe93e9daa448101f9"
+    },
+    {
+     "row": 15,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 806,
+      "end": 813
+     },
+     "digest": "66849f556e0ddb2b4c2d53f3d940661e9e6984b1f8a6c93925f4606791f6ab50"
+    },
+    {
+     "row": 15,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Correct",
+     "coordinates": null,
+     "span": {
+      "start": 813,
+      "end": 820
+     },
+     "digest": "21156ab83bd51fef6798ec8a3a7363d9fb869b4b0dfcfb864e8b343ba006775a"
+    },
+    {
+     "row": 16,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 820,
+      "end": 820
+     },
+     "digest": "be96d382897f0819ffa165dbc9a99e9590a9ac1d24e003190c42dc1bace83f9c"
+    },
+    {
+     "row": 16,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Rupture of the",
+     "coordinates": null,
+     "span": {
+      "start": 820,
+      "end": 834
+     },
+     "digest": "3c911aee791497fcd86a32ed8fff322063c8e5485029e7995a8f0c899ad14401"
+    },
+    {
+     "row": 16,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Sprain of the",
+     "coordinates": null,
+     "span": {
+      "start": 834,
+      "end": 847
+     },
+     "digest": "10e0c3646960d6be3f966e38876e370a6cc53e1e783835bec7c7ffc1c0b748d4"
+    },
+    {
+     "row": 16,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 847,
+      "end": 847
+     },
+     "digest": "9c5c21ae48e18dbd9375112f00001727919296bc00a1da839e4d2eadc3a53fd7"
+    },
+    {
+     "row": 17,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "15",
+     "coordinates": null,
+     "span": {
+      "start": 847,
+      "end": 849
+     },
+     "digest": "b3246409bc2d4b2a4452b1ffbba42eacd1d1d9b99f6bb9f67e222f3a8fe1f73b"
+    },
+    {
+     "row": 17,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "flexor digitorum profundus tendon",
+     "coordinates": null,
+     "span": {
+      "start": 849,
+      "end": 882
+     },
+     "digest": "62f90817ae835e08d1ccbef2e2817a0e8219d6959e5a0f806f16ab66cae8ea62"
+    },
+    {
+     "row": 17,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "distal interphalangeal joint of the right ring finger",
+     "coordinates": null,
+     "span": {
+      "start": 882,
+      "end": 935
+     },
+     "digest": "421bfdfc7827afd9a6ae6714fa286c7f725bce747db261009fb53dfdca61ecb6"
+    },
+    {
+     "row": 17,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "No answer",
+     "coordinates": null,
+     "span": {
+      "start": 935,
+      "end": 944
+     },
+     "digest": "f4eebd59081bf7a8cbe722008e97e18b1d3b9727cee85f9fe49bcd5ae570234d"
+    },
+    {
+     "row": 18,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 944,
+      "end": 944
+     },
+     "digest": "249400128536479bafb899f879a5d7241d7fc94295574e02f5bdf4ae5c7ab5ac"
+    },
+    {
+     "row": 18,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "at its point of insertion",
+     "coordinates": null,
+     "span": {
+      "start": 944,
+      "end": 969
+     },
+     "digest": "fcbbec4d7bc38632786ccbcb0aa8038bcda311f0446075e8ac7351c4940fc514"
+    },
+    {
+     "row": 18,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "with possible ligament injury",
+     "coordinates": null,
+     "span": {
+      "start": 969,
+      "end": 998
+     },
+     "digest": "5c136e1142b53818f2eee6f453d82109197cc0f0be626af7ab594b9cddd649be"
+    },
+    {
+     "row": 18,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 998,
+      "end": 998
+     },
+     "digest": "c437b241c2f2c3b49a52ed626b35ba57045b14042ab2d4780f0a3c6da24dc238"
+    }
+   ],
+   "source_digest": "79c9f675375c19ce4ac0d31186994b23122897024ce11fd548bd4d1d1a5c2bb0",
+   "missingness": null
+  }
+ ],
+ "table_missingness": null,
+ "formulas": [
+  {
+   "formula_id": "formula_0",
+   "section_path_id": "3",
+   "section_ordinal": 2,
+   "label": "(1)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "a 1 0 ∼ π θ (a 1 0 |s 1 0 ),(1)"
+   },
+   "span": {
+    "start": 2444,
+    "end": 2475
+   },
+   "source_digest": "ba0a1a64e51ea0c2d6e9a9c84ad142ce8d31f027ab7d2178d421ea38c8b3d045",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_1",
+   "section_path_id": "3",
+   "section_ordinal": 2,
+   "label": "(4)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "s 2 0 = {R(τ )},(4)"
+   },
+   "span": {
+    "start": 3386,
+    "end": 3405
+   },
+   "source_digest": "a451454abba62451c177fdc35b40088861d696bb7afbbc6ff644fe4df46aed57",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_2",
+   "section_path_id": "3",
+   "section_ordinal": 2,
+   "label": "(5)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "t 2 0 ∼ π θ (t 2 0 |s 2 0 ),(5)"
+   },
+   "span": {
+    "start": 3528,
+    "end": 3559
+   },
+   "source_digest": "02dd9867a107df8e21ea32a7bb93b024e172069f18e4d6854977638a2acf8b69",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_3",
+   "section_path_id": "3",
+   "section_ordinal": 2,
+   "label": "(6)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "a 2 0 ∼ π θ (a 2 0 |s 2 0 , t 2 0 ).(6)"
+   },
+   "span": {
+    "start": 4169,
+    "end": 4208
+   },
+   "source_digest": "41a0b47862f274b71810dc0c2f57b7a593832def02f9af6d0fa10901cf73c03b",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_4",
+   "section_path_id": "3",
+   "section_ordinal": 2,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "t ep k ∼ π θ (t ep k |s ep k ). Compression step: If k = 0, then s ep 0 = s 0 . If ep &gt; 1, then generate action a ep k ∼ π θ (a ep k |s ep k , t ep 0 ). If ep = 1, then generate action a ep k ∼ π θ (a ep k |s ep k ). Get observation o ep k+1 = f (s ep k , a ep k ). Let s ep k+1 = {s ep k , a ep k , o ep k+1 }. k := k + 1"
+   },
+   "span": {
+    "start": 4672,
+    "end": 4997
+   },
+   "source_digest": "7bffe460fc4b770f6717f981b25d28ce2fcb0a2d9f8beba6f031f1c11bf86cc5",
+   "missingness": null
+  }
+ ],
+ "formula_missingness": null,
+ "page_text_missingness": null
+}

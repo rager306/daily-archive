@@ -1,0 +1,1809 @@
+{
+ "paper_id": "2501.13956",
+ "title": "ZEP: A TEMPORAL KNOWLEDGE GRAPH ARCHITECTURE FOR AGENT MEMORY",
+ "abstract_text": "We introduce Zep, a novel memory layer service for AI agents that outperforms the current stateof-the-art system, MemGPT, in the Deep Memory Retrieval (DMR) benchmark. Additionally, Zep excels in more comprehensive and challenging evaluations than DMR that better reflect real-world enterprise use cases. While existing retrieval-augmented generation (RAG) frameworks for large language model (LLM)-based agents are limited to static document retrieval, enterprise applications demand dynamic knowledge integration from diverse sources including ongoing conversations and business data. Zep addresses this fundamental limitation through its core component Graphiti-a temporally-aware knowledge graph engine that dynamically synthesizes both unstructured conversational data and structured business data while maintaining historical relationships. In the DMR benchmark, which the MemGPT team established as their primary evaluation metric, Zep demonstrates superior performance (94.8% vs 93.4%). Beyond DMR, Zep's capabilities are further validated through the more challenging LongMemEval benchmark, which better reflects enterprise use cases through complex temporal reasoning tasks. In this evaluation, Zep achieves substantial results with accuracy improvements of up to 18.5% while simultaneously reducing response latency by 90% compared to baseline implementations. These results are particularly pronounced in enterprisecritical tasks such as cross-session information synthesis and long-term context maintenance, demonstrating Zep's effectiveness for deployment in real-world applications.",
+ "body_text": "IntroductionThe impact of transformer-based large language models (LLMs) on industry and research communities has garnered significant attention in recent years [1]. A major application of LLMs has been the development of chat-based agents. However, these agents' capabilities are limited by the LLMs' context windows, effective context utilization, and knowledge gained during pre-training. Consequently, additional context is required to provide out-of-domain (OOD) knowledge and reduce hallucinations.Retrieval-Augmented Generation (RAG) has emerged as a key area of interest in LLM-based applications. RAG leverages Information Retrieval (IR) techniques pioneered over the last fifty years [2] to supply necessary domain knowledge to LLMs.Current approaches using RAG have focused on broad domain knowledge and largely static corpora-that is, document contents added to a corpus seldom change. For agents to become pervasive in our daily lives, autonomously solving problems from trivial to highly complex, they will need access to a large corpus of continuously evolving data from users' interactions with the agent, along with related business and world data. We view empowering agents with this broad and dynamic \"memory\" as a crucial building block to actualize this vision, and we argue that current RAG approaches are unsuitable for this future. Since entire conversation histories, business datasets, and other domainspecific content cannot fit effectively inside LLM context windows, new approaches need to be developed for agent memory. Adding memory to LLM-powered agents isn't a new idea-this concept has been explored previously in MemGPT [3].Recently, Knowledge Graphs (KGs) have been employed to enhance RAG architectures to address many of the shortcomings of traditional IR techniques [4]. In this paper, we introduce Zep [5], a memory layer service powered by Graphiti [6], a dynamic, temporally-aware knowledge graph engine. Zep ingests and synthesizes both unstructured message data and structured business data. The Graphiti KG engine dynamically updates the knowledge graph with new information in a non-lossy manner, maintaining a timeline of facts and relationships, including their periods of validity. This approach enables the knowledge graph to represent a complex, evolving world.As Zep is a production system, we've focused heavily on the accuracy, latency, and scalability of its memory retrieval mechanisms. We evaluate these mechanisms' efficacy using two existing benchmarks: a Deep Memory Retrieval task (DMR) from MemGPT [3], as well as the LongMemEval benchmark [7].\nKnowledge Graph ConstructionIn Zep, memory is powered by a temporally-aware dynamic knowledge graph G = (N , E, φ), where N represents nodes, E represents edges, and φ : E → N × N represents a formal incidence function. This graph comprises three hierarchical tiers of subgraphs: an episode subgraph, a semantic entity subgraph, and a community subgraph.• Episode Subgraph G e : Episodic nodes (episodes), n i ∈ N e , contain raw input data in the form of mes-sages, text, or JSON. Episodes serve as a non-lossy data store from which semantic entities and relations are extracted. Episodic edges, e i ∈ E e ⊆ φ * (N e × N s ), connect episodes to their referenced semantic entities.• Semantic Entity Subgraph G s : The semantic entity subgraph builds upon the episode subgraph. Entity nodes (entities), n i ∈ N s , represent entities extracted from episodes and resolved with existing graph entities. Entity edges (semantic edges), e i ∈ E s ⊆ φ * (N s × N s ), represent relationships between entities extracted from episodes.• The dual storage of both raw episodic data and derived semantic entity information mirrors psychological models of human memory. These models distinguish between episodic memory, which represents distinct events, and semantic memory, which captures associations between concepts and their meanings [8]. This approach enables LLM agents using Zep to develop more sophisticated and nuanced memory structures that better align with our understanding of human memory systems. Knowledge graphs provide an effective medium for representing these memory structures, and our implementation of distinct episodic and semantic subgraphs draws from similar approaches in AriGraph [9].Our use of community nodes to represent high-level structures and domain concepts builds upon work from GraphRAG [4], enabling a more comprehensive global understanding of the domain. The resulting hierarchical organization-from episodes to facts to entities to communities-extends existing hierarchical RAG strategies [10][11].\nEpisodesZep's graph construction begins with the ingestion of raw data units called Episodes. Episodes can be one of three core types: message, text, or JSON. While each type requires specific handling during graph construction, this paper focuses on the message type, as our experiments center on conversation memory. In our context, a message consists of relatively short text (several messages can fit within an LLM context window) along with the associated actor who produced the utterance.Each message includes a reference timestamp t ref indicating when the message was sent. This temporal information enables Zep to accurately identify and extract relative or partial dates mentioned in the message content (e.g., \"next Thursday,\" \"in two weeks,\" or \"last summer\"). Zep implements a bi-temporal model, where timeline T represents the chronological ordering of events, and timeline T ′ represents the transactional order of Zep's data ingestion. While the T ′ timeline serves the traditional purpose of database auditing, the T timeline provides an additional dimension for modeling the dynamic nature of conversational data and memory. This bi-temporal approach represents a novel advancement in LLM-based knowledge graph construction and underlies much of Zep's unique capabilities compared to previous graph-based RAG proposals.The episodic edges, E e , connect episodes to their extracted entity nodes. Episodes and their derived semantic edges maintain bidirectional indices that track the relationships between edges and their source episodes. This design reinforces the non-lossy nature of Graphiti's episodic subgraph by enabling both forward and backward traversal: semantic artifacts can be traced to their sources for citation or quotation, while episodes can quickly retrieve their relevant entities and facts. While these connections are not directly examined in this paper's experiments, they will be explored in future work.\nSemantic Entities and Facts\nEntitiesntity extraction represents the initial phase of episode processing. During ingestion, the system processes both the current message content and the last n messages to provide context for named entity recognition. For this paper and in Zep's general implementation, n = 4, providing two complete conversation turns for context evaluation. Given our focus on message processing, the speaker is automatically extracted as an entity. Following initial entity extraction, we employ a reflection technique inspired by reflexion [12] to minimize hallucinations and enhance extraction coverage.The system also extracts an entity summary from the episode to facilitate subsequent entity resolution and retrieval operations.After extraction, the system embeds each entity name into a 1024-dimensional vector space. This embedding enables the retrieval of similar nodes through cosine similarity search across existing graph entity nodes. The system also performs a separate full-text search on existing entity names and summaries to identify additional candidate nodes. These candidate nodes, together with the episode context, are then processed through an LLM using our entity resolution prompt. When the system identifies a duplicate entity, it generates an updated name and summary.Following entity extraction and resolution, the system incorporates the data into the knowledge graph using predefined Cypher queries. We chose this approach over LLM-generated database queries to ensure consistent schema formats and reduce the potential for hallucinations.Selected prompts for graph construction are provided in the appendix.\nFactsor each fact containing its key predicate. Importantly, the same fact can be extracted multiple times between different entities, enabling Graphiti to model complex multi-entity facts through an implementation of hyper-edges.Following extraction, the system generates embeddings for facts in preparation for graph integration. The system performs edge deduplication through a process similar to entity resolution. The hybrid search for relevant edges is constrained to edges existing between the same entity pairs as the proposed new edge. This constraint not only prevents erroneous combinations of similar edges between different entities but also significantly reduces the computational complexity of the deduplication process by limiting the search space to a subset of edges relevant to the specific entity pair.\nTemporal Extraction and Edge InvalidationA key differentiating feature of Graphiti compared to other knowledge graph engines is its capacity to manage dynamic information updates through temporal extraction and edge invalidation processes.The system extracts temporal information about facts from the episode context using t ref .This enables accurate extraction and datetime representation of both absolute timestamps (e.g., \"Alan Turing was born on June 23, 1912\") and relative timestamps (e.g., \"I started my new job two weeks ago\"). Consistent with our bi-temporal modeling approach, the system tracks four timestamps: t ′ created and t ′ expired ∈ T ′ monitor when facts are created or invalidated in the system, while t valid and t invalid ∈ T track the temporal range during which facts held true. These temporal data points are stored on edges alongside other fact information.The introduction of new edges can invalidate existing edges in the database. The system employs an LLM to compare new edges against semantically related existing edges to identify potential contradictions. When the system identifies temporally overlapping contradictions, it invalidates the affected edges by setting their t invalid to the t valid of the invalidating edge. Following the transactional timeline T ′ , Graphiti consistently prioritizes new information when determining edge invalidation.This comprehensive approach enables the dynamic addition of data to Graphiti as conversations evolve, while maintaining both current relationship states and historical records of relationship evolution over time.\nCommunitiesAfter establishing the episodic and semantic subgraphs, the system constructs the community subgraph through community detection. While our community detection approach builds upon the technique described in GraphRAG [4], we employ a label propagation algorithm [13] rather than the Leiden algorithm [14]. This choice was influenced by label propagation's straightforward dynamic extension, which enables the system to maintain accurate community representations for longer periods as new data enters the graph, delaying the need for complete community refreshes.The dynamic extension implements the logic of a single recursive step in label propagation. When the system adds a new entity node n i ∈ N s to the graph, it surveys the communities of neighboring nodes. The system assigns the new node to the community held by the plurality of its neighbors, then updates the community summary and graph accordingly. While this dynamic updating enables efficient community extension as data flows into the system, the resulting communities gradually diverge from those that would be generated by a complete label propagation run. Therefore, periodic community refreshes remain necessary. However, this dynamic updating strategy provides a practical heuristic that significantly reduces latency and LLM inference costs.Following [4], our community nodes contain summaries derived through an iterative map-reduce-style summarization of member nodes. However, our retrieval methods differ substantially from GraphRAG's map-reduce approach [4].To support our retrieval methodology, we generate community names containing key terms and relevant subjects from the community summaries. These names are embedded and stored to enable cosine similarity searches.\nMemory RetrievalThe memory retrieval system in Zep provides powerful, complex, and highly configurable functionality. At a high level, the Zep graph search API implements a function f : S → S that accepts a text-string query α ∈ S as input and returns a text-string context β ∈ S as output. The output β contains formatted data from nodes and edges required for an LLM agent to generate an accurate response to query α. The process f (α) → β comprises three distinct steps:• Search (ϕ): The process begins by identifying candidate nodes and edges potentially containing relevant information. While Zep employs multiple distinct search methods, the overall search function can be represented as ϕ : S → E n s × N n s × N n c . Thus, ϕ transforms a query into a 3-tuple containing lists of semantic edges, entity nodes, and community nodes-the three graph types containing relevant textual information.• Reranker (ρ): The second step reorders search results. A reranker function or model accepts a list of search results and produces a reordered version of those results: ρ : ϕ(α), ... → E n s × N n s × N n c .• Constructor (χ): The final step, the constructor, transforms the relevant nodes and edges into text context:χ :E n s × N n s × N c n → S.For each e i ∈ Es, χ returns the fact and tvalid, tinvalid fields; for each n i ∈ N s , the name and summary fields; and for each n i ∈ N c , the summary field.With these definitions established, we can express f as a composition of these three components: f (α) = χ(ρ(ϕ(α))) = β.\nSample context string template:FACTS and ENTITIES represent relevant context to the current conversation. These are the most relevant facts and their valid date ranges. If the fact is about an event, the event takes place during this time. format: FACT (Date range: from -to) &lt;FACTS&gt; {facts} &lt;/FACTS&gt; These are the most relevant entities ENTITY_NAME: entity summary &lt;ENTITIES&gt; {entities} &lt;/ENTITIES&gt;\nSearchZep implements three search functions: cosine semantic similarity search (ϕ cos ), Okapi BM25 full-text search (ϕ bm25 ), and breadth-first search (ϕ bfs ). The first two functions utilize Neo4j's implementation of Lucene [15][16]. Each search function offers distinct capabilities in identifying relevant documents, and together they provide comprehensive coverage of candidate results before reranking. The search field varies across the three object types: for E s , we search the fact field; for N s , the entity name; and for N c , the community name, which comprises relevant keywords and phrases covered in the community. While developed independently, our community search approach parallels the high-level key search methodology in LightRAG [17]. The hybridization of LightRAG's approach with graph-based systems like Graphiti presents a promising direction for future research.While cosine similarity and full-text search methodologies are well-established in RAG [18], breadth-first search over knowledge graphs has received limited attention in the RAG domain, with notable exceptions in graph-based RAG systems such as AriGraph [9] and Distill-SynthKG [19]. In Graphiti, the breadth-first search enhances initial search results by identifying additional nodes and edges within n-hops. Moreover, ϕ bfs can accept nodes as parameters for the search, enabling greater control over the search function. This functionality proves particularly valuable when using recent episodes as seeds for the breadth-first search, allowing the system to incorporate recently mentioned entities and relationships into the retrieved context.The three search methods each target different aspects of similarity: full-text search identifies word similarities, cosine similarity captures semantic similarities, and breadth-first search reveals contextual similarities-where nodes and edges closer in the graph appear in more similar conversational contexts. This multi-faceted approach to candidate result identification maximizes the likelihood of discovering optimal context.\nRerankerWhile the initial search methods aim to achieve high recall, rerankers serve to increase precision by prioritizing the most relevant results. Zep supports existing reranking approaches such as Reciprocal Rank Fusion (RRF) [20] and Maximal Marginal Relevance (MMR) [21]. Additionally, Zep implements a graph-based episode-mentions reranker that prioritizes results based on the frequency of entity or fact mentions within a conversation, enabling a system where frequently referenced information becomes more readily accessible. The system also includes a node distance reranker that reorders results based on their graph distance from a designated centroid node, providing context localized to specific areas of the knowledge graph. The system's most sophisticated reranking capability employs crossencoders-LLMs that generate relevance scores by evaluating nodes and edges against queries using cross-attention, though this approach incurs the highest computational cost.\nExperimentsThis section analyzes two experiments conducted using LLM-memory based benchmarks. The first evaluation employs the Deep Memory Retrieval (DMR) task developed in [3], which uses a 500-conversation subset of the Multi-Session Chat dataset introduced in \"Beyond Goldfish Memory: Long-Term Open-Domain Conversation\" [22]. The second evaluation utilizes the LongMemEval benchmark from \"LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory\" [7]. Specifically, we use the LongMemEval s dataset, which provides an extensive conversation context of on average 115,000 tokens.For both experiments, we integrate the conversation history into a Zep knowledge graph through Zep's APIs. We then retrieve the 20 most relevant edges (facts) and entity nodes (entity summaries) using the techniques described in Section 3. The system reformats this data into a context string, matching the functionality provided by Zep's memory APIs.While these experiments demonstrate key retrieval capabilities of Graphiti, they represent a subset of the system's full search functionality. This focused scope enables clear comparison with existing benchmarks while reserving the exploration of additional knowledge graph capabilities for future work.\nChoice of modelsOur experimental implementation employs the BGE-m3 models from BAAI for both reranking and embedding tasks [23] [24]. For graph construction and response generation, we utilize gpt-4o-mini-2024-07-18 for graph construction, and both gpt-4o-mini-2024-07-18 and gpt-4o-2024-11-20 for the chat agent generating responses to provided context.To ensure direct comparability with MemGPT's DMR results, we also conducted the DMR evaluation using gpt-4turbo-2024-04-09.The experimental notebooks will be made publicly available through our GitHub repository, and relevant experimental prompts are included in the Appendix. \nDeep Memory Retrieval (DMR)The Deep Memory Retrieval evaluation, introduced by [3], comprises 500 multi-session conversations, each containing 5 chat sessions with up to 12 messages per session. Each conversation includes a question/answer pair for memory evaluation. The MemGPT framework [3] currently leads performance metrics with 93.4% accuracy using gpt-4-turbo, a significant improvement over the 35.3% baseline achieved through recursive summarization.To establish comparative baselines, we implemented two common LLM memory approaches: full-conversation context and session summaries. Using gpt-4-turbo, the full-conversation baseline achieved 94.4% accuracy, slightly surpassing MemGPT's reported results, while the session summary baseline achieved 78.6%. When using gpt-4o-mini, both approaches showed improved performance: 98.0% for full-conversation and 88.0% for session summaries. We were unable to reproduce MemGPT's results using gpt-4o-mini due to insufficient methodological details in their published work.We then evaluated Zep's performance by ingesting the conversations and using its search functions to retrieve the top 10 most relevant nodes and edges. An LLM judge compared the agent's responses to the provided golden answers. Zep achieved 94.8% accuracy with gpt-4-turbo and 98.2% with gpt-4o-mini, showing marginal improvements over both MemGPT and the respective full-conversation baselines. However, these results must be contextualized: each conversation contains only 60 messages, easily fitting within current LLM context windows.The limitations of the DMR evaluation extend beyond its small scale. Our analysis revealed significant weaknesses in the benchmark's design. The evaluation relies exclusively on single-turn, fact-retrieval questions that fail to assess complex memory understanding. Many questions contain ambiguous phrasing, referencing concepts like \"favorite drink to relax with\" or \"weird hobby\" that were not explicitly characterized as such in the conversations. Most critically, the dataset poorly represents real-world enterprise use cases for LLM agents. The high performance achieved by simple full-context approaches using modern LLMs further highlights the benchmark's inadequacy for evaluating memory systems.This inadequacy is further emphasized by findings in [7], which demonstrate rapidly declining LLM performance on the LongMemEval benchmark as conversation length increases. The LongMemEval dataset [7] addresses many of these shortcomings by presenting longer, more coherent conversations that better reflect enterprise scenarios, along with more diverse evaluation questions.\nLongMemEval (LME)We evaluated Zep using the LongMemEvals dataset, which provides conversations and questions representative of realworld business applications of LLM agents. The LongMemEvals dataset presents significant challenges to existing LLMs and commercial memory solutions [7], with conversations averaging approximately 115,000 tokens in length. This length, while substantial, remains within the context windows of current frontier models, enabling us to establish meaningful baselines for evaluating Zep's performance.The dataset incorporates six distinct question types: single-session-user, single-session-assistant, single-sessionpreference, multi-session, knowledge-update, and temporal-reasoning. These categories are not uniformly distributed throughout the dataset; for detailed distribution information, we refer readers to [7].We conducted all experiments between December 2024 and January 2025. We performed testing using a consumer laptop from a residential location in Boston, MA, connecting to Zep's service hosted in AWS us-west-2. This dis-tributed architecture introduced additional network latency when evaluating Zep's performance, though this latency was not present in our baseline evaluations.For answer evaluation, we employed GPT-4o with the question-specific prompts provided in [7], which have demonstrated high correlation with human evaluators.\nLongMemEval and MemGPTTo establish a comparative benchmark between Zep and the current state-of-the-art MemGPT system [3], we attempted to evaluate MemGPT using the LongMemEval dataset. Given that the current MemGPT framework does not support direct ingestion of existing message histories, we implemented a workaround by adding conversation messages to the archival history. However, we were unable to achieve successful question responses using this approach. We look forward to seeing evaluations of this benchmark by other research teams, as comparative performance data would benefit the broader development of LLM memory systems.\nLongMemEval resultsZep demonstrates substantial improvements in both accuracy and latency compared to the baseline across both model variants. Using gpt-4o-mini, Zep achieved a 15.2% accuracy improvement over the baseline, while gpt-4o showed an 18.5% improvement. The reduced prompt size also led to significant latency cost reductions compared to the baseline implementations. Analysis by question type reveals that gpt-4o-mini with Zep showed improvements in four of the six categories, with the most substantial gains in complex question types: single-session-preference, multi-session, and temporalreasoning. When using gpt-4o, Zep further demonstrated improved performance in the knowledge-update category, highlighting its effectiveness with more capable models. However, additional development may be needed to improve less capable models' understanding of Zep's temporal data. These results demonstrate Zep's ability to enhance performance across model scales, with the most pronounced improvements observed in complex and nuanced question types when paired with more capable models. The latency improvements are particularly noteworthy, with Zep reducing response times by approximately 90% while maintaining higher accuracy.The decrease in performance for single-session-assistant questions-17.7% for gpt-4o and 9.06% for gpt-4omini-represents a notable exception to Zep's otherwise consistent improvements, and suggest further research and engineering work is needed.\nConclusionWe have introduced Zep, a graph-based approach to LLM memory that incorporates semantic and episodic memory alongside entity and community summaries. Our evaluations demonstrate that Zep achieves state-of-the-art performance on existing memory benchmarks while reducing token costs and operating at significantly lower latencies.The results achieved with Graphiti and Zep, while impressive, likely represent only initial advances in graph-based memory systems. Multiple research avenues could build upon these frameworks, including integration of other GraphRAG approaches into the Zep paradigm and novel extensions of our work.Research has already demonstrated the value of fine-tuned models for LLM-based entity and edge extraction within the GraphRAG paradigm, improving accuracy while reducing costs and latency [19][25]. Similar models finetuned for Graphiti prompts may enhance knowledge extraction, particularly for complex conversations. Additionally, while current research on LLM-generated knowledge graphs has primarily operated without formal ontologies [9][4] [17][19][26], domain-specific ontologies present significant potential. Graph ontologies, foundational in pre-LLM knowledge graph work, warrant further exploration within the Graphiti framework.Our search for suitable memory benchmarks revealed limited options, with existing benchmarks often lacking robustness and complexity, frequently defaulting to simple needle-in-a-haystack fact-retrieval questions [3]. The field requires additional memory benchmarks, particularly those reflecting business applications like customer experience tasks, to effectively evaluate and differentiate memory approaches. Notably, no existing benchmarks adequately assess Zep's capability to process and synthesize conversation history with structured business data. While Zep focuses on LLM memory, its traditional RAG capabilities should be evaluated against established benchmarks such as those in [17], [27], and [28].Current literature on LLM memory and RAG systems insufficiently addresses production system scalability in terms of cost and latency. We have included latency benchmarks for our retrieval mechanisms to begin addressing this gap, following the example set by LightRAG's authors in prioritizing these metrics.6 Appendix 6.1 Graph Construction Prompts 6.1.1 Entity Extraction &lt;PREVIOUS MESSAGES&gt; {previous_messages} &lt;/PREVIOUS MESSAGES&gt; &lt;CURRENT MESSAGE&gt; {current_message} &lt;/CURRENT MESSAGE&gt; Given the above conversation, extract entity nodes from the CURRENT MESSAGE that are explicitly or implicitly mentioned: Guidelines: 1. ALWAYS extract the speaker/actor as the first node. The speaker is the part before the colon in each line of dialogue. 2. Extract other significant entities, concepts, or actors mentioned in the CURRENT MESSAGE. 3. DO NOT create nodes for relationships or actions. 4. DO NOT create nodes for temporal information like dates, times or years (these will be added to edges later). 5. Be as explicit as possible in your node names, using full names. 6. DO NOT extract entities mentioned only 6.1.2 Entity Resolution &lt;PREVIOUS MESSAGES&gt; {previous_messages} &lt;/PREVIOUS MESSAGES&gt; &lt;CURRENT MESSAGE&gt; {current_message} &lt;/CURRENT MESSAGE&gt; &lt;EXISTING NODES&gt; {existing_nodes} &lt;/EXISTING NODES&gt; Given the above EXISTING NODES, MESSAGE, and PREVIOUS MESSAGES. Determine if the NEW NODE extracted from the conversation is a duplicate entity of one of the EXISTING NODES. &lt;NEW NODE&gt; {new_node} &lt;/NEW NODE&gt; Task: 1. If the New Node represents the same entity as any node in Existing Nodes, return 'is_duplicate: true' in the response. Otherwise, return 'is_duplicate: false' 2. If is_duplicate is true, also return the uuid of the existing node in the response 3. If is_duplicate is true, return a name for the node that is the most complete full name. Guidelines: 1. Use both the name and summary of nodes to determine if the entities are duplicates, duplicate nodes may have different names 6.1.3 Fact Extraction &lt;PREVIOUS MESSAGES&gt; {previous_messages} &lt;/PREVIOUS MESSAGES&gt; &lt;CURRENT MESSAGE&gt; {current_message} &lt;/CURRENT MESSAGE&gt; &lt;ENTITIES&gt; {entities} &lt;/ENTITIES&gt; Given the above MESSAGES and ENTITIES, extract all facts pertaining to the listed ENTITIES from the CURRENT MESSAGE. Guidelines: 1. Extract facts only between the provided entities. 2. Each fact should represent a clear relationship between two DISTINCT nodes. 3. The relation_type should be a concise, all-caps description of the fact (e.g., LOVES, IS_FRIENDS_WITH, WORKS_FOR). 4. Provide a more detailed fact containing all relevant information. 5. Consider temporal aspects of relationships when relevant. 6.1.4 Fact Resolution Given the following context, determine whether the New Edge represents any of the edges in the list of Existing Edges. &lt;EXISTING EDGES&gt; {existing_edges} &lt;/EXISTING EDGES&gt; &lt;NEW EDGE&gt; {new_edge} &lt;/NEW EDGE&gt; Task: 1. If the New Edges represents the same factual information as any edge in Existing Edges, return 'is_duplicate: true' in the response. Otherwise, return 'is_duplicate: false' 2. If is_duplicate is true, also return the uuid of the existing edge in the response Guidelines: 1. The facts do not need to be completely identical to be duplicates, they just need to express the same information. 6.1.5 Temporal Extraction &lt;PREVIOUS MESSAGES&gt; {previous_messages} &lt;/PREVIOUS MESSAGES&gt; &lt;CURRENT MESSAGE&gt; {current_message} &lt;/CURRENT MESSAGE&gt; &lt;REFERENCE TIMESTAMP&gt; {reference_timestamp} &lt;/REFERENCE TIMESTAMP&gt; &lt;FACT&gt; {fact} &lt;/FACT&gt; IMPORTANT: Only extract time information if it is part of the provided fact. Otherwise ignore the time mentioned. Make sure to do your best to determine the dates if only the relative time is mentioned. (eg 10 years ago, 2 mins ago) based on the provided reference timestamp If the relationship is not of spanning nature, but you are still able to determine the dates, set the valid_at only. Definitions:-valid_at: The date and time when the relationship described by the edge fact became true or was established.-invalid_at: The date and time when the relationship described by the edge fact stopped being true or ended.Task: Analyze the conversation and determine if there are dates that are part of the edge fact. Only set dates if they explicitly relate to the formation or alteration of the relationship itself. Guidelines: 1. Use ISO 8601 format (YYYY-MM-DDTHH:MM:SS.SSSSSSZ) for datetimes. 2. Use the reference timestamp as the current time when determining the valid_at and invalid_at dates.3. If the fact is written in the present tense, use the Reference Timestamp for the valid_at date 4. If no temporal information is found that establishes or changes the relationship, leave the fields as null. 5. Do not infer dates from related events. Only use dates that are directly stated to establish or change the relationship. 6. For relative time mentions directly related to the relationship, calculate the actual datetime based on the reference timestamp. 7. If only a date is mentioned without a specific time, use 00:00:00 (midnight) for that date. 8. If only year is mentioned, use January 1st of that year at 00:00:00. 9. Always include the time zone offset (use Z for UTC if no specific time zone is mentioned).Community Subgraph G c : The community subgraph forms the highest level of Zep's knowledge graph. Community nodes (communities), n i ∈ N c , represent clusters of strongly connected entities. Communities contain high-level summarizations of these clusters and represent a more comprehensive, interconnected view of G s 's structure. Community edges, e i ∈ E c ⊆ φ * (N c × N s ), connect communities to their entity members.\nTable 1 :1Deep Memory RetrievalMemoryModelScoreRecursive Summarization  † gpt-4-turbo 35.3%Conversation Summaries gpt-4-turbo 78.6%MemGPT  †gpt-4-turbo 93.4%Full-conversationgpt-4-turbo 94.4%Zepgpt-4-turbo 94.8%Conversation Summaries gpt-4o-mini 88.0%Full-conversationgpt-4o-mini 98.0%Zepgpt-4o-mini 98.2%† Results reported in[3].\nTable 2 :2LongMemEval sMemoryModelScoreLatency Latency IQR Avg Context TokensFull-context gpt-4o-mini 55.4% 31.3 s8.76 s115kZepgpt-4o-mini 63.8% 3.20 s1.31 s1.6kFull-context gpt-4o60.2% 28.9 s6.01 s115kZepgpt-4o71.2% 2.58 s0.684 s1.6k\nTable 3 :3LongMemEval s Question Type BreakdownQuestion TypeModelFull-context ZepDeltasingle-session-preference gpt-4o-mini 30.0%53.3% 77.7%↑single-session-assistantgpt-4o-mini 81.8%75.0% 9.06%↓temporal-reasoninggpt-4o-mini 36.5%54.1% 48.2%↑multi-sessiongpt-4o-mini 40.6%47.4% 16.7%↑knowledge-updategpt-4o-mini 76.9%74.4% 3.36%↓single-session-usergpt-4o-mini 81.4%92.9% 14.1%↑single-session-preference gpt-4o20.0%56.7% 184%↑single-session-assistantgpt-4o94.6%80.4% 17.7%↓temporal-reasoninggpt-4o45.1%62.4% 38.4%↑multi-sessiongpt-4o44.3%57.9% 30.7%↑knowledge-updategpt-4o78.2%83.3% 6.52%↑single-session-usergpt-4o81.4%92.9% 14.1%↑",
+ "sections": [
+  {
+   "title": "Introduction",
+   "text": "The impact of transformer-based large language models (LLMs) on industry and research communities has garnered significant attention in recent years [1]. A major application of LLMs has been the development of chat-based agents. However, these agents' capabilities are limited by the LLMs' context windows, effective context utilization, and knowledge gained during pre-training. Consequently, additional context is required to provide out-of-domain (OOD) knowledge and reduce hallucinations.Retrieval-Augmented Generation (RAG) has emerged as a key area of interest in LLM-based applications. RAG leverages Information Retrieval (IR) techniques pioneered over the last fifty years [2] to supply necessary domain knowledge to LLMs.Current approaches using RAG have focused on broad domain knowledge and largely static corpora-that is, document contents added to a corpus seldom change. For agents to become pervasive in our daily lives, autonomously solving problems from trivial to highly complex, they will need access to a large corpus of continuously evolving data from users' interactions with the agent, along with related business and world data. We view empowering agents with this broad and dynamic \"memory\" as a crucial building block to actualize this vision, and we argue that current RAG approaches are unsuitable for this future. Since entire conversation histories, business datasets, and other domainspecific content cannot fit effectively inside LLM context windows, new approaches need to be developed for agent memory. Adding memory to LLM-powered agents isn't a new idea-this concept has been explored previously in MemGPT [3].Recently, Knowledge Graphs (KGs) have been employed to enhance RAG architectures to address many of the shortcomings of traditional IR techniques [4]. In this paper, we introduce Zep [5], a memory layer service powered by Graphiti [6], a dynamic, temporally-aware knowledge graph engine. Zep ingests and synthesizes both unstructured message data and structured business data. The Graphiti KG engine dynamically updates the knowledge graph with new information in a non-lossy manner, maintaining a timeline of facts and relationships, including their periods of validity. This approach enables the knowledge graph to represent a complex, evolving world.As Zep is a production system, we've focused heavily on the accuracy, latency, and scalability of its memory retrieval mechanisms. We evaluate these mechanisms' efficacy using two existing benchmarks: a Deep Memory Retrieval task (DMR) from MemGPT [3], as well as the LongMemEval benchmark [7].",
+   "level": 1,
+   "path_id": "1",
+   "parent_section_id": null,
+   "order_in_parent": 0,
+   "section_id": "sec-1"
+  },
+  {
+   "title": "Knowledge Graph Construction",
+   "text": "In Zep, memory is powered by a temporally-aware dynamic knowledge graph G = (N , E, φ), where N represents nodes, E represents edges, and φ : E → N × N represents a formal incidence function. This graph comprises three hierarchical tiers of subgraphs: an episode subgraph, a semantic entity subgraph, and a community subgraph.• Episode Subgraph G e : Episodic nodes (episodes), n i ∈ N e , contain raw input data in the form of mes-sages, text, or JSON. Episodes serve as a non-lossy data store from which semantic entities and relations are extracted. Episodic edges, e i ∈ E e ⊆ φ * (N e × N s ), connect episodes to their referenced semantic entities.• Semantic Entity Subgraph G s : The semantic entity subgraph builds upon the episode subgraph. Entity nodes (entities), n i ∈ N s , represent entities extracted from episodes and resolved with existing graph entities. Entity edges (semantic edges), e i ∈ E s ⊆ φ * (N s × N s ), represent relationships between entities extracted from episodes.• The dual storage of both raw episodic data and derived semantic entity information mirrors psychological models of human memory. These models distinguish between episodic memory, which represents distinct events, and semantic memory, which captures associations between concepts and their meanings [8]. This approach enables LLM agents using Zep to develop more sophisticated and nuanced memory structures that better align with our understanding of human memory systems. Knowledge graphs provide an effective medium for representing these memory structures, and our implementation of distinct episodic and semantic subgraphs draws from similar approaches in AriGraph [9].Our use of community nodes to represent high-level structures and domain concepts builds upon work from GraphRAG [4], enabling a more comprehensive global understanding of the domain. The resulting hierarchical organization-from episodes to facts to entities to communities-extends existing hierarchical RAG strategies [10][11].",
+   "level": 2,
+   "path_id": "2",
+   "parent_section_id": null,
+   "order_in_parent": 1,
+   "section_id": "sec-2"
+  },
+  {
+   "title": "Episodes",
+   "text": "Zep's graph construction begins with the ingestion of raw data units called Episodes. Episodes can be one of three core types: message, text, or JSON. While each type requires specific handling during graph construction, this paper focuses on the message type, as our experiments center on conversation memory. In our context, a message consists of relatively short text (several messages can fit within an LLM context window) along with the associated actor who produced the utterance.Each message includes a reference timestamp t ref indicating when the message was sent. This temporal information enables Zep to accurately identify and extract relative or partial dates mentioned in the message content (e.g., \"next Thursday,\" \"in two weeks,\" or \"last summer\"). Zep implements a bi-temporal model, where timeline T represents the chronological ordering of events, and timeline T ′ represents the transactional order of Zep's data ingestion. While the T ′ timeline serves the traditional purpose of database auditing, the T timeline provides an additional dimension for modeling the dynamic nature of conversational data and memory. This bi-temporal approach represents a novel advancement in LLM-based knowledge graph construction and underlies much of Zep's unique capabilities compared to previous graph-based RAG proposals.The episodic edges, E e , connect episodes to their extracted entity nodes. Episodes and their derived semantic edges maintain bidirectional indices that track the relationships between edges and their source episodes. This design reinforces the non-lossy nature of Graphiti's episodic subgraph by enabling both forward and backward traversal: semantic artifacts can be traced to their sources for citation or quotation, while episodes can quickly retrieve their relevant entities and facts. While these connections are not directly examined in this paper's experiments, they will be explored in future work.",
+   "level": 2,
+   "path_id": "2.1",
+   "parent_section_id": "sec-2",
+   "order_in_parent": 0,
+   "section_id": "sec-2.1"
+  },
+  {
+   "title": "Semantic Entities and Facts",
+   "text": "",
+   "level": 2,
+   "path_id": "2.2",
+   "parent_section_id": "sec-2",
+   "order_in_parent": 1,
+   "section_id": "sec-2.2"
+  },
+  {
+   "title": "Entities",
+   "text": "ntity extraction represents the initial phase of episode processing. During ingestion, the system processes both the current message content and the last n messages to provide context for named entity recognition. For this paper and in Zep's general implementation, n = 4, providing two complete conversation turns for context evaluation. Given our focus on message processing, the speaker is automatically extracted as an entity. Following initial entity extraction, we employ a reflection technique inspired by reflexion [12] to minimize hallucinations and enhance extraction coverage.The system also extracts an entity summary from the episode to facilitate subsequent entity resolution and retrieval operations.After extraction, the system embeds each entity name into a 1024-dimensional vector space. This embedding enables the retrieval of similar nodes through cosine similarity search across existing graph entity nodes. The system also performs a separate full-text search on existing entity names and summaries to identify additional candidate nodes. These candidate nodes, together with the episode context, are then processed through an LLM using our entity resolution prompt. When the system identifies a duplicate entity, it generates an updated name and summary.Following entity extraction and resolution, the system incorporates the data into the knowledge graph using predefined Cypher queries. We chose this approach over LLM-generated database queries to ensure consistent schema formats and reduce the potential for hallucinations.Selected prompts for graph construction are provided in the appendix.",
+   "level": 3,
+   "path_id": "2.2.1",
+   "parent_section_id": "sec-2.2",
+   "order_in_parent": 0,
+   "section_id": "sec-2.2.1"
+  },
+  {
+   "title": "Facts",
+   "text": "or each fact containing its key predicate. Importantly, the same fact can be extracted multiple times between different entities, enabling Graphiti to model complex multi-entity facts through an implementation of hyper-edges.Following extraction, the system generates embeddings for facts in preparation for graph integration. The system performs edge deduplication through a process similar to entity resolution. The hybrid search for relevant edges is constrained to edges existing between the same entity pairs as the proposed new edge. This constraint not only prevents erroneous combinations of similar edges between different entities but also significantly reduces the computational complexity of the deduplication process by limiting the search space to a subset of edges relevant to the specific entity pair.",
+   "level": 3,
+   "path_id": "2.2.2",
+   "parent_section_id": "sec-2.2",
+   "order_in_parent": 1,
+   "section_id": "sec-2.2.2"
+  },
+  {
+   "title": "Temporal Extraction and Edge Invalidation",
+   "text": "A key differentiating feature of Graphiti compared to other knowledge graph engines is its capacity to manage dynamic information updates through temporal extraction and edge invalidation processes.The system extracts temporal information about facts from the episode context using t ref .This enables accurate extraction and datetime representation of both absolute timestamps (e.g., \"Alan Turing was born on June 23, 1912\") and relative timestamps (e.g., \"I started my new job two weeks ago\"). Consistent with our bi-temporal modeling approach, the system tracks four timestamps: t ′ created and t ′ expired ∈ T ′ monitor when facts are created or invalidated in the system, while t valid and t invalid ∈ T track the temporal range during which facts held true. These temporal data points are stored on edges alongside other fact information.The introduction of new edges can invalidate existing edges in the database. The system employs an LLM to compare new edges against semantically related existing edges to identify potential contradictions. When the system identifies temporally overlapping contradictions, it invalidates the affected edges by setting their t invalid to the t valid of the invalidating edge. Following the transactional timeline T ′ , Graphiti consistently prioritizes new information when determining edge invalidation.This comprehensive approach enables the dynamic addition of data to Graphiti as conversations evolve, while maintaining both current relationship states and historical records of relationship evolution over time.",
+   "level": 3,
+   "path_id": "2.2.3",
+   "parent_section_id": "sec-2.2",
+   "order_in_parent": 2,
+   "section_id": "sec-2.2.3"
+  },
+  {
+   "title": "Communities",
+   "text": "After establishing the episodic and semantic subgraphs, the system constructs the community subgraph through community detection. While our community detection approach builds upon the technique described in GraphRAG [4], we employ a label propagation algorithm [13] rather than the Leiden algorithm [14]. This choice was influenced by label propagation's straightforward dynamic extension, which enables the system to maintain accurate community representations for longer periods as new data enters the graph, delaying the need for complete community refreshes.The dynamic extension implements the logic of a single recursive step in label propagation. When the system adds a new entity node n i ∈ N s to the graph, it surveys the communities of neighboring nodes. The system assigns the new node to the community held by the plurality of its neighbors, then updates the community summary and graph accordingly. While this dynamic updating enables efficient community extension as data flows into the system, the resulting communities gradually diverge from those that would be generated by a complete label propagation run. Therefore, periodic community refreshes remain necessary. However, this dynamic updating strategy provides a practical heuristic that significantly reduces latency and LLM inference costs.Following [4], our community nodes contain summaries derived through an iterative map-reduce-style summarization of member nodes. However, our retrieval methods differ substantially from GraphRAG's map-reduce approach [4].To support our retrieval methodology, we generate community names containing key terms and relevant subjects from the community summaries. These names are embedded and stored to enable cosine similarity searches.",
+   "level": 2,
+   "path_id": "2.3",
+   "parent_section_id": "sec-2",
+   "order_in_parent": 2,
+   "section_id": "sec-2.3"
+  },
+  {
+   "title": "Memory Retrieval",
+   "text": "The memory retrieval system in Zep provides powerful, complex, and highly configurable functionality. At a high level, the Zep graph search API implements a function f : S → S that accepts a text-string query α ∈ S as input and returns a text-string context β ∈ S as output. The output β contains formatted data from nodes and edges required for an LLM agent to generate an accurate response to query α. The process f (α) → β comprises three distinct steps:• Search (ϕ): The process begins by identifying candidate nodes and edges potentially containing relevant information. While Zep employs multiple distinct search methods, the overall search function can be represented as ϕ : S → E n s × N n s × N n c . Thus, ϕ transforms a query into a 3-tuple containing lists of semantic edges, entity nodes, and community nodes-the three graph types containing relevant textual information.• Reranker (ρ): The second step reorders search results. A reranker function or model accepts a list of search results and produces a reordered version of those results: ρ : ϕ(α), ... → E n s × N n s × N n c .• Constructor (χ): The final step, the constructor, transforms the relevant nodes and edges into text context:χ :E n s × N n s × N c n → S.For each e i ∈ Es, χ returns the fact and tvalid, tinvalid fields; for each n i ∈ N s , the name and summary fields; and for each n i ∈ N c , the summary field.With these definitions established, we can express f as a composition of these three components: f (α) = χ(ρ(ϕ(α))) = β.",
+   "level": 3,
+   "path_id": "3",
+   "parent_section_id": null,
+   "order_in_parent": 2,
+   "section_id": "sec-3"
+  },
+  {
+   "title": "Sample context string template:",
+   "text": "FACTS and ENTITIES represent relevant context to the current conversation. These are the most relevant facts and their valid date ranges. If the fact is about an event, the event takes place during this time. format: FACT (Date range: from -to) &lt;FACTS&gt; {facts} &lt;/FACTS&gt; These are the most relevant entities ENTITY_NAME: entity summary &lt;ENTITIES&gt; {entities} &lt;/ENTITIES&gt;",
+   "level": 1,
+   "path_id": "1~2",
+   "parent_section_id": null,
+   "order_in_parent": 3,
+   "section_id": "sec-1~2"
+  },
+  {
+   "title": "Search",
+   "text": "Zep implements three search functions: cosine semantic similarity search (ϕ cos ), Okapi BM25 full-text search (ϕ bm25 ), and breadth-first search (ϕ bfs ). The first two functions utilize Neo4j's implementation of Lucene [15][16]. Each search function offers distinct capabilities in identifying relevant documents, and together they provide comprehensive coverage of candidate results before reranking. The search field varies across the three object types: for E s , we search the fact field; for N s , the entity name; and for N c , the community name, which comprises relevant keywords and phrases covered in the community. While developed independently, our community search approach parallels the high-level key search methodology in LightRAG [17]. The hybridization of LightRAG's approach with graph-based systems like Graphiti presents a promising direction for future research.While cosine similarity and full-text search methodologies are well-established in RAG [18], breadth-first search over knowledge graphs has received limited attention in the RAG domain, with notable exceptions in graph-based RAG systems such as AriGraph [9] and Distill-SynthKG [19]. In Graphiti, the breadth-first search enhances initial search results by identifying additional nodes and edges within n-hops. Moreover, ϕ bfs can accept nodes as parameters for the search, enabling greater control over the search function. This functionality proves particularly valuable when using recent episodes as seeds for the breadth-first search, allowing the system to incorporate recently mentioned entities and relationships into the retrieved context.The three search methods each target different aspects of similarity: full-text search identifies word similarities, cosine similarity captures semantic similarities, and breadth-first search reveals contextual similarities-where nodes and edges closer in the graph appear in more similar conversational contexts. This multi-faceted approach to candidate result identification maximizes the likelihood of discovering optimal context.",
+   "level": 2,
+   "path_id": "3.1",
+   "parent_section_id": "sec-3",
+   "order_in_parent": 0,
+   "section_id": "sec-3.1"
+  },
+  {
+   "title": "Reranker",
+   "text": "While the initial search methods aim to achieve high recall, rerankers serve to increase precision by prioritizing the most relevant results. Zep supports existing reranking approaches such as Reciprocal Rank Fusion (RRF) [20] and Maximal Marginal Relevance (MMR) [21]. Additionally, Zep implements a graph-based episode-mentions reranker that prioritizes results based on the frequency of entity or fact mentions within a conversation, enabling a system where frequently referenced information becomes more readily accessible. The system also includes a node distance reranker that reorders results based on their graph distance from a designated centroid node, providing context localized to specific areas of the knowledge graph. The system's most sophisticated reranking capability employs crossencoders-LLMs that generate relevance scores by evaluating nodes and edges against queries using cross-attention, though this approach incurs the highest computational cost.",
+   "level": 2,
+   "path_id": "3.2",
+   "parent_section_id": "sec-3",
+   "order_in_parent": 1,
+   "section_id": "sec-3.2"
+  },
+  {
+   "title": "Experiments",
+   "text": "This section analyzes two experiments conducted using LLM-memory based benchmarks. The first evaluation employs the Deep Memory Retrieval (DMR) task developed in [3], which uses a 500-conversation subset of the Multi-Session Chat dataset introduced in \"Beyond Goldfish Memory: Long-Term Open-Domain Conversation\" [22]. The second evaluation utilizes the LongMemEval benchmark from \"LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory\" [7]. Specifically, we use the LongMemEval s dataset, which provides an extensive conversation context of on average 115,000 tokens.For both experiments, we integrate the conversation history into a Zep knowledge graph through Zep's APIs. We then retrieve the 20 most relevant edges (facts) and entity nodes (entity summaries) using the techniques described in Section 3. The system reformats this data into a context string, matching the functionality provided by Zep's memory APIs.While these experiments demonstrate key retrieval capabilities of Graphiti, they represent a subset of the system's full search functionality. This focused scope enables clear comparison with existing benchmarks while reserving the exploration of additional knowledge graph capabilities for future work.",
+   "level": 4,
+   "path_id": "4",
+   "parent_section_id": null,
+   "order_in_parent": 4,
+   "section_id": "sec-4"
+  },
+  {
+   "title": "Choice of models",
+   "text": "Our experimental implementation employs the BGE-m3 models from BAAI for both reranking and embedding tasks [23] [24]. For graph construction and response generation, we utilize gpt-4o-mini-2024-07-18 for graph construction, and both gpt-4o-mini-2024-07-18 and gpt-4o-2024-11-20 for the chat agent generating responses to provided context.To ensure direct comparability with MemGPT's DMR results, we also conducted the DMR evaluation using gpt-4turbo-2024-04-09.The experimental notebooks will be made publicly available through our GitHub repository, and relevant experimental prompts are included in the Appendix.",
+   "level": 2,
+   "path_id": "4.1",
+   "parent_section_id": "sec-4",
+   "order_in_parent": 0,
+   "section_id": "sec-4.1"
+  },
+  {
+   "title": "Deep Memory Retrieval (DMR)",
+   "text": "The Deep Memory Retrieval evaluation, introduced by [3], comprises 500 multi-session conversations, each containing 5 chat sessions with up to 12 messages per session. Each conversation includes a question/answer pair for memory evaluation. The MemGPT framework [3] currently leads performance metrics with 93.4% accuracy using gpt-4-turbo, a significant improvement over the 35.3% baseline achieved through recursive summarization.To establish comparative baselines, we implemented two common LLM memory approaches: full-conversation context and session summaries. Using gpt-4-turbo, the full-conversation baseline achieved 94.4% accuracy, slightly surpassing MemGPT's reported results, while the session summary baseline achieved 78.6%. When using gpt-4o-mini, both approaches showed improved performance: 98.0% for full-conversation and 88.0% for session summaries. We were unable to reproduce MemGPT's results using gpt-4o-mini due to insufficient methodological details in their published work.We then evaluated Zep's performance by ingesting the conversations and using its search functions to retrieve the top 10 most relevant nodes and edges. An LLM judge compared the agent's responses to the provided golden answers. Zep achieved 94.8% accuracy with gpt-4-turbo and 98.2% with gpt-4o-mini, showing marginal improvements over both MemGPT and the respective full-conversation baselines. However, these results must be contextualized: each conversation contains only 60 messages, easily fitting within current LLM context windows.The limitations of the DMR evaluation extend beyond its small scale. Our analysis revealed significant weaknesses in the benchmark's design. The evaluation relies exclusively on single-turn, fact-retrieval questions that fail to assess complex memory understanding. Many questions contain ambiguous phrasing, referencing concepts like \"favorite drink to relax with\" or \"weird hobby\" that were not explicitly characterized as such in the conversations. Most critically, the dataset poorly represents real-world enterprise use cases for LLM agents. The high performance achieved by simple full-context approaches using modern LLMs further highlights the benchmark's inadequacy for evaluating memory systems.This inadequacy is further emphasized by findings in [7], which demonstrate rapidly declining LLM performance on the LongMemEval benchmark as conversation length increases. The LongMemEval dataset [7] addresses many of these shortcomings by presenting longer, more coherent conversations that better reflect enterprise scenarios, along with more diverse evaluation questions.",
+   "level": 2,
+   "path_id": "4.2",
+   "parent_section_id": "sec-4",
+   "order_in_parent": 1,
+   "section_id": "sec-4.2"
+  },
+  {
+   "title": "LongMemEval (LME)",
+   "text": "We evaluated Zep using the LongMemEvals dataset, which provides conversations and questions representative of realworld business applications of LLM agents. The LongMemEvals dataset presents significant challenges to existing LLMs and commercial memory solutions [7], with conversations averaging approximately 115,000 tokens in length. This length, while substantial, remains within the context windows of current frontier models, enabling us to establish meaningful baselines for evaluating Zep's performance.The dataset incorporates six distinct question types: single-session-user, single-session-assistant, single-sessionpreference, multi-session, knowledge-update, and temporal-reasoning. These categories are not uniformly distributed throughout the dataset; for detailed distribution information, we refer readers to [7].We conducted all experiments between December 2024 and January 2025. We performed testing using a consumer laptop from a residential location in Boston, MA, connecting to Zep's service hosted in AWS us-west-2. This dis-tributed architecture introduced additional network latency when evaluating Zep's performance, though this latency was not present in our baseline evaluations.For answer evaluation, we employed GPT-4o with the question-specific prompts provided in [7], which have demonstrated high correlation with human evaluators.",
+   "level": 2,
+   "path_id": "4.3",
+   "parent_section_id": "sec-4",
+   "order_in_parent": 2,
+   "section_id": "sec-4.3"
+  },
+  {
+   "title": "LongMemEval and MemGPT",
+   "text": "To establish a comparative benchmark between Zep and the current state-of-the-art MemGPT system [3], we attempted to evaluate MemGPT using the LongMemEval dataset. Given that the current MemGPT framework does not support direct ingestion of existing message histories, we implemented a workaround by adding conversation messages to the archival history. However, we were unable to achieve successful question responses using this approach. We look forward to seeing evaluations of this benchmark by other research teams, as comparative performance data would benefit the broader development of LLM memory systems.",
+   "level": 3,
+   "path_id": "4.3.1",
+   "parent_section_id": "sec-4.3",
+   "order_in_parent": 0,
+   "section_id": "sec-4.3.1"
+  },
+  {
+   "title": "LongMemEval results",
+   "text": "Zep demonstrates substantial improvements in both accuracy and latency compared to the baseline across both model variants. Using gpt-4o-mini, Zep achieved a 15.2% accuracy improvement over the baseline, while gpt-4o showed an 18.5% improvement. The reduced prompt size also led to significant latency cost reductions compared to the baseline implementations. Analysis by question type reveals that gpt-4o-mini with Zep showed improvements in four of the six categories, with the most substantial gains in complex question types: single-session-preference, multi-session, and temporalreasoning. When using gpt-4o, Zep further demonstrated improved performance in the knowledge-update category, highlighting its effectiveness with more capable models. However, additional development may be needed to improve less capable models' understanding of Zep's temporal data. These results demonstrate Zep's ability to enhance performance across model scales, with the most pronounced improvements observed in complex and nuanced question types when paired with more capable models. The latency improvements are particularly noteworthy, with Zep reducing response times by approximately 90% while maintaining higher accuracy.The decrease in performance for single-session-assistant questions-17.7% for gpt-4o and 9.06% for gpt-4omini-represents a notable exception to Zep's otherwise consistent improvements, and suggest further research and engineering work is needed.",
+   "level": 3,
+   "path_id": "4.3.2",
+   "parent_section_id": "sec-4.3",
+   "order_in_parent": 1,
+   "section_id": "sec-4.3.2"
+  },
+  {
+   "title": "Conclusion",
+   "text": "We have introduced Zep, a graph-based approach to LLM memory that incorporates semantic and episodic memory alongside entity and community summaries. Our evaluations demonstrate that Zep achieves state-of-the-art performance on existing memory benchmarks while reducing token costs and operating at significantly lower latencies.The results achieved with Graphiti and Zep, while impressive, likely represent only initial advances in graph-based memory systems. Multiple research avenues could build upon these frameworks, including integration of other GraphRAG approaches into the Zep paradigm and novel extensions of our work.Research has already demonstrated the value of fine-tuned models for LLM-based entity and edge extraction within the GraphRAG paradigm, improving accuracy while reducing costs and latency [19][25]. Similar models finetuned for Graphiti prompts may enhance knowledge extraction, particularly for complex conversations. Additionally, while current research on LLM-generated knowledge graphs has primarily operated without formal ontologies [9][4] [17][19][26], domain-specific ontologies present significant potential. Graph ontologies, foundational in pre-LLM knowledge graph work, warrant further exploration within the Graphiti framework.Our search for suitable memory benchmarks revealed limited options, with existing benchmarks often lacking robustness and complexity, frequently defaulting to simple needle-in-a-haystack fact-retrieval questions [3]. The field requires additional memory benchmarks, particularly those reflecting business applications like customer experience tasks, to effectively evaluate and differentiate memory approaches. Notably, no existing benchmarks adequately assess Zep's capability to process and synthesize conversation history with structured business data. While Zep focuses on LLM memory, its traditional RAG capabilities should be evaluated against established benchmarks such as those in [17], [27], and [28].Current literature on LLM memory and RAG systems insufficiently addresses production system scalability in terms of cost and latency. We have included latency benchmarks for our retrieval mechanisms to begin addressing this gap, following the example set by LightRAG's authors in prioritizing these metrics.6 Appendix 6.1 Graph Construction Prompts 6.1.1 Entity Extraction &lt;PREVIOUS MESSAGES&gt; {previous_messages} &lt;/PREVIOUS MESSAGES&gt; &lt;CURRENT MESSAGE&gt; {current_message} &lt;/CURRENT MESSAGE&gt; Given the above conversation, extract entity nodes from the CURRENT MESSAGE that are explicitly or implicitly mentioned: Guidelines: 1. ALWAYS extract the speaker/actor as the first node. The speaker is the part before the colon in each line of dialogue. 2. Extract other significant entities, concepts, or actors mentioned in the CURRENT MESSAGE. 3. DO NOT create nodes for relationships or actions. 4. DO NOT create nodes for temporal information like dates, times or years (these will be added to edges later). 5. Be as explicit as possible in your node names, using full names. 6. DO NOT extract entities mentioned only 6.1.2 Entity Resolution &lt;PREVIOUS MESSAGES&gt; {previous_messages} &lt;/PREVIOUS MESSAGES&gt; &lt;CURRENT MESSAGE&gt; {current_message} &lt;/CURRENT MESSAGE&gt; &lt;EXISTING NODES&gt; {existing_nodes} &lt;/EXISTING NODES&gt; Given the above EXISTING NODES, MESSAGE, and PREVIOUS MESSAGES. Determine if the NEW NODE extracted from the conversation is a duplicate entity of one of the EXISTING NODES. &lt;NEW NODE&gt; {new_node} &lt;/NEW NODE&gt; Task: 1. If the New Node represents the same entity as any node in Existing Nodes, return 'is_duplicate: true' in the response. Otherwise, return 'is_duplicate: false' 2. If is_duplicate is true, also return the uuid of the existing node in the response 3. If is_duplicate is true, return a name for the node that is the most complete full name. Guidelines: 1. Use both the name and summary of nodes to determine if the entities are duplicates, duplicate nodes may have different names 6.1.3 Fact Extraction &lt;PREVIOUS MESSAGES&gt; {previous_messages} &lt;/PREVIOUS MESSAGES&gt; &lt;CURRENT MESSAGE&gt; {current_message} &lt;/CURRENT MESSAGE&gt; &lt;ENTITIES&gt; {entities} &lt;/ENTITIES&gt; Given the above MESSAGES and ENTITIES, extract all facts pertaining to the listed ENTITIES from the CURRENT MESSAGE. Guidelines: 1. Extract facts only between the provided entities. 2. Each fact should represent a clear relationship between two DISTINCT nodes. 3. The relation_type should be a concise, all-caps description of the fact (e.g., LOVES, IS_FRIENDS_WITH, WORKS_FOR). 4. Provide a more detailed fact containing all relevant information. 5. Consider temporal aspects of relationships when relevant. 6.1.4 Fact Resolution Given the following context, determine whether the New Edge represents any of the edges in the list of Existing Edges. &lt;EXISTING EDGES&gt; {existing_edges} &lt;/EXISTING EDGES&gt; &lt;NEW EDGE&gt; {new_edge} &lt;/NEW EDGE&gt; Task: 1. If the New Edges represents the same factual information as any edge in Existing Edges, return 'is_duplicate: true' in the response. Otherwise, return 'is_duplicate: false' 2. If is_duplicate is true, also return the uuid of the existing edge in the response Guidelines: 1. The facts do not need to be completely identical to be duplicates, they just need to express the same information. 6.1.5 Temporal Extraction &lt;PREVIOUS MESSAGES&gt; {previous_messages} &lt;/PREVIOUS MESSAGES&gt; &lt;CURRENT MESSAGE&gt; {current_message} &lt;/CURRENT MESSAGE&gt; &lt;REFERENCE TIMESTAMP&gt; {reference_timestamp} &lt;/REFERENCE TIMESTAMP&gt; &lt;FACT&gt; {fact} &lt;/FACT&gt; IMPORTANT: Only extract time information if it is part of the provided fact. Otherwise ignore the time mentioned. Make sure to do your best to determine the dates if only the relative time is mentioned. (eg 10 years ago, 2 mins ago) based on the provided reference timestamp If the relationship is not of spanning nature, but you are still able to determine the dates, set the valid_at only. Definitions:-valid_at: The date and time when the relationship described by the edge fact became true or was established.-invalid_at: The date and time when the relationship described by the edge fact stopped being true or ended.Task: Analyze the conversation and determine if there are dates that are part of the edge fact. Only set dates if they explicitly relate to the formation or alteration of the relationship itself. Guidelines: 1. Use ISO 8601 format (YYYY-MM-DDTHH:MM:SS.SSSSSSZ) for datetimes. 2. Use the reference timestamp as the current time when determining the valid_at and invalid_at dates.3. If the fact is written in the present tense, use the Reference Timestamp for the valid_at date 4. If no temporal information is found that establishes or changes the relationship, leave the fields as null. 5. Do not infer dates from related events. Only use dates that are directly stated to establish or change the relationship. 6. For relative time mentions directly related to the relationship, calculate the actual datetime based on the reference timestamp. 7. If only a date is mentioned without a specific time, use 00:00:00 (midnight) for that date. 8. If only year is mentioned, use January 1st of that year at 00:00:00. 9. Always include the time zone offset (use Z for UTC if no specific time zone is mentioned).Community Subgraph G c : The community subgraph forms the highest level of Zep's knowledge graph. Community nodes (communities), n i ∈ N c , represent clusters of strongly connected entities. Communities contain high-level summarizations of these clusters and represent a more comprehensive, interconnected view of G s 's structure. Community edges, e i ∈ E c ⊆ φ * (N c × N s ), connect communities to their entity members.",
+   "level": 5,
+   "path_id": "5",
+   "parent_section_id": null,
+   "order_in_parent": 5,
+   "section_id": "sec-5"
+  },
+  {
+   "title": "Table 1 :",
+   "text": "1Deep Memory RetrievalMemoryModelScoreRecursive Summarization  † gpt-4-turbo 35.3%Conversation Summaries gpt-4-turbo 78.6%MemGPT  †gpt-4-turbo 93.4%Full-conversationgpt-4-turbo 94.4%Zepgpt-4-turbo 94.8%Conversation Summaries gpt-4o-mini 88.0%Full-conversationgpt-4o-mini 98.0%Zepgpt-4o-mini 98.2%† Results reported in[3].",
+   "level": 1,
+   "path_id": "1~3",
+   "parent_section_id": null,
+   "order_in_parent": 6,
+   "section_id": "sec-1~3"
+  },
+  {
+   "title": "Table 2 :",
+   "text": "2LongMemEval sMemoryModelScoreLatency Latency IQR Avg Context TokensFull-context gpt-4o-mini 55.4% 31.3 s8.76 s115kZepgpt-4o-mini 63.8% 3.20 s1.31 s1.6kFull-context gpt-4o60.2% 28.9 s6.01 s115kZepgpt-4o71.2% 2.58 s0.684 s1.6k",
+   "level": 1,
+   "path_id": "1~4",
+   "parent_section_id": null,
+   "order_in_parent": 7,
+   "section_id": "sec-1~4"
+  },
+  {
+   "title": "Table 3 :",
+   "text": "3LongMemEval s Question Type BreakdownQuestion TypeModelFull-context ZepDeltasingle-session-preference gpt-4o-mini 30.0%53.3% 77.7%↑single-session-assistantgpt-4o-mini 81.8%75.0% 9.06%↓temporal-reasoninggpt-4o-mini 36.5%54.1% 48.2%↑multi-sessiongpt-4o-mini 40.6%47.4% 16.7%↑knowledge-updategpt-4o-mini 76.9%74.4% 3.36%↓single-session-usergpt-4o-mini 81.4%92.9% 14.1%↑single-session-preference gpt-4o20.0%56.7% 184%↑single-session-assistantgpt-4o94.6%80.4% 17.7%↓temporal-reasoninggpt-4o45.1%62.4% 38.4%↑multi-sessiongpt-4o44.3%57.9% 30.7%↑knowledge-updategpt-4o78.2%83.3% 6.52%↑single-session-usergpt-4o81.4%92.9% 14.1%↑",
+   "level": 1,
+   "path_id": "1~5",
+   "parent_section_id": null,
+   "order_in_parent": 8,
+   "section_id": "sec-1~5"
+  }
+ ],
+ "citations": [
+  {
+   "raw_text": "AshishVaswani\n\t\t\n\t\t\n\t\t\tNoamShazeer\n\t\t\n\t\t\n\t\t\tNikiParmar\n\t\t\n\t\t\n\t\t\tJakobUszkoreit\n\t\t\n\t\t\n\t\t\tLlionJones\n\t\t\n\t\t\n\t\t\tAidanNGomez\n\t\t\n\t\t\n\t\t\tLukaszKaiser\n\t\t\n\t\t\n\t\t\tIlliaPolosukhin\n\t\t\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tAttention is all you need",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b0",
+     "section_path_id": "1",
+     "quote": "[1]",
+     "offset": 149
+    }
+   ]
+  },
+  {
+   "raw_text": "A statistical interpretation of term specificity and its application in retrieval\n\t\t\n\t\t\tKSparckJones\n\t\t\n\t\n\t\n\t\tJournal of Documentation\n\t\t\n\t\t\t28\n\t\t\t1\n\t\t\t\n\t\t\t1972",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "A statistical interpretation of term specificity and its application in retrieval",
+   "anchors": [
+    {
+     "ref_id": "b1",
+     "section_path_id": "1",
+     "quote": "[2]",
+     "offset": 682
+    }
+   ]
+  },
+  {
+   "raw_text": "CharlesPacker\n\t\t\n\t\t\n\t\t\tSarahWooders\n\t\t\n\t\t\n\t\t\tKevinLin\n\t\t\n\t\t\n\t\t\tVivianFang\n\t\t\n\t\t\n\t\t\tGShishir\n\t\t\n\t\t\n\t\t\tIonPatil\n\t\t\n\t\t\n\t\t\tJosephEStoica\n\t\t\n\t\t\n\t\t\tGonzalez\n\t\t\n\t\t\n\t\t\tMemgpt\n\t\t\n\t\tTowards llms as operating systems\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b2",
+     "section_path_id": "1",
+     "quote": "[3]",
+     "offset": 1643
+    },
+    {
+     "ref_id": "b2",
+     "section_path_id": "1",
+     "quote": "[3]",
+     "offset": 2548
+    },
+    {
+     "ref_id": "b2",
+     "section_path_id": "4",
+     "quote": "[3]",
+     "offset": 162
+    },
+    {
+     "ref_id": "b2",
+     "section_path_id": "4.2",
+     "quote": "[3]",
+     "offset": 52
+    },
+    {
+     "ref_id": "b2",
+     "section_path_id": "4.2",
+     "quote": "[3]",
+     "offset": 262
+    },
+    {
+     "ref_id": "b2",
+     "section_path_id": "4.3.1",
+     "quote": "[3]",
+     "offset": 96
+    },
+    {
+     "ref_id": "b2",
+     "section_path_id": "5",
+     "quote": "[3]",
+     "offset": 1479
+    },
+    {
+     "ref_id": "b2",
+     "section_path_id": "1~3",
+     "quote": "[3]",
+     "offset": 317
+    }
+   ]
+  },
+  {
+   "raw_text": "From local to global: A graph rag approach to query-focused summarization\n\t\t\n\t\t\tDarrenEdge\n\t\t\n\t\t\n\t\t\tHaTrinh\n\t\t\n\t\t\n\t\t\tNewmanCheng\n\t\t\n\t\t\n\t\t\tJoshuaBradley\n\t\t\n\t\t\n\t\t\tAlexChao\n\t\t\n\t\t\n\t\t\tApurvaMody\n\t\t\n\t\t\n\t\t\tStevenTruitt\n\t\t\n\t\t\n\t\t\tJonathanLarson\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b3",
+     "section_path_id": "1",
+     "quote": "[4]",
+     "offset": 1793
+    },
+    {
+     "ref_id": "b3",
+     "section_path_id": "2",
+     "quote": "[4]",
+     "offset": 1786
+    },
+    {
+     "ref_id": "b3",
+     "section_path_id": "2.3",
+     "quote": "[4]",
+     "offset": 217
+    },
+    {
+     "ref_id": "b3",
+     "section_path_id": "2.3",
+     "quote": "[4]",
+     "offset": 1325
+    },
+    {
+     "ref_id": "b3",
+     "section_path_id": "2.3",
+     "quote": "[4]",
+     "offset": 1533
+    }
+   ]
+  },
+  {
+   "raw_text": "Commercial memory layer for AI applications\n\t\t\n\t\t\tZep\n\t\t\n\t\t\n\t\t\tZep\n\t\t\n\t\t\n\t\n\t\n\t\tLong-term memory for ai agents\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Commercial memory layer for AI applications",
+   "anchors": [
+    {
+     "ref_id": "b4",
+     "section_path_id": "1",
+     "quote": "[5]",
+     "offset": 1830
+    }
+   ]
+  },
+  {
+   "raw_text": "Graphiti builds dynamic, temporally aware Knowledge Graphs that represent complex, evolving relationships between entities over time\n\t\t\n\t\t\tZep\n\t\t\n\t\t\n\t\t\tGraphiti\n\t\t\n\t\t\n\t\n\t\n\t\tTemporal knowledge graphs for agentic applications\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Graphiti builds dynamic, temporally aware Knowledge Graphs that represent complex, evolving relationships between entities over time",
+   "anchors": [
+    {
+     "ref_id": "b5",
+     "section_path_id": "1",
+     "quote": "[6]",
+     "offset": 1878
+    }
+   ]
+  },
+  {
+   "raw_text": "Longmemeval: Benchmarking chat assistants on long-term interactive memory\n\t\t\n\t\t\tDiWu\n\t\t\n\t\t\n\t\t\tHongweiWang\n\t\t\n\t\t\n\t\t\tWenhaoYu\n\t\t\n\t\t\n\t\t\tYuweiZhang\n\t\t\n\t\t\n\t\t\tKai-WeiChang\n\t\t\n\t\t\n\t\t\tDongYu\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b6",
+     "section_path_id": "1",
+     "quote": "[7]",
+     "offset": 2590
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "4",
+     "quote": "[7]",
+     "offset": 457
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "4.2",
+     "quote": "[7]",
+     "offset": 2295
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "4.2",
+     "quote": "[7]",
+     "offset": 2439
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "4.3",
+     "quote": "[7]",
+     "offset": 263
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "4.3",
+     "quote": "[7]",
+     "offset": 825
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "4.3",
+     "quote": "[7]",
+     "offset": 1296
+    }
+   ]
+  },
+  {
+   "raw_text": "The relationship between semantic and episodic memory: Exploring the effect of semantic neighbourhood density on episodic memory\n\t\t\n\t\t\tWongGonzalez\n\t\t\n\t\t\n\t\t\tDaniela\n\t\t\n\t\t\n\t\t\t2018\n\t\t\n\t\t\n\t\t\tUniversity of Winsor\n\t\t\n\t\n\tPhD thesis",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b7",
+     "section_path_id": "2",
+     "quote": "[8]",
+     "offset": 1299
+    }
+   ]
+  },
+  {
+   "raw_text": "Arigraph: Learning knowledge graph world models with episodic memory for llm agents\n\t\t\n\t\t\tPetrAnokhin\n\t\t\n\t\t\n\t\t\tNikitaSemenov\n\t\t\n\t\t\n\t\t\tArtyomSorokin\n\t\t\n\t\t\n\t\t\tDmitryEvseev\n\t\t\n\t\t\n\t\t\tMikhailBurtsev\n\t\t\n\t\t\n\t\t\tEvgenyBurnaev\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b8",
+     "section_path_id": "2",
+     "quote": "[9]",
+     "offset": 1669
+    },
+    {
+     "ref_id": "b8",
+     "section_path_id": "3.1",
+     "quote": "[9]",
+     "offset": 1141
+    },
+    {
+     "ref_id": "b8",
+     "section_path_id": "5",
+     "quote": "[9]",
+     "offset": 1066
+    }
+   ]
+  },
+  {
+   "raw_text": "XinyueChen\n\t\t\n\t\t\n\t\t\tPengyuGao\n\t\t\n\t\t\n\t\t\tJiangjiangSong\n\t\t\n\t\t\n\t\t\tXiaoyangTan\n\t\t\n\t\tHiqa: A hierarchical contextual augmentation rag for multi-documents qa\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b9",
+     "section_path_id": "2",
+     "quote": "[10]",
+     "offset": 1992
+    }
+   ]
+  },
+  {
+   "raw_text": "KrishGoel\n\t\t\n\t\t\n\t\t\tMahekChandak\n\t\t\n\t\t\n\t\t\tHiro\n\t\t\n\t\tHierarchical information retrieval optimization\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Reflexion: Language agents with verbal reinforcement learning\n\t\t\n\t\t\tNoahShinn\n\t\t\n\t\t\n\t\t\tFedericoCassano\n\t\t\n\t\t\n\t\t\tEdwardBerman\n\t\t\n\t\t\n\t\t\tAshwinGopinath\n\t\t\n\t\t\n\t\t\tKarthikNarasimhan\n\t\t\n\t\t\n\t\t\tShunyuYao\n\t\t\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b11",
+     "section_path_id": "2.2.1",
+     "quote": "[12]",
+     "offset": 523
+    }
+   ]
+  },
+  {
+   "raw_text": "Learning from labeled and unlabeled data with label propagation\n\t\t\n\t\t\tXiaojinZhu\n\t\t\n\t\t\n\t\t\tZoubinGhahramani\n\t\t\n\t\t\n\t\t\t2002",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b12",
+     "section_path_id": "2.3",
+     "quote": "[13]",
+     "offset": 262
+    }
+   ]
+  },
+  {
+   "raw_text": "From louvain to leiden: guaranteeing well-connected communities\n\t\t\n\t\t\tVATraag\n\t\t\n\t\t\n\t\t\tLWaltman\n\t\t\n\t\t\n\t\t\tNJVan Eck\n\t\t\n\t\n\t\n\t\tSci Rep\n\t\t\n\t\t\t9\n\t\t\t5233\n\t\t\t2019",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "From louvain to leiden: guaranteeing well-connected communities",
+   "anchors": [
+    {
+     "ref_id": "b13",
+     "section_path_id": "2.3",
+     "quote": "[14]",
+     "offset": 300
+    }
+   ]
+  },
+  {
+   "raw_text": "Neo4j -the world&apos;s leading graph database\n\t\t\n\t\t\t2012",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Apache Software Foundation. Apache lucene -scoring\n\t\t\n\t\t\t20\n\t\t\t2011. 2011",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Lightrag: Simple and fast retrieval-augmented generation\n\t\t\n\t\t\tZiruiGuo\n\t\t\n\t\t\n\t\t\tLianghaoXia\n\t\t\n\t\t\n\t\t\tYanhuaYu\n\t\t\n\t\t\n\t\t\tTuAo\n\t\t\n\t\t\n\t\t\tChaoHuang\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b16",
+     "section_path_id": "3.1",
+     "quote": "[17]",
+     "offset": 750
+    },
+    {
+     "ref_id": "b16",
+     "section_path_id": "5",
+     "quote": "[17]",
+     "offset": 1957
+    }
+   ]
+  },
+  {
+   "raw_text": "Vector search with openai embeddings: Lucene is all you need\n\t\t\n\t\t\tJimmyLin\n\t\t\n\t\t\n\t\t\tRonakPradeep\n\t\t\n\t\t\n\t\t\tTommasoTeofili\n\t\t\n\t\t\n\t\t\tJasperXian\n\t\t\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b17",
+     "section_path_id": "3.1",
+     "quote": "[18]",
+     "offset": 974
+    }
+   ]
+  },
+  {
+   "raw_text": "Distill-synthkg: Distilling knowledge graph synthesis workflow for improved coverage and efficiency\n\t\t\n\t\t\tPrafullaKumar Choubey\n\t\t\n\t\t\n\t\t\tXinSu\n\t\t\n\t\t\n\t\t\tManLuo\n\t\t\n\t\t\n\t\t\tXiangyuPeng\n\t\t\n\t\t\n\t\t\tCaimingXiong\n\t\t\n\t\t\n\t\t\tTiepLe\n\t\t\n\t\t\n\t\t\tShacharRosenman\n\t\t\n\t\t\n\t\t\tVasudevLal\n\t\t\n\t\t\n\t\t\tPhilMui\n\t\t\n\t\t\n\t\t\tRickyHo\n\t\t\n\t\t\n\t\t\tPhillipHoward\n\t\t\n\t\t\n\t\t\tChien-ShengWu\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b18",
+     "section_path_id": "3.1",
+     "quote": "[19]",
+     "offset": 1165
+    }
+   ]
+  },
+  {
+   "raw_text": "Reciprocal rank fusion outperforms condorcet and individual rank learning methods\n\t\t\n\t\t\tGordonVCormack\n\t\t\n\t\t\n\t\t\tLACharles\n\t\t\n\t\t\n\t\t\tStefanClarke\n\t\t\n\t\t\n\t\t\tBuettcher\n\t\t\n\t\n\t\n\t\tProceedings of the 32nd International ACM SIGIR Conference on Research and Development in Information Retrieval, SIGIR &apos;09\n\t\tthe 32nd International ACM SIGIR Conference on Research and Development in Information Retrieval, SIGIR &apos;09\n\t\t\n\t\t\tACM\n\t\t\t2009",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Reciprocal rank fusion outperforms condorcet and individual rank learning methods",
+   "anchors": [
+    {
+     "ref_id": "b19",
+     "section_path_id": "3.2",
+     "quote": "[20]",
+     "offset": 222
+    }
+   ]
+  },
+  {
+   "raw_text": "The use of mmr, diversity-based reranking for reordering documents and producing summaries\n\t\t\n\t\t\tJaimeCarbonell\n\t\t\n\t\t\n\t\t\tJadeGoldstein\n\t\t\n\t\n\t\n\t\tProceedings of the 21st Annual International ACM SIGIR Conference on Research and Development in Information Retrieval, SIGIR &apos;98\n\t\tthe 21st Annual International ACM SIGIR Conference on Research and Development in Information Retrieval, SIGIR &apos;98New York, NY, USA\n\t\t\n\t\t\tAssociation for Computing Machinery\n\t\t\t1998",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "The use of mmr, diversity-based reranking for reordering documents and producing summaries",
+   "anchors": [
+    {
+     "ref_id": "b20",
+     "section_path_id": "3.2",
+     "quote": "[21]",
+     "offset": 264
+    }
+   ]
+  },
+  {
+   "raw_text": "Beyond goldfish memory: Long-term open-domain conversation\n\t\t\n\t\t\tJingXu\n\t\t\n\t\t\n\t\t\tArthurSzlam\n\t\t\n\t\t\n\t\t\tJasonWeston\n\t\t\n\t\t\n\t\t\t2021",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b21",
+     "section_path_id": "4",
+     "quote": "[22]",
+     "offset": 313
+    }
+   ]
+  },
+  {
+   "raw_text": "Making large language models a better foundation for dense retrieval\n\t\t\n\t\t\tChaofanLi\n\t\t\n\t\t\n\t\t\tZhengLiu\n\t\t\n\t\t\n\t\t\tShitaoXiao\n\t\t\n\t\t\n\t\t\tYingxiaShao\n\t\t\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Bge m3-embedding: Multilingual, multi-functionality, multi-granularity text embeddings through self-knowledge distillation\n\t\t\n\t\t\tJianlvChen\n\t\t\n\t\t\n\t\t\tShitaoXiao\n\t\t\n\t\t\n\t\t\tPeitianZhang\n\t\t\n\t\t\n\t\t\tKunLuo\n\t\t\n\t\t\n\t\t\tDefuLian\n\t\t\n\t\t\n\t\t\tZhengLiu\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Triplex: a sota llm for knowledge graph construction\n\t\t\n\t\t\tShreyasPimpalgaonkar\n\t\t\n\t\t\n\t\t\tNolanTremelling\n\t\t\n\t\t\n\t\t\tOwenColegrove\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Graphreader: Building graph-based agent to enhance long-context abilities of large language models\n\t\t\n\t\t\tShilongLi\n\t\t\n\t\t\n\t\t\tYanchengHe\n\t\t\n\t\t\n\t\t\tHangyuGuo\n\t\t\n\t\t\n\t\t\tXingyuanBu\n\t\t\n\t\t\n\t\t\tGeBai\n\t\t\n\t\t\n\t\t\tJieLiu\n\t\t\n\t\t\n\t\t\tJiahengLiu\n\t\t\n\t\t\n\t\t\tXingweiQu\n\t\t\n\t\t\n\t\t\tYangguangLi\n\t\t\n\t\t\n\t\t\tWanliOuyang\n\t\t\n\t\t\n\t\t\tWenboSu\n\t\t\n\t\t\n\t\t\tBoZheng\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Financebench: A new benchmark for financial question answering\n\t\t\n\t\t\tPranabIslam\n\t\t\n\t\t\n\t\t\tAnandKannappan\n\t\t\n\t\t\n\t\t\tDouweKiela\n\t\t\n\t\t\n\t\t\tRebeccaQian\n\t\t\n\t\t\n\t\t\tNinoScherrer\n\t\t\n\t\t\n\t\t\tBertieVidgen\n\t\t\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b26",
+     "section_path_id": "5",
+     "quote": "[27]",
+     "offset": 1963
+    }
+   ]
+  },
+  {
+   "raw_text": "Beir: A heterogenous benchmark for zero-shot evaluation of information retrieval models\n\t\t\n\t\t\tNandanThakur\n\t\t\n\t\t\n\t\t\tNilsReimers\n\t\t\n\t\t\n\t\t\tAndreasRücklé\n\t\t\n\t\t\n\t\t\tAbhishekSrivastava\n\t\t\n\t\t\n\t\t\tIrynaGurevych\n\t\t\n\t\t\n\t\t\t2021",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b27",
+     "section_path_id": "5",
+     "quote": "[28]",
+     "offset": 1973
+    }
+   ]
+  }
+ ],
+ "layout_json": null,
+ "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">ZEP: A TEMPORAL KNOWLEDGE GRAPH ARCHITECTURE FOR AGENT MEMORY</title>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability  status=\"unknown\">\n\t\t\t\t\t<licence/>\n\t\t\t\t</availability>\n\t\t\t\t<date type=\"published\" when=\"2025-01-20\">20 Jan 2025</date>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Preston</forename><surname>Rasmussen</surname></persName>\n\t\t\t\t\t\t\t<email>preston@getzep.com</email>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Travis</forename><surname>Beauvais</surname></persName>\n\t\t\t\t\t\t\t<email>travis@getzep.com</email>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Jack</forename><surname>Ryan</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Daniel</forename><surname>Chalef</surname></persName>\n\t\t\t\t\t\t\t<email>daniel@getzep.com</email>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">ZEP: A TEMPORAL KNOWLEDGE GRAPH ARCHITECTURE FOR AGENT MEMORY</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date type=\"published\" when=\"2025-01-20\">20 Jan 2025</date>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">534A82CF3D161C58AA4ADA09670A295E</idno>\n\t\t\t\t\t<idno type=\"arXiv\">arXiv:2501.13956v1[cs.CL]</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.0\" ident=\"GROBID\" when=\"2026-08-21T15:15+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.0</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>We introduce Zep, a novel memory layer service for AI agents that outperforms the current stateof-the-art system, MemGPT, in the Deep Memory Retrieval (DMR) benchmark. Additionally, Zep excels in more comprehensive and challenging evaluations than DMR that better reflect real-world enterprise use cases. While existing retrieval-augmented generation (RAG) frameworks for large language model (LLM)-based agents are limited to static document retrieval, enterprise applications demand dynamic knowledge integration from diverse sources including ongoing conversations and business data. Zep addresses this fundamental limitation through its core component Graphiti-a temporally-aware knowledge graph engine that dynamically synthesizes both unstructured conversational data and structured business data while maintaining historical relationships. In the DMR benchmark, which the MemGPT team established as their primary evaluation metric, Zep demonstrates superior performance (94.8% vs 93.4%). Beyond DMR, Zep's capabilities are further validated through the more challenging LongMemEval benchmark, which better reflects enterprise use cases through complex temporal reasoning tasks. In this evaluation, Zep achieves substantial results with accuracy improvements of up to 18.5% while simultaneously reducing response latency by 90% compared to baseline implementations. These results are particularly pronounced in enterprisecritical tasks such as cross-session information synthesis and long-term context maintenance, demonstrating Zep's effectiveness for deployment in real-world applications.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"8\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"9\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"10\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"11\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"12\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"1\">Introduction</head><p>The impact of transformer-based large language models (LLMs) on industry and research communities has garnered significant attention in recent years <ref type=\"bibr\" target=\"#b0\">[1]</ref>. A major application of LLMs has been the development of chat-based agents. However, these agents' capabilities are limited by the LLMs' context windows, effective context utilization, and knowledge gained during pre-training. Consequently, additional context is required to provide out-of-domain (OOD) knowledge and reduce hallucinations.</p><p>Retrieval-Augmented Generation (RAG) has emerged as a key area of interest in LLM-based applications. RAG leverages Information Retrieval (IR) techniques pioneered over the last fifty years <ref type=\"bibr\" target=\"#b1\">[2]</ref> to supply necessary domain knowledge to LLMs.</p><p>Current approaches using RAG have focused on broad domain knowledge and largely static corpora-that is, document contents added to a corpus seldom change. For agents to become pervasive in our daily lives, autonomously solving problems from trivial to highly complex, they will need access to a large corpus of continuously evolving data from users' interactions with the agent, along with related business and world data. We view empowering agents with this broad and dynamic \"memory\" as a crucial building block to actualize this vision, and we argue that current RAG approaches are unsuitable for this future. Since entire conversation histories, business datasets, and other domainspecific content cannot fit effectively inside LLM context windows, new approaches need to be developed for agent memory. Adding memory to LLM-powered agents isn't a new idea-this concept has been explored previously in MemGPT <ref type=\"bibr\" target=\"#b2\">[3]</ref>.</p><p>Recently, Knowledge Graphs (KGs) have been employed to enhance RAG architectures to address many of the shortcomings of traditional IR techniques <ref type=\"bibr\" target=\"#b3\">[4]</ref>. In this paper, we introduce Zep <ref type=\"bibr\" target=\"#b4\">[5]</ref>, a memory layer service powered by Graphiti <ref type=\"bibr\" target=\"#b5\">[6]</ref>, a dynamic, temporally-aware knowledge graph engine. Zep ingests and synthesizes both unstructured message data and structured business data. The Graphiti KG engine dynamically updates the knowledge graph with new information in a non-lossy manner, maintaining a timeline of facts and relationships, including their periods of validity. This approach enables the knowledge graph to represent a complex, evolving world.</p><p>As Zep is a production system, we've focused heavily on the accuracy, latency, and scalability of its memory retrieval mechanisms. We evaluate these mechanisms' efficacy using two existing benchmarks: a Deep Memory Retrieval task (DMR) from MemGPT <ref type=\"bibr\" target=\"#b2\">[3]</ref>, as well as the LongMemEval benchmark <ref type=\"bibr\" target=\"#b6\">[7]</ref>.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2\">Knowledge Graph Construction</head><p>In Zep, memory is powered by a temporally-aware dynamic knowledge graph G = (N , E, φ), where N represents nodes, E represents edges, and φ : E → N × N represents a formal incidence function. This graph comprises three hierarchical tiers of subgraphs: an episode subgraph, a semantic entity subgraph, and a community subgraph.</p><p>• Episode Subgraph G e : Episodic nodes (episodes), n i ∈ N e , contain raw input data in the form of mes-</p><p>sages, text, or JSON. Episodes serve as a non-lossy data store from which semantic entities and relations are extracted. Episodic edges, e i ∈ E e ⊆ φ * (N e × N s ), connect episodes to their referenced semantic entities.</p><p>• Semantic Entity Subgraph G s : The semantic entity subgraph builds upon the episode subgraph. Entity nodes (entities), n i ∈ N s , represent entities extracted from episodes and resolved with existing graph entities. Entity edges (semantic edges), e i ∈ E s ⊆ φ * (N s × N s ), represent relationships between entities extracted from episodes.</p><p>• The dual storage of both raw episodic data and derived semantic entity information mirrors psychological models of human memory. These models distinguish between episodic memory, which represents distinct events, and semantic memory, which captures associations between concepts and their meanings <ref type=\"bibr\" target=\"#b7\">[8]</ref>. This approach enables LLM agents using Zep to develop more sophisticated and nuanced memory structures that better align with our understanding of human memory systems. Knowledge graphs provide an effective medium for representing these memory structures, and our implementation of distinct episodic and semantic subgraphs draws from similar approaches in AriGraph <ref type=\"bibr\" target=\"#b8\">[9]</ref>.</p><p>Our use of community nodes to represent high-level structures and domain concepts builds upon work from GraphRAG <ref type=\"bibr\" target=\"#b3\">[4]</ref>, enabling a more comprehensive global understanding of the domain. The resulting hierarchical organization-from episodes to facts to entities to communities-extends existing hierarchical RAG strategies <ref type=\"bibr\" target=\"#b9\">[10]</ref>[11].</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.1\">Episodes</head><p>Zep's graph construction begins with the ingestion of raw data units called Episodes. Episodes can be one of three core types: message, text, or JSON. While each type requires specific handling during graph construction, this paper focuses on the message type, as our experiments center on conversation memory. In our context, a message consists of relatively short text (several messages can fit within an LLM context window) along with the associated actor who produced the utterance.</p><p>Each message includes a reference timestamp t ref indicating when the message was sent. This temporal information enables Zep to accurately identify and extract relative or partial dates mentioned in the message content (e.g., \"next Thursday,\" \"in two weeks,\" or \"last summer\"). Zep implements a bi-temporal model, where timeline T represents the chronological ordering of events, and timeline T ′ represents the transactional order of Zep's data ingestion. While the T ′ timeline serves the traditional purpose of database auditing, the T timeline provides an additional dimension for modeling the dynamic nature of conversational data and memory. This bi-temporal approach represents a novel advancement in LLM-based knowledge graph construction and underlies much of Zep's unique capabilities compared to previous graph-based RAG proposals.</p><p>The episodic edges, E e , connect episodes to their extracted entity nodes. Episodes and their derived semantic edges maintain bidirectional indices that track the relationships between edges and their source episodes. This design reinforces the non-lossy nature of Graphiti's episodic subgraph by enabling both forward and backward traversal: semantic artifacts can be traced to their sources for citation or quotation, while episodes can quickly retrieve their relevant entities and facts. While these connections are not directly examined in this paper's experiments, they will be explored in future work.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.2\">Semantic Entities and Facts</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.2.1\">Entities</head><p>ntity extraction represents the initial phase of episode processing. During ingestion, the system processes both the current message content and the last n messages to provide context for named entity recognition. For this paper and in Zep's general implementation, n = 4, providing two complete conversation turns for context evaluation. Given our focus on message processing, the speaker is automatically extracted as an entity. Following initial entity extraction, we employ a reflection technique inspired by reflexion <ref type=\"bibr\" target=\"#b11\">[12]</ref> to minimize hallucinations and enhance extraction coverage.</p><p>The system also extracts an entity summary from the episode to facilitate subsequent entity resolution and retrieval operations.</p><p>After extraction, the system embeds each entity name into a 1024-dimensional vector space. This embedding enables the retrieval of similar nodes through cosine similarity search across existing graph entity nodes. The system also performs a separate full-text search on existing entity names and summaries to identify additional candidate nodes. These candidate nodes, together with the episode context, are then processed through an LLM using our entity resolution prompt. When the system identifies a duplicate entity, it generates an updated name and summary.</p><p>Following entity extraction and resolution, the system incorporates the data into the knowledge graph using predefined Cypher queries. We chose this approach over LLM-generated database queries to ensure consistent schema formats and reduce the potential for hallucinations.</p><p>Selected prompts for graph construction are provided in the appendix.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.2.2\">Facts</head><p>or each fact containing its key predicate. Importantly, the same fact can be extracted multiple times between different entities, enabling Graphiti to model complex multi-entity facts through an implementation of hyper-edges.</p><p>Following extraction, the system generates embeddings for facts in preparation for graph integration. The system performs edge deduplication through a process similar to entity resolution. The hybrid search for relevant edges is constrained to edges existing between the same entity pairs as the proposed new edge. This constraint not only prevents erroneous combinations of similar edges between different entities but also significantly reduces the computational complexity of the deduplication process by limiting the search space to a subset of edges relevant to the specific entity pair.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.2.3\">Temporal Extraction and Edge Invalidation</head><p>A key differentiating feature of Graphiti compared to other knowledge graph engines is its capacity to manage dynamic information updates through temporal extraction and edge invalidation processes.</p><p>The system extracts temporal information about facts from the episode context using t ref .</p><p>This enables accurate extraction and datetime representation of both absolute timestamps (e.g., \"Alan Turing was born on June 23, 1912\") and relative timestamps (e.g., \"I started my new job two weeks ago\"). Consistent with our bi-temporal modeling approach, the system tracks four timestamps: t ′ created and t ′ expired ∈ T ′ monitor when facts are created or invalidated in the system, while t valid and t invalid ∈ T track the temporal range during which facts held true. These temporal data points are stored on edges alongside other fact information.</p><p>The introduction of new edges can invalidate existing edges in the database. The system employs an LLM to compare new edges against semantically related existing edges to identify potential contradictions. When the system identifies temporally overlapping contradictions, it invalidates the affected edges by setting their t invalid to the t valid of the invalidating edge. Following the transactional timeline T ′ , Graphiti consistently prioritizes new information when determining edge invalidation.</p><p>This comprehensive approach enables the dynamic addition of data to Graphiti as conversations evolve, while maintaining both current relationship states and historical records of relationship evolution over time.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.3\">Communities</head><p>After establishing the episodic and semantic subgraphs, the system constructs the community subgraph through community detection. While our community detection approach builds upon the technique described in GraphRAG <ref type=\"bibr\" target=\"#b3\">[4]</ref>, we employ a label propagation algorithm <ref type=\"bibr\" target=\"#b12\">[13]</ref> rather than the Leiden algorithm <ref type=\"bibr\" target=\"#b13\">[14]</ref>. This choice was influenced by label propagation's straightforward dynamic extension, which enables the system to maintain accurate community representations for longer periods as new data enters the graph, delaying the need for complete community refreshes.</p><p>The dynamic extension implements the logic of a single recursive step in label propagation. When the system adds a new entity node n i ∈ N s to the graph, it surveys the communities of neighboring nodes. The system assigns the new node to the community held by the plurality of its neighbors, then updates the community summary and graph accordingly. While this dynamic updating enables efficient community extension as data flows into the system, the resulting communities gradually diverge from those that would be generated by a complete label propagation run. Therefore, periodic community refreshes remain necessary. However, this dynamic updating strategy provides a practical heuristic that significantly reduces latency and LLM inference costs.</p><p>Following <ref type=\"bibr\" target=\"#b3\">[4]</ref>, our community nodes contain summaries derived through an iterative map-reduce-style summarization of member nodes. However, our retrieval methods differ substantially from GraphRAG's map-reduce approach <ref type=\"bibr\" target=\"#b3\">[4]</ref>.</p><p>To support our retrieval methodology, we generate community names containing key terms and relevant subjects from the community summaries. These names are embedded and stored to enable cosine similarity searches.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3\">Memory Retrieval</head><p>The memory retrieval system in Zep provides powerful, complex, and highly configurable functionality. At a high level, the Zep graph search API implements a function f : S → S that accepts a text-string query α ∈ S as input and returns a text-string context β ∈ S as output. The output β contains formatted data from nodes and edges required for an LLM agent to generate an accurate response to query α. The process f (α) → β comprises three distinct steps:</p><p>• Search (ϕ): The process begins by identifying candidate nodes and edges potentially containing relevant information. While Zep employs multiple distinct search methods, the overall search function can be represented as ϕ : S → E n s × N n s × N n c . Thus, ϕ transforms a query into a 3-tuple containing lists of semantic edges, entity nodes, and community nodes-the three graph types containing relevant textual information.</p><p>• Reranker (ρ): The second step reorders search results. A reranker function or model accepts a list of search results and produces a reordered version of those results: ρ : ϕ(α), ... → E n s × N n s × N n c .</p><p>• Constructor (χ): The final step, the constructor, transforms the relevant nodes and edges into text context:</p><p>χ :</p><formula xml:id=\"formula_0\">E n s × N n s × N c n → S.</formula><p>For each e i ∈ Es, χ returns the fact and tvalid, tinvalid fields; for each n i ∈ N s , the name and summary fields; and for each n i ∈ N c , the summary field.</p><p>With these definitions established, we can express f as a composition of these three components: f (α) = χ(ρ(ϕ(α))) = β.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Sample context string template:</head><p>FACTS and ENTITIES represent relevant context to the current conversation. These are the most relevant facts and their valid date ranges. If the fact is about an event, the event takes place during this time. format: FACT (Date range: from -to) &lt;FACTS&gt; {facts} &lt;/FACTS&gt; These are the most relevant entities ENTITY_NAME: entity summary &lt;ENTITIES&gt; {entities} &lt;/ENTITIES&gt;</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.1\">Search</head><p>Zep implements three search functions: cosine semantic similarity search (ϕ cos ), Okapi BM25 full-text search (ϕ bm25 ), and breadth-first search (ϕ bfs ). The first two functions utilize Neo4j's implementation of Lucene <ref type=\"bibr\">[15][16]</ref>. Each search function offers distinct capabilities in identifying relevant documents, and together they provide comprehensive coverage of candidate results before reranking. The search field varies across the three object types: for E s , we search the fact field; for N s , the entity name; and for N c , the community name, which comprises relevant keywords and phrases covered in the community. While developed independently, our community search approach parallels the high-level key search methodology in LightRAG <ref type=\"bibr\" target=\"#b16\">[17]</ref>. The hybridization of LightRAG's approach with graph-based systems like Graphiti presents a promising direction for future research.</p><p>While cosine similarity and full-text search methodologies are well-established in RAG <ref type=\"bibr\" target=\"#b17\">[18]</ref>, breadth-first search over knowledge graphs has received limited attention in the RAG domain, with notable exceptions in graph-based RAG systems such as AriGraph <ref type=\"bibr\" target=\"#b8\">[9]</ref> and Distill-SynthKG <ref type=\"bibr\" target=\"#b18\">[19]</ref>. In Graphiti, the breadth-first search enhances initial search results by identifying additional nodes and edges within n-hops. Moreover, ϕ bfs can accept nodes as parameters for the search, enabling greater control over the search function. This functionality proves particularly valuable when using recent episodes as seeds for the breadth-first search, allowing the system to incorporate recently mentioned entities and relationships into the retrieved context.</p><p>The three search methods each target different aspects of similarity: full-text search identifies word similarities, cosine similarity captures semantic similarities, and breadth-first search reveals contextual similarities-where nodes and edges closer in the graph appear in more similar conversational contexts. This multi-faceted approach to candidate result identification maximizes the likelihood of discovering optimal context.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.2\">Reranker</head><p>While the initial search methods aim to achieve high recall, rerankers serve to increase precision by prioritizing the most relevant results. Zep supports existing reranking approaches such as Reciprocal Rank Fusion (RRF) <ref type=\"bibr\" target=\"#b19\">[20]</ref> and Maximal Marginal Relevance (MMR) <ref type=\"bibr\" target=\"#b20\">[21]</ref>. Additionally, Zep implements a graph-based episode-mentions reranker that prioritizes results based on the frequency of entity or fact mentions within a conversation, enabling a system where frequently referenced information becomes more readily accessible. The system also includes a node distance reranker that reorders results based on their graph distance from a designated centroid node, providing context localized to specific areas of the knowledge graph. The system's most sophisticated reranking capability employs crossencoders-LLMs that generate relevance scores by evaluating nodes and edges against queries using cross-attention, though this approach incurs the highest computational cost.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4\">Experiments</head><p>This section analyzes two experiments conducted using LLM-memory based benchmarks. The first evaluation employs the Deep Memory Retrieval (DMR) task developed in <ref type=\"bibr\" target=\"#b2\">[3]</ref>, which uses a 500-conversation subset of the Multi-Session Chat dataset introduced in \"Beyond Goldfish Memory: Long-Term Open-Domain Conversation\" <ref type=\"bibr\" target=\"#b21\">[22]</ref>. The second evaluation utilizes the LongMemEval benchmark from \"LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory\" <ref type=\"bibr\" target=\"#b6\">[7]</ref>. Specifically, we use the LongMemEval s dataset, which provides an extensive conversation context of on average 115,000 tokens.</p><p>For both experiments, we integrate the conversation history into a Zep knowledge graph through Zep's APIs. We then retrieve the 20 most relevant edges (facts) and entity nodes (entity summaries) using the techniques described in Section 3. The system reformats this data into a context string, matching the functionality provided by Zep's memory APIs.</p><p>While these experiments demonstrate key retrieval capabilities of Graphiti, they represent a subset of the system's full search functionality. This focused scope enables clear comparison with existing benchmarks while reserving the exploration of additional knowledge graph capabilities for future work.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.1\">Choice of models</head><p>Our experimental implementation employs the BGE-m3 models from BAAI for both reranking and embedding tasks <ref type=\"bibr\">[23] [24]</ref>. For graph construction and response generation, we utilize gpt-4o-mini-2024-07-18 for graph construction, and both gpt-4o-mini-2024-07-18 and gpt-4o-2024-11-20 for the chat agent generating responses to provided context.</p><p>To ensure direct comparability with MemGPT's DMR results, we also conducted the DMR evaluation using gpt-4turbo-2024-04-09.</p><p>The experimental notebooks will be made publicly available through our GitHub repository, and relevant experimental prompts are included in the Appendix. </p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.2\">Deep Memory Retrieval (DMR)</head><p>The Deep Memory Retrieval evaluation, introduced by <ref type=\"bibr\" target=\"#b2\">[3]</ref>, comprises 500 multi-session conversations, each containing 5 chat sessions with up to 12 messages per session. Each conversation includes a question/answer pair for memory evaluation. The MemGPT framework <ref type=\"bibr\" target=\"#b2\">[3]</ref> currently leads performance metrics with 93.4% accuracy using gpt-4-turbo, a significant improvement over the 35.3% baseline achieved through recursive summarization.</p><p>To establish comparative baselines, we implemented two common LLM memory approaches: full-conversation context and session summaries. Using gpt-4-turbo, the full-conversation baseline achieved 94.4% accuracy, slightly surpassing MemGPT's reported results, while the session summary baseline achieved 78.6%. When using gpt-4o-mini, both approaches showed improved performance: 98.0% for full-conversation and 88.0% for session summaries. We were unable to reproduce MemGPT's results using gpt-4o-mini due to insufficient methodological details in their published work.</p><p>We then evaluated Zep's performance by ingesting the conversations and using its search functions to retrieve the top 10 most relevant nodes and edges. An LLM judge compared the agent's responses to the provided golden answers. Zep achieved 94.8% accuracy with gpt-4-turbo and 98.2% with gpt-4o-mini, showing marginal improvements over both MemGPT and the respective full-conversation baselines. However, these results must be contextualized: each conversation contains only 60 messages, easily fitting within current LLM context windows.</p><p>The limitations of the DMR evaluation extend beyond its small scale. Our analysis revealed significant weaknesses in the benchmark's design. The evaluation relies exclusively on single-turn, fact-retrieval questions that fail to assess complex memory understanding. Many questions contain ambiguous phrasing, referencing concepts like \"favorite drink to relax with\" or \"weird hobby\" that were not explicitly characterized as such in the conversations. Most critically, the dataset poorly represents real-world enterprise use cases for LLM agents. The high performance achieved by simple full-context approaches using modern LLMs further highlights the benchmark's inadequacy for evaluating memory systems.</p><p>This inadequacy is further emphasized by findings in <ref type=\"bibr\" target=\"#b6\">[7]</ref>, which demonstrate rapidly declining LLM performance on the LongMemEval benchmark as conversation length increases. The LongMemEval dataset <ref type=\"bibr\" target=\"#b6\">[7]</ref> addresses many of these shortcomings by presenting longer, more coherent conversations that better reflect enterprise scenarios, along with more diverse evaluation questions.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.3\">LongMemEval (LME)</head><p>We evaluated Zep using the LongMemEvals dataset, which provides conversations and questions representative of realworld business applications of LLM agents. The LongMemEvals dataset presents significant challenges to existing LLMs and commercial memory solutions <ref type=\"bibr\" target=\"#b6\">[7]</ref>, with conversations averaging approximately 115,000 tokens in length. This length, while substantial, remains within the context windows of current frontier models, enabling us to establish meaningful baselines for evaluating Zep's performance.</p><p>The dataset incorporates six distinct question types: single-session-user, single-session-assistant, single-sessionpreference, multi-session, knowledge-update, and temporal-reasoning. These categories are not uniformly distributed throughout the dataset; for detailed distribution information, we refer readers to <ref type=\"bibr\" target=\"#b6\">[7]</ref>.</p><p>We conducted all experiments between December 2024 and January 2025. We performed testing using a consumer laptop from a residential location in Boston, MA, connecting to Zep's service hosted in AWS us-west-2. This dis-tributed architecture introduced additional network latency when evaluating Zep's performance, though this latency was not present in our baseline evaluations.</p><p>For answer evaluation, we employed GPT-4o with the question-specific prompts provided in <ref type=\"bibr\" target=\"#b6\">[7]</ref>, which have demonstrated high correlation with human evaluators.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.3.1\">LongMemEval and MemGPT</head><p>To establish a comparative benchmark between Zep and the current state-of-the-art MemGPT system <ref type=\"bibr\" target=\"#b2\">[3]</ref>, we attempted to evaluate MemGPT using the LongMemEval dataset. Given that the current MemGPT framework does not support direct ingestion of existing message histories, we implemented a workaround by adding conversation messages to the archival history. However, we were unable to achieve successful question responses using this approach. We look forward to seeing evaluations of this benchmark by other research teams, as comparative performance data would benefit the broader development of LLM memory systems.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.3.2\">LongMemEval results</head><p>Zep demonstrates substantial improvements in both accuracy and latency compared to the baseline across both model variants. Using gpt-4o-mini, Zep achieved a 15.2% accuracy improvement over the baseline, while gpt-4o showed an 18.5% improvement. The reduced prompt size also led to significant latency cost reductions compared to the baseline implementations. Analysis by question type reveals that gpt-4o-mini with Zep showed improvements in four of the six categories, with the most substantial gains in complex question types: single-session-preference, multi-session, and temporalreasoning. When using gpt-4o, Zep further demonstrated improved performance in the knowledge-update category, highlighting its effectiveness with more capable models. However, additional development may be needed to improve less capable models' understanding of Zep's temporal data. These results demonstrate Zep's ability to enhance performance across model scales, with the most pronounced improvements observed in complex and nuanced question types when paired with more capable models. The latency improvements are particularly noteworthy, with Zep reducing response times by approximately 90% while maintaining higher accuracy.</p><p>The decrease in performance for single-session-assistant questions-17.7% for gpt-4o and 9.06% for gpt-4omini-represents a notable exception to Zep's otherwise consistent improvements, and suggest further research and engineering work is needed.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"5\">Conclusion</head><p>We have introduced Zep, a graph-based approach to LLM memory that incorporates semantic and episodic memory alongside entity and community summaries. Our evaluations demonstrate that Zep achieves state-of-the-art performance on existing memory benchmarks while reducing token costs and operating at significantly lower latencies.</p><p>The results achieved with Graphiti and Zep, while impressive, likely represent only initial advances in graph-based memory systems. Multiple research avenues could build upon these frameworks, including integration of other GraphRAG approaches into the Zep paradigm and novel extensions of our work.</p><p>Research has already demonstrated the value of fine-tuned models for LLM-based entity and edge extraction within the GraphRAG paradigm, improving accuracy while reducing costs and latency <ref type=\"bibr\">[19][25]</ref>. Similar models finetuned for Graphiti prompts may enhance knowledge extraction, particularly for complex conversations. Additionally, while current research on LLM-generated knowledge graphs has primarily operated without formal ontologies <ref type=\"bibr\" target=\"#b8\">[9]</ref>[4] <ref type=\"bibr\">[17][19][26]</ref>, domain-specific ontologies present significant potential. Graph ontologies, foundational in pre-LLM knowledge graph work, warrant further exploration within the Graphiti framework.</p><p>Our search for suitable memory benchmarks revealed limited options, with existing benchmarks often lacking robustness and complexity, frequently defaulting to simple needle-in-a-haystack fact-retrieval questions <ref type=\"bibr\" target=\"#b2\">[3]</ref>. The field requires additional memory benchmarks, particularly those reflecting business applications like customer experience tasks, to effectively evaluate and differentiate memory approaches. Notably, no existing benchmarks adequately assess Zep's capability to process and synthesize conversation history with structured business data. While Zep focuses on LLM memory, its traditional RAG capabilities should be evaluated against established benchmarks such as those in <ref type=\"bibr\" target=\"#b16\">[17]</ref>, <ref type=\"bibr\" target=\"#b26\">[27]</ref>, and <ref type=\"bibr\" target=\"#b27\">[28]</ref>.</p><p>Current literature on LLM memory and RAG systems insufficiently addresses production system scalability in terms of cost and latency. We have included latency benchmarks for our retrieval mechanisms to begin addressing this gap, following the example set by LightRAG's authors in prioritizing these metrics.</p><p>6 Appendix 6.1 Graph Construction Prompts 6.1.1 Entity Extraction &lt;PREVIOUS MESSAGES&gt; {previous_messages} &lt;/PREVIOUS MESSAGES&gt; &lt;CURRENT MESSAGE&gt; {current_message} &lt;/CURRENT MESSAGE&gt; Given the above conversation, extract entity nodes from the CURRENT MESSAGE that are explicitly or implicitly mentioned: Guidelines: 1. ALWAYS extract the speaker/actor as the first node. The speaker is the part before the colon in each line of dialogue. 2. Extract other significant entities, concepts, or actors mentioned in the CURRENT MESSAGE. 3. DO NOT create nodes for relationships or actions. 4. DO NOT create nodes for temporal information like dates, times or years (these will be added to edges later). 5. Be as explicit as possible in your node names, using full names. 6. DO NOT extract entities mentioned only 6.1.2 Entity Resolution &lt;PREVIOUS MESSAGES&gt; {previous_messages} &lt;/PREVIOUS MESSAGES&gt; &lt;CURRENT MESSAGE&gt; {current_message} &lt;/CURRENT MESSAGE&gt; &lt;EXISTING NODES&gt; {existing_nodes} &lt;/EXISTING NODES&gt; Given the above EXISTING NODES, MESSAGE, and PREVIOUS MESSAGES. Determine if the NEW NODE extracted from the conversation is a duplicate entity of one of the EXISTING NODES. &lt;NEW NODE&gt; {new_node} &lt;/NEW NODE&gt; Task: 1. If the New Node represents the same entity as any node in Existing Nodes, return 'is_duplicate: true' in the response. Otherwise, return 'is_duplicate: false' 2. If is_duplicate is true, also return the uuid of the existing node in the response 3. If is_duplicate is true, return a name for the node that is the most complete full name. Guidelines: 1. Use both the name and summary of nodes to determine if the entities are duplicates, duplicate nodes may have different names 6.1.3 Fact Extraction &lt;PREVIOUS MESSAGES&gt; {previous_messages} &lt;/PREVIOUS MESSAGES&gt; &lt;CURRENT MESSAGE&gt; {current_message} &lt;/CURRENT MESSAGE&gt; &lt;ENTITIES&gt; {entities} &lt;/ENTITIES&gt; Given the above MESSAGES and ENTITIES, extract all facts pertaining to the listed ENTITIES from the CURRENT MESSAGE. Guidelines: 1. Extract facts only between the provided entities. 2. Each fact should represent a clear relationship between two DISTINCT nodes. 3. The relation_type should be a concise, all-caps description of the fact (e.g., LOVES, IS_FRIENDS_WITH, WORKS_FOR). 4. Provide a more detailed fact containing all relevant information. 5. Consider temporal aspects of relationships when relevant. 6.1.4 Fact Resolution Given the following context, determine whether the New Edge represents any of the edges in the list of Existing Edges. &lt;EXISTING EDGES&gt; {existing_edges} &lt;/EXISTING EDGES&gt; &lt;NEW EDGE&gt; {new_edge} &lt;/NEW EDGE&gt; Task: 1. If the New Edges represents the same factual information as any edge in Existing Edges, return 'is_duplicate: true' in the response. Otherwise, return 'is_duplicate: false' 2. If is_duplicate is true, also return the uuid of the existing edge in the response Guidelines: 1. The facts do not need to be completely identical to be duplicates, they just need to express the same information. 6.1.5 Temporal Extraction &lt;PREVIOUS MESSAGES&gt; {previous_messages} &lt;/PREVIOUS MESSAGES&gt; &lt;CURRENT MESSAGE&gt; {current_message} &lt;/CURRENT MESSAGE&gt; &lt;REFERENCE TIMESTAMP&gt; {reference_timestamp} &lt;/REFERENCE TIMESTAMP&gt; &lt;FACT&gt; {fact} &lt;/FACT&gt; IMPORTANT: Only extract time information if it is part of the provided fact. Otherwise ignore the time mentioned. Make sure to do your best to determine the dates if only the relative time is mentioned. (eg 10 years ago, 2 mins ago) based on the provided reference timestamp If the relationship is not of spanning nature, but you are still able to determine the dates, set the valid_at only. Definitions:</p><p>-valid_at: The date and time when the relationship described by the edge fact became true or was established.</p><p>-invalid_at: The date and time when the relationship described by the edge fact stopped being true or ended.</p><p>Task: Analyze the conversation and determine if there are dates that are part of the edge fact. Only set dates if they explicitly relate to the formation or alteration of the relationship itself. Guidelines: 1. Use ISO 8601 format (YYYY-MM-DDTHH:MM:SS.SSSSSSZ) for datetimes. 2. Use the reference timestamp as the current time when determining the valid_at and invalid_at dates.</p><p>3. If the fact is written in the present tense, use the Reference Timestamp for the valid_at date 4. If no temporal information is found that establishes or changes the relationship, leave the fields as null. 5. Do not infer dates from related events. Only use dates that are directly stated to establish or change the relationship. 6. For relative time mentions directly related to the relationship, calculate the actual datetime based on the reference timestamp. 7. If only a date is mentioned without a specific time, use 00:00:00 (midnight) for that date. 8. If only year is mentioned, use January 1st of that year at 00:00:00. 9. Always include the time zone offset (use Z for UTC if no specific time zone is mentioned).</p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><figDesc>Community Subgraph G c : The community subgraph forms the highest level of Zep's knowledge graph. Community nodes (communities), n i ∈ N c , represent clusters of strongly connected entities. Communities contain high-level summarizations of these clusters and represent a more comprehensive, interconnected view of G s 's structure. Community edges, e i ∈ E c ⊆ φ * (N c × N s ), connect communities to their entity members.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_0\"><head>Table 1 :</head><label>1</label><figDesc>Deep Memory Retrieval</figDesc><table><row><cell>Memory</cell><cell>Model</cell><cell>Score</cell></row><row><cell cols=\"3\">Recursive Summarization  † gpt-4-turbo 35.3%</cell></row><row><cell cols=\"3\">Conversation Summaries gpt-4-turbo 78.6%</cell></row><row><cell>MemGPT  †</cell><cell cols=\"2\">gpt-4-turbo 93.4%</cell></row><row><cell>Full-conversation</cell><cell cols=\"2\">gpt-4-turbo 94.4%</cell></row><row><cell>Zep</cell><cell cols=\"2\">gpt-4-turbo 94.8%</cell></row><row><cell cols=\"3\">Conversation Summaries gpt-4o-mini 88.0%</cell></row><row><cell>Full-conversation</cell><cell cols=\"2\">gpt-4o-mini 98.0%</cell></row><row><cell>Zep</cell><cell cols=\"2\">gpt-4o-mini 98.2%</cell></row><row><cell></cell><cell></cell><cell></cell></row></table><note><p>† Results reported in<ref type=\"bibr\" target=\"#b2\">[3]</ref></p><p>.</p></note></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_1\"><head>Table 2 :</head><label>2</label><figDesc>LongMemEval s</figDesc><table><row><cell>Memory</cell><cell>Model</cell><cell>Score</cell><cell cols=\"3\">Latency Latency IQR Avg Context Tokens</cell></row><row><cell cols=\"4\">Full-context gpt-4o-mini 55.4% 31.3 s</cell><cell>8.76 s</cell><cell>115k</cell></row><row><cell>Zep</cell><cell cols=\"3\">gpt-4o-mini 63.8% 3.20 s</cell><cell>1.31 s</cell><cell>1.6k</cell></row><row><cell cols=\"2\">Full-context gpt-4o</cell><cell cols=\"2\">60.2% 28.9 s</cell><cell>6.01 s</cell><cell>115k</cell></row><row><cell>Zep</cell><cell>gpt-4o</cell><cell cols=\"2\">71.2% 2.58 s</cell><cell>0.684 s</cell><cell>1.6k</cell></row></table></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_2\"><head>Table 3 :</head><label>3</label><figDesc>LongMemEval s Question Type Breakdown</figDesc><table><row><cell>Question Type</cell><cell>Model</cell><cell cols=\"2\">Full-context Zep</cell><cell>Delta</cell></row><row><cell cols=\"3\">single-session-preference gpt-4o-mini 30.0%</cell><cell cols=\"2\">53.3% 77.7%↑</cell></row><row><cell>single-session-assistant</cell><cell cols=\"2\">gpt-4o-mini 81.8%</cell><cell cols=\"2\">75.0% 9.06%↓</cell></row><row><cell>temporal-reasoning</cell><cell cols=\"2\">gpt-4o-mini 36.5%</cell><cell cols=\"2\">54.1% 48.2%↑</cell></row><row><cell>multi-session</cell><cell cols=\"2\">gpt-4o-mini 40.6%</cell><cell cols=\"2\">47.4% 16.7%↑</cell></row><row><cell>knowledge-update</cell><cell cols=\"2\">gpt-4o-mini 76.9%</cell><cell cols=\"2\">74.4% 3.36%↓</cell></row><row><cell>single-session-user</cell><cell cols=\"2\">gpt-4o-mini 81.4%</cell><cell cols=\"2\">92.9% 14.1%↑</cell></row><row><cell cols=\"2\">single-session-preference gpt-4o</cell><cell>20.0%</cell><cell cols=\"2\">56.7% 184%↑</cell></row><row><cell>single-session-assistant</cell><cell>gpt-4o</cell><cell>94.6%</cell><cell cols=\"2\">80.4% 17.7%↓</cell></row><row><cell>temporal-reasoning</cell><cell>gpt-4o</cell><cell>45.1%</cell><cell cols=\"2\">62.4% 38.4%↑</cell></row><row><cell>multi-session</cell><cell>gpt-4o</cell><cell>44.3%</cell><cell cols=\"2\">57.9% 30.7%↑</cell></row><row><cell>knowledge-update</cell><cell>gpt-4o</cell><cell>78.2%</cell><cell cols=\"2\">83.3% 6.52%↑</cell></row><row><cell>single-session-user</cell><cell>gpt-4o</cell><cell>81.4%</cell><cell cols=\"2\">92.9% 14.1%↑</cell></row></table></figure>\n\t\t</body>\n\t\t<back>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<monogr>\n\t\t<title/>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ashish</forename><surname>Vaswani</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Noam</forename><surname>Shazeer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Niki</forename><surname>Parmar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jakob</forename><surname>Uszkoreit</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Llion</forename><surname>Jones</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Aidan</forename><forename type=\"middle\">N</forename><surname>Gomez</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Lukasz</forename><surname>Kaiser</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Illia</forename><surname>Polosukhin</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note>Attention is all you need</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">A statistical interpretation of term specificity and its application in retrieval</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><forename type=\"middle\">Sparck</forename><surname>Jones</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Journal of Documentation</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">28</biblScope>\n\t\t\t<biblScope unit=\"issue\">1</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"11\" to=\"21\" />\n\t\t\t<date type=\"published\" when=\"1972\">1972</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Charles</forename><surname>Packer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Sarah</forename><surname>Wooders</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Kevin</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Vivian</forename><surname>Fang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Shishir</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ion</forename><surname>Patil</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Joseph</forename><forename type=\"middle\">E</forename><surname>Stoica</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Gonzalez</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Memgpt</surname></persName>\n\t\t</author>\n\t\t<title level=\"m\">Towards llms as operating systems</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">From local to global: A graph rag approach to query-focused summarization</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Darren</forename><surname>Edge</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ha</forename><surname>Trinh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Newman</forename><surname>Cheng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Joshua</forename><surname>Bradley</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Alex</forename><surname>Chao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Apurva</forename><surname>Mody</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Steven</forename><surname>Truitt</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jonathan</forename><surname>Larson</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Commercial memory layer for AI applications</title>\n\t\t<author>\n\t\t\t<persName><surname>Zep</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Zep</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://www.getzep.com\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Long-term memory for ai agents</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Graphiti builds dynamic, temporally aware Knowledge Graphs that represent complex, evolving relationships between entities over time</title>\n\t\t<author>\n\t\t\t<persName><surname>Zep</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Graphiti</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://github.com/getzep/graphiti\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Temporal knowledge graphs for agentic applications</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Longmemeval: Benchmarking chat assistants on long-term interactive memory</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Di</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Hongwei</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Wenhao</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuwei</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Kai-Wei</forename><surname>Chang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dong</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b7\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">The relationship between semantic and episodic memory: Exploring the effect of semantic neighbourhood density on episodic memory</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Wong</forename><surname>Gonzalez</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Daniela</forename></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2018\">2018</date>\n\t\t</imprint>\n\t\t<respStmt>\n\t\t\t<orgName>University of Winsor</orgName>\n\t\t</respStmt>\n\t</monogr>\n\t<note type=\"report_type\">PhD thesis</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b8\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Arigraph: Learning knowledge graph world models with episodic memory for llm agents</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Petr</forename><surname>Anokhin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Nikita</forename><surname>Semenov</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Artyom</forename><surname>Sorokin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dmitry</forename><surname>Evseev</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Mikhail</forename><surname>Burtsev</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Evgeny</forename><surname>Burnaev</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b9\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xinyue</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Pengyu</forename><surname>Gao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jiangjiang</forename><surname>Song</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiaoyang</forename><surname>Tan</surname></persName>\n\t\t</author>\n\t\t<title level=\"m\">Hiqa: A hierarchical contextual augmentation rag for multi-documents qa</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b10\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Krish</forename><surname>Goel</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Mahek</forename><surname>Chandak</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Hiro</surname></persName>\n\t\t</author>\n\t\t<title level=\"m\">Hierarchical information retrieval optimization</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b11\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Reflexion: Language agents with verbal reinforcement learning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Noah</forename><surname>Shinn</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Federico</forename><surname>Cassano</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Edward</forename><surname>Berman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ashwin</forename><surname>Gopinath</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Karthik</forename><surname>Narasimhan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shunyu</forename><surname>Yao</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b12\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Learning from labeled and unlabeled data with label propagation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiaojin</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zoubin</forename><surname>Ghahramani</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2002\">2002</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b13\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">From louvain to leiden: guaranteeing well-connected communities</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><forename type=\"middle\">A</forename><surname>Traag</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Waltman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><forename type=\"middle\">J</forename><surname>Van Eck</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Sci Rep</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">9</biblScope>\n\t\t\t<biblScope unit=\"page\">5233</biblScope>\n\t\t\t<date type=\"published\" when=\"2019\">2019</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b14\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Neo4j -the world&apos;s leading graph database</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2012\">2012</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b15\">\n\t<analytic>\n\t\t<title/>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Apache Software Foundation. Apache lucene -scoring</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"page\">20</biblScope>\n\t\t\t<date type=\"published\" when=\"2011\">2011. 2011</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b16\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Lightrag: Simple and fast retrieval-augmented generation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zirui</forename><surname>Guo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Lianghao</forename><surname>Xia</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yanhua</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Tu</forename><surname>Ao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Chao</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b17\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Vector search with openai embeddings: Lucene is all you need</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jimmy</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ronak</forename><surname>Pradeep</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Tommaso</forename><surname>Teofili</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jasper</forename><surname>Xian</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b18\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Distill-synthkg: Distilling knowledge graph synthesis workflow for improved coverage and efficiency</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Prafulla</forename><surname>Kumar Choubey</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xin</forename><surname>Su</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Man</forename><surname>Luo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiangyu</forename><surname>Peng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Caiming</forename><surname>Xiong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Tiep</forename><surname>Le</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shachar</forename><surname>Rosenman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Vasudev</forename><surname>Lal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Phil</forename><surname>Mui</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ricky</forename><surname>Ho</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Phillip</forename><surname>Howard</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Chien-Sheng</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b19\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Reciprocal rank fusion outperforms condorcet and individual rank learning methods</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Gordon</forename><forename type=\"middle\">V</forename><surname>Cormack</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><forename type=\"middle\">A</forename><surname>Charles</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Stefan</forename><surname>Clarke</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Buettcher</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 32nd International ACM SIGIR Conference on Research and Development in Information Retrieval, SIGIR &apos;09</title>\n\t\t<meeting>the 32nd International ACM SIGIR Conference on Research and Development in Information Retrieval, SIGIR &apos;09</meeting>\n\t\t<imprint>\n\t\t\t<publisher>ACM</publisher>\n\t\t\t<date type=\"published\" when=\"2009\">2009</date>\n\t\t\t<biblScope unit=\"page\" from=\"758\" to=\"759\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b20\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">The use of mmr, diversity-based reranking for reordering documents and producing summaries</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jaime</forename><surname>Carbonell</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jade</forename><surname>Goldstein</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 21st Annual International ACM SIGIR Conference on Research and Development in Information Retrieval, SIGIR &apos;98</title>\n\t\t<meeting>the 21st Annual International ACM SIGIR Conference on Research and Development in Information Retrieval, SIGIR &apos;98<address><addrLine>New York, NY, USA</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Association for Computing Machinery</publisher>\n\t\t\t<date type=\"published\" when=\"1998\">1998</date>\n\t\t\t<biblScope unit=\"page\" from=\"335\" to=\"336\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b21\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Beyond goldfish memory: Long-term open-domain conversation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jing</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Arthur</forename><surname>Szlam</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jason</forename><surname>Weston</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2021\">2021</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b22\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Making large language models a better foundation for dense retrieval</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Chaofan</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zheng</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shitao</forename><surname>Xiao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yingxia</forename><surname>Shao</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b23\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Bge m3-embedding: Multilingual, multi-functionality, multi-granularity text embeddings through self-knowledge distillation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jianlv</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shitao</forename><surname>Xiao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Peitian</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Kun</forename><surname>Luo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Defu</forename><surname>Lian</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zheng</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b24\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Triplex: a sota llm for knowledge graph construction</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shreyas</forename><surname>Pimpalgaonkar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Nolan</forename><surname>Tremelling</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Owen</forename><surname>Colegrove</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b25\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Graphreader: Building graph-based agent to enhance long-context abilities of large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shilong</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yancheng</forename><surname>He</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Hangyu</forename><surname>Guo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xingyuan</forename><surname>Bu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ge</forename><surname>Bai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jie</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jiaheng</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xingwei</forename><surname>Qu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yangguang</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Wanli</forename><surname>Ouyang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Wenbo</forename><surname>Su</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Bo</forename><surname>Zheng</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b26\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Financebench: A new benchmark for financial question answering</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Pranab</forename><surname>Islam</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Anand</forename><surname>Kannappan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Douwe</forename><surname>Kiela</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Rebecca</forename><surname>Qian</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Nino</forename><surname>Scherrer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Bertie</forename><surname>Vidgen</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b27\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Beir: A heterogenous benchmark for zero-shot evaluation of information retrieval models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Nandan</forename><surname>Thakur</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Nils</forename><surname>Reimers</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Andreas</forename><surname>Rücklé</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Abhishek</forename><surname>Srivastava</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Iryna</forename><surname>Gurevych</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2021\">2021</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+ "pdf_hash": "d26f7eb599540e8b14d75e7efda58a07661abbb1b864e58323b5768475a15d42",
+ "tables": [
+  {
+   "table_id": "tab_0",
+   "section_path_id": "1~3",
+   "section_ordinal": 19,
+   "caption": "Table 1 :",
+   "coordinates": null,
+   "cells": [
+    {
+     "row": 0,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Memory",
+     "coordinates": null,
+     "span": {
+      "start": 22,
+      "end": 28
+     },
+     "digest": "4fa457e1c02b6bd749949b327af38f5a0fa33f240b052edd0a4555fcee58535f"
+    },
+    {
+     "row": 0,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Model",
+     "coordinates": null,
+     "span": {
+      "start": 28,
+      "end": 33
+     },
+     "digest": "ca9f73f57872cc09c41bdd06cd7ff64c624f0d02976904dbadf950a063ad1d8a"
+    },
+    {
+     "row": 0,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Score",
+     "coordinates": null,
+     "span": {
+      "start": 33,
+      "end": 38
+     },
+     "digest": "e75a5d2f8dfc5fc6c7bd7556b9e2ef813b4ed52127681f8415287444b6f5a3e4"
+    },
+    {
+     "row": 1,
+     "column": 0,
+     "colspan": 3,
+     "rowspan": 1,
+     "text": "Recursive Summarization  † gpt-4-turbo 35.3%",
+     "coordinates": null,
+     "span": {
+      "start": 38,
+      "end": 82
+     },
+     "digest": "2af6b6425c31b65dde6a423057616af8eb8c3168403dfe6f3e3a1280b032ec69"
+    },
+    {
+     "row": 2,
+     "column": 0,
+     "colspan": 3,
+     "rowspan": 1,
+     "text": "Conversation Summaries gpt-4-turbo 78.6%",
+     "coordinates": null,
+     "span": {
+      "start": 82,
+      "end": 122
+     },
+     "digest": "e3ccd2d7c18021a8c4b401f21acc1a56f87ecf74733484ad1cbb1d6868e2b9bf"
+    },
+    {
+     "row": 3,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "MemGPT  †",
+     "coordinates": null,
+     "span": {
+      "start": 122,
+      "end": 131
+     },
+     "digest": "8ac66f1e7ac70f8752de9cc3716a13ee84dd098948430ee4e639a5e27d34090b"
+    },
+    {
+     "row": 3,
+     "column": 1,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "gpt-4-turbo 93.4%",
+     "coordinates": null,
+     "span": {
+      "start": 131,
+      "end": 148
+     },
+     "digest": "b34edefddd68c862e8f770d082d6bf2c4eb655b66499a06fee73d91f06f216e9"
+    },
+    {
+     "row": 4,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Full-conversation",
+     "coordinates": null,
+     "span": {
+      "start": 148,
+      "end": 165
+     },
+     "digest": "cca09eeae2f9abfc334ce5e97e2688a2baf81b2f29a9fd6df73c46ca3920d7ad"
+    },
+    {
+     "row": 4,
+     "column": 1,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "gpt-4-turbo 94.4%",
+     "coordinates": null,
+     "span": {
+      "start": 165,
+      "end": 182
+     },
+     "digest": "01c8eedd81fe5f2105d0ef1380a0ccea7ec87527286aff0c3665aaf0c26f196f"
+    },
+    {
+     "row": 5,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Zep",
+     "coordinates": null,
+     "span": {
+      "start": 182,
+      "end": 185
+     },
+     "digest": "19200eddc0d45fd2dc3020f3438fdb36ff0f988acdb15500b21e5db07ee42b1a"
+    },
+    {
+     "row": 5,
+     "column": 1,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "gpt-4-turbo 94.8%",
+     "coordinates": null,
+     "span": {
+      "start": 185,
+      "end": 202
+     },
+     "digest": "16417b668b763bc303328be1024e61674a2c39f13aada234b0137ccfbb79f7fb"
+    },
+    {
+     "row": 6,
+     "column": 0,
+     "colspan": 3,
+     "rowspan": 1,
+     "text": "Conversation Summaries gpt-4o-mini 88.0%",
+     "coordinates": null,
+     "span": {
+      "start": 202,
+      "end": 242
+     },
+     "digest": "0a1854a3c400e0eab87f7c6814a73fee88bbbf850ec38555f15429f96b6b386c"
+    },
+    {
+     "row": 7,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Full-conversation",
+     "coordinates": null,
+     "span": {
+      "start": 242,
+      "end": 259
+     },
+     "digest": "669f34c7823f3687f58d5ff5e115c6fc4ed539b515d9363e3a4b8d20a1ccc039"
+    },
+    {
+     "row": 7,
+     "column": 1,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "gpt-4o-mini 98.0%",
+     "coordinates": null,
+     "span": {
+      "start": 259,
+      "end": 276
+     },
+     "digest": "39ed4c8b964af7b6793d17ae75e1712f87a4128e7d608ff602a687d7670b1aa1"
+    },
+    {
+     "row": 8,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Zep",
+     "coordinates": null,
+     "span": {
+      "start": 276,
+      "end": 279
+     },
+     "digest": "b60b6abc31b811f63512ab121d41b1ac0a77fdc330e27e2b89e9ba06fcaedec3"
+    },
+    {
+     "row": 8,
+     "column": 1,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "gpt-4o-mini 98.2%",
+     "coordinates": null,
+     "span": {
+      "start": 279,
+      "end": 296
+     },
+     "digest": "c2e4ee7c4083acd72600aab5c491b51564cf6ee729bac13a42e4a68e8705e327"
+    },
+    {
+     "row": 9,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 296,
+      "end": 296
+     },
+     "digest": "d559b70a49af0d65b26f7a929870f281a53fb0893cf8640a9419fce053e460e1"
+    },
+    {
+     "row": 9,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 296,
+      "end": 296
+     },
+     "digest": "017b0ebcd041219b8f6563a33f68c0645efac1215a206ec8da245fa4a6a8ece8"
+    },
+    {
+     "row": 9,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 296,
+      "end": 296
+     },
+     "digest": "6e20fec485404e2e14d2a9235abdbbd5e7cfe28414a962225dbbd20e9ddb445f"
+    }
+   ],
+   "source_digest": "a6c36538c30d84d3e3845e8f7e193c0c11c4c1cfbf914ba36d5b6d700279808e",
+   "missingness": null
+  },
+  {
+   "table_id": "tab_1",
+   "section_path_id": "1~4",
+   "section_ordinal": 20,
+   "caption": "Table 2 :",
+   "coordinates": null,
+   "cells": [
+    {
+     "row": 0,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Memory",
+     "coordinates": null,
+     "span": {
+      "start": 14,
+      "end": 20
+     },
+     "digest": "4fa457e1c02b6bd749949b327af38f5a0fa33f240b052edd0a4555fcee58535f"
+    },
+    {
+     "row": 0,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Model",
+     "coordinates": null,
+     "span": {
+      "start": 20,
+      "end": 25
+     },
+     "digest": "ca9f73f57872cc09c41bdd06cd7ff64c624f0d02976904dbadf950a063ad1d8a"
+    },
+    {
+     "row": 0,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Score",
+     "coordinates": null,
+     "span": {
+      "start": 25,
+      "end": 30
+     },
+     "digest": "e75a5d2f8dfc5fc6c7bd7556b9e2ef813b4ed52127681f8415287444b6f5a3e4"
+    },
+    {
+     "row": 0,
+     "column": 3,
+     "colspan": 3,
+     "rowspan": 1,
+     "text": "Latency Latency IQR Avg Context Tokens",
+     "coordinates": null,
+     "span": {
+      "start": 30,
+      "end": 68
+     },
+     "digest": "92a952447a96a506646a818d4f11074b6b3ecfdffaabcf88eebb20cb984936bd"
+    },
+    {
+     "row": 1,
+     "column": 0,
+     "colspan": 4,
+     "rowspan": 1,
+     "text": "Full-context gpt-4o-mini 55.4% 31.3 s",
+     "coordinates": null,
+     "span": {
+      "start": 68,
+      "end": 105
+     },
+     "digest": "1c48004481fcf0d3658a6c150b13d47d1921253f66517db3b701c9d62392f319"
+    },
+    {
+     "row": 1,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "8.76 s",
+     "coordinates": null,
+     "span": {
+      "start": 105,
+      "end": 111
+     },
+     "digest": "f01618a7e49ebc92a891afa0fb7b193257dcc4d35e991aa36a4a47d5e00522e2"
+    },
+    {
+     "row": 1,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "115k",
+     "coordinates": null,
+     "span": {
+      "start": 111,
+      "end": 115
+     },
+     "digest": "56a0ba678e9923758a5b61c98eadd8588cda7167d7c129812604dd90f1aea131"
+    },
+    {
+     "row": 2,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Zep",
+     "coordinates": null,
+     "span": {
+      "start": 115,
+      "end": 118
+     },
+     "digest": "2a35b23986225db19e226e71f925f4d6adc2f706860a677253c1136e3e46d1dd"
+    },
+    {
+     "row": 2,
+     "column": 1,
+     "colspan": 3,
+     "rowspan": 1,
+     "text": "gpt-4o-mini 63.8% 3.20 s",
+     "coordinates": null,
+     "span": {
+      "start": 118,
+      "end": 142
+     },
+     "digest": "c8199cebb0ae4bba841c0f781dc1f5c0951ea35d214c92661e55feb171ce00ba"
+    },
+    {
+     "row": 2,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "1.31 s",
+     "coordinates": null,
+     "span": {
+      "start": 142,
+      "end": 148
+     },
+     "digest": "25d2900191e4b5d52b7be173bf5880efd23efd1999df3a1847669964e9257f1f"
+    },
+    {
+     "row": 2,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "1.6k",
+     "coordinates": null,
+     "span": {
+      "start": 148,
+      "end": 152
+     },
+     "digest": "c55bedab87c03ff8d19000f11e5b1f58d3e7402bdc36f6358e9137dc0abe125a"
+    },
+    {
+     "row": 3,
+     "column": 0,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "Full-context gpt-4o",
+     "coordinates": null,
+     "span": {
+      "start": 152,
+      "end": 171
+     },
+     "digest": "33e8a102f5e4c80cdd03da292a101cb2588af7f10fe2a641186541f5ea192119"
+    },
+    {
+     "row": 3,
+     "column": 2,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "60.2% 28.9 s",
+     "coordinates": null,
+     "span": {
+      "start": 171,
+      "end": 183
+     },
+     "digest": "eb199629a1fb6ac9420226debdd6ebc4060aa0bc0d673f4b8a7da92905ef8f48"
+    },
+    {
+     "row": 3,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "6.01 s",
+     "coordinates": null,
+     "span": {
+      "start": 183,
+      "end": 189
+     },
+     "digest": "716eb4cb167164f252adf14b8f7383f0ff1a1d3724b7b58687d53958e5abfc6c"
+    },
+    {
+     "row": 3,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "115k",
+     "coordinates": null,
+     "span": {
+      "start": 189,
+      "end": 193
+     },
+     "digest": "7454f23a7c4dd3b69f0aaf970e43324d896760f49f5724a653e639a5cf27cb51"
+    },
+    {
+     "row": 4,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Zep",
+     "coordinates": null,
+     "span": {
+      "start": 193,
+      "end": 196
+     },
+     "digest": "18e45a1a57888eb3970b834bcfa594d144665f1d6101a6b61abae5c58be84c91"
+    },
+    {
+     "row": 4,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "gpt-4o",
+     "coordinates": null,
+     "span": {
+      "start": 196,
+      "end": 202
+     },
+     "digest": "4d93b91cacc64a6bc75e4a3a7719a1b728a8074d648e8ace8cae63a27c74dded"
+    },
+    {
+     "row": 4,
+     "column": 2,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "71.2% 2.58 s",
+     "coordinates": null,
+     "span": {
+      "start": 202,
+      "end": 214
+     },
+     "digest": "e6cf7bdfbfc4e353b867ee4a145710b39c033ab3e1af3b03c94e55d0d8b8cd9c"
+    },
+    {
+     "row": 4,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.684 s",
+     "coordinates": null,
+     "span": {
+      "start": 214,
+      "end": 221
+     },
+     "digest": "790ad30653c99ed9fad307c9d89ed02f1315bde8e208ebc321506aa285dd0f9c"
+    },
+    {
+     "row": 4,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "1.6k",
+     "coordinates": null,
+     "span": {
+      "start": 221,
+      "end": 225
+     },
+     "digest": "cbf8cb933240d24d722c976a6c7408e9f40b3dc4a6721537f52dda67bd20fefc"
+    }
+   ],
+   "source_digest": "a446ae8635bf91de75d69df116ad265095bf350bb495573efadd8896bc90e155",
+   "missingness": null
+  },
+  {
+   "table_id": "tab_2",
+   "section_path_id": "1~5",
+   "section_ordinal": 21,
+   "caption": "Table 3 :",
+   "coordinates": null,
+   "cells": [
+    {
+     "row": 0,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Question Type",
+     "coordinates": null,
+     "span": {
+      "start": 38,
+      "end": 51
+     },
+     "digest": "50bad9b9aa693c695916dc1005d9190ab7bdd45460c7f57ff3d25df2e2775293"
+    },
+    {
+     "row": 0,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Model",
+     "coordinates": null,
+     "span": {
+      "start": 51,
+      "end": 56
+     },
+     "digest": "ca9f73f57872cc09c41bdd06cd7ff64c624f0d02976904dbadf950a063ad1d8a"
+    },
+    {
+     "row": 0,
+     "column": 2,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "Full-context Zep",
+     "coordinates": null,
+     "span": {
+      "start": 56,
+      "end": 72
+     },
+     "digest": "75771603eba4bf930af518cfc7ca5635630e252142e9c43c7aff28a139449179"
+    },
+    {
+     "row": 0,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Delta",
+     "coordinates": null,
+     "span": {
+      "start": 72,
+      "end": 77
+     },
+     "digest": "7f7cc6ca2ed0d6b34966a12aefcdc89762558503adaa1071d2510ab9fc69d88e"
+    },
+    {
+     "row": 1,
+     "column": 0,
+     "colspan": 3,
+     "rowspan": 1,
+     "text": "single-session-preference gpt-4o-mini 30.0%",
+     "coordinates": null,
+     "span": {
+      "start": 77,
+      "end": 120
+     },
+     "digest": "c13a059d3a4c275d8c4e0681b66d9ef241286aa8b5bd6b35fb2843d5b9dec5d5"
+    },
+    {
+     "row": 1,
+     "column": 3,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "53.3% 77.7%↑",
+     "coordinates": null,
+     "span": {
+      "start": 120,
+      "end": 132
+     },
+     "digest": "9f289b4fbbecfcffff69cbdc0e94814ef83ee1620a911e601d328ae79dc69462"
+    },
+    {
+     "row": 2,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "single-session-assistant",
+     "coordinates": null,
+     "span": {
+      "start": 132,
+      "end": 156
+     },
+     "digest": "4306cc182d297ca09a638ee677675342dfad87b02208429a4250326a32fa75f1"
+    },
+    {
+     "row": 2,
+     "column": 1,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "gpt-4o-mini 81.8%",
+     "coordinates": null,
+     "span": {
+      "start": 156,
+      "end": 173
+     },
+     "digest": "b7d87e9627867b6f1fe504348b526aeda5f7170c22075106e54545f625c28380"
+    },
+    {
+     "row": 2,
+     "column": 3,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "75.0% 9.06%↓",
+     "coordinates": null,
+     "span": {
+      "start": 173,
+      "end": 185
+     },
+     "digest": "fd9f4ca8533e72464c9d07d3e2a88dee3cea39443c8abfef61f183533850e292"
+    },
+    {
+     "row": 3,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "temporal-reasoning",
+     "coordinates": null,
+     "span": {
+      "start": 185,
+      "end": 203
+     },
+     "digest": "747cc8252d29fed41b4e399dfc04ebf3187b6abbf622c1a7db9cac723de07d77"
+    },
+    {
+     "row": 3,
+     "column": 1,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "gpt-4o-mini 36.5%",
+     "coordinates": null,
+     "span": {
+      "start": 203,
+      "end": 220
+     },
+     "digest": "d7881639080184011374b0b10b3da7fd4aebc592e34d472dc7118c23cc61d404"
+    },
+    {
+     "row": 3,
+     "column": 3,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "54.1% 48.2%↑",
+     "coordinates": null,
+     "span": {
+      "start": 220,
+      "end": 232
+     },
+     "digest": "9775dd95abd86dbb464187679234208a5af71858216bbe28b643e4486e118ddc"
+    },
+    {
+     "row": 4,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "multi-session",
+     "coordinates": null,
+     "span": {
+      "start": 232,
+      "end": 245
+     },
+     "digest": "3b2d650b9699cd2217cdd1552821a059e8a35a45383cc49279483255c9ff47a8"
+    },
+    {
+     "row": 4,
+     "column": 1,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "gpt-4o-mini 40.6%",
+     "coordinates": null,
+     "span": {
+      "start": 245,
+      "end": 262
+     },
+     "digest": "cb11d03ae1bc20c684802114f1bf2696743948731b5af18d9c84f65f24b90898"
+    },
+    {
+     "row": 4,
+     "column": 3,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "47.4% 16.7%↑",
+     "coordinates": null,
+     "span": {
+      "start": 262,
+      "end": 274
+     },
+     "digest": "2175eac1f18bf6d8246459b247740dc831ed6a478af2f7d60a2e612d739351d6"
+    },
+    {
+     "row": 5,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "knowledge-update",
+     "coordinates": null,
+     "span": {
+      "start": 274,
+      "end": 290
+     },
+     "digest": "7544ac0b377a119cd6fd73fd769d2dc981693bf3f9e0cab9b55c6f96724379b8"
+    },
+    {
+     "row": 5,
+     "column": 1,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "gpt-4o-mini 76.9%",
+     "coordinates": null,
+     "span": {
+      "start": 290,
+      "end": 307
+     },
+     "digest": "b0a82c6ca0bc4815aa4e53647c47ff93a1ac604edc911c594d33b08bac9dd17a"
+    },
+    {
+     "row": 5,
+     "column": 3,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "74.4% 3.36%↓",
+     "coordinates": null,
+     "span": {
+      "start": 307,
+      "end": 319
+     },
+     "digest": "5a5196b6cb25e67883af0dada1d6d8ba963e0ed717b473a0b7685b4bfe390e98"
+    },
+    {
+     "row": 6,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "single-session-user",
+     "coordinates": null,
+     "span": {
+      "start": 319,
+      "end": 338
+     },
+     "digest": "65899d98efd907904ed06c8421fad50229d87d71b4b4967a5bdc941e57a663b6"
+    },
+    {
+     "row": 6,
+     "column": 1,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "gpt-4o-mini 81.4%",
+     "coordinates": null,
+     "span": {
+      "start": 338,
+      "end": 355
+     },
+     "digest": "dd718d7ee2d2c8bc42282a96fe911fedf80b6b8fe19c72532607c8f91f2f6760"
+    },
+    {
+     "row": 6,
+     "column": 3,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "92.9% 14.1%↑",
+     "coordinates": null,
+     "span": {
+      "start": 355,
+      "end": 367
+     },
+     "digest": "e9012ecab67b185bc2c2d63786302990752efc644ae9ac47e7733df7f4b6dcf9"
+    },
+    {
+     "row": 7,
+     "column": 0,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "single-session-preference gpt-4o",
+     "coordinates": null,
+     "span": {
+      "start": 367,
+      "end": 399
+     },
+     "digest": "7906fa6af360ce93b6f2fc82bd9948728d306d01a2d2ff5fc574a3231a5b7a79"
+    },
+    {
+     "row": 7,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "20.0%",
+     "coordinates": null,
+     "span": {
+      "start": 399,
+      "end": 404
+     },
+     "digest": "3c5ab97fb9a583fc24d55cbaa42f81f535ac2cbd43da27a56431da58d04b0b4a"
+    },
+    {
+     "row": 7,
+     "column": 3,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "56.7% 184%↑",
+     "coordinates": null,
+     "span": {
+      "start": 404,
+      "end": 415
+     },
+     "digest": "8efde6b18a636ea50bbf45e5e5045bb9744f8e6ebe4edbdf11d08ee76a97440b"
+    },
+    {
+     "row": 8,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "single-session-assistant",
+     "coordinates": null,
+     "span": {
+      "start": 415,
+      "end": 439
+     },
+     "digest": "111206a2ffe091a84a11c4418b7c80a49af5df68110b41620f44a293642aa2cf"
+    },
+    {
+     "row": 8,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "gpt-4o",
+     "coordinates": null,
+     "span": {
+      "start": 439,
+      "end": 445
+     },
+     "digest": "13a4e738a3ddb7db811fd8beb1db2853bdc2ed8961e250c2f7029a69acf73901"
+    },
+    {
+     "row": 8,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "94.6%",
+     "coordinates": null,
+     "span": {
+      "start": 445,
+      "end": 450
+     },
+     "digest": "354a23977789df2da690dad08293d3fdadbae17ad8681394b4453d02be51d3ac"
+    },
+    {
+     "row": 8,
+     "column": 3,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "80.4% 17.7%↓",
+     "coordinates": null,
+     "span": {
+      "start": 450,
+      "end": 462
+     },
+     "digest": "eb43d0e215bb817817a110f764accba512ecf84be260e53d67a047a8be002402"
+    },
+    {
+     "row": 9,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "temporal-reasoning",
+     "coordinates": null,
+     "span": {
+      "start": 462,
+      "end": 480
+     },
+     "digest": "4b3ee6e86ed835ac466228703190498ed2d7d83f1f5bc412f971bedaf70295dd"
+    },
+    {
+     "row": 9,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "gpt-4o",
+     "coordinates": null,
+     "span": {
+      "start": 480,
+      "end": 486
+     },
+     "digest": "15a59d31c915a404a1316e93f8fc149362af5e442729704f5ea0f5c5fc061fd6"
+    },
+    {
+     "row": 9,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "45.1%",
+     "coordinates": null,
+     "span": {
+      "start": 486,
+      "end": 491
+     },
+     "digest": "ddf5ff2fe86fb7d91cb3a5e850a04f9279d5f66ad0ce86ce698ce0f035941e73"
+    },
+    {
+     "row": 9,
+     "column": 3,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "62.4% 38.4%↑",
+     "coordinates": null,
+     "span": {
+      "start": 491,
+      "end": 503
+     },
+     "digest": "aba4bae80d5abcdb6e845c7156402bcf642b732270854d2964a617c0e4267224"
+    },
+    {
+     "row": 10,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "multi-session",
+     "coordinates": null,
+     "span": {
+      "start": 503,
+      "end": 516
+     },
+     "digest": "7b8e049022fe64899611df37d66a0557e230c8b0fafad00b69fd700e1fe0695f"
+    },
+    {
+     "row": 10,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "gpt-4o",
+     "coordinates": null,
+     "span": {
+      "start": 516,
+      "end": 522
+     },
+     "digest": "3cf82d613b30fd0abacec6e0ba2af8e762b0fb20b0d8d054a104e37a37b26495"
+    },
+    {
+     "row": 10,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "44.3%",
+     "coordinates": null,
+     "span": {
+      "start": 522,
+      "end": 527
+     },
+     "digest": "50647e037ccf01626226c2c5b038874beb22ab681b69140f2498280bb80b5247"
+    },
+    {
+     "row": 10,
+     "column": 3,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "57.9% 30.7%↑",
+     "coordinates": null,
+     "span": {
+      "start": 527,
+      "end": 539
+     },
+     "digest": "caf55b57647cffa14e4e6a19860c3b50b8c3c686436d76c42144ce9dee77dc4e"
+    },
+    {
+     "row": 11,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "knowledge-update",
+     "coordinates": null,
+     "span": {
+      "start": 539,
+      "end": 555
+     },
+     "digest": "92f72d16e0e6e16e854bde3ffce77f9ed774a7a334ba4beebc973eed2f2d460e"
+    },
+    {
+     "row": 11,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "gpt-4o",
+     "coordinates": null,
+     "span": {
+      "start": 555,
+      "end": 561
+     },
+     "digest": "c32c8f8d5909a21e0af3d34d452a14b745387df8526009b6c15ebd2f25fe5106"
+    },
+    {
+     "row": 11,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "78.2%",
+     "coordinates": null,
+     "span": {
+      "start": 561,
+      "end": 566
+     },
+     "digest": "de99af572cc5b50393df19b586a95216702ad418db51a37fffabf672352c5d4e"
+    },
+    {
+     "row": 11,
+     "column": 3,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "83.3% 6.52%↑",
+     "coordinates": null,
+     "span": {
+      "start": 566,
+      "end": 578
+     },
+     "digest": "8bbdcaac8fa67ad460407bac0e169f93f32f19f6da979dc9f53dcd4a9b74ef9e"
+    },
+    {
+     "row": 12,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "single-session-user",
+     "coordinates": null,
+     "span": {
+      "start": 578,
+      "end": 597
+     },
+     "digest": "f9b661e7d71cf3eec659d18f60d9cba7c6d19aeb2afeea569c15299a74f7976c"
+    },
+    {
+     "row": 12,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "gpt-4o",
+     "coordinates": null,
+     "span": {
+      "start": 597,
+      "end": 603
+     },
+     "digest": "51e86ef46c93d5be9f74b28d46391a78952705c30076023b3c2b8a42e13841c7"
+    },
+    {
+     "row": 12,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "81.4%",
+     "coordinates": null,
+     "span": {
+      "start": 603,
+      "end": 608
+     },
+     "digest": "79aa32df6f88367f05ebc8105a55b6d83c846634adc01c99b3c62cd88201cab3"
+    },
+    {
+     "row": 12,
+     "column": 3,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "92.9% 14.1%↑",
+     "coordinates": null,
+     "span": {
+      "start": 608,
+      "end": 620
+     },
+     "digest": "8b31dc3f9a665482fdcf5f5e9f496d5bd376b9a85b506adf940f142dd1484e6a"
+    }
+   ],
+   "source_digest": "5985e6cb425fd8ed20dc6950830b7cc2da1c3844d8d6d2e7d448e7e459170dd1",
+   "missingness": null
+  }
+ ],
+ "table_missingness": null,
+ "formulas": [
+  {
+   "formula_id": "formula_0",
+   "section_path_id": "3",
+   "section_ordinal": 8,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "E n s × N n s × N c n → S."
+   },
+   "span": {
+    "start": 1206,
+    "end": 1232
+   },
+   "source_digest": "10eb97c3e1bca3de5a5b178731626949ef5bf343b778c6a46f3d30e8d7d539b2",
+   "missingness": null
+  }
+ ],
+ "formula_missingness": null,
+ "page_text_missingness": null
+}

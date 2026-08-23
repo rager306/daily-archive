@@ -1,0 +1,1336 @@
+{
+ "paper_id": "1511.08228",
+ "title": "NEURAL GPUS LEARN ALGORITHMS",
+ "abstract_text": "Learning an algorithm from examples is a fundamental problem that has been widely studied. It has been addressed using neural networks too, in particular by Neural Turing Machines (NTMs). These are fully differentiable computers that use backpropagation to learn their own programming. Despite their appeal NTMs have a weakness that is caused by their sequential nature: they are not parallel and are are hard to train due to their large depth when unfolded. We present a neural network architecture to address this problem: the Neural GPU. It is based on a type of convolutional gated recurrent unit and, like the NTM, is computationally universal. Unlike the NTM, the Neural GPU is highly parallel which makes it easier to train and efficient to run. An essential property of algorithms is their ability to handle inputs of arbitrary size. We show that the Neural GPU can be trained on short instances of an algorithmic task and successfully generalize to long instances. We verified it on a number of tasks including long addition and long multiplication of numbers represented in binary. We train the Neural GPU on numbers with up-to 20 bits and observe no errors whatsoever while testing it, even on much longer numbers. To achieve these results we introduce a technique for training deep recurrent networks: parameter sharing relaxation. We also found a small amount of dropout and gradient noise to have a large positive effect on learning and generalization.",
+ "body_text": "INTRODUCTIONDeep neural networks have recently proven successful at various tasks, such as computer vision (Krizhevsky et al., 2012), speech recognition (Dahl et al., 2012), and in other domains. Recurrent neural networks based on long short-term memory (LSTM) cells (Hochreiter &amp; Schmidhuber, 1997) have been successfully applied to a number of natural language processing tasks. Sequence-tosequence recurrent neural networks with such cells can learn very complex tasks in an end-to-end manner, such as translation (Sutskever et al., 2014;Bahdanau et al., 2014;Cho et al., 2014), parsing (Vinyals &amp; Kaiser et al., 2015), speech recognition (Chan et al., 2016) or image caption generation (Vinyals et al., 2014). Since so many tasks can be solved with essentially one model, a natural question arises: is this model the best we can hope for in supervised learning?Despite its recent success, the sequence-to-sequence model has limitations. In its basic form, the entire input is encoded into a single fixed-size vector, so the model cannot generalize to inputs much longer than this fixed capacity. One way to resolve this problem is by using an attention mechanism (Bahdanau et al., 2014). This allows the network to inspect arbitrary parts of the input in every decoding step, so the basic limitation is removed. But other problems remain, and Joulin &amp; Mikolov (2015) show a number of basic algorithmic tasks on which sequence-to-sequence LSTM networks fail to generalize. They propose a stack-augmented recurrent network, and it works on some problems, but is limited in other ways.In the best case one would desire a neural network model able to learn arbitrarily complex algorithms given enough resources. Neural Turing Machines (Graves et al., 2014) have this theoretical property. However, they are not computationally efficient because they use soft attention and because they tend to be of considerable depth. Their depth makes the training objective difficult to optimize and impossible to parallelize because they are learning a sequential program. Their use of soft attention requires accessing the entire memory in order to simulate 1 step of computation, which introduces substantial overhead. These two factors make learning complex algorithms using Neural Turing Ma-chines difficult. These issues are not limited to Neural Turing Machines, they apply to other architectures too, such as stack-RNNs (Joulin &amp; Mikolov, 2015) or (De)Queue-RNNs (Grefenstette et al., 2015). One can try to alleviate these problems using hard attention and reinforcement learning, but such non-differentiable models do not learn well at present (Zaremba &amp; Sutskever, 2015b).In this work we present a neural network model, the Neural GPU, that addresses the above issues. It is a Turing-complete model capable of learning arbitrary algorithms in principle, like a Neural Turing Machine. But, in contrast to Neural Turing Machines, it is designed to be as parallel and as shallow as possible. It is more similar to a GPU than to a Turing machine since it uses a smaller number of parallel computational steps. We show that the Neural GPU works in multiple experiments:• A Neural GPU can learn long binary multiplication from examples. It is the first neural network able to learn an algorithm whose run-time is superlinear in the size of its input.Trained on up-to 20-bit numbers, we see no single error on any inputs we tested, and we tested on numbers up-to 2000 bits long.• The same architecture can also learn long binary addition and a number of other algorithmic tasks, such as counting, copying sequences, reversing them, or duplicating them.\nRELATED WORKThe learning of algorithms with neural networks has seen a lot of interest after the success of sequence-to-sequence neural networks on language processing tasks (Sutskever et al., 2014;Bahdanau et al., 2014;Cho et al., 2014). An attempt has even been made to learn to evaluate simple python programs with a pure sequence-to-sequence model (Zaremba &amp; Sutskever, 2015a), but more success was seen with more complex models. Neural Turing Machines (Graves et al., 2014) were shown to learn a number of basic sequence transformations and memory access patterns, and their reinforcement learning variant (Zaremba &amp; Sutskever, 2015b) has reasonable performance on a number of tasks as well. Stack, Queue and DeQueue networks (Grefenstette et al., 2015) were also shown to learn basic sequence transformations such as bigram flipping or sequence reversal.The Grid LSTM (Kalchbrenner et al., 2016) is another powerful architecture that can learn to multiply 15-digit decimal numbers. As we will see in the next section, the Grid-LSTM is quite similar to the Neural GPU -the main difference is that the Neural GPU is less recurrent and is explicitly constructed from the highly parallel convolution operator.In image processing, convolutional LSTMs, an architecture similar to the Neural GPU, have recently been used for weather prediction (Shi et al., 2015) and image compression (Toderici et al., 2016). We find it encouraging as it hints that the Neural GPU might perform well in other contexts.Most comparable to this work are the prior experiments with the stack-augmented RNNs (Joulin &amp; Mikolov, 2015). These networks manage to learn and generalize to unseen lengths on a number of algorithmic tasks. But, as we show in Section 3.1, stack-augmented RNNs trained to add numbers up-to 20-bit long generalize only to ∼ 100-bit numbers, never to 200-bit ones, and never without error. Still, their generalization is the best we were able to obtain without using the Neural GPU and far surpasses a baseline LSTM sequence-to-sequence model with attention.The quest for learning algorithms has been pursued much more widely with tools other than neural networks. It is known under names such as program synthesis, program induction, automatic programming, or inductive synthesis, and has a long history with many works that we do not cover here; see, e.g., Gulwani (2010) and Kitzelmann (2010) for a more general perspective.Since one of our results is the synthesis of an algorithm for long binary addition, let us recall how this problem has been addressed without neural networks. Importantly, there are two cases of this problem with different complexity. The easier case is when the two numbers that are to be added are aligned at input, i.e., if the first (lower-endian) bit of the first number is presented at the same time as the first bit of the second number, then come the second bits, and so on, as depicted below for x = 9 = 8 + 1 and y = 5 = 4 + 1 written in binary with least-significant bit left.Input 1 0 0 1 (x and y aligned) 1 0 1 0 Desired Output (x + y) 0 1 1 1 In this representation the triples of bits from (x, y, x + y), e.g., (1, 1, 0) (0, 0, 1) (0, 1, 1) (1, 0, 1) as in the figure above, form a regular language. To learn binary addition in this representation it therefore suffices to find a regular expression or an automaton that accepts this language, which can be done with a variant of Anguin's algorithm (Angluin, 1987). But only few interesting functions have regular representations, as for example long multiplication does not (Blumensath &amp; Grädel, 2000). It is therefore desirable to learn long binary addition without alignment, for example when x and y are provided one after another. This is the representation we use in the present paper.\nInput (x, y)1 0 0 1 + 1 0 1 0 Desired Output (x + y) 0 1 1 1 2 THE NEURAL GPU Before we introduce the Neural GPU, let us recall the architecture of a Gated Recurrent Unit (GRU) (Cho et al., 2014). A GRU is similar to an LSTM, but its input and state are the same size, which makes it easier for us to generalize it later; a highway network could have also been used (Srivastava et al., 2015), but it lacks the reset gate. GRUs have shown performance similar to LSTMs on a number of tasks (Chung et al., 2014;Greff et al., 2015). A GRU takes an input vector x and a current state vector s, and outputs:GRU(x, s) = u ⊙ s + (1 -u) ⊙ tanh(W x + U (r ⊙ s) + B), where u = σ(W ′ x + U ′ s + B ′ ) and r = σ(W ′′ x + U ′′ s + B ′′ ).In the equations above, W, W ′ , W ′′ , U, U ′ , U ′′ are matrices and B, B ′ , B ′′ are bias vectors; these are the parameters that will be learned. We write W x for a matrix-vector multiplication and r ⊙ s for elementwise vector multiplication. The vectors u and r are called gates since their elements are in [0, 1] -u is the update gate and r is the reset gate.In recurrent neural networks a unit like GRU is applied at every step and the result is both passed as new state and used to compute the output. In a Neural GPU we do not process a new input in every step. Instead, all inputs are written into the starting state s 0 . This state has 2-dimensional structure: it consists of w × h vectors of m numbers, i.e., it is a 3-dimensional tensor of shape [w, h, m]. This mental image evolves in time in a way defined by a convolutional gated recurrent unit:CGRU(s) = u ⊙ s + (1 -u) ⊙ tanh(U * (r ⊙ s) + B), where u = σ(U ′ * s + B ′ ) and r = σ(U ′′ * s + B ′′ ).U * s above denotes the convolution of a kernel bank U with the mental image s. A kernel bank is a 4-dimensional tensor of shape [k w , k h , m, m], i.e., it contains k w • k h • m 2 parameters, where k w and k h are kernel width and height. It is applied to a mental image s of shape [w, h, m] which results in another mental image U * s of the same shape defined by:U * s[x, y, i] = ⌊kw/2⌋ u=⌊-kw/2⌋ ⌊k h /2⌋ v=⌊-k h /2⌋ m c=1 s[x + u, y + v, c] • U [u, v, c, i].In the equation above the index x + u might sometimes be negative or larger than the size of s, and in such cases we assume the value is 0. This corresponds to the standard convolution operator used in convolutional neural networks with zero padding on both sides and stride 1. Using the standard operator has the advantage that it is heavily optimized (see Section 4 for Neural GPU performance). New work on faster convolutions, e.g., Lavin &amp; Gray (2015), can be directly used in a Neural GPU.Knowing how a CGRU gate works, the definition of a l-layer Neural GPU is simple, as depicted in Figure 1. The given sequence i = (i 1 , . . . , i n ) of n discrete symbols from {0, . . . , I} is first embedded into the mental image s 0 by concatenating the vectors obtained from an embedding lookup of the input symbols into its first column. More precisely, we create the starting mental image s 0 of shape [w, n, m] by using an embedding matrix E of shape [I, m] and setting s 0 [0, k, :] = E[i k ] (in python notation) for all k = 1 . . . n (here i 1 , . . . , i n is the input). All other elements of s 0 are set to 0. Then, we apply l different CGRU gates in turn for n steps to produce the final mental image s fin : The result of a Neural GPU is produced by multiplying each item in the first column of s fin by an output matrix O to obtain the logits l k = Os fin [0, k, :] and then selecting the maximal one: o k = argmax(l k ). During training we use the standard loss function, i.e., we compute a softmax over the logits l k and use the negative log probability of the target as the loss.s t+1 = CGRU l (CGRU l-1 . . . CGRU 1 (s t ) . . .) and s fin = s n . i1 . . . in s0 CGRU1 CGRU2 s1 . . . sn-1 CGRU1 CGRU2 sn o1 . . .Since all components of a Neural GPU are clearly differentiable, we can train using any stochastic gradient descent optimizer. For the results presented in this paper we used the Adam optimizer (Kingma &amp; Ba, 2014) with ε = 10 -4 and gradients norm clipped to 1. The number of layers was set to l = 2, the width of mental images was constant at w = 4, the number of maps in each mental image point was m = 24, and the convolution kernels width and height was always k w = k h = 3.\nComputational power of Neural GPUs.While the above definition is simple, it might not be immediately obvious what kind of functions a Neural GPU can compute. Why can we expect it to be able to perform long multiplication? To answer such questions it is useful to draw an analogy between a Neural GPU and a discrete 2-dimensional cellular automaton. Except for being discrete and the lack of a gating mechanism, such automata are quite similar to Neural GPUs. Of course, these are large exceptions. Dense representations have often more capacity than purely discrete states and the gating mechanism is crucial to avoid vanishing gradients during training. But the computational power of cellular automata is much better understood. In particular, it is well known that a cellular automaton can exploit its parallelism to multiply two n-bit numbers in O(n) steps using Atrubin's algorithm. We recommend the online book (Vivien, 2003) to get an understanding of this algorithm and the computational power of cellular automata.\nEXPERIMENTSIn this section, we present experiments showing that a Neural GPU can successfully learn a number of algorithmic tasks and generalize well beyond the lengths that it was trained on. We start with the two tasks we focused on, long binary addition and long binary multiplication. Then, to demonstrate the generality of the model, we show that Neural GPUs perform well on several other tasks as well.\nADDITION AND MULTIPLICATIONThe two core tasks on which we study the performance of Neural GPUs are long binary addition and long binary multiplication. We chose them because they are fundamental tasks and because there is no known linear-time algorithm for long multiplication. As described in Section 2, we input a sequence of discrete symbols into the network and we read out a sequence of symbols again. For binary addition, we use a set of 4 symbols: {0, 1, +, PAD} and for multiplication we use {0, 1, •, PAD}. The PAD symbol is only used for padding so we depict it as empty space below.\nLong binary addition (badd)is the task of adding two numbers represented lower-endian in binary notation. We always add numbers of the same length, but we allow them to have 0s at start, so numbers of differing lengths can be padded to equal size. Given two d-bit numbers the full sequence length is n = 2d + 1, as seen in the example below, representing (1 + 4) + (2 + 4 + 8) = 5 + 14 = 19 = (16 + 2 + 1). Input 1 0 1 0 + 0 1 1 1 Output 1 1 0 0 1Long binary multiplication (bmul) is the task of multiplying two binary numbers, represented lower-endian. Again, we always multiply numbers of the same length, but we allow them to have 0s at start, so numbers of differing lengths can be padded to equal size. Given two d-bit numbers, the full sequence length is again n = 2d+1, as seen in the example below, representing (2+4)•(2+8) = 6 • 10 = 60 = 32 + 16 + 8 + 4.Input 0 1 1 0 • 0 1 0 1 Output 0 0 1 1 1Models. We compare three different models on the above tasks. In addition to the Neural GPU we include a baseline LSTM recurrent neural network with an attention mechanism. We call this model LSTM+A as it is exactly the same as described in (Vinyals &amp; Kaiser et al., 2015). It is a 3-layer model with 64 units in each LSTM cell in each layer, which results in about 200k parameters (the Neural GPU uses m = 24 and has about 30k paramters). Both the Neural GPU and the LSTM+A baseline were trained using all the techniques described below, including curriculum training and gradient noise. Finally, on binary addition, we also include the stack-RNN model from (Joulin &amp; Mikolov, 2015). This model was not trained using our training regime, but in exactly the way as provided in its source code, only with nmax = 41. To match our training procedure, we ran it 729 times (cf. Section 3.3) with different random seeds and we report the best obtained result.\nResults.We measure also the rate of fully correct output sequences and report the results in Table 1. For both tasks, we show first the error at the maximum length seen during training, i.e., for 20-bit numbers. Note that LSTM+A is not able to learn long binary multiplication at this length, it does not even fit the training data. Then we report numbers for sizes not seen during training.As you can see, a Neural GPU can learn a multiplication algorithm that generalizes perfectly, at least as far as we were able to test (technical limits of our implementation prevented us from testing much above 2000 bits). Even for the simpler task of binary addition, stack-RNNs work only up-to length 100. This is still much better than the LSTM+A baseline which only generalizes to length 25.\nOTHER ALGORITHMIC TASKSIn addition to the two main tasks above, we tested Neural GPUs on the following simpler algorithmic tasks. The same architecture as used above was able to solve all of the tasks described below, i.e., after being trained on sequences of length up-to 41 we were not able to find any error on sequences on any length we tested (up-to 4001).Copying sequences is the simple task of producing on output the same sequence as on input. It is very easy for a Neural GPU, in fact all models converge quickly and generalize perfectly.Reversing sequences is the task of reversing a sequence of bits, n is the length of the sequence.Duplicating sequences is the task of duplicating the input bit sequence on output twice, as in the example below. We use the padding symbol on input to make it match the output length. We trained on sequences of inputs up-to 20 bits, so outputs were up-to 40-bits long, and tested on inputs up-to 2000 bits long. 0 0 1 1  Output 0 0 1 1 0 0 1 1 Counting by sorting bits is the task of sorting the input bit sequence on output. Since there are only 2 symbols to sort, this is a counting tasks -the network must count how many 0s are in the input and produce the output accordingly, as in the example below.\nInputInput 1 0 1 1 0 0 1 0 Output 0 0 0 0 1 1 1 1 3.3 TRAINING TECHNIQUESHere we describe the training methods that we used to improve our results. Note that we applied these methods to the LSTM+A baseline as well, to keep the above comparison fair. We focus on the most important elements of our training regime, all less relevant details can be found in the code which is released as open-source.foot_0 Grid search. Each result we report is obtained by running a grid search over 3 6 = 729 instances. We consider 3 settings of the learning rate, initial parameters scale, and 4 other hyperparameters discussed below: the relaxation pull factor, curriculum progress threshold, gradient noise scale, and dropout. An important effect of running this grid search is also that we train 729 models with different random seeds every time. Usually only a few of these models generalize to 2000-bit numbers, but a significant fraction works well on 200-bit numbers, as discussed below.Curriculum learning. We use a curriculum learning approach inspired by Zaremba &amp; Sutskever (2015a). This means that we train, e.g., on 7-digit numbers only after crossing a curriculum progress threshold (e.g., over 90% fully correct outputs) on 6-digit numbers. However, with 20% probability we pick a minibatch of d-digit numbers with d chosen uniformly at random between 1 and 20.\nGradients noise.To improve training speed and stability we add noise to gradients in each training step. Inspired by the schedule from Welling &amp; Teh (2011), we add to gradients a noise drawn from the normal distribution with mean 0 and variance inversely proportional to the square root of stepnumber (i.e., with standard deviation proportional to the 4-th root of step-number). We multiply this noise by the gradient noise scale and, to avoid noise in converged models, we also multiply it by the fraction of non-fully-correct outputs (which is 0 for a perfect model).\nGate cutoff.In Section 2 we defined the gates in a CGRU using the sigmoid function, e.g., we wrote u = σ(U ′ * s + B ′ ). Usually the standard sigmoid function is used, σ(x) = 1 1+e -x . We found that adding a hard threshold on the top and bottom helps slightly in our setting, so we use1.2σ(x) -0.1 cut to the interval [0, 1], i.e., σ ′ (x) = max(0, min(1, 1.2σ(x) -0.1)).\nDROPOUT ON RECURRENT CONNECTIONSDropout is a widely applied technique for regularizing neural networks. But when applying it to recurrent networks, it has been counter-productive to apply it on recurrent connections -it only worked when applied to the non-recurrent ones, as reported by Pham et al. (2014).Since a Neural GPU does not have non-recurrent connections it might seem that dropout will not be useful for this architecture. Surprisingly, we found the contrary -it is useful and improves generalization. The key to using dropout effectively in this setting is to set a small dropout rate.When we run a grid search for dropout rates we vary them between 6%, 9%, and 13.5%, meaning that over 85% of the values are always preserved. It turns out that even this small dropout has large effect since we apply it to the whole mental image s i in each step i. Presumably the network now learns to include some redundancy in its internal representation and generalization benefits from it.Without dropout we usually see only a few models from a 729 grid search generalize reasonably, while with dropout it is a much larger fraction and they generalize to higher lengths. In particular, dropout was necessary to train models for multiplication that generalize to 2000 bits.\nPARAMETER SHARING RELAXATION.To improve optimization of our deep network we use a relaxation technique for shared parameters which works as follows. Instead of training with parameters shared across time-steps we use r identical sets of non-shared parameters (we often use r = 6, larger numbers work better but use more memory). At time-step t of the Neural GPU we use the i-th set if t mod r = i.The procedure described above relaxes the network, as it can now perform different operations in different time-steps. Training becomes easier, but we now have r parameters instead of the single shared set we want. To unify them we add a term to the cost function representing the distance of each parameter from the average of this parameter in all the r sets. This term in the final cost function is multiplied by a scalar which we call the relaxation pull. If the relaxation pull is 0, the network behaves as if the r parameter sets were separate, but when it is large, the cost forces the network to unify the parameters across different set.During training, we gradually increase the relaxation pull. We start with a small value and every time the curriculum makes progress, e.g., when the model performs well on 6-digit numbers, we multiply the relaxation pull by a relaxation pull factor. When the curriculum reaches the maximal length we average the parameters from all sets and continue to train with a single shared parameter set.This method is crucial for learning multiplication. Without it, a Neural GPU with m = 24 has trouble to even fit the training set, and the few models that manage to do it do not generalize. With relaxation almost all models in our 729 runs manage to fit the training data.\nDISCUSSIONWe prepared a video of the Neural GPU trained to solve the tasks mentioned above.foot_1 . It shows the state in each step with values of -1 drawn in white, 1 in black, and other in gray. This gives an intuition how the Neural GPU solves the discussed problems, e.g., it is quite clear that for the duplication task the Neural GPU learned to move a part of the embedding downwards in each step.What did not work well? For one, using decimal inputs degrades performance. All tasks above can easily be formulated with decimal inputs instead of binary ones. One could hope that a Neural GPU will work well in this case too, maybe with a larger m. We experimented with this formulation and our results were worse than when the representation was binary: we did not manage to learn long decimal multiplication. Increasing m to 128 allows to learn all other tasks in the decimal setting.Another problem is that often only a few models in a 729 grid search generalize to very long unseen instances. Among those 729 models, there usually are many models that generalize to 40 or even 200 bits, but only a few working without error for 2000-bit numbers. Using dropout and gradient noise improves the reliability of training and generalization, but maybe another technique could help even more. How could we make more models achieve good generalization? One idea that looks natural is to try to reduce the number of parameters by decreasing m. Surprisingly, this does not seem to have any influence. In addition to the m = 24 results presented above we ran experiments with m = 32, 64, 128 and the results were similar. In fact using m = 128 we got the most models to generalize. Additionally, we observed that ensembling a few models, just by averaging their outputs, helps to generalize: ensembles of 5 models almost always generalize perfectly on binary tasks.\nWhy use width?The Neural GPU is defined using two-dimensional convolutions and in our experiments one of the dimensions is always set to 4. Doing so is not necessary since a one-dimensional Neural GPU that uses four times larger m can represent every function representable by the original one. In fact we trained a model for long binary multiplication that generalized to 2000-bit numbers using a Neural GPU with width 1 and m = 64. However, the width of the Neural GPU increases the amount of information carried in its hidden state without increasing the number of its parameters. Thus it can be thought of as a factorization and might be useful for other tasks.Speed and data efficiency. Neural GPUs use the standard, heavily optimized convolution operation and are fast. We experimented with a 2-layer Neural GPU for n = 32 and m = 64. After unfolding in time it has 128 layers of CGRUs, each operating on 32 mental images, each 4 × 64 × 64 . The joint forward-backward step time for this network was about 0.6s on an NVIDIA GTX 970 GPU.We were also surprised by how data-efficient a Neural GPU can be. The experiments presented above were all performed using 10k random training data examples for each training length. Since we train on up-to 20-bit numbers this adds to about 200k training examples. We tried to train using only 100 examples per length, so about 2000 total training instances. We were surprised to see that it actually worked well for binary addition: there were models that generalized well to 200-bit numbers and to all lengths below despite such small training set. But we never managed to train a good model for binary multiplication with that little training data.\nCONCLUSIONS AND FUTURE WORKThe results presented in Table 1 show clearly that there is a qualitative difference between what can be achieved with a Neural GPU and what was possible with previous architectures. In particular, for the first time, we show a neural network that learns a non-trivial superlinear-time algorithm in a way that generalized to much higher lengths without errors.This opens the way to use neural networks in domains that were previously only addressed by discrete methods, such as program synthesis. With the surprising data efficiency of Neural GPUs it could even be possible to replicate previous program synthesis results, e.g., Kaiser (2012), but in a more scalable way. It is also interesting that a Neural GPU can learn symbolic algorithms without using any discrete state at all, and adding dropout and noise only improves its performance.Another promising future work is to apply Neural GPUs to language processing tasks. Good results have already been obtained on translation with a convolutional architecture over words (Kalchbrenner &amp; Blunsom, 2013) and adding gating and recursion, like in a Neural GPU, should allow to train much deeper models without overfitting. Finally, the parameter sharing relaxation technique can be applied to any deep recurrent network and has the potential to improve RNN training in general.onFigure 1 :1Figure 1: Neural GPU with 2 layers and width w = 3 unfolded in time.\nTable 1 :1Neural GPU, stackRNN, and LSTM+A results on addition and multiplication. The table shows the fraction of test cases for which every single bit of the model's output is correct.Task@BitsNeural GPUstackRNN LSTM+Abadd@20100%100%100%badd@25100%100%73%badd@100100%88%0%badd@200100%0%0%badd@2000100%0%0%bmul@20100%N/A0%bmul@25100%N/A0%bmul@200100%N/A0%bmul@2000100%N/A0%\n\t\t\tThe code is at https://github.com/tensorflow/models/tree/master/neural_gpu.\n\t\t\tThe video is available at https://www.youtube.com/watch?v=LzC8NkTZAF4",
+ "sections": [
+  {
+   "title": "INTRODUCTION",
+   "text": "Deep neural networks have recently proven successful at various tasks, such as computer vision (Krizhevsky et al., 2012), speech recognition (Dahl et al., 2012), and in other domains. Recurrent neural networks based on long short-term memory (LSTM) cells (Hochreiter &amp; Schmidhuber, 1997) have been successfully applied to a number of natural language processing tasks. Sequence-tosequence recurrent neural networks with such cells can learn very complex tasks in an end-to-end manner, such as translation (Sutskever et al., 2014;Bahdanau et al., 2014;Cho et al., 2014), parsing (Vinyals &amp; Kaiser et al., 2015), speech recognition (Chan et al., 2016) or image caption generation (Vinyals et al., 2014). Since so many tasks can be solved with essentially one model, a natural question arises: is this model the best we can hope for in supervised learning?Despite its recent success, the sequence-to-sequence model has limitations. In its basic form, the entire input is encoded into a single fixed-size vector, so the model cannot generalize to inputs much longer than this fixed capacity. One way to resolve this problem is by using an attention mechanism (Bahdanau et al., 2014). This allows the network to inspect arbitrary parts of the input in every decoding step, so the basic limitation is removed. But other problems remain, and Joulin &amp; Mikolov (2015) show a number of basic algorithmic tasks on which sequence-to-sequence LSTM networks fail to generalize. They propose a stack-augmented recurrent network, and it works on some problems, but is limited in other ways.In the best case one would desire a neural network model able to learn arbitrarily complex algorithms given enough resources. Neural Turing Machines (Graves et al., 2014) have this theoretical property. However, they are not computationally efficient because they use soft attention and because they tend to be of considerable depth. Their depth makes the training objective difficult to optimize and impossible to parallelize because they are learning a sequential program. Their use of soft attention requires accessing the entire memory in order to simulate 1 step of computation, which introduces substantial overhead. These two factors make learning complex algorithms using Neural Turing Ma-chines difficult. These issues are not limited to Neural Turing Machines, they apply to other architectures too, such as stack-RNNs (Joulin &amp; Mikolov, 2015) or (De)Queue-RNNs (Grefenstette et al., 2015). One can try to alleviate these problems using hard attention and reinforcement learning, but such non-differentiable models do not learn well at present (Zaremba &amp; Sutskever, 2015b).In this work we present a neural network model, the Neural GPU, that addresses the above issues. It is a Turing-complete model capable of learning arbitrary algorithms in principle, like a Neural Turing Machine. But, in contrast to Neural Turing Machines, it is designed to be as parallel and as shallow as possible. It is more similar to a GPU than to a Turing machine since it uses a smaller number of parallel computational steps. We show that the Neural GPU works in multiple experiments:• A Neural GPU can learn long binary multiplication from examples. It is the first neural network able to learn an algorithm whose run-time is superlinear in the size of its input.Trained on up-to 20-bit numbers, we see no single error on any inputs we tested, and we tested on numbers up-to 2000 bits long.• The same architecture can also learn long binary addition and a number of other algorithmic tasks, such as counting, copying sequences, reversing them, or duplicating them.",
+   "level": 1,
+   "path_id": "1",
+   "parent_section_id": null,
+   "order_in_parent": 0,
+   "section_id": "sec-1"
+  },
+  {
+   "title": "RELATED WORK",
+   "text": "The learning of algorithms with neural networks has seen a lot of interest after the success of sequence-to-sequence neural networks on language processing tasks (Sutskever et al., 2014;Bahdanau et al., 2014;Cho et al., 2014). An attempt has even been made to learn to evaluate simple python programs with a pure sequence-to-sequence model (Zaremba &amp; Sutskever, 2015a), but more success was seen with more complex models. Neural Turing Machines (Graves et al., 2014) were shown to learn a number of basic sequence transformations and memory access patterns, and their reinforcement learning variant (Zaremba &amp; Sutskever, 2015b) has reasonable performance on a number of tasks as well. Stack, Queue and DeQueue networks (Grefenstette et al., 2015) were also shown to learn basic sequence transformations such as bigram flipping or sequence reversal.The Grid LSTM (Kalchbrenner et al., 2016) is another powerful architecture that can learn to multiply 15-digit decimal numbers. As we will see in the next section, the Grid-LSTM is quite similar to the Neural GPU -the main difference is that the Neural GPU is less recurrent and is explicitly constructed from the highly parallel convolution operator.In image processing, convolutional LSTMs, an architecture similar to the Neural GPU, have recently been used for weather prediction (Shi et al., 2015) and image compression (Toderici et al., 2016). We find it encouraging as it hints that the Neural GPU might perform well in other contexts.Most comparable to this work are the prior experiments with the stack-augmented RNNs (Joulin &amp; Mikolov, 2015). These networks manage to learn and generalize to unseen lengths on a number of algorithmic tasks. But, as we show in Section 3.1, stack-augmented RNNs trained to add numbers up-to 20-bit long generalize only to ∼ 100-bit numbers, never to 200-bit ones, and never without error. Still, their generalization is the best we were able to obtain without using the Neural GPU and far surpasses a baseline LSTM sequence-to-sequence model with attention.The quest for learning algorithms has been pursued much more widely with tools other than neural networks. It is known under names such as program synthesis, program induction, automatic programming, or inductive synthesis, and has a long history with many works that we do not cover here; see, e.g., Gulwani (2010) and Kitzelmann (2010) for a more general perspective.Since one of our results is the synthesis of an algorithm for long binary addition, let us recall how this problem has been addressed without neural networks. Importantly, there are two cases of this problem with different complexity. The easier case is when the two numbers that are to be added are aligned at input, i.e., if the first (lower-endian) bit of the first number is presented at the same time as the first bit of the second number, then come the second bits, and so on, as depicted below for x = 9 = 8 + 1 and y = 5 = 4 + 1 written in binary with least-significant bit left.Input 1 0 0 1 (x and y aligned) 1 0 1 0 Desired Output (x + y) 0 1 1 1 In this representation the triples of bits from (x, y, x + y), e.g., (1, 1, 0) (0, 0, 1) (0, 1, 1) (1, 0, 1) as in the figure above, form a regular language. To learn binary addition in this representation it therefore suffices to find a regular expression or an automaton that accepts this language, which can be done with a variant of Anguin's algorithm (Angluin, 1987). But only few interesting functions have regular representations, as for example long multiplication does not (Blumensath &amp; Grädel, 2000). It is therefore desirable to learn long binary addition without alignment, for example when x and y are provided one after another. This is the representation we use in the present paper.",
+   "level": 2,
+   "path_id": "1.1",
+   "parent_section_id": "sec-1",
+   "order_in_parent": 0,
+   "section_id": "sec-1.1"
+  },
+  {
+   "title": "Input (x, y)",
+   "text": "1 0 0 1 + 1 0 1 0 Desired Output (x + y) 0 1 1 1 2 THE NEURAL GPU Before we introduce the Neural GPU, let us recall the architecture of a Gated Recurrent Unit (GRU) (Cho et al., 2014). A GRU is similar to an LSTM, but its input and state are the same size, which makes it easier for us to generalize it later; a highway network could have also been used (Srivastava et al., 2015), but it lacks the reset gate. GRUs have shown performance similar to LSTMs on a number of tasks (Chung et al., 2014;Greff et al., 2015). A GRU takes an input vector x and a current state vector s, and outputs:GRU(x, s) = u ⊙ s + (1 -u) ⊙ tanh(W x + U (r ⊙ s) + B), where u = σ(W ′ x + U ′ s + B ′ ) and r = σ(W ′′ x + U ′′ s + B ′′ ).In the equations above, W, W ′ , W ′′ , U, U ′ , U ′′ are matrices and B, B ′ , B ′′ are bias vectors; these are the parameters that will be learned. We write W x for a matrix-vector multiplication and r ⊙ s for elementwise vector multiplication. The vectors u and r are called gates since their elements are in [0, 1] -u is the update gate and r is the reset gate.In recurrent neural networks a unit like GRU is applied at every step and the result is both passed as new state and used to compute the output. In a Neural GPU we do not process a new input in every step. Instead, all inputs are written into the starting state s 0 . This state has 2-dimensional structure: it consists of w × h vectors of m numbers, i.e., it is a 3-dimensional tensor of shape [w, h, m]. This mental image evolves in time in a way defined by a convolutional gated recurrent unit:CGRU(s) = u ⊙ s + (1 -u) ⊙ tanh(U * (r ⊙ s) + B), where u = σ(U ′ * s + B ′ ) and r = σ(U ′′ * s + B ′′ ).U * s above denotes the convolution of a kernel bank U with the mental image s. A kernel bank is a 4-dimensional tensor of shape [k w , k h , m, m], i.e., it contains k w • k h • m 2 parameters, where k w and k h are kernel width and height. It is applied to a mental image s of shape [w, h, m] which results in another mental image U * s of the same shape defined by:U * s[x, y, i] = ⌊kw/2⌋ u=⌊-kw/2⌋ ⌊k h /2⌋ v=⌊-k h /2⌋ m c=1 s[x + u, y + v, c] • U [u, v, c, i].In the equation above the index x + u might sometimes be negative or larger than the size of s, and in such cases we assume the value is 0. This corresponds to the standard convolution operator used in convolutional neural networks with zero padding on both sides and stride 1. Using the standard operator has the advantage that it is heavily optimized (see Section 4 for Neural GPU performance). New work on faster convolutions, e.g., Lavin &amp; Gray (2015), can be directly used in a Neural GPU.Knowing how a CGRU gate works, the definition of a l-layer Neural GPU is simple, as depicted in Figure 1. The given sequence i = (i 1 , . . . , i n ) of n discrete symbols from {0, . . . , I} is first embedded into the mental image s 0 by concatenating the vectors obtained from an embedding lookup of the input symbols into its first column. More precisely, we create the starting mental image s 0 of shape [w, n, m] by using an embedding matrix E of shape [I, m] and setting s 0 [0, k, :] = E[i k ] (in python notation) for all k = 1 . . . n (here i 1 , . . . , i n is the input). All other elements of s 0 are set to 0. Then, we apply l different CGRU gates in turn for n steps to produce the final mental image s fin : The result of a Neural GPU is produced by multiplying each item in the first column of s fin by an output matrix O to obtain the logits l k = Os fin [0, k, :] and then selecting the maximal one: o k = argmax(l k ). During training we use the standard loss function, i.e., we compute a softmax over the logits l k and use the negative log probability of the target as the loss.s t+1 = CGRU l (CGRU l-1 . . . CGRU 1 (s t ) . . .) and s fin = s n . i1 . . . in s0 CGRU1 CGRU2 s1 . . . sn-1 CGRU1 CGRU2 sn o1 . . .Since all components of a Neural GPU are clearly differentiable, we can train using any stochastic gradient descent optimizer. For the results presented in this paper we used the Adam optimizer (Kingma &amp; Ba, 2014) with ε = 10 -4 and gradients norm clipped to 1. The number of layers was set to l = 2, the width of mental images was constant at w = 4, the number of maps in each mental image point was m = 24, and the convolution kernels width and height was always k w = k h = 3.",
+   "level": 1,
+   "path_id": "1~2",
+   "parent_section_id": null,
+   "order_in_parent": 1,
+   "section_id": "sec-1~2"
+  },
+  {
+   "title": "Computational power of Neural GPUs.",
+   "text": "While the above definition is simple, it might not be immediately obvious what kind of functions a Neural GPU can compute. Why can we expect it to be able to perform long multiplication? To answer such questions it is useful to draw an analogy between a Neural GPU and a discrete 2-dimensional cellular automaton. Except for being discrete and the lack of a gating mechanism, such automata are quite similar to Neural GPUs. Of course, these are large exceptions. Dense representations have often more capacity than purely discrete states and the gating mechanism is crucial to avoid vanishing gradients during training. But the computational power of cellular automata is much better understood. In particular, it is well known that a cellular automaton can exploit its parallelism to multiply two n-bit numbers in O(n) steps using Atrubin's algorithm. We recommend the online book (Vivien, 2003) to get an understanding of this algorithm and the computational power of cellular automata.",
+   "level": 1,
+   "path_id": "1~3",
+   "parent_section_id": null,
+   "order_in_parent": 2,
+   "section_id": "sec-1~3"
+  },
+  {
+   "title": "EXPERIMENTS",
+   "text": "In this section, we present experiments showing that a Neural GPU can successfully learn a number of algorithmic tasks and generalize well beyond the lengths that it was trained on. We start with the two tasks we focused on, long binary addition and long binary multiplication. Then, to demonstrate the generality of the model, we show that Neural GPUs perform well on several other tasks as well.",
+   "level": 3,
+   "path_id": "3",
+   "parent_section_id": null,
+   "order_in_parent": 3,
+   "section_id": "sec-3"
+  },
+  {
+   "title": "ADDITION AND MULTIPLICATION",
+   "text": "The two core tasks on which we study the performance of Neural GPUs are long binary addition and long binary multiplication. We chose them because they are fundamental tasks and because there is no known linear-time algorithm for long multiplication. As described in Section 2, we input a sequence of discrete symbols into the network and we read out a sequence of symbols again. For binary addition, we use a set of 4 symbols: {0, 1, +, PAD} and for multiplication we use {0, 1, •, PAD}. The PAD symbol is only used for padding so we depict it as empty space below.",
+   "level": 2,
+   "path_id": "3.1",
+   "parent_section_id": "sec-3",
+   "order_in_parent": 0,
+   "section_id": "sec-3.1"
+  },
+  {
+   "title": "Long binary addition (badd)",
+   "text": "is the task of adding two numbers represented lower-endian in binary notation. We always add numbers of the same length, but we allow them to have 0s at start, so numbers of differing lengths can be padded to equal size. Given two d-bit numbers the full sequence length is n = 2d + 1, as seen in the example below, representing (1 + 4) + (2 + 4 + 8) = 5 + 14 = 19 = (16 + 2 + 1). Input 1 0 1 0 + 0 1 1 1 Output 1 1 0 0 1Long binary multiplication (bmul) is the task of multiplying two binary numbers, represented lower-endian. Again, we always multiply numbers of the same length, but we allow them to have 0s at start, so numbers of differing lengths can be padded to equal size. Given two d-bit numbers, the full sequence length is again n = 2d+1, as seen in the example below, representing (2+4)•(2+8) = 6 • 10 = 60 = 32 + 16 + 8 + 4.Input 0 1 1 0 • 0 1 0 1 Output 0 0 1 1 1Models. We compare three different models on the above tasks. In addition to the Neural GPU we include a baseline LSTM recurrent neural network with an attention mechanism. We call this model LSTM+A as it is exactly the same as described in (Vinyals &amp; Kaiser et al., 2015). It is a 3-layer model with 64 units in each LSTM cell in each layer, which results in about 200k parameters (the Neural GPU uses m = 24 and has about 30k paramters). Both the Neural GPU and the LSTM+A baseline were trained using all the techniques described below, including curriculum training and gradient noise. Finally, on binary addition, we also include the stack-RNN model from (Joulin &amp; Mikolov, 2015). This model was not trained using our training regime, but in exactly the way as provided in its source code, only with nmax = 41. To match our training procedure, we ran it 729 times (cf. Section 3.3) with different random seeds and we report the best obtained result.",
+   "level": 1,
+   "path_id": "1~4",
+   "parent_section_id": null,
+   "order_in_parent": 4,
+   "section_id": "sec-1~4"
+  },
+  {
+   "title": "Results.",
+   "text": "We measure also the rate of fully correct output sequences and report the results in Table 1. For both tasks, we show first the error at the maximum length seen during training, i.e., for 20-bit numbers. Note that LSTM+A is not able to learn long binary multiplication at this length, it does not even fit the training data. Then we report numbers for sizes not seen during training.As you can see, a Neural GPU can learn a multiplication algorithm that generalizes perfectly, at least as far as we were able to test (technical limits of our implementation prevented us from testing much above 2000 bits). Even for the simpler task of binary addition, stack-RNNs work only up-to length 100. This is still much better than the LSTM+A baseline which only generalizes to length 25.",
+   "level": 1,
+   "path_id": "1~5",
+   "parent_section_id": null,
+   "order_in_parent": 5,
+   "section_id": "sec-1~5"
+  },
+  {
+   "title": "OTHER ALGORITHMIC TASKS",
+   "text": "In addition to the two main tasks above, we tested Neural GPUs on the following simpler algorithmic tasks. The same architecture as used above was able to solve all of the tasks described below, i.e., after being trained on sequences of length up-to 41 we were not able to find any error on sequences on any length we tested (up-to 4001).Copying sequences is the simple task of producing on output the same sequence as on input. It is very easy for a Neural GPU, in fact all models converge quickly and generalize perfectly.Reversing sequences is the task of reversing a sequence of bits, n is the length of the sequence.Duplicating sequences is the task of duplicating the input bit sequence on output twice, as in the example below. We use the padding symbol on input to make it match the output length. We trained on sequences of inputs up-to 20 bits, so outputs were up-to 40-bits long, and tested on inputs up-to 2000 bits long. 0 0 1 1  Output 0 0 1 1 0 0 1 1 Counting by sorting bits is the task of sorting the input bit sequence on output. Since there are only 2 symbols to sort, this is a counting tasks -the network must count how many 0s are in the input and produce the output accordingly, as in the example below.",
+   "level": 2,
+   "path_id": "3.2",
+   "parent_section_id": "sec-3",
+   "order_in_parent": 1,
+   "section_id": "sec-3.2"
+  },
+  {
+   "title": "Input",
+   "text": "Input 1 0 1 1 0 0 1 0 Output 0 0 0 0 1 1 1 1 3.3 TRAINING TECHNIQUESHere we describe the training methods that we used to improve our results. Note that we applied these methods to the LSTM+A baseline as well, to keep the above comparison fair. We focus on the most important elements of our training regime, all less relevant details can be found in the code which is released as open-source.foot_0 Grid search. Each result we report is obtained by running a grid search over 3 6 = 729 instances. We consider 3 settings of the learning rate, initial parameters scale, and 4 other hyperparameters discussed below: the relaxation pull factor, curriculum progress threshold, gradient noise scale, and dropout. An important effect of running this grid search is also that we train 729 models with different random seeds every time. Usually only a few of these models generalize to 2000-bit numbers, but a significant fraction works well on 200-bit numbers, as discussed below.Curriculum learning. We use a curriculum learning approach inspired by Zaremba &amp; Sutskever (2015a). This means that we train, e.g., on 7-digit numbers only after crossing a curriculum progress threshold (e.g., over 90% fully correct outputs) on 6-digit numbers. However, with 20% probability we pick a minibatch of d-digit numbers with d chosen uniformly at random between 1 and 20.",
+   "level": 1,
+   "path_id": "1~6",
+   "parent_section_id": null,
+   "order_in_parent": 6,
+   "section_id": "sec-1~6"
+  },
+  {
+   "title": "Gradients noise.",
+   "text": "To improve training speed and stability we add noise to gradients in each training step. Inspired by the schedule from Welling &amp; Teh (2011), we add to gradients a noise drawn from the normal distribution with mean 0 and variance inversely proportional to the square root of stepnumber (i.e., with standard deviation proportional to the 4-th root of step-number). We multiply this noise by the gradient noise scale and, to avoid noise in converged models, we also multiply it by the fraction of non-fully-correct outputs (which is 0 for a perfect model).",
+   "level": 1,
+   "path_id": "1~7",
+   "parent_section_id": null,
+   "order_in_parent": 7,
+   "section_id": "sec-1~7"
+  },
+  {
+   "title": "Gate cutoff.",
+   "text": "In Section 2 we defined the gates in a CGRU using the sigmoid function, e.g., we wrote u = σ(U ′ * s + B ′ ). Usually the standard sigmoid function is used, σ(x) = 1 1+e -x . We found that adding a hard threshold on the top and bottom helps slightly in our setting, so we use1.2σ(x) -0.1 cut to the interval [0, 1], i.e., σ ′ (x) = max(0, min(1, 1.2σ(x) -0.1)).",
+   "level": 1,
+   "path_id": "1~8",
+   "parent_section_id": null,
+   "order_in_parent": 8,
+   "section_id": "sec-1~8"
+  },
+  {
+   "title": "DROPOUT ON RECURRENT CONNECTIONS",
+   "text": "Dropout is a widely applied technique for regularizing neural networks. But when applying it to recurrent networks, it has been counter-productive to apply it on recurrent connections -it only worked when applied to the non-recurrent ones, as reported by Pham et al. (2014).Since a Neural GPU does not have non-recurrent connections it might seem that dropout will not be useful for this architecture. Surprisingly, we found the contrary -it is useful and improves generalization. The key to using dropout effectively in this setting is to set a small dropout rate.When we run a grid search for dropout rates we vary them between 6%, 9%, and 13.5%, meaning that over 85% of the values are always preserved. It turns out that even this small dropout has large effect since we apply it to the whole mental image s i in each step i. Presumably the network now learns to include some redundancy in its internal representation and generalization benefits from it.Without dropout we usually see only a few models from a 729 grid search generalize reasonably, while with dropout it is a much larger fraction and they generalize to higher lengths. In particular, dropout was necessary to train models for multiplication that generalize to 2000 bits.",
+   "level": 3,
+   "path_id": "3.3.1",
+   "parent_section_id": "sec-3.3",
+   "order_in_parent": 0,
+   "section_id": "sec-3.3.1"
+  },
+  {
+   "title": "PARAMETER SHARING RELAXATION.",
+   "text": "To improve optimization of our deep network we use a relaxation technique for shared parameters which works as follows. Instead of training with parameters shared across time-steps we use r identical sets of non-shared parameters (we often use r = 6, larger numbers work better but use more memory). At time-step t of the Neural GPU we use the i-th set if t mod r = i.The procedure described above relaxes the network, as it can now perform different operations in different time-steps. Training becomes easier, but we now have r parameters instead of the single shared set we want. To unify them we add a term to the cost function representing the distance of each parameter from the average of this parameter in all the r sets. This term in the final cost function is multiplied by a scalar which we call the relaxation pull. If the relaxation pull is 0, the network behaves as if the r parameter sets were separate, but when it is large, the cost forces the network to unify the parameters across different set.During training, we gradually increase the relaxation pull. We start with a small value and every time the curriculum makes progress, e.g., when the model performs well on 6-digit numbers, we multiply the relaxation pull by a relaxation pull factor. When the curriculum reaches the maximal length we average the parameters from all sets and continue to train with a single shared parameter set.This method is crucial for learning multiplication. Without it, a Neural GPU with m = 24 has trouble to even fit the training set, and the few models that manage to do it do not generalize. With relaxation almost all models in our 729 runs manage to fit the training data.",
+   "level": 3,
+   "path_id": "3.3.2",
+   "parent_section_id": "sec-3.3",
+   "order_in_parent": 1,
+   "section_id": "sec-3.3.2"
+  },
+  {
+   "title": "DISCUSSION",
+   "text": "We prepared a video of the Neural GPU trained to solve the tasks mentioned above.foot_1 . It shows the state in each step with values of -1 drawn in white, 1 in black, and other in gray. This gives an intuition how the Neural GPU solves the discussed problems, e.g., it is quite clear that for the duplication task the Neural GPU learned to move a part of the embedding downwards in each step.What did not work well? For one, using decimal inputs degrades performance. All tasks above can easily be formulated with decimal inputs instead of binary ones. One could hope that a Neural GPU will work well in this case too, maybe with a larger m. We experimented with this formulation and our results were worse than when the representation was binary: we did not manage to learn long decimal multiplication. Increasing m to 128 allows to learn all other tasks in the decimal setting.Another problem is that often only a few models in a 729 grid search generalize to very long unseen instances. Among those 729 models, there usually are many models that generalize to 40 or even 200 bits, but only a few working without error for 2000-bit numbers. Using dropout and gradient noise improves the reliability of training and generalization, but maybe another technique could help even more. How could we make more models achieve good generalization? One idea that looks natural is to try to reduce the number of parameters by decreasing m. Surprisingly, this does not seem to have any influence. In addition to the m = 24 results presented above we ran experiments with m = 32, 64, 128 and the results were similar. In fact using m = 128 we got the most models to generalize. Additionally, we observed that ensembling a few models, just by averaging their outputs, helps to generalize: ensembles of 5 models almost always generalize perfectly on binary tasks.",
+   "level": 4,
+   "path_id": "4",
+   "parent_section_id": null,
+   "order_in_parent": 9,
+   "section_id": "sec-4"
+  },
+  {
+   "title": "Why use width?",
+   "text": "The Neural GPU is defined using two-dimensional convolutions and in our experiments one of the dimensions is always set to 4. Doing so is not necessary since a one-dimensional Neural GPU that uses four times larger m can represent every function representable by the original one. In fact we trained a model for long binary multiplication that generalized to 2000-bit numbers using a Neural GPU with width 1 and m = 64. However, the width of the Neural GPU increases the amount of information carried in its hidden state without increasing the number of its parameters. Thus it can be thought of as a factorization and might be useful for other tasks.Speed and data efficiency. Neural GPUs use the standard, heavily optimized convolution operation and are fast. We experimented with a 2-layer Neural GPU for n = 32 and m = 64. After unfolding in time it has 128 layers of CGRUs, each operating on 32 mental images, each 4 × 64 × 64 . The joint forward-backward step time for this network was about 0.6s on an NVIDIA GTX 970 GPU.We were also surprised by how data-efficient a Neural GPU can be. The experiments presented above were all performed using 10k random training data examples for each training length. Since we train on up-to 20-bit numbers this adds to about 200k training examples. We tried to train using only 100 examples per length, so about 2000 total training instances. We were surprised to see that it actually worked well for binary addition: there were models that generalized well to 200-bit numbers and to all lengths below despite such small training set. But we never managed to train a good model for binary multiplication with that little training data.",
+   "level": 1,
+   "path_id": "1~9",
+   "parent_section_id": null,
+   "order_in_parent": 10,
+   "section_id": "sec-1~9"
+  },
+  {
+   "title": "CONCLUSIONS AND FUTURE WORK",
+   "text": "The results presented in Table 1 show clearly that there is a qualitative difference between what can be achieved with a Neural GPU and what was possible with previous architectures. In particular, for the first time, we show a neural network that learns a non-trivial superlinear-time algorithm in a way that generalized to much higher lengths without errors.This opens the way to use neural networks in domains that were previously only addressed by discrete methods, such as program synthesis. With the surprising data efficiency of Neural GPUs it could even be possible to replicate previous program synthesis results, e.g., Kaiser (2012), but in a more scalable way. It is also interesting that a Neural GPU can learn symbolic algorithms without using any discrete state at all, and adding dropout and noise only improves its performance.Another promising future work is to apply Neural GPUs to language processing tasks. Good results have already been obtained on translation with a convolutional architecture over words (Kalchbrenner &amp; Blunsom, 2013) and adding gating and recursion, like in a Neural GPU, should allow to train much deeper models without overfitting. Finally, the parameter sharing relaxation technique can be applied to any deep recurrent network and has the potential to improve RNN training in general.",
+   "level": 5,
+   "path_id": "5",
+   "parent_section_id": null,
+   "order_in_parent": 11,
+   "section_id": "sec-5"
+  },
+  {
+   "title": "onFigure 1 :",
+   "text": "1Figure 1: Neural GPU with 2 layers and width w = 3 unfolded in time.",
+   "level": 1,
+   "path_id": "1~10",
+   "parent_section_id": null,
+   "order_in_parent": 12,
+   "section_id": "sec-1~10"
+  },
+  {
+   "title": "Table 1 :",
+   "text": "1Neural GPU, stackRNN, and LSTM+A results on addition and multiplication. The table shows the fraction of test cases for which every single bit of the model's output is correct.Task@BitsNeural GPUstackRNN LSTM+Abadd@20100%100%100%badd@25100%100%73%badd@100100%88%0%badd@200100%0%0%badd@2000100%0%0%bmul@20100%N/A0%bmul@25100%N/A0%bmul@200100%N/A0%bmul@2000100%N/A0%\n\t\t\tThe code is at https://github.com/tensorflow/models/tree/master/neural_gpu.\n\t\t\tThe video is available at https://www.youtube.com/watch?v=LzC8NkTZAF4",
+   "level": 1,
+   "path_id": "1~11",
+   "parent_section_id": null,
+   "order_in_parent": 13,
+   "section_id": "sec-1~11"
+  }
+ ],
+ "citations": [
+  {
+   "raw_text": "Learning regaular sets from queries and counterexamples\n\t\t\n\t\t\tDanaAngluin\n\t\t\n\t\n\t\n\t\tInformation and Computation\n\t\t\n\t\t\t75\n\t\t\t\n\t\t\t1987",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Learning regaular sets from queries and counterexamples",
+   "anchors": [
+    {
+     "ref_id": "b0",
+     "section_path_id": "1.1",
+     "quote": "(Angluin, 1987)",
+     "offset": 3441
+    }
+   ]
+  },
+  {
+   "raw_text": "Neural machine translation by jointly learning to align and translate\n\t\t\n\t\t\tDzmitryBahdanau\n\t\t\n\t\t\n\t\t\tKyunghyunCho\n\t\t\n\t\t\n\t\t\tYoshuaBengio\n\t\t\n\t\tCoRR, abs/1409.0473\n\t\t\n\t\t\n\t\t\t2014",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b1",
+     "section_path_id": "1",
+     "quote": "Bahdanau et al., 2014;",
+     "offset": 533
+    },
+    {
+     "ref_id": "b1",
+     "section_path_id": "1",
+     "quote": "(Bahdanau et al., 2014)",
+     "offset": 1163
+    },
+    {
+     "ref_id": "b1",
+     "section_path_id": "1.1",
+     "quote": "Bahdanau et al., 2014;",
+     "offset": 186
+    }
+   ]
+  },
+  {
+   "raw_text": "Automatic Structures\n\t\t\n\t\t\tAchimBlumensath\n\t\t\n\t\t\n\t\t\tErichGrädel\n\t\t\n\t\t\n\t\n\t\n\t\tProceedings of LICS 2000\n\t\tLICS 2000\n\t\t\n\t\t\t2000",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Automatic Structures",
+   "anchors": [
+    {
+     "ref_id": "b2",
+     "section_path_id": "1.1",
+     "quote": "(Blumensath &amp; Grädel, 2000)",
+     "offset": 3567
+    }
+   ]
+  },
+  {
+   "raw_text": "Listen, attend and spell\n\t\t\n\t\t\tWilliamChan\n\t\t\n\t\t\n\t\t\tJaitly\n\t\t\n\t\t\n\t\t\tNavdeep\n\t\t\n\t\t\n\t\t\tQuocVLe\n\t\t\n\t\t\n\t\t\tVinyals\n\t\t\n\t\t\n\t\t\tOriol\n\t\t\n\t\n\t\n\t\tInternational Conference on Acoustics, Speech and Signal Processing\n\t\t\n\t\t\t2016",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Listen, attend and spell",
+   "anchors": [
+    {
+     "ref_id": "b3",
+     "section_path_id": "1",
+     "quote": "(Chan et al., 2016)",
+     "offset": 638
+    }
+   ]
+  },
+  {
+   "raw_text": "Learning phrase representations using rnn encoder-decoder for statistical machine translation\n\t\t\n\t\t\tKyunghyunCho\n\t\t\n\t\t\n\t\t\tVan Merrienboer\n\t\t\n\t\t\n\t\t\tBart\n\t\t\n\t\t\n\t\t\tGulcehre\n\t\t\n\t\t\n\t\t\tCaglar\n\t\t\n\t\t\n\t\t\tBougares\n\t\t\n\t\t\n\t\t\tFethi\n\t\t\n\t\t\n\t\t\tSchwenk\n\t\t\n\t\t\n\t\t\tHolger\n\t\t\n\t\t\n\t\t\tYoshuaBengio\n\t\t\n\t\tCoRR, abs/1406.1078\n\t\t\n\t\t\n\t\t\t2014",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b4",
+     "section_path_id": "1",
+     "quote": "Cho et al., 2014)",
+     "offset": 555
+    },
+    {
+     "ref_id": "b4",
+     "section_path_id": "1.1",
+     "quote": "Cho et al., 2014",
+     "offset": 208
+    },
+    {
+     "ref_id": "b4",
+     "section_path_id": "1~2",
+     "quote": "(Cho et al., 2014)",
+     "offset": 165
+    }
+   ]
+  },
+  {
+   "raw_text": "Empirical evaluation of gated recurrent neural networks on sequence modeling\n\t\t\n\t\t\tJunyoungChung\n\t\t\n\t\t\n\t\t\tGülc ¸ehre\n\t\t\n\t\t\n\t\t\tKyunghyunCho\n\t\t\n\t\t\n\t\t\tYoshuaBengio\n\t\t\n\t\tCoRR, abs/1412.3555\n\t\t\n\t\t\n\t\t\t2014",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b5",
+     "section_path_id": "1~2",
+     "quote": "(Chung et al., 2014;",
+     "offset": 476
+    }
+   ]
+  },
+  {
+   "raw_text": "Context-dependent pre-trained deep neural networks for large-vocabulary speech recognition\n\t\t\n\t\t\tGeorgeEDahl\n\t\t\n\t\t\n\t\t\tYu\n\t\t\n\t\t\n\t\t\tDong\n\t\t\n\t\t\n\t\t\tLiDeng\n\t\t\n\t\t\n\t\t\tAlexAcero\n\t\t\n\t\n\t\n\t\tIEEE Transactions on Audio, Speech &amp; Language Processing\n\t\t\n\t\t\t20\n\t\t\t1\n\t\t\t\n\t\t\t2012",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Context-dependent pre-trained deep neural networks for large-vocabulary speech recognition",
+   "anchors": [
+    {
+     "ref_id": "b6",
+     "section_path_id": "1",
+     "quote": "(Dahl et al., 2012)",
+     "offset": 141
+    }
+   ]
+  },
+  {
+   "raw_text": "AlexGraves\n\t\t\n\t\t\n\t\t\tGregWayne\n\t\t\n\t\t\n\t\t\tIvoDanihelka\n\t\t\n\t\t\n\t\tNeural turing machines. CoRR, abs/1410\n\t\t\n\t\t\t2014\n\t\t\t5401",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b7",
+     "section_path_id": "1",
+     "quote": "(Graves et al., 2014)",
+     "offset": 1735
+    },
+    {
+     "ref_id": "b7",
+     "section_path_id": "1.1",
+     "quote": "(Graves et al., 2014)",
+     "offset": 449
+    }
+   ]
+  },
+  {
+   "raw_text": "Learning to transduce with unbounded memory\n\t\t\n\t\t\tEdwardGrefenstette\n\t\t\n\t\t\n\t\t\tKarlHermann\n\t\t\n\t\t\n\t\t\tMoritz\n\t\t\n\t\t\n\t\t\tMustafaSuleyman\n\t\t\n\t\t\n\t\t\tPhilBlunsom\n\t\t\n\t\tCoRR, abs/1506.02516\n\t\t\n\t\t\n\t\t\t2015",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b8",
+     "section_path_id": "1",
+     "quote": "(Grefenstette et al., 2015)",
+     "offset": 2462
+    },
+    {
+     "ref_id": "b8",
+     "section_path_id": "1.1",
+     "quote": "(Grefenstette et al., 2015)",
+     "offset": 727
+    }
+   ]
+  },
+  {
+   "raw_text": "LSTM: A search space odyssey\n\t\t\n\t\t\tKlausGreff\n\t\t\n\t\t\n\t\t\tRupeshSrivastava\n\t\t\n\t\t\n\t\t\tKumar\n\t\t\n\t\t\n\t\t\tJanKoutník\n\t\t\n\t\t\n\t\t\tSteunebrink\n\t\t\n\t\t\n\t\t\tRBas\n\t\t\n\t\t\n\t\t\tJürgenSchmidhuber\n\t\t\n\t\tCoRR, abs/1503.04069\n\t\t\n\t\t\n\t\t\t2015",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b9",
+     "section_path_id": "1~2",
+     "quote": "(Srivastava et al., 2015)",
+     "offset": 354
+    },
+    {
+     "ref_id": "b9",
+     "section_path_id": "1~2",
+     "quote": "Greff et al., 2015)",
+     "offset": 496
+    }
+   ]
+  },
+  {
+   "raw_text": "Dimensions in program synthesis\n\t\t\n\t\t\tSumitGulwani\n\t\t\n\t\n\t\n\t\tProceedings of PPDP 2010, PPDP &apos;10\n\t\tPPDP 2010, PPDP &apos;10\n\t\t\n\t\t\t2010",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Dimensions in program synthesis",
+   "anchors": [
+    {
+     "ref_id": "b10",
+     "section_path_id": "1.1",
+     "quote": "Gulwani (2010)",
+     "offset": 2359
+    }
+   ]
+  },
+  {
+   "raw_text": "Long short-term memory\n\t\t\n\t\t\tSeppHochreiter\n\t\t\n\t\t\n\t\t\tJürgenSchmidhuber\n\t\t\n\t\n\t\n\t\tNeural computation\n\t\t\n\t\t\t9\n\t\t\t8\n\t\t\t\n\t\t\t1997",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Long short-term memory",
+   "anchors": [
+    {
+     "ref_id": "b11",
+     "section_path_id": "1",
+     "quote": "(Hochreiter &amp; Schmidhuber, 1997)",
+     "offset": 255
+    }
+   ]
+  },
+  {
+   "raw_text": "Inferring algorithmic patterns with stack-augmented recurrent nets\n\t\t\n\t\t\tArmandJoulin\n\t\t\n\t\t\n\t\t\tTomasMikolov\n\t\t\n\t\tCoRR, abs/1503.01007\n\t\t\n\t\t\n\t\t\t2015",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b12",
+     "section_path_id": "1",
+     "quote": "Joulin &amp; Mikolov (2015)",
+     "offset": 1343
+    },
+    {
+     "ref_id": "b12",
+     "section_path_id": "1",
+     "quote": "(Joulin &amp; Mikolov, 2015)",
+     "offset": 2415
+    },
+    {
+     "ref_id": "b12",
+     "section_path_id": "1.1",
+     "quote": "(Joulin &amp; Mikolov, 2015)",
+     "offset": 1582
+    },
+    {
+     "ref_id": "b12",
+     "section_path_id": "1~4",
+     "quote": "(Joulin &amp; Mikolov, 2015)",
+     "offset": 1540
+    }
+   ]
+  },
+  {
+   "raw_text": "Learning games from videos guided by descriptive complexity\n\t\t\n\t\t\tŁukaszKaiser\n\t\t\n\t\t\n\t\n\t\n\t\tProceedings of the AAAI-12\n\t\tthe AAAI-12\n\t\t\n\t\t\tAAAI Press\n\t\t\t2012",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Learning games from videos guided by descriptive complexity",
+   "anchors": [
+    {
+     "ref_id": "b13",
+     "section_path_id": "5",
+     "quote": "Kaiser (2012)",
+     "offset": 629
+    }
+   ]
+  },
+  {
+   "raw_text": "Recurrent continuous translation models\n\t\t\n\t\t\tNalKalchbrenner\n\t\t\n\t\t\n\t\t\tPhilBlunsom\n\t\t\n\t\t\n\t\n\t\n\t\tProceedings EMNLP 2013\n\t\tEMNLP 2013\n\t\t\n\t\t\t2013",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Recurrent continuous translation models",
+   "anchors": [
+    {
+     "ref_id": "b14",
+     "section_path_id": "5",
+     "quote": "(Kalchbrenner &amp; Blunsom, 2013)",
+     "offset": 1027
+    }
+   ]
+  },
+  {
+   "raw_text": "Grid long short-term memory\n\t\t\n\t\t\tNalKalchbrenner\n\t\t\n\t\t\n\t\t\tDanihelka\n\t\t\n\t\t\n\t\t\tIvo\n\t\t\n\t\t\n\t\t\tAlexGraves\n\t\t\n\t\t\n\t\n\t\n\t\tInternational Conference on Learning Representations\n\t\t\n\t\t\t2016",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Grid long short-term memory",
+   "anchors": [
+    {
+     "ref_id": "b15",
+     "section_path_id": "1.1",
+     "quote": "(Kalchbrenner et al., 2016)",
+     "offset": 870
+    }
+   ]
+  },
+  {
+   "raw_text": "Adam: A method for stochastic optimization\n\t\t\n\t\t\tDiederikPKingma\n\t\t\n\t\t\n\t\t\tJimmyBa\n\t\t\n\t\tCoRR, abs/1412.6980\n\t\t\n\t\t\n\t\t\t2014",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b16",
+     "section_path_id": "1~2",
+     "quote": "(Kingma &amp; Ba, 2014)",
+     "offset": 4072
+    }
+   ]
+  },
+  {
+   "raw_text": "Inductive programming: A survey of program synthesis techniques\n\t\t\n\t\t\tEmanuelKitzelmann\n\t\t\n\t\n\t\n\t\tApproaches and Applications of Inductive Programming\n\t\t\n\t\t\t2009. 2010\n\t\t\t5812\n\t\t\t\n\t\t\n\t\n\tLNCS",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Inductive programming: A survey of program synthesis techniques",
+   "anchors": [
+    {
+     "ref_id": "b17",
+     "section_path_id": "1.1",
+     "quote": "Kitzelmann (2010)",
+     "offset": 2378
+    }
+   ]
+  },
+  {
+   "raw_text": "Imagenet classification with deep convolutional neural network\n\t\t\n\t\t\tAlexKrizhevsky\n\t\t\n\t\t\n\t\t\tSutskever\n\t\t\n\t\t\n\t\t\tIlya\n\t\t\n\t\t\n\t\t\tGeoffreyHinton\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t2012",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Imagenet classification with deep convolutional neural network",
+   "anchors": [
+    {
+     "ref_id": "b18",
+     "section_path_id": "1",
+     "quote": "(Krizhevsky et al., 2012)",
+     "offset": 95
+    }
+   ]
+  },
+  {
+   "raw_text": "Fast algorithms for convolutional neural networks\n\t\t\n\t\t\tAndrewLavin\n\t\t\n\t\t\n\t\t\tScottGray\n\t\t\n\t\tCoRR, abs/1509.09308\n\t\t\n\t\t\n\t\t\t2015",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b19",
+     "section_path_id": "1~2",
+     "quote": "Lavin &amp; Gray (2015)",
+     "offset": 2583
+    }
+   ]
+  },
+  {
+   "raw_text": "Dropout improves recurrent neural networks for handwriting recognition\n\t\t\n\t\t\tPham\n\t\t\n\t\t\n\t\t\tVu\n\t\t\n\t\t\n\t\t\tBluche\n\t\t\n\t\t\n\t\t\tThéodore\n\t\t\n\t\t\n\t\t\tChristopherKermorvant\n\t\t\n\t\t\n\t\t\tJérômeLouradour\n\t\t\n\t\t\n\t\n\t\n\t\tInternational Conference on Frontiers in Handwriting Recognition (ICFHR)\n\t\t\n\t\t\tIEEE\n\t\t\t2014",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Dropout improves recurrent neural networks for handwriting recognition",
+   "anchors": [
+    {
+     "ref_id": "b20",
+     "section_path_id": "3.3.1",
+     "quote": "Pham et al. (2014)",
+     "offset": 255
+    }
+   ]
+  },
+  {
+   "raw_text": "Convolutional LSTM network: A machine learning approach for precipitation nowcasting\n\t\t\n\t\t\tXingjianShi\n\t\t\n\t\t\n\t\t\tChen\n\t\t\n\t\t\n\t\t\tZhourong\n\t\t\n\t\t\n\t\t\tWang\n\t\t\n\t\t\n\t\t\tHao\n\t\t\n\t\t\n\t\t\tYeung\n\t\t\n\t\t\n\t\t\tKinDit-Yan\n\t\t\n\t\t\n\t\t\tWaiWong\n\t\t\n\t\t\n\t\t\tChunWoo\n\t\t\n\t\t\n\t\t\tWang\n\t\t\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t2015",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Convolutional LSTM network: A machine learning approach for precipitation nowcasting",
+   "anchors": [
+    {
+     "ref_id": "b21",
+     "section_path_id": "1.1",
+     "quote": "(Shi et al., 2015)",
+     "offset": 1339
+    }
+   ]
+  },
+  {
+   "raw_text": "RupeshSrivastava\n\t\t\n\t\t\n\t\t\tKumar\n\t\t\n\t\t\n\t\t\tKlausGreff\n\t\t\n\t\t\n\t\t\tJürgenSchmidhuber\n\t\t\n\t\t\n\t\n\tHighway networks",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Corr\n\t\t\n\t\tabs/1505.00387\n\t\t\n\t\t\n\t\t\t2015",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Sequence to sequence learning with neural networks\n\t\t\n\t\t\tIlyaSutskever\n\t\t\n\t\t\n\t\t\tVinyals\n\t\t\n\t\t\n\t\t\tOriol\n\t\t\n\t\t\n\t\t\tQuocLe\n\t\t\n\t\t\n\t\t\tVv\n\t\t\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t2014",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Sequence to sequence learning with neural networks",
+   "anchors": [
+    {
+     "ref_id": "b24",
+     "section_path_id": "1",
+     "quote": "(Sutskever et al., 2014;",
+     "offset": 509
+    },
+    {
+     "ref_id": "b24",
+     "section_path_id": "1.1",
+     "quote": "(Sutskever et al., 2014;",
+     "offset": 162
+    }
+   ]
+  },
+  {
+   "raw_text": "Variable rate image compression with recurrent neural networks\n\t\t\n\t\t\tGeorgeToderici\n\t\t\n\t\t\n\t\t\tO'Malley\n\t\t\n\t\t\n\t\t\tSeanMHwang\n\t\t\n\t\t\n\t\t\tSungJin\n\t\t\n\t\t\n\t\t\tDamienVincent\n\t\t\n\t\t\n\t\t\tMinnen\n\t\t\n\t\t\n\t\t\tDavid\n\t\t\n\t\t\n\t\t\tBaluja\n\t\t\n\t\t\n\t\t\tShumeet\n\t\t\n\t\t\n\t\t\tMicheleCovell\n\t\t\n\t\t\n\t\t\tRahulSukthankar\n\t\t\n\t\t\n\t\n\t\n\t\tInternational Conference on Learning Representations\n\t\t\n\t\t\t2016",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Variable rate image compression with recurrent neural networks",
+   "anchors": [
+    {
+     "ref_id": "b25",
+     "section_path_id": "1.1",
+     "quote": "(Toderici et al., 2016)",
+     "offset": 1380
+    }
+   ]
+  },
+  {
+   "raw_text": "Grammar as a foreign language\n\t\t\n\t\t\tVinyals\n\t\t\n\t\t\n\t\t\tKooKaiser\n\t\t\n\t\t\n\t\t\tPetrov\n\t\t\n\t\t\n\t\t\tSutskever\n\t\t\n\t\t\n\t\t\tHinton\n\t\t\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t2015",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Grammar as a foreign language",
+   "anchors": [
+    {
+     "ref_id": "b26",
+     "section_path_id": "1",
+     "quote": "(Vinyals &amp; Kaiser et al., 2015)",
+     "offset": 582
+    },
+    {
+     "ref_id": "b26",
+     "section_path_id": "1~4",
+     "quote": "(Vinyals &amp; Kaiser et al., 2015)",
+     "offset": 1118
+    }
+   ]
+  },
+  {
+   "raw_text": "Show and tell: A neural image caption generator\n\t\t\n\t\t\tVinyals\n\t\t\n\t\t\n\t\t\tOriol\n\t\t\n\t\t\n\t\t\tToshev\n\t\t\n\t\t\n\t\t\tAlexander\n\t\t\n\t\t\n\t\t\tBengio\n\t\t\n\t\t\n\t\t\tSamy\n\t\t\n\t\t\n\t\t\tDumitruErhan\n\t\t\n\t\tCoRR, abs/1411.4555\n\t\t\n\t\t\n\t\t\t2014",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b27",
+     "section_path_id": "1",
+     "quote": "(Vinyals et al., 2014)",
+     "offset": 686
+    }
+   ]
+  },
+  {
+   "raw_text": "An Introduction to cellular automata\n\t\t\n\t\t\tHeleneVivien\n\t\t\n\t\t\n\t\t\n\t\t\t2003",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b28",
+     "section_path_id": "1~3",
+     "quote": "(Vivien, 2003)",
+     "offset": 882
+    }
+   ]
+  },
+  {
+   "raw_text": "Bayesian learning via stochastic gradient Langevin dynamics\n\t\t\n\t\t\tMaxWelling\n\t\t\n\t\t\n\t\t\tYeeTeh\n\t\t\n\t\t\n\t\t\tWhye\n\t\t\n\t\n\t\n\t\tProceedings of ICML 2011\n\t\tICML 2011\n\t\t\n\t\t\t2011",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Bayesian learning via stochastic gradient Langevin dynamics",
+   "anchors": [
+    {
+     "ref_id": "b29",
+     "section_path_id": "1~7",
+     "quote": "Welling &amp; Teh (2011)",
+     "offset": 119
+    }
+   ]
+  },
+  {
+   "raw_text": "Learning to execute\n\t\t\n\t\t\tWojciechZaremba\n\t\t\n\t\t\n\t\t\tIlyaSutskever\n\t\t\n\t\tCoRR, abs/1410.4615\n\t\t\n\t\t\n\t\t\t2015",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Reinforcement learning neural turing machines\n\t\t\n\t\t\tWojciechZaremba\n\t\t\n\t\t\n\t\t\tIlyaSutskever",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Corr\n\t\t\n\t\tabs/1505.00521\n\t\t\n\t\t\n\t\t\t2015",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  }
+ ],
+ "layout_json": null,
+ "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">NEURAL GPUS LEARN ALGORITHMS</title>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability  status=\"unknown\">\n\t\t\t\t\t<licence/>\n\t\t\t\t</availability>\n\t\t\t\t<date type=\"published\" when=\"2016-03-15\">15 Mar 2016</date>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Łukasz</forename><surname>Kaiser</surname></persName>\n\t\t\t\t\t\t\t<email>lukaszkaiser@google.com</email>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Ilya</forename><surname>Sutskever</surname></persName>\n\t\t\t\t\t\t\t<email>ilyasu@google.com</email>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">NEURAL GPUS LEARN ALGORITHMS</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date type=\"published\" when=\"2016-03-15\">15 Mar 2016</date>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">6020B42FDB5BE3951AEC56E8FD52AA57</idno>\n\t\t\t\t\t<idno type=\"arXiv\">arXiv:1511.08228v3[cs.LG]</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.0\" ident=\"GROBID\" when=\"2026-08-21T15:21+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.0</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>Learning an algorithm from examples is a fundamental problem that has been widely studied. It has been addressed using neural networks too, in particular by Neural Turing Machines (NTMs). These are fully differentiable computers that use backpropagation to learn their own programming. Despite their appeal NTMs have a weakness that is caused by their sequential nature: they are not parallel and are are hard to train due to their large depth when unfolded. We present a neural network architecture to address this problem: the Neural GPU. It is based on a type of convolutional gated recurrent unit and, like the NTM, is computationally universal. Unlike the NTM, the Neural GPU is highly parallel which makes it easier to train and efficient to run. An essential property of algorithms is their ability to handle inputs of arbitrary size. We show that the Neural GPU can be trained on short instances of an algorithmic task and successfully generalize to long instances. We verified it on a number of tasks including long addition and long multiplication of numbers represented in binary. We train the Neural GPU on numbers with up-to 20 bits and observe no errors whatsoever while testing it, even on much longer numbers. To achieve these results we introduce a technique for training deep recurrent networks: parameter sharing relaxation. We also found a small amount of dropout and gradient noise to have a large positive effect on learning and generalization.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"8\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"9\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"1\">INTRODUCTION</head><p>Deep neural networks have recently proven successful at various tasks, such as computer vision <ref type=\"bibr\" target=\"#b18\">(Krizhevsky et al., 2012)</ref>, speech recognition <ref type=\"bibr\" target=\"#b6\">(Dahl et al., 2012)</ref>, and in other domains. Recurrent neural networks based on long short-term memory (LSTM) cells <ref type=\"bibr\" target=\"#b11\">(Hochreiter &amp; Schmidhuber, 1997)</ref> have been successfully applied to a number of natural language processing tasks. Sequence-tosequence recurrent neural networks with such cells can learn very complex tasks in an end-to-end manner, such as translation <ref type=\"bibr\" target=\"#b24\">(Sutskever et al., 2014;</ref><ref type=\"bibr\" target=\"#b1\">Bahdanau et al., 2014;</ref><ref type=\"bibr\" target=\"#b4\">Cho et al., 2014)</ref>, parsing <ref type=\"bibr\" target=\"#b26\">(Vinyals &amp; Kaiser et al., 2015)</ref>, speech recognition <ref type=\"bibr\" target=\"#b3\">(Chan et al., 2016)</ref> or image caption generation <ref type=\"bibr\" target=\"#b27\">(Vinyals et al., 2014)</ref>. Since so many tasks can be solved with essentially one model, a natural question arises: is this model the best we can hope for in supervised learning?</p><p>Despite its recent success, the sequence-to-sequence model has limitations. In its basic form, the entire input is encoded into a single fixed-size vector, so the model cannot generalize to inputs much longer than this fixed capacity. One way to resolve this problem is by using an attention mechanism <ref type=\"bibr\" target=\"#b1\">(Bahdanau et al., 2014)</ref>. This allows the network to inspect arbitrary parts of the input in every decoding step, so the basic limitation is removed. But other problems remain, and <ref type=\"bibr\" target=\"#b12\">Joulin &amp; Mikolov (2015)</ref> show a number of basic algorithmic tasks on which sequence-to-sequence LSTM networks fail to generalize. They propose a stack-augmented recurrent network, and it works on some problems, but is limited in other ways.</p><p>In the best case one would desire a neural network model able to learn arbitrarily complex algorithms given enough resources. Neural Turing Machines <ref type=\"bibr\" target=\"#b7\">(Graves et al., 2014)</ref> have this theoretical property. However, they are not computationally efficient because they use soft attention and because they tend to be of considerable depth. Their depth makes the training objective difficult to optimize and impossible to parallelize because they are learning a sequential program. Their use of soft attention requires accessing the entire memory in order to simulate 1 step of computation, which introduces substantial overhead. These two factors make learning complex algorithms using Neural Turing Ma-chines difficult. These issues are not limited to Neural Turing Machines, they apply to other architectures too, such as stack-RNNs <ref type=\"bibr\" target=\"#b12\">(Joulin &amp; Mikolov, 2015)</ref> or (De)Queue-RNNs <ref type=\"bibr\" target=\"#b8\">(Grefenstette et al., 2015)</ref>. One can try to alleviate these problems using hard attention and reinforcement learning, but such non-differentiable models do not learn well at present <ref type=\"bibr\">(Zaremba &amp; Sutskever, 2015b)</ref>.</p><p>In this work we present a neural network model, the Neural GPU, that addresses the above issues. It is a Turing-complete model capable of learning arbitrary algorithms in principle, like a Neural Turing Machine. But, in contrast to Neural Turing Machines, it is designed to be as parallel and as shallow as possible. It is more similar to a GPU than to a Turing machine since it uses a smaller number of parallel computational steps. We show that the Neural GPU works in multiple experiments:</p><p>• A Neural GPU can learn long binary multiplication from examples. It is the first neural network able to learn an algorithm whose run-time is superlinear in the size of its input.</p><p>Trained on up-to 20-bit numbers, we see no single error on any inputs we tested, and we tested on numbers up-to 2000 bits long.</p><p>• The same architecture can also learn long binary addition and a number of other algorithmic tasks, such as counting, copying sequences, reversing them, or duplicating them.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"1.1\">RELATED WORK</head><p>The learning of algorithms with neural networks has seen a lot of interest after the success of sequence-to-sequence neural networks on language processing tasks <ref type=\"bibr\" target=\"#b24\">(Sutskever et al., 2014;</ref><ref type=\"bibr\" target=\"#b1\">Bahdanau et al., 2014;</ref><ref type=\"bibr\" target=\"#b4\">Cho et al., 2014</ref>). An attempt has even been made to learn to evaluate simple python programs with a pure sequence-to-sequence model <ref type=\"bibr\">(Zaremba &amp; Sutskever, 2015a)</ref>, but more success was seen with more complex models. Neural Turing Machines <ref type=\"bibr\" target=\"#b7\">(Graves et al., 2014)</ref> were shown to learn a number of basic sequence transformations and memory access patterns, and their reinforcement learning variant <ref type=\"bibr\">(Zaremba &amp; Sutskever, 2015b)</ref> has reasonable performance on a number of tasks as well. Stack, Queue and DeQueue networks <ref type=\"bibr\" target=\"#b8\">(Grefenstette et al., 2015)</ref> were also shown to learn basic sequence transformations such as bigram flipping or sequence reversal.</p><p>The Grid LSTM <ref type=\"bibr\" target=\"#b15\">(Kalchbrenner et al., 2016)</ref> is another powerful architecture that can learn to multiply 15-digit decimal numbers. As we will see in the next section, the Grid-LSTM is quite similar to the Neural GPU -the main difference is that the Neural GPU is less recurrent and is explicitly constructed from the highly parallel convolution operator.</p><p>In image processing, convolutional LSTMs, an architecture similar to the Neural GPU, have recently been used for weather prediction <ref type=\"bibr\" target=\"#b21\">(Shi et al., 2015)</ref> and image compression <ref type=\"bibr\" target=\"#b25\">(Toderici et al., 2016)</ref>. We find it encouraging as it hints that the Neural GPU might perform well in other contexts.</p><p>Most comparable to this work are the prior experiments with the stack-augmented RNNs <ref type=\"bibr\" target=\"#b12\">(Joulin &amp; Mikolov, 2015)</ref>. These networks manage to learn and generalize to unseen lengths on a number of algorithmic tasks. But, as we show in Section 3.1, stack-augmented RNNs trained to add numbers up-to 20-bit long generalize only to ∼ 100-bit numbers, never to 200-bit ones, and never without error. Still, their generalization is the best we were able to obtain without using the Neural GPU and far surpasses a baseline LSTM sequence-to-sequence model with attention.</p><p>The quest for learning algorithms has been pursued much more widely with tools other than neural networks. It is known under names such as program synthesis, program induction, automatic programming, or inductive synthesis, and has a long history with many works that we do not cover here; see, e.g., <ref type=\"bibr\" target=\"#b10\">Gulwani (2010)</ref> and <ref type=\"bibr\" target=\"#b17\">Kitzelmann (2010)</ref> for a more general perspective.</p><p>Since one of our results is the synthesis of an algorithm for long binary addition, let us recall how this problem has been addressed without neural networks. Importantly, there are two cases of this problem with different complexity. The easier case is when the two numbers that are to be added are aligned at input, i.e., if the first (lower-endian) bit of the first number is presented at the same time as the first bit of the second number, then come the second bits, and so on, as depicted below for x = 9 = 8 + 1 and y = 5 = 4 + 1 written in binary with least-significant bit left.</p><p>Input 1 0 0 1 (x and y aligned) 1 0 1 0 Desired Output (x + y) 0 1 1 1 In this representation the triples of bits from (x, y, x + y), e.g., (1, 1, 0) (0, 0, 1) (0, 1, 1) (1, 0, 1) as in the figure above, form a regular language. To learn binary addition in this representation it therefore suffices to find a regular expression or an automaton that accepts this language, which can be done with a variant of Anguin's algorithm <ref type=\"bibr\" target=\"#b0\">(Angluin, 1987)</ref>. But only few interesting functions have regular representations, as for example long multiplication does not <ref type=\"bibr\" target=\"#b2\">(Blumensath &amp; Grädel, 2000)</ref>. It is therefore desirable to learn long binary addition without alignment, for example when x and y are provided one after another. This is the representation we use in the present paper.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Input (x, y)</head><p>1 0 0 1 + 1 0 1 0 Desired Output (x + y) 0 1 1 1 2 THE NEURAL GPU Before we introduce the Neural GPU, let us recall the architecture of a Gated Recurrent Unit (GRU) <ref type=\"bibr\" target=\"#b4\">(Cho et al., 2014)</ref>. A GRU is similar to an LSTM, but its input and state are the same size, which makes it easier for us to generalize it later; a highway network could have also been used <ref type=\"bibr\" target=\"#b9\">(Srivastava et al., 2015)</ref>, but it lacks the reset gate. GRUs have shown performance similar to LSTMs on a number of tasks <ref type=\"bibr\" target=\"#b5\">(Chung et al., 2014;</ref><ref type=\"bibr\" target=\"#b9\">Greff et al., 2015)</ref>. A GRU takes an input vector x and a current state vector s, and outputs:</p><formula xml:id=\"formula_0\">GRU(x, s) = u ⊙ s + (1 -u) ⊙ tanh(W x + U (r ⊙ s) + B), where u = σ(W ′ x + U ′ s + B ′ ) and r = σ(W ′′ x + U ′′ s + B ′′ ).</formula><p>In the equations above, W, W ′ , W ′′ , U, U ′ , U ′′ are matrices and B, B ′ , B ′′ are bias vectors; these are the parameters that will be learned. We write W x for a matrix-vector multiplication and r ⊙ s for elementwise vector multiplication. The vectors u and r are called gates since their elements are in [0, 1] -u is the update gate and r is the reset gate.</p><p>In recurrent neural networks a unit like GRU is applied at every step and the result is both passed as new state and used to compute the output. In a Neural GPU we do not process a new input in every step. Instead, all inputs are written into the starting state s 0 . This state has 2-dimensional structure: it consists of w × h vectors of m numbers, i.e., it is a 3-dimensional tensor of shape <ref type=\"bibr\">[w, h, m]</ref>. This mental image evolves in time in a way defined by a convolutional gated recurrent unit:</p><formula xml:id=\"formula_1\">CGRU(s) = u ⊙ s + (1 -u) ⊙ tanh(U * (r ⊙ s) + B), where u = σ(U ′ * s + B ′ ) and r = σ(U ′′ * s + B ′′ ).</formula><p>U * s above denotes the convolution of a kernel bank U with the mental image s. A kernel bank is a 4-dimensional tensor of shape [k w , k h , m, m], i.e., it contains k w • k h • m 2 parameters, where k w and k h are kernel width and height. It is applied to a mental image s of shape [w, h, m] which results in another mental image U * s of the same shape defined by:</p><formula xml:id=\"formula_2\">U * s[x, y, i] = ⌊kw/2⌋ u=⌊-kw/2⌋ ⌊k h /2⌋ v=⌊-k h /2⌋ m c=1 s[x + u, y + v, c] • U [u, v, c, i].</formula><p>In the equation above the index x + u might sometimes be negative or larger than the size of s, and in such cases we assume the value is 0. This corresponds to the standard convolution operator used in convolutional neural networks with zero padding on both sides and stride 1. Using the standard operator has the advantage that it is heavily optimized (see Section 4 for Neural GPU performance). New work on faster convolutions, e.g., <ref type=\"bibr\" target=\"#b19\">Lavin &amp; Gray (2015)</ref>, can be directly used in a Neural GPU.</p><p>Knowing how a CGRU gate works, the definition of a l-layer Neural GPU is simple, as depicted in Figure <ref type=\"figure\" target=\"#fig_0\">1</ref>. The given sequence i = (i 1 , . . . , i n ) of n discrete symbols from {0, . . . , I} is first embedded into the mental image s 0 by concatenating the vectors obtained from an embedding lookup of the input symbols into its first column. More precisely, we create the starting mental image s 0 of shape [w, n, m] by using an embedding matrix E of shape [I, m] and setting s 0 [0, k, :] = E[i k ] (in python notation) for all k = 1 . . . n (here i 1 , . . . , i n is the input). All other elements of s 0 are set to 0. Then, we apply l different CGRU gates in turn for n steps to produce the final mental image s fin : The result of a Neural GPU is produced by multiplying each item in the first column of s fin by an output matrix O to obtain the logits l k = Os fin [0, k, :] and then selecting the maximal one: o k = argmax(l k ). During training we use the standard loss function, i.e., we compute a softmax over the logits l k and use the negative log probability of the target as the loss.</p><formula xml:id=\"formula_3\">s t+1 = CGRU l (CGRU l-1 . . . CGRU 1 (s t ) . . .) and s fin = s n . i1 . . . in s0 CGRU1 CGRU2 s1 . . . sn-1 CGRU1 CGRU2 sn o1 . . .</formula><p>Since all components of a Neural GPU are clearly differentiable, we can train using any stochastic gradient descent optimizer. For the results presented in this paper we used the Adam optimizer <ref type=\"bibr\" target=\"#b16\">(Kingma &amp; Ba, 2014)</ref> with ε = 10 -4 and gradients norm clipped to 1. The number of layers was set to l = 2, the width of mental images was constant at w = 4, the number of maps in each mental image point was m = 24, and the convolution kernels width and height was always k w = k h = 3.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Computational power of Neural GPUs.</head><p>While the above definition is simple, it might not be immediately obvious what kind of functions a Neural GPU can compute. Why can we expect it to be able to perform long multiplication? To answer such questions it is useful to draw an analogy between a Neural GPU and a discrete 2-dimensional cellular automaton. Except for being discrete and the lack of a gating mechanism, such automata are quite similar to Neural GPUs. Of course, these are large exceptions. Dense representations have often more capacity than purely discrete states and the gating mechanism is crucial to avoid vanishing gradients during training. But the computational power of cellular automata is much better understood. In particular, it is well known that a cellular automaton can exploit its parallelism to multiply two n-bit numbers in O(n) steps using Atrubin's algorithm. We recommend the online book <ref type=\"bibr\" target=\"#b28\">(Vivien, 2003)</ref> to get an understanding of this algorithm and the computational power of cellular automata.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3\">EXPERIMENTS</head><p>In this section, we present experiments showing that a Neural GPU can successfully learn a number of algorithmic tasks and generalize well beyond the lengths that it was trained on. We start with the two tasks we focused on, long binary addition and long binary multiplication. Then, to demonstrate the generality of the model, we show that Neural GPUs perform well on several other tasks as well.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.1\">ADDITION AND MULTIPLICATION</head><p>The two core tasks on which we study the performance of Neural GPUs are long binary addition and long binary multiplication. We chose them because they are fundamental tasks and because there is no known linear-time algorithm for long multiplication. As described in Section 2, we input a sequence of discrete symbols into the network and we read out a sequence of symbols again. For binary addition, we use a set of 4 symbols: {0, 1, +, PAD} and for multiplication we use {0, 1, •, PAD}. The PAD symbol is only used for padding so we depict it as empty space below.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Long binary addition (badd)</head><p>is the task of adding two numbers represented lower-endian in binary notation. We always add numbers of the same length, but we allow them to have 0s at start, so numbers of differing lengths can be padded to equal size. Given two d-bit numbers the full sequence length is n = 2d + 1, as seen in the example below, representing (1 + 4) + (2 + 4 + 8) = 5 + 14 = 19 = (16 + 2 + 1). </p><formula xml:id=\"formula_4\">Input 1 0 1 0 + 0 1 1 1 Output 1 1 0 0 1</formula><p>Long binary multiplication (bmul) is the task of multiplying two binary numbers, represented lower-endian. Again, we always multiply numbers of the same length, but we allow them to have 0s at start, so numbers of differing lengths can be padded to equal size. Given two d-bit numbers, the full sequence length is again n = 2d+1, as seen in the example below, representing (2+4)•(2+8) = 6 • 10 = 60 = 32 + 16 + 8 + 4.</p><formula xml:id=\"formula_5\">Input 0 1 1 0 • 0 1 0 1 Output 0 0 1 1 1</formula><p>Models. We compare three different models on the above tasks. In addition to the Neural GPU we include a baseline LSTM recurrent neural network with an attention mechanism. We call this model LSTM+A as it is exactly the same as described in <ref type=\"bibr\" target=\"#b26\">(Vinyals &amp; Kaiser et al., 2015)</ref>. It is a 3-layer model with 64 units in each LSTM cell in each layer, which results in about 200k parameters (the Neural GPU uses m = 24 and has about 30k paramters). Both the Neural GPU and the LSTM+A baseline were trained using all the techniques described below, including curriculum training and gradient noise. Finally, on binary addition, we also include the stack-RNN model from <ref type=\"bibr\" target=\"#b12\">(Joulin &amp; Mikolov, 2015)</ref>. This model was not trained using our training regime, but in exactly the way as provided in its source code, only with nmax = 41. To match our training procedure, we ran it 729 times (cf. Section 3.3) with different random seeds and we report the best obtained result.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Results.</head><p>We measure also the rate of fully correct output sequences and report the results in Table 1. For both tasks, we show first the error at the maximum length seen during training, i.e., for 20-bit numbers. Note that LSTM+A is not able to learn long binary multiplication at this length, it does not even fit the training data. Then we report numbers for sizes not seen during training.</p><p>As you can see, a Neural GPU can learn a multiplication algorithm that generalizes perfectly, at least as far as we were able to test (technical limits of our implementation prevented us from testing much above 2000 bits). Even for the simpler task of binary addition, stack-RNNs work only up-to length 100. This is still much better than the LSTM+A baseline which only generalizes to length 25.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.2\">OTHER ALGORITHMIC TASKS</head><p>In addition to the two main tasks above, we tested Neural GPUs on the following simpler algorithmic tasks. The same architecture as used above was able to solve all of the tasks described below, i.e., after being trained on sequences of length up-to 41 we were not able to find any error on sequences on any length we tested (up-to 4001).</p><p>Copying sequences is the simple task of producing on output the same sequence as on input. It is very easy for a Neural GPU, in fact all models converge quickly and generalize perfectly.</p><p>Reversing sequences is the task of reversing a sequence of bits, n is the length of the sequence.</p><p>Duplicating sequences is the task of duplicating the input bit sequence on output twice, as in the example below. We use the padding symbol on input to make it match the output length. We trained on sequences of inputs up-to 20 bits, so outputs were up-to 40-bits long, and tested on inputs up-to 2000 bits long. <ref type=\"table\" target=\"#tab_0\">0 0 1 1  Output 0 0 1 1 0 0 1 1</ref> Counting by sorting bits is the task of sorting the input bit sequence on output. Since there are only 2 symbols to sort, this is a counting tasks -the network must count how many 0s are in the input and produce the output accordingly, as in the example below.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Input</head><formula xml:id=\"formula_6\">Input 1 0 1 1 0 0 1 0 Output 0 0 0 0 1 1 1 1 3.3 TRAINING TECHNIQUES</formula><p>Here we describe the training methods that we used to improve our results. Note that we applied these methods to the LSTM+A baseline as well, to keep the above comparison fair. We focus on the most important elements of our training regime, all less relevant details can be found in the code which is released as open-source.<ref type=\"foot\" target=\"#foot_0\">foot_0</ref> </p><p>Grid search. Each result we report is obtained by running a grid search over 3 6 = 729 instances. We consider 3 settings of the learning rate, initial parameters scale, and 4 other hyperparameters discussed below: the relaxation pull factor, curriculum progress threshold, gradient noise scale, and dropout. An important effect of running this grid search is also that we train 729 models with different random seeds every time. Usually only a few of these models generalize to 2000-bit numbers, but a significant fraction works well on 200-bit numbers, as discussed below.</p><p>Curriculum learning. We use a curriculum learning approach inspired by <ref type=\"bibr\">Zaremba &amp; Sutskever (2015a)</ref>. This means that we train, e.g., on 7-digit numbers only after crossing a curriculum progress threshold (e.g., over 90% fully correct outputs) on 6-digit numbers. However, with 20% probability we pick a minibatch of d-digit numbers with d chosen uniformly at random between 1 and 20.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Gradients noise.</head><p>To improve training speed and stability we add noise to gradients in each training step. Inspired by the schedule from <ref type=\"bibr\" target=\"#b29\">Welling &amp; Teh (2011)</ref>, we add to gradients a noise drawn from the normal distribution with mean 0 and variance inversely proportional to the square root of stepnumber (i.e., with standard deviation proportional to the 4-th root of step-number). We multiply this noise by the gradient noise scale and, to avoid noise in converged models, we also multiply it by the fraction of non-fully-correct outputs (which is 0 for a perfect model).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Gate cutoff.</head><p>In Section 2 we defined the gates in a CGRU using the sigmoid function, e.g., we wrote u = σ(U ′ * s + B ′ ). Usually the standard sigmoid function is used, σ(x) = 1 1+e -x . We found that adding a hard threshold on the top and bottom helps slightly in our setting, so we use</p><formula xml:id=\"formula_7\">1.2σ(x) -0.1 cut to the interval [0, 1], i.e., σ ′ (x) = max(0, min(1, 1.2σ(x) -0.1)).</formula></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.3.1\">DROPOUT ON RECURRENT CONNECTIONS</head><p>Dropout is a widely applied technique for regularizing neural networks. But when applying it to recurrent networks, it has been counter-productive to apply it on recurrent connections -it only worked when applied to the non-recurrent ones, as reported by <ref type=\"bibr\" target=\"#b20\">Pham et al. (2014)</ref>.</p><p>Since a Neural GPU does not have non-recurrent connections it might seem that dropout will not be useful for this architecture. Surprisingly, we found the contrary -it is useful and improves generalization. The key to using dropout effectively in this setting is to set a small dropout rate.</p><p>When we run a grid search for dropout rates we vary them between 6%, 9%, and 13.5%, meaning that over 85% of the values are always preserved. It turns out that even this small dropout has large effect since we apply it to the whole mental image s i in each step i. Presumably the network now learns to include some redundancy in its internal representation and generalization benefits from it.</p><p>Without dropout we usually see only a few models from a 729 grid search generalize reasonably, while with dropout it is a much larger fraction and they generalize to higher lengths. In particular, dropout was necessary to train models for multiplication that generalize to 2000 bits.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.3.2\">PARAMETER SHARING RELAXATION.</head><p>To improve optimization of our deep network we use a relaxation technique for shared parameters which works as follows. Instead of training with parameters shared across time-steps we use r identical sets of non-shared parameters (we often use r = 6, larger numbers work better but use more memory). At time-step t of the Neural GPU we use the i-th set if t mod r = i.</p><p>The procedure described above relaxes the network, as it can now perform different operations in different time-steps. Training becomes easier, but we now have r parameters instead of the single shared set we want. To unify them we add a term to the cost function representing the distance of each parameter from the average of this parameter in all the r sets. This term in the final cost function is multiplied by a scalar which we call the relaxation pull. If the relaxation pull is 0, the network behaves as if the r parameter sets were separate, but when it is large, the cost forces the network to unify the parameters across different set.</p><p>During training, we gradually increase the relaxation pull. We start with a small value and every time the curriculum makes progress, e.g., when the model performs well on 6-digit numbers, we multiply the relaxation pull by a relaxation pull factor. When the curriculum reaches the maximal length we average the parameters from all sets and continue to train with a single shared parameter set.</p><p>This method is crucial for learning multiplication. Without it, a Neural GPU with m = 24 has trouble to even fit the training set, and the few models that manage to do it do not generalize. With relaxation almost all models in our 729 runs manage to fit the training data.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4\">DISCUSSION</head><p>We prepared a video of the Neural GPU trained to solve the tasks mentioned above.<ref type=\"foot\" target=\"#foot_1\">foot_1</ref> . It shows the state in each step with values of -1 drawn in white, 1 in black, and other in gray. This gives an intuition how the Neural GPU solves the discussed problems, e.g., it is quite clear that for the duplication task the Neural GPU learned to move a part of the embedding downwards in each step.</p><p>What did not work well? For one, using decimal inputs degrades performance. All tasks above can easily be formulated with decimal inputs instead of binary ones. One could hope that a Neural GPU will work well in this case too, maybe with a larger m. We experimented with this formulation and our results were worse than when the representation was binary: we did not manage to learn long decimal multiplication. Increasing m to 128 allows to learn all other tasks in the decimal setting.</p><p>Another problem is that often only a few models in a 729 grid search generalize to very long unseen instances. Among those 729 models, there usually are many models that generalize to 40 or even 200 bits, but only a few working without error for 2000-bit numbers. Using dropout and gradient noise improves the reliability of training and generalization, but maybe another technique could help even more. How could we make more models achieve good generalization? One idea that looks natural is to try to reduce the number of parameters by decreasing m. Surprisingly, this does not seem to have any influence. In addition to the m = 24 results presented above we ran experiments with m = 32, 64, 128 and the results were similar. In fact using m = 128 we got the most models to generalize. Additionally, we observed that ensembling a few models, just by averaging their outputs, helps to generalize: ensembles of 5 models almost always generalize perfectly on binary tasks.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Why use width?</head><p>The Neural GPU is defined using two-dimensional convolutions and in our experiments one of the dimensions is always set to 4. Doing so is not necessary since a one-dimensional Neural GPU that uses four times larger m can represent every function representable by the original one. In fact we trained a model for long binary multiplication that generalized to 2000-bit numbers using a Neural GPU with width 1 and m = 64. However, the width of the Neural GPU increases the amount of information carried in its hidden state without increasing the number of its parameters. Thus it can be thought of as a factorization and might be useful for other tasks.</p><p>Speed and data efficiency. Neural GPUs use the standard, heavily optimized convolution operation and are fast. We experimented with a 2-layer Neural GPU for n = 32 and m = 64. After unfolding in time it has 128 layers of CGRUs, each operating on 32 mental images, each 4 × 64 × 64 . The joint forward-backward step time for this network was about 0.6s on an NVIDIA GTX 970 GPU.</p><p>We were also surprised by how data-efficient a Neural GPU can be. The experiments presented above were all performed using 10k random training data examples for each training length. Since we train on up-to 20-bit numbers this adds to about 200k training examples. We tried to train using only 100 examples per length, so about 2000 total training instances. We were surprised to see that it actually worked well for binary addition: there were models that generalized well to 200-bit numbers and to all lengths below despite such small training set. But we never managed to train a good model for binary multiplication with that little training data.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"5\">CONCLUSIONS AND FUTURE WORK</head><p>The results presented in Table <ref type=\"table\" target=\"#tab_0\">1</ref> show clearly that there is a qualitative difference between what can be achieved with a Neural GPU and what was possible with previous architectures. In particular, for the first time, we show a neural network that learns a non-trivial superlinear-time algorithm in a way that generalized to much higher lengths without errors.</p><p>This opens the way to use neural networks in domains that were previously only addressed by discrete methods, such as program synthesis. With the surprising data efficiency of Neural GPUs it could even be possible to replicate previous program synthesis results, e.g., <ref type=\"bibr\" target=\"#b13\">Kaiser (2012)</ref>, but in a more scalable way. It is also interesting that a Neural GPU can learn symbolic algorithms without using any discrete state at all, and adding dropout and noise only improves its performance.</p><p>Another promising future work is to apply Neural GPUs to language processing tasks. Good results have already been obtained on translation with a convolutional architecture over words <ref type=\"bibr\" target=\"#b14\">(Kalchbrenner &amp; Blunsom, 2013)</ref> and adding gating and recursion, like in a Neural GPU, should allow to train much deeper models without overfitting. Finally, the parameter sharing relaxation technique can be applied to any deep recurrent network and has the potential to improve RNN training in general.</p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><head>onFigure 1 :</head><label>1</label><figDesc>Figure 1: Neural GPU with 2 layers and width w = 3 unfolded in time.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_0\"><head>Table 1 :</head><label>1</label><figDesc>Neural GPU, stackRNN, and LSTM+A results on addition and multiplication. The table shows the fraction of test cases for which every single bit of the model's output is correct.</figDesc><table><row><cell>Task@Bits</cell><cell>Neural GPU</cell><cell cols=\"2\">stackRNN LSTM+A</cell></row><row><cell>badd@20</cell><cell>100%</cell><cell>100%</cell><cell>100%</cell></row><row><cell>badd@25</cell><cell>100%</cell><cell>100%</cell><cell>73%</cell></row><row><cell>badd@100</cell><cell>100%</cell><cell>88%</cell><cell>0%</cell></row><row><cell>badd@200</cell><cell>100%</cell><cell>0%</cell><cell>0%</cell></row><row><cell>badd@2000</cell><cell>100%</cell><cell>0%</cell><cell>0%</cell></row><row><cell>bmul@20</cell><cell>100%</cell><cell>N/A</cell><cell>0%</cell></row><row><cell>bmul@25</cell><cell>100%</cell><cell>N/A</cell><cell>0%</cell></row><row><cell>bmul@200</cell><cell>100%</cell><cell>N/A</cell><cell>0%</cell></row><row><cell>bmul@2000</cell><cell>100%</cell><cell>N/A</cell><cell>0%</cell></row></table></figure>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"1\" xml:id=\"foot_0\"><p>The code is at https://github.com/tensorflow/models/tree/master/neural_gpu.</p></note>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"2\" xml:id=\"foot_1\"><p>The video is available at https://www.youtube.com/watch?v=LzC8NkTZAF4</p></note>\n\t\t</body>\n\t\t<back>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Learning regaular sets from queries and counterexamples</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dana</forename><surname>Angluin</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Information and Computation</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">75</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"87\" to=\"106\" />\n\t\t\t<date type=\"published\" when=\"1987\">1987</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Neural machine translation by jointly learning to align and translate</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dzmitry</forename><surname>Bahdanau</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Kyunghyun</forename><surname>Cho</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yoshua</forename><surname>Bengio</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/1409.0473</idno>\n\t\t<ptr target=\"http://arxiv.org/abs/1409.0473\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2014\">2014</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Automatic Structures</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Achim</forename><surname>Blumensath</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Erich</forename><surname>Grädel</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://www.logic.rwth-aachen.de/pub/graedel/BlGr-lics00.ps\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of LICS 2000</title>\n\t\t<meeting>LICS 2000</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2000\">2000</date>\n\t\t\t<biblScope unit=\"page\" from=\"51\" to=\"62\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Listen, attend and spell</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">William</forename><surname>Chan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Jaitly</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Navdeep</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Quoc</forename><forename type=\"middle\">V</forename><surname>Le</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Vinyals</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Oriol</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">International Conference on Acoustics, Speech and Signal Processing</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2016\">2016</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Learning phrase representations using rnn encoder-decoder for statistical machine translation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Kyunghyun</forename><surname>Cho</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Van Merrienboer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Bart</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Gulcehre</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Caglar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Bougares</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Fethi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Schwenk</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Holger</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yoshua</forename><surname>Bengio</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/1406.1078</idno>\n\t\t<ptr target=\"http://arxiv.org/abs/1406.1078\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2014\">2014</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Empirical evaluation of gated recurrent neural networks on sequence modeling</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Junyoung</forename><surname>Chung</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Gülc ¸ehre</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Kyunghyun</forename><surname>Cho</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yoshua</forename><surname>Bengio</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/1412.3555</idno>\n\t\t<ptr target=\"http://arxiv.org/abs/1412.3555\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2014\">2014</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Context-dependent pre-trained deep neural networks for large-vocabulary speech recognition</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">George</forename><forename type=\"middle\">E</forename><surname>Dahl</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Dong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Li</forename><surname>Deng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Alex</forename><surname>Acero</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">IEEE Transactions on Audio, Speech &amp; Language Processing</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">20</biblScope>\n\t\t\t<biblScope unit=\"issue\">1</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"30\" to=\"42\" />\n\t\t\t<date type=\"published\" when=\"2012\">2012</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b7\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Alex</forename><surname>Graves</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Greg</forename><surname>Wayne</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ivo</forename><surname>Danihelka</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://arxiv.org/abs/1410.5401\" />\n\t\t<title level=\"m\">Neural turing machines. CoRR, abs/1410</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2014\">2014</date>\n\t\t\t<biblScope unit=\"volume\">5401</biblScope>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b8\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Learning to transduce with unbounded memory</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Edward</forename><surname>Grefenstette</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Karl</forename><surname>Hermann</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Moritz</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Mustafa</forename><surname>Suleyman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Phil</forename><surname>Blunsom</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/1506.02516</idno>\n\t\t<ptr target=\"http://arxiv.org/abs/1506.02516\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2015\">2015</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b9\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">LSTM: A search space odyssey</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Klaus</forename><surname>Greff</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Rupesh</forename><surname>Srivastava</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Kumar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jan</forename><surname>Koutník</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Steunebrink</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Bas</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jürgen</forename><surname>Schmidhuber</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/1503.04069</idno>\n\t\t<ptr target=\"http://arxiv.org/abs/1503.04069\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2015\">2015</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b10\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Dimensions in program synthesis</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Sumit</forename><surname>Gulwani</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of PPDP 2010, PPDP &apos;10</title>\n\t\t<meeting>PPDP 2010, PPDP &apos;10</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2010\">2010</date>\n\t\t\t<biblScope unit=\"page\" from=\"13\" to=\"24\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b11\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Long short-term memory</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Sepp</forename><surname>Hochreiter</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jürgen</forename><surname>Schmidhuber</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Neural computation</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">9</biblScope>\n\t\t\t<biblScope unit=\"issue\">8</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"1735\" to=\"1780\" />\n\t\t\t<date type=\"published\" when=\"1997\">1997</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b12\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Inferring algorithmic patterns with stack-augmented recurrent nets</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Armand</forename><surname>Joulin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Tomas</forename><surname>Mikolov</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/1503.01007</idno>\n\t\t<ptr target=\"http://arxiv.org/abs/1503.01007\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2015\">2015</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b13\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Learning games from videos guided by descriptive complexity</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Łukasz</forename><surname>Kaiser</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://goo.gl/mRbfV5\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the AAAI-12</title>\n\t\t<meeting>the AAAI-12</meeting>\n\t\t<imprint>\n\t\t\t<publisher>AAAI Press</publisher>\n\t\t\t<date type=\"published\" when=\"2012\">2012</date>\n\t\t\t<biblScope unit=\"page\" from=\"963\" to=\"970\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b14\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Recurrent continuous translation models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Nal</forename><surname>Kalchbrenner</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Phil</forename><surname>Blunsom</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://nal.co/papers/KalchbrennerBlunsom_EMNLP13\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings EMNLP 2013</title>\n\t\t<meeting>EMNLP 2013</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2013\">2013</date>\n\t\t\t<biblScope unit=\"page\" from=\"1700\" to=\"1709\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b15\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Grid long short-term memory</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Nal</forename><surname>Kalchbrenner</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Danihelka</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Ivo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Alex</forename><surname>Graves</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://arxiv.org/abs/1507.01526\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">International Conference on Learning Representations</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2016\">2016</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b16\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Adam: A method for stochastic optimization</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Diederik</forename><forename type=\"middle\">P</forename><surname>Kingma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jimmy</forename><surname>Ba</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/1412.6980</idno>\n\t\t<ptr target=\"http://arxiv.org/abs/1412.6980\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2014\">2014</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b17\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Inductive programming: A survey of program synthesis techniques</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Emanuel</forename><surname>Kitzelmann</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Approaches and Applications of Inductive Programming</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2009\">2009. 2010</date>\n\t\t\t<biblScope unit=\"volume\">5812</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"50\" to=\"73\" />\n\t\t</imprint>\n\t</monogr>\n\t<note>LNCS</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b18\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Imagenet classification with deep convolutional neural network</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Alex</forename><surname>Krizhevsky</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Sutskever</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Ilya</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Geoffrey</forename><surname>Hinton</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2012\">2012</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b19\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Fast algorithms for convolutional neural networks</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Andrew</forename><surname>Lavin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Scott</forename><surname>Gray</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/1509.09308</idno>\n\t\t<ptr target=\"http://arxiv.org/abs/1509.09308\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2015\">2015</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b20\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Dropout improves recurrent neural networks for handwriting recognition</title>\n\t\t<author>\n\t\t\t<persName><surname>Pham</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Vu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Bluche</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Théodore</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Christopher</forename><surname>Kermorvant</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jérôme</forename><surname>Louradour</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://arxiv.org/pdf/1312.4569.pdf\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">International Conference on Frontiers in Handwriting Recognition (ICFHR)</title>\n\t\t<imprint>\n\t\t\t<publisher>IEEE</publisher>\n\t\t\t<date type=\"published\" when=\"2014\">2014</date>\n\t\t\t<biblScope unit=\"page\" from=\"285\" to=\"290\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b21\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Convolutional LSTM network: A machine learning approach for precipitation nowcasting</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xingjian</forename><surname>Shi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Zhourong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Hao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Yeung</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Kin</forename><surname>Dit-Yan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Wai</forename><surname>Wong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Chun</forename><surname>Woo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Wang</forename></persName>\n\t\t</author>\n\t\t<ptr target=\"http://arxiv.org/abs/1506.04214\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2015\">2015</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b22\">\n\t<monogr>\n\t\t<title/>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Rupesh</forename><surname>Srivastava</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Kumar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Klaus</forename><surname>Greff</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jürgen</forename><surname>Schmidhuber</surname></persName>\n\t\t</author>\n\t\t<imprint/>\n\t</monogr>\n\t<note>Highway networks</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b23\">\n\t<monogr>\n\t\t<title/>\n\t\t<author>\n\t\t\t<persName><surname>Corr</surname></persName>\n\t\t</author>\n\t\t<idno>abs/1505.00387</idno>\n\t\t<ptr target=\"http://arxiv.org/abs/1505.00387\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2015\">2015</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b24\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Sequence to sequence learning with neural networks</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ilya</forename><surname>Sutskever</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Vinyals</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Oriol</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Quoc</forename><surname>Le</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Vv</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://arxiv.org/abs/1409.3215\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2014\">2014</date>\n\t\t\t<biblScope unit=\"page\" from=\"3104\" to=\"3112\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b25\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Variable rate image compression with recurrent neural networks</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">George</forename><surname>Toderici</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O'</forename><surname>Malley</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Sean</forename><forename type=\"middle\">M</forename><surname>Hwang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Sung</forename><surname>Jin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Damien</forename><surname>Vincent</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Minnen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>David</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Baluja</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Shumeet</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Michele</forename><surname>Covell</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Rahul</forename><surname>Sukthankar</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://arxiv.org/abs/1511.06085\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">International Conference on Learning Representations</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2016\">2016</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b26\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Grammar as a foreign language</title>\n\t\t<author>\n\t\t\t<persName><surname>Vinyals</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Koo</forename><surname>Kaiser</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Petrov</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Sutskever</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Hinton</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://arxiv.org/abs/1412.7449\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2015\">2015</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b27\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Show and tell: A neural image caption generator</title>\n\t\t<author>\n\t\t\t<persName><surname>Vinyals</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Oriol</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Toshev</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Alexander</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Bengio</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Samy</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dumitru</forename><surname>Erhan</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/1411.4555</idno>\n\t\t<ptr target=\"http://arxiv.org/abs/1411.4555\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2014\">2014</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b28\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">An Introduction to cellular automata</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Helene</forename><surname>Vivien</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://www.liafa.univ-paris-diderot.fr/˜yunes/ca/archives/bookvivien.pdf\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2003\">2003</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b29\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Bayesian learning via stochastic gradient Langevin dynamics</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Max</forename><surname>Welling</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yee</forename><surname>Teh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Whye</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of ICML 2011</title>\n\t\t<meeting>ICML 2011</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2011\">2011</date>\n\t\t\t<biblScope unit=\"page\" from=\"681\" to=\"688\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b30\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Learning to execute</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Wojciech</forename><surname>Zaremba</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ilya</forename><surname>Sutskever</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/1410.4615</idno>\n\t\t<ptr target=\"http://arxiv.org/abs/1410.4615\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2015\">2015</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b31\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Reinforcement learning neural turing machines</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Wojciech</forename><surname>Zaremba</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ilya</forename><surname>Sutskever</surname></persName>\n\t\t</author>\n\t\t<imprint/>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b32\">\n\t<monogr>\n\t\t<title/>\n\t\t<author>\n\t\t\t<persName><surname>Corr</surname></persName>\n\t\t</author>\n\t\t<idno>abs/1505.00521</idno>\n\t\t<ptr target=\"http://arxiv.org/abs/1505.00521\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2015\">2015</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+ "pdf_hash": "9bc9b63e985a663420ad6dd172ec9353a79a90b16bbf3f15148a6c182dc8aefc",
+ "tables": [
+  {
+   "table_id": "tab_0",
+   "section_path_id": "1~11",
+   "section_ordinal": 18,
+   "caption": "Table 1 :",
+   "coordinates": null,
+   "cells": [
+    {
+     "row": 0,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Task@Bits",
+     "coordinates": null,
+     "span": {
+      "start": 177,
+      "end": 186
+     },
+     "digest": "0fa59246923280f8762afacc6db369cd3c66bd3fafd0c97fae3d0157770a41e1"
+    },
+    {
+     "row": 0,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Neural GPU",
+     "coordinates": null,
+     "span": {
+      "start": 186,
+      "end": 196
+     },
+     "digest": "b5420b55e142929e7b49b02a8b1fc4f2c488a1600b3b15a05f93094310444807"
+    },
+    {
+     "row": 0,
+     "column": 2,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "stackRNN LSTM+A",
+     "coordinates": null,
+     "span": {
+      "start": 196,
+      "end": 211
+     },
+     "digest": "533f169e73c8092a05e367da1745a86b4ca393fb0ffb3275c0436e689918960d"
+    },
+    {
+     "row": 1,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "badd@20",
+     "coordinates": null,
+     "span": {
+      "start": 211,
+      "end": 218
+     },
+     "digest": "3571b2e7611523cfb1f3c2f52142862bfb76a7504e001e447d947a8eb81851c2"
+    },
+    {
+     "row": 1,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "100%",
+     "coordinates": null,
+     "span": {
+      "start": 218,
+      "end": 222
+     },
+     "digest": "bc76c46df3e0c132565471e04e1593fa1c84f53f94f8262bd125971bcff3d4de"
+    },
+    {
+     "row": 1,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "100%",
+     "coordinates": null,
+     "span": {
+      "start": 222,
+      "end": 226
+     },
+     "digest": "4723f7d8e282392e07a125d849ce4c2cf8fe56b67cf77f6ef2ddd2f5080bc51a"
+    },
+    {
+     "row": 1,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "100%",
+     "coordinates": null,
+     "span": {
+      "start": 226,
+      "end": 230
+     },
+     "digest": "01749c08fd34e1827fecbf64b5e65639bd1a1538d69ce06c22c4178d9688368c"
+    },
+    {
+     "row": 2,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "badd@25",
+     "coordinates": null,
+     "span": {
+      "start": 230,
+      "end": 237
+     },
+     "digest": "2c02e8d83124e0e97bc51d79cd51db1e1ff2de48cb6eb1c3c8148da00e2c59f0"
+    },
+    {
+     "row": 2,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "100%",
+     "coordinates": null,
+     "span": {
+      "start": 237,
+      "end": 241
+     },
+     "digest": "674717671aabceeb0a55919e4be651d9af8708de2d68a5167a8563a93a18f845"
+    },
+    {
+     "row": 2,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "100%",
+     "coordinates": null,
+     "span": {
+      "start": 241,
+      "end": 245
+     },
+     "digest": "147d47424df0d88b108e295593c113fb092bf55b9bd915337aad9dea1259d1d1"
+    },
+    {
+     "row": 2,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "73%",
+     "coordinates": null,
+     "span": {
+      "start": 245,
+      "end": 248
+     },
+     "digest": "312609e20b6da3c14a0809a75107a2ee3137f618120e618bc0b5a8483448350e"
+    },
+    {
+     "row": 3,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "badd@100",
+     "coordinates": null,
+     "span": {
+      "start": 248,
+      "end": 256
+     },
+     "digest": "090f0743a3ae6a6357eaace53f64bdb6a075459f555da40e26f6525c1c33e814"
+    },
+    {
+     "row": 3,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "100%",
+     "coordinates": null,
+     "span": {
+      "start": 256,
+      "end": 260
+     },
+     "digest": "8ac01454104530d95eed7ce1481c564428b63ef95ceb7c08520c37612e0be22c"
+    },
+    {
+     "row": 3,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "88%",
+     "coordinates": null,
+     "span": {
+      "start": 260,
+      "end": 263
+     },
+     "digest": "1e701cbf7fea12182a0ee6bef065ea20a79b5cfda049ce6532c5aaa46365fd18"
+    },
+    {
+     "row": 3,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0%",
+     "coordinates": null,
+     "span": {
+      "start": 263,
+      "end": 265
+     },
+     "digest": "b2203144421892648b069263a384837dc0193a0023da09b360d43022674670f2"
+    },
+    {
+     "row": 4,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "badd@200",
+     "coordinates": null,
+     "span": {
+      "start": 265,
+      "end": 273
+     },
+     "digest": "149ead5a945be0f5c636722cd1bfc8aa8e8068d9388a48f5cc48fff26732d5b9"
+    },
+    {
+     "row": 4,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "100%",
+     "coordinates": null,
+     "span": {
+      "start": 273,
+      "end": 277
+     },
+     "digest": "c405e61c7589b2c674aa8c5fc1d4ab86f9c632c7208f4fae53b86972d061dc91"
+    },
+    {
+     "row": 4,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0%",
+     "coordinates": null,
+     "span": {
+      "start": 277,
+      "end": 279
+     },
+     "digest": "8a20e521007590c8a3c20f81c4d4ca44a8adaf3a52f0dc3d4fbcb40bcfcd8386"
+    },
+    {
+     "row": 4,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0%",
+     "coordinates": null,
+     "span": {
+      "start": 279,
+      "end": 281
+     },
+     "digest": "8c83ce8c0242732b93039683aa200d810bedc572fb326b8e15b02af31d40eaec"
+    },
+    {
+     "row": 5,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "badd@2000",
+     "coordinates": null,
+     "span": {
+      "start": 281,
+      "end": 290
+     },
+     "digest": "8f1c55bebe79a0bbf6f1857805c950ae21e61a5bc604d910c82be0615edc06d0"
+    },
+    {
+     "row": 5,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "100%",
+     "coordinates": null,
+     "span": {
+      "start": 290,
+      "end": 294
+     },
+     "digest": "6bae68fa67b064efc6e0a9a5951eb07e94e6252ce92621bb40688a5961f5a18b"
+    },
+    {
+     "row": 5,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0%",
+     "coordinates": null,
+     "span": {
+      "start": 294,
+      "end": 296
+     },
+     "digest": "318c740d856023efcf6f56c9a3a43bc7b789364329a09d5ffcd61b4f1be48edb"
+    },
+    {
+     "row": 5,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0%",
+     "coordinates": null,
+     "span": {
+      "start": 296,
+      "end": 298
+     },
+     "digest": "bb63847ec4cf0eaf406fa6951580964857debcc08e755f09a432b680b01f5b89"
+    },
+    {
+     "row": 6,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "bmul@20",
+     "coordinates": null,
+     "span": {
+      "start": 298,
+      "end": 305
+     },
+     "digest": "c69eee7064fc1e6da9f695d4ba75197eea9ac47a1c5f9f645e8043d15b38e140"
+    },
+    {
+     "row": 6,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "100%",
+     "coordinates": null,
+     "span": {
+      "start": 305,
+      "end": 309
+     },
+     "digest": "52373b79c9fac397c21a8069437055ccbc6459b1a317bf101b34dca3c0876f5f"
+    },
+    {
+     "row": 6,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "N/A",
+     "coordinates": null,
+     "span": {
+      "start": 309,
+      "end": 312
+     },
+     "digest": "b7be1eed5541e858159ce262f9f3a3e3c3e1afb3b864a3e0a274f042f1826c66"
+    },
+    {
+     "row": 6,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0%",
+     "coordinates": null,
+     "span": {
+      "start": 312,
+      "end": 314
+     },
+     "digest": "33eba9235e6ca7facf2767bac68875bcbc813539ffb30d104b4a1e8bab318e5b"
+    },
+    {
+     "row": 7,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "bmul@25",
+     "coordinates": null,
+     "span": {
+      "start": 314,
+      "end": 321
+     },
+     "digest": "ace2fa6226410c2a0073ca683f5b48dd46a1fcb9257ddee2acfa6313c5103a1c"
+    },
+    {
+     "row": 7,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "100%",
+     "coordinates": null,
+     "span": {
+      "start": 321,
+      "end": 325
+     },
+     "digest": "14e9dfbe6a284233b3b6a39d08b1edced48d08bd9c5a134d7e1b24f274c8e116"
+    },
+    {
+     "row": 7,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "N/A",
+     "coordinates": null,
+     "span": {
+      "start": 325,
+      "end": 328
+     },
+     "digest": "d29df7c479d500cb617ef77ff95dbccc82c89eb6e3048ab10039f99458b59cc8"
+    },
+    {
+     "row": 7,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0%",
+     "coordinates": null,
+     "span": {
+      "start": 328,
+      "end": 330
+     },
+     "digest": "b88c3db0f577886c6a43ecb6473604bc9357b2ba89cf6c37ff56f4b139b86a74"
+    },
+    {
+     "row": 8,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "bmul@200",
+     "coordinates": null,
+     "span": {
+      "start": 330,
+      "end": 338
+     },
+     "digest": "a98910002890d0d8077b666270e30f9824bc23173c37620e8c203fab509c3a54"
+    },
+    {
+     "row": 8,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "100%",
+     "coordinates": null,
+     "span": {
+      "start": 338,
+      "end": 342
+     },
+     "digest": "d29ee34c128b141f3b7dea3204f1b331f2311bb7c0d3d86f42adc23c0915f446"
+    },
+    {
+     "row": 8,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "N/A",
+     "coordinates": null,
+     "span": {
+      "start": 342,
+      "end": 345
+     },
+     "digest": "5fbd1ab9925b34858040e05f59820d16a1058b4b19557efa455c8b58e508264a"
+    },
+    {
+     "row": 8,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0%",
+     "coordinates": null,
+     "span": {
+      "start": 345,
+      "end": 347
+     },
+     "digest": "0076157950c71eea061c86502bebca877c39f797c36773dd6f6bf048af35a311"
+    },
+    {
+     "row": 9,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "bmul@2000",
+     "coordinates": null,
+     "span": {
+      "start": 347,
+      "end": 356
+     },
+     "digest": "b0daecc04210d69ffd08c9f18ada1d41d957df5c9fb4990fb3ac197e5d61e3fb"
+    },
+    {
+     "row": 9,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "100%",
+     "coordinates": null,
+     "span": {
+      "start": 356,
+      "end": 360
+     },
+     "digest": "b12b2018e2606f50b3c909f04a7bd4c9b087c10c4e1b19f05fdad1435a61b922"
+    },
+    {
+     "row": 9,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "N/A",
+     "coordinates": null,
+     "span": {
+      "start": 360,
+      "end": 363
+     },
+     "digest": "d627f40992a4d7f1339c1b354e323062c20c5b01c4e3003fd6250826e6e6bb0f"
+    },
+    {
+     "row": 9,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0%",
+     "coordinates": null,
+     "span": {
+      "start": 363,
+      "end": 365
+     },
+     "digest": "90f832f87b09ff50b80acf99beacc7aa2b0180b98e1a68ddeff2ec7441c28f03"
+    }
+   ],
+   "source_digest": "0bc969faf12e3a1707dab3dace6a3162e3abe1afcd0da61ed835fd3cc34df9f7",
+   "missingness": null
+  }
+ ],
+ "table_missingness": null,
+ "formulas": [
+  {
+   "formula_id": "formula_0",
+   "section_path_id": "1~2",
+   "section_ordinal": 2,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "GRU(x, s) = u ⊙ s + (1 -u) ⊙ tanh(W x + U (r ⊙ s) + B), where u = σ(W ′ x + U ′ s + B ′ ) and r = σ(W ′′ x + U ′′ s + B ′′ )."
+   },
+   "span": {
+    "start": 589,
+    "end": 714
+   },
+   "source_digest": "bedd8e0655db5076b15b633a583c163b0fd7629d9a5699c5eb8208d7b9d628f5",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_1",
+   "section_path_id": "1~2",
+   "section_ordinal": 2,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "CGRU(s) = u ⊙ s + (1 -u) ⊙ tanh(U * (r ⊙ s) + B), where u = σ(U ′ * s + B ′ ) and r = σ(U ′′ * s + B ′′ )."
+   },
+   "span": {
+    "start": 1576,
+    "end": 1682
+   },
+   "source_digest": "192c568f91fe155b39f05bee51c27781ef895928f90abbfa2af4e09d6555c8ba",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_2",
+   "section_path_id": "1~2",
+   "section_ordinal": 2,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "U * s[x, y, i] = ⌊kw/2⌋ u=⌊-kw/2⌋ ⌊k h /2⌋ v=⌊-k h /2⌋ m c=1 s[x + u, y + v, c] • U [u, v, c, i]."
+   },
+   "span": {
+    "start": 2050,
+    "end": 2147
+   },
+   "source_digest": "9378fe1fa3d310b12359011ab448dcca412afd89c2ab84d69e6e727156ea9a0a",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_3",
+   "section_path_id": "1~2",
+   "section_ordinal": 2,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "s t+1 = CGRU l (CGRU l-1 . . . CGRU 1 (s t ) . . .) and s fin = s n . i1 . . . in s0 CGRU1 CGRU2 s1 . . . sn-1 CGRU1 CGRU2 sn o1 . . ."
+   },
+   "span": {
+    "start": 3744,
+    "end": 3878
+   },
+   "source_digest": "6f7291dae453017ca38f11257b13e7c3d782cfe1b8b27ced70f7ec7365d773c5",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_4",
+   "section_path_id": "1~4",
+   "section_ordinal": 6,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "Input 1 0 1 0 + 0 1 1 1 Output 1 1 0 0 1"
+   },
+   "span": {
+    "start": 380,
+    "end": 420
+   },
+   "source_digest": "76de2a1d2f046b6a835e3db2b5adff46192cad02320ffc97bcf0906a2c85f346",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_5",
+   "section_path_id": "1~4",
+   "section_ordinal": 6,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "Input 0 1 1 0 • 0 1 0 1 Output 0 0 1 1 1"
+   },
+   "span": {
+    "start": 837,
+    "end": 877
+   },
+   "source_digest": "136d6fbacfb4e7c4a9ac894416b5cc36cd4515b42a1fd6db98aef7079a904d6e",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_6",
+   "section_path_id": "1~6",
+   "section_ordinal": 9,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "Input 1 0 1 1 0 0 1 0 Output 0 0 0 0 1 1 1 1 3.3 TRAINING TECHNIQUES"
+   },
+   "span": {
+    "start": 0,
+    "end": 68
+   },
+   "source_digest": "45263127ead33962a492f2522c6a96798b28c7d00c5f1bb2142bb216e3fa32af",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_7",
+   "section_path_id": "1~8",
+   "section_ordinal": 11,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "1.2σ(x) -0.1 cut to the interval [0, 1], i.e., σ ′ (x) = max(0, min(1, 1.2σ(x) -0.1))."
+   },
+   "span": {
+    "start": 275,
+    "end": 361
+   },
+   "source_digest": "7bcb2bc39d0483e235d9f1aeebbda38901b4062ad334be7f6dd320a5f915ae00",
+   "missingness": null
+  }
+ ],
+ "formula_missingness": null,
+ "page_text_missingness": null
+}

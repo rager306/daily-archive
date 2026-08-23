@@ -1,0 +1,1009 @@
+{
+ "paper_id": "2403.10131",
+ "title": "RAFT: Adapting Language Model to Domain Specific RAG",
+ "abstract_text": "Pretraining Large Language Models (LLMs) on large corpora of textual data is now a standard paradigm. When using these LLMs for many downstream applications, it is common to additionally incorporate new information into the pretrained model either through RAG-based-prompting, or finetuning. However, the best methodology to incorporate information remains an open question. In this paper, we present Retrieval Augmented Fine Tuning (RAFT), a training recipe which improves the model's ability to answer questions in \"open-book\" in-domain settings. In training RAFT, given a question, and a set of retrieved documents, we train the model to ignore those documents that don't help in answering the question, which we call, distractor documents. RAFT accomplishes this by citing verbatim the right sequence from the relevant document to help answer the question. This coupled with RAFT's chain-of-thought-style response helps improve the model's ability to reason. In domain specific RAG, RAFT consistently improves the model's performance across PubMed, HotpotQA, and Gorilla datasets, presenting a post-training recipe to improve pre-trained LLMs to in-domain RAG.",
+ "body_text": "IntroductionTrained on vast quantities of public data, Large Language Models LLMs have achieved significant advances in a wide range of general knowledge reasoning tasks Brown et al. (2020); Wei et al. (2022). However, increasingly LLMs are being employed in specialized domains to support tasks ranging from code completion for specific software frameworks to question answering on specific document collections (e.g., legal or medical documents). In these settings, general knowledge reasoning is less critical and instead the primary goal is to maximize accuracy based on a given set of documents. Indeed, adapting LLMs to the specialized domains (e.g., recent news, enterprise private documents, or program resources constructed after the training cutoff) is essential to many emerging applications (Vu et al., 2023;Lazaridou et al., 2022) and is the focus of this work. This paper studies the following question -How do we adapt pre-trained LLMs for Retrieval Augmented Generation (RAG) in specialized domains?When it comes to adapting LLMs to specialized domains, we consider the following two candidates: in-context learning through Retrieval-Augmented Generation (RAG) and supervised fine-tuning. RAG based methods allow the LLM to reference the documents when\"Open book\" query answer \"Closed book\" query answer Bake in Knowledge at Train Time Model can use External Docs at Test RAFT (Proposed) query answer Teach Model to use External Docs at TestFigure 1: How best to prepare for an Exam?(a) Fine-tuning based approaches implement \"studying\" by either directly \"memorizing\" the input documents or answering practice QA without referencing the documents. (b) Alternatively, in-context retrieval methods fail to leverage the learning opportunity afforded by the fixed domain and are equivalent to taking an open-book exam without studying. In contrast, our approach (c) RAFT leverages fine-tuning with question-answer pairs while referencing the documents in a simulated imperfect retrieval setting -thereby effectively preparing for the open-book exam setting.answering questions. However, RAG based in-context learning methods fail to leverage the learning opportunity afforded by the fixed domain setting and early access to the test documents. Alternatively, supervised fine-tuning offers the opportunity to learn more general patterns in the documents and better align to end tasks and user preferences Zhou et al. (2023). However, existing fine-tuning based approaches either fail to leverage the documents at test time (don't incorporate RAG) or fail to account for the imperfections in retrieval process during training.We can draw an analogy to an open-book exam. Existing in-context retrieval methods are equivalent to taking an open-book exam without studying. Alternatively, existing finetuning based approaches implement \"studying\" by either directly \"memorizing \" Xiong et al. (2023) the input documents or answering practice questions Wang et al. (2022) without referencing the documents. While these approaches leverage in-domain learning they fail to prepare for the open-book nature of the test setting.In this paper, we study how to combine instruction fine-tuning (IFT) with retrieval augmented generation (RAG). We propose a novel adaptation strategy -Retrieval-Augmented Fine Tuning (RAFT). RAFT specifically addresses the challenge of fine-tuning LLMs to both incorporate domain knowledge while also improving in-domain RAG performance. RAFT aims to not only enable models to learn domain-specific knowledge through fine-tuning, but also to ensure robustness against distracting retrieved information. This is achieved by training the models to understand the dynamics between the question (prompt), the domain-specific documents retrieved, and the right answer. Going back to our analogy to the open book exam, our approach is analogous to studying for an open-book exam by recognizing relevant, and irrelevant retrieved documents.In RAFT, we train the model to answer the question (Q) from Document(s) (D*) to generate answer (A*), where A* includes chain-of-thought reasoning Wei et al. (2022); Anthropic (2023), and in the presence of distractor documents (D k ). We explain the methodology in Section 3 and analyze the sensitivity to the number of distractor documents (k) at train-and test-time in Section 5. RAFT consistently outperforms Supervised-finetuning both withand without-RAG across PubMed Dernoncourt &amp; Lee (2017), HotPot QA Yang et al. (2018), and HuggingFace Hub, Torch Hub, and Tensorflow Hub Gorilla datasets Patil et al. (2023), presenting a novel, yet simple technique to improve pre-trained LLMs for in-domain RAG. Our code is available at https://github.com/ShishirPatil/gorilla.\nLLMs for Open-Book ExamTo understand our goal better, we expand on our analogy between training an LLM with the real-world setting of prepararing for an exam.Closed-Book Exam A closed book exam often refers to the scenario where the LLMs do not have access to any additional documents or references to answer the questions during Figure 2: Overview of our RAFT method. The top-left figure depicts our approach of adapting LLMs to reading solution from a set of positive and distractor documents in contrast to standard RAG setup where models are trained based on the retriever outputs, which is a mixture of both memorization and reading. At test time, all methods follow the standard RAG setting, provided with a top-k retrieved documents in the context.the exam. For LLMs, this is equivalent to the scenario, for example, in which the LLM is used as a chatbot. In this scenario the LLM draws from the knowledge baked in during pre-training and supervised-finetuning to respond to the users' prompt.Open Book Exam In contrast, we liken the open-book exam setting to the scenario in which the LLM can refer to external sources of information (e.g., a website or a book chapter). In such scenarios, typically, the LLM is paired with retriever which retrieves 'k' documents (or specific segments of the document) which are appended to the users' prompt. It is only through these documents retrieved that the LLM gains access to \"domain-specific information\". As a result, we argue that the LLM's performance in these settings, where it is trained as a general-purpose LLM is largely dependent on the quality of the retriever and how accurately the retriever can identify the most relevant piece of information.\nDomain-Specific Open-Book ExamIn this paper, we focus on the narrower but increasingly popular domain than the general open book exam, which we call the domain-specific open-book exam. Here, we know apriori the domain in which the LLM will be tested. The LLM can respond to the users' prompt using use any and all information from this specific domain, which it has been fine-tuned on. Examples of domain specific examples include enterprise documents, code repositories belonging to an organization, etc. In all these scenarios, the LLM will be used to respond to the questions, whose answers can be found within a collection of documents. The retrieval technique itself has little to no-impact on the mechanism (though it may impact the accuracy). This paper studies the domain-specific open-book setting and how to adapt a pretrained LLM to this specific domain, including how to make it more robust to a varying number of retrieved documents and distractors.\nRAFTIn this section, we present RAFT, a novel way of training LLMs for domain-specific openbook exams. We first introduce the classical technique of supervised fine-tuning, followed with the key takeaways from our experiments. Then, we introduce RAFT , a modified version of general instruction tuning. Lastly, we provide an overview of the experiments to expect in the later sections.\nSupervised FinetuningConsider the supervised fine-tuning (SFT) setting for a Question-Answer dataset. The formulation consists of the Dataset (D) from which a set of Question (Q) and corresponding answer (A) pairs are derived or already available. In the classical SFT setting, the model is trained to improve it's ability to answer the questions based on it's knowledge -obtained either during pre-training, or during the SFT training phase. The model so trained can also be used at test-time with Retrieval Augmented Generation (RAG) setting, where additional documents can be introduced in the prompt to help the model answer the question. This can be represented as follows: {Train: Q → A}, {0-shot Inference: Q → A}, {RAG Inference: Q + D → A} RAFT: Retrieval Augmented Fine-Tuning (RAFT), presents a novel recipe to prepare finetuning data to tailor the models for domain-specific open-book setting, equivalent to indomain RAG In RAFT, we prepare the training data such that each data point contains a question (Q), a set of documents (D k ), and a corresponding Chain-of-though style answer (A * ) generated from one of the document (D * ). We differentiate between two types of documents: 'golden' documents (D * ) i.e. the documents from which the answer to the question can be deduced, and 'distractor' documents (D i ) that do not contain answerrelevant information. As an implementation detail, the 'golden' document doesn't need to be a single document, but can be more than one document, as is the case in HotpotQA Yang et al. (2018). Then, for P fraction of the questions (q i ) in the dataset, we retain the golden document (d * i ) along with distractor documents (d k-1 ). For (1 -P) fraction of the questions (q i ) in the dataset, we include no golden document and only include distractor documents (d k ). We then fine-tune the language model using standard supervised training (SFT) technique, training it to generate answers from the provided documents and question. Fig. 2 illustrates the high-level design principal for RAFT .We demonstrate that our RAG approach trains the model to perform better RAG on the set of documents it is trained on i.e., in-domain. By removing the golden documents in some instances, we are compelling the model to memorize answers instead of deriving them from the context. The training data for RAFT is as follows, and an example training data can be seen in Fig. 3:P % of data: Q + D * + D 1 + D 2 + . . . + D k → A * (1 -P) % of data: Q + D 1 + D 2 + . . . + D k → A *Subsequently, for the test scenario, the model is provided with the Q and top-k documents retrieved by the RAG pipeline. Note that RAFT is independent of the retriever used.A key factor in enhancing training quality is the generation of a reasoning process, such as Chain-of-Thought, to explain the provided answers. RAFT approach is similar: we demonstrate that creating a full reasoning chain and in-addition, clearly citing sources enhances the model's accuracy in answering questions. In Fig. 3, we illustrate this setup. Generating the training data in this fashion, involves presenting the model with a question, context, and verified answers, and then requesting it to form a reasoning chain that appropriately references the original context.For all the datasets in our experiments, we generate the answers using the technique described above. Note that the Gorilla APIBench dataset, already includes reasoning in the answers. We provide an example of the generation step in Fig. 3, the detailed reasoning answer includes a citation from the original context inside ##begin_quote## and ##end_quote## as well as the detailed explanation on how to reach the conclusion based on the citations. We demonstrate that adding detailed reasoning paragraphs can help boost the model's performance in our experiment section.\nEvaluationWe design our experiments to study how well RAFT performs compared to various baselines. We find that the RAFT-7B model (a finetuned version of LlaMA-2) is better at reading and extracting information from in-domain documents, than domain-specific finetuned model, and general-purpose model with RAG. As an ablation, we also demonstrate how important it is for the model to learn with Chain-of-Thought responses. In this section, we will first introduce all the datasets we used in the experiments, then all the baseline model/fine-tuning techniques that we benchmark against.Question: The Oberoi family is part of a hotel company that has a head office in what city? context: [The Oberoi family is an Indian family that is famous for its involvement in hotels, namely through The Oberoi Group]...[It is located in city center of Jakarta, near Mega Kuningan, adjacent to the sister JW Marriott Hotel. It is operated by The Ritz-Carlton Hotel Company. The complex has two towers that comprises a hotel and the Airlangga Apartment respectively]...[The Oberoi Group is a hotel company with its head office in Delhi.] Instruction: Given the question, context and answer above, provide a logical reasoning for that answer. Please use the format of: ##Reason: {reason} ##Answer: {answer}.- -------------------------------------------------------------------------------------CoT Answer: ##Reason: The document ##begin_quote## The Oberoi family is an Indian family that is famous for its involvement in hotels, namely through The Oberoi Group. ##end_quote## establishes that the Oberoi family is involved in the Oberoi group, and the document ##begin_quote## The Oberoi Group is a hotel company with its head office in Delhi. ##end_quote## establishes the head office of The Oberoi Group. Therefore, the Oberoi family is part of a hotel company whose head office is in Delhi. ##Answer: Delhi Figure 3: RAFT prompt to help LLM evaluate its own generated reasoning and answers, contrasting them with the correct reasoning and answers. The LLM is prompted to identify errors in its reasoning and extract key insights for improvement. This figure specifically represents the 'GenerateExplanation' step in the RAFT algorithm (Section 3).Table 1: RAFT improves RAG performance for all specialized domains: Across PubMed, HotPot, HuggingFace, Torch Hub, and Tensorflow Hub, we see that Domain-specific Finetuning improves significantly of the performance of the base model, RAFT consistently outperforms the existing domain-specific finetuning method with or without RAG. This suggests the need to train the model with context. We compare our model with LLaMA finetuning receipes, and provide GPT-3.5 for reference.PubMed HotPot HuggingFace Torch Hub TensorFlow GPT-3.5 + RAG 71.60 41.5 29.08 60.21 65.59 LLaMA2-7B 56.5 0.54 0.22 0 0 LLaMA2-7B + RAG 58.8 0.03 26.43 08.60 43.06 DSF 59.7 6.38 61.06 84.94 86.56 DSF + RAG 71.6 4.41 42.59 82.80 60.29 RAFT (LLaMA2-7B) 73.30 35.28 74.00 84.95 86.86 Datasets In our experiments, we use the following datasets to evaluate our model and all baselines. We selected these datasets to represent both popular and diverse domains including Wikipedia, Coding/API documents, and question-answering on medical documents. Natural Questions (NQ) Kwiatkowski et al. (2019), Trivia QA Joshi et al. (2017) and HotpotQA Yang et al. (2018) are the open-domain question-answers based on Wikipedia, mainly focused on common knowledge (e.g., movies, sports, etc). HuggingFace, Torch Hub, and TensorFlow Hub are from the APIBench Patil et al. (2023) proposed in the Gorilla paper. These benchmarks measure how to generate the correct, functional, and executable API calls based on the documentation. PubMed QA Jin et al. ( 2019) is a question-answering dataset tailored only for biomedical-research question-answering. It mainly focuses on answering medical and biology questions based on a given set of documents. We would like to highlight that (NQ, Trivia QA, and HotpotQA) are relatively general domain whereas the latter two domains are on domain-specific documents.Baselines We consider the following baselines for our experiments:• LlaMA2-7B-chat model with 0-shot prompting: this is the commonly used instruction-finetuned model for QA tasks, where we provide clearly written instructions, but no reference documentation.• LlaMA2-7B-chat model with RAG (Llama2 + RAG): similar to the previous setting, except here we include reference documents. This is a popular technique when dealing with domain-specific QA tasks.• Domain-Specific Finetuning with 0-shot prompting (DSF): Standard supervisedfinetuning, without documents in context. We find that its mostly useful to align the answering style of the model as well as get familiar with the domain context.• Domain-Specific Finetuning with RAG (DSF + RAG): Equip a domain-specific finetuned-model with external knowledge using RAG. So, for the \"knowledge\" the model does not know, it can still refer to the context.\nResultsUsing the above datasets and baselines, we evaluate our model RAFT and demonstrate the effectiveness of RAFT in Tab. 1. We see that RAFT consistently and significantly outperforms the baselines. Compared with the base Llama-2 instruction-tuned model, RAFT with RAG does much better in terms of extracting information as well as being robust towards distractors. The gain can be as big as 35.25% on Hotpot QA and 76.35% on Torch Hub evaluation. Compared with DSF on the specific dataset, our model does better at relying on the provided context to solve the problem. RAFT does much better on the tasks like Hotpot and HuggingFace datasets (30.87% on Hotpot and 31.41% on HuggingFace). Note that for PubMed QA, since it is a binary yes/no question, we don't observe significant gains when we compare our model with DSF + RAG. Even compared with a much larger and better model GPT-3.5, RAFT demonstrates significant advantages.Overall, the LLaMA-7B model, both with and without the RAG, performs poorly due to its answering style not aligning with the ground truth. By applying domain-specific tuning, we significantly enhance its performance. This process enables the model to learn and adopt the appropriate style of answering. However, introducing RAG to a domain-specifically fine-tuned (DSF) model doesn't invariably lead to better outcomes. This might indicate that the model lacks training in context processing and extracting useful information from it. By incorporating our method, RAFT , we train the model not only to match its answering style with that required but also to improve its document processing capabilities. Consequently, our approach outperforms all others.\nEffect of CoTWe also conduct an analysis to evaluate the effectiveness of the Chain-of-Thought approach in enhancing the model's performance. As indicated in Table 2, simply providing the answer to a question may not always be adequate. This approach can lead to a rapid decrease in loss, resulting in the model beginning to overfit. Incorporating a reasoning chain that not only guides the model to the answer but also enriches the model's understanding can improve the overall accuracy and prevent overfitting to concise answers. In our experiments, integrating the Chain-of-Thought significantly enhances training robustness. We employ GPT-4-1106 to generate our Chain-of-Thought prompts and include an example of the prompt we used in Figure 3.\nQualitative AnalysisTo illustrate the potential advantages of RAFT over the domain-specifically fine-tuned (DSF) approach, we present a comparative example in Figure 4. This example qualitatively demonstrates a scenario where the DSF model becomes confused by a question asking for the identity of a screenwriter. Instead of providing the correct name, it mistakenly cites one of the films written by the screenwriter. In contrast, the RAFT model accurately answers the question. This discrepancy suggests that training a model solely with question-answer pairs may impair its ability to derive relevant context from provided documents. The comparison underscores the importance of incorporating both standard instructional tuning and context comprehension into the training dataset to preserve and enhance the model's ability to process text effectively.HotPot QA Question: What screenwriter with credits for \"Evolution\"[0/1879]e a film starring Nicolas Cage and Téa Leoni? Documents: . . . David Weissman is a screenwriter and director. His film credits include \"The Family Man\" (2000), \"Evolution\" ( 2001), and \"When in Rome\" (2010). . . . The Family Man is a 2000 American romantic comedy-drama film directed by Brett Ratner, written by David Diamond and David Weissman, and starring Nicolas Cage and Téa Leoni. . . .\n-----------------------------------------------RAFT: ##Reason:The screenwriter with credits for the film \"Evolution,\" starring Nicolas Cage and Téa Leoni, is David Weissman. This information is provided in the reference documents where it mentions David Weissman as a screenwriter with film credits including \"The Family Man\" (2000), \"Evolution\" (2001), and \"When in Rome\" (2010). Therefore, the screenwriter for \"Evolution\" is David Weissman. ##Answer: David Weissman ✓ DSF: The Family Man ✗ 4.4 Should we train the LLM always with the golden context for RAG?In our exploration of whether large language models (LLMs) should always be trained with the golden context for Retrieval-Augmented Generation (RAG), we address a key question: what proportion (p%) of the training data should include golden documents? Intuitively, one might assume that for effective training in reading and extracting information from context (e.g., RAG tasks), the golden document should always be included during training (P = 100%). However, our findings challenge this assumption: incorporating a portion of the training data without the golden document in the context (P = 80%) appears to enhance the model's performance on RAG tasks.0 20 40 60 80 100 P % Golden Retrieved Context at Training 0.25 0.30 0.35 0.40 0.45 Final Accuracy Test Domain: NQ 0 20 40 60 80 100 % Golden Retrieved Context at Training 0.50 0.55 0.60 0.65 Final Accuracy Test Domain: TQA 0 20 40 60 80 100 P % Golden Retrieved Context at Training 0.40 0.45 0.50 0.55 0.60 Final Accuracy Test Domain: HoPo Figure 5 presents our investigation into the hyperparameter P%, which represents the percentage of training instances that should include golden documents. We find that the optimal proportion varies across datasets, with P% ranging from 40%, 60%, and 100%. This indicates that training your LLM without the correct corresponding context at times can be beneficial for the downstream task of answering questions related to the documents. In our training setup, we include four distractor documents alongside the golden document, and at test time, we maintain this format by providing the golden document with four distractors. Our findings suggest that, for domain-specific RAG tasks, including a certain percentage of training data without the golden documents in the context proves to be advantageous.\nRAFT Generalizes to Top-K RAGWe now study another important problem: How does the number of distractor documents in RAFT affect the model's performance when augmented with top-k RAG results during evaluation? Previous research has highlighted the vulnerability of LLMs to irrelevant text (see studies (Shi et al., 2023a;Weston &amp; Sukhbaatar, 2023;Liu et al., 2023)). This issue is particularly critical for LLMs + RAG since top-k RAG is frequently employed at test time to ensure high recall. Such a scenario necessitates the model to have the ability to discern and disregard irrelevant content, focusing solely on pertinent information.\nMaking Model Robust to top-K RAGTo tackle the challenge of enhancing large language models' (LLMs) ability to sift through irrelevant text within the retrieval pipeline, our analysis revealed that training solely with golden (highly relevant) documents can inadvertently diminish the model's ability to discern and disregard irrelevant information. To address this, our algorithm, RAFT , adopts a strategy that integrates golden documents with a mix of irrelevant ones. This methodology prompts us to investigate the ideal fraction of distractor (irrelevant) documents to incorporate throughout the training process and to assess how well this training approach adapts to different volumes of documents encountered by the Retrieval-Augmented Generation (RAG) during the test phase. Our aim is to refine the balance between relevant and irrelevant information to strenghten the model's efficiency in identifying and utilizing pertinent content. Notice that Sec 4.4 looked what what P% of training data should include distractors, while in this section, we study test-time scenarios.Training with Distractor Documents To enhance the robustness of LLMs against irrelevant text in retrieved documents, we adopted a finetuning approach that incorporates both golden (highly relevant) documents and distractor (irrelevant) documents. The model was trained with varying numbers of distractor documents, but consistently evaluated using the top-3 documents obtained from the retriever -not to be confused with p. Our findings, detailed in Fig. 6, reveal that finetuning with only the golden document frequently results in inferior performance compared to configurations that include a greater number of distractor documents. As we can see in the figure, the better performance for Natural Questions is In NQ, we find that training with 4 documents leads to optimal performance, and this changes to 3 and 2 for for Trivia QA and HotPot QA respectively. However, we see that training with only golden documents leads to poor performance.training with D * + 3D and it is D * + 1D documents with Hotpot QA. This insight has been particularly beneficial for our algorithm, RAFT . In our experiments, we consistently employ a training setup consisting of one golden document alongside four distractor documents.\nGeneralization to a variable number of test-time documents.We extended our research to examine the impact of different quantities of test-time documents on the model's performance. Specifically, our experiments focused on assessing how models, trained with varying numbers of distractor documents, respond to changes in the number of documents presented at test time. The results, illustrated in Fig. 6, confirm that the inclusion of distractor documents during training indeed makes the model more resilient to fluctuations in the number of documents encountered during testing. This ability to maintain consistent performance despite variations in test-time document numbers further validates the robustness of our approach, RAFT . This finding underscores the importance of a well-calibrated training environment to prepare the model for a range of scenarios it may encounter in real-world.\nRelated WorksRetrieval-Augmented Language Models Retrieval-Augmented Language Models (RALMs) enhance LLMs by integrating a retrieval module that sources relevant information from external knowledge bases, significantly improving performance across various NLP tasks, including language modeling (Guu et al., 2020;Borgeaud et al., 2022;Khandelwal et al., 2019;Shi et al., 2023d;Lin et al., 2023b;Shi et al., 2023c;Asai et al., 2023;Xu et al., 2023;Wang et al., 2023) and open-domain question answering (Izacard et al., 2023;Lewis et al., 2020). For instance, Atlas (Izacard et al., 2023) fine-tunes T5 models with the retriever, treating documents as latent variables, while RETRO (Borgeaud et al., 2022) modifies the decoder-only architecture to include retrieved texts and conducts pre-training from scratch. kNN-LM (Khandelwal et al., 2019) interpolates between the LM's next token distribution and distributions computed from retrieved tokens at inference. (Shi et al., 2023d;Ram et al., 2023) assume black-box access to an LLM, combining it with either off-the-shelf or fine-tuned retriever.Memorization A key question around large neural language models is whether they truly \"understand\" text (Feldman, 2020;Power et al., 2022) or simply rely on surface pattern memorization (Carlini et al., 2019;Tänzer et al., 2022). (Feldman, 2020;Carlini et al., 2019;2022) develop methodologies to quantify the extent of memorization in neural models. (Brown et al., 2020;Power et al., 2022;Liu et al., 2022) further explored how memorization impacts the models' generalization capabilities. (Carlini et al., 2021;Shi et al., 2023b) demonstrated the ability of language models to memorize and regurgitate training data, raising significant privacy concerns (Kandpal et al., 2022;Pan et al., 2020).Finetuning for RAG More recently, several papers have been exploring the idea of finetuning a pretrained LLM to be better at RAG tasks (Lin et al., 2023a;Wang et al., 2023;Xu et al., 2023;Liu et al., 2024). These works focus on constructing a combination of finetuning dataset for RAG and train a model to perform well on these tasks. In particular, in their settings, at test time, the domain or documents can be different than the training time; whereas our paper studies a slightly opposite scenario where we only care about testing the LLM on the same set of documents.\nConclusionRAFT is a training strategy designed to enhance the model's performance in answering questions within a specific domain, in \"open-book\" settings. We highlight several crucial design decisions, such as training the model alongside distractor documents, organizing the dataset so a portion lacks golden documents in their context, and formulating answers in a chain-of-thought manner with direct quotations from the relevant text. Our evaluations on PubMed, HotpotQA, and Gorilla API Bench underline RAFT's significant potential.Figure 4 :4Figure4: Comparison of RAFT and DSF: On the HotPot QA dataset, we can see that DSF model extracts the wrong information from the context when the question is asking who is the screen writer and it answers a film name. RAFT manages to get the accurate results .\nFigure 5 :5Figure5: How many golden documents to involve? We study the hyperparameter P% where it indicates how much portion of training data is with golden document. Results on NQ, TQA and HotpotQA suggest that mixing some amount of data that the golden document is not put in the context is helpful for in-domain RAG.\nFigure 6 :6Figure 6: Test-Time Documents Varying:To analyze how robust RAFT is to varying number of test-time documents, we study three domains -NQ, Trivia QA and HotPot QA. In NQ, we find that training with 4 documents leads to optimal performance, and this changes to 3 and 2 for for Trivia QA and HotPot QA respectively. However, we see that training with only golden documents leads to poor performance.\nTable 2 :2Ablation on Chain-of-Thought:The numbers of RAFT and RAFT without CoT. Results on various datasets show that adding CoT can significantly improve the performance of the finetuned model. With a gains of 9.66% and 14.93% in the Hotpot QA and HuggingFace datasets respectively.PubMedHotpotQAHuggingFaceTorch HubTensorFlowRAFT w.o CoT68.3025.6259.0786.5683.21RAFT73.3035.2874.0084.9586.86",
+ "sections": [
+  {
+   "title": "Introduction",
+   "text": "Trained on vast quantities of public data, Large Language Models LLMs have achieved significant advances in a wide range of general knowledge reasoning tasks Brown et al. (2020); Wei et al. (2022). However, increasingly LLMs are being employed in specialized domains to support tasks ranging from code completion for specific software frameworks to question answering on specific document collections (e.g., legal or medical documents). In these settings, general knowledge reasoning is less critical and instead the primary goal is to maximize accuracy based on a given set of documents. Indeed, adapting LLMs to the specialized domains (e.g., recent news, enterprise private documents, or program resources constructed after the training cutoff) is essential to many emerging applications (Vu et al., 2023;Lazaridou et al., 2022) and is the focus of this work. This paper studies the following question -How do we adapt pre-trained LLMs for Retrieval Augmented Generation (RAG) in specialized domains?When it comes to adapting LLMs to specialized domains, we consider the following two candidates: in-context learning through Retrieval-Augmented Generation (RAG) and supervised fine-tuning. RAG based methods allow the LLM to reference the documents when\"Open book\" query answer \"Closed book\" query answer Bake in Knowledge at Train Time Model can use External Docs at Test RAFT (Proposed) query answer Teach Model to use External Docs at TestFigure 1: How best to prepare for an Exam?(a) Fine-tuning based approaches implement \"studying\" by either directly \"memorizing\" the input documents or answering practice QA without referencing the documents. (b) Alternatively, in-context retrieval methods fail to leverage the learning opportunity afforded by the fixed domain and are equivalent to taking an open-book exam without studying. In contrast, our approach (c) RAFT leverages fine-tuning with question-answer pairs while referencing the documents in a simulated imperfect retrieval setting -thereby effectively preparing for the open-book exam setting.answering questions. However, RAG based in-context learning methods fail to leverage the learning opportunity afforded by the fixed domain setting and early access to the test documents. Alternatively, supervised fine-tuning offers the opportunity to learn more general patterns in the documents and better align to end tasks and user preferences Zhou et al. (2023). However, existing fine-tuning based approaches either fail to leverage the documents at test time (don't incorporate RAG) or fail to account for the imperfections in retrieval process during training.We can draw an analogy to an open-book exam. Existing in-context retrieval methods are equivalent to taking an open-book exam without studying. Alternatively, existing finetuning based approaches implement \"studying\" by either directly \"memorizing \" Xiong et al. (2023) the input documents or answering practice questions Wang et al. (2022) without referencing the documents. While these approaches leverage in-domain learning they fail to prepare for the open-book nature of the test setting.In this paper, we study how to combine instruction fine-tuning (IFT) with retrieval augmented generation (RAG). We propose a novel adaptation strategy -Retrieval-Augmented Fine Tuning (RAFT). RAFT specifically addresses the challenge of fine-tuning LLMs to both incorporate domain knowledge while also improving in-domain RAG performance. RAFT aims to not only enable models to learn domain-specific knowledge through fine-tuning, but also to ensure robustness against distracting retrieved information. This is achieved by training the models to understand the dynamics between the question (prompt), the domain-specific documents retrieved, and the right answer. Going back to our analogy to the open book exam, our approach is analogous to studying for an open-book exam by recognizing relevant, and irrelevant retrieved documents.In RAFT, we train the model to answer the question (Q) from Document(s) (D*) to generate answer (A*), where A* includes chain-of-thought reasoning Wei et al. (2022); Anthropic (2023), and in the presence of distractor documents (D k ). We explain the methodology in Section 3 and analyze the sensitivity to the number of distractor documents (k) at train-and test-time in Section 5. RAFT consistently outperforms Supervised-finetuning both withand without-RAG across PubMed Dernoncourt &amp; Lee (2017), HotPot QA Yang et al. (2018), and HuggingFace Hub, Torch Hub, and Tensorflow Hub Gorilla datasets Patil et al. (2023), presenting a novel, yet simple technique to improve pre-trained LLMs for in-domain RAG. Our code is available at https://github.com/ShishirPatil/gorilla.",
+   "level": 1,
+   "path_id": "1",
+   "parent_section_id": null,
+   "order_in_parent": 0,
+   "section_id": "sec-1"
+  },
+  {
+   "title": "LLMs for Open-Book Exam",
+   "text": "To understand our goal better, we expand on our analogy between training an LLM with the real-world setting of prepararing for an exam.Closed-Book Exam A closed book exam often refers to the scenario where the LLMs do not have access to any additional documents or references to answer the questions during Figure 2: Overview of our RAFT method. The top-left figure depicts our approach of adapting LLMs to reading solution from a set of positive and distractor documents in contrast to standard RAG setup where models are trained based on the retriever outputs, which is a mixture of both memorization and reading. At test time, all methods follow the standard RAG setting, provided with a top-k retrieved documents in the context.the exam. For LLMs, this is equivalent to the scenario, for example, in which the LLM is used as a chatbot. In this scenario the LLM draws from the knowledge baked in during pre-training and supervised-finetuning to respond to the users' prompt.Open Book Exam In contrast, we liken the open-book exam setting to the scenario in which the LLM can refer to external sources of information (e.g., a website or a book chapter). In such scenarios, typically, the LLM is paired with retriever which retrieves 'k' documents (or specific segments of the document) which are appended to the users' prompt. It is only through these documents retrieved that the LLM gains access to \"domain-specific information\". As a result, we argue that the LLM's performance in these settings, where it is trained as a general-purpose LLM is largely dependent on the quality of the retriever and how accurately the retriever can identify the most relevant piece of information.",
+   "level": 2,
+   "path_id": "2",
+   "parent_section_id": null,
+   "order_in_parent": 1,
+   "section_id": "sec-2"
+  },
+  {
+   "title": "Domain-Specific Open-Book Exam",
+   "text": "In this paper, we focus on the narrower but increasingly popular domain than the general open book exam, which we call the domain-specific open-book exam. Here, we know apriori the domain in which the LLM will be tested. The LLM can respond to the users' prompt using use any and all information from this specific domain, which it has been fine-tuned on. Examples of domain specific examples include enterprise documents, code repositories belonging to an organization, etc. In all these scenarios, the LLM will be used to respond to the questions, whose answers can be found within a collection of documents. The retrieval technique itself has little to no-impact on the mechanism (though it may impact the accuracy). This paper studies the domain-specific open-book setting and how to adapt a pretrained LLM to this specific domain, including how to make it more robust to a varying number of retrieved documents and distractors.",
+   "level": 1,
+   "path_id": "1~2",
+   "parent_section_id": null,
+   "order_in_parent": 2,
+   "section_id": "sec-1~2"
+  },
+  {
+   "title": "RAFT",
+   "text": "In this section, we present RAFT, a novel way of training LLMs for domain-specific openbook exams. We first introduce the classical technique of supervised fine-tuning, followed with the key takeaways from our experiments. Then, we introduce RAFT , a modified version of general instruction tuning. Lastly, we provide an overview of the experiments to expect in the later sections.",
+   "level": 3,
+   "path_id": "3",
+   "parent_section_id": null,
+   "order_in_parent": 3,
+   "section_id": "sec-3"
+  },
+  {
+   "title": "Supervised Finetuning",
+   "text": "Consider the supervised fine-tuning (SFT) setting for a Question-Answer dataset. The formulation consists of the Dataset (D) from which a set of Question (Q) and corresponding answer (A) pairs are derived or already available. In the classical SFT setting, the model is trained to improve it's ability to answer the questions based on it's knowledge -obtained either during pre-training, or during the SFT training phase. The model so trained can also be used at test-time with Retrieval Augmented Generation (RAG) setting, where additional documents can be introduced in the prompt to help the model answer the question. This can be represented as follows: {Train: Q → A}, {0-shot Inference: Q → A}, {RAG Inference: Q + D → A} RAFT: Retrieval Augmented Fine-Tuning (RAFT), presents a novel recipe to prepare finetuning data to tailor the models for domain-specific open-book setting, equivalent to indomain RAG In RAFT, we prepare the training data such that each data point contains a question (Q), a set of documents (D k ), and a corresponding Chain-of-though style answer (A * ) generated from one of the document (D * ). We differentiate between two types of documents: 'golden' documents (D * ) i.e. the documents from which the answer to the question can be deduced, and 'distractor' documents (D i ) that do not contain answerrelevant information. As an implementation detail, the 'golden' document doesn't need to be a single document, but can be more than one document, as is the case in HotpotQA Yang et al. (2018). Then, for P fraction of the questions (q i ) in the dataset, we retain the golden document (d * i ) along with distractor documents (d k-1 ). For (1 -P) fraction of the questions (q i ) in the dataset, we include no golden document and only include distractor documents (d k ). We then fine-tune the language model using standard supervised training (SFT) technique, training it to generate answers from the provided documents and question. Fig. 2 illustrates the high-level design principal for RAFT .We demonstrate that our RAG approach trains the model to perform better RAG on the set of documents it is trained on i.e., in-domain. By removing the golden documents in some instances, we are compelling the model to memorize answers instead of deriving them from the context. The training data for RAFT is as follows, and an example training data can be seen in Fig. 3:P % of data: Q + D * + D 1 + D 2 + . . . + D k → A * (1 -P) % of data: Q + D 1 + D 2 + . . . + D k → A *Subsequently, for the test scenario, the model is provided with the Q and top-k documents retrieved by the RAG pipeline. Note that RAFT is independent of the retriever used.A key factor in enhancing training quality is the generation of a reasoning process, such as Chain-of-Thought, to explain the provided answers. RAFT approach is similar: we demonstrate that creating a full reasoning chain and in-addition, clearly citing sources enhances the model's accuracy in answering questions. In Fig. 3, we illustrate this setup. Generating the training data in this fashion, involves presenting the model with a question, context, and verified answers, and then requesting it to form a reasoning chain that appropriately references the original context.For all the datasets in our experiments, we generate the answers using the technique described above. Note that the Gorilla APIBench dataset, already includes reasoning in the answers. We provide an example of the generation step in Fig. 3, the detailed reasoning answer includes a citation from the original context inside ##begin_quote## and ##end_quote## as well as the detailed explanation on how to reach the conclusion based on the citations. We demonstrate that adding detailed reasoning paragraphs can help boost the model's performance in our experiment section.",
+   "level": 1,
+   "path_id": "1~3",
+   "parent_section_id": null,
+   "order_in_parent": 4,
+   "section_id": "sec-1~3"
+  },
+  {
+   "title": "Evaluation",
+   "text": "We design our experiments to study how well RAFT performs compared to various baselines. We find that the RAFT-7B model (a finetuned version of LlaMA-2) is better at reading and extracting information from in-domain documents, than domain-specific finetuned model, and general-purpose model with RAG. As an ablation, we also demonstrate how important it is for the model to learn with Chain-of-Thought responses. In this section, we will first introduce all the datasets we used in the experiments, then all the baseline model/fine-tuning techniques that we benchmark against.Question: The Oberoi family is part of a hotel company that has a head office in what city? context: [The Oberoi family is an Indian family that is famous for its involvement in hotels, namely through The Oberoi Group]...[It is located in city center of Jakarta, near Mega Kuningan, adjacent to the sister JW Marriott Hotel. It is operated by The Ritz-Carlton Hotel Company. The complex has two towers that comprises a hotel and the Airlangga Apartment respectively]...[The Oberoi Group is a hotel company with its head office in Delhi.] Instruction: Given the question, context and answer above, provide a logical reasoning for that answer. Please use the format of: ##Reason: {reason} ##Answer: {answer}.- -------------------------------------------------------------------------------------CoT Answer: ##Reason: The document ##begin_quote## The Oberoi family is an Indian family that is famous for its involvement in hotels, namely through The Oberoi Group. ##end_quote## establishes that the Oberoi family is involved in the Oberoi group, and the document ##begin_quote## The Oberoi Group is a hotel company with its head office in Delhi. ##end_quote## establishes the head office of The Oberoi Group. Therefore, the Oberoi family is part of a hotel company whose head office is in Delhi. ##Answer: Delhi Figure 3: RAFT prompt to help LLM evaluate its own generated reasoning and answers, contrasting them with the correct reasoning and answers. The LLM is prompted to identify errors in its reasoning and extract key insights for improvement. This figure specifically represents the 'GenerateExplanation' step in the RAFT algorithm (Section 3).Table 1: RAFT improves RAG performance for all specialized domains: Across PubMed, HotPot, HuggingFace, Torch Hub, and Tensorflow Hub, we see that Domain-specific Finetuning improves significantly of the performance of the base model, RAFT consistently outperforms the existing domain-specific finetuning method with or without RAG. This suggests the need to train the model with context. We compare our model with LLaMA finetuning receipes, and provide GPT-3.5 for reference.PubMed HotPot HuggingFace Torch Hub TensorFlow GPT-3.5 + RAG 71.60 41.5 29.08 60.21 65.59 LLaMA2-7B 56.5 0.54 0.22 0 0 LLaMA2-7B + RAG 58.8 0.03 26.43 08.60 43.06 DSF 59.7 6.38 61.06 84.94 86.56 DSF + RAG 71.6 4.41 42.59 82.80 60.29 RAFT (LLaMA2-7B) 73.30 35.28 74.00 84.95 86.86 Datasets In our experiments, we use the following datasets to evaluate our model and all baselines. We selected these datasets to represent both popular and diverse domains including Wikipedia, Coding/API documents, and question-answering on medical documents. Natural Questions (NQ) Kwiatkowski et al. (2019), Trivia QA Joshi et al. (2017) and HotpotQA Yang et al. (2018) are the open-domain question-answers based on Wikipedia, mainly focused on common knowledge (e.g., movies, sports, etc). HuggingFace, Torch Hub, and TensorFlow Hub are from the APIBench Patil et al. (2023) proposed in the Gorilla paper. These benchmarks measure how to generate the correct, functional, and executable API calls based on the documentation. PubMed QA Jin et al. ( 2019) is a question-answering dataset tailored only for biomedical-research question-answering. It mainly focuses on answering medical and biology questions based on a given set of documents. We would like to highlight that (NQ, Trivia QA, and HotpotQA) are relatively general domain whereas the latter two domains are on domain-specific documents.Baselines We consider the following baselines for our experiments:• LlaMA2-7B-chat model with 0-shot prompting: this is the commonly used instruction-finetuned model for QA tasks, where we provide clearly written instructions, but no reference documentation.• LlaMA2-7B-chat model with RAG (Llama2 + RAG): similar to the previous setting, except here we include reference documents. This is a popular technique when dealing with domain-specific QA tasks.• Domain-Specific Finetuning with 0-shot prompting (DSF): Standard supervisedfinetuning, without documents in context. We find that its mostly useful to align the answering style of the model as well as get familiar with the domain context.• Domain-Specific Finetuning with RAG (DSF + RAG): Equip a domain-specific finetuned-model with external knowledge using RAG. So, for the \"knowledge\" the model does not know, it can still refer to the context.",
+   "level": 4,
+   "path_id": "4",
+   "parent_section_id": null,
+   "order_in_parent": 5,
+   "section_id": "sec-4"
+  },
+  {
+   "title": "Results",
+   "text": "Using the above datasets and baselines, we evaluate our model RAFT and demonstrate the effectiveness of RAFT in Tab. 1. We see that RAFT consistently and significantly outperforms the baselines. Compared with the base Llama-2 instruction-tuned model, RAFT with RAG does much better in terms of extracting information as well as being robust towards distractors. The gain can be as big as 35.25% on Hotpot QA and 76.35% on Torch Hub evaluation. Compared with DSF on the specific dataset, our model does better at relying on the provided context to solve the problem. RAFT does much better on the tasks like Hotpot and HuggingFace datasets (30.87% on Hotpot and 31.41% on HuggingFace). Note that for PubMed QA, since it is a binary yes/no question, we don't observe significant gains when we compare our model with DSF + RAG. Even compared with a much larger and better model GPT-3.5, RAFT demonstrates significant advantages.Overall, the LLaMA-7B model, both with and without the RAG, performs poorly due to its answering style not aligning with the ground truth. By applying domain-specific tuning, we significantly enhance its performance. This process enables the model to learn and adopt the appropriate style of answering. However, introducing RAG to a domain-specifically fine-tuned (DSF) model doesn't invariably lead to better outcomes. This might indicate that the model lacks training in context processing and extracting useful information from it. By incorporating our method, RAFT , we train the model not only to match its answering style with that required but also to improve its document processing capabilities. Consequently, our approach outperforms all others.",
+   "level": 2,
+   "path_id": "4.1",
+   "parent_section_id": "sec-4",
+   "order_in_parent": 0,
+   "section_id": "sec-4.1"
+  },
+  {
+   "title": "Effect of CoT",
+   "text": "We also conduct an analysis to evaluate the effectiveness of the Chain-of-Thought approach in enhancing the model's performance. As indicated in Table 2, simply providing the answer to a question may not always be adequate. This approach can lead to a rapid decrease in loss, resulting in the model beginning to overfit. Incorporating a reasoning chain that not only guides the model to the answer but also enriches the model's understanding can improve the overall accuracy and prevent overfitting to concise answers. In our experiments, integrating the Chain-of-Thought significantly enhances training robustness. We employ GPT-4-1106 to generate our Chain-of-Thought prompts and include an example of the prompt we used in Figure 3.",
+   "level": 2,
+   "path_id": "4.2",
+   "parent_section_id": "sec-4",
+   "order_in_parent": 1,
+   "section_id": "sec-4.2"
+  },
+  {
+   "title": "Qualitative Analysis",
+   "text": "To illustrate the potential advantages of RAFT over the domain-specifically fine-tuned (DSF) approach, we present a comparative example in Figure 4. This example qualitatively demonstrates a scenario where the DSF model becomes confused by a question asking for the identity of a screenwriter. Instead of providing the correct name, it mistakenly cites one of the films written by the screenwriter. In contrast, the RAFT model accurately answers the question. This discrepancy suggests that training a model solely with question-answer pairs may impair its ability to derive relevant context from provided documents. The comparison underscores the importance of incorporating both standard instructional tuning and context comprehension into the training dataset to preserve and enhance the model's ability to process text effectively.HotPot QA Question: What screenwriter with credits for \"Evolution\"[0/1879]e a film starring Nicolas Cage and Téa Leoni? Documents: . . . David Weissman is a screenwriter and director. His film credits include \"The Family Man\" (2000), \"Evolution\" ( 2001), and \"When in Rome\" (2010). . . . The Family Man is a 2000 American romantic comedy-drama film directed by Brett Ratner, written by David Diamond and David Weissman, and starring Nicolas Cage and Téa Leoni. . . .",
+   "level": 2,
+   "path_id": "4.3",
+   "parent_section_id": "sec-4",
+   "order_in_parent": 2,
+   "section_id": "sec-4.3"
+  },
+  {
+   "title": "-----------------------------------------------RAFT: ##Reason:",
+   "text": "The screenwriter with credits for the film \"Evolution,\" starring Nicolas Cage and Téa Leoni, is David Weissman. This information is provided in the reference documents where it mentions David Weissman as a screenwriter with film credits including \"The Family Man\" (2000), \"Evolution\" (2001), and \"When in Rome\" (2010). Therefore, the screenwriter for \"Evolution\" is David Weissman. ##Answer: David Weissman ✓ DSF: The Family Man ✗ 4.4 Should we train the LLM always with the golden context for RAG?In our exploration of whether large language models (LLMs) should always be trained with the golden context for Retrieval-Augmented Generation (RAG), we address a key question: what proportion (p%) of the training data should include golden documents? Intuitively, one might assume that for effective training in reading and extracting information from context (e.g., RAG tasks), the golden document should always be included during training (P = 100%). However, our findings challenge this assumption: incorporating a portion of the training data without the golden document in the context (P = 80%) appears to enhance the model's performance on RAG tasks.0 20 40 60 80 100 P % Golden Retrieved Context at Training 0.25 0.30 0.35 0.40 0.45 Final Accuracy Test Domain: NQ 0 20 40 60 80 100 % Golden Retrieved Context at Training 0.50 0.55 0.60 0.65 Final Accuracy Test Domain: TQA 0 20 40 60 80 100 P % Golden Retrieved Context at Training 0.40 0.45 0.50 0.55 0.60 Final Accuracy Test Domain: HoPo Figure 5 presents our investigation into the hyperparameter P%, which represents the percentage of training instances that should include golden documents. We find that the optimal proportion varies across datasets, with P% ranging from 40%, 60%, and 100%. This indicates that training your LLM without the correct corresponding context at times can be beneficial for the downstream task of answering questions related to the documents. In our training setup, we include four distractor documents alongside the golden document, and at test time, we maintain this format by providing the golden document with four distractors. Our findings suggest that, for domain-specific RAG tasks, including a certain percentage of training data without the golden documents in the context proves to be advantageous.",
+   "level": 1,
+   "path_id": "1~4",
+   "parent_section_id": null,
+   "order_in_parent": 6,
+   "section_id": "sec-1~4"
+  },
+  {
+   "title": "RAFT Generalizes to Top-K RAG",
+   "text": "We now study another important problem: How does the number of distractor documents in RAFT affect the model's performance when augmented with top-k RAG results during evaluation? Previous research has highlighted the vulnerability of LLMs to irrelevant text (see studies (Shi et al., 2023a;Weston &amp; Sukhbaatar, 2023;Liu et al., 2023)). This issue is particularly critical for LLMs + RAG since top-k RAG is frequently employed at test time to ensure high recall. Such a scenario necessitates the model to have the ability to discern and disregard irrelevant content, focusing solely on pertinent information.",
+   "level": 5,
+   "path_id": "5",
+   "parent_section_id": null,
+   "order_in_parent": 7,
+   "section_id": "sec-5"
+  },
+  {
+   "title": "Making Model Robust to top-K RAG",
+   "text": "To tackle the challenge of enhancing large language models' (LLMs) ability to sift through irrelevant text within the retrieval pipeline, our analysis revealed that training solely with golden (highly relevant) documents can inadvertently diminish the model's ability to discern and disregard irrelevant information. To address this, our algorithm, RAFT , adopts a strategy that integrates golden documents with a mix of irrelevant ones. This methodology prompts us to investigate the ideal fraction of distractor (irrelevant) documents to incorporate throughout the training process and to assess how well this training approach adapts to different volumes of documents encountered by the Retrieval-Augmented Generation (RAG) during the test phase. Our aim is to refine the balance between relevant and irrelevant information to strenghten the model's efficiency in identifying and utilizing pertinent content. Notice that Sec 4.4 looked what what P% of training data should include distractors, while in this section, we study test-time scenarios.Training with Distractor Documents To enhance the robustness of LLMs against irrelevant text in retrieved documents, we adopted a finetuning approach that incorporates both golden (highly relevant) documents and distractor (irrelevant) documents. The model was trained with varying numbers of distractor documents, but consistently evaluated using the top-3 documents obtained from the retriever -not to be confused with p. Our findings, detailed in Fig. 6, reveal that finetuning with only the golden document frequently results in inferior performance compared to configurations that include a greater number of distractor documents. As we can see in the figure, the better performance for Natural Questions is In NQ, we find that training with 4 documents leads to optimal performance, and this changes to 3 and 2 for for Trivia QA and HotPot QA respectively. However, we see that training with only golden documents leads to poor performance.training with D * + 3D and it is D * + 1D documents with Hotpot QA. This insight has been particularly beneficial for our algorithm, RAFT . In our experiments, we consistently employ a training setup consisting of one golden document alongside four distractor documents.",
+   "level": 2,
+   "path_id": "5.1",
+   "parent_section_id": "sec-5",
+   "order_in_parent": 0,
+   "section_id": "sec-5.1"
+  },
+  {
+   "title": "Generalization to a variable number of test-time documents.",
+   "text": "We extended our research to examine the impact of different quantities of test-time documents on the model's performance. Specifically, our experiments focused on assessing how models, trained with varying numbers of distractor documents, respond to changes in the number of documents presented at test time. The results, illustrated in Fig. 6, confirm that the inclusion of distractor documents during training indeed makes the model more resilient to fluctuations in the number of documents encountered during testing. This ability to maintain consistent performance despite variations in test-time document numbers further validates the robustness of our approach, RAFT . This finding underscores the importance of a well-calibrated training environment to prepare the model for a range of scenarios it may encounter in real-world.",
+   "level": 1,
+   "path_id": "1~5",
+   "parent_section_id": null,
+   "order_in_parent": 8,
+   "section_id": "sec-1~5"
+  },
+  {
+   "title": "Related Works",
+   "text": "Retrieval-Augmented Language Models Retrieval-Augmented Language Models (RALMs) enhance LLMs by integrating a retrieval module that sources relevant information from external knowledge bases, significantly improving performance across various NLP tasks, including language modeling (Guu et al., 2020;Borgeaud et al., 2022;Khandelwal et al., 2019;Shi et al., 2023d;Lin et al., 2023b;Shi et al., 2023c;Asai et al., 2023;Xu et al., 2023;Wang et al., 2023) and open-domain question answering (Izacard et al., 2023;Lewis et al., 2020). For instance, Atlas (Izacard et al., 2023) fine-tunes T5 models with the retriever, treating documents as latent variables, while RETRO (Borgeaud et al., 2022) modifies the decoder-only architecture to include retrieved texts and conducts pre-training from scratch. kNN-LM (Khandelwal et al., 2019) interpolates between the LM's next token distribution and distributions computed from retrieved tokens at inference. (Shi et al., 2023d;Ram et al., 2023) assume black-box access to an LLM, combining it with either off-the-shelf or fine-tuned retriever.Memorization A key question around large neural language models is whether they truly \"understand\" text (Feldman, 2020;Power et al., 2022) or simply rely on surface pattern memorization (Carlini et al., 2019;Tänzer et al., 2022). (Feldman, 2020;Carlini et al., 2019;2022) develop methodologies to quantify the extent of memorization in neural models. (Brown et al., 2020;Power et al., 2022;Liu et al., 2022) further explored how memorization impacts the models' generalization capabilities. (Carlini et al., 2021;Shi et al., 2023b) demonstrated the ability of language models to memorize and regurgitate training data, raising significant privacy concerns (Kandpal et al., 2022;Pan et al., 2020).Finetuning for RAG More recently, several papers have been exploring the idea of finetuning a pretrained LLM to be better at RAG tasks (Lin et al., 2023a;Wang et al., 2023;Xu et al., 2023;Liu et al., 2024). These works focus on constructing a combination of finetuning dataset for RAG and train a model to perform well on these tasks. In particular, in their settings, at test time, the domain or documents can be different than the training time; whereas our paper studies a slightly opposite scenario where we only care about testing the LLM on the same set of documents.",
+   "level": 6,
+   "path_id": "6",
+   "parent_section_id": null,
+   "order_in_parent": 9,
+   "section_id": "sec-6"
+  },
+  {
+   "title": "Conclusion",
+   "text": "RAFT is a training strategy designed to enhance the model's performance in answering questions within a specific domain, in \"open-book\" settings. We highlight several crucial design decisions, such as training the model alongside distractor documents, organizing the dataset so a portion lacks golden documents in their context, and formulating answers in a chain-of-thought manner with direct quotations from the relevant text. Our evaluations on PubMed, HotpotQA, and Gorilla API Bench underline RAFT's significant potential.",
+   "level": 7,
+   "path_id": "7",
+   "parent_section_id": null,
+   "order_in_parent": 10,
+   "section_id": "sec-7"
+  },
+  {
+   "title": "Figure 4 :",
+   "text": "4Figure4: Comparison of RAFT and DSF: On the HotPot QA dataset, we can see that DSF model extracts the wrong information from the context when the question is asking who is the screen writer and it answers a film name. RAFT manages to get the accurate results .",
+   "level": 1,
+   "path_id": "1~6",
+   "parent_section_id": null,
+   "order_in_parent": 11,
+   "section_id": "sec-1~6"
+  },
+  {
+   "title": "Figure 5 :",
+   "text": "5Figure5: How many golden documents to involve? We study the hyperparameter P% where it indicates how much portion of training data is with golden document. Results on NQ, TQA and HotpotQA suggest that mixing some amount of data that the golden document is not put in the context is helpful for in-domain RAG.",
+   "level": 1,
+   "path_id": "1~7",
+   "parent_section_id": null,
+   "order_in_parent": 12,
+   "section_id": "sec-1~7"
+  },
+  {
+   "title": "Figure 6 :",
+   "text": "6Figure 6: Test-Time Documents Varying:To analyze how robust RAFT is to varying number of test-time documents, we study three domains -NQ, Trivia QA and HotPot QA. In NQ, we find that training with 4 documents leads to optimal performance, and this changes to 3 and 2 for for Trivia QA and HotPot QA respectively. However, we see that training with only golden documents leads to poor performance.",
+   "level": 1,
+   "path_id": "1~8",
+   "parent_section_id": null,
+   "order_in_parent": 13,
+   "section_id": "sec-1~8"
+  },
+  {
+   "title": "Table 2 :",
+   "text": "2Ablation on Chain-of-Thought:The numbers of RAFT and RAFT without CoT. Results on various datasets show that adding CoT can significantly improve the performance of the finetuned model. With a gains of 9.66% and 14.93% in the Hotpot QA and HuggingFace datasets respectively.PubMedHotpotQAHuggingFaceTorch HubTensorFlowRAFT w.o CoT68.3025.6259.0786.5683.21RAFT73.3035.2874.0084.9586.86",
+   "level": 1,
+   "path_id": "1~9",
+   "parent_section_id": null,
+   "order_in_parent": 14,
+   "section_id": "sec-1~9"
+  }
+ ],
+ "citations": [
+  {
+   "raw_text": "Prompt engineering for claude&apos;s long context window\n\t\t\n\t\t\tAnthropic\n\t\t\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b0",
+     "section_path_id": "1",
+     "quote": "Anthropic (2023)",
+     "offset": 4118
+    }
+   ]
+  },
+  {
+   "raw_text": "Self-rag: Learning to retrieve, generate, and critique through self-reflection\n\t\t\n\t\t\tAAsai\n\t\t\n\t\t\n\t\t\tZWu\n\t\t\n\t\t\n\t\t\tYWang\n\t\t\n\t\t\n\t\t\tASil\n\t\t\n\t\t\n\t\t\tHHajishirzi\n\t\t\n\t\tarXiv:2310.11511\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2310.11511",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b1",
+     "section_path_id": "6",
+     "quote": "Asai et al., 2023;",
+     "offset": 400
+    }
+   ]
+  },
+  {
+   "raw_text": "Improving language models by retrieving from trillions of tokens\n\t\t\n\t\t\tSBorgeaud\n\t\t\n\t\t\n\t\t\tAMensch\n\t\t\n\t\t\n\t\t\tJHoffmann\n\t\t\n\t\t\n\t\t\tTCai\n\t\t\n\t\t\n\t\t\tERutherford\n\t\t\n\t\t\n\t\t\tKMillican\n\t\t\n\t\t\n\t\t\tGBVan Den Driessche\n\t\t\n\t\t\n\t\t\tJ.-BLespiau\n\t\t\n\t\t\n\t\t\tBDamoc\n\t\t\n\t\t\n\t\t\tAClark\n\t\t\n\t\n\t\n\t\tInternational conference on machine learning\n\t\t\n\t\t\tPMLR\n\t\t\t2022",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Improving language models by retrieving from trillions of tokens",
+   "anchors": [
+    {
+     "ref_id": "b2",
+     "section_path_id": "6",
+     "quote": "Borgeaud et al., 2022;",
+     "offset": 300
+    },
+    {
+     "ref_id": "b2",
+     "section_path_id": "6",
+     "quote": "(Borgeaud et al., 2022)",
+     "offset": 667
+    }
+   ]
+  },
+  {
+   "raw_text": "Language models are few-shot learners\n\t\t\n\t\t\tTBrown\n\t\t\n\t\t\n\t\t\tBMann\n\t\t\n\t\t\n\t\t\tNRyder\n\t\t\n\t\t\n\t\t\tMSubbiah\n\t\t\n\t\t\n\t\t\tJDKaplan\n\t\t\n\t\t\n\t\t\tPDhariwal\n\t\t\n\t\t\n\t\t\tANeelakantan\n\t\t\n\t\t\n\t\t\tPShyam\n\t\t\n\t\t\n\t\t\tGSastry\n\t\t\n\t\t\n\t\t\tAAskell\n\t\t\n\t\n\t\n\t\tAdvances in neural information processing systems\n\t\t\n\t\t\t33\n\t\t\t\n\t\t\t2020",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Language models are few-shot learners",
+   "anchors": [
+    {
+     "ref_id": "b3",
+     "section_path_id": "1",
+     "quote": "Brown et al. (2020)",
+     "offset": 158
+    },
+    {
+     "ref_id": "b3",
+     "section_path_id": "6",
+     "quote": "(Brown et al., 2020;",
+     "offset": 1433
+    }
+   ]
+  },
+  {
+   "raw_text": "The secret sharer: Evaluating and testing unintended memorization in neural networks\n\t\t\n\t\t\tNCarlini\n\t\t\n\t\t\n\t\t\tCLiu\n\t\t\n\t\t\n\t\t\tÚErlingsson\n\t\t\n\t\t\n\t\t\tJKos\n\t\t\n\t\t\n\t\t\tDSong\n\t\t\n\t\n\t\n\t\t28th USENIX Security Symposium (USENIX Security 19)\n\t\t\n\t\t\t2019",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "The secret sharer: Evaluating and testing unintended memorization in neural networks",
+   "anchors": [
+    {
+     "ref_id": "b4",
+     "section_path_id": "6",
+     "quote": "(Carlini et al., 2019;",
+     "offset": 1268
+    },
+    {
+     "ref_id": "b4",
+     "section_path_id": "6",
+     "quote": "Carlini et al., 2019;",
+     "offset": 1327
+    }
+   ]
+  },
+  {
+   "raw_text": "Extracting training data from large language models\n\t\t\n\t\t\tNCarlini\n\t\t\n\t\t\n\t\t\tFTramer\n\t\t\n\t\t\n\t\t\tEWallace\n\t\t\n\t\t\n\t\t\tMJagielski\n\t\t\n\t\t\n\t\t\tAHerbert-Voss\n\t\t\n\t\t\n\t\t\tKLee\n\t\t\n\t\t\n\t\t\tARoberts\n\t\t\n\t\t\n\t\t\tTBrown\n\t\t\n\t\t\n\t\t\tDSong\n\t\t\n\t\t\n\t\t\tUErlingsson\n\t\t\n\t\n\t\n\t\t30th USENIX Security Symposium (USENIX Security 21)\n\t\t\n\t\t\t2021",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Extracting training data from large language models",
+   "anchors": [
+    {
+     "ref_id": "b5",
+     "section_path_id": "6",
+     "quote": "(Carlini et al., 2021;",
+     "offset": 1573
+    }
+   ]
+  },
+  {
+   "raw_text": "Quantifying memorization across neural language models\n\t\t\n\t\t\tNCarlini\n\t\t\n\t\t\n\t\t\tDIppolito\n\t\t\n\t\t\n\t\t\tMJagielski\n\t\t\n\t\t\n\t\t\tKLee\n\t\t\n\t\t\n\t\t\tFTramer\n\t\t\n\t\t\n\t\t\tCZhang\n\t\t\n\t\n\t\n\t\tThe Eleventh International Conference on Learning Representations\n\t\t\n\t\t\t2022",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Quantifying memorization across neural language models",
+   "anchors": []
+  },
+  {
+   "raw_text": "Pubmed 200k rct: a dataset for sequential sentence classification in medical abstracts\n\t\t\n\t\t\tFDernoncourt\n\t\t\n\t\t\n\t\t\tJYLee\n\t\t\n\t\tarXiv:1710.06071\n\t\t\n\t\t\t2017\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "1710.06071",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Does learning require memorization? a short tale about a long tail\n\t\t\n\t\t\tVFeldman\n\t\t\n\t\n\t\n\t\tProceedings of the 52nd Annual ACM SIGACT Symposium on Theory of Computing\n\t\tthe 52nd Annual ACM SIGACT Symposium on Theory of Computing\n\t\t\n\t\t\t2020",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Does learning require memorization? a short tale about a long tail",
+   "anchors": [
+    {
+     "ref_id": "b8",
+     "section_path_id": "6",
+     "quote": "(Feldman, 2020;",
+     "offset": 1186
+    },
+    {
+     "ref_id": "b8",
+     "section_path_id": "6",
+     "quote": "(Feldman, 2020;",
+     "offset": 1312
+    }
+   ]
+  },
+  {
+   "raw_text": "Retrieval augmented language model pre-training\n\t\t\n\t\t\tKGuu\n\t\t\n\t\t\n\t\t\tKLee\n\t\t\n\t\t\n\t\t\tZTung\n\t\t\n\t\t\n\t\t\tPPasupat\n\t\t\n\t\t\n\t\t\tMChang\n\t\t\n\t\tPMLR\n\t\n\t\n\t\tInternational conference on machine learning\n\t\t\n\t\t\t2020",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Retrieval augmented language model pre-training",
+   "anchors": [
+    {
+     "ref_id": "b9",
+     "section_path_id": "6",
+     "quote": "(Guu et al., 2020;",
+     "offset": 282
+    }
+   ]
+  },
+  {
+   "raw_text": "Atlas: Few-shot learning with retrieval augmented language models\n\t\t\n\t\t\tGIzacard\n\t\t\n\t\t\n\t\t\tPLewis\n\t\t\n\t\t\n\t\t\tMLomeli\n\t\t\n\t\t\n\t\t\tLHosseini\n\t\t\n\t\t\n\t\t\tFPetroni\n\t\t\n\t\t\n\t\t\tTSchick\n\t\t\n\t\t\n\t\t\tJDwivedi-Yu\n\t\t\n\t\t\n\t\t\tAJoulin\n\t\t\n\t\t\n\t\t\tSRiedel\n\t\t\n\t\t\n\t\t\tEGrave\n\t\t\n\t\t\n\t\n\t\n\t\tJournal of Machine Learning Research\n\t\t\n\t\t\t24\n\t\t\t251\n\t\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Atlas: Few-shot learning with retrieval augmented language models",
+   "anchors": [
+    {
+     "ref_id": "b10",
+     "section_path_id": "6",
+     "quote": "(Izacard et al., 2023;",
+     "offset": 488
+    },
+    {
+     "ref_id": "b10",
+     "section_path_id": "6",
+     "quote": "(Izacard et al., 2023)",
+     "offset": 551
+    }
+   ]
+  },
+  {
+   "raw_text": "QJin\n\t\t\n\t\t\n\t\t\tBDhingra\n\t\t\n\t\t\n\t\t\tZLiu\n\t\t\n\t\t\n\t\t\tWWCohen\n\t\t\n\t\t\n\t\t\tXLu\n\t\t\n\t\t\n\t\t\tPubmedqa\n\t\t\n\t\tarXiv:1909.06146\n\t\tA dataset for biomedical research question answering\n\t\t\n\t\t\t2019\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "1909.06146",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "MJoshi\n\t\t\n\t\t\n\t\t\tEChoi\n\t\t\n\t\t\n\t\t\tDSWeld\n\t\t\n\t\t\n\t\t\tLZettlemoyer\n\t\t\n\t\t\n\t\t\tTriviaqa\n\t\t\n\t\tarXiv:1705.03551\n\t\tA large scale distantly supervised challenge dataset for reading comprehension\n\t\t\n\t\t\t2017\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "1705.03551",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Deduplicating training data mitigates privacy risks in language models\n\t\t\n\t\t\tNKandpal\n\t\t\n\t\t\n\t\t\tEWallace\n\t\t\n\t\t\n\t\t\tCRaffel\n\t\t\n\t\tPMLR\n\t\n\t\n\t\tInternational Conference on Machine Learning\n\t\t\n\t\t\t2022",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Deduplicating training data mitigates privacy risks in language models",
+   "anchors": [
+    {
+     "ref_id": "b13",
+     "section_path_id": "6",
+     "quote": "(Kandpal et al., 2022;",
+     "offset": 1738
+    }
+   ]
+  },
+  {
+   "raw_text": "UKhandelwal\n\t\t\n\t\t\n\t\t\tOLevy\n\t\t\n\t\t\n\t\t\tDJurafsky\n\t\t\n\t\t\n\t\t\tLZettlemoyer\n\t\t\n\t\t\n\t\t\tMLewis\n\t\t\n\t\tarXiv:1911.00172\n\t\tGeneralization through memorization: Nearest neighbor language models\n\t\t\n\t\t\t2019\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "1911.00172",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b14",
+     "section_path_id": "6",
+     "quote": "Khandelwal et al., 2019;",
+     "offset": 322
+    },
+    {
+     "ref_id": "b14",
+     "section_path_id": "6",
+     "quote": "(Khandelwal et al., 2019)",
+     "offset": 804
+    }
+   ]
+  },
+  {
+   "raw_text": "Natural questions: a benchmark for question answering research\n\t\t\n\t\t\tTKwiatkowski\n\t\t\n\t\t\n\t\t\tJPalomaki\n\t\t\n\t\t\n\t\t\tORedfield\n\t\t\n\t\t\n\t\t\tMCollins\n\t\t\n\t\t\n\t\t\tAParikh\n\t\t\n\t\t\n\t\t\tCAlberti\n\t\t\n\t\t\n\t\t\tDEpstein\n\t\t\n\t\t\n\t\t\tIPolosukhin\n\t\t\n\t\t\n\t\t\tJDevlin\n\t\t\n\t\t\n\t\t\tKLee\n\t\t\n\t\n\t\n\t\tTransactions of the Association for Computational Linguistics\n\t\t\n\t\t\t7\n\t\t\t\n\t\t\t2019",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Natural questions: a benchmark for question answering research",
+   "anchors": []
+  },
+  {
+   "raw_text": "Internet-augmented language models through few-shot prompting for open-domain question answering\n\t\t\n\t\t\tALazaridou\n\t\t\n\t\t\n\t\t\tEGribovskaya\n\t\t\n\t\t\n\t\t\tWStokowiec\n\t\t\n\t\t\n\t\t\tNGrigorev\n\t\t\n\t\tarXiv:2203.05115\n\t\t\n\t\t\t2022\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2203.05115",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b16",
+     "section_path_id": "1",
+     "quote": "Lazaridou et al., 2022)",
+     "offset": 808
+    }
+   ]
+  },
+  {
+   "raw_text": "Retrieval-augmented generation for knowledge-intensive nlp tasks\n\t\t\n\t\t\tPLewis\n\t\t\n\t\t\n\t\t\tEPerez\n\t\t\n\t\t\n\t\t\tAPiktus\n\t\t\n\t\t\n\t\t\tFPetroni\n\t\t\n\t\t\n\t\t\tVKarpukhin\n\t\t\n\t\t\n\t\t\tNGoyal\n\t\t\n\t\t\n\t\t\tHKüttler\n\t\t\n\t\t\n\t\t\tMLewis\n\t\t\n\t\t\n\t\t\tW.-TYih\n\t\t\n\t\t\n\t\t\tTRocktäschel\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t33\n\t\t\t\n\t\t\t2020",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Retrieval-augmented generation for knowledge-intensive nlp tasks",
+   "anchors": [
+    {
+     "ref_id": "b17",
+     "section_path_id": "6",
+     "quote": "Lewis et al., 2020)",
+     "offset": 510
+    }
+   ]
+  },
+  {
+   "raw_text": "XVLin\n\t\t\n\t\t\n\t\t\tXChen\n\t\t\n\t\t\n\t\t\tMChen\n\t\t\n\t\t\n\t\t\tWShi\n\t\t\n\t\t\n\t\t\tMLomeli\n\t\t\n\t\t\n\t\t\tRJames\n\t\t\n\t\t\n\t\t\tPRodriguez\n\t\t\n\t\t\n\t\t\tJKahn\n\t\t\n\t\t\n\t\t\tGSzilvasy\n\t\t\n\t\t\n\t\t\tMLewis\n\t\t\n\t\tarXiv:2310.01352\n\t\tRa-dit: Retrieval-augmented dual instruction tuning\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2310.01352",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "XVLin\n\t\t\n\t\t\n\t\t\tXChen\n\t\t\n\t\t\n\t\t\tMChen\n\t\t\n\t\t\n\t\t\tWShi\n\t\t\n\t\t\n\t\t\tMLomeli\n\t\t\n\t\t\n\t\t\tRJames\n\t\t\n\t\t\n\t\t\tPRodriguez\n\t\t\n\t\t\n\t\t\tJKahn\n\t\t\n\t\t\n\t\t\tGSzilvasy\n\t\t\n\t\t\n\t\t\tMLewis\n\t\t\n\t\tarXiv:2310.01352\n\t\tRa-dit: Retrieval-augmented dual instruction tuning\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2310.01352",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "NFLiu\n\t\t\n\t\t\n\t\t\tKLin\n\t\t\n\t\t\n\t\t\tJHewitt\n\t\t\n\t\t\n\t\t\tAParanjape\n\t\t\n\t\t\n\t\t\tMBevilacqua\n\t\t\n\t\t\n\t\t\tFPetroni\n\t\t\n\t\t\n\t\t\tPLiang\n\t\t\n\t\tarXiv:2307.03172\n\t\tLost in the middle: How language models use long contexts\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2307.03172",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b20",
+     "section_path_id": "5",
+     "quote": "Liu et al., 2023)",
+     "offset": 321
+    }
+   ]
+  },
+  {
+   "raw_text": "Towards understanding grokking: An effective theory of representation learning\n\t\t\n\t\t\tZLiu\n\t\t\n\t\t\n\t\t\tOKitouni\n\t\t\n\t\t\n\t\t\tNSNolte\n\t\t\n\t\t\n\t\t\tEMichaud\n\t\t\n\t\t\n\t\t\tMTegmark\n\t\t\n\t\t\n\t\t\tMWilliams\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t35\n\t\t\t\n\t\t\t2022",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Towards understanding grokking: An effective theory of representation learning",
+   "anchors": [
+    {
+     "ref_id": "b21",
+     "section_path_id": "6",
+     "quote": "Liu et al., 2022)",
+     "offset": 1472
+    }
+   ]
+  },
+  {
+   "raw_text": "ZLiu\n\t\t\n\t\t\n\t\t\tWPing\n\t\t\n\t\t\n\t\t\tRRoy\n\t\t\n\t\t\n\t\t\tPXu\n\t\t\n\t\t\n\t\t\tMShoeybi\n\t\t\n\t\t\n\t\t\tBCatanzaro\n\t\t\n\t\tarXiv:2401.10225\n\t\tChatqa: Building gpt-4 level conversational qa models\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2401.10225",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b22",
+     "section_path_id": "6",
+     "quote": "Liu et al., 2024)",
+     "offset": 1966
+    }
+   ]
+  },
+  {
+   "raw_text": "Privacy risks of general-purpose language models\n\t\t\n\t\t\tXPan\n\t\t\n\t\t\n\t\t\tMZhang\n\t\t\n\t\t\n\t\t\tSJi\n\t\t\n\t\t\n\t\t\tMYang\n\t\t\n\t\n\t\n\t\t2020 IEEE Symposium on Security and Privacy (SP)\n\t\t\n\t\t\tIEEE\n\t\t\t2020",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Privacy risks of general-purpose language models",
+   "anchors": [
+    {
+     "ref_id": "b23",
+     "section_path_id": "6",
+     "quote": "Pan et al., 2020)",
+     "offset": 1760
+    }
+   ]
+  },
+  {
+   "raw_text": "SGPatil\n\t\t\n\t\t\n\t\t\tTZhang\n\t\t\n\t\t\n\t\t\tXWang\n\t\t\n\t\t\n\t\t\tJEGonzalez\n\t\t\n\t\t\n\t\t\tGorilla\n\t\t\n\t\tarXiv:2305.15334\n\t\tLarge language model connected with massive apis\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2305.15334",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b24",
+     "section_path_id": "1",
+     "quote": "Patil et al. (2023)",
+     "offset": 4554
+    }
+   ]
+  },
+  {
+   "raw_text": "APower\n\t\t\n\t\t\n\t\t\tYBurda\n\t\t\n\t\t\n\t\t\tHEdwards\n\t\t\n\t\t\n\t\t\tIBabuschkin\n\t\t\n\t\t\n\t\t\tVMisra\n\t\t\n\t\t\n\t\t\tGrokking\n\t\t\n\t\tarXiv:2201.02177\n\t\tGeneralization beyond overfitting on small algorithmic datasets\n\t\t\n\t\t\t2022\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2201.02177",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b25",
+     "section_path_id": "6",
+     "quote": "Power et al., 2022)",
+     "offset": 1201
+    },
+    {
+     "ref_id": "b25",
+     "section_path_id": "6",
+     "quote": "Power et al., 2022;",
+     "offset": 1453
+    }
+   ]
+  },
+  {
+   "raw_text": "ORam\n\t\t\n\t\t\n\t\t\tYLevine\n\t\t\n\t\t\n\t\t\tIDalmedigos\n\t\t\n\t\t\n\t\t\tDMuhlgay\n\t\t\n\t\t\n\t\t\tAShashua\n\t\t\n\t\t\n\t\t\tKLeyton-Brown\n\t\t\n\t\t\n\t\t\tYShoham\n\t\t\n\t\tarXiv:2302.00083\n\t\t-context retrieval-augmented language models\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2302.00083",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b26",
+     "section_path_id": "6",
+     "quote": "Ram et al., 2023)",
+     "offset": 966
+    }
+   ]
+  },
+  {
+   "raw_text": "Large language models can be easily distracted by irrelevant context\n\t\t\n\t\t\tFShi\n\t\t\n\t\t\n\t\t\tXChen\n\t\t\n\t\t\n\t\t\tKMisra\n\t\t\n\t\t\n\t\t\tNScales\n\t\t\n\t\t\n\t\t\tDDohan\n\t\t\n\t\t\n\t\t\tEHChi\n\t\t\n\t\t\n\t\t\tNSchärli\n\t\t\n\t\t\n\t\t\tDZhou\n\t\t\n\t\tPMLR\n\t\n\t\n\t\tInternational Conference on Machine Learning\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Large language models can be easily distracted by irrelevant context",
+   "anchors": []
+  },
+  {
+   "raw_text": "WShi\n\t\t\n\t\t\n\t\t\tAAjith\n\t\t\n\t\t\n\t\t\tMXia\n\t\t\n\t\t\n\t\t\tYHuang\n\t\t\n\t\t\n\t\t\tDLiu\n\t\t\n\t\t\n\t\t\tTBlevins\n\t\t\n\t\t\n\t\t\tDChen\n\t\t\n\t\t\n\t\t\tLZettlemoyer\n\t\t\n\t\tarXiv:2310.16789\n\t\tDetecting pretraining data from large language models\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2310.16789",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "WShi\n\t\t\n\t\t\n\t\t\tSMin\n\t\t\n\t\t\n\t\t\tMLomeli\n\t\t\n\t\t\n\t\t\tCZhou\n\t\t\n\t\t\n\t\t\tMLi\n\t\t\n\t\t\n\t\t\tVLin\n\t\t\n\t\t\n\t\t\tNASmith\n\t\t\n\t\t\n\t\t\tLZettlemoyer\n\t\t\n\t\t\n\t\t\tSYih\n\t\t\n\t\t\n\t\t\tMLewis\n\t\t\n\t\tarXiv:2310.10638\n\t\t-context pretraining: Language modeling beyond document boundaries\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2310.10638",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "WShi\n\t\t\n\t\t\n\t\t\tSMin\n\t\t\n\t\t\n\t\t\tMYasunaga\n\t\t\n\t\t\n\t\t\tMSeo\n\t\t\n\t\t\n\t\t\tRJames\n\t\t\n\t\t\n\t\t\tMLewis\n\t\t\n\t\t\n\t\t\tLZettlemoyer\n\t\t\n\t\t\n\t\t\tW.-TYih\n\t\t\n\t\t\n\t\t\tReplug\n\t\t\n\t\tarXiv:2301.12652\n\t\tRetrieval-augmented black-box language models\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2301.12652",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Memorisation versus generalisation in pre-trained language models\n\t\t\n\t\t\tMTänzer\n\t\t\n\t\t\n\t\t\tSRuder\n\t\t\n\t\t\n\t\t\tMRei\n\t\t\n\t\n\t\n\t\tProceedings of the 60th Annual Meeting of the Association for Computational Linguistics\n\t\tthe 60th Annual Meeting of the Association for Computational Linguistics\n\t\t\n\t\t\tLong Papers\n\t\t\t2022\n\t\t\t1",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Memorisation versus generalisation in pre-trained language models",
+   "anchors": [
+    {
+     "ref_id": "b31",
+     "section_path_id": "6",
+     "quote": "Tänzer et al., 2022)",
+     "offset": 1290
+    }
+   ]
+  },
+  {
+   "raw_text": "TVu\n\t\t\n\t\t\n\t\t\tMIyyer\n\t\t\n\t\t\n\t\t\tXWang\n\t\t\n\t\t\n\t\t\tNConstant\n\t\t\n\t\t\n\t\t\tJWei\n\t\t\n\t\t\n\t\t\tJWei\n\t\t\n\t\t\n\t\t\tCTar\n\t\t\n\t\t\n\t\t\tY.-HSung\n\t\t\n\t\t\n\t\t\tDZhou\n\t\t\n\t\t\n\t\t\tQLe\n\t\t\n\t\tarXiv:2310.03214\n\t\tRefreshing large language models with search engine augmentation\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2310.03214",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b32",
+     "section_path_id": "1",
+     "quote": "(Vu et al., 2023;",
+     "offset": 791
+    }
+   ]
+  },
+  {
+   "raw_text": "BWang\n\t\t\n\t\t\n\t\t\tWPing\n\t\t\n\t\t\n\t\t\tLMcafee\n\t\t\n\t\t\n\t\t\tPXu\n\t\t\n\t\t\n\t\t\tBLi\n\t\t\n\t\t\n\t\t\tMShoeybi\n\t\t\n\t\t\n\t\t\tBCatanzaro\n\t\t\n\t\t\n\t\t\tInstructretro\n\t\t\n\t\tarXiv:2310.07713\n\t\tInstruction tuning post retrieval-augmented pretraining\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2310.07713",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b33",
+     "section_path_id": "6",
+     "quote": "Wang et al., 2023)",
+     "offset": 434
+    },
+    {
+     "ref_id": "b33",
+     "section_path_id": "6",
+     "quote": "Wang et al., 2023;",
+     "offset": 1932
+    }
+   ]
+  },
+  {
+   "raw_text": "Self-instruct: Aligning language models with self-generated instructions\n\t\t\n\t\t\tYWang\n\t\t\n\t\t\n\t\t\tYKordi\n\t\t\n\t\t\n\t\t\tSMishra\n\t\t\n\t\t\n\t\t\tALiu\n\t\t\n\t\t\n\t\t\tNASmith\n\t\t\n\t\t\n\t\t\tDKhashabi\n\t\t\n\t\t\n\t\t\tHHajishirzi\n\t\t\n\t\tarXiv:2212.10560\n\t\t\n\t\t\t2022\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2212.10560",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b34",
+     "section_path_id": "1",
+     "quote": "Wang et al. (2022)",
+     "offset": 2947
+    }
+   ]
+  },
+  {
+   "raw_text": "Chain-of-thought prompting elicits reasoning in large language models\n\t\t\n\t\t\tJWei\n\t\t\n\t\t\n\t\t\tXWang\n\t\t\n\t\t\n\t\t\tDSchuurmans\n\t\t\n\t\t\n\t\t\tMBosma\n\t\t\n\t\t\n\t\t\tFXia\n\t\t\n\t\t\n\t\t\tEChi\n\t\t\n\t\t\n\t\t\tQVLe\n\t\t\n\t\t\n\t\t\tDZhou\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t35\n\t\t\t\n\t\t\t2022",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Chain-of-thought prompting elicits reasoning in large language models",
+   "anchors": [
+    {
+     "ref_id": "b35",
+     "section_path_id": "1",
+     "quote": "Wei et al. (2022)",
+     "offset": 179
+    },
+    {
+     "ref_id": "b35",
+     "section_path_id": "1",
+     "quote": "Wei et al. (2022)",
+     "offset": 4099
+    }
+   ]
+  },
+  {
+   "raw_text": "System 2 attention (is something you might need too)\n\t\t\n\t\t\tJWeston\n\t\t\n\t\t\n\t\t\tSSukhbaatar\n\t\t\n\t\tarXiv:2311.11829\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2311.11829",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b36",
+     "section_path_id": "5",
+     "quote": "Weston &amp; Sukhbaatar, 2023;",
+     "offset": 291
+    }
+   ]
+  },
+  {
+   "raw_text": "Effective long-context scaling of foundation models\n\t\t\n\t\t\tWXiong\n\t\t\n\t\t\n\t\t\tJLiu\n\t\t\n\t\t\n\t\t\tIMolybog\n\t\t\n\t\t\n\t\t\tHZhang\n\t\t\n\t\t\n\t\t\tPBhargava\n\t\t\n\t\t\n\t\t\tRHou\n\t\t\n\t\t\n\t\t\tLMartin\n\t\t\n\t\t\n\t\t\tRRungta\n\t\t\n\t\t\n\t\t\tKASankararaman\n\t\t\n\t\t\n\t\t\tBOguz\n\t\t\n\t\tarXiv:2309.16039\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2309.16039",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b37",
+     "section_path_id": "1",
+     "quote": "\" Xiong et al. (2023)",
+     "offset": 2873
+    }
+   ]
+  },
+  {
+   "raw_text": "PXu\n\t\t\n\t\t\n\t\t\tWPing\n\t\t\n\t\t\n\t\t\tXWu\n\t\t\n\t\t\n\t\t\tLMcafee\n\t\t\n\t\t\n\t\t\tCZhu\n\t\t\n\t\t\n\t\t\tZLiu\n\t\t\n\t\t\n\t\t\tSSubramanian\n\t\t\n\t\t\n\t\t\tEBakhturina\n\t\t\n\t\t\n\t\t\tMShoeybi\n\t\t\n\t\t\n\t\t\tBCatanzaro\n\t\t\n\t\tarXiv:2310.03025\n\t\tRetrieval meets long context large language models\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2310.03025",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b38",
+     "section_path_id": "6",
+     "quote": "Xu et al., 2023;",
+     "offset": 418
+    },
+    {
+     "ref_id": "b38",
+     "section_path_id": "6",
+     "quote": "Xu et al., 2023;",
+     "offset": 1950
+    }
+   ]
+  },
+  {
+   "raw_text": "ZYang\n\t\t\n\t\t\n\t\t\tPQi\n\t\t\n\t\t\n\t\t\tSZhang\n\t\t\n\t\t\n\t\t\tYBengio\n\t\t\n\t\t\n\t\t\tWWCohen\n\t\t\n\t\t\n\t\t\tRSalakhutdinov\n\t\t\n\t\t\n\t\t\tCDManning\n\t\t\n\t\t\n\t\t\tHotpotqa\n\t\t\n\t\tarXiv:1809.09600\n\t\tA dataset for diverse, explainable multi-hop question answering\n\t\t\n\t\t\t2018\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "1809.09600",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b39",
+     "section_path_id": "1~3",
+     "quote": "Yang et al. (2018)",
+     "offset": 1508
+    }
+   ]
+  },
+  {
+   "raw_text": "CZhou\n\t\t\n\t\t\n\t\t\tPLiu\n\t\t\n\t\t\n\t\t\tPXu\n\t\t\n\t\t\n\t\t\tSIyer\n\t\t\n\t\t\n\t\t\tJSun\n\t\t\n\t\t\n\t\t\tYMao\n\t\t\n\t\t\n\t\t\tXMa\n\t\t\n\t\t\n\t\t\tAEfrat\n\t\t\n\t\t\n\t\t\tPYu\n\t\t\n\t\t\n\t\t\tLYu\n\t\t\n\t\tarXiv:2305.11206\n\t\tLess is more for alignment\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2305.11206",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b40",
+     "section_path_id": "1",
+     "quote": "Zhou et al. (2023)",
+     "offset": 2405
+    }
+   ]
+  }
+ ],
+ "layout_json": null,
+ "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">RAFT: Adapting Language Model to Domain Specific RAG</title>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability  status=\"unknown\">\n\t\t\t\t\t<licence/>\n\t\t\t\t</availability>\n\t\t\t\t<date type=\"published\" when=\"2024-06-05\">5 Jun 2024</date>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Tianjun</forename><surname>Zhang</surname></persName>\n\t\t\t\t\t\t\t<email>tianjunz@berkeley.edu</email>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Shishir</forename><forename type=\"middle\">G</forename><surname>Patil</surname></persName>\n\t\t\t\t\t\t\t<email>shishirpatil@berkeley.edu</email>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Naman</forename><surname>Jain</surname></persName>\n\t\t\t\t\t\t\t<email>naman_jain@berkeley.edu</email>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Sheng</forename><surname>Shen</surname></persName>\n\t\t\t\t\t\t\t<email>sheng.s@berkeley.edu</email>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Matei</forename><surname>Zaharia</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Ion</forename><surname>Stoica</surname></persName>\n\t\t\t\t\t\t\t<email>istoica@berkeley.edu</email>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Joseph</forename><forename type=\"middle\">E</forename><surname>Gonzalez</surname></persName>\n\t\t\t\t\t\t\t<email>jegonzal@berkeley.edu</email>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Department of Computer Science UC</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<postCode>94720</postCode>\n\t\t\t\t\t\t\t\t\t<settlement>Berkeley Berkeley</settlement>\n\t\t\t\t\t\t\t\t\t<region>CA</region>\n\t\t\t\t\t\t\t\t\t<country key=\"US\">USA</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<affiliation key=\"aff1\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Department of Computer Science UC</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<postCode>94720</postCode>\n\t\t\t\t\t\t\t\t\t<settlement>Berkeley Berkeley</settlement>\n\t\t\t\t\t\t\t\t\t<region>CA</region>\n\t\t\t\t\t\t\t\t\t<country key=\"US\">USA</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<affiliation key=\"aff2\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Department of Computer Science UC</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<postCode>94720</postCode>\n\t\t\t\t\t\t\t\t\t<settlement>Berkeley Berkeley</settlement>\n\t\t\t\t\t\t\t\t\t<region>CA</region>\n\t\t\t\t\t\t\t\t\t<country key=\"US\">USA</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">RAFT: Adapting Language Model to Domain Specific RAG</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date type=\"published\" when=\"2024-06-05\">5 Jun 2024</date>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">28371D967B0EFF28258B163A527A2530</idno>\n\t\t\t\t\t<idno type=\"arXiv\">arXiv:2403.10131v2[cs.CL]</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.0\" ident=\"GROBID\" when=\"2026-08-21T15:12+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.0</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>Pretraining Large Language Models (LLMs) on large corpora of textual data is now a standard paradigm. When using these LLMs for many downstream applications, it is common to additionally incorporate new information into the pretrained model either through RAG-based-prompting, or finetuning. However, the best methodology to incorporate information remains an open question. In this paper, we present Retrieval Augmented Fine Tuning (RAFT), a training recipe which improves the model's ability to answer questions in \"open-book\" in-domain settings. In training RAFT, given a question, and a set of retrieved documents, we train the model to ignore those documents that don't help in answering the question, which we call, distractor documents. RAFT accomplishes this by citing verbatim the right sequence from the relevant document to help answer the question. This coupled with RAFT's chain-of-thought-style response helps improve the model's ability to reason. In domain specific RAG, RAFT consistently improves the model's performance across PubMed, HotpotQA, and Gorilla datasets, presenting a post-training recipe to improve pre-trained LLMs to in-domain RAG.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"8\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"9\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"10\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"11\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"12\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"1\">Introduction</head><p>Trained on vast quantities of public data, Large Language Models LLMs have achieved significant advances in a wide range of general knowledge reasoning tasks <ref type=\"bibr\" target=\"#b3\">Brown et al. (2020)</ref>; <ref type=\"bibr\" target=\"#b35\">Wei et al. (2022)</ref>. However, increasingly LLMs are being employed in specialized domains to support tasks ranging from code completion for specific software frameworks to question answering on specific document collections (e.g., legal or medical documents). In these settings, general knowledge reasoning is less critical and instead the primary goal is to maximize accuracy based on a given set of documents. Indeed, adapting LLMs to the specialized domains (e.g., recent news, enterprise private documents, or program resources constructed after the training cutoff) is essential to many emerging applications <ref type=\"bibr\" target=\"#b32\">(Vu et al., 2023;</ref><ref type=\"bibr\" target=\"#b16\">Lazaridou et al., 2022)</ref> and is the focus of this work. This paper studies the following question -How do we adapt pre-trained LLMs for Retrieval Augmented Generation (RAG) in specialized domains?</p><p>When it comes to adapting LLMs to specialized domains, we consider the following two candidates: in-context learning through Retrieval-Augmented Generation (RAG) and supervised fine-tuning. RAG based methods allow the LLM to reference the documents when</p><p>\"Open book\" query answer \"Closed book\" query answer Bake in Knowledge at Train Time Model can use External Docs at Test RAFT (Proposed) query answer Teach Model to use External Docs at Test</p><p>Figure <ref type=\"figure\">1</ref>: How best to prepare for an Exam?(a) Fine-tuning based approaches implement \"studying\" by either directly \"memorizing\" the input documents or answering practice QA without referencing the documents. (b) Alternatively, in-context retrieval methods fail to leverage the learning opportunity afforded by the fixed domain and are equivalent to taking an open-book exam without studying. In contrast, our approach (c) RAFT leverages fine-tuning with question-answer pairs while referencing the documents in a simulated imperfect retrieval setting -thereby effectively preparing for the open-book exam setting.</p><p>answering questions. However, RAG based in-context learning methods fail to leverage the learning opportunity afforded by the fixed domain setting and early access to the test documents. Alternatively, supervised fine-tuning offers the opportunity to learn more general patterns in the documents and better align to end tasks and user preferences <ref type=\"bibr\" target=\"#b40\">Zhou et al. (2023)</ref>. However, existing fine-tuning based approaches either fail to leverage the documents at test time (don't incorporate RAG) or fail to account for the imperfections in retrieval process during training.</p><p>We can draw an analogy to an open-book exam. Existing in-context retrieval methods are equivalent to taking an open-book exam without studying. Alternatively, existing finetuning based approaches implement \"studying\" by either directly \"memorizing <ref type=\"bibr\" target=\"#b37\">\" Xiong et al. (2023)</ref> the input documents or answering practice questions <ref type=\"bibr\" target=\"#b34\">Wang et al. (2022)</ref> without referencing the documents. While these approaches leverage in-domain learning they fail to prepare for the open-book nature of the test setting.</p><p>In this paper, we study how to combine instruction fine-tuning (IFT) with retrieval augmented generation <ref type=\"bibr\">(RAG)</ref>. We propose a novel adaptation strategy -Retrieval-Augmented Fine Tuning (RAFT). RAFT specifically addresses the challenge of fine-tuning LLMs to both incorporate domain knowledge while also improving in-domain RAG performance. RAFT aims to not only enable models to learn domain-specific knowledge through fine-tuning, but also to ensure robustness against distracting retrieved information. This is achieved by training the models to understand the dynamics between the question (prompt), the domain-specific documents retrieved, and the right answer. Going back to our analogy to the open book exam, our approach is analogous to studying for an open-book exam by recognizing relevant, and irrelevant retrieved documents.</p><p>In RAFT, we train the model to answer the question (Q) from Document(s) (D*) to generate answer (A*), where A* includes chain-of-thought reasoning <ref type=\"bibr\" target=\"#b35\">Wei et al. (2022)</ref>; <ref type=\"bibr\" target=\"#b0\">Anthropic (2023)</ref>, and in the presence of distractor documents (D k ). We explain the methodology in Section 3 and analyze the sensitivity to the number of distractor documents (k) at train-and test-time in Section 5. RAFT consistently outperforms Supervised-finetuning both withand without-RAG across <ref type=\"bibr\">PubMed Dernoncourt &amp; Lee (2017)</ref>, HotPot <ref type=\"bibr\">QA Yang et al. (2018)</ref>, and HuggingFace Hub, Torch Hub, and Tensorflow Hub Gorilla datasets <ref type=\"bibr\" target=\"#b24\">Patil et al. (2023)</ref>, presenting a novel, yet simple technique to improve pre-trained LLMs for in-domain RAG. Our code is available at <ref type=\"url\" target=\"https://github.com/ShishirPatil/gorilla\">https://github.com/ShishirPatil/gorilla</ref>.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2\">LLMs for Open-Book Exam</head><p>To understand our goal better, we expand on our analogy between training an LLM with the real-world setting of prepararing for an exam.</p><p>Closed-Book Exam A closed book exam often refers to the scenario where the LLMs do not have access to any additional documents or references to answer the questions during Figure <ref type=\"figure\">2</ref>: Overview of our RAFT method. The top-left figure depicts our approach of adapting LLMs to reading solution from a set of positive and distractor documents in contrast to standard RAG setup where models are trained based on the retriever outputs, which is a mixture of both memorization and reading. At test time, all methods follow the standard RAG setting, provided with a top-k retrieved documents in the context.</p><p>the exam. For LLMs, this is equivalent to the scenario, for example, in which the LLM is used as a chatbot. In this scenario the LLM draws from the knowledge baked in during pre-training and supervised-finetuning to respond to the users' prompt.</p><p>Open Book Exam In contrast, we liken the open-book exam setting to the scenario in which the LLM can refer to external sources of information (e.g., a website or a book chapter). In such scenarios, typically, the LLM is paired with retriever which retrieves 'k' documents (or specific segments of the document) which are appended to the users' prompt. It is only through these documents retrieved that the LLM gains access to \"domain-specific information\". As a result, we argue that the LLM's performance in these settings, where it is trained as a general-purpose LLM is largely dependent on the quality of the retriever and how accurately the retriever can identify the most relevant piece of information.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Domain-Specific Open-Book Exam</head><p>In this paper, we focus on the narrower but increasingly popular domain than the general open book exam, which we call the domain-specific open-book exam. Here, we know apriori the domain in which the LLM will be tested. The LLM can respond to the users' prompt using use any and all information from this specific domain, which it has been fine-tuned on. Examples of domain specific examples include enterprise documents, code repositories belonging to an organization, etc. In all these scenarios, the LLM will be used to respond to the questions, whose answers can be found within a collection of documents. The retrieval technique itself has little to no-impact on the mechanism (though it may impact the accuracy). This paper studies the domain-specific open-book setting and how to adapt a pretrained LLM to this specific domain, including how to make it more robust to a varying number of retrieved documents and distractors.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3\">RAFT</head><p>In this section, we present RAFT, a novel way of training LLMs for domain-specific openbook exams. We first introduce the classical technique of supervised fine-tuning, followed with the key takeaways from our experiments. Then, we introduce RAFT , a modified version of general instruction tuning. Lastly, we provide an overview of the experiments to expect in the later sections.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Supervised Finetuning</head><p>Consider the supervised fine-tuning (SFT) setting for a Question-Answer dataset. The formulation consists of the Dataset (D) from which a set of Question (Q) and corresponding answer (A) pairs are derived or already available. In the classical SFT setting, the model is trained to improve it's ability to answer the questions based on it's knowledge -obtained either during pre-training, or during the SFT training phase. The model so trained can also be used at test-time with Retrieval Augmented Generation (RAG) setting, where additional documents can be introduced in the prompt to help the model answer the question. This can be represented as follows: {Train: Q → A}, {0-shot Inference: Q → A}, {RAG Inference: Q + D → A} RAFT: Retrieval Augmented Fine-Tuning (RAFT), presents a novel recipe to prepare finetuning data to tailor the models for domain-specific open-book setting, equivalent to indomain RAG In RAFT, we prepare the training data such that each data point contains a question (Q), a set of documents (D k ), and a corresponding Chain-of-though style answer (A * ) generated from one of the document (D * ). We differentiate between two types of documents: 'golden' documents (D * ) i.e. the documents from which the answer to the question can be deduced, and 'distractor' documents (D i ) that do not contain answerrelevant information. As an implementation detail, the 'golden' document doesn't need to be a single document, but can be more than one document, as is the case in HotpotQA <ref type=\"bibr\" target=\"#b39\">Yang et al. (2018)</ref>. Then, for P fraction of the questions (q i ) in the dataset, we retain the golden document (d * i ) along with distractor documents (d k-1 ). For (1 -P) fraction of the questions (q i ) in the dataset, we include no golden document and only include distractor documents (d k ). We then fine-tune the language model using standard supervised training (SFT) technique, training it to generate answers from the provided documents and question. Fig. <ref type=\"figure\">2</ref> illustrates the high-level design principal for RAFT .</p><p>We demonstrate that our RAG approach trains the model to perform better RAG on the set of documents it is trained on i.e., in-domain. By removing the golden documents in some instances, we are compelling the model to memorize answers instead of deriving them from the context. The training data for RAFT is as follows, and an example training data can be seen in Fig. <ref type=\"figure\">3</ref>:</p><formula xml:id=\"formula_0\">P % of data: Q + D * + D 1 + D 2 + . . . + D k → A * (1 -P) % of data: Q + D 1 + D 2 + . . . + D k → A *</formula><p>Subsequently, for the test scenario, the model is provided with the Q and top-k documents retrieved by the RAG pipeline. Note that RAFT is independent of the retriever used.</p><p>A key factor in enhancing training quality is the generation of a reasoning process, such as Chain-of-Thought, to explain the provided answers. RAFT approach is similar: we demonstrate that creating a full reasoning chain and in-addition, clearly citing sources enhances the model's accuracy in answering questions. In Fig. <ref type=\"figure\">3</ref>, we illustrate this setup. Generating the training data in this fashion, involves presenting the model with a question, context, and verified answers, and then requesting it to form a reasoning chain that appropriately references the original context.</p><p>For all the datasets in our experiments, we generate the answers using the technique described above. Note that the Gorilla APIBench dataset, already includes reasoning in the answers. We provide an example of the generation step in Fig. <ref type=\"figure\">3</ref>, the detailed reasoning answer includes a citation from the original context inside ##begin_quote## and ##end_quote## as well as the detailed explanation on how to reach the conclusion based on the citations. We demonstrate that adding detailed reasoning paragraphs can help boost the model's performance in our experiment section.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4\">Evaluation</head><p>We design our experiments to study how well RAFT performs compared to various baselines. We find that the RAFT-7B model (a finetuned version of LlaMA-2) is better at reading and extracting information from in-domain documents, than domain-specific finetuned model, and general-purpose model with RAG. As an ablation, we also demonstrate how important it is for the model to learn with Chain-of-Thought responses. In this section, we will first introduce all the datasets we used in the experiments, then all the baseline model/fine-tuning techniques that we benchmark against.</p><p>Question: The Oberoi family is part of a hotel company that has a head office in what city? context: [The Oberoi family is an Indian family that is famous for its involvement in hotels, namely through The Oberoi Group]...[It is located in city center of Jakarta, near Mega Kuningan, adjacent to the sister JW Marriott Hotel. It is operated by The Ritz-Carlton Hotel Company. The complex has two towers that comprises a hotel and the Airlangga Apartment respectively]...[The Oberoi Group is a hotel company with its head office in Delhi.] Instruction: Given the question, context and answer above, provide a logical reasoning for that answer. Please use the format of: ##Reason: {reason} ##Answer: {answer}.</p><p>- <ref type=\"figure\">-------------------------------------------------------------------------------------</ref>CoT Answer: ##Reason: The document ##begin_quote## The Oberoi family is an Indian family that is famous for its involvement in hotels, namely through The Oberoi Group. ##end_quote## establishes that the Oberoi family is involved in the Oberoi group, and the document ##begin_quote## The Oberoi Group is a hotel company with its head office in Delhi. ##end_quote## establishes the head office of The Oberoi Group. Therefore, the Oberoi family is part of a hotel company whose head office is in Delhi. ##Answer: Delhi Figure <ref type=\"figure\">3</ref>: RAFT prompt to help LLM evaluate its own generated reasoning and answers, contrasting them with the correct reasoning and answers. The LLM is prompted to identify errors in its reasoning and extract key insights for improvement. This figure specifically represents the 'GenerateExplanation' step in the RAFT algorithm (Section 3).</p><p>Table 1: RAFT improves RAG performance for all specialized domains: Across PubMed, HotPot, HuggingFace, Torch Hub, and Tensorflow Hub, we see that Domain-specific Finetuning improves significantly of the performance of the base model, RAFT consistently outperforms the existing domain-specific finetuning method with or without RAG. This suggests the need to train the model with context. We compare our model with LLaMA finetuning receipes, and provide GPT-3.5 for reference.</p><p>PubMed HotPot HuggingFace Torch Hub TensorFlow GPT-3.5 + RAG 71.60 41.5 29.08 60.21 65.59 LLaMA2-7B 56.5 0.54 0.22 0 0 LLaMA2-7B + RAG 58.8 0.03 26.43 08.60 43.06 DSF 59.7 6.38 61.06 84.94 86.56 DSF + RAG 71.6 4.41 42.59 82.80 60.29 RAFT (LLaMA2-7B) 73.30 35.28 74.00 84.95 86.86 Datasets In our experiments, we use the following datasets to evaluate our model and all baselines. We selected these datasets to represent both popular and diverse domains including Wikipedia, Coding/API documents, and question-answering on medical documents. Natural Questions (NQ) Kwiatkowski et al. (2019), Trivia QA Joshi et al. (2017) and HotpotQA Yang et al. (2018) are the open-domain question-answers based on Wikipedia, mainly focused on common knowledge (e.g., movies, sports, etc). HuggingFace, Torch Hub, and TensorFlow Hub are from the APIBench Patil et al. (2023) proposed in the Gorilla paper. These benchmarks measure how to generate the correct, functional, and executable API calls based on the documentation. PubMed QA Jin et al. ( <ref type=\"formula\">2019</ref>) is a question-answering dataset tailored only for biomedical-research question-answering. It mainly focuses on answering medical and biology questions based on a given set of documents. We would like to highlight that (NQ, Trivia QA, and HotpotQA) are relatively general domain whereas the latter two domains are on domain-specific documents.</p><p>Baselines We consider the following baselines for our experiments:</p><p>• LlaMA2-7B-chat model with 0-shot prompting: this is the commonly used instruction-finetuned model for QA tasks, where we provide clearly written instructions, but no reference documentation.</p><p>• LlaMA2-7B-chat model with RAG (Llama2 + RAG): similar to the previous setting, except here we include reference documents. This is a popular technique when dealing with domain-specific QA tasks.</p><p>• Domain-Specific Finetuning with 0-shot prompting (DSF): Standard supervisedfinetuning, without documents in context. We find that its mostly useful to align the answering style of the model as well as get familiar with the domain context.</p><p>• Domain-Specific Finetuning with RAG (DSF + RAG): Equip a domain-specific finetuned-model with external knowledge using RAG. So, for the \"knowledge\" the model does not know, it can still refer to the context.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.1\">Results</head><p>Using the above datasets and baselines, we evaluate our model RAFT and demonstrate the effectiveness of RAFT in Tab. 1. We see that RAFT consistently and significantly outperforms the baselines. Compared with the base Llama-2 instruction-tuned model, RAFT with RAG does much better in terms of extracting information as well as being robust towards distractors. The gain can be as big as 35.25% on Hotpot QA and 76.35% on Torch Hub evaluation. Compared with DSF on the specific dataset, our model does better at relying on the provided context to solve the problem. RAFT does much better on the tasks like Hotpot and HuggingFace datasets (30.87% on Hotpot and 31.41% on HuggingFace). Note that for PubMed QA, since it is a binary yes/no question, we don't observe significant gains when we compare our model with DSF + RAG. Even compared with a much larger and better model GPT-3.5, RAFT demonstrates significant advantages.</p><p>Overall, the LLaMA-7B model, both with and without the RAG, performs poorly due to its answering style not aligning with the ground truth. By applying domain-specific tuning, we significantly enhance its performance. This process enables the model to learn and adopt the appropriate style of answering. However, introducing RAG to a domain-specifically fine-tuned (DSF) model doesn't invariably lead to better outcomes. This might indicate that the model lacks training in context processing and extracting useful information from it. By incorporating our method, RAFT , we train the model not only to match its answering style with that required but also to improve its document processing capabilities. Consequently, our approach outperforms all others.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.2\">Effect of CoT</head><p>We also conduct an analysis to evaluate the effectiveness of the Chain-of-Thought approach in enhancing the model's performance. As indicated in Table <ref type=\"table\" target=\"#tab_0\">2</ref>, simply providing the answer to a question may not always be adequate. This approach can lead to a rapid decrease in loss, resulting in the model beginning to overfit. Incorporating a reasoning chain that not only guides the model to the answer but also enriches the model's understanding can improve the overall accuracy and prevent overfitting to concise answers. In our experiments, integrating the Chain-of-Thought significantly enhances training robustness. We employ GPT-4-1106 to generate our Chain-of-Thought prompts and include an example of the prompt we used in Figure <ref type=\"figure\">3</ref>.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.3\">Qualitative Analysis</head><p>To illustrate the potential advantages of RAFT over the domain-specifically fine-tuned (DSF) approach, we present a comparative example in Figure <ref type=\"figure\" target=\"#fig_0\">4</ref>. This example qualitatively demonstrates a scenario where the DSF model becomes confused by a question asking for the identity of a screenwriter. Instead of providing the correct name, it mistakenly cites one of the films written by the screenwriter. In contrast, the RAFT model accurately answers the question. This discrepancy suggests that training a model solely with question-answer pairs may impair its ability to derive relevant context from provided documents. The comparison underscores the importance of incorporating both standard instructional tuning and context comprehension into the training dataset to preserve and enhance the model's ability to process text effectively.</p><p>HotPot QA Question: What screenwriter with credits for \"Evolution\"[0/1879]e a film starring Nicolas Cage and Téa Leoni? Documents: . . . David Weissman is a screenwriter and director. His film credits include \"The Family Man\" (2000), \"Evolution\" ( <ref type=\"formula\">2001</ref>), and \"When in Rome\" (2010). . . . The Family Man is a 2000 American romantic comedy-drama film directed by Brett Ratner, written by David Diamond and David Weissman, and starring Nicolas Cage and Téa Leoni. . . .</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>-----------------------------------------------RAFT: ##Reason:</head><p>The screenwriter with credits for the film \"Evolution,\" starring Nicolas Cage and Téa Leoni, is David Weissman. This information is provided in the reference documents where it mentions David Weissman as a screenwriter with film credits including \"The Family Man\" (2000), \"Evolution\" (2001), and \"When in Rome\" <ref type=\"bibr\">(2010)</ref>. Therefore, the screenwriter for \"Evolution\" is David Weissman. ##Answer: David Weissman ✓ DSF: The Family Man ✗ 4.4 Should we train the LLM always with the golden context for RAG?</p><p>In our exploration of whether large language models (LLMs) should always be trained with the golden context for Retrieval-Augmented Generation (RAG), we address a key question: what proportion (p%) of the training data should include golden documents? Intuitively, one might assume that for effective training in reading and extracting information from context (e.g., RAG tasks), the golden document should always be included during training (P = 100%). However, our findings challenge this assumption: incorporating a portion of the training data without the golden document in the context (P = 80%) appears to enhance the model's performance on RAG tasks.</p><p>0 20 40 60 80 100 P % Golden Retrieved Context at Training 0.25 0.30 0.35 0.40 0.45 Final Accuracy Test Domain: NQ 0 20 40 60 80 100 % Golden Retrieved Context at Training 0.50 0.55 0.60 0.65 Final Accuracy Test Domain: TQA 0 20 40 60 80 100 P % Golden Retrieved Context at Training 0.40 0.45 0.50 0.55 0.60 Final Accuracy Test Domain: HoPo Figure <ref type=\"figure\" target=\"#fig_1\">5</ref> presents our investigation into the hyperparameter P%, which represents the percentage of training instances that should include golden documents. We find that the optimal proportion varies across datasets, with P% ranging from 40%, 60%, and 100%. This indicates that training your LLM without the correct corresponding context at times can be beneficial for the downstream task of answering questions related to the documents. In our training setup, we include four distractor documents alongside the golden document, and at test time, we maintain this format by providing the golden document with four distractors. Our findings suggest that, for domain-specific RAG tasks, including a certain percentage of training data without the golden documents in the context proves to be advantageous.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"5\">RAFT Generalizes to Top-K RAG</head><p>We now study another important problem: How does the number of distractor documents in RAFT affect the model's performance when augmented with top-k RAG results during evaluation? Previous research has highlighted the vulnerability of LLMs to irrelevant text (see studies <ref type=\"bibr\">(Shi et al., 2023a;</ref><ref type=\"bibr\" target=\"#b36\">Weston &amp; Sukhbaatar, 2023;</ref><ref type=\"bibr\" target=\"#b20\">Liu et al., 2023)</ref>). This issue is particularly critical for LLMs + RAG since top-k RAG is frequently employed at test time to ensure high recall. Such a scenario necessitates the model to have the ability to discern and disregard irrelevant content, focusing solely on pertinent information.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"5.1\">Making Model Robust to top-K RAG</head><p>To tackle the challenge of enhancing large language models' (LLMs) ability to sift through irrelevant text within the retrieval pipeline, our analysis revealed that training solely with golden (highly relevant) documents can inadvertently diminish the model's ability to discern and disregard irrelevant information. To address this, our algorithm, RAFT , adopts a strategy that integrates golden documents with a mix of irrelevant ones. This methodology prompts us to investigate the ideal fraction of distractor (irrelevant) documents to incorporate throughout the training process and to assess how well this training approach adapts to different volumes of documents encountered by the Retrieval-Augmented Generation (RAG) during the test phase. Our aim is to refine the balance between relevant and irrelevant information to strenghten the model's efficiency in identifying and utilizing pertinent content. Notice that Sec 4.4 looked what what P% of training data should include distractors, while in this section, we study test-time scenarios.</p><p>Training with Distractor Documents To enhance the robustness of LLMs against irrelevant text in retrieved documents, we adopted a finetuning approach that incorporates both golden (highly relevant) documents and distractor (irrelevant) documents. The model was trained with varying numbers of distractor documents, but consistently evaluated using the top-3 documents obtained from the retriever -not to be confused with p. Our findings, detailed in Fig. <ref type=\"figure\" target=\"#fig_2\">6</ref>, reveal that finetuning with only the golden document frequently results in inferior performance compared to configurations that include a greater number of distractor documents. As we can see in the figure, the better performance for Natural Questions is In NQ, we find that training with 4 documents leads to optimal performance, and this changes to 3 and 2 for for Trivia QA and HotPot QA respectively. However, we see that training with only golden documents leads to poor performance.</p><p>training with D * + 3D and it is D * + 1D documents with Hotpot QA. This insight has been particularly beneficial for our algorithm, RAFT . In our experiments, we consistently employ a training setup consisting of one golden document alongside four distractor documents.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Generalization to a variable number of test-time documents.</head><p>We extended our research to examine the impact of different quantities of test-time documents on the model's performance. Specifically, our experiments focused on assessing how models, trained with varying numbers of distractor documents, respond to changes in the number of documents presented at test time. The results, illustrated in Fig. <ref type=\"figure\" target=\"#fig_2\">6</ref>, confirm that the inclusion of distractor documents during training indeed makes the model more resilient to fluctuations in the number of documents encountered during testing. This ability to maintain consistent performance despite variations in test-time document numbers further validates the robustness of our approach, RAFT . This finding underscores the importance of a well-calibrated training environment to prepare the model for a range of scenarios it may encounter in real-world.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"6\">Related Works</head><p>Retrieval-Augmented Language Models Retrieval-Augmented Language Models (RALMs) enhance LLMs by integrating a retrieval module that sources relevant information from external knowledge bases, significantly improving performance across various NLP tasks, including language modeling <ref type=\"bibr\" target=\"#b9\">(Guu et al., 2020;</ref><ref type=\"bibr\" target=\"#b2\">Borgeaud et al., 2022;</ref><ref type=\"bibr\" target=\"#b14\">Khandelwal et al., 2019;</ref><ref type=\"bibr\">Shi et al., 2023d;</ref><ref type=\"bibr\">Lin et al., 2023b;</ref><ref type=\"bibr\">Shi et al., 2023c;</ref><ref type=\"bibr\" target=\"#b1\">Asai et al., 2023;</ref><ref type=\"bibr\" target=\"#b38\">Xu et al., 2023;</ref><ref type=\"bibr\" target=\"#b33\">Wang et al., 2023)</ref> and open-domain question answering <ref type=\"bibr\" target=\"#b10\">(Izacard et al., 2023;</ref><ref type=\"bibr\" target=\"#b17\">Lewis et al., 2020)</ref>. For instance, Atlas <ref type=\"bibr\" target=\"#b10\">(Izacard et al., 2023)</ref> fine-tunes T5 models with the retriever, treating documents as latent variables, while RETRO <ref type=\"bibr\" target=\"#b2\">(Borgeaud et al., 2022)</ref> modifies the decoder-only architecture to include retrieved texts and conducts pre-training from scratch. kNN-LM <ref type=\"bibr\" target=\"#b14\">(Khandelwal et al., 2019)</ref> interpolates between the LM's next token distribution and distributions computed from retrieved tokens at inference. <ref type=\"bibr\">(Shi et al., 2023d;</ref><ref type=\"bibr\" target=\"#b26\">Ram et al., 2023)</ref> assume black-box access to an LLM, combining it with either off-the-shelf or fine-tuned retriever.</p><p>Memorization A key question around large neural language models is whether they truly \"understand\" text <ref type=\"bibr\" target=\"#b8\">(Feldman, 2020;</ref><ref type=\"bibr\" target=\"#b25\">Power et al., 2022)</ref> or simply rely on surface pattern memorization <ref type=\"bibr\" target=\"#b4\">(Carlini et al., 2019;</ref><ref type=\"bibr\" target=\"#b31\">Tänzer et al., 2022)</ref>. <ref type=\"bibr\" target=\"#b8\">(Feldman, 2020;</ref><ref type=\"bibr\" target=\"#b4\">Carlini et al., 2019;</ref><ref type=\"bibr\">2022)</ref> develop methodologies to quantify the extent of memorization in neural models. <ref type=\"bibr\" target=\"#b3\">(Brown et al., 2020;</ref><ref type=\"bibr\" target=\"#b25\">Power et al., 2022;</ref><ref type=\"bibr\" target=\"#b21\">Liu et al., 2022)</ref> further explored how memorization impacts the models' generalization capabilities. <ref type=\"bibr\" target=\"#b5\">(Carlini et al., 2021;</ref><ref type=\"bibr\">Shi et al., 2023b)</ref> demonstrated the ability of language models to memorize and regurgitate training data, raising significant privacy concerns <ref type=\"bibr\" target=\"#b13\">(Kandpal et al., 2022;</ref><ref type=\"bibr\" target=\"#b23\">Pan et al., 2020)</ref>.</p><p>Finetuning for RAG More recently, several papers have been exploring the idea of finetuning a pretrained LLM to be better at RAG tasks <ref type=\"bibr\">(Lin et al., 2023a;</ref><ref type=\"bibr\" target=\"#b33\">Wang et al., 2023;</ref><ref type=\"bibr\" target=\"#b38\">Xu et al., 2023;</ref><ref type=\"bibr\" target=\"#b22\">Liu et al., 2024)</ref>. These works focus on constructing a combination of finetuning dataset for RAG and train a model to perform well on these tasks. In particular, in their settings, at test time, the domain or documents can be different than the training time; whereas our paper studies a slightly opposite scenario where we only care about testing the LLM on the same set of documents.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"7\">Conclusion</head><p>RAFT is a training strategy designed to enhance the model's performance in answering questions within a specific domain, in \"open-book\" settings. We highlight several crucial design decisions, such as training the model alongside distractor documents, organizing the dataset so a portion lacks golden documents in their context, and formulating answers in a chain-of-thought manner with direct quotations from the relevant text. Our evaluations on PubMed, HotpotQA, and Gorilla API Bench underline RAFT's significant potential.</p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><head>Figure 4 :</head><label>4</label><figDesc>Figure4: Comparison of RAFT and DSF: On the HotPot QA dataset, we can see that DSF model extracts the wrong information from the context when the question is asking who is the screen writer and it answers a film name. RAFT manages to get the accurate results .</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_1\"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: How many golden documents to involve? We study the hyperparameter P% where it indicates how much portion of training data is with golden document. Results on NQ, TQA and HotpotQA suggest that mixing some amount of data that the golden document is not put in the context is helpful for in-domain RAG.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_2\"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Test-Time Documents Varying:To analyze how robust RAFT is to varying number of test-time documents, we study three domains -NQ, Trivia QA and HotPot QA. In NQ, we find that training with 4 documents leads to optimal performance, and this changes to 3 and 2 for for Trivia QA and HotPot QA respectively. However, we see that training with only golden documents leads to poor performance.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_0\"><head>Table 2 :</head><label>2</label><figDesc>Ablation on Chain-of-Thought:The numbers of RAFT and RAFT without CoT. Results on various datasets show that adding CoT can significantly improve the performance of the finetuned model. With a gains of 9.66% and 14.93% in the Hotpot QA and HuggingFace datasets respectively.</figDesc><table><row><cell></cell><cell>PubMed</cell><cell>HotpotQA</cell><cell>HuggingFace</cell><cell>Torch Hub</cell><cell>TensorFlow</cell></row><row><cell>RAFT w.o CoT</cell><cell>68.30</cell><cell>25.62</cell><cell>59.07</cell><cell>86.56</cell><cell>83.21</cell></row><row><cell>RAFT</cell><cell>73.30</cell><cell>35.28</cell><cell>74.00</cell><cell>84.95</cell><cell>86.86</cell></row></table></figure>\n\t\t</body>\n\t\t<back>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Prompt engineering for claude&apos;s long context window</title>\n\t\t<author>\n\t\t\t<persName><surname>Anthropic</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Self-rag: Learning to retrieve, generate, and critique through self-reflection</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Asai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Sil</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Hajishirzi</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2310.11511</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Improving language models by retrieving from trillions of tokens</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Borgeaud</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Mensch</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Hoffmann</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Cai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Rutherford</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Millican</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><forename type=\"middle\">B</forename><surname>Van Den Driessche</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J.-B</forename><surname>Lespiau</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Damoc</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Clark</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">International conference on machine learning</title>\n\t\t<imprint>\n\t\t\t<publisher>PMLR</publisher>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t\t<biblScope unit=\"page\" from=\"2206\" to=\"2240\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Language models are few-shot learners</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Brown</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Mann</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Ryder</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Subbiah</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><forename type=\"middle\">D</forename><surname>Kaplan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Dhariwal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Neelakantan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Shyam</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Sastry</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Askell</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Advances in neural information processing systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">33</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"1877\" to=\"1901\" />\n\t\t\t<date type=\"published\" when=\"2020\">2020</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">The secret sharer: Evaluating and testing unintended memorization in neural networks</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Carlini</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ú</forename><surname>Erlingsson</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Kos</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Song</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">28th USENIX Security Symposium (USENIX Security 19)</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2019\">2019</date>\n\t\t\t<biblScope unit=\"page\" from=\"267\" to=\"284\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Extracting training data from large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Carlini</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Tramer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Wallace</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Jagielski</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Herbert-Voss</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Lee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Roberts</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Brown</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Song</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">U</forename><surname>Erlingsson</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">30th USENIX Security Symposium (USENIX Security 21)</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2021\">2021</date>\n\t\t\t<biblScope unit=\"page\" from=\"2633\" to=\"2650\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Quantifying memorization across neural language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Carlini</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Ippolito</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Jagielski</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Lee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Tramer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">The Eleventh International Conference on Learning Representations</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b7\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Pubmed 200k rct: a dataset for sequential sentence classification in medical abstracts</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Dernoncourt</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><forename type=\"middle\">Y</forename><surname>Lee</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1710.06071</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2017\">2017</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b8\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Does learning require memorization? a short tale about a long tail</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Feldman</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 52nd Annual ACM SIGACT Symposium on Theory of Computing</title>\n\t\t<meeting>the 52nd Annual ACM SIGACT Symposium on Theory of Computing</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2020\">2020</date>\n\t\t\t<biblScope unit=\"page\" from=\"954\" to=\"959\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b9\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Retrieval augmented language model pre-training</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Guu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Lee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Tung</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Pasupat</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Chang</surname></persName>\n\t\t</author>\n\t\t<idno>PMLR</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">International conference on machine learning</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2020\">2020</date>\n\t\t\t<biblScope unit=\"page\" from=\"3929\" to=\"3938\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b10\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Atlas: Few-shot learning with retrieval augmented language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Izacard</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Lewis</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Lomeli</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Hosseini</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Petroni</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Schick</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Dwivedi-Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Joulin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Riedel</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Grave</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://jmlr.org/papers/v24/23-0037.html\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Journal of Machine Learning Research</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">24</biblScope>\n\t\t\t<biblScope unit=\"issue\">251</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"1\" to=\"43\" />\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b11\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Jin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Dhingra</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><forename type=\"middle\">W</forename><surname>Cohen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Lu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Pubmedqa</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1909.06146</idno>\n\t\t<title level=\"m\">A dataset for biomedical research question answering</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2019\">2019</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b12\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Joshi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Choi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><forename type=\"middle\">S</forename><surname>Weld</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Zettlemoyer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Triviaqa</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1705.03551</idno>\n\t\t<title level=\"m\">A large scale distantly supervised challenge dataset for reading comprehension</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2017\">2017</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b13\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Deduplicating training data mitigates privacy risks in language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Kandpal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Wallace</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Raffel</surname></persName>\n\t\t</author>\n\t\t<idno>PMLR</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">International Conference on Machine Learning</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t\t<biblScope unit=\"page\" from=\"10697\" to=\"10707\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b14\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">U</forename><surname>Khandelwal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O</forename><surname>Levy</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Jurafsky</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Zettlemoyer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Lewis</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1911.00172</idno>\n\t\t<title level=\"m\">Generalization through memorization: Nearest neighbor language models</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2019\">2019</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b15\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Natural questions: a benchmark for question answering research</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Kwiatkowski</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Palomaki</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O</forename><surname>Redfield</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Collins</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Parikh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Alberti</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Epstein</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Polosukhin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Devlin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Lee</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Transactions of the Association for Computational Linguistics</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">7</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"453\" to=\"466\" />\n\t\t\t<date type=\"published\" when=\"2019\">2019</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b16\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Internet-augmented language models through few-shot prompting for open-domain question answering</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Lazaridou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Gribovskaya</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Stokowiec</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Grigorev</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2203.05115</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b17\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Retrieval-augmented generation for knowledge-intensive nlp tasks</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Lewis</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Perez</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Piktus</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Petroni</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Karpukhin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Goyal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Küttler</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Lewis</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W.-T</forename><surname>Yih</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Rocktäschel</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">33</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"9459\" to=\"9474\" />\n\t\t\t<date type=\"published\" when=\"2020\">2020</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b18\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><forename type=\"middle\">V</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Shi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Lomeli</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>James</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Rodriguez</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Kahn</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Szilvasy</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Lewis</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2310.01352</idno>\n\t\t<title level=\"m\">Ra-dit: Retrieval-augmented dual instruction tuning</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b19\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><forename type=\"middle\">V</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Shi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Lomeli</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>James</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Rodriguez</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Kahn</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Szilvasy</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Lewis</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2310.01352</idno>\n\t\t<title level=\"m\">Ra-dit: Retrieval-augmented dual instruction tuning</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b20\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><forename type=\"middle\">F</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Hewitt</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Paranjape</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Bevilacqua</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Petroni</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Liang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2307.03172</idno>\n\t\t<title level=\"m\">Lost in the middle: How language models use long contexts</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b21\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Towards understanding grokking: An effective theory of representation learning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O</forename><surname>Kitouni</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><forename type=\"middle\">S</forename><surname>Nolte</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Michaud</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Tegmark</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Williams</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">35</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"34651\" to=\"34663\" />\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b22\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Ping</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Roy</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Shoeybi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Catanzaro</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2401.10225</idno>\n\t\t<title level=\"m\">Chatqa: Building gpt-4 level conversational qa models</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b23\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Privacy risks of general-purpose language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Pan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Ji</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">2020 IEEE Symposium on Security and Privacy (SP)</title>\n\t\t<imprint>\n\t\t\t<publisher>IEEE</publisher>\n\t\t\t<date type=\"published\" when=\"2020\">2020</date>\n\t\t\t<biblScope unit=\"page\" from=\"1314\" to=\"1331\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b24\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><forename type=\"middle\">G</forename><surname>Patil</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><forename type=\"middle\">E</forename><surname>Gonzalez</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Gorilla</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2305.15334</idno>\n\t\t<title level=\"m\">Large language model connected with massive apis</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b25\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Power</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Burda</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Edwards</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Babuschkin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Misra</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Grokking</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2201.02177</idno>\n\t\t<title level=\"m\">Generalization beyond overfitting on small algorithmic datasets</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b26\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O</forename><surname>Ram</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Levine</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Dalmedigos</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Muhlgay</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Shashua</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Leyton-Brown</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Shoham</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2302.00083</idno>\n\t\t<title level=\"m\">-context retrieval-augmented language models</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b27\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Large language models can be easily distracted by irrelevant context</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Shi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Misra</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Scales</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Dohan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><forename type=\"middle\">H</forename><surname>Chi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Schärli</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<idno>PMLR</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">International Conference on Machine Learning</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"31210\" to=\"31227\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b28\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Shi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Ajith</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Xia</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Blevins</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Zettlemoyer</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2310.16789</idno>\n\t\t<title level=\"m\">Detecting pretraining data from large language models</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b29\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Shi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Min</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Lomeli</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><forename type=\"middle\">A</forename><surname>Smith</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Zettlemoyer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Yih</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Lewis</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2310.10638</idno>\n\t\t<title level=\"m\">-context pretraining: Language modeling beyond document boundaries</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b30\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Shi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Min</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Yasunaga</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Seo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>James</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Lewis</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Zettlemoyer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W.-T</forename><surname>Yih</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Replug</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2301.12652</idno>\n\t\t<title level=\"m\">Retrieval-augmented black-box language models</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b31\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Memorisation versus generalisation in pre-trained language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Tänzer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Ruder</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Rei</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics</title>\n\t\t<meeting>the 60th Annual Meeting of the Association for Computational Linguistics</meeting>\n\t\t<imprint>\n\t\t\t<publisher>Long Papers</publisher>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t\t<biblScope unit=\"volume\">1</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"7564\" to=\"7578\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b32\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Vu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Iyyer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Constant</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Wei</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Wei</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Tar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y.-H</forename><surname>Sung</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Le</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2310.03214</idno>\n\t\t<title level=\"m\">Refreshing large language models with search engine augmentation</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b33\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Ping</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Mcafee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Shoeybi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Catanzaro</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Instructretro</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2310.07713</idno>\n\t\t<title level=\"m\">Instruction tuning post retrieval-augmented pretraining</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b34\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Self-instruct: Aligning language models with self-generated instructions</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Kordi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Mishra</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><forename type=\"middle\">A</forename><surname>Smith</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Khashabi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Hajishirzi</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2212.10560</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b35\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Chain-of-thought prompting elicits reasoning in large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Wei</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Schuurmans</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Bosma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Xia</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Chi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><forename type=\"middle\">V</forename><surname>Le</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">35</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"24824\" to=\"24837\" />\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b36\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">System 2 attention (is something you might need too)</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Weston</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Sukhbaatar</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2311.11829</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b37\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Effective long-context scaling of foundation models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Xiong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Molybog</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Bhargava</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Hou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Martin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Rungta</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><forename type=\"middle\">A</forename><surname>Sankararaman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Oguz</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2309.16039</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b38\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Ping</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Mcafee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Subramanian</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Bakhturina</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Shoeybi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Catanzaro</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2310.03025</idno>\n\t\t<title level=\"m\">Retrieval meets long context large language models</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b39\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Qi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Bengio</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><forename type=\"middle\">W</forename><surname>Cohen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Salakhutdinov</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><forename type=\"middle\">D</forename><surname>Manning</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Hotpotqa</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1809.09600</idno>\n\t\t<title level=\"m\">A dataset for diverse, explainable multi-hop question answering</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2018\">2018</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b40\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Iyer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Mao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Ma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Efrat</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2305.11206</idno>\n\t\t<title level=\"m\">Less is more for alignment</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+ "pdf_hash": "d0b53459489069072344c7ba8a170c6608f7cb2a497fab8f095e6b604942f394",
+ "tables": [
+  {
+   "table_id": "tab_0",
+   "section_path_id": "1~9",
+   "section_ordinal": 18,
+   "caption": "Table 2 :",
+   "coordinates": null,
+   "cells": [
+    {
+     "row": 0,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 275,
+      "end": 275
+     },
+     "digest": "b342c83d7060c5852f741e8e009d375103df2e1f7c76fbc512e575cd86d7b03d"
+    },
+    {
+     "row": 0,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "PubMed",
+     "coordinates": null,
+     "span": {
+      "start": 275,
+      "end": 281
+     },
+     "digest": "1b1c635acf72d3eaffec21cb3f829c001b96727778ffc950bf8fd40a37999f3f"
+    },
+    {
+     "row": 0,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "HotpotQA",
+     "coordinates": null,
+     "span": {
+      "start": 281,
+      "end": 289
+     },
+     "digest": "e814363356f757a5371b335d253893a62077cbe3257fe85a12127c4fa09dfd24"
+    },
+    {
+     "row": 0,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "HuggingFace",
+     "coordinates": null,
+     "span": {
+      "start": 289,
+      "end": 300
+     },
+     "digest": "98c831f276c6c8d1a9d245a59305590d9018db38487af7b4e2f4225e8f90e974"
+    },
+    {
+     "row": 0,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Torch Hub",
+     "coordinates": null,
+     "span": {
+      "start": 300,
+      "end": 309
+     },
+     "digest": "18197056b2eef25d239fb2b8d16db933421f694af55e870d4612b1ce6d05c836"
+    },
+    {
+     "row": 0,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "TensorFlow",
+     "coordinates": null,
+     "span": {
+      "start": 309,
+      "end": 319
+     },
+     "digest": "044bfb7676db519dfbe08f023924d6fe4afcaa8b8ea5d7d5be4cbd505e85b5ae"
+    },
+    {
+     "row": 1,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "RAFT w.o CoT",
+     "coordinates": null,
+     "span": {
+      "start": 319,
+      "end": 331
+     },
+     "digest": "203d12233cbe8e85853a16b3b238a01df5fe6ab31a329ea4af642b68648d8813"
+    },
+    {
+     "row": 1,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "68.30",
+     "coordinates": null,
+     "span": {
+      "start": 331,
+      "end": 336
+     },
+     "digest": "c70314fb4ab8f86e3925cffb8e8a48f299529e3edde41a2832a0aecfbc5c353a"
+    },
+    {
+     "row": 1,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "25.62",
+     "coordinates": null,
+     "span": {
+      "start": 336,
+      "end": 341
+     },
+     "digest": "184eaea254f543455625059a777019fd80203c9af5f6e4a9c3d95bce9755ea29"
+    },
+    {
+     "row": 1,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "59.07",
+     "coordinates": null,
+     "span": {
+      "start": 341,
+      "end": 346
+     },
+     "digest": "963a8c47512c65c3d61b4b4c175d15e2d7b7680b5bfa0319f71b7a44d63d8e42"
+    },
+    {
+     "row": 1,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "86.56",
+     "coordinates": null,
+     "span": {
+      "start": 346,
+      "end": 351
+     },
+     "digest": "d370d9ec6651561fb6454255b19646c2b9c922c97b3b36c787fa6fcca05a70cf"
+    },
+    {
+     "row": 1,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "83.21",
+     "coordinates": null,
+     "span": {
+      "start": 351,
+      "end": 356
+     },
+     "digest": "44a4c2bfb3495e093aabde92820359f6502ca114b12d6b097758036242d7c6b2"
+    },
+    {
+     "row": 2,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "RAFT",
+     "coordinates": null,
+     "span": {
+      "start": 356,
+      "end": 360
+     },
+     "digest": "53bd3a37c2df4f921e1c7f6e108df586975e4a781ddbdb77439926cfe8272412"
+    },
+    {
+     "row": 2,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "73.30",
+     "coordinates": null,
+     "span": {
+      "start": 360,
+      "end": 365
+     },
+     "digest": "63b6162357fb98b5e69caf747c1d6753f79c5cff93b227d977730e6b044c8732"
+    },
+    {
+     "row": 2,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "35.28",
+     "coordinates": null,
+     "span": {
+      "start": 365,
+      "end": 370
+     },
+     "digest": "e010bb01c05d381197374dab6c15f452bdedae9893f3d8b8e4e00b58fb9baf73"
+    },
+    {
+     "row": 2,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "74.00",
+     "coordinates": null,
+     "span": {
+      "start": 370,
+      "end": 375
+     },
+     "digest": "85103f02e2fde9f5288d07f5818dc043a5873c8f12c862d16470b7637be8f61a"
+    },
+    {
+     "row": 2,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "84.95",
+     "coordinates": null,
+     "span": {
+      "start": 375,
+      "end": 380
+     },
+     "digest": "a0f1afa69d45f7acad7016886ce60618529264c7c1e38c86badf7f8d78ae265f"
+    },
+    {
+     "row": 2,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "86.86",
+     "coordinates": null,
+     "span": {
+      "start": 380,
+      "end": 385
+     },
+     "digest": "63ffbd6fb817fbae1492e3ad32b259299455d78b502fa0336420307ea5291bfb"
+    }
+   ],
+   "source_digest": "6de02e3c2cd1fa7df7a7f0626458bee1afc775896dbf70d3ca0de683dbf5878e",
+   "missingness": null
+  }
+ ],
+ "table_missingness": null,
+ "formulas": [
+  {
+   "formula_id": "formula_0",
+   "section_path_id": "1~3",
+   "section_ordinal": 4,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "P % of data: Q + D * + D 1 + D 2 + . . . + D k → A * (1 -P) % of data: Q + D 1 + D 2 + . . . + D k → A *"
+   },
+   "span": {
+    "start": 2400,
+    "end": 2504
+   },
+   "source_digest": "600849e1e0ece05e65752b141d72e31b3404c9adf1cb3de4be1c856df7da7596",
+   "missingness": null
+  }
+ ],
+ "formula_missingness": null,
+ "page_text_missingness": null
+}

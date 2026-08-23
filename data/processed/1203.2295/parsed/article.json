@@ -1,0 +1,643 @@
+{
+ "paper_id": "1203.2295",
+ "title": "TECHNIQUES FOR SOLVING SUDOKU PUZZLES",
+ "abstract_text": "Solving Sudoku puzzles is one of the most popular pastimes in the world. Puzzles range in difficulty from easy to very challenging; the hardest puzzles tend to have the most empty cells. The current paper explains and compares three algorithms for solving Sudoku puzzles. Backtracking, simulated annealing, and alternating projections are generic methods for attacking combinatorial optimization problems. Our results favor backtracking. It infallibly solves a Sudoku puzzle or deduces that a unique solution does not exist. However, backtracking does not scale well in highdimensional combinatorial optimization. Hence, it is useful to expose students in the mathematical sciences to the other two solution techniques in a concrete setting. Simulated annealing shares a common structure with MCMC (Markov chain Monte Carlo) and enjoys wide applicability. The method of alternating projections solves the feasibility problem in convex programming. Converting a discrete optimization problem into a continuous optimization problem opens up the possibility of handling combinatorial problems of much higher dimensionality.",
+ "body_text": "Introduction.As all good mathematical scientists know, a broad community has contributed to the invention of modern algorithms. Computer scientists, applied mathematicians, statisticians, economists, and physicists, to name just a few, have made lasting contributions. Exposing students to a variety of perspectives outside the realm of their own disciplines sharpens their instincts for modeling and arms them with invaluable tools. In this spirit, the current paper discusses techniques for solving Sudoku puzzles, one of the most popular pastimes in the world. One could make the same points with more serious applications, but it is hard to imagine a more beguiling introduction to the algorithms featured here. Sudoku diagrams are special cases of the Latin squares long familiar in experimental design and, as such, enjoy interesting mathematical and statistical properties [1]. The complicated constraints encountered in solving Sudoku puzzles have elicited many clever heuristics that amateurs use to good effect. Here we examine three generic methods with broader scientific and societal applications. The fact that one of these methods outperforms the other two is mostly irrelevant. No two problem categories are completely alike, and it is best to try many techniques before declaring a winner.The three algorithms tested here are simulated annealing, alternating projections, and backtracking. Simulating annealing is perhaps the most familiar to statisticians. It is the optimization analog of MCMC (Markov chain Monte Carlo) and has been employed to solve a host of combinatorial problems. The method of alternating projections was first proposed by von Neumann [20] to find a feasible point in the intersection of a family of hyperplanes. Modern versions of alternating projections more generally seek a point in the intersection of a family of closed convex sets. Backtracking is a standard technique taken from the toolkits of applied mathematics and computer science. Backtracking infallibly finds all solutions of a Sudoku puzzle or determines that no solution exists. Its Achilles heel of excessive computational complexity does not come into play with Sudoku puzzles because they are, despite appearances, relatively benign computationally. Sudoku puzzles are instances of the satisfiability problem in computer science. As problem size increases, such problems are combinatorially hard and often defy backtracking. For this reason alone, it is useful to examine alternative strategies.In a typical Sudoku puzzle, there are 81 cells arranged in a 9-by-9 grid, some of which are occupied by numerical clues. See Figure 1.1. The goal is to fill in the remaining cells subject to the following three rules:1. Each integer between 1 and 9 must appear exactly once in a row, 2. Each integer between 1 and 9 must appear exactly once in a column, 3. Each integer between 1 and 9 must appear exactly once in each of the 3-by-3 subgrids. Solving a Sudoku game is a combinatorial task of intermediate complexity. The general problem of filling in an incomplete n 2 × n 2 grid with n × n subgrids belongs to the class of NP-complete problems [22]. These problems are conjectured to increase in computational complexity at an exponential rate in n. Nonetheless, a well planned exhaustive search can work quite well for a low value of n such as 9. For larger values of n, brute force, no matter how cleverly executed, is simply not an option. In contrast, simulated annealing and alternating projections may yield good approximate solutions and partially salvage the situation.In the rest of this paper, we describe the three methods for solving Sudoku puzzles and compare them on a battery of puzzles. The puzzles range in difficulty from pencil and paper exercises to hard benchmark tests that often defeat the two approximate methods. Our discussion reiterates the rationale for equipping students with the best computational tools.2. Three methods for solving Sudoku.\nBacktracking.Backtracking systematically grows a partial solution until it becomes a full solution or violates a constraint [18]. In the latter case it backtracks to the next permissible partial solution and begins the growing process anew. The advantage of backtracking is that a block of potential solutions can be discarded en masse. Backtracking starts by constructing for each empty Sudoku cell (i, j) a79 792 7923 79232 Infeasible . . . s 19 . . . s 17 . . . s 16 s 74 s 95 79233 Infeasible 7929 . . . 793 . . . list L ij of compatible digits. This is done by scanning the cell's row, column, and subgrid. The empty cells are then ordered by the cardinalities of the lists |L ij |. For example in Figure 1.1, two cells (7, 4) and (9, 5) possess lists L 74 = {7} and L 95 = {9} with cardinality 1 and come first. Next come cells such as (1,6) with L 16 = {2, 3}, (1, 7) with L 17 = {3, 9}, and (1, 9) with L 19 = {2, 3} whose lists have cardinality 2. Finally come cells such as (2, 9) with L 29 = {2, 3, 5, 6, 7} whose lists have maximum cardinality 5. Partial solutions are character strings such as s 74 s 95 s 16 s 17 s 19 taken in dictionary order with the alphabet at cell (i, j) limited to the list L ij . In dictionary order a string such as 7939 is treated as coming after a string such as 79232.Backtracking starts with the string 7 by taking the only element of L 74 , grows it to 79 by taking the only element of L 95 , grows it to 792 by taking the first element of L 16 , grows it to 7923 by taking the first element of L 17 , and finally grows it to 79232 by taking the first element of L 19 . At this juncture a row violation occurs, namely a 2 in both cells (1,6) and (1,9). Backtracking discards all strings beginning with 79232 and moves on to the string 79233 by replacing the first element of L 19 by the second element of L 19 . This leads to another row violation with a 3 in both cells (1,7) and (1,9). Backtracking moves back to the string 7929 by discarding the fifth character of 79239 and replacing the first element of L 17 by its second element. This sets the stage for another round of growing.Backtracking is also known as depth first search. In this setting the strings are viewed as nodes of a tree as depicted in Figure 2.1. Generating strings in dictionary order constitutes a tree traversal that systematically eliminates subtrees and moves down and backs up along branches. Because pruning large subtrees is more efficient than pruning small subtrees, ordering of cells by cardinality compels the decision tree to have fewer branches at the top. We use the C code from Skiena and Revilla [17] implementing backtracking on Sudoku puzzles. Backtracking has the virtue of finding all solutions when multiple solutions exist. Thus, it provides a mechanism for validating the correctness of puzzles.\nSimulated Annealing.Simulated annealing [2,10,16] attacks a combinatorial optimization problem by defining a state space of possible solutions, a cost function quantifying departures from the solution ideal, and a positive temperature parameter. For a satisfiability problem, it is sensible to equate cost to the number of constraint violations. Solutions then correspond to states of zero cost. Each step of annealing operates by proposing a move to a new randomly chosen state. Proposals are Markovian in the sense that they depend only on the current state of the process, not on its past history. Proposed steps that decrease cost are always accepted. Proposed steps that increase cost are taken with high probability in the early stages of annealing when temperature is high and with low probability in the late stages of annealing when temperature is low. Inspired by models from statistical physics, simulated annealing is designed to sample the state space broadly before settling down at a local minimum of the cost function.For the Sudoku problem, a state is a 9 × 9 matrix (board) of integers drawn from the set {1, . . . , 9}. Each integer appears nine times, and all numerical clues are respected. Annealing starts from any feasible board. The proposal stage randomly selects two different cells without clues. The corresponding move swaps the contents of the cells, thus preserving all digit counts. To ensure that the most troublesome cells are more likely to be chosen for swapping, we select cells non-uniformly with probability proportional to exp(i) for a cell involved in i constraint violations. Let B denote a typical board, c(B) its associated cost, and n the current iteration index. At temperature τ , we decide whether to accept a proposed neighboring board B by drawing a random deviate U uniformly from [0, 1]. If U satisfies U ≤ min {exp([c(B n ) -c(B)] /τ n ), 1} ,then we accept the proposed move and set B n+1 = B. Otherwise, we reject the move and set B n+1 = B n . Thus, the greater the increase in the number of constraint violations, the less likely the move is made to a proposed state. Also, the higher the temperature, the more likely a move is made to an unfavorable state. The final ingredient of simulated annealing is the cooling schedule. In general, the temperature parameter τ starts high and slowly declines to 0, where only favorable or cost neutral moves are taken. Typically temperature is lowered at a slow geometric rate.\nAlternating Projections.The method of alternating projections relies on projection operators. In the projection problem, one seeks the closest point x in a set C ⊂ R d to a point y ∈ R d . Distance is quantified by the usual Euclidean norm x-y . If y already lies in C, then the problem is trivially solved by setting x = y. It is well known that a unique minimizer exists whenever the set C is closed and convex [11]. We will denote the projection operator taking y to x by P C (y) = x.Given a finite collection of closed convex sets with a nonempty intersection, the alternating projection algorithm finds a point in that intersection. Consider the case of two closed convex sets A and B. The method recursively generates a sequence y n by taking y 0 = y and y n+1 = P A (y n ) for n even and y n+1 = P B (y n ) for n odd. Figure 2.2 illustrates a few iterations of the algorithm. As suggested by the picture, the algorithm does indeed converge to a point in A ∩ B [3]. For more than two closed convex sets with nonempty intersection, the method of alternating projections cycles through the projections in some fixed order. Convergence occurs in this more general case as well based on some simple theory involving paracontractive operators [7]. The limit is not guaranteed to be the closest point in the intersection to the original point y. The related but more complicated procedure known as Dykstra's algorithm [6] finds this point.It is easy to construct some basic projection operators. For instance, projection onto the rectangle R = {x ∈ R d : a i ≤ x i ≤ b i for all i} is achieved by defining x = P R (y) to have components x i = min{max{a i , y i }, b i }. This example illustrates a more general rule; namely, if A and B are two closed convex sets, then projection onto the Cartesian product A × B is effected by the Cartesian product operator (x, y) → [P A (x), P B (y)]. When A is an entire Euclidean space, P A (x) is just the identity map. Projection onto the hyperplaneH = {y ∈ R d : v T y = c} is implemented by the operator P H (x) = x - v T x -c v 2 v.Projection onto the unit simplex U = x ∈ R d :d i=1 x i = 1, x i ≥ 0 ∀i is more subtle.Fortunately there exist fast algorithms for this purpose [5,13].In either the alternating projection algorithm or Dykstra's algorithm, it is advantageous to reduce the number of participating convex sets to the minimum possible consistent with fast projection. For instance, it is better to take the unit simplex U as a whole rather than as an intersection of the halfspaces {x : x i ≥ 0} and the affine subspace {x : d i=1 x i = 1}. Because our alternating projection algorithm for solving Sudoku puzzles relies on projecting onto several simplexes, it is instructive to derive the Duchi et al [5] projection algorithm. Consider minimization of a convex smooth function f (x) over U . The Karush-Kuhn-Tucker stationarity condition involves setting the gradient of the LagrangianL(x, λ, µ) = f (x) + λ d i=1 x i -1 - d i=1 µ i x iequal to 0. This is stated in components as the Gibbs criterion0 = ∂ ∂x i f (x) + λ -µ ifor multipliers µ i ≥ 0 obeying the complementary slackness conditions µ i x i = 0. For the choice f (x) = 1 2 xy 2 , the Gibbs condition can be solved in the formx i = y i -λ x i &gt; 0 y i -λ + µ i x i = 0.If we let I + = {i : x i &gt; 0}, then the equality constraint1 = i∈I+ x i = i∈I+ y i -|I + |λ implies λ = 1 |I + | i∈I+ y i -1 .The catch, of course, is that we do not know I + .The key to avoid searching over all 2 d subsets is the simple observation that the x i and y i are consistently ordered. Suppose on the contrary that y i &lt; y j and x j &lt; x i . For small s &gt; 0 substitute x j + s for x j and x i -s for x i . The objective function f (x) = 1 2 xy 2 then changes by the amount1 2 (x i -s -y i ) 2 + (x j + s -y j ) 2 -(x i -y i ) 2 -(x j -y j ) 2 = s(y i -y j + x j -x i ) + s 2 ,which is negative for s small. Let w i denote the ith largest entry of y. Then the Gibbs condition implies that w 1 ≥ w 2 ≥ . . . ≥ w |I+| &gt; λ. Thus, to determine λ we seek the largest k such thatw k &gt; 1 k k i=1 w i -1and set λ equal to the right hand side of this inequality. With λ in hand, the Gibbs condition implies that x i = max{y i -λ, 0}. It follows that projection onto U can be accomplished in O(d log d) operations dominated by sorting. Algorithm 1 displays pseudocode for projection onto U . Armed with these results, we now describe how to solve a continuous relaxation of Sudoku by the method of alternating projections. In the relaxed version of the problem, we imagine generating candidate solutions by random sampling. Each cell (i, j) is assigned a sampling distribution p ijk = Pr(S ij = k) for choosing a random deviate S ij ∈ {1, . . . , 9} to populate the cell. If a numerical clue k occupies cell (i, j), Algorithm 1 Projection onto simplex w ← sort descending(y).k ← max j : w j &gt; 1 j j i=1 w i λ ← 1 k k i=1 w i x i ← max{y i -λ, 0}.then we set p ijl = 1 for l = k and 0 otherwise. A matrix of sampled deviates S constitutes a candidate solution. It seems reasonable to demand that the average puzzle obey the constraints. Once we find a feasible 3-dimensional tensor P = (p ijk ) obeying the constraints, a good heuristic for generating an integer solution Ŝ is to put ŝij = max k∈{1,...,9} p ijk .In other words, we impute the most probable integer to each unknown cell (i, j). It is easy to construct counterexamples where imputation of the most probable integer from a feasible tensor P of the relaxed problem fails to solve the Sudoku puzzle.In any case, the remaining agenda is to specify the constraints and the corresponding projection operators. The requirement that each digit appear in each row on average once amounts to the constraint 9 j=1 p ijk = 1 for all i and k between 1 and 9. There are 81 such constraints. The requirement that each digit appear in each column on average once amounts to the constraint 9 i=1 p ijk = 1 for all j and k between 1 and 9. Again, there are 81 such constraints. The requirement that each digit appear in each subgrid on average once amounts to the constraint 3 j=1 3 j=1 p a+i,b+j,k = 1 for all k between 1 and 9 and all a and b chosen from the set {0, 3, 6}. This contributes another 81 constraints. Finally, the probability constraints 9 k=1 p ijk = 1 for all i and j between 1 and 9 contribute 81 more affine constraints. Hence, there are a total of 324 affine constraints on the 9 3 = 729 parameters. In addition there are 729 nonnegativity constraints p ijk ≥ 0.Every numerical clue voids several constraints. For example, if the digit 7 is mandated for cell (9,2), then we must take p 927 = 1, p 92k = 0 for k = 7, p i27 = 0 for all i = 9, p 9j7 = 0 for all j = 2, and p ij7 = 0 for all other pairs (i, j) in the (3,1) subgrid. In carrying out alternating projection, we eliminate the corresponding variables. With this proviso, we cycle through the simplex projections summarized in Algorithm 1. The process is very efficient but slightly tedious to code. For the sake of brevity we omit the remaining details. All code used to generate the subsequent results are available at https://github.com/echi/Sudoku, and we direct the interested reader there.\nComparisons.We generated test puzzles from code available online [21] and discarded puzzles that could be completely solved by filling in entries directly implied by the initial clues. This left 87 easy puzzles, 130 medium puzzles, and 100 hard puzzles. We also downloaded an additional 95 very hard benchmark puzzles [4,19]. In simulated annealing, the temperature τ was initialized to 200 and lowered by a factor of 0.99 after every 50 steps. We allowed at most 2 × 10 5 iterations and reset the temperature to 200 if a solution had not been found after 10 5 iterations. For the alternating projection algorithm, we commenced projecting from the origin 0.Backtracking successfully solved all puzzles. Table 3.1 shows the fraction of puzzles the two heuristics were able to successfully complete.Table 3.2 records summary Alt. Projection Sim. Annealing Backtracking Number of Puzzles Easy 0.85 1.00 1.00 87 Medium 0.89 1.00 1.00 130 Hard 0.72 0.97 1.00 100 Top 95 0.41 0.03 1.00 95 Table 3.1: Success rates for solving puzzles of varying difficulty. CPU Time (sec) Alt. Projection Sim. Annealing Backtracking Easy Minimum 0.032 0.006 0.007 Median 0.041 0.021 0.008 Mean 0.052 0.112 0.008 Maximum 0.237 0.970 0.009 Medium Minimum 0.032 0.007 0.007 Median 0.051 0.037 0.008 Mean 0.062 0.231 0.008 Maximum 0.269 3.36 0.010 Hard Minimum 0.033 0.008 0.008 Median 0.110 0.753 0.008 Mean 0.159 1.104 0.009 Maximum 0.525 7.204 0.031 Table 3.2: Summary statistics on the run times for different methods on puzzles of varying difficulty. For the alternating projection and simulated annealing techniques, only successfully solved puzzles are included in the statistics.statistics for the CPU time taken by each method for each puzzle category. All computations were done on an iMac computer with a 3.4 GHz Intel Core i7 processor and 8 GB of RAM. We implemented the alternating projection and simulated annealing algorithms in Fortran 95. For backtracking we relied on the existing implementation in C. The comparisons show that backtracking performs best, and for the vast majority of 9 × 9 Sudoku problems it is probably going to be hard to beat. Simulated annealing finds the solution except for a handful of the most challenging paper and pencil problems, but its maximum run times are unimpressive. While alternating projection does not perform as well on the pencil and paper problems compared to the other two algorithms, it does not do terribly either. Moreover, we see hints of the tables turning on the hard puzzles.Simulated annealing struggles mightily on the 95 benchmark puzzles. Closer inspection of individual puzzles reveals that these very hard puzzles admit many local minima with just a few constraint violations. Figure 3.1 shows a typical local minimum that traps the simulated annealing algorithm. Additionally, something curious is happening in Figure 3.2, which plots CPU solution times for alternating projection1 7 9 6 2 8 3 5 6 3 2 1 5 8 7 4 9 9 5 8 7 3 4 6 1 2 8 2 5 4 9 7 3 6 1 3 9 1 5 8 6 4 2 7 7 4 6 3 1 2 5 9 8 2 8 9 6 5 3 1 7 4 5 7 3 2 4 1 9 8 6 1 6 4 8 7 9 2 5 3 Fig. 3.1: A typical local minimum that traps simulated annealing in a top 95 puzzle. Clues are shaded light gray. There are two column constraint violations caused by the cells shaded dark gray. The local minimum is deep in the sense that all one-step swaps result in further constraint violations.versus backtracking. Points below the dashed line indicate puzzles that the method of alternating projection solves more efficiently than backtracking. It appears that when the method of alternating projections finds correct solutions to very hard problems, it tends to find them more quickly than backtracking.\nDiscussion.It goes almost without saying that students of the mathematical sciences should be taught a variety of solution techniques for combinatorial problems. Because Sudoku puzzles are easy to state and culturally neutral, they furnish a good starting point for the educational task ahead. It is important to stress the contrast between exact strategies that scale poorly with problem size and approximate strategies that adapt more gracefully. The performance of the alternating projection algorithm on the benchmark tests suggest it may have a role in solving much harder combinatorial problems. Certainly, the electrical engineering community takes this attitude, given the close kinship of Sudoku puzzles to problems in coding theory [8,9,14,15].One can argue that algorithm development has assumed a dominant role within the mathematical sciences. Three inter-related trends are feeding this phenomenon. First, computing power continues to grow. Execution times are dropping, and computer memory is getting cheaper. Second, good computing simply tempts scientists to tackle larger data sets. Third, certain fields, notably communications, imaging, genomics, and economics generate enormous amounts of data. All of these fields create problems in combinatorial optimization. For instance, modern DNA sequencing is still challenged by the phase problem of discerning the maternal and paternal origin of genetic variants. Computation is also being adopted more often as a means of proving propositions. The claim that at least 17 numerical clues are needed to ensure uniqueness of a Sudoku solution has apparently been proved using intelligent brute force [12]. Mathematical scientists need to be aware of computational developments outside their classical application silos. Importing algorithms from outside fields is one of the quickest means of refreshing an existing field.Fig. 1 .1Fig. 1.1: Sample Puzzle\nFig. 2 . 1 :21Fig. 2.1: Backtracking on the puzzle shown in Figure 1.1. Starting from s 74 s 95 = 79, the algorithm attempts and fails to grow the solution beyond s 74 s 95 s 16 s 17 s 19 = 79232. After failing to grow the solution beyond s 74 s 95 s 16 s 17 s 19 = 79233, all partial solutions beginning with 7923 are eliminated from further consideration. The algorithm starts anew by attempting to grow s 74 s 95 s 16 s 17 = 7929.\nFig. 2 . 2 :22Fig. 2.2: Alternating projections find a point in A∩B, where A and B are closed convex sets. The initial point is y. The sequence of points y n is generated by alternating projection onto A with projection onto B.\nFig. 3 . 2 :32Fig.3.2: Scatterplot of solution times for the top 95 benchmark problems.",
+ "sections": [
+  {
+   "title": "Introduction.",
+   "text": "As all good mathematical scientists know, a broad community has contributed to the invention of modern algorithms. Computer scientists, applied mathematicians, statisticians, economists, and physicists, to name just a few, have made lasting contributions. Exposing students to a variety of perspectives outside the realm of their own disciplines sharpens their instincts for modeling and arms them with invaluable tools. In this spirit, the current paper discusses techniques for solving Sudoku puzzles, one of the most popular pastimes in the world. One could make the same points with more serious applications, but it is hard to imagine a more beguiling introduction to the algorithms featured here. Sudoku diagrams are special cases of the Latin squares long familiar in experimental design and, as such, enjoy interesting mathematical and statistical properties [1]. The complicated constraints encountered in solving Sudoku puzzles have elicited many clever heuristics that amateurs use to good effect. Here we examine three generic methods with broader scientific and societal applications. The fact that one of these methods outperforms the other two is mostly irrelevant. No two problem categories are completely alike, and it is best to try many techniques before declaring a winner.The three algorithms tested here are simulated annealing, alternating projections, and backtracking. Simulating annealing is perhaps the most familiar to statisticians. It is the optimization analog of MCMC (Markov chain Monte Carlo) and has been employed to solve a host of combinatorial problems. The method of alternating projections was first proposed by von Neumann [20] to find a feasible point in the intersection of a family of hyperplanes. Modern versions of alternating projections more generally seek a point in the intersection of a family of closed convex sets. Backtracking is a standard technique taken from the toolkits of applied mathematics and computer science. Backtracking infallibly finds all solutions of a Sudoku puzzle or determines that no solution exists. Its Achilles heel of excessive computational complexity does not come into play with Sudoku puzzles because they are, despite appearances, relatively benign computationally. Sudoku puzzles are instances of the satisfiability problem in computer science. As problem size increases, such problems are combinatorially hard and often defy backtracking. For this reason alone, it is useful to examine alternative strategies.In a typical Sudoku puzzle, there are 81 cells arranged in a 9-by-9 grid, some of which are occupied by numerical clues. See Figure 1.1. The goal is to fill in the remaining cells subject to the following three rules:1. Each integer between 1 and 9 must appear exactly once in a row, 2. Each integer between 1 and 9 must appear exactly once in a column, 3. Each integer between 1 and 9 must appear exactly once in each of the 3-by-3 subgrids. Solving a Sudoku game is a combinatorial task of intermediate complexity. The general problem of filling in an incomplete n 2 × n 2 grid with n × n subgrids belongs to the class of NP-complete problems [22]. These problems are conjectured to increase in computational complexity at an exponential rate in n. Nonetheless, a well planned exhaustive search can work quite well for a low value of n such as 9. For larger values of n, brute force, no matter how cleverly executed, is simply not an option. In contrast, simulated annealing and alternating projections may yield good approximate solutions and partially salvage the situation.In the rest of this paper, we describe the three methods for solving Sudoku puzzles and compare them on a battery of puzzles. The puzzles range in difficulty from pencil and paper exercises to hard benchmark tests that often defeat the two approximate methods. Our discussion reiterates the rationale for equipping students with the best computational tools.2. Three methods for solving Sudoku.",
+   "level": 2,
+   "path_id": "1.",
+   "parent_section_id": "sec-1",
+   "order_in_parent": 0,
+   "section_id": "sec-1."
+  },
+  {
+   "title": "Backtracking.",
+   "text": "Backtracking systematically grows a partial solution until it becomes a full solution or violates a constraint [18]. In the latter case it backtracks to the next permissible partial solution and begins the growing process anew. The advantage of backtracking is that a block of potential solutions can be discarded en masse. Backtracking starts by constructing for each empty Sudoku cell (i, j) a79 792 7923 79232 Infeasible . . . s 19 . . . s 17 . . . s 16 s 74 s 95 79233 Infeasible 7929 . . . 793 . . . list L ij of compatible digits. This is done by scanning the cell's row, column, and subgrid. The empty cells are then ordered by the cardinalities of the lists |L ij |. For example in Figure 1.1, two cells (7, 4) and (9, 5) possess lists L 74 = {7} and L 95 = {9} with cardinality 1 and come first. Next come cells such as (1,6) with L 16 = {2, 3}, (1, 7) with L 17 = {3, 9}, and (1, 9) with L 19 = {2, 3} whose lists have cardinality 2. Finally come cells such as (2, 9) with L 29 = {2, 3, 5, 6, 7} whose lists have maximum cardinality 5. Partial solutions are character strings such as s 74 s 95 s 16 s 17 s 19 taken in dictionary order with the alphabet at cell (i, j) limited to the list L ij . In dictionary order a string such as 7939 is treated as coming after a string such as 79232.Backtracking starts with the string 7 by taking the only element of L 74 , grows it to 79 by taking the only element of L 95 , grows it to 792 by taking the first element of L 16 , grows it to 7923 by taking the first element of L 17 , and finally grows it to 79232 by taking the first element of L 19 . At this juncture a row violation occurs, namely a 2 in both cells (1,6) and (1,9). Backtracking discards all strings beginning with 79232 and moves on to the string 79233 by replacing the first element of L 19 by the second element of L 19 . This leads to another row violation with a 3 in both cells (1,7) and (1,9). Backtracking moves back to the string 7929 by discarding the fifth character of 79239 and replacing the first element of L 17 by its second element. This sets the stage for another round of growing.Backtracking is also known as depth first search. In this setting the strings are viewed as nodes of a tree as depicted in Figure 2.1. Generating strings in dictionary order constitutes a tree traversal that systematically eliminates subtrees and moves down and backs up along branches. Because pruning large subtrees is more efficient than pruning small subtrees, ordering of cells by cardinality compels the decision tree to have fewer branches at the top. We use the C code from Skiena and Revilla [17] implementing backtracking on Sudoku puzzles. Backtracking has the virtue of finding all solutions when multiple solutions exist. Thus, it provides a mechanism for validating the correctness of puzzles.",
+   "level": 3,
+   "path_id": "2.1.",
+   "parent_section_id": "sec-2.1",
+   "order_in_parent": 0,
+   "section_id": "sec-2.1."
+  },
+  {
+   "title": "Simulated Annealing.",
+   "text": "Simulated annealing [2,10,16] attacks a combinatorial optimization problem by defining a state space of possible solutions, a cost function quantifying departures from the solution ideal, and a positive temperature parameter. For a satisfiability problem, it is sensible to equate cost to the number of constraint violations. Solutions then correspond to states of zero cost. Each step of annealing operates by proposing a move to a new randomly chosen state. Proposals are Markovian in the sense that they depend only on the current state of the process, not on its past history. Proposed steps that decrease cost are always accepted. Proposed steps that increase cost are taken with high probability in the early stages of annealing when temperature is high and with low probability in the late stages of annealing when temperature is low. Inspired by models from statistical physics, simulated annealing is designed to sample the state space broadly before settling down at a local minimum of the cost function.For the Sudoku problem, a state is a 9 × 9 matrix (board) of integers drawn from the set {1, . . . , 9}. Each integer appears nine times, and all numerical clues are respected. Annealing starts from any feasible board. The proposal stage randomly selects two different cells without clues. The corresponding move swaps the contents of the cells, thus preserving all digit counts. To ensure that the most troublesome cells are more likely to be chosen for swapping, we select cells non-uniformly with probability proportional to exp(i) for a cell involved in i constraint violations. Let B denote a typical board, c(B) its associated cost, and n the current iteration index. At temperature τ , we decide whether to accept a proposed neighboring board B by drawing a random deviate U uniformly from [0, 1]. If U satisfies U ≤ min {exp([c(B n ) -c(B)] /τ n ), 1} ,then we accept the proposed move and set B n+1 = B. Otherwise, we reject the move and set B n+1 = B n . Thus, the greater the increase in the number of constraint violations, the less likely the move is made to a proposed state. Also, the higher the temperature, the more likely a move is made to an unfavorable state. The final ingredient of simulated annealing is the cooling schedule. In general, the temperature parameter τ starts high and slowly declines to 0, where only favorable or cost neutral moves are taken. Typically temperature is lowered at a slow geometric rate.",
+   "level": 3,
+   "path_id": "2.2.",
+   "parent_section_id": "sec-2.2",
+   "order_in_parent": 0,
+   "section_id": "sec-2.2."
+  },
+  {
+   "title": "Alternating Projections.",
+   "text": "The method of alternating projections relies on projection operators. In the projection problem, one seeks the closest point x in a set C ⊂ R d to a point y ∈ R d . Distance is quantified by the usual Euclidean norm x-y . If y already lies in C, then the problem is trivially solved by setting x = y. It is well known that a unique minimizer exists whenever the set C is closed and convex [11]. We will denote the projection operator taking y to x by P C (y) = x.Given a finite collection of closed convex sets with a nonempty intersection, the alternating projection algorithm finds a point in that intersection. Consider the case of two closed convex sets A and B. The method recursively generates a sequence y n by taking y 0 = y and y n+1 = P A (y n ) for n even and y n+1 = P B (y n ) for n odd. Figure 2.2 illustrates a few iterations of the algorithm. As suggested by the picture, the algorithm does indeed converge to a point in A ∩ B [3]. For more than two closed convex sets with nonempty intersection, the method of alternating projections cycles through the projections in some fixed order. Convergence occurs in this more general case as well based on some simple theory involving paracontractive operators [7]. The limit is not guaranteed to be the closest point in the intersection to the original point y. The related but more complicated procedure known as Dykstra's algorithm [6] finds this point.It is easy to construct some basic projection operators. For instance, projection onto the rectangle R = {x ∈ R d : a i ≤ x i ≤ b i for all i} is achieved by defining x = P R (y) to have components x i = min{max{a i , y i }, b i }. This example illustrates a more general rule; namely, if A and B are two closed convex sets, then projection onto the Cartesian product A × B is effected by the Cartesian product operator (x, y) → [P A (x), P B (y)]. When A is an entire Euclidean space, P A (x) is just the identity map. Projection onto the hyperplaneH = {y ∈ R d : v T y = c} is implemented by the operator P H (x) = x - v T x -c v 2 v.Projection onto the unit simplex U = x ∈ R d :d i=1 x i = 1, x i ≥ 0 ∀i is more subtle.Fortunately there exist fast algorithms for this purpose [5,13].In either the alternating projection algorithm or Dykstra's algorithm, it is advantageous to reduce the number of participating convex sets to the minimum possible consistent with fast projection. For instance, it is better to take the unit simplex U as a whole rather than as an intersection of the halfspaces {x : x i ≥ 0} and the affine subspace {x : d i=1 x i = 1}. Because our alternating projection algorithm for solving Sudoku puzzles relies on projecting onto several simplexes, it is instructive to derive the Duchi et al [5] projection algorithm. Consider minimization of a convex smooth function f (x) over U . The Karush-Kuhn-Tucker stationarity condition involves setting the gradient of the LagrangianL(x, λ, µ) = f (x) + λ d i=1 x i -1 - d i=1 µ i x iequal to 0. This is stated in components as the Gibbs criterion0 = ∂ ∂x i f (x) + λ -µ ifor multipliers µ i ≥ 0 obeying the complementary slackness conditions µ i x i = 0. For the choice f (x) = 1 2 xy 2 , the Gibbs condition can be solved in the formx i = y i -λ x i &gt; 0 y i -λ + µ i x i = 0.If we let I + = {i : x i &gt; 0}, then the equality constraint1 = i∈I+ x i = i∈I+ y i -|I + |λ implies λ = 1 |I + | i∈I+ y i -1 .The catch, of course, is that we do not know I + .The key to avoid searching over all 2 d subsets is the simple observation that the x i and y i are consistently ordered. Suppose on the contrary that y i &lt; y j and x j &lt; x i . For small s &gt; 0 substitute x j + s for x j and x i -s for x i . The objective function f (x) = 1 2 xy 2 then changes by the amount1 2 (x i -s -y i ) 2 + (x j + s -y j ) 2 -(x i -y i ) 2 -(x j -y j ) 2 = s(y i -y j + x j -x i ) + s 2 ,which is negative for s small. Let w i denote the ith largest entry of y. Then the Gibbs condition implies that w 1 ≥ w 2 ≥ . . . ≥ w |I+| &gt; λ. Thus, to determine λ we seek the largest k such thatw k &gt; 1 k k i=1 w i -1and set λ equal to the right hand side of this inequality. With λ in hand, the Gibbs condition implies that x i = max{y i -λ, 0}. It follows that projection onto U can be accomplished in O(d log d) operations dominated by sorting. Algorithm 1 displays pseudocode for projection onto U . Armed with these results, we now describe how to solve a continuous relaxation of Sudoku by the method of alternating projections. In the relaxed version of the problem, we imagine generating candidate solutions by random sampling. Each cell (i, j) is assigned a sampling distribution p ijk = Pr(S ij = k) for choosing a random deviate S ij ∈ {1, . . . , 9} to populate the cell. If a numerical clue k occupies cell (i, j), Algorithm 1 Projection onto simplex w ← sort descending(y).k ← max j : w j &gt; 1 j j i=1 w i λ ← 1 k k i=1 w i x i ← max{y i -λ, 0}.then we set p ijl = 1 for l = k and 0 otherwise. A matrix of sampled deviates S constitutes a candidate solution. It seems reasonable to demand that the average puzzle obey the constraints. Once we find a feasible 3-dimensional tensor P = (p ijk ) obeying the constraints, a good heuristic for generating an integer solution Ŝ is to put ŝij = max k∈{1,...,9} p ijk .In other words, we impute the most probable integer to each unknown cell (i, j). It is easy to construct counterexamples where imputation of the most probable integer from a feasible tensor P of the relaxed problem fails to solve the Sudoku puzzle.In any case, the remaining agenda is to specify the constraints and the corresponding projection operators. The requirement that each digit appear in each row on average once amounts to the constraint 9 j=1 p ijk = 1 for all i and k between 1 and 9. There are 81 such constraints. The requirement that each digit appear in each column on average once amounts to the constraint 9 i=1 p ijk = 1 for all j and k between 1 and 9. Again, there are 81 such constraints. The requirement that each digit appear in each subgrid on average once amounts to the constraint 3 j=1 3 j=1 p a+i,b+j,k = 1 for all k between 1 and 9 and all a and b chosen from the set {0, 3, 6}. This contributes another 81 constraints. Finally, the probability constraints 9 k=1 p ijk = 1 for all i and j between 1 and 9 contribute 81 more affine constraints. Hence, there are a total of 324 affine constraints on the 9 3 = 729 parameters. In addition there are 729 nonnegativity constraints p ijk ≥ 0.Every numerical clue voids several constraints. For example, if the digit 7 is mandated for cell (9,2), then we must take p 927 = 1, p 92k = 0 for k = 7, p i27 = 0 for all i = 9, p 9j7 = 0 for all j = 2, and p ij7 = 0 for all other pairs (i, j) in the (3,1) subgrid. In carrying out alternating projection, we eliminate the corresponding variables. With this proviso, we cycle through the simplex projections summarized in Algorithm 1. The process is very efficient but slightly tedious to code. For the sake of brevity we omit the remaining details. All code used to generate the subsequent results are available at https://github.com/echi/Sudoku, and we direct the interested reader there.",
+   "level": 3,
+   "path_id": "2.3.",
+   "parent_section_id": "sec-2.3",
+   "order_in_parent": 0,
+   "section_id": "sec-2.3."
+  },
+  {
+   "title": "Comparisons.",
+   "text": "We generated test puzzles from code available online [21] and discarded puzzles that could be completely solved by filling in entries directly implied by the initial clues. This left 87 easy puzzles, 130 medium puzzles, and 100 hard puzzles. We also downloaded an additional 95 very hard benchmark puzzles [4,19]. In simulated annealing, the temperature τ was initialized to 200 and lowered by a factor of 0.99 after every 50 steps. We allowed at most 2 × 10 5 iterations and reset the temperature to 200 if a solution had not been found after 10 5 iterations. For the alternating projection algorithm, we commenced projecting from the origin 0.Backtracking successfully solved all puzzles. Table 3.1 shows the fraction of puzzles the two heuristics were able to successfully complete.Table 3.2 records summary Alt. Projection Sim. Annealing Backtracking Number of Puzzles Easy 0.85 1.00 1.00 87 Medium 0.89 1.00 1.00 130 Hard 0.72 0.97 1.00 100 Top 95 0.41 0.03 1.00 95 Table 3.1: Success rates for solving puzzles of varying difficulty. CPU Time (sec) Alt. Projection Sim. Annealing Backtracking Easy Minimum 0.032 0.006 0.007 Median 0.041 0.021 0.008 Mean 0.052 0.112 0.008 Maximum 0.237 0.970 0.009 Medium Minimum 0.032 0.007 0.007 Median 0.051 0.037 0.008 Mean 0.062 0.231 0.008 Maximum 0.269 3.36 0.010 Hard Minimum 0.033 0.008 0.008 Median 0.110 0.753 0.008 Mean 0.159 1.104 0.009 Maximum 0.525 7.204 0.031 Table 3.2: Summary statistics on the run times for different methods on puzzles of varying difficulty. For the alternating projection and simulated annealing techniques, only successfully solved puzzles are included in the statistics.statistics for the CPU time taken by each method for each puzzle category. All computations were done on an iMac computer with a 3.4 GHz Intel Core i7 processor and 8 GB of RAM. We implemented the alternating projection and simulated annealing algorithms in Fortran 95. For backtracking we relied on the existing implementation in C. The comparisons show that backtracking performs best, and for the vast majority of 9 × 9 Sudoku problems it is probably going to be hard to beat. Simulated annealing finds the solution except for a handful of the most challenging paper and pencil problems, but its maximum run times are unimpressive. While alternating projection does not perform as well on the pencil and paper problems compared to the other two algorithms, it does not do terribly either. Moreover, we see hints of the tables turning on the hard puzzles.Simulated annealing struggles mightily on the 95 benchmark puzzles. Closer inspection of individual puzzles reveals that these very hard puzzles admit many local minima with just a few constraint violations. Figure 3.1 shows a typical local minimum that traps the simulated annealing algorithm. Additionally, something curious is happening in Figure 3.2, which plots CPU solution times for alternating projection1 7 9 6 2 8 3 5 6 3 2 1 5 8 7 4 9 9 5 8 7 3 4 6 1 2 8 2 5 4 9 7 3 6 1 3 9 1 5 8 6 4 2 7 7 4 6 3 1 2 5 9 8 2 8 9 6 5 3 1 7 4 5 7 3 2 4 1 9 8 6 1 6 4 8 7 9 2 5 3 Fig. 3.1: A typical local minimum that traps simulated annealing in a top 95 puzzle. Clues are shaded light gray. There are two column constraint violations caused by the cells shaded dark gray. The local minimum is deep in the sense that all one-step swaps result in further constraint violations.versus backtracking. Points below the dashed line indicate puzzles that the method of alternating projection solves more efficiently than backtracking. It appears that when the method of alternating projections finds correct solutions to very hard problems, it tends to find them more quickly than backtracking.",
+   "level": 2,
+   "path_id": "3.",
+   "parent_section_id": "sec-3",
+   "order_in_parent": 0,
+   "section_id": "sec-3."
+  },
+  {
+   "title": "Discussion.",
+   "text": "It goes almost without saying that students of the mathematical sciences should be taught a variety of solution techniques for combinatorial problems. Because Sudoku puzzles are easy to state and culturally neutral, they furnish a good starting point for the educational task ahead. It is important to stress the contrast between exact strategies that scale poorly with problem size and approximate strategies that adapt more gracefully. The performance of the alternating projection algorithm on the benchmark tests suggest it may have a role in solving much harder combinatorial problems. Certainly, the electrical engineering community takes this attitude, given the close kinship of Sudoku puzzles to problems in coding theory [8,9,14,15].One can argue that algorithm development has assumed a dominant role within the mathematical sciences. Three inter-related trends are feeding this phenomenon. First, computing power continues to grow. Execution times are dropping, and computer memory is getting cheaper. Second, good computing simply tempts scientists to tackle larger data sets. Third, certain fields, notably communications, imaging, genomics, and economics generate enormous amounts of data. All of these fields create problems in combinatorial optimization. For instance, modern DNA sequencing is still challenged by the phase problem of discerning the maternal and paternal origin of genetic variants. Computation is also being adopted more often as a means of proving propositions. The claim that at least 17 numerical clues are needed to ensure uniqueness of a Sudoku solution has apparently been proved using intelligent brute force [12]. Mathematical scientists need to be aware of computational developments outside their classical application silos. Importing algorithms from outside fields is one of the quickest means of refreshing an existing field.",
+   "level": 2,
+   "path_id": "4.",
+   "parent_section_id": "sec-4",
+   "order_in_parent": 0,
+   "section_id": "sec-4."
+  },
+  {
+   "title": "Fig. 1 .",
+   "text": "1Fig. 1.1: Sample Puzzle",
+   "level": 1,
+   "path_id": "1",
+   "parent_section_id": null,
+   "order_in_parent": 0,
+   "section_id": "sec-1"
+  },
+  {
+   "title": "Fig. 2 . 1 :",
+   "text": "21Fig. 2.1: Backtracking on the puzzle shown in Figure 1.1. Starting from s 74 s 95 = 79, the algorithm attempts and fails to grow the solution beyond s 74 s 95 s 16 s 17 s 19 = 79232. After failing to grow the solution beyond s 74 s 95 s 16 s 17 s 19 = 79233, all partial solutions beginning with 7923 are eliminated from further consideration. The algorithm starts anew by attempting to grow s 74 s 95 s 16 s 17 = 7929.",
+   "level": 1,
+   "path_id": "1~2",
+   "parent_section_id": null,
+   "order_in_parent": 1,
+   "section_id": "sec-1~2"
+  },
+  {
+   "title": "Fig. 2 . 2 :",
+   "text": "22Fig. 2.2: Alternating projections find a point in A∩B, where A and B are closed convex sets. The initial point is y. The sequence of points y n is generated by alternating projection onto A with projection onto B.",
+   "level": 1,
+   "path_id": "1~3",
+   "parent_section_id": null,
+   "order_in_parent": 2,
+   "section_id": "sec-1~3"
+  },
+  {
+   "title": "Fig. 3 . 2 :",
+   "text": "32Fig.3.2: Scatterplot of solution times for the top 95 benchmark problems.",
+   "level": 1,
+   "path_id": "1~4",
+   "parent_section_id": null,
+   "order_in_parent": 3,
+   "section_id": "sec-1~4"
+  }
+ ],
+ "citations": [
+  {
+   "raw_text": "RABailey\n\t\t\n\t\t\n\t\t\tPJCameron\n\t\t\n\t\t\n\t\t\tRConnelly\n\t\t\n\t\n\t\n\t\tSudoku, gerechte designs, resolutions, affine space, spreads, reguli, and Hamming codes\n\t\t\n\t\t\t2008\n\t\t\t115",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b0",
+     "section_path_id": "1.",
+     "quote": "[1]",
+     "offset": 867
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "2.1.",
+     "quote": "(1,",
+     "offset": 829
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "2.1.",
+     "quote": "(1,",
+     "offset": 1667
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "2.1.",
+     "quote": "(1,",
+     "offset": 1677
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "2.1.",
+     "quote": "(1,",
+     "offset": 1902
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "2.1.",
+     "quote": "(1,",
+     "offset": 1912
+    }
+   ]
+  },
+  {
+   "raw_text": "Thermodynamical approach to the traveling salesman problem: An efficient simulation algorithm\n\t\t\n\t\t\tVCerny\n\t\t\n\t\n\t\n\t\tJ. Opt. Theory Appl\n\t\t\n\t\t\t45\n\t\t\t\n\t\t\t1985",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Thermodynamical approach to the traveling salesman problem: An efficient simulation algorithm",
+   "anchors": [
+    {
+     "ref_id": "b1",
+     "section_path_id": "2.2.",
+     "quote": "[2,",
+     "offset": 20
+    }
+   ]
+  },
+  {
+   "raw_text": "Proximity maps for convex sets\n\t\t\n\t\t\tWCheney\n\t\t\n\t\t\n\t\t\tAAGoldstein\n\t\t\n\t\n\t\n\t\tProceedings of the American Mathematical Society\n\t\t\n\t\t\t10\n\t\t\t\n\t\t\t1959",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Proximity maps for convex sets",
+   "anchors": [
+    {
+     "ref_id": "b2",
+     "section_path_id": "2.3.",
+     "quote": "[3]",
+     "offset": 943
+    }
+   ]
+  },
+  {
+   "raw_text": "Solving Sudoku puzzles with Python\n\t\t\n\t\t\tPCock\n\t\t\n\t\t\n\t\t\n\t\t\t2012",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b3",
+     "section_path_id": "3.",
+     "quote": "[4,",
+     "offset": 306
+    }
+   ]
+  },
+  {
+   "raw_text": "Efficient projections onto the ℓ 1 -ball for learning in high dimensions\n\t\t\n\t\t\tJDuchi\n\t\t\n\t\t\n\t\t\tSShalev-Shwartz\n\t\t\n\t\t\n\t\t\tYSinger\n\t\t\n\t\t\n\t\t\tTChandra\n\t\t\n\t\n\t\n\t\tProceedings of the International Conference on Machine Learning\n\t\tthe International Conference on Machine Learning\n\t\t\n\t\t\t2008",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Efficient projections onto the ℓ 1 -ball for learning in high dimensions",
+   "anchors": [
+    {
+     "ref_id": "b4",
+     "section_path_id": "2.3.",
+     "quote": "[5,",
+     "offset": 2195
+    },
+    {
+     "ref_id": "b4",
+     "section_path_id": "2.3.",
+     "quote": "[5]",
+     "offset": 2733
+    }
+   ]
+  },
+  {
+   "raw_text": "An algorithm for restricted least squares regression\n\t\t\n\t\t\tRLDykstra\n\t\t\n\t\n\t\n\t\tJournal of the American Statistical Association\n\t\t\n\t\t\t78\n\t\t\t\n\t\t\t1983",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "An algorithm for restricted least squares regression",
+   "anchors": [
+    {
+     "ref_id": "b5",
+     "section_path_id": "2.1.",
+     "quote": "6)",
+     "offset": 832
+    },
+    {
+     "ref_id": "b5",
+     "section_path_id": "2.1.",
+     "quote": "6)",
+     "offset": 1670
+    },
+    {
+     "ref_id": "b5",
+     "section_path_id": "2.3.",
+     "quote": "[6]",
+     "offset": 1394
+    }
+   ]
+  },
+  {
+   "raw_text": "Convergence of sequential and asynchronous nonlinear paracontractions\n\t\t\n\t\t\tLElsner\n\t\t\n\t\t\n\t\t\tIKoltracht\n\t\t\n\t\t\n\t\t\tMNeumann\n\t\t\n\t\t10.1007/BF01396232\n\t\n\t\n\t\tNumerische Mathematik\n\t\t\n\t\t\t62\n\t\t\t\n\t\t\t1992",
+   "doi": "10.1007/BF01396232",
+   "arxiv_id": null,
+   "title": "Convergence of sequential and asynchronous nonlinear paracontractions",
+   "anchors": [
+    {
+     "ref_id": "b6",
+     "section_path_id": "2.1.",
+     "quote": "7)",
+     "offset": 1905
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "2.3.",
+     "quote": "[7]",
+     "offset": 1220
+    }
+   ]
+  },
+  {
+   "raw_text": "DNA Sudoku -Harnessing high-throughput sequencing for multiplexed specimen analysis\n\t\t\n\t\t\tYErlich\n\t\t\n\t\t\n\t\t\tKChang\n\t\t\n\t\t\n\t\t\tAGordon\n\t\t\n\t\t\n\t\t\tRRonen\n\t\t\n\t\t\n\t\t\tONavon\n\t\t\n\t\t\n\t\t\tMRooks\n\t\t\n\t\t\n\t\t\tGJHannon\n\t\t\n\t\t10.1101/gr.092957.109\n\t\n\t\n\t\tGenome Research\n\t\t\n\t\t\t19\n\t\t\t\n\t\t\t2009",
+   "doi": "10.1101/gr.092957.109",
+   "arxiv_id": null,
+   "title": "DNA Sudoku -Harnessing high-throughput sequencing for multiplexed specimen analysis",
+   "anchors": [
+    {
+     "ref_id": "b7",
+     "section_path_id": "4.",
+     "quote": "[8,",
+     "offset": 731
+    }
+   ]
+  },
+  {
+   "raw_text": "Entropy minimization for solving Sudoku, Signal Processing\n\t\t\n\t\t\tJGunther\n\t\t\n\t\t\n\t\t\tTMoon\n\t\t\n\t\t10.1109/TSP.2011.2169253\n\t\n\t\n\t\tIEEE Transactions on\n\t\t\n\t\t\t60\n\t\t\t\n\t\t\t2012",
+   "doi": "10.1109/TSP.2011.2169253",
+   "arxiv_id": null,
+   "title": "Entropy minimization for solving Sudoku, Signal Processing",
+   "anchors": [
+    {
+     "ref_id": "b8",
+     "section_path_id": "2.1.",
+     "quote": "9)",
+     "offset": 1680
+    },
+    {
+     "ref_id": "b8",
+     "section_path_id": "2.1.",
+     "quote": "9)",
+     "offset": 1915
+    },
+    {
+     "ref_id": "b8",
+     "section_path_id": "4.",
+     "quote": "9,",
+     "offset": 734
+    }
+   ]
+  },
+  {
+   "raw_text": "Optimization by simulated annealing\n\t\t\n\t\t\tSKirkpatrick\n\t\t\n\t\t\n\t\t\tCDGelatt\n\t\t\n\t\t\n\t\t\tMPVecchi\n\t\t\n\t\t10.1126/science.220.4598.671\n\t\n\t\n\t\tScience\n\t\t\n\t\t\t220\n\t\t\t\n\t\t\t1983",
+   "doi": "10.1126/science.220.4598.671",
+   "arxiv_id": null,
+   "title": "Optimization by simulated annealing",
+   "anchors": [
+    {
+     "ref_id": "b9",
+     "section_path_id": "2.2.",
+     "quote": "10,",
+     "offset": 23
+    }
+   ]
+  },
+  {
+   "raw_text": "KLange\n\t\t\n\t\tOptimization\n\t\tNew York\n\t\t\n\t\t\tSpringer-Verlag\n\t\t\t2004",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b10",
+     "section_path_id": "2.3.",
+     "quote": "[11]",
+     "offset": 389
+    }
+   ]
+  },
+  {
+   "raw_text": "There is no 16-clue Sudoku: Solving the Sudoku minimum number of clues problem\n\t\t\n\t\t\tGMcguire\n\t\t\n\t\t\n\t\t\tBTugemann\n\t\t\n\t\t\n\t\t\tGCivario\n\t\t\n\t\tarXiv:1201.0749v1[cs.DS]\n\t\t\n\t\t\n\t\t\tJanuary 2012",
+   "doi": null,
+   "arxiv_id": "1201.0749",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b11",
+     "section_path_id": "4.",
+     "quote": "[12]",
+     "offset": 1651
+    }
+   ]
+  },
+  {
+   "raw_text": "A finite algorithm for finding the projection of a point onto the canonical simplex of R n\n\t\t\n\t\t\tCMichelot\n\t\t\n\t\t10.1007/BF00938486\n\t\n\t\n\t\tJournal of Optimization Theory and Applications\n\t\t\n\t\t\t50\n\t\t\t\n\t\t\t1986",
+   "doi": "10.1007/BF00938486",
+   "arxiv_id": null,
+   "title": "A finite algorithm for finding the projection of a point onto the canonical simplex of R n",
+   "anchors": [
+    {
+     "ref_id": "b12",
+     "section_path_id": "2.3.",
+     "quote": "13]",
+     "offset": 2198
+    }
+   ]
+  },
+  {
+   "raw_text": "Multiple constraint satisfaction by belief propagation: An example using Sudoku, in Adaptive and Learning Systems\n\t\t\n\t\t\tTMoon\n\t\t\n\t\t\n\t\t\tJGunther\n\t\t\n\t\t10.1109/SMCALS.2006.250702\n\t\n\t\n\t\tIEEE Mountain Workshop on\n\t\t\n\t\t\t\n\t\t\t2006. july 2006",
+   "doi": "10.1109/SMCALS.2006.250702",
+   "arxiv_id": null,
+   "title": "Multiple constraint satisfaction by belief propagation: An example using Sudoku, in Adaptive and Learning Systems",
+   "anchors": [
+    {
+     "ref_id": "b13",
+     "section_path_id": "4.",
+     "quote": "14,",
+     "offset": 736
+    }
+   ]
+  },
+  {
+   "raw_text": "Sinkhorn solves Sudoku, Information Theory\n\t\t\n\t\t\tTMoon\n\t\t\n\t\t\n\t\t\tJGunther\n\t\t\n\t\t\n\t\t\tJKupin\n\t\t\n\t\t10.1109/TIT.2009.2013004\n\t\n\t\n\t\tIEEE Transactions on\n\t\t\n\t\t\t55\n\t\t\t\n\t\t\t2009",
+   "doi": "10.1109/TIT.2009.2013004",
+   "arxiv_id": null,
+   "title": "Sinkhorn solves Sudoku, Information Theory",
+   "anchors": [
+    {
+     "ref_id": "b14",
+     "section_path_id": "4.",
+     "quote": "15]",
+     "offset": 739
+    }
+   ]
+  },
+  {
+   "raw_text": "WHPress\n\t\t\n\t\t\n\t\t\tSATeukolsky\n\t\t\n\t\t\n\t\t\tWTVetterling\n\t\t\n\t\t\n\t\t\tBPFlannery\n\t\t\n\t\tNumerical Recipes: The Art of Scientific Computing\n\t\tNew York, New York\n\t\t\n\t\t\tCambridge University Press\n\t\t\t2007\n\t\t\t3\n\t\t\n\t\n\trd ed.",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b15",
+     "section_path_id": "2.2.",
+     "quote": "16]",
+     "offset": 26
+    }
+   ]
+  },
+  {
+   "raw_text": "Programming Challenges: The Programming Contest Training Manual\n\t\t\n\t\t\tSSkiena\n\t\t\n\t\t\n\t\t\tMRevilla\n\t\t\n\t\t\n\t\t\t2003\n\t\t\tSpringer-Verlag\n\t\t\tNew York",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b16",
+     "section_path_id": "2.1.",
+     "quote": "[17]",
+     "offset": 2618
+    }
+   ]
+  },
+  {
+   "raw_text": "The Algorithm Design Manual\n\t\t\n\t\t\tSSSkiena\n\t\t\n\t\t\n\t\t\t2008\n\t\t\tSpringer-Verlag\n\t\t\t2\n\t\t\n\t\n\tnd ed.",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b17",
+     "section_path_id": "2.1.",
+     "quote": "[18]",
+     "offset": 111
+    }
+   ]
+  },
+  {
+   "raw_text": "GStertenbrink\n\t\t\n\t\t\n\t\tSudoku\n\t\t\n\t\t\tNovember 2005",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b18",
+     "section_path_id": "3.",
+     "quote": "19]",
+     "offset": 309
+    }
+   ]
+  },
+  {
+   "raw_text": "This is a reprint of mimeographed lecture notes first distributed in 1933\n\t\t\n\t\t\tJNeumann\n\t\t\n\t\n\t\n\t\tAnnals of Math. Studies\n\t\t\n\t\t\tII.\n\t\t\t1950\n\t\t\tPrinceton Univ. Press\n\t\t\tPrinceton, NJ\n\t\t\n\t\n\tFunctional operators",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "This is a reprint of mimeographed lecture notes first distributed in 1933",
+   "anchors": [
+    {
+     "ref_id": "b19",
+     "section_path_id": "1.",
+     "quote": "[20]",
+     "offset": 1664
+    }
+   ]
+  },
+  {
+   "raw_text": "Solve and create Sudoku puzzles for different levels\n\t\t\n\t\t\tHWang\n\t\t\n\t\t\n\t\t\n\t\t\t2007",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b20",
+     "section_path_id": "3.",
+     "quote": "[21]",
+     "offset": 53
+    }
+   ]
+  },
+  {
+   "raw_text": "Complexity and completeness of finding another solution and its application to puzzles\n\t\t\n\t\t\tTYato\n\t\t\n\t\t\n\t\t\tTSeta\n\t\t\n\t\n\t\n\t\tIEICE Transactions on Fundamentals of Electronics, Communications and Computer Sciences\n\t\t\n\t\t\t86\n\t\t\t\n\t\t\t2003",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Complexity and completeness of finding another solution and its application to puzzles",
+   "anchors": [
+    {
+     "ref_id": "b21",
+     "section_path_id": "1.",
+     "quote": "[22]",
+     "offset": 3140
+    }
+   ]
+  }
+ ],
+ "layout_json": null,
+ "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">TECHNIQUES FOR SOLVING SUDOKU PUZZLES</title>\n\t\t\t\t<funder ref=\"#_7FyBCXE\">\n\t\t\t\t\t<orgName type=\"full\">unknown</orgName>\n\t\t\t\t</funder>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability  status=\"unknown\">\n\t\t\t\t\t<licence/>\n\t\t\t\t</availability>\n\t\t\t\t<date type=\"published\" when=\"2013-05-16\">16 May 2013</date>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Eric</forename><forename type=\"middle\">C</forename><surname>Chi</surname></persName>\n\t\t\t\t\t\t\t<email>ecchi@ucla.edu</email>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Dept. Human Genetics</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of California</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<settlement>Los Angeles</settlement>\n\t\t\t\t\t\t\t\t\t<region>CA</region>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Kenneth</forename><surname>Lange</surname></persName>\n\t\t\t\t\t\t\t<email>klange@ucla.edu</email>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Dept. Human Genetics</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of California</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<settlement>Los Angeles</settlement>\n\t\t\t\t\t\t\t\t\t<region>CA</region>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t\t<affiliation key=\"aff1\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Depts. of Biomathematics and Statistics</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of California</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<settlement>Los Angeles</settlement>\n\t\t\t\t\t\t\t\t\t<region>CA</region>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">TECHNIQUES FOR SOLVING SUDOKU PUZZLES</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date type=\"published\" when=\"2013-05-16\">16 May 2013</date>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">C35780166CDE57365D0434C858FC2311</idno>\n\t\t\t\t\t<idno type=\"arXiv\">arXiv:1203.2295v3[math.OC]</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.0\" ident=\"GROBID\" when=\"2026-08-21T15:31+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.0</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<textClass>\n\t\t\t\t<keywords>\n\t\t\t\t\t<term>Backtracking</term>\n\t\t\t\t\t<term>Simulated Annealing</term>\n\t\t\t\t\t<term>Alternating Projections</term>\n\t\t\t\t\t<term>NP-complete</term>\n\t\t\t\t\t<term>Satisfiability</term>\n\t\t\t\t</keywords>\n\t\t\t</textClass>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>Solving Sudoku puzzles is one of the most popular pastimes in the world. Puzzles range in difficulty from easy to very challenging; the hardest puzzles tend to have the most empty cells. The current paper explains and compares three algorithms for solving Sudoku puzzles. Backtracking, simulated annealing, and alternating projections are generic methods for attacking combinatorial optimization problems. Our results favor backtracking. It infallibly solves a Sudoku puzzle or deduces that a unique solution does not exist. However, backtracking does not scale well in highdimensional combinatorial optimization. Hence, it is useful to expose students in the mathematical sciences to the other two solution techniques in a concrete setting. Simulated annealing shares a common structure with MCMC (Markov chain Monte Carlo) and enjoys wide applicability. The method of alternating projections solves the feasibility problem in convex programming. Converting a discrete optimization problem into a continuous optimization problem opens up the possibility of handling combinatorial problems of much higher dimensionality.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"8\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"9\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"10\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"11\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"1.\">Introduction.</head><p>As all good mathematical scientists know, a broad community has contributed to the invention of modern algorithms. Computer scientists, applied mathematicians, statisticians, economists, and physicists, to name just a few, have made lasting contributions. Exposing students to a variety of perspectives outside the realm of their own disciplines sharpens their instincts for modeling and arms them with invaluable tools. In this spirit, the current paper discusses techniques for solving Sudoku puzzles, one of the most popular pastimes in the world. One could make the same points with more serious applications, but it is hard to imagine a more beguiling introduction to the algorithms featured here. Sudoku diagrams are special cases of the Latin squares long familiar in experimental design and, as such, enjoy interesting mathematical and statistical properties <ref type=\"bibr\" target=\"#b0\">[1]</ref>. The complicated constraints encountered in solving Sudoku puzzles have elicited many clever heuristics that amateurs use to good effect. Here we examine three generic methods with broader scientific and societal applications. The fact that one of these methods outperforms the other two is mostly irrelevant. No two problem categories are completely alike, and it is best to try many techniques before declaring a winner.</p><p>The three algorithms tested here are simulated annealing, alternating projections, and backtracking. Simulating annealing is perhaps the most familiar to statisticians. It is the optimization analog of MCMC (Markov chain Monte Carlo) and has been employed to solve a host of combinatorial problems. The method of alternating projections was first proposed by von Neumann <ref type=\"bibr\" target=\"#b19\">[20]</ref> to find a feasible point in the intersection of a family of hyperplanes. Modern versions of alternating projections more generally seek a point in the intersection of a family of closed convex sets. Backtracking is a standard technique taken from the toolkits of applied mathematics and computer science. Backtracking infallibly finds all solutions of a Sudoku puzzle or determines that no solution exists. Its Achilles heel of excessive computational complexity does not come into play with Sudoku puzzles because they are, despite appearances, relatively benign computationally. Sudoku puzzles are instances of the satisfiability problem in computer science. As problem size increases, such problems are combinatorially hard and often defy backtracking. For this reason alone, it is useful to examine alternative strategies.</p><p>In a typical Sudoku puzzle, there are 81 cells arranged in a 9-by-9 grid, some of which are occupied by numerical clues. See Figure <ref type=\"figure\" target=\"#fig_0\">1</ref>.1. The goal is to fill in the remaining cells subject to the following three rules:</p><p>1. Each integer between 1 and 9 must appear exactly once in a row, 2. Each integer between 1 and 9 must appear exactly once in a column, 3. Each integer between 1 and 9 must appear exactly once in each of the 3-by-3 subgrids. Solving a Sudoku game is a combinatorial task of intermediate complexity. The general problem of filling in an incomplete n 2 × n 2 grid with n × n subgrids belongs to the class of NP-complete problems <ref type=\"bibr\" target=\"#b21\">[22]</ref>. These problems are conjectured to increase in computational complexity at an exponential rate in n. Nonetheless, a well planned exhaustive search can work quite well for a low value of n such as 9. For larger values of n, brute force, no matter how cleverly executed, is simply not an option. In contrast, simulated annealing and alternating projections may yield good approximate solutions and partially salvage the situation.</p><p>In the rest of this paper, we describe the three methods for solving Sudoku puzzles and compare them on a battery of puzzles. The puzzles range in difficulty from pencil and paper exercises to hard benchmark tests that often defeat the two approximate methods. Our discussion reiterates the rationale for equipping students with the best computational tools.</p><p>2. Three methods for solving Sudoku.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.1.\">Backtracking.</head><p>Backtracking systematically grows a partial solution until it becomes a full solution or violates a constraint <ref type=\"bibr\" target=\"#b17\">[18]</ref>. In the latter case it backtracks to the next permissible partial solution and begins the growing process anew. The advantage of backtracking is that a block of potential solutions can be discarded en masse. Backtracking starts by constructing for each empty Sudoku cell (i, j) a</p><p>79 792 7923 79232 Infeasible . . . s 19 . . . s 17 . . . s 16 s 74 s 95 79233 Infeasible 7929 . . . 793 . . . list L ij of compatible digits. This is done by scanning the cell's row, column, and subgrid. The empty cells are then ordered by the cardinalities of the lists |L ij |. For example in Figure <ref type=\"figure\" target=\"#fig_0\">1</ref>.1, two cells (7, 4) and (9, 5) possess lists L 74 = {7} and L 95 = {9} with cardinality 1 and come first. Next come cells such as <ref type=\"bibr\" target=\"#b0\">(1,</ref><ref type=\"bibr\" target=\"#b5\">6)</ref> with L 16 = {2, 3}, (1, 7) with L 17 = {3, 9}, and (1, 9) with L 19 = {2, 3} whose lists have cardinality 2. Finally come cells such as (2, 9) with L 29 = {2, 3, 5, 6, 7} whose lists have maximum cardinality 5. Partial solutions are character strings such as s 74 s 95 s 16 s 17 s 19 taken in dictionary order with the alphabet at cell (i, j) limited to the list L ij . In dictionary order a string such as 7939 is treated as coming after a string such as 79232.</p><p>Backtracking starts with the string 7 by taking the only element of L 74 , grows it to 79 by taking the only element of L 95 , grows it to 792 by taking the first element of L 16 , grows it to 7923 by taking the first element of L 17 , and finally grows it to 79232 by taking the first element of L 19 . At this juncture a row violation occurs, namely a 2 in both cells <ref type=\"bibr\" target=\"#b0\">(1,</ref><ref type=\"bibr\" target=\"#b5\">6)</ref> and <ref type=\"bibr\" target=\"#b0\">(1,</ref><ref type=\"bibr\" target=\"#b8\">9)</ref>. Backtracking discards all strings beginning with 79232 and moves on to the string 79233 by replacing the first element of L 19 by the second element of L 19 . This leads to another row violation with a 3 in both cells <ref type=\"bibr\" target=\"#b0\">(1,</ref><ref type=\"bibr\" target=\"#b6\">7)</ref> and <ref type=\"bibr\" target=\"#b0\">(1,</ref><ref type=\"bibr\" target=\"#b8\">9)</ref>. Backtracking moves back to the string 7929 by discarding the fifth character of 79239 and replacing the first element of L 17 by its second element. This sets the stage for another round of growing.</p><p>Backtracking is also known as depth first search. In this setting the strings are viewed as nodes of a tree as depicted in Figure <ref type=\"figure\">2</ref>.1. Generating strings in dictionary order constitutes a tree traversal that systematically eliminates subtrees and moves down and backs up along branches. Because pruning large subtrees is more efficient than pruning small subtrees, ordering of cells by cardinality compels the decision tree to have fewer branches at the top. We use the C code from Skiena and Revilla <ref type=\"bibr\" target=\"#b16\">[17]</ref> implementing backtracking on Sudoku puzzles. Backtracking has the virtue of finding all solutions when multiple solutions exist. Thus, it provides a mechanism for validating the correctness of puzzles.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.2.\">Simulated Annealing.</head><p>Simulated annealing <ref type=\"bibr\" target=\"#b1\">[2,</ref><ref type=\"bibr\" target=\"#b9\">10,</ref><ref type=\"bibr\" target=\"#b15\">16]</ref> attacks a combinatorial optimization problem by defining a state space of possible solutions, a cost function quantifying departures from the solution ideal, and a positive temperature parameter. For a satisfiability problem, it is sensible to equate cost to the number of constraint violations. Solutions then correspond to states of zero cost. Each step of annealing operates by proposing a move to a new randomly chosen state. Proposals are Markovian in the sense that they depend only on the current state of the process, not on its past history. Proposed steps that decrease cost are always accepted. Proposed steps that increase cost are taken with high probability in the early stages of annealing when temperature is high and with low probability in the late stages of annealing when temperature is low. Inspired by models from statistical physics, simulated annealing is designed to sample the state space broadly before settling down at a local minimum of the cost function.</p><p>For the Sudoku problem, a state is a 9 × 9 matrix (board) of integers drawn from the set {1, . . . , 9}. Each integer appears nine times, and all numerical clues are respected. Annealing starts from any feasible board. The proposal stage randomly selects two different cells without clues. The corresponding move swaps the contents of the cells, thus preserving all digit counts. To ensure that the most troublesome cells are more likely to be chosen for swapping, we select cells non-uniformly with probability proportional to exp(i) for a cell involved in i constraint violations. Let B denote a typical board, c(B) its associated cost, and n the current iteration index. At temperature τ , we decide whether to accept a proposed neighboring board B by drawing a random deviate U uniformly from [0</p><formula xml:id=\"formula_0\">, 1]. If U satisfies U ≤ min {exp([c(B n ) -c(B)] /τ n ), 1} ,</formula><p>then we accept the proposed move and set B n+1 = B. Otherwise, we reject the move and set B n+1 = B n . Thus, the greater the increase in the number of constraint violations, the less likely the move is made to a proposed state. Also, the higher the temperature, the more likely a move is made to an unfavorable state. The final ingredient of simulated annealing is the cooling schedule. In general, the temperature parameter τ starts high and slowly declines to 0, where only favorable or cost neutral moves are taken. Typically temperature is lowered at a slow geometric rate.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.3.\">Alternating Projections.</head><p>The method of alternating projections relies on projection operators. In the projection problem, one seeks the closest point x in a set C ⊂ R d to a point y ∈ R d . Distance is quantified by the usual Euclidean norm x-y . If y already lies in C, then the problem is trivially solved by setting x = y. It is well known that a unique minimizer exists whenever the set C is closed and convex <ref type=\"bibr\" target=\"#b10\">[11]</ref>. We will denote the projection operator taking y to x by P C (y) = x.</p><p>Given a finite collection of closed convex sets with a nonempty intersection, the alternating projection algorithm finds a point in that intersection. Consider the case of two closed convex sets A and B. The method recursively generates a sequence y n by taking y 0 = y and y n+1 = P A (y n ) for n even and y n+1 = P B (y n ) for n odd. Figure <ref type=\"figure\">2</ref>.2 illustrates a few iterations of the algorithm. As suggested by the picture, the algorithm does indeed converge to a point in A ∩ B <ref type=\"bibr\" target=\"#b2\">[3]</ref>. For more than two closed convex sets with nonempty intersection, the method of alternating projections cycles through the projections in some fixed order. Convergence occurs in this more general case as well based on some simple theory involving paracontractive operators <ref type=\"bibr\" target=\"#b6\">[7]</ref>. The limit is not guaranteed to be the closest point in the intersection to the original point y. The related but more complicated procedure known as Dykstra's algorithm <ref type=\"bibr\" target=\"#b5\">[6]</ref> finds this point.</p><p>It is easy to construct some basic projection operators. For instance, projection onto the rectangle R = {x ∈ R d : a i ≤ x i ≤ b i for all i} is achieved by defining x = P R (y) to have components x i = min{max{a i , y i }, b i }. This example illustrates a more general rule; namely, if A and B are two closed convex sets, then projection onto the Cartesian product A × B is effected by the Cartesian product operator (x, y) → [P A (x), P B (y)]. When A is an entire Euclidean space, P A (x) is just the identity map. Projection onto the hyperplane</p><formula xml:id=\"formula_1\">H = {y ∈ R d : v T y = c} is implemented by the operator P H (x) = x - v T x -c v 2 v.</formula><p>Projection onto the unit simplex U = x ∈ R d :</p><formula xml:id=\"formula_2\">d i=1 x i = 1, x i ≥ 0 ∀i is more subtle.</formula><p>Fortunately there exist fast algorithms for this purpose <ref type=\"bibr\" target=\"#b4\">[5,</ref><ref type=\"bibr\" target=\"#b12\">13]</ref>.</p><p>In either the alternating projection algorithm or Dykstra's algorithm, it is advantageous to reduce the number of participating convex sets to the minimum possible consistent with fast projection. For instance, it is better to take the unit simplex U as a whole rather than as an intersection of the halfspaces {x : x i ≥ 0} and the affine subspace {x : d i=1 x i = 1}. Because our alternating projection algorithm for solving Sudoku puzzles relies on projecting onto several simplexes, it is instructive to derive the Duchi et al <ref type=\"bibr\" target=\"#b4\">[5]</ref> projection algorithm. Consider minimization of a convex smooth function f (x) over U . The Karush-Kuhn-Tucker stationarity condition involves setting the gradient of the Lagrangian</p><formula xml:id=\"formula_3\">L(x, λ, µ) = f (x) + λ d i=1 x i -1 - d i=1 µ i x i</formula><p>equal to 0. This is stated in components as the Gibbs criterion</p><formula xml:id=\"formula_4\">0 = ∂ ∂x i f (x) + λ -µ i</formula><p>for multipliers µ i ≥ 0 obeying the complementary slackness conditions µ i x i = 0. For the choice f (x) = 1 2 xy 2 , the Gibbs condition can be solved in the form</p><formula xml:id=\"formula_5\">x i = y i -λ x i &gt; 0 y i -λ + µ i x i = 0.</formula><p>If we let I + = {i : x i &gt; 0}, then the equality constraint</p><formula xml:id=\"formula_6\">1 = i∈I+ x i = i∈I+ y i -|I + |λ implies λ = 1 |I + | i∈I+ y i -1 .</formula><p>The catch, of course, is that we do not know I + .</p><p>The key to avoid searching over all 2 d subsets is the simple observation that the x i and y i are consistently ordered. Suppose on the contrary that y i &lt; y j and x j &lt; x i . For small s &gt; 0 substitute x j + s for x j and x i -s for x i . The objective function f (x) = 1 2 xy 2 then changes by the amount</p><formula xml:id=\"formula_7\">1 2 (x i -s -y i ) 2 + (x j + s -y j ) 2 -(x i -y i ) 2 -(x j -y j ) 2 = s(y i -y j + x j -x i ) + s 2 ,</formula><p>which is negative for s small. Let w i denote the ith largest entry of y. Then the Gibbs condition implies that w 1 ≥ w 2 ≥ . . . ≥ w |I+| &gt; λ. Thus, to determine λ we seek the largest k such that</p><formula xml:id=\"formula_8\">w k &gt; 1 k k i=1 w i -1</formula><p>and set λ equal to the right hand side of this inequality. With λ in hand, the Gibbs condition implies that x i = max{y i -λ, 0}. It follows that projection onto U can be accomplished in O(d log d) operations dominated by sorting. Algorithm 1 displays pseudocode for projection onto U . Armed with these results, we now describe how to solve a continuous relaxation of Sudoku by the method of alternating projections. In the relaxed version of the problem, we imagine generating candidate solutions by random sampling. Each cell (i, j) is assigned a sampling distribution p ijk = Pr(S ij = k) for choosing a random deviate S ij ∈ {1, . . . , 9} to populate the cell. If a numerical clue k occupies cell (i, j), Algorithm 1 Projection onto simplex w ← sort descending(y).</p><formula xml:id=\"formula_9\">k ← max j : w j &gt; 1 j j i=1 w i λ ← 1 k k i=1 w i x i ← max{y i -λ, 0}.</formula><p>then we set p ijl = 1 for l = k and 0 otherwise. A matrix of sampled deviates S constitutes a candidate solution. It seems reasonable to demand that the average puzzle obey the constraints. Once we find a feasible 3-dimensional tensor P = (p ijk ) obeying the constraints, a good heuristic for generating an integer solution Ŝ is to put ŝij = max k∈{1,...,9} p ijk .</p><p>In other words, we impute the most probable integer to each unknown cell (i, j). It is easy to construct counterexamples where imputation of the most probable integer from a feasible tensor P of the relaxed problem fails to solve the Sudoku puzzle.</p><p>In any case, the remaining agenda is to specify the constraints and the corresponding projection operators. The requirement that each digit appear in each row on average once amounts to the constraint 9 j=1 p ijk = 1 for all i and k between 1 and 9. There are 81 such constraints. The requirement that each digit appear in each column on average once amounts to the constraint 9 i=1 p ijk = 1 for all j and k between 1 and 9. Again, there are 81 such constraints. The requirement that each digit appear in each subgrid on average once amounts to the constraint 3 j=1 3 j=1 p a+i,b+j,k = 1 for all k between 1 and 9 and all a and b chosen from the set {0, 3, 6}. This contributes another 81 constraints. Finally, the probability constraints 9 k=1 p ijk = 1 for all i and j between 1 and 9 contribute 81 more affine constraints. Hence, there are a total of 324 affine constraints on the 9 3 = 729 parameters. In addition there are 729 nonnegativity constraints p ijk ≥ 0.</p><p>Every numerical clue voids several constraints. For example, if the digit 7 is mandated for cell (9,2), then we must take p 927 = 1, p 92k = 0 for k = 7, p i27 = 0 for all i = 9, p 9j7 = 0 for all j = 2, and p ij7 = 0 for all other pairs (i, j) in the (3,1) subgrid. In carrying out alternating projection, we eliminate the corresponding variables. With this proviso, we cycle through the simplex projections summarized in Algorithm 1. The process is very efficient but slightly tedious to code. For the sake of brevity we omit the remaining details. All code used to generate the subsequent results are available at <ref type=\"url\" target=\"https://github.com/echi/Sudoku\">https://github.com/echi/Sudoku</ref>, and we direct the interested reader there.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.\">Comparisons.</head><p>We generated test puzzles from code available online <ref type=\"bibr\" target=\"#b20\">[21]</ref> and discarded puzzles that could be completely solved by filling in entries directly implied by the initial clues. This left 87 easy puzzles, 130 medium puzzles, and 100 hard puzzles. We also downloaded an additional 95 very hard benchmark puzzles <ref type=\"bibr\" target=\"#b3\">[4,</ref><ref type=\"bibr\" target=\"#b18\">19]</ref>. In simulated annealing, the temperature τ was initialized to 200 and lowered by a factor of 0.99 after every 50 steps. We allowed at most 2 × 10 5 iterations and reset the temperature to 200 if a solution had not been found after 10 5 iterations. For the alternating projection algorithm, we commenced projecting from the origin 0.</p><p>Backtracking successfully solved all puzzles. Table <ref type=\"table\">3</ref>.1 shows the fraction of puzzles the two heuristics were able to successfully complete.</p><p>Table 3.2 records summary Alt. Projection Sim. Annealing Backtracking Number of Puzzles Easy 0.85 1.00 1.00 87 Medium 0.89 1.00 1.00 130 Hard 0.72 0.97 1.00 100 Top 95 0.41 0.03 1.00 95 Table 3.1: Success rates for solving puzzles of varying difficulty. CPU Time (sec) Alt. Projection Sim. Annealing Backtracking Easy Minimum 0.032 0.006 0.007 Median 0.041 0.021 0.008 Mean 0.052 0.112 0.008 Maximum 0.237 0.970 0.009 Medium Minimum 0.032 0.007 0.007 Median 0.051 0.037 0.008 Mean 0.062 0.231 0.008 Maximum 0.269 3.36 0.010 Hard Minimum 0.033 0.008 0.008 Median 0.110 0.753 0.008 Mean 0.159 1.104 0.009 Maximum 0.525 7.204 0.031 Table 3.2: Summary statistics on the run times for different methods on puzzles of varying difficulty. For the alternating projection and simulated annealing techniques, only successfully solved puzzles are included in the statistics.</p><p>statistics for the CPU time taken by each method for each puzzle category. All computations were done on an iMac computer with a 3.4 GHz Intel Core i7 processor and 8 GB of RAM. We implemented the alternating projection and simulated annealing algorithms in Fortran 95. For backtracking we relied on the existing implementation in C. The comparisons show that backtracking performs best, and for the vast majority of 9 × 9 Sudoku problems it is probably going to be hard to beat. Simulated annealing finds the solution except for a handful of the most challenging paper and pencil problems, but its maximum run times are unimpressive. While alternating projection does not perform as well on the pencil and paper problems compared to the other two algorithms, it does not do terribly either. Moreover, we see hints of the tables turning on the hard puzzles.</p><p>Simulated annealing struggles mightily on the 95 benchmark puzzles. Closer inspection of individual puzzles reveals that these very hard puzzles admit many local minima with just a few constraint violations. Figure <ref type=\"figure\">3</ref>.1 shows a typical local minimum that traps the simulated annealing algorithm. Additionally, something curious is happening in Figure <ref type=\"figure\">3</ref>.2, which plots CPU solution times for alternating projection</p><p>1 7 9 6 2 8 3 5 6 3 2 1 5 8 7 4 9 9 5 8 7 3 4 6 1 2 8 2 5 4 9 7 3 6 1 3 9 1 5 8 6 4 2 7 7 4 6 3 1 2 5 9 8 2 8 9 6 5 3 1 7 4 5 7 3 2 4 1 9 8 6 1 6 4 8 7 9 2 5 3 Fig. 3.1: A typical local minimum that traps simulated annealing in a top 95 puzzle. Clues are shaded light gray. There are two column constraint violations caused by the cells shaded dark gray. The local minimum is deep in the sense that all one-step swaps result in further constraint violations.</p><p>versus backtracking. Points below the dashed line indicate puzzles that the method of alternating projection solves more efficiently than backtracking. It appears that when the method of alternating projections finds correct solutions to very hard problems, it tends to find them more quickly than backtracking.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.\">Discussion.</head><p>It goes almost without saying that students of the mathematical sciences should be taught a variety of solution techniques for combinatorial problems. Because Sudoku puzzles are easy to state and culturally neutral, they furnish a good starting point for the educational task ahead. It is important to stress the contrast between exact strategies that scale poorly with problem size and approximate strategies that adapt more gracefully. The performance of the alternating projection algorithm on the benchmark tests suggest it may have a role in solving much harder combinatorial problems. Certainly, the electrical engineering community takes this attitude, given the close kinship of Sudoku puzzles to problems in coding theory <ref type=\"bibr\" target=\"#b7\">[8,</ref><ref type=\"bibr\" target=\"#b8\">9,</ref><ref type=\"bibr\" target=\"#b13\">14,</ref><ref type=\"bibr\" target=\"#b14\">15]</ref>.</p><p>One can argue that algorithm development has assumed a dominant role within the mathematical sciences. Three inter-related trends are feeding this phenomenon. First, computing power continues to grow. Execution times are dropping, and computer memory is getting cheaper. Second, good computing simply tempts scientists to tackle larger data sets. Third, certain fields, notably communications, imaging, genomics, and economics generate enormous amounts of data. All of these fields create problems in combinatorial optimization. For instance, modern DNA sequencing is still challenged by the phase problem of discerning the maternal and paternal origin of genetic variants. Computation is also being adopted more often as a means of proving propositions. The claim that at least 17 numerical clues are needed to ensure uniqueness of a Sudoku solution has apparently been proved using intelligent brute force <ref type=\"bibr\" target=\"#b11\">[12]</ref>. Mathematical scientists need to be aware of computational developments outside their classical application silos. Importing algorithms from outside fields is one of the quickest means of refreshing an existing field.</p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1.1: Sample Puzzle</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_1\"><head>Fig. 2 . 1 :</head><label>21</label><figDesc>Fig. 2.1: Backtracking on the puzzle shown in Figure 1.1. Starting from s 74 s 95 = 79, the algorithm attempts and fails to grow the solution beyond s 74 s 95 s 16 s 17 s 19 = 79232. After failing to grow the solution beyond s 74 s 95 s 16 s 17 s 19 = 79233, all partial solutions beginning with 7923 are eliminated from further consideration. The algorithm starts anew by attempting to grow s 74 s 95 s 16 s 17 = 7929.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_2\"><head>Fig. 2 . 2 :</head><label>22</label><figDesc>Fig. 2.2: Alternating projections find a point in A∩B, where A and B are closed convex sets. The initial point is y. The sequence of points y n is generated by alternating projection onto A with projection onto B.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_3\"><head>Fig. 3 . 2 :</head><label>32</label><figDesc>Fig.3.2: Scatterplot of solution times for the top 95 benchmark problems.</figDesc></figure>\n\t\t</body>\n\t\t<back>\n\n\t\t\t<div type=\"acknowledgement\">\n<div><p>Acknowledgments. We thank <rs type=\"person\">Peter Cock</rs> for helpful comments and pointing us to the source and author of the \"<rs type=\"programName\">Top 95</rs>\" puzzles.</p></div>\n\t\t\t</div>\n\t\t\t<listOrg type=\"funding\">\n\t\t\t\t<org type=\"funding\" xml:id=\"_7FyBCXE\">\n\t\t\t\t\t<orgName type=\"program\" subtype=\"full\">Top 95</orgName>\n\t\t\t\t</org>\n\t\t\t</listOrg>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<analytic>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><forename type=\"middle\">A</forename><surname>Bailey</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><forename type=\"middle\">J</forename><surname>Cameron</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Connelly</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Sudoku, gerechte designs, resolutions, affine space, spreads, reguli, and Hamming codes</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2008\">2008</date>\n\t\t\t<biblScope unit=\"volume\">115</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"383\" to=\"404\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Thermodynamical approach to the traveling salesman problem: An efficient simulation algorithm</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Cerny</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">J. Opt. Theory Appl</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">45</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"41\" to=\"51\" />\n\t\t\t<date type=\"published\" when=\"1985\">1985</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Proximity maps for convex sets</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Cheney</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><forename type=\"middle\">A</forename><surname>Goldstein</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Proceedings of the American Mathematical Society</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">10</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"448\" to=\"450\" />\n\t\t\t<date type=\"published\" when=\"1959\">1959</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Solving Sudoku puzzles with Python</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Cock</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://www2.warwick.ac.uk/fac/sci/moac/people/students/peter_cock/python/sudoku\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2012\">2012</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Efficient projections onto the ℓ 1 -ball for learning in high dimensions</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Duchi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Shalev-Shwartz</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Singer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Chandra</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the International Conference on Machine Learning</title>\n\t\t<meeting>the International Conference on Machine Learning</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2008\">2008</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">An algorithm for restricted least squares regression</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><forename type=\"middle\">L</forename><surname>Dykstra</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Journal of the American Statistical Association</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">78</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"837\" to=\"842\" />\n\t\t\t<date type=\"published\" when=\"1983\">1983</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Convergence of sequential and asynchronous nonlinear paracontractions</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Elsner</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Koltracht</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Neumann</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.1007/BF01396232</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Numerische Mathematik</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">62</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"305\" to=\"319\" />\n\t\t\t<date type=\"published\" when=\"1992\">1992</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b7\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">DNA Sudoku -Harnessing high-throughput sequencing for multiplexed specimen analysis</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Erlich</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Chang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Gordon</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Ronen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O</forename><surname>Navon</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Rooks</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><forename type=\"middle\">J</forename><surname>Hannon</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.1101/gr.092957.109</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Genome Research</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">19</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"1243\" to=\"1253\" />\n\t\t\t<date type=\"published\" when=\"2009\">2009</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b8\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Entropy minimization for solving Sudoku, Signal Processing</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Gunther</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Moon</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.1109/TSP.2011.2169253</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">IEEE Transactions on</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">60</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"508\" to=\"513\" />\n\t\t\t<date type=\"published\" when=\"2012\">2012</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b9\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Optimization by simulated annealing</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Kirkpatrick</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><forename type=\"middle\">D</forename><surname>Gelatt</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><forename type=\"middle\">P</forename><surname>Vecchi</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.1126/science.220.4598.671</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Science</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">220</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"671\" to=\"680\" />\n\t\t\t<date type=\"published\" when=\"1983\">1983</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b10\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Lange</surname></persName>\n\t\t</author>\n\t\t<title level=\"m\">Optimization</title>\n\t\t<meeting><address><addrLine>New York</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Springer-Verlag</publisher>\n\t\t\t<date type=\"published\" when=\"2004\">2004</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b11\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">There is no 16-clue Sudoku: Solving the Sudoku minimum number of clues problem</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Mcguire</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Tugemann</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Civario</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1201.0749v1[cs.DS]</idno>\n\t\t<ptr target=\"http://arxiv.org/abs/1201.0749v1\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2012-01\">January 2012</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b12\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">A finite algorithm for finding the projection of a point onto the canonical simplex of R n</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Michelot</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.1007/BF00938486</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Journal of Optimization Theory and Applications</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">50</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"195\" to=\"200\" />\n\t\t\t<date type=\"published\" when=\"1986\">1986</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b13\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Multiple constraint satisfaction by belief propagation: An example using Sudoku, in Adaptive and Learning Systems</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Moon</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Gunther</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.1109/SMCALS.2006.250702</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">IEEE Mountain Workshop on</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"page\" from=\"122\" to=\"126\" />\n\t\t\t<date type=\"published\" when=\"2006-07\">2006. july 2006</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b14\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Sinkhorn solves Sudoku, Information Theory</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Moon</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Gunther</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Kupin</surname></persName>\n\t\t</author>\n\t\t<idno type=\"DOI\">10.1109/TIT.2009.2013004</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">IEEE Transactions on</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">55</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"1741\" to=\"1746\" />\n\t\t\t<date type=\"published\" when=\"2009\">2009</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b15\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><forename type=\"middle\">H</forename><surname>Press</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><forename type=\"middle\">A</forename><surname>Teukolsky</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><forename type=\"middle\">T</forename><surname>Vetterling</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><forename type=\"middle\">P</forename><surname>Flannery</surname></persName>\n\t\t</author>\n\t\t<title level=\"m\">Numerical Recipes: The Art of Scientific Computing</title>\n\t\t<meeting><address><addrLine>New York, New York</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Cambridge University Press</publisher>\n\t\t\t<date type=\"published\" when=\"2007\">2007</date>\n\t\t\t<biblScope unit=\"volume\">3</biblScope>\n\t\t</imprint>\n\t</monogr>\n\t<note>rd ed.</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b16\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Programming Challenges: The Programming Contest Training Manual</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Skiena</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Revilla</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2003\">2003</date>\n\t\t\t<publisher>Springer-Verlag</publisher>\n\t\t\t<pubPlace>New York</pubPlace>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b17\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">The Algorithm Design Manual</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><forename type=\"middle\">S</forename><surname>Skiena</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2008\">2008</date>\n\t\t\t<publisher>Springer-Verlag</publisher>\n\t\t\t<biblScope unit=\"volume\">2</biblScope>\n\t\t</imprint>\n\t</monogr>\n\t<note>nd ed.</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b18\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Stertenbrink</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://magictour.free.fr/sudoku.htm\" />\n\t\t<title level=\"m\">Sudoku</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2005-11\">November 2005</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b19\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">This is a reprint of mimeographed lecture notes first distributed in 1933</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Neumann</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Annals of Math. Studies</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">II.</biblScope>\n\t\t\t<date type=\"published\" when=\"1950\">1950</date>\n\t\t\t<publisher>Princeton Univ. Press</publisher>\n\t\t\t<pubPlace>Princeton, NJ</pubPlace>\n\t\t</imprint>\n\t</monogr>\n\t<note>Functional operators</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b20\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Solve and create Sudoku puzzles for different levels</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"http://www.mathworks.com/matlabcentral/fileexchange/13846-solve-and-create-sudoku-puzzles-for-different-levels\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2007\">2007</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b21\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Complexity and completeness of finding another solution and its application to puzzles</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Yato</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Seta</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">IEICE Transactions on Fundamentals of Electronics, Communications and Computer Sciences</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">86</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"1052\" to=\"1060\" />\n\t\t\t<date type=\"published\" when=\"2003\">2003</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+ "pdf_hash": "f4594edaccccad936def8b1b4673d6d4796f624e9952f1e94a650cfc3ea94608",
+ "tables": [],
+ "table_missingness": "no_table_elements",
+ "formulas": [
+  {
+   "formula_id": "formula_0",
+   "section_path_id": "2.2.",
+   "section_ordinal": 2,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": ", 1]. If U satisfies U ≤ min {exp([c(B n ) -c(B)] /τ n ), 1} ,"
+   },
+   "span": {
+    "start": 1813,
+    "end": 1875
+   },
+   "source_digest": "931a689894d2873ac88747747c92e136c8318cdb5a2029983a79c7f1b780b9ae",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_1",
+   "section_path_id": "2.3.",
+   "section_ordinal": 3,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "H = {y ∈ R d : v T y = c} is implemented by the operator P H (x) = x - v T x -c v 2 v."
+   },
+   "span": {
+    "start": 1965,
+    "end": 2051
+   },
+   "source_digest": "100b8c3b25f885b9affab31b70d7e13cb970fb3a62db78b0f170149abf5e3136",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_2",
+   "section_path_id": "2.3.",
+   "section_ordinal": 3,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "d i=1 x i = 1, x i ≥ 0 ∀i is more subtle."
+   },
+   "span": {
+    "start": 2097,
+    "end": 2138
+   },
+   "source_digest": "004ee47a47b95eda55701dd2f8354420d08d847c2b3e562738a4e63b6896a4f5",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_3",
+   "section_path_id": "2.3.",
+   "section_ordinal": 3,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "L(x, λ, µ) = f (x) + λ d i=1 x i -1 - d i=1 µ i x i"
+   },
+   "span": {
+    "start": 2917,
+    "end": 2968
+   },
+   "source_digest": "c01fe72ed60082c4c869978120b99fe05c5f1e6f593fc2dbacd46615af47a3b0",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_4",
+   "section_path_id": "2.3.",
+   "section_ordinal": 3,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "0 = ∂ ∂x i f (x) + λ -µ i"
+   },
+   "span": {
+    "start": 3031,
+    "end": 3056
+   },
+   "source_digest": "ce148e7e6aff768a371563516007831778b4396ac9a75554fbbd86fb967383fc",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_5",
+   "section_path_id": "2.3.",
+   "section_ordinal": 3,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "x i = y i -λ x i &gt; 0 y i -λ + µ i x i = 0."
+   },
+   "span": {
+    "start": 3219,
+    "end": 3264
+   },
+   "source_digest": "de5cbfe5ff12802e1f4baf3a17faac7a51535ef50e8fe0998c3d6c1e99054414",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_6",
+   "section_path_id": "2.3.",
+   "section_ordinal": 3,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "1 = i∈I+ x i = i∈I+ y i -|I + |λ implies λ = 1 |I + | i∈I+ y i -1 ."
+   },
+   "span": {
+    "start": 3326,
+    "end": 3393
+   },
+   "source_digest": "e7bb364dabd19c119f448adad478beb43e00fd987d94d9985c30998148eb94ea",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_7",
+   "section_path_id": "2.3.",
+   "section_ordinal": 3,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "1 2 (x i -s -y i ) 2 + (x j + s -y j ) 2 -(x i -y i ) 2 -(x j -y j ) 2 = s(y i -y j + x j -x i ) + s 2 ,"
+   },
+   "span": {
+    "start": 3758,
+    "end": 3862
+   },
+   "source_digest": "d1c5d71f5e823898e6c0ca6d85f1349bc4e0ba4f31129c953b450c33be9626cf",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_8",
+   "section_path_id": "2.3.",
+   "section_ordinal": 3,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "w k &gt; 1 k k i=1 w i -1"
+   },
+   "span": {
+    "start": 4061,
+    "end": 4086
+   },
+   "source_digest": "1b2b0b05543600d86168e36a0f8eb6c95b0938a12774eb71137404682dbad69a",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_9",
+   "section_path_id": "2.3.",
+   "section_ordinal": 3,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "k ← max j : w j &gt; 1 j j i=1 w i λ ← 1 k k i=1 w i x i ← max{y i -λ, 0}."
+   },
+   "span": {
+    "start": 4856,
+    "end": 4930
+   },
+   "source_digest": "236f0d545ee458f28c0e314cabc0b189dcf0c2235a68ed2873e30b13a6bc1228",
+   "missingness": null
+  }
+ ],
+ "formula_missingness": null,
+ "page_text_missingness": null
+}

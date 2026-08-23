@@ -1,0 +1,1025 @@
+{
+ "paper_id": "2411.00820",
+ "title": "AutoGLM: Autonomous Foundation Agents for GUIs",
+ "abstract_text": "We present AUTOGLM, a new series in the ChatGLM family [11], designed to serve as foundation agents for autonomous control of digital devices through Graphical User Interfaces (GUIs). While foundation models excel at acquiring human knowledge, they often struggle with decision-making in dynamic real-world environments, limiting their progress toward artificial general intelligence. This limitation underscores the importance of developing foundation agents capable of learning through autonomous environmental interactions by reinforcing existing models. Focusing on Web Browser and Phone as representative GUI scenarios, we have developed AUTOGLM as a practical foundation agent system for real-world GUI interactions. Our approach integrates a comprehensive suite of techniques and infrastructures to create deployable agent systems suitable for user delivery. Through this development, we have derived two key insights: First, the design of an appropriate \"intermediate interface\" for GUI control is crucial, enabling the separation of planning and grounding behaviors, which require distinct optimization for flexibility and accuracy respectively. Second, we have developed a novel progressive training framework that enables self-evolving online curriculum reinforcement learning for AUTOGLM. Our evaluations demonstrate AUTOGLM's effectiveness across multiple domains. For web browsing, AUTOGLM achieves a 55.2% success rate on VAB-WebArena-Lite (improving to 59.1% with a second attempt) and 96.2% on OpenTable evaluation tasks. In Android device control, AUTOGLM attains a 36.2% success rate on AndroidLab (VAB-Mobile) and 89.7% on common tasks in popular Chinese APPs. Select AUTOGLM capabilities are now available through the Qingyan Browser Plugin for web applications and via Form Applications for invited Android testing. Additional results and materials will be released at https://github.com/THUDM/AutoGLM.",
+ "body_text": "IntroductionFoundation models, including Large Language Models (LLMs) [5; 27; 7; 2; 42; 11] and Large Multimodal Models (LMMs) [20; 25; 26; 1], have captured widespread attention for their remarkable language understanding and generation capabilities. Through extensive self-supervised [22] pretraining on internet-scale corpora, these models have acquired not only knowledge and language  abilities but also human-like reasoning and planning capabilities, giving rise to LLMs as Agents [21; 28]. These agents have demonstrated their utility across diverse domains, including coding [35; 16; 44], data analysis [14; 21], and gaming [34; 18], charting a promising course toward Artificial General Intelligence (AGI) through the development of multimodal Foundation Agents [23] that serve as generalists across multiple tasks and environments.The ubiquity of digital devices presents a unique opportunity for GUI-capable agents [13; 46; 43; 17]. This domain offers several advantages: GUI simulators can be readily deployed in parallel for data annotation and online reinforcement learning (RL); GUI environments provide rich textual and visual inputs essential for foundation model agents, but in a safer and controllable environments compared to embodied environments; and GUI agents hold broad practical appeal given their extensive potential user base. Their successful development could fundamentally transform human-device interaction.However, the development of foundation agents for GUI faces a critical challenge: the scarcity of decision-making data in existing pre-training sets. While the internet contains vast human knowledge, it primarily consists of static information that inadequately captures human decision-making and environmental interaction. Building capable foundation agents requires enriching them with dynamic knowledge, either through direct interaction with real-world environments or through learning from synthesized trajectories. Such foundation agents can then self-evolve in the digital world, iteratively improving to achieve genuine general intelligence.Crucially, these systems must be developed with progressive user deployment in mind. Autonomous agents are designed to augment, not replace, human capabilities. User deployment serves the dual purpose of teaching agents effective human assistance while allowing humans to adapt to intelligent assistants. This approach also enables researchers to systematically understand, discover, and examine both the potential benefits and risks of autonomous foundation agents during development.In response to these opportunities and challenges, we introduce AUTOGLM, a series of foundation agents built upon the ChatGLM [11] model family. AUTOGLM represents a pioneering attempt to develop foundation agent prototypes for two fundamental GUI scenarios: Web Browser and Android. To address the data scarcity challenge, we employ a comprehensive suite of training techniques and develop key infrastructures for user deployment. This process has yielded two crucial insights:• Intermediate Interface Design: We find it essential to design an intermediate interface that disentangles planning and grounding behaviors in foundation GUI agents. They present distinct requirements -planning demands flexibility and error recovery, while grounding emphasizes action accuracy. Their separation enables more agile development and enhanced performance.• Self-Evolving Online Curriculum RL [30]: We recognize that error recovery [23] is crucial for robust and deployable agent applications, yet it remains difficult to acquire through offline training alone. Additionally, the shortage of instructions and trajectories impedes training progress. We address this challenge through self-evolving RL, implemented according to a progressive weak-to-strong curriculum schedule in an online manner.Building on these insights, AUTOGLM demonstrates exceptional capabilities across various benchmarks and real-world tests. In Web Browsing, AUTOGLM achieves a task success rate (SR) of 55.2% on the challenging VAB-WebArena-Lite [47; 23], substantially surpassing GPT-4o's 18.2%. With a second attempt opportunity, this improves to 59.1%. On OpenTable real-world booking tasks, AUTOGLM achieves 96.2% SR, outperforming both GPT-4o (62.6% SR) and Agent Q [29] (81.7%). Select AUTOGLM web capabilities are publicly available via the Qingyan Browser Plugin on both Chrome and Edge Plugin Store. See the real example in Figure 2.For Android control, AUTOGLM achieves 36.2% SR on AndroidLab [37] (previously known as VAB-Mobile [23]), a comprehensive interactive Android evaluation framework. This performance exceeds both GPT-4o (31.2% SR) and Claude-3.5-Sonnet (29.0% SR). We have also implemented a practical Android application via AccessibilityService for autonomous device control. In human evaluation, AUTOGLM achieves an impressive 89.7% SR on common tasks (e.g., \"Please Order a large iced Americano with half sugar from the nearest coffee shop for delivery to my company\") across popular Chinese APPs. The Android client is currently available for invited internal testing through Form Applications. See the real example in Figure 1.\nAUTOGLM: Techniques and InsightsIn this section, we will give an overview of the techniques involved in developing AUTOGLM. Particularly, we will discuss the two important insights that enable AUTOGLM's significant improvements compared to existing LLM or LMM-based GUI Agents.\nImportant TechniquesTraining agents can be different from training ordinary LLMs or LMMs. A key obstacle lies in the lack of high-quality trajectory data that entails the decision-making process. Following are some useful techniques we realized during the project.Pre-training. Generally, there is little agent-related data on internet text corpora, making LLMs fall short of effectively act as agents. Additionally, existing LMM pre-training, which is primarily \"visual instruction tuning\", models the alignment between texts and images without sufficiently learning from sequential multimodal data [4; 10]. As a result, properly leveraging existing online data with weaksupervised decision-making signals in pre-training would actually help. Besides, for multimodal perception, high-resolution visual inputs are very important according to CogAgent [13] and our observations, especially when using grounding strategies like Set-of-Marks (SoM) prompting [38].\nLarge Multimodal Models (LMMs).LMMs are important for GUI understanding and manipulation.Traditionally in Robotic Process Automation (RPA), the paradigm has been using Optical Character Recognition (OCR) catcher to match key elements in human handcrafted automating programs, which cannot be scaled and generalized. LMMs, instead, can perform fuzzy matching and do long-horizon planning thanks to its strong grasping of commonsense and GUI environments from pre-training. Nevertheless, LMMs still require much training to gain strong planning and reasoning abilities necessary for agent tasks.Behavior Cloning (Supervised Fine-tuning). Behavior Cloning (BC) is a key strategy for training agents from scratch with high-quality expert trajectories. The strategy has also been verified as effective for LLM and LMM-based agent training [24; 41; 6; 13; 17; 23]. Nevertheless, it is of extreme cost and time to collect expert trajectories. Moreover, a fundamental problem of using BC is that agents only learn to imitate experts' behaviors step-by-step without fully understanding its goal. When expert trajectories are oracle (mostly the case for maintaining training stability), agents fail to foster abilities to recover from errors well [23].\nCurriculum Learning.Agent tasks are usually of substantially varied difficulties. As a result, it is wise to progressively add difficulty to training with a curriculum schedule. For example, AutoWebGLM [17; 15] adopts a multi-stage curriculum, where agent models are sequentially trained with single-step tasks, simple few-step tasks, and complicated long-horizon tasks. DigiRL [3] also proposes a simple curriculum to filter appropriate tasks from a fixed set of instructions according to the corresponding agent capabilities at a certain timestamp. We basically find the strategy very useful for building foundation agents with complex goal-achieving abilities.\nReward Modeling (RM).To enable online RL with foundation agents, a proper RM is necessary for providing supervision. Traditionally, many RL agents are trained with limited tasks with precise rule-based reward functions. However, foundation agents based on LLMs and LMMs are targeting generalist mission accomplishment in open worlds, which contradicts task-specific reward functions' abilities. Therefore, it is crucial to build generalizable RMs that can deal with a wide range of real-world agent tasks. Specifically, RMs can be categorized to outcome-supervised ORM and process-supervised PRM [19; 8; 40], which provide different granularities of effective supervision.\nReinforcement Learning (RL).Compared to BC, RL from a narrow sense can better learn from failures. This is especially important for foundation agent training since high-quality expert trajectories are extraordinarily hard to acquire [24]. However, the challenge in applying RL to foundation agent training lies in the inefficiency of sampling in environments. The problem can be understood from two aspects: 1) Simulators: when agents are exploring in the Web or Android environments, their efficiency is bounded by internet connection speed and maximum degree of parallelism. Environments like Android Virtual Devices are quite memory-consuming [23]. 2) Sample Diversity: LLMs and LMMs are trained to output certain function-based actions. The strict function formatting usually requires overfitting training with the model, resulting in stubborn monotonous sampling results even when they are inferenced with a high temperature [33].Despite the challenge, we believe to scale up RL and post-training on foundation models is crucial for building strong foundation agents, as indicated by the success of OpenAI o1. It is unlikely to build general intelligence without letting it learn from interactions with real-world environments. \nInsight 1: Intermediate Interface DesignDuring the development, we find intermediate interface design vital for disentangling the behaviors of planning and grounding in foundation agents. By separating them into different modules, foundation agents can be improved from both dimensions of flexibility and accuracy without interference.The intuition is simple: we find existing LLMs and LMMs to be more capable in planning than in grounding when executing agent tasks on existing benchmarks. While the planning could still be significantly improved, a majority of current errors arise from incorrect element identification in the grounding period [23]. For example, a typical action generated in VAB-WebArena-Lite when testing with visual inputs would be:# End-to-End Agent do(action=\"Click\", element_coordinates=[823,684])where the element \"4\" may refer to a \"Submit\" button on Reddit. If we change the format to the following:#Agent with Intermediate Interface Design # Planner do(action=\"Click\", element_description=\"the 'Submit' button on the bottom right\") # Grounder find_coordinates_by_instruction(\"the 'Submit' button on the bottom right\") # Expected Output: [823,684]In this way, planner and grounder abilities could be separately improved. Actually, it is much easier to harvest massive grounding data from automatic construction from unsupervised environmental observations. In our experiments (Cf. Table 1), we find the strategy with the grounder we trained to be very useful for improving proprietary LLM/LMM API-based planners. Our observation is similar to another concurrent work [12] which explores a universal grounding model for GUI agents.\nInsight 2: Self-Evolving Online Curriculum RLWhile Intermediate Interface Design helps alleviate the issue of inaccurate grounding, planning is still a problem. Many existing agent works in literature base their frameworks on proprietary LLM/LMM APIs, whose planning abilities consequently fail to be improved by training. As a result, we decide to explore training in-house planners via RL. It is very challenging as it lacks a sufficient amount of either user tasks or expert trajectories. We develop a self-evolving online curriculum RL framework-WebRL [30]-for training foundation agents from scratch. Take We-bArena [47] environment as an example, we adopt the actor-critic RL framework for training. Briefly speaking, we identify the most difficult issues when we apply curriculum RL to the problemtask data scarcity and policy distribution drift.\nTask Data Scarcity.Leveraging around 1,000 BC data provided by VisualAgentBench trajectories. Thus we apply self-evolving techniques to augment failed task instructions during online roll-outs, mutating instructions to be more complicated or simpler. These self-evolved instructions are filtered by the critic and then used for roll-outs in the next iterative training phase.\nPolicy Distribution Drift.One significant problem of curriculum learning is the policy distribution drift during the progressive curriculum schedule. We develop a KL-constrained policy update for agent training, together with actor confidence filtered experience replay. The ablation study indicates that the designs are indispensable for consistent performance improvement during iterative training.\nResultsIn this section, we report our evaluation of AUTOGLM on both Web and Android-oriented tasks.\nEvaluated on WebWe adopt three interactive benchmarks: VAB-WebArena-Lite [47; 23] and an online human evaluation dataset OpenTable [29]. AUTOGLM experiences training optimization in these environments.\nVAB-WebArena-Lite [47; 23]. VAB-WebArena-Litefoot_0 is a refined 165-task subset of the original 812-task WebArena [47] with manual verification of answers and judge functions. Its design intention is to speed up the evaluation on WebArena and ensure judging correctness. We evaluate representative proprietary LLM/LMM APIs, open models [9], recent agent frameworks [36; 45], and AUTOGLM. Results in Figure 4 show that AUTOGLM has significantly advanced on the benchmark, narrowing the performance gap between autonomous agents and humans.\ngpt-4o 20240513Agent Q AutoGLM 020 40 60 80 100 Success Rate (%) 62.6% 81.7% 96.2% Success Rates Comparison OpenTable Eval [29]. Following Agent Q [29], we also evaluate AUTOGLM on a real website OpenTable, which provides an online open booking service. Since the test set of [29] is undisclosed, we reconstruct a 200-sample test set according to the example provided in its paper (\"Book reservation for restaurant Cecconi's on OpenTable for 4 people on May 22 2024 at 7:00 PM\") and run evaluation on the real OpenTable website with human evaluation. Results are in Figure 5. AUTOGLM outperforms both gpt-4o and Agent Q on this real-world website.  \nEvaluated on AndroidWe evaluate AUTOGLM's Android abilities on the academic benchmark AndroidLab [37] (i.e., VAB-Mobile [23]) and frequent tasks in common Chinese Mobile APPs on Android. AndroidLab [37] (VAB-Mobile [23]). AndroidLab is an interactive Android benchmark and development environments that support reproducible evaluation, covering systems and some offline deployable English APPs. Compared to some existing benchmarks such as AITW [32], its interactive nature allows more practical evaluation of foundation agents for Android and improvement via RL. We evaluate representative proprietary LLM/LMM APIs, open models [9] fine-tuned on provided BC data, and AU-TOGLM. Results are shown in Figure 6. AUTOGLM achieves 36.2% SR, the best-performed one among all compared agents.\nHuman Evaluation on Chinese Android APPs.To test the practicality of AUTOGLM being deployed for public users, we carefully examine it on frequent tasks in 7 common Chinese Android APPs, including WeChat, Meituan, Taobao, Dianping, Amap, Xiaohongshu, and 12306.We curate a test query set (Cf. Table 2) for evaluating AUTOGLM's real performance in the user delivery setting, where the final success rate is determined by human evaluation on the whole executing trajectories. Instead of evaluating an Android Virtual Device (AVD) as in AndroidLab and previous work [31; 39], our evaluation is conducted in physical Android phones implemented with AccessibilityService applications to reflect the practical scenarios of foundation agents for phone use. Results are shown in Figure 7. We classify results into 3 types for better understanding of AUTOGLM:• Success: The task is completely successful, fulfilling all requirements in user instructions.• Partial: The task is partially done in the correct direction without completing some following procedures to fulfill user requirements.• Fail: The task is terminated too early, gets stuck in the middle, or goes in the wrong direction.As we observe, AUTOGLM works decently on evaluated APPs. While currently, it is unable to solve all tasks perfectly, unfinished tasks are able to be half completed, which would still be of assistance in practical scenes to users to speed up GUI operations.\nConclusionThrough this work, we introduced AUTOGLM, a series of foundation agents built upon the ChatGLM model family that demonstrates strong capabilities in GUI operation across web browsing and Android environments. Our key contributions include the design of an intermediate interface that effectively disentangles planning and grounding behaviors, and the development of a self-evolving online curriculum RL approach that enables robust error recovery and performance improvement. The strong empirical results across various benchmarks, including a 55.2% success rate on VAB-WebArena-Lite and 36.2% on AndroidLab, along with successful real-world deployments through browser plugins and Android applications, demonstrate AUTOGLM's potential as a significant step toward developing practical foundation agents for GUI interaction.Figure 1 :1Figure 1: AUTOGLM real phone use demonstration for instruction \"Order a hot coconut latte from Luckin Coffee with half sugar\" for Chinese Android APP Meituan. See more videos.\nFigure 2 :2Figure 2: AUTOGLM real web-browser use demonstration for instruction \"Could you help me book a reservation for my parents and I at Megan's Kitchen on October 23, 2024 at 7:30 PM through OpenTable? You can reach me at 146xxxxxxxx, China.\" on the website OpenTable. See more videos.\nFigure 3 :3Figure3: VAB-WebArena-Lite [47; 23], methods are all trained using GLM-4-9B-Base[11].\nFigure 4 :4Figure 4: Success rates of different agents on VAB-WebArena-Lite. * Results of AWM and WebPilot are evaluated on full WebArena and taken from reporting.\nFigure 5 :5Figure5: OpenTable Eval[29].\nFigure 6 :6Figure 6: Success rates of different agents on AndroidLab. BC indicates behavior cloning training.\nFigure 7 :7Figure 7: Human evaluated success rates of AUTOGLM on Chinese APPs.\nTable 1 :1Experiments on Intermediate Interface Design on VAB-WebArena-Lite [47; 23].Observation Typegpt-4o (text) gpt-4o (visual) gpt-4-vision-preview (visual)End-to-End Agent14.3%18.2%18.8%Intermediate Interface Design 18.1% (+3.8%) 27.3% (+9.1%)36.4% (+17.6%)\nTable 2 :2Examples of test queries for evaluating AUTOGLM on Chinese APPs. Taobao Check the shipping/delivery status of the shirt I ordered Dianping What's the nearest restaurant from Beijing's must-eat list to my location Amap Order a ride/taxi to Taikoo Li Sanlitun, immediately Xiaohongshu Bookmark and summarize the most liked travel guide post about Aranya 12306 Book a bus ticket from Zhuhai to Guangzhou for SaturdayAPPTest Query ExampleWeChatPost a complimentary comment on Alice's latest post on MomentsMeituanOrder a cold coconut latte from nearest coffee shop, with half sugar\n\t\t\thttps://github.com/THUDM/VisualAgentBench/blob/main/VAB-WebArena-Lite",
+ "sections": [
+  {
+   "title": "Introduction",
+   "text": "Foundation models, including Large Language Models (LLMs) [5; 27; 7; 2; 42; 11] and Large Multimodal Models (LMMs) [20; 25; 26; 1], have captured widespread attention for their remarkable language understanding and generation capabilities. Through extensive self-supervised [22] pretraining on internet-scale corpora, these models have acquired not only knowledge and language  abilities but also human-like reasoning and planning capabilities, giving rise to LLMs as Agents [21; 28]. These agents have demonstrated their utility across diverse domains, including coding [35; 16; 44], data analysis [14; 21], and gaming [34; 18], charting a promising course toward Artificial General Intelligence (AGI) through the development of multimodal Foundation Agents [23] that serve as generalists across multiple tasks and environments.The ubiquity of digital devices presents a unique opportunity for GUI-capable agents [13; 46; 43; 17]. This domain offers several advantages: GUI simulators can be readily deployed in parallel for data annotation and online reinforcement learning (RL); GUI environments provide rich textual and visual inputs essential for foundation model agents, but in a safer and controllable environments compared to embodied environments; and GUI agents hold broad practical appeal given their extensive potential user base. Their successful development could fundamentally transform human-device interaction.However, the development of foundation agents for GUI faces a critical challenge: the scarcity of decision-making data in existing pre-training sets. While the internet contains vast human knowledge, it primarily consists of static information that inadequately captures human decision-making and environmental interaction. Building capable foundation agents requires enriching them with dynamic knowledge, either through direct interaction with real-world environments or through learning from synthesized trajectories. Such foundation agents can then self-evolve in the digital world, iteratively improving to achieve genuine general intelligence.Crucially, these systems must be developed with progressive user deployment in mind. Autonomous agents are designed to augment, not replace, human capabilities. User deployment serves the dual purpose of teaching agents effective human assistance while allowing humans to adapt to intelligent assistants. This approach also enables researchers to systematically understand, discover, and examine both the potential benefits and risks of autonomous foundation agents during development.In response to these opportunities and challenges, we introduce AUTOGLM, a series of foundation agents built upon the ChatGLM [11] model family. AUTOGLM represents a pioneering attempt to develop foundation agent prototypes for two fundamental GUI scenarios: Web Browser and Android. To address the data scarcity challenge, we employ a comprehensive suite of training techniques and develop key infrastructures for user deployment. This process has yielded two crucial insights:• Intermediate Interface Design: We find it essential to design an intermediate interface that disentangles planning and grounding behaviors in foundation GUI agents. They present distinct requirements -planning demands flexibility and error recovery, while grounding emphasizes action accuracy. Their separation enables more agile development and enhanced performance.• Self-Evolving Online Curriculum RL [30]: We recognize that error recovery [23] is crucial for robust and deployable agent applications, yet it remains difficult to acquire through offline training alone. Additionally, the shortage of instructions and trajectories impedes training progress. We address this challenge through self-evolving RL, implemented according to a progressive weak-to-strong curriculum schedule in an online manner.Building on these insights, AUTOGLM demonstrates exceptional capabilities across various benchmarks and real-world tests. In Web Browsing, AUTOGLM achieves a task success rate (SR) of 55.2% on the challenging VAB-WebArena-Lite [47; 23], substantially surpassing GPT-4o's 18.2%. With a second attempt opportunity, this improves to 59.1%. On OpenTable real-world booking tasks, AUTOGLM achieves 96.2% SR, outperforming both GPT-4o (62.6% SR) and Agent Q [29] (81.7%). Select AUTOGLM web capabilities are publicly available via the Qingyan Browser Plugin on both Chrome and Edge Plugin Store. See the real example in Figure 2.For Android control, AUTOGLM achieves 36.2% SR on AndroidLab [37] (previously known as VAB-Mobile [23]), a comprehensive interactive Android evaluation framework. This performance exceeds both GPT-4o (31.2% SR) and Claude-3.5-Sonnet (29.0% SR). We have also implemented a practical Android application via AccessibilityService for autonomous device control. In human evaluation, AUTOGLM achieves an impressive 89.7% SR on common tasks (e.g., \"Please Order a large iced Americano with half sugar from the nearest coffee shop for delivery to my company\") across popular Chinese APPs. The Android client is currently available for invited internal testing through Form Applications. See the real example in Figure 1.",
+   "level": 1,
+   "path_id": "1",
+   "parent_section_id": null,
+   "order_in_parent": 0,
+   "section_id": "sec-1"
+  },
+  {
+   "title": "AUTOGLM: Techniques and Insights",
+   "text": "In this section, we will give an overview of the techniques involved in developing AUTOGLM. Particularly, we will discuss the two important insights that enable AUTOGLM's significant improvements compared to existing LLM or LMM-based GUI Agents.",
+   "level": 2,
+   "path_id": "2",
+   "parent_section_id": null,
+   "order_in_parent": 1,
+   "section_id": "sec-2"
+  },
+  {
+   "title": "Important Techniques",
+   "text": "Training agents can be different from training ordinary LLMs or LMMs. A key obstacle lies in the lack of high-quality trajectory data that entails the decision-making process. Following are some useful techniques we realized during the project.Pre-training. Generally, there is little agent-related data on internet text corpora, making LLMs fall short of effectively act as agents. Additionally, existing LMM pre-training, which is primarily \"visual instruction tuning\", models the alignment between texts and images without sufficiently learning from sequential multimodal data [4; 10]. As a result, properly leveraging existing online data with weaksupervised decision-making signals in pre-training would actually help. Besides, for multimodal perception, high-resolution visual inputs are very important according to CogAgent [13] and our observations, especially when using grounding strategies like Set-of-Marks (SoM) prompting [38].",
+   "level": 2,
+   "path_id": "2.1",
+   "parent_section_id": "sec-2",
+   "order_in_parent": 0,
+   "section_id": "sec-2.1"
+  },
+  {
+   "title": "Large Multimodal Models (LMMs).",
+   "text": "LMMs are important for GUI understanding and manipulation.Traditionally in Robotic Process Automation (RPA), the paradigm has been using Optical Character Recognition (OCR) catcher to match key elements in human handcrafted automating programs, which cannot be scaled and generalized. LMMs, instead, can perform fuzzy matching and do long-horizon planning thanks to its strong grasping of commonsense and GUI environments from pre-training. Nevertheless, LMMs still require much training to gain strong planning and reasoning abilities necessary for agent tasks.Behavior Cloning (Supervised Fine-tuning). Behavior Cloning (BC) is a key strategy for training agents from scratch with high-quality expert trajectories. The strategy has also been verified as effective for LLM and LMM-based agent training [24; 41; 6; 13; 17; 23]. Nevertheless, it is of extreme cost and time to collect expert trajectories. Moreover, a fundamental problem of using BC is that agents only learn to imitate experts' behaviors step-by-step without fully understanding its goal. When expert trajectories are oracle (mostly the case for maintaining training stability), agents fail to foster abilities to recover from errors well [23].",
+   "level": 1,
+   "path_id": "1~2",
+   "parent_section_id": null,
+   "order_in_parent": 2,
+   "section_id": "sec-1~2"
+  },
+  {
+   "title": "Curriculum Learning.",
+   "text": "Agent tasks are usually of substantially varied difficulties. As a result, it is wise to progressively add difficulty to training with a curriculum schedule. For example, AutoWebGLM [17; 15] adopts a multi-stage curriculum, where agent models are sequentially trained with single-step tasks, simple few-step tasks, and complicated long-horizon tasks. DigiRL [3] also proposes a simple curriculum to filter appropriate tasks from a fixed set of instructions according to the corresponding agent capabilities at a certain timestamp. We basically find the strategy very useful for building foundation agents with complex goal-achieving abilities.",
+   "level": 1,
+   "path_id": "1~3",
+   "parent_section_id": null,
+   "order_in_parent": 3,
+   "section_id": "sec-1~3"
+  },
+  {
+   "title": "Reward Modeling (RM).",
+   "text": "To enable online RL with foundation agents, a proper RM is necessary for providing supervision. Traditionally, many RL agents are trained with limited tasks with precise rule-based reward functions. However, foundation agents based on LLMs and LMMs are targeting generalist mission accomplishment in open worlds, which contradicts task-specific reward functions' abilities. Therefore, it is crucial to build generalizable RMs that can deal with a wide range of real-world agent tasks. Specifically, RMs can be categorized to outcome-supervised ORM and process-supervised PRM [19; 8; 40], which provide different granularities of effective supervision.",
+   "level": 1,
+   "path_id": "1~4",
+   "parent_section_id": null,
+   "order_in_parent": 4,
+   "section_id": "sec-1~4"
+  },
+  {
+   "title": "Reinforcement Learning (RL).",
+   "text": "Compared to BC, RL from a narrow sense can better learn from failures. This is especially important for foundation agent training since high-quality expert trajectories are extraordinarily hard to acquire [24]. However, the challenge in applying RL to foundation agent training lies in the inefficiency of sampling in environments. The problem can be understood from two aspects: 1) Simulators: when agents are exploring in the Web or Android environments, their efficiency is bounded by internet connection speed and maximum degree of parallelism. Environments like Android Virtual Devices are quite memory-consuming [23]. 2) Sample Diversity: LLMs and LMMs are trained to output certain function-based actions. The strict function formatting usually requires overfitting training with the model, resulting in stubborn monotonous sampling results even when they are inferenced with a high temperature [33].Despite the challenge, we believe to scale up RL and post-training on foundation models is crucial for building strong foundation agents, as indicated by the success of OpenAI o1. It is unlikely to build general intelligence without letting it learn from interactions with real-world environments.",
+   "level": 1,
+   "path_id": "1~5",
+   "parent_section_id": null,
+   "order_in_parent": 5,
+   "section_id": "sec-1~5"
+  },
+  {
+   "title": "Insight 1: Intermediate Interface Design",
+   "text": "During the development, we find intermediate interface design vital for disentangling the behaviors of planning and grounding in foundation agents. By separating them into different modules, foundation agents can be improved from both dimensions of flexibility and accuracy without interference.The intuition is simple: we find existing LLMs and LMMs to be more capable in planning than in grounding when executing agent tasks on existing benchmarks. While the planning could still be significantly improved, a majority of current errors arise from incorrect element identification in the grounding period [23]. For example, a typical action generated in VAB-WebArena-Lite when testing with visual inputs would be:# End-to-End Agent do(action=\"Click\", element_coordinates=[823,684])where the element \"4\" may refer to a \"Submit\" button on Reddit. If we change the format to the following:#Agent with Intermediate Interface Design # Planner do(action=\"Click\", element_description=\"the 'Submit' button on the bottom right\") # Grounder find_coordinates_by_instruction(\"the 'Submit' button on the bottom right\") # Expected Output: [823,684]In this way, planner and grounder abilities could be separately improved. Actually, it is much easier to harvest massive grounding data from automatic construction from unsupervised environmental observations. In our experiments (Cf. Table 1), we find the strategy with the grounder we trained to be very useful for improving proprietary LLM/LMM API-based planners. Our observation is similar to another concurrent work [12] which explores a universal grounding model for GUI agents.",
+   "level": 2,
+   "path_id": "2.2",
+   "parent_section_id": "sec-2",
+   "order_in_parent": 1,
+   "section_id": "sec-2.2"
+  },
+  {
+   "title": "Insight 2: Self-Evolving Online Curriculum RL",
+   "text": "While Intermediate Interface Design helps alleviate the issue of inaccurate grounding, planning is still a problem. Many existing agent works in literature base their frameworks on proprietary LLM/LMM APIs, whose planning abilities consequently fail to be improved by training. As a result, we decide to explore training in-house planners via RL. It is very challenging as it lacks a sufficient amount of either user tasks or expert trajectories. We develop a self-evolving online curriculum RL framework-WebRL [30]-for training foundation agents from scratch. Take We-bArena [47] environment as an example, we adopt the actor-critic RL framework for training. Briefly speaking, we identify the most difficult issues when we apply curriculum RL to the problemtask data scarcity and policy distribution drift.",
+   "level": 2,
+   "path_id": "2.3",
+   "parent_section_id": "sec-2",
+   "order_in_parent": 2,
+   "section_id": "sec-2.3"
+  },
+  {
+   "title": "Task Data Scarcity.",
+   "text": "Leveraging around 1,000 BC data provided by VisualAgentBench trajectories. Thus we apply self-evolving techniques to augment failed task instructions during online roll-outs, mutating instructions to be more complicated or simpler. These self-evolved instructions are filtered by the critic and then used for roll-outs in the next iterative training phase.",
+   "level": 1,
+   "path_id": "1~6",
+   "parent_section_id": null,
+   "order_in_parent": 6,
+   "section_id": "sec-1~6"
+  },
+  {
+   "title": "Policy Distribution Drift.",
+   "text": "One significant problem of curriculum learning is the policy distribution drift during the progressive curriculum schedule. We develop a KL-constrained policy update for agent training, together with actor confidence filtered experience replay. The ablation study indicates that the designs are indispensable for consistent performance improvement during iterative training.",
+   "level": 1,
+   "path_id": "1~7",
+   "parent_section_id": null,
+   "order_in_parent": 7,
+   "section_id": "sec-1~7"
+  },
+  {
+   "title": "Results",
+   "text": "In this section, we report our evaluation of AUTOGLM on both Web and Android-oriented tasks.",
+   "level": 3,
+   "path_id": "3",
+   "parent_section_id": null,
+   "order_in_parent": 8,
+   "section_id": "sec-3"
+  },
+  {
+   "title": "Evaluated on Web",
+   "text": "We adopt three interactive benchmarks: VAB-WebArena-Lite [47; 23] and an online human evaluation dataset OpenTable [29]. AUTOGLM experiences training optimization in these environments.",
+   "level": 2,
+   "path_id": "3.1",
+   "parent_section_id": "sec-3",
+   "order_in_parent": 0,
+   "section_id": "sec-3.1"
+  },
+  {
+   "title": "VAB-WebArena-Lite [47; 23]",
+   "text": ". VAB-WebArena-Litefoot_0 is a refined 165-task subset of the original 812-task WebArena [47] with manual verification of answers and judge functions. Its design intention is to speed up the evaluation on WebArena and ensure judging correctness. We evaluate representative proprietary LLM/LMM APIs, open models [9], recent agent frameworks [36; 45], and AUTOGLM. Results in Figure 4 show that AUTOGLM has significantly advanced on the benchmark, narrowing the performance gap between autonomous agents and humans.",
+   "level": 1,
+   "path_id": "1~8",
+   "parent_section_id": null,
+   "order_in_parent": 9,
+   "section_id": "sec-1~8"
+  },
+  {
+   "title": "gpt-4o 20240513",
+   "text": "Agent Q AutoGLM 020 40 60 80 100 Success Rate (%) 62.6% 81.7% 96.2% Success Rates Comparison OpenTable Eval [29]. Following Agent Q [29], we also evaluate AUTOGLM on a real website OpenTable, which provides an online open booking service. Since the test set of [29] is undisclosed, we reconstruct a 200-sample test set according to the example provided in its paper (\"Book reservation for restaurant Cecconi's on OpenTable for 4 people on May 22 2024 at 7:00 PM\") and run evaluation on the real OpenTable website with human evaluation. Results are in Figure 5. AUTOGLM outperforms both gpt-4o and Agent Q on this real-world website.",
+   "level": 1,
+   "path_id": "1~9",
+   "parent_section_id": null,
+   "order_in_parent": 10,
+   "section_id": "sec-1~9"
+  },
+  {
+   "title": "Evaluated on Android",
+   "text": "We evaluate AUTOGLM's Android abilities on the academic benchmark AndroidLab [37] (i.e., VAB-Mobile [23]) and frequent tasks in common Chinese Mobile APPs on Android. AndroidLab [37] (VAB-Mobile [23]). AndroidLab is an interactive Android benchmark and development environments that support reproducible evaluation, covering systems and some offline deployable English APPs. Compared to some existing benchmarks such as AITW [32], its interactive nature allows more practical evaluation of foundation agents for Android and improvement via RL. We evaluate representative proprietary LLM/LMM APIs, open models [9] fine-tuned on provided BC data, and AU-TOGLM. Results are shown in Figure 6. AUTOGLM achieves 36.2% SR, the best-performed one among all compared agents.",
+   "level": 2,
+   "path_id": "3.2",
+   "parent_section_id": "sec-3",
+   "order_in_parent": 1,
+   "section_id": "sec-3.2"
+  },
+  {
+   "title": "Human Evaluation on Chinese Android APPs.",
+   "text": "To test the practicality of AUTOGLM being deployed for public users, we carefully examine it on frequent tasks in 7 common Chinese Android APPs, including WeChat, Meituan, Taobao, Dianping, Amap, Xiaohongshu, and 12306.We curate a test query set (Cf. Table 2) for evaluating AUTOGLM's real performance in the user delivery setting, where the final success rate is determined by human evaluation on the whole executing trajectories. Instead of evaluating an Android Virtual Device (AVD) as in AndroidLab and previous work [31; 39], our evaluation is conducted in physical Android phones implemented with AccessibilityService applications to reflect the practical scenarios of foundation agents for phone use. Results are shown in Figure 7. We classify results into 3 types for better understanding of AUTOGLM:• Success: The task is completely successful, fulfilling all requirements in user instructions.• Partial: The task is partially done in the correct direction without completing some following procedures to fulfill user requirements.• Fail: The task is terminated too early, gets stuck in the middle, or goes in the wrong direction.As we observe, AUTOGLM works decently on evaluated APPs. While currently, it is unable to solve all tasks perfectly, unfinished tasks are able to be half completed, which would still be of assistance in practical scenes to users to speed up GUI operations.",
+   "level": 1,
+   "path_id": "1~10",
+   "parent_section_id": null,
+   "order_in_parent": 11,
+   "section_id": "sec-1~10"
+  },
+  {
+   "title": "Conclusion",
+   "text": "Through this work, we introduced AUTOGLM, a series of foundation agents built upon the ChatGLM model family that demonstrates strong capabilities in GUI operation across web browsing and Android environments. Our key contributions include the design of an intermediate interface that effectively disentangles planning and grounding behaviors, and the development of a self-evolving online curriculum RL approach that enables robust error recovery and performance improvement. The strong empirical results across various benchmarks, including a 55.2% success rate on VAB-WebArena-Lite and 36.2% on AndroidLab, along with successful real-world deployments through browser plugins and Android applications, demonstrate AUTOGLM's potential as a significant step toward developing practical foundation agents for GUI interaction.",
+   "level": 4,
+   "path_id": "4",
+   "parent_section_id": null,
+   "order_in_parent": 12,
+   "section_id": "sec-4"
+  },
+  {
+   "title": "Figure 1 :",
+   "text": "1Figure 1: AUTOGLM real phone use demonstration for instruction \"Order a hot coconut latte from Luckin Coffee with half sugar\" for Chinese Android APP Meituan. See more videos.",
+   "level": 1,
+   "path_id": "1~11",
+   "parent_section_id": null,
+   "order_in_parent": 13,
+   "section_id": "sec-1~11"
+  },
+  {
+   "title": "Figure 2 :",
+   "text": "2Figure 2: AUTOGLM real web-browser use demonstration for instruction \"Could you help me book a reservation for my parents and I at Megan's Kitchen on October 23, 2024 at 7:30 PM through OpenTable? You can reach me at 146xxxxxxxx, China.\" on the website OpenTable. See more videos.",
+   "level": 1,
+   "path_id": "1~12",
+   "parent_section_id": null,
+   "order_in_parent": 14,
+   "section_id": "sec-1~12"
+  },
+  {
+   "title": "Figure 3 :",
+   "text": "3Figure3: VAB-WebArena-Lite [47; 23], methods are all trained using GLM-4-9B-Base[11].",
+   "level": 1,
+   "path_id": "1~13",
+   "parent_section_id": null,
+   "order_in_parent": 15,
+   "section_id": "sec-1~13"
+  },
+  {
+   "title": "Figure 4 :",
+   "text": "4Figure 4: Success rates of different agents on VAB-WebArena-Lite. * Results of AWM and WebPilot are evaluated on full WebArena and taken from reporting.",
+   "level": 1,
+   "path_id": "1~14",
+   "parent_section_id": null,
+   "order_in_parent": 16,
+   "section_id": "sec-1~14"
+  },
+  {
+   "title": "Figure 5 :",
+   "text": "5Figure5: OpenTable Eval[29].",
+   "level": 1,
+   "path_id": "1~15",
+   "parent_section_id": null,
+   "order_in_parent": 17,
+   "section_id": "sec-1~15"
+  },
+  {
+   "title": "Figure 6 :",
+   "text": "6Figure 6: Success rates of different agents on AndroidLab. BC indicates behavior cloning training.",
+   "level": 1,
+   "path_id": "1~16",
+   "parent_section_id": null,
+   "order_in_parent": 18,
+   "section_id": "sec-1~16"
+  },
+  {
+   "title": "Figure 7 :",
+   "text": "7Figure 7: Human evaluated success rates of AUTOGLM on Chinese APPs.",
+   "level": 1,
+   "path_id": "1~17",
+   "parent_section_id": null,
+   "order_in_parent": 19,
+   "section_id": "sec-1~17"
+  },
+  {
+   "title": "Table 1 :",
+   "text": "1Experiments on Intermediate Interface Design on VAB-WebArena-Lite [47; 23].Observation Typegpt-4o (text) gpt-4o (visual) gpt-4-vision-preview (visual)End-to-End Agent14.3%18.2%18.8%Intermediate Interface Design 18.1% (+3.8%) 27.3% (+9.1%)36.4% (+17.6%)",
+   "level": 1,
+   "path_id": "1~18",
+   "parent_section_id": null,
+   "order_in_parent": 20,
+   "section_id": "sec-1~18"
+  },
+  {
+   "title": "Table 2 :",
+   "text": "2Examples of test queries for evaluating AUTOGLM on Chinese APPs. Taobao Check the shipping/delivery status of the shirt I ordered Dianping What's the nearest restaurant from Beijing's must-eat list to my location Amap Order a ride/taxi to Taikoo Li Sanlitun, immediately Xiaohongshu Bookmark and summarize the most liked travel guide post about Aranya 12306 Book a bus ticket from Zhuhai to Guangzhou for SaturdayAPPTest Query ExampleWeChatPost a complimentary comment on Alice's latest post on MomentsMeituanOrder a cold coconut latte from nearest coffee shop, with half sugar\n\t\t\thttps://github.com/THUDM/VisualAgentBench/blob/main/VAB-WebArena-Lite",
+   "level": 1,
+   "path_id": "1~19",
+   "parent_section_id": null,
+   "order_in_parent": 21,
+   "section_id": "sec-1~19"
+  }
+ ],
+ "citations": [
+  {
+   "raw_text": "Anthropic\n\t\t\n\t\t\n\t\t\tClaude\n\t\t\n\t\t\n\t\t\t3.5 sonnet, 2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Introducing the next generation of claude\n\t\t\n\t\t\tAnthropic\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Digirl: Training in-the-wild device-control agents with autonomous reinforcement learning\n\t\t\n\t\t\tHBai\n\t\t\n\t\t\n\t\t\tYZhou\n\t\t\n\t\t\n\t\t\tMCemri\n\t\t\n\t\t\n\t\t\tJPan\n\t\t\n\t\t\n\t\t\tASuhr\n\t\t\n\t\t\n\t\t\tSLevine\n\t\t\n\t\t\n\t\t\tAKumar\n\t\t\n\t\tarXiv:2406.11896\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2406.11896",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b2",
+     "section_path_id": "1~3",
+     "quote": "[3]",
+     "offset": 358
+    }
+   ]
+  },
+  {
+   "raw_text": "Video pretraining (vpt): Learning to act by watching unlabeled online videos\n\t\t\n\t\t\tBBaker\n\t\t\n\t\t\n\t\t\tIAkkaya\n\t\t\n\t\t\n\t\t\tPZhokov\n\t\t\n\t\t\n\t\t\tJHuizinga\n\t\t\n\t\t\n\t\t\tJTang\n\t\t\n\t\t\n\t\t\tAEcoffet\n\t\t\n\t\t\n\t\t\tBHoughton\n\t\t\n\t\t\n\t\t\tRSampedro\n\t\t\n\t\t\n\t\t\tJClune\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t35\n\t\t\t\n\t\t\t2022",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Video pretraining (vpt): Learning to act by watching unlabeled online videos",
+   "anchors": []
+  },
+  {
+   "raw_text": "Language models are few-shot learners\n\t\t\n\t\t\tTBBrown\n\t\t\n\t\t\n\t\t\tBMann\n\t\t\n\t\t\n\t\t\tNRyder\n\t\t\n\t\t\n\t\t\tMSubbiah\n\t\t\n\t\t\n\t\t\tJKaplan\n\t\t\n\t\t\n\t\t\tPDhariwal\n\t\t\n\t\t\n\t\t\tANeelakantan\n\t\t\n\t\t\n\t\t\tPShyam\n\t\t\n\t\t\n\t\t\tGSastry\n\t\t\n\t\t\n\t\t\tAAskell\n\t\t\n\t\t\n\t\t\tSAgarwal\n\t\t\n\t\t\n\t\t\tAHerbert-Voss\n\t\t\n\t\t\n\t\t\tGKrueger\n\t\t\n\t\t\n\t\t\tTHenighan\n\t\t\n\t\t\n\t\t\tRChild\n\t\t\n\t\t\n\t\t\tARamesh\n\t\t\n\t\t\n\t\t\tDMZiegler\n\t\t\n\t\t\n\t\t\tJWu\n\t\t\n\t\t\n\t\t\tCWinter\n\t\t\n\t\t\n\t\t\tCHesse\n\t\t\n\t\t\n\t\t\tMChen\n\t\t\n\t\t\n\t\t\tESigler\n\t\t\n\t\t\n\t\t\tMLitwin\n\t\t\n\t\t\n\t\t\tSGray\n\t\t\n\t\t\n\t\t\tBChess\n\t\t\n\t\t\n\t\t\tJClark\n\t\t\n\t\t\n\t\t\tCBerner\n\t\t\n\t\t\n\t\t\tSMccandlish\n\t\t\n\t\t\n\t\t\tARadford\n\t\t\n\t\t\n\t\t\tISutskever\n\t\t\n\t\t\n\t\t\tDAmodei\n\t\t\n\t\n\t\n\t\tProceedings of the 34th International Conference on Neural Information Processing Systems, NIPS&apos;20\n\t\tthe 34th International Conference on Neural Information Processing Systems, NIPS&apos;20Red Hook, NY, USA\n\t\t\n\t\t\tCurran Associates Inc\n\t\t\t2020",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Language models are few-shot learners",
+   "anchors": []
+  },
+  {
+   "raw_text": "BChen\n\t\t\n\t\t\n\t\t\tCShu\n\t\t\n\t\t\n\t\t\tEShareghi\n\t\t\n\t\t\n\t\t\tNCollier\n\t\t\n\t\t\n\t\t\tKNarasimhan\n\t\t\n\t\t\n\t\t\tSYao\n\t\t\n\t\tarXiv:2310.05915\n\t\tFireact: Toward language agent fine-tuning\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2310.05915",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "AChowdhery\n\t\t\n\t\t\n\t\t\tSNarang\n\t\t\n\t\t\n\t\t\tJDevlin\n\t\t\n\t\t\n\t\t\tMBosma\n\t\t\n\t\t\n\t\t\tGMishra\n\t\t\n\t\t\n\t\t\tARoberts\n\t\t\n\t\t\n\t\t\tPBarham\n\t\t\n\t\t\n\t\t\tHWChung\n\t\t\n\t\t\n\t\t\tCSutton\n\t\t\n\t\t\n\t\t\tSGehrmann\n\t\t\n\t\tarXiv:2204.02311\n\t\tScaling language modeling with pathways\n\t\t\n\t\t\t2022\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2204.02311",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "ACreswell\n\t\t\n\t\t\n\t\t\tMShanahan\n\t\t\n\t\t\n\t\t\tIHiggins\n\t\t\n\t\tarXiv:2205.09712\n\t\tSelection-inference: Exploiting large language models for interpretable logical reasoning\n\t\t\n\t\t\t2022\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2205.09712",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "ADubey\n\t\t\n\t\t\n\t\t\tAJauhri\n\t\t\n\t\t\n\t\t\tAPandey\n\t\t\n\t\t\n\t\t\tAKadian\n\t\t\n\t\t\n\t\t\tAAl-Dahle\n\t\t\n\t\t\n\t\t\tALetman\n\t\t\n\t\t\n\t\t\tAMathur\n\t\t\n\t\t\n\t\t\tASchelten\n\t\t\n\t\t\n\t\t\tAYang\n\t\t\n\t\t\n\t\t\tAFan\n\t\t\n\t\tarXiv:2407.21783\n\t\tThe llama 3 herd of models\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2407.21783",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b8",
+     "section_path_id": "1~8",
+     "quote": "[9]",
+     "offset": 311
+    },
+    {
+     "ref_id": "b8",
+     "section_path_id": "3.2",
+     "quote": "[9]",
+     "offset": 609
+    }
+   ]
+  },
+  {
+   "raw_text": "Building open-ended embodied agents with internet-scale knowledge\n\t\t\n\t\t\tLFan\n\t\t\n\t\t\n\t\t\tGWang\n\t\t\n\t\t\n\t\t\tYJiang\n\t\t\n\t\t\n\t\t\tAMandlekar\n\t\t\n\t\t\n\t\t\tYYang\n\t\t\n\t\t\n\t\t\tHZhu\n\t\t\n\t\t\n\t\t\tATang\n\t\t\n\t\t\n\t\t\tD.-AHuang\n\t\t\n\t\t\n\t\t\tYZhu\n\t\t\n\t\t\n\t\t\tAAnandkumar\n\t\t\n\t\t\n\t\t\tMinedojo\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t35\n\t\t\t\n\t\t\t2022",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Building open-ended embodied agents with internet-scale knowledge",
+   "anchors": []
+  },
+  {
+   "raw_text": "TGlm\n\t\t\n\t\t\n\t\t\tAZeng\n\t\t\n\t\t\n\t\t\tBXu\n\t\t\n\t\t\n\t\t\tBWang\n\t\t\n\t\t\n\t\t\tCZhang\n\t\t\n\t\t\n\t\t\tDYin\n\t\t\n\t\t\n\t\t\tDRojas\n\t\t\n\t\t\n\t\t\tGFeng\n\t\t\n\t\t\n\t\t\tHZhao\n\t\t\n\t\t\n\t\t\tHLai\n\t\t\n\t\tarXiv:2406.12793\n\t\tA family of large language models from glm-130b to glm-4 all tools\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2406.12793",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b10",
+     "section_path_id": "1",
+     "quote": "[11]",
+     "offset": 2687
+    },
+    {
+     "ref_id": "b10",
+     "section_path_id": "1~13",
+     "quote": "[11]",
+     "offset": 81
+    }
+   ]
+  },
+  {
+   "raw_text": "BGou\n\t\t\n\t\t\n\t\t\tRWang\n\t\t\n\t\t\n\t\t\tBZheng\n\t\t\n\t\t\n\t\t\tYXie\n\t\t\n\t\t\n\t\t\tCChang\n\t\t\n\t\t\n\t\t\tYShu\n\t\t\n\t\t\n\t\t\tHSun\n\t\t\n\t\t\n\t\t\tYSu\n\t\t\n\t\tarXiv:2410.05243\n\t\tNavigating the digital world as humans do: Universal visual grounding for gui agents\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2410.05243",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b11",
+     "section_path_id": "2.2",
+     "quote": "[12]",
+     "offset": 1555
+    }
+   ]
+  },
+  {
+   "raw_text": "WHong\n\t\t\n\t\t\n\t\t\tWWang\n\t\t\n\t\t\n\t\t\tQLv\n\t\t\n\t\t\n\t\t\tJXu\n\t\t\n\t\t\n\t\t\tWYu\n\t\t\n\t\t\n\t\t\tJJi\n\t\t\n\t\t\n\t\t\tYWang\n\t\t\n\t\t\n\t\t\tZWang\n\t\t\n\t\t\n\t\t\tYDong\n\t\t\n\t\t\n\t\t\tMDing\n\t\t\n\t\tarXiv:2312.08914\n\t\tA visual language model for gui agents\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2312.08914",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b12",
+     "section_path_id": "2.1",
+     "quote": "[13]",
+     "offset": 831
+    }
+   ]
+  },
+  {
+   "raw_text": "Infiagent-dabench: Evaluating agents on data analysis tasks\n\t\t\n\t\t\tXHu\n\t\t\n\t\t\n\t\t\tZZhao\n\t\t\n\t\t\n\t\t\tSWei\n\t\t\n\t\t\n\t\t\tZChai\n\t\t\n\t\t\n\t\t\tGWang\n\t\t\n\t\t\n\t\t\tXWang\n\t\t\n\t\t\n\t\t\tJSu\n\t\t\n\t\t\n\t\t\tJXu\n\t\t\n\t\t\n\t\t\tMZhu\n\t\t\n\t\t\n\t\t\tYCheng\n\t\t\n\t\tarXiv:2401.05507\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2401.05507",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Openwebagent: An open toolkit to enable web agents on large language models\n\t\t\n\t\t\tILIong\n\t\t\n\t\t\n\t\t\tXLiu\n\t\t\n\t\t\n\t\t\tYChen\n\t\t\n\t\t\n\t\t\tHLai\n\t\t\n\t\t\n\t\t\tSYao\n\t\t\n\t\t\n\t\t\tPShen\n\t\t\n\t\t\n\t\t\tHYu\n\t\t\n\t\t\n\t\t\tYDong\n\t\t\n\t\t\n\t\t\tJTang\n\t\t\n\t\n\t\n\t\tProceedings of the 62nd Annual Meeting of the Association for Computational Linguistics\n\t\tthe 62nd Annual Meeting of the Association for Computational Linguistics\n\t\t\n\t\t\t2024\n\t\t\t3\n\t\t\t\n\t\t\n\t\n\tSystem Demonstrations)",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Openwebagent: An open toolkit to enable web agents on large language models",
+   "anchors": []
+  },
+  {
+   "raw_text": "Swe-bench: Can language models resolve real-world github issues?\n\t\t\n\t\t\tCEJimenez\n\t\t\n\t\t\n\t\t\tJYang\n\t\t\n\t\t\n\t\t\tAWettig\n\t\t\n\t\t\n\t\t\tSYao\n\t\t\n\t\t\n\t\t\tKPei\n\t\t\n\t\t\n\t\t\tOPress\n\t\t\n\t\t\n\t\t\tKRNarasimhan\n\t\t\n\t\n\t\n\t\tThe Twelfth International Conference on Learning Representations\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Swe-bench: Can language models resolve real-world github issues?",
+   "anchors": []
+  },
+  {
+   "raw_text": "HLai\n\t\t\n\t\t\n\t\t\tXLiu\n\t\t\n\t\t\n\t\t\tILIong\n\t\t\n\t\t\n\t\t\tSYao\n\t\t\n\t\t\n\t\t\tYChen\n\t\t\n\t\t\n\t\t\tPShen\n\t\t\n\t\t\n\t\t\tHYu\n\t\t\n\t\t\n\t\t\tHZhang\n\t\t\n\t\t\n\t\t\tXZhang\n\t\t\n\t\t\n\t\t\tYDong\n\t\t\n\t\t\n\t\t\tJTang\n\t\t\n\t\tAutowebglm: Bootstrap and reinforce a large language model-based web navigating agent\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Avalonbench: Evaluating llms playing the game of avalon\n\t\t\n\t\t\tJLight\n\t\t\n\t\t\n\t\t\tMCai\n\t\t\n\t\t\n\t\t\tSShen\n\t\t\n\t\t\n\t\t\tZHu\n\t\t\n\t\n\t\n\t\tNeurIPS 2023 Foundation Models for Decision Making Workshop\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Avalonbench: Evaluating llms playing the game of avalon",
+   "anchors": []
+  },
+  {
+   "raw_text": "HLightman\n\t\t\n\t\t\n\t\t\tVKosaraju\n\t\t\n\t\t\n\t\t\tYBurda\n\t\t\n\t\t\n\t\t\tHEdwards\n\t\t\n\t\t\n\t\t\tBBaker\n\t\t\n\t\t\n\t\t\tTLee\n\t\t\n\t\t\n\t\t\tJLeike\n\t\t\n\t\t\n\t\t\tJSchulman\n\t\t\n\t\t\n\t\t\tISutskever\n\t\t\n\t\t\n\t\t\tKCobbe\n\t\t\n\t\tarXiv:2305.20050\n\t\tLet&apos;s verify step by step\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2305.20050",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Visual instruction tuning\n\t\t\n\t\t\tHLiu\n\t\t\n\t\t\n\t\t\tCLi\n\t\t\n\t\t\n\t\t\tQWu\n\t\t\n\t\t\n\t\t\tYJLee\n\t\t\n\t\n\t\n\t\tAdvances in neural information processing systems\n\t\t\n\t\t\t36\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Visual instruction tuning",
+   "anchors": []
+  },
+  {
+   "raw_text": "XLiu\n\t\t\n\t\t\n\t\t\tHYu\n\t\t\n\t\t\n\t\t\tHZhang\n\t\t\n\t\t\n\t\t\tYXu\n\t\t\n\t\t\n\t\t\tXLei\n\t\t\n\t\t\n\t\t\tHLai\n\t\t\n\t\t\n\t\t\tYGu\n\t\t\n\t\t\n\t\t\tHDing\n\t\t\n\t\t\n\t\t\tKMen\n\t\t\n\t\t\n\t\t\tKYang\n\t\t\n\t\tarXiv:2308.03688\n\t\tEvaluating llms as agents\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2308.03688",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Self-supervised learning: Generative or contrastive\n\t\t\n\t\t\tXLiu\n\t\t\n\t\t\n\t\t\tFZhang\n\t\t\n\t\t\n\t\t\tZHou\n\t\t\n\t\t\n\t\t\tLMian\n\t\t\n\t\t\n\t\t\tZWang\n\t\t\n\t\t\n\t\t\tJZhang\n\t\t\n\t\t\n\t\t\tJTang\n\t\t\n\t\n\t\n\t\tIEEE transactions on knowledge and data engineering\n\t\t\n\t\t\t35\n\t\t\t1\n\t\t\t\n\t\t\t2021",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Self-supervised learning: Generative or contrastive",
+   "anchors": [
+    {
+     "ref_id": "b21",
+     "section_path_id": "1",
+     "quote": "[22]",
+     "offset": 274
+    }
+   ]
+  },
+  {
+   "raw_text": "XLiu\n\t\t\n\t\t\n\t\t\tTZhang\n\t\t\n\t\t\n\t\t\tYGu\n\t\t\n\t\t\n\t\t\tILIong\n\t\t\n\t\t\n\t\t\tYXu\n\t\t\n\t\t\n\t\t\tXSong\n\t\t\n\t\t\n\t\t\tSZhang\n\t\t\n\t\t\n\t\t\tHLai\n\t\t\n\t\t\n\t\t\tXLiu\n\t\t\n\t\t\n\t\t\tHZhao\n\t\t\n\t\tarXiv:2408.06327\n\t\tTowards large multimodal models as visual foundation agents\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2408.06327",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b22",
+     "section_path_id": "1",
+     "quote": "[23]",
+     "offset": 759
+    },
+    {
+     "ref_id": "b22",
+     "section_path_id": "1",
+     "quote": "[23]",
+     "offset": 3484
+    },
+    {
+     "ref_id": "b22",
+     "section_path_id": "1",
+     "quote": "[23]",
+     "offset": 4568
+    },
+    {
+     "ref_id": "b22",
+     "section_path_id": "1~2",
+     "quote": "[23]",
+     "offset": 1206
+    },
+    {
+     "ref_id": "b22",
+     "section_path_id": "1~5",
+     "quote": "[23]",
+     "offset": 618
+    },
+    {
+     "ref_id": "b22",
+     "section_path_id": "2.2",
+     "quote": "[23]",
+     "offset": 606
+    },
+    {
+     "ref_id": "b22",
+     "section_path_id": "3.2",
+     "quote": "[23]",
+     "offset": 100
+    },
+    {
+     "ref_id": "b22",
+     "section_path_id": "3.2",
+     "quote": "[23]",
+     "offset": 195
+    }
+   ]
+  },
+  {
+   "raw_text": "RNakano\n\t\t\n\t\t\n\t\t\tJHilton\n\t\t\n\t\t\n\t\t\tSBalaji\n\t\t\n\t\t\n\t\t\tJWu\n\t\t\n\t\t\n\t\t\tLOuyang\n\t\t\n\t\t\n\t\t\tCKim\n\t\t\n\t\t\n\t\t\tCHesse\n\t\t\n\t\t\n\t\t\tSJain\n\t\t\n\t\t\n\t\t\tVKosaraju\n\t\t\n\t\t\n\t\t\tWSaunders\n\t\t\n\t\tarXiv:2112.09332\n\t\tBrowser-assisted question-answering with human feedback\n\t\t\n\t\t\t2021\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2112.09332",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b23",
+     "section_path_id": "1~5",
+     "quote": "[24]",
+     "offset": 205
+    }
+   ]
+  },
+  {
+   "raw_text": "New models and developer products announced at devday\n\t\t\n\t\t\tOpenai\n\t\t\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Openai\n\t\t\n\t\t\n\t\t\tHello\n\t\t\n\t\t\n\t\t\tgpt-4o, 2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "ROpenai\n\t\t\n\t\tarXiv\n\t\tGpt-4 technical report\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Generative agents: Interactive simulacra of human behavior\n\t\t\n\t\t\tJSPark\n\t\t\n\t\t\n\t\t\tJO'brien\n\t\t\n\t\t\n\t\t\tCJCai\n\t\t\n\t\t\n\t\t\tMRMorris\n\t\t\n\t\t\n\t\t\tPLiang\n\t\t\n\t\t\n\t\t\tMSBernstein\n\t\t\n\t\n\t\n\t\tProceedings of the 36th annual acm symposium on user interface software and technology\n\t\tthe 36th annual acm symposium on user interface software and technology\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Generative agents: Interactive simulacra of human behavior",
+   "anchors": []
+  },
+  {
+   "raw_text": "PPutta\n\t\t\n\t\t\n\t\t\tEMills\n\t\t\n\t\t\n\t\t\tNGarg\n\t\t\n\t\t\n\t\t\tSMotwani\n\t\t\n\t\t\n\t\t\tCFinn\n\t\t\n\t\t\n\t\t\tDGarg\n\t\t\n\t\t\n\t\t\tRRafailov\n\t\t\n\t\tarXiv:2408.07199\n\t\tAgent q: Advanced reasoning and learning for autonomous ai agents\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2408.07199",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b28",
+     "section_path_id": "1",
+     "quote": "[29]",
+     "offset": 4299
+    },
+    {
+     "ref_id": "b28",
+     "section_path_id": "3.1",
+     "quote": "[29]",
+     "offset": 115
+    },
+    {
+     "ref_id": "b28",
+     "section_path_id": "1~9",
+     "quote": "[29]",
+     "offset": 108
+    },
+    {
+     "ref_id": "b28",
+     "section_path_id": "1~9",
+     "quote": "[29]",
+     "offset": 132
+    },
+    {
+     "ref_id": "b28",
+     "section_path_id": "1~9",
+     "quote": "[29]",
+     "offset": 261
+    },
+    {
+     "ref_id": "b28",
+     "section_path_id": "1~15",
+     "quote": "[29]",
+     "offset": 24
+    }
+   ]
+  },
+  {
+   "raw_text": "Webrl: Training llm web agents via self-evolving online curriculum reinforcement learning\n\t\t\n\t\t\tZQi\n\t\t\n\t\t\n\t\t\tXLiu\n\t\t\n\t\t\n\t\t\tILIong\n\t\t\n\t\t\n\t\t\tHLai\n\t\t\n\t\t\n\t\t\tXSun\n\t\t\n\t\t\n\t\t\tJSun\n\t\t\n\t\t\n\t\t\tXYang\n\t\t\n\t\t\n\t\t\tYYang\n\t\t\n\t\t\n\t\t\tSYao\n\t\t\n\t\t\n\t\t\tWXu\n\t\t\n\t\t\n\t\t\tJTang\n\t\t\n\t\t\n\t\t\tYDong\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b29",
+     "section_path_id": "1",
+     "quote": "[30]",
+     "offset": 3445
+    },
+    {
+     "ref_id": "b29",
+     "section_path_id": "2.3",
+     "quote": "[30]",
+     "offset": 511
+    }
+   ]
+  },
+  {
+   "raw_text": "CRawles\n\t\t\n\t\t\n\t\t\tSClinckemaillie\n\t\t\n\t\t\n\t\t\tYChang\n\t\t\n\t\t\n\t\t\tJWaltz\n\t\t\n\t\t\n\t\t\tGLau\n\t\t\n\t\t\n\t\t\tMFair\n\t\t\n\t\t\n\t\t\tALi\n\t\t\n\t\t\n\t\t\tWBishop\n\t\t\n\t\t\n\t\t\tWLi\n\t\t\n\t\t\n\t\t\tFCampbell-Ajala\n\t\t\n\t\tarXiv:2405.14573\n\t\tA dynamic benchmarking environment for autonomous agents\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2405.14573",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Android in the wild: A large-scale dataset for android device control\n\t\t\n\t\t\tCRawles\n\t\t\n\t\t\n\t\t\tALi\n\t\t\n\t\t\n\t\t\tDRodriguez\n\t\t\n\t\t\n\t\t\tORiva\n\t\t\n\t\t\n\t\t\tTLillicrap\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t36\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Android in the wild: A large-scale dataset for android device control",
+   "anchors": [
+    {
+     "ref_id": "b31",
+     "section_path_id": "3.2",
+     "quote": "[32]",
+     "offset": 425
+    }
+   ]
+  },
+  {
+   "raw_text": "Planning in natural language improves llm search for code generation\n\t\t\n\t\t\tEWang\n\t\t\n\t\t\n\t\t\tFCassano\n\t\t\n\t\t\n\t\t\tCWu\n\t\t\n\t\t\n\t\t\tYBai\n\t\t\n\t\t\n\t\t\tWSong\n\t\t\n\t\t\n\t\t\tVNath\n\t\t\n\t\t\n\t\t\tZHan\n\t\t\n\t\t\n\t\t\tSHendryx\n\t\t\n\t\t\n\t\t\tSYue\n\t\t\n\t\t\n\t\t\tHZhang\n\t\t\n\t\tarXiv:2409.03733\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2409.03733",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b32",
+     "section_path_id": "1~5",
+     "quote": "[33]",
+     "offset": 902
+    }
+   ]
+  },
+  {
+   "raw_text": "Voyager: An open-ended embodied agent with large language models\n\t\t\n\t\t\tGWang\n\t\t\n\t\t\n\t\t\tYXie\n\t\t\n\t\t\n\t\t\tYJiang\n\t\t\n\t\t\n\t\t\tAMandlekar\n\t\t\n\t\t\n\t\t\tCXiao\n\t\t\n\t\t\n\t\t\tYZhu\n\t\t\n\t\t\n\t\t\tLFan\n\t\t\n\t\t\n\t\t\tAAnandkumar\n\t\t\n\t\tarXiv:2305.16291\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2305.16291",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Opendevin: An open platform for ai software developers as generalist agents\n\t\t\n\t\t\tXWang\n\t\t\n\t\t\n\t\t\tBLi\n\t\t\n\t\t\n\t\t\tYSong\n\t\t\n\t\t\n\t\t\tFFXu\n\t\t\n\t\t\n\t\t\tXTang\n\t\t\n\t\t\n\t\t\tMZhuge\n\t\t\n\t\t\n\t\t\tJPan\n\t\t\n\t\t\n\t\t\tYSong\n\t\t\n\t\t\n\t\t\tBLi\n\t\t\n\t\t\n\t\t\tJSingh\n\t\t\n\t\tarXiv:2407.16741\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2407.16741",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "ZZWang\n\t\t\n\t\t\n\t\t\tJMao\n\t\t\n\t\t\n\t\t\tDFried\n\t\t\n\t\t\n\t\t\tGNeubig\n\t\t\n\t\tarXiv:2409.07429\n\t\tAgent workflow memory\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2409.07429",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Androidlab: Training and systematic benchmarking of android autonomous agents\n\t\t\n\t\t\tYXu\n\t\t\n\t\t\n\t\t\tXLiu\n\t\t\n\t\t\n\t\t\tXSun\n\t\t\n\t\t\n\t\t\tSCheng\n\t\t\n\t\t\n\t\t\tHYu\n\t\t\n\t\t\n\t\t\tHLai\n\t\t\n\t\t\n\t\t\tSZhang\n\t\t\n\t\t\n\t\t\tDZhang\n\t\t\n\t\t\n\t\t\tJTang\n\t\t\n\t\t\n\t\t\tYDong\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b36",
+     "section_path_id": "1",
+     "quote": "[37]",
+     "offset": 4531
+    },
+    {
+     "ref_id": "b36",
+     "section_path_id": "3.2",
+     "quote": "[37]",
+     "offset": 77
+    },
+    {
+     "ref_id": "b36",
+     "section_path_id": "3.2",
+     "quote": "[37]",
+     "offset": 178
+    }
+   ]
+  },
+  {
+   "raw_text": "JYang\n\t\t\n\t\t\n\t\t\tHZhang\n\t\t\n\t\t\n\t\t\tFLi\n\t\t\n\t\t\n\t\t\tXZou\n\t\t\n\t\t\n\t\t\tCLi\n\t\t\n\t\t\n\t\t\tJGao\n\t\t\n\t\tarXiv:2310.11441\n\t\tSet-of-mark prompting unleashes extraordinary visual grounding in gpt-4v\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2310.11441",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b37",
+     "section_path_id": "2.1",
+     "quote": "[38]",
+     "offset": 935
+    }
+   ]
+  },
+  {
+   "raw_text": "ZYang\n\t\t\n\t\t\n\t\t\tJLiu\n\t\t\n\t\t\n\t\t\tYHan\n\t\t\n\t\t\n\t\t\tXChen\n\t\t\n\t\t\n\t\t\tZHuang\n\t\t\n\t\t\n\t\t\tBFu\n\t\t\n\t\t\n\t\t\tGYu\n\t\t\n\t\tarXiv:2312.13771\n\t\tAppagent: Multimodal agents as smartphone users\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2312.13771",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Star: Bootstrapping reasoning with reasoning\n\t\t\n\t\t\tEZelikman\n\t\t\n\t\t\n\t\t\tYWu\n\t\t\n\t\t\n\t\t\tJMu\n\t\t\n\t\t\n\t\t\tNGoodman\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t35\n\t\t\t\n\t\t\t2022",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Star: Bootstrapping reasoning with reasoning",
+   "anchors": []
+  },
+  {
+   "raw_text": "AZeng\n\t\t\n\t\t\n\t\t\tMLiu\n\t\t\n\t\t\n\t\t\tRLu\n\t\t\n\t\t\n\t\t\tBWang\n\t\t\n\t\t\n\t\t\tXLiu\n\t\t\n\t\t\n\t\t\tYDong\n\t\t\n\t\t\n\t\t\tJTang\n\t\t\n\t\tarXiv:2310.12823\n\t\tAgenttuning: Enabling generalized agent abilities for llms\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2310.12823",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "AZeng\n\t\t\n\t\t\n\t\t\tXLiu\n\t\t\n\t\t\n\t\t\tZDu\n\t\t\n\t\t\n\t\t\tZWang\n\t\t\n\t\t\n\t\t\tHLai\n\t\t\n\t\t\n\t\t\tMDing\n\t\t\n\t\t\n\t\t\tZYang\n\t\t\n\t\t\n\t\t\tYXu\n\t\t\n\t\t\n\t\t\tWZheng\n\t\t\n\t\t\n\t\t\tXXia\n\t\t\n\t\tarXiv:2210.02414\n\t\tGlm-130b: An open bilingual pre-trained model\n\t\t\n\t\t\t2022\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2210.02414",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "CZhang\n\t\t\n\t\t\n\t\t\tZYang\n\t\t\n\t\t\n\t\t\tJLiu\n\t\t\n\t\t\n\t\t\tYHan\n\t\t\n\t\t\n\t\t\tXChen\n\t\t\n\t\t\n\t\t\tZHuang\n\t\t\n\t\t\n\t\t\tBFu\n\t\t\n\t\t\n\t\t\tGYu\n\t\t\n\t\tarXiv:2312.13771\n\t\tAppagent: Multimodal agents as smartphone users\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2312.13771",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "SZhang\n\t\t\n\t\t\n\t\t\tHZhao\n\t\t\n\t\t\n\t\t\tXLiu\n\t\t\n\t\t\n\t\t\tQZheng\n\t\t\n\t\t\n\t\t\tZQi\n\t\t\n\t\t\n\t\t\tXGu\n\t\t\n\t\t\n\t\t\tXZhang\n\t\t\n\t\t\n\t\t\tYDong\n\t\t\n\t\t\n\t\t\tJTang\n\t\t\n\t\tarXiv:2405.04520\n\t\tNaturalcodebench: Examining coding performance mismatch on humaneval and natural user prompts\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2405.04520",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Webpilot: A versatile and autonomous multi-agent system for web task execution with strategic exploration\n\t\t\n\t\t\tYZhang\n\t\t\n\t\t\n\t\t\tZMa\n\t\t\n\t\t\n\t\t\tYMa\n\t\t\n\t\t\n\t\t\tZHan\n\t\t\n\t\t\n\t\t\tYWu\n\t\t\n\t\t\n\t\t\tVTresp\n\t\t\n\t\tarXiv:2408.15978\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2408.15978",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "BZheng\n\t\t\n\t\t\n\t\t\tBGou\n\t\t\n\t\t\n\t\t\tJKil\n\t\t\n\t\t\n\t\t\tHSun\n\t\t\n\t\t\n\t\t\tYSu\n\t\t\n\t\tarXiv:2401.01614\n\t\tGpt-4v (ision) is a generalist web agent, if grounded\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2401.01614",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Webarena: A realistic web environment for building autonomous agents\n\t\t\n\t\t\tSZhou\n\t\t\n\t\t\n\t\t\tFFXu\n\t\t\n\t\t\n\t\t\tHZhu\n\t\t\n\t\t\n\t\t\tXZhou\n\t\t\n\t\t\n\t\t\tRLo\n\t\t\n\t\t\n\t\t\tASridhar\n\t\t\n\t\t\n\t\t\tXCheng\n\t\t\n\t\t\n\t\t\tTOu\n\t\t\n\t\t\n\t\t\tYBisk\n\t\t\n\t\t\n\t\t\tDFried\n\t\t\n\t\n\t\n\t\tThe Twelfth International Conference on Learning Representations\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Webarena: A realistic web environment for building autonomous agents",
+   "anchors": [
+    {
+     "ref_id": "b46",
+     "section_path_id": "2.3",
+     "quote": "[47]",
+     "offset": 576
+    },
+    {
+     "ref_id": "b46",
+     "section_path_id": "1~8",
+     "quote": "[47]",
+     "offset": 89
+    }
+   ]
+  }
+ ],
+ "layout_json": null,
+ "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">AutoGLM: Autonomous Foundation Agents for GUIs</title>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability  status=\"unknown\">\n\t\t\t\t\t<licence/>\n\t\t\t\t</availability>\n\t\t\t\t<date type=\"published\" when=\"2024-10-28\">28 Oct 2024</date>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Xiao</forename><surname>Liu</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Bo</forename><surname>Qin</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Dongzhu</forename><surname>Liang</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Guang</forename><surname>Dong</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Hanyu</forename><surname>Lai</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Hanchen</forename><surname>Zhang</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Hanlin</forename><surname>Zhao</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Iat</forename><forename type=\"middle\">Long</forename><surname>Iong</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Jiadai</forename><surname>Sun</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Jiaqi</forename><surname>Wang</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Junjie</forename><surname>Gao</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Junjun</forename><surname>Shan</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Kangning</forename><surname>Liu</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Shudan</forename><surname>Zhang</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Shuntian</forename><surname>Yao</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Siyi</forename><surname>Cheng</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Wentao</forename><surname>Yao</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Wenyi</forename><surname>Zhao</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Xinghan</forename><surname>Liu</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Xinyi</forename><surname>Liu</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Xinying</forename><surname>Chen</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Xinyue</forename><surname>Yang</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Yang</forename><surname>Yang</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Yifan</forename><surname>Xu</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Yu</forename><surname>Yang</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Yujia</forename><surname>Wang</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Yulin</forename><surname>Xu</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Zehan</forename><surname>Qi</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Yuxiao</forename><surname>Dong</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Jie</forename><surname>Tang</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Zhipu</forename><surname>Ai</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Tsinghua</forename><surname>University</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">AutoGLM: Autonomous Foundation Agents for GUIs</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date type=\"published\" when=\"2024-10-28\">28 Oct 2024</date>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">00D73C3C32C4504D09F52ABA18C88BF9</idno>\n\t\t\t\t\t<idno type=\"arXiv\">arXiv:2411.00820v1[cs.HC]</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.0\" ident=\"GROBID\" when=\"2026-08-21T15:21+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.0</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>We present AUTOGLM, a new series in the ChatGLM family <ref type=\"bibr\" target=\"#b10\">[11]</ref>, designed to serve as foundation agents for autonomous control of digital devices through Graphical User Interfaces (GUIs). While foundation models excel at acquiring human knowledge, they often struggle with decision-making in dynamic real-world environments, limiting their progress toward artificial general intelligence. This limitation underscores the importance of developing foundation agents capable of learning through autonomous environmental interactions by reinforcing existing models. Focusing on Web Browser and Phone as representative GUI scenarios, we have developed AUTOGLM as a practical foundation agent system for real-world GUI interactions. Our approach integrates a comprehensive suite of techniques and infrastructures to create deployable agent systems suitable for user delivery. Through this development, we have derived two key insights: First, the design of an appropriate \"intermediate interface\" for GUI control is crucial, enabling the separation of planning and grounding behaviors, which require distinct optimization for flexibility and accuracy respectively. Second, we have developed a novel progressive training framework that enables self-evolving online curriculum reinforcement learning for AUTOGLM. Our evaluations demonstrate AUTOGLM's effectiveness across multiple domains. For web browsing, AUTOGLM achieves a 55.2% success rate on VAB-WebArena-Lite (improving to 59.1% with a second attempt) and 96.2% on OpenTable evaluation tasks. In Android device control, AUTOGLM attains a 36.2% success rate on AndroidLab (VAB-Mobile) and 89.7% on common tasks in popular Chinese APPs. Select AUTOGLM capabilities are now available through the <ref type=\"url\" target=\"https://chromewebstore.google.com/detail/%E6%99%BA%E8%B0%B1%E6%B8%85%E8%A8%80-%E4%BD%A0%E7%9A%84%E6%B5%8F%E8%A7%88%E5%99%A8ai%E5%8A%A9%E6%89%8B/mnpdbmgpebfihcndnpgdaihnkmloclkd\">Qingyan Browser Plugin</ref> for web applications and via <ref type=\"url\" target=\"https://chatglm.cn/main/gdetail/6715f75ec8d0a702dff1e4e6\">Form Applications</ref> for invited Android testing. Additional results and materials will be released at <ref type=\"url\" target=\"https://github.com/THUDM/AutoGLM\">https://github.com/THUDM/AutoGLM</ref>.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"8\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"9\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"10\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"1\">Introduction</head><p>Foundation models, including Large Language Models (LLMs) <ref type=\"bibr\">[5; 27; 7; 2; 42; 11]</ref> and Large Multimodal Models (LMMs) <ref type=\"bibr\">[20; 25; 26; 1]</ref>, have captured widespread attention for their remarkable language understanding and generation capabilities. Through extensive self-supervised <ref type=\"bibr\" target=\"#b21\">[22]</ref> pretraining on internet-scale corpora, these models have acquired not only knowledge and language  abilities but also human-like reasoning and planning capabilities, giving rise to LLMs as Agents <ref type=\"bibr\">[21; 28]</ref>. These agents have demonstrated their utility across diverse domains, including coding <ref type=\"bibr\">[35; 16; 44]</ref>, data analysis <ref type=\"bibr\">[14; 21]</ref>, and gaming <ref type=\"bibr\">[34; 18]</ref>, charting a promising course toward Artificial General Intelligence (AGI) through the development of multimodal Foundation Agents <ref type=\"bibr\" target=\"#b22\">[23]</ref> that serve as generalists across multiple tasks and environments.</p><p>The ubiquity of digital devices presents a unique opportunity for GUI-capable agents <ref type=\"bibr\">[13; 46; 43; 17]</ref>. This domain offers several advantages: GUI simulators can be readily deployed in parallel for data annotation and online reinforcement learning (RL); GUI environments provide rich textual and visual inputs essential for foundation model agents, but in a safer and controllable environments compared to embodied environments; and GUI agents hold broad practical appeal given their extensive potential user base. Their successful development could fundamentally transform human-device interaction.</p><p>However, the development of foundation agents for GUI faces a critical challenge: the scarcity of decision-making data in existing pre-training sets. While the internet contains vast human knowledge, it primarily consists of static information that inadequately captures human decision-making and environmental interaction. Building capable foundation agents requires enriching them with dynamic knowledge, either through direct interaction with real-world environments or through learning from synthesized trajectories. Such foundation agents can then self-evolve in the digital world, iteratively improving to achieve genuine general intelligence.</p><p>Crucially, these systems must be developed with progressive user deployment in mind. Autonomous agents are designed to augment, not replace, human capabilities. User deployment serves the dual purpose of teaching agents effective human assistance while allowing humans to adapt to intelligent assistants. This approach also enables researchers to systematically understand, discover, and examine both the potential benefits and risks of autonomous foundation agents during development.</p><p>In response to these opportunities and challenges, we introduce AUTOGLM, a series of foundation agents built upon the ChatGLM <ref type=\"bibr\" target=\"#b10\">[11]</ref> model family. AUTOGLM represents a pioneering attempt to develop foundation agent prototypes for two fundamental GUI scenarios: Web Browser and Android. To address the data scarcity challenge, we employ a comprehensive suite of training techniques and develop key infrastructures for user deployment. This process has yielded two crucial insights:</p><p>• Intermediate Interface Design: We find it essential to design an intermediate interface that disentangles planning and grounding behaviors in foundation GUI agents. They present distinct requirements -planning demands flexibility and error recovery, while grounding emphasizes action accuracy. Their separation enables more agile development and enhanced performance.</p><p>• Self-Evolving Online Curriculum RL <ref type=\"bibr\" target=\"#b29\">[30]</ref>: We recognize that error recovery <ref type=\"bibr\" target=\"#b22\">[23]</ref> is crucial for robust and deployable agent applications, yet it remains difficult to acquire through offline training alone. Additionally, the shortage of instructions and trajectories impedes training progress. We address this challenge through self-evolving RL, implemented according to a progressive weak-to-strong curriculum schedule in an online manner.</p><p>Building on these insights, AUTOGLM demonstrates exceptional capabilities across various benchmarks and real-world tests. In Web Browsing, AUTOGLM achieves a task success rate (SR) of 55.2% on the challenging VAB-WebArena-Lite [47; 23], substantially surpassing GPT-4o's 18.2%. With a second attempt opportunity, this improves to 59.1%. On OpenTable real-world booking tasks, AUTOGLM achieves 96.2% SR, outperforming both GPT-4o (62.6% SR) and Agent Q <ref type=\"bibr\" target=\"#b28\">[29]</ref> (81.7%). Select AUTOGLM web capabilities are publicly available via the <ref type=\"url\" target=\"https://chromewebstore.google.com/detail/%E6%99%BA%E8%B0%B1%E6%B8%85%E8%A8%80-%E4%BD%A0%E7%9A%84%E6%B5%8F%E8%A7%88%E5%99%A8ai%E5%8A%A9%E6%89%8B/mnpdbmgpebfihcndnpgdaihnkmloclkd\">Qingyan Browser Plugin</ref> on both Chrome and Edge Plugin Store. See the real example in Figure <ref type=\"figure\" target=\"#fig_1\">2</ref>.</p><p>For Android control, AUTOGLM achieves 36.2% SR on AndroidLab <ref type=\"bibr\" target=\"#b36\">[37]</ref> (previously known as VAB-Mobile <ref type=\"bibr\" target=\"#b22\">[23]</ref>), a comprehensive interactive Android evaluation framework. This performance exceeds both GPT-4o (31.2% SR) and Claude-3.5-Sonnet (29.0% SR). We have also implemented a practical Android application via AccessibilityService for autonomous device control. In human evaluation, AUTOGLM achieves an impressive 89.7% SR on common tasks (e.g., \"Please Order a large iced Americano with half sugar from the nearest coffee shop for delivery to my company\") across popular Chinese APPs. The Android client is currently available for invited internal testing through <ref type=\"url\" target=\"https://chatglm.cn/main/gdetail/6715f75ec8d0a702dff1e4e6\">Form Applications</ref>. See the real example in Figure <ref type=\"figure\" target=\"#fig_0\">1</ref>.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2\">AUTOGLM: Techniques and Insights</head><p>In this section, we will give an overview of the techniques involved in developing AUTOGLM. Particularly, we will discuss the two important insights that enable AUTOGLM's significant improvements compared to existing LLM or LMM-based GUI Agents.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.1\">Important Techniques</head><p>Training agents can be different from training ordinary LLMs or LMMs. A key obstacle lies in the lack of high-quality trajectory data that entails the decision-making process. Following are some useful techniques we realized during the project.</p><p>Pre-training. Generally, there is little agent-related data on internet text corpora, making LLMs fall short of effectively act as agents. Additionally, existing LMM pre-training, which is primarily \"visual instruction tuning\", models the alignment between texts and images without sufficiently learning from sequential multimodal data <ref type=\"bibr\">[4; 10]</ref>. As a result, properly leveraging existing online data with weaksupervised decision-making signals in pre-training would actually help. Besides, for multimodal perception, high-resolution visual inputs are very important according to CogAgent <ref type=\"bibr\" target=\"#b12\">[13]</ref> and our observations, especially when using grounding strategies like Set-of-Marks (SoM) prompting <ref type=\"bibr\" target=\"#b37\">[38]</ref>.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Large Multimodal Models (LMMs).</head><p>LMMs are important for GUI understanding and manipulation.</p><p>Traditionally in Robotic Process Automation (RPA), the paradigm has been using Optical Character Recognition (OCR) catcher to match key elements in human handcrafted automating programs, which cannot be scaled and generalized. LMMs, instead, can perform fuzzy matching and do long-horizon planning thanks to its strong grasping of commonsense and GUI environments from pre-training. Nevertheless, LMMs still require much training to gain strong planning and reasoning abilities necessary for agent tasks.</p><p>Behavior Cloning (Supervised Fine-tuning). Behavior Cloning (BC) is a key strategy for training agents from scratch with high-quality expert trajectories. The strategy has also been verified as effective for LLM and LMM-based agent training [24; 41; 6; 13; 17; 23]. Nevertheless, it is of extreme cost and time to collect expert trajectories. Moreover, a fundamental problem of using BC is that agents only learn to imitate experts' behaviors step-by-step without fully understanding its goal. When expert trajectories are oracle (mostly the case for maintaining training stability), agents fail to foster abilities to recover from errors well <ref type=\"bibr\" target=\"#b22\">[23]</ref>.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Curriculum Learning.</head><p>Agent tasks are usually of substantially varied difficulties. As a result, it is wise to progressively add difficulty to training with a curriculum schedule. For example, AutoWebGLM [17; 15] adopts a multi-stage curriculum, where agent models are sequentially trained with single-step tasks, simple few-step tasks, and complicated long-horizon tasks. DigiRL <ref type=\"bibr\" target=\"#b2\">[3]</ref> also proposes a simple curriculum to filter appropriate tasks from a fixed set of instructions according to the corresponding agent capabilities at a certain timestamp. We basically find the strategy very useful for building foundation agents with complex goal-achieving abilities.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Reward Modeling (RM).</head><p>To enable online RL with foundation agents, a proper RM is necessary for providing supervision. Traditionally, many RL agents are trained with limited tasks with precise rule-based reward functions. However, foundation agents based on LLMs and LMMs are targeting generalist mission accomplishment in open worlds, which contradicts task-specific reward functions' abilities. Therefore, it is crucial to build generalizable RMs that can deal with a wide range of real-world agent tasks. Specifically, RMs can be categorized to outcome-supervised ORM and process-supervised PRM <ref type=\"bibr\">[19; 8; 40]</ref>, which provide different granularities of effective supervision.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Reinforcement Learning (RL).</head><p>Compared to BC, RL from a narrow sense can better learn from failures. This is especially important for foundation agent training since high-quality expert trajectories are extraordinarily hard to acquire <ref type=\"bibr\" target=\"#b23\">[24]</ref>. However, the challenge in applying RL to foundation agent training lies in the inefficiency of sampling in environments. The problem can be understood from two aspects: 1) Simulators: when agents are exploring in the Web or Android environments, their efficiency is bounded by internet connection speed and maximum degree of parallelism. Environments like Android Virtual Devices are quite memory-consuming <ref type=\"bibr\" target=\"#b22\">[23]</ref>. 2) Sample Diversity: LLMs and LMMs are trained to output certain function-based actions. The strict function formatting usually requires overfitting training with the model, resulting in stubborn monotonous sampling results even when they are inferenced with a high temperature <ref type=\"bibr\" target=\"#b32\">[33]</ref>.</p><p>Despite the challenge, we believe to scale up RL and post-training on foundation models is crucial for building strong foundation agents, as indicated by the success of OpenAI o1. It is unlikely to build general intelligence without letting it learn from interactions with real-world environments. </p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.2\">Insight 1: Intermediate Interface Design</head><p>During the development, we find intermediate interface design vital for disentangling the behaviors of planning and grounding in foundation agents. By separating them into different modules, foundation agents can be improved from both dimensions of flexibility and accuracy without interference.</p><p>The intuition is simple: we find existing LLMs and LMMs to be more capable in planning than in grounding when executing agent tasks on existing benchmarks. While the planning could still be significantly improved, a majority of current errors arise from incorrect element identification in the grounding period <ref type=\"bibr\" target=\"#b22\">[23]</ref>. For example, a typical action generated in VAB-WebArena-Lite when testing with visual inputs would be:</p><p># End-to-End Agent do(action=\"Click\", element_coordinates=[823,684])</p><p>where the element \"4\" may refer to a \"Submit\" button on Reddit. If we change the format to the following:</p><formula xml:id=\"formula_0\">#</formula><p>Agent with Intermediate Interface Design # Planner do(action=\"Click\", element_description=\"the 'Submit' button on the bottom right\") # Grounder find_coordinates_by_instruction(\"the 'Submit' button on the bottom right\") # Expected Output: [823,684]</p><p>In this way, planner and grounder abilities could be separately improved. Actually, it is much easier to harvest massive grounding data from automatic construction from unsupervised environmental observations. In our experiments (Cf. Table <ref type=\"table\" target=\"#tab_0\">1</ref>), we find the strategy with the grounder we trained to be very useful for improving proprietary LLM/LMM API-based planners. Our observation is similar to another concurrent work <ref type=\"bibr\" target=\"#b11\">[12]</ref> which explores a universal grounding model for GUI agents.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.3\">Insight 2: Self-Evolving Online Curriculum RL</head><p>While Intermediate Interface Design helps alleviate the issue of inaccurate grounding, planning is still a problem. Many existing agent works in literature base their frameworks on proprietary LLM/LMM APIs, whose planning abilities consequently fail to be improved by training. As a result, we decide to explore training in-house planners via RL. It is very challenging as it lacks a sufficient amount of either user tasks or expert trajectories. We develop a self-evolving online curriculum RL framework-WebRL <ref type=\"bibr\" target=\"#b29\">[30]</ref>-for training foundation agents from scratch. Take We-bArena <ref type=\"bibr\" target=\"#b46\">[47]</ref> environment as an example, we adopt the actor-critic RL framework for training. Briefly speaking, we identify the most difficult issues when we apply curriculum RL to the problemtask data scarcity and policy distribution drift.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Task Data Scarcity.</head><p>Leveraging around 1,000 BC data provided by VisualAgentBench trajectories. Thus we apply self-evolving techniques to augment failed task instructions during online roll-outs, mutating instructions to be more complicated or simpler. These self-evolved instructions are filtered by the critic and then used for roll-outs in the next iterative training phase.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Policy Distribution Drift.</head><p>One significant problem of curriculum learning is the policy distribution drift during the progressive curriculum schedule. We develop a KL-constrained policy update for agent training, together with actor confidence filtered experience replay. The ablation study indicates that the designs are indispensable for consistent performance improvement during iterative training.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3\">Results</head><p>In this section, we report our evaluation of AUTOGLM on both Web and Android-oriented tasks.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.1\">Evaluated on Web</head><p>We adopt three interactive benchmarks: VAB-WebArena-Lite <ref type=\"bibr\">[47; 23]</ref> and an online human evaluation dataset OpenTable <ref type=\"bibr\" target=\"#b28\">[29]</ref>. AUTOGLM experiences training optimization in these environments.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>VAB-WebArena-Lite [47; 23]</head><p>. VAB-WebArena-Lite<ref type=\"foot\" target=\"#foot_0\">foot_0</ref> is a refined 165-task subset of the original 812-task WebArena <ref type=\"bibr\" target=\"#b46\">[47]</ref> with manual verification of answers and judge functions. Its design intention is to speed up the evaluation on WebArena and ensure judging correctness. We evaluate representative proprietary LLM/LMM APIs, open models <ref type=\"bibr\" target=\"#b8\">[9]</ref>, recent agent frameworks <ref type=\"bibr\">[36; 45]</ref>, and AUTOGLM. Results in Figure <ref type=\"figure\" target=\"#fig_3\">4</ref> show that AUTOGLM has significantly advanced on the benchmark, narrowing the performance gap between autonomous agents and humans.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>gpt-4o 20240513</head><p>Agent Q AutoGLM 0</p><p>20 40 60 80 100 Success Rate (%) 62.6% 81.7% 96.2% Success Rates Comparison OpenTable Eval <ref type=\"bibr\" target=\"#b28\">[29]</ref>. Following Agent Q <ref type=\"bibr\" target=\"#b28\">[29]</ref>, we also evaluate AUTOGLM on a real website OpenTable, which provides an online open booking service. Since the test set of <ref type=\"bibr\" target=\"#b28\">[29]</ref> is undisclosed, we reconstruct a 200-sample test set according to the example provided in its paper (\"Book reservation for restaurant Cecconi's on OpenTable for 4 people on May 22 2024 at 7:00 PM\") and run evaluation on the real OpenTable website with human evaluation. Results are in Figure <ref type=\"figure\" target=\"#fig_4\">5</ref>. AUTOGLM outperforms both gpt-4o and Agent Q on this real-world website.  </p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.2\">Evaluated on Android</head><p>We evaluate AUTOGLM's Android abilities on the academic benchmark AndroidLab <ref type=\"bibr\" target=\"#b36\">[37]</ref> (i.e., VAB-Mobile <ref type=\"bibr\" target=\"#b22\">[23]</ref>) and frequent tasks in common Chinese Mobile APPs on Android. AndroidLab <ref type=\"bibr\" target=\"#b36\">[37]</ref> (VAB-Mobile <ref type=\"bibr\" target=\"#b22\">[23]</ref>). AndroidLab is an interactive Android benchmark and development environments that support reproducible evaluation, covering systems and some offline deployable English APPs. Compared to some existing benchmarks such as AITW <ref type=\"bibr\" target=\"#b31\">[32]</ref>, its interactive nature allows more practical evaluation of foundation agents for Android and improvement via RL. We evaluate representative proprietary LLM/LMM APIs, open models <ref type=\"bibr\" target=\"#b8\">[9]</ref> fine-tuned on provided BC data, and AU-TOGLM. Results are shown in Figure <ref type=\"figure\" target=\"#fig_5\">6</ref>. AUTOGLM achieves 36.2% SR, the best-performed one among all compared agents.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Human Evaluation on Chinese Android APPs.</head><p>To test the practicality of AUTOGLM being deployed for public users, we carefully examine it on frequent tasks in 7 common Chinese Android APPs, including WeChat, Meituan, Taobao, Dianping, Amap, Xiaohongshu, and 12306.</p><p>We curate a test query set (Cf. Table <ref type=\"table\" target=\"#tab_1\">2</ref>) for evaluating AUTOGLM's real performance in the user delivery setting, where the final success rate is determined by human evaluation on the whole executing trajectories. Instead of evaluating an Android Virtual Device (AVD) as in AndroidLab and previous work <ref type=\"bibr\">[31; 39]</ref>, our evaluation is conducted in physical Android phones implemented with AccessibilityService applications to reflect the practical scenarios of foundation agents for phone use. Results are shown in Figure <ref type=\"figure\" target=\"#fig_6\">7</ref>. We classify results into 3 types for better understanding of AUTOGLM:</p><p>• Success: The task is completely successful, fulfilling all requirements in user instructions.</p><p>• Partial: The task is partially done in the correct direction without completing some following procedures to fulfill user requirements.</p><p>• Fail: The task is terminated too early, gets stuck in the middle, or goes in the wrong direction.</p><p>As we observe, AUTOGLM works decently on evaluated APPs. While currently, it is unable to solve all tasks perfectly, unfinished tasks are able to be half completed, which would still be of assistance in practical scenes to users to speed up GUI operations.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4\">Conclusion</head><p>Through this work, we introduced AUTOGLM, a series of foundation agents built upon the ChatGLM model family that demonstrates strong capabilities in GUI operation across web browsing and Android environments. Our key contributions include the design of an intermediate interface that effectively disentangles planning and grounding behaviors, and the development of a self-evolving online curriculum RL approach that enables robust error recovery and performance improvement. The strong empirical results across various benchmarks, including a 55.2% success rate on VAB-WebArena-Lite and 36.2% on AndroidLab, along with successful real-world deployments through browser plugins and Android applications, demonstrate AUTOGLM's potential as a significant step toward developing practical foundation agents for GUI interaction.</p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: AUTOGLM real phone use demonstration for instruction \"Order a hot coconut latte from Luckin Coffee with half sugar\" for Chinese Android APP Meituan. See more videos.</figDesc><graphic coords=\"2,108.00,71.98,396.02,265.95\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_1\"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: AUTOGLM real web-browser use demonstration for instruction \"Could you help me book a reservation for my parents and I at Megan's Kitchen on October 23, 2024 at 7:30 PM through OpenTable? You can reach me at 146xxxxxxxx, China.\" on the website OpenTable. See more videos.</figDesc><graphic coords=\"2,108.00,376.25,395.85,190.36\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_2\"><head>Figure 3 :</head><label>3</label><figDesc>Figure3: VAB-WebArena-Lite [47; 23], methods are all trained using GLM-4-9B-Base<ref type=\"bibr\" target=\"#b10\">[11]</ref>.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_3\"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Success rates of different agents on VAB-WebArena-Lite. * Results of AWM and WebPilot are evaluated on full WebArena and taken from reporting.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_4\"><head>Figure 5 :</head><label>5</label><figDesc>Figure5: OpenTable Eval<ref type=\"bibr\" target=\"#b28\">[29]</ref>.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_5\"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Success rates of different agents on AndroidLab. BC indicates behavior cloning training.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_6\"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Human evaluated success rates of AUTOGLM on Chinese APPs.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_0\"><head>Table 1 :</head><label>1</label><figDesc>Experiments on Intermediate Interface Design on VAB-WebArena-Lite [47; 23].</figDesc><table><row><cell>Observation Type</cell><cell cols=\"3\">gpt-4o (text) gpt-4o (visual) gpt-4-vision-preview (visual)</cell></row><row><cell>End-to-End Agent</cell><cell>14.3%</cell><cell>18.2%</cell><cell>18.8%</cell></row><row><cell cols=\"3\">Intermediate Interface Design 18.1% (+3.8%) 27.3% (+9.1%)</cell><cell>36.4% (+17.6%)</cell></row></table></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_1\"><head>Table 2 :</head><label>2</label><figDesc>Examples of test queries for evaluating AUTOGLM on Chinese APPs. Taobao Check the shipping/delivery status of the shirt I ordered Dianping What's the nearest restaurant from Beijing's must-eat list to my location Amap Order a ride/taxi to Taikoo Li Sanlitun, immediately Xiaohongshu Bookmark and summarize the most liked travel guide post about Aranya 12306 Book a bus ticket from Zhuhai to Guangzhou for Saturday</figDesc><table><row><cell>APP</cell><cell>Test Query Example</cell></row><row><cell>WeChat</cell><cell>Post a complimentary comment on Alice's latest post on Moments</cell></row><row><cell>Meituan</cell><cell>Order a cold coconut latte from nearest coffee shop, with half sugar</cell></row></table></figure>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"1\" xml:id=\"foot_0\"><p>https://github.com/THUDM/VisualAgentBench/blob/main/VAB-WebArena-Lite</p></note>\n\t\t</body>\n\t\t<back>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<monogr>\n\t\t<title/>\n\t\t<author>\n\t\t\t<persName><surname>Anthropic</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Claude</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">3.5 sonnet, 2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Introducing the next generation of claude</title>\n\t\t<author>\n\t\t\t<persName><surname>Anthropic</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Digirl: Training in-the-wild device-control agents with autonomous reinforcement learning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Bai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Cemri</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Pan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Suhr</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Levine</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Kumar</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2406.11896</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Video pretraining (vpt): Learning to act by watching unlabeled online videos</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Baker</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Akkaya</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Zhokov</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Huizinga</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Ecoffet</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Houghton</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Sampedro</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Clune</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">35</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"24639\" to=\"24654\" />\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Language models are few-shot learners</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><forename type=\"middle\">B</forename><surname>Brown</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Mann</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Ryder</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Subbiah</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Kaplan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Dhariwal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Neelakantan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Shyam</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Sastry</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Askell</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Agarwal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Herbert-Voss</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Krueger</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Henighan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Child</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Ramesh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><forename type=\"middle\">M</forename><surname>Ziegler</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Winter</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Hesse</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Sigler</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Litwin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Gray</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Chess</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Clark</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Berner</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Mccandlish</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Radford</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Sutskever</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Amodei</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 34th International Conference on Neural Information Processing Systems, NIPS&apos;20</title>\n\t\t<meeting>the 34th International Conference on Neural Information Processing Systems, NIPS&apos;20<address><addrLine>Red Hook, NY, USA</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Curran Associates Inc</publisher>\n\t\t\t<date type=\"published\" when=\"2020\">2020</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Shu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Shareghi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Collier</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Narasimhan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Yao</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2310.05915</idno>\n\t\t<title level=\"m\">Fireact: Toward language agent fine-tuning</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Chowdhery</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Narang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Devlin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Bosma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Mishra</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Roberts</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Barham</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><forename type=\"middle\">W</forename><surname>Chung</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Sutton</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Gehrmann</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2204.02311</idno>\n\t\t<title level=\"m\">Scaling language modeling with pathways</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b7\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Creswell</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Shanahan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Higgins</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2205.09712</idno>\n\t\t<title level=\"m\">Selection-inference: Exploiting large language models for interpretable logical reasoning</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b8\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Dubey</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Jauhri</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Pandey</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Kadian</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Al-Dahle</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Letman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Mathur</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Schelten</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Fan</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2407.21783</idno>\n\t\t<title level=\"m\">The llama 3 herd of models</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b9\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Building open-ended embodied agents with internet-scale knowledge</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Fan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Mandlekar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D.-A</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Anandkumar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Minedojo</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">35</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"18343\" to=\"18362\" />\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b10\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Glm</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Zeng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Yin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Rojas</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Feng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Lai</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2406.12793</idno>\n\t\t<title level=\"m\">A family of large language models from glm-130b to glm-4 all tools</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b11\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Gou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Zheng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Xie</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Chang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Shu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Su</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2410.05243</idno>\n\t\t<title level=\"m\">Navigating the digital world as humans do: Universal visual grounding for gui agents</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b12\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Hong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Lv</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Ji</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Dong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Ding</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2312.08914</idno>\n\t\t<title level=\"m\">A visual language model for gui agents</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b13\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Infiagent-dabench: Evaluating agents on data analysis tasks</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Hu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Wei</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Chai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Su</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Cheng</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2401.05507</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b14\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Openwebagent: An open toolkit to enable web agents on large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><forename type=\"middle\">L</forename><surname>Iong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Lai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Yao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Shen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Dong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics</title>\n\t\t<meeting>the 62nd Annual Meeting of the Association for Computational Linguistics</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t\t<biblScope unit=\"volume\">3</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"72\" to=\"81\" />\n\t\t</imprint>\n\t</monogr>\n\t<note>System Demonstrations)</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b15\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Swe-bench: Can language models resolve real-world github issues?</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><forename type=\"middle\">E</forename><surname>Jimenez</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Wettig</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Yao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Pei</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O</forename><surname>Press</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><forename type=\"middle\">R</forename><surname>Narasimhan</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">The Twelfth International Conference on Learning Representations</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b16\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Lai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><forename type=\"middle\">L</forename><surname>Iong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Yao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Shen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Dong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<title level=\"m\">Autowebglm: Bootstrap and reinforce a large language model-based web navigating agent</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b17\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Avalonbench: Evaluating llms playing the game of avalon</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Light</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Cai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Shen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Hu</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">NeurIPS 2023 Foundation Models for Decision Making Workshop</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b18\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Lightman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Kosaraju</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Burda</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Edwards</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Baker</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Lee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Leike</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Schulman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Sutskever</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Cobbe</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2305.20050</idno>\n\t\t<title level=\"m\">Let&apos;s verify step by step</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b19\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Visual instruction tuning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><forename type=\"middle\">J</forename><surname>Lee</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Advances in neural information processing systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">36</biblScope>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b20\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Lei</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Lai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Gu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Ding</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Men</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2308.03688</idno>\n\t\t<title level=\"m\">Evaluating llms as agents</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b21\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Self-supervised learning: Generative or contrastive</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Hou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Mian</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">IEEE transactions on knowledge and data engineering</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">35</biblScope>\n\t\t\t<biblScope unit=\"issue\">1</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"857\" to=\"876\" />\n\t\t\t<date type=\"published\" when=\"2021\">2021</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b22\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Gu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><forename type=\"middle\">L</forename><surname>Iong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Song</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Lai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2408.06327</idno>\n\t\t<title level=\"m\">Towards large multimodal models as visual foundation agents</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b23\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Nakano</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Hilton</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Balaji</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Ouyang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Kim</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Hesse</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Jain</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Kosaraju</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Saunders</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2112.09332</idno>\n\t\t<title level=\"m\">Browser-assisted question-answering with human feedback</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2021\">2021</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b24\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">New models and developer products announced at devday</title>\n\t\t<author>\n\t\t\t<persName><surname>Openai</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b25\">\n\t<monogr>\n\t\t<title/>\n\t\t<author>\n\t\t\t<persName><surname>Openai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Hello</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">gpt-4o, 2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b26\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Openai</surname></persName>\n\t\t</author>\n\t\t<idno>arXiv</idno>\n\t\t<title level=\"m\">Gpt-4 technical report</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"2303\" to=\"08774\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b27\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Generative agents: Interactive simulacra of human behavior</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><forename type=\"middle\">S</forename><surname>Park</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>O'brien</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><forename type=\"middle\">J</forename><surname>Cai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><forename type=\"middle\">R</forename><surname>Morris</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Liang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><forename type=\"middle\">S</forename><surname>Bernstein</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 36th annual acm symposium on user interface software and technology</title>\n\t\t<meeting>the 36th annual acm symposium on user interface software and technology</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"1\" to=\"22\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b28\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Putta</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Mills</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Garg</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Motwani</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Finn</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Garg</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Rafailov</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2408.07199</idno>\n\t\t<title level=\"m\">Agent q: Advanced reasoning and learning for autonomous ai agents</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b29\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Webrl: Training llm web agents via self-evolving online curriculum reinforcement learning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Qi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><forename type=\"middle\">L</forename><surname>Iong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Lai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Yao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Dong</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b30\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Rawles</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Clinckemaillie</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Chang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Waltz</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Lau</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Fair</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Bishop</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Campbell-Ajala</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2405.14573</idno>\n\t\t<title level=\"m\">A dynamic benchmarking environment for autonomous agents</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b31\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Android in the wild: A large-scale dataset for android device control</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Rawles</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Rodriguez</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O</forename><surname>Riva</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Lillicrap</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">36</biblScope>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b32\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Planning in natural language improves llm search for code generation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Cassano</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Bai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Song</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Nath</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Han</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Hendryx</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Yue</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2409.03733</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b33\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Voyager: An open-ended embodied agent with large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Xie</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Mandlekar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Xiao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Fan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Anandkumar</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2305.16291</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b34\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Opendevin: An open platform for ai software developers as generalist agents</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Song</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><forename type=\"middle\">F</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Zhuge</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Pan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Song</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Singh</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2407.16741</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b35\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><forename type=\"middle\">Z</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Mao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Fried</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Neubig</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2409.07429</idno>\n\t\t<title level=\"m\">Agent workflow memory</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b36\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Androidlab: Training and systematic benchmarking of android autonomous agents</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Cheng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Lai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Dong</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b37\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Zou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Gao</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2310.11441</idno>\n\t\t<title level=\"m\">Set-of-mark prompting unleashes extraordinary visual grounding in gpt-4v</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b38\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Han</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Fu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2312.13771</idno>\n\t\t<title level=\"m\">Appagent: Multimodal agents as smartphone users</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b39\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Star: Bootstrapping reasoning with reasoning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Zelikman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Mu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Goodman</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">35</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"15476\" to=\"15488\" />\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b40\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Zeng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Lu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Dong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2310.12823</idno>\n\t\t<title level=\"m\">Agenttuning: Enabling generalized agent abilities for llms</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b41\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Zeng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Du</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Lai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Ding</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Zheng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Xia</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2210.02414</idno>\n\t\t<title level=\"m\">Glm-130b: An open bilingual pre-trained model</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b42\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Han</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Fu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2312.13771</idno>\n\t\t<title level=\"m\">Appagent: Multimodal agents as smartphone users</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b43\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Zheng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Qi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Gu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Dong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2405.04520</idno>\n\t\t<title level=\"m\">Naturalcodebench: Examining coding performance mismatch on humaneval and natural user prompts</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b44\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Webpilot: A versatile and autonomous multi-agent system for web task execution with strategic exploration</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Ma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Ma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Han</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Tresp</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2408.15978</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b45\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Zheng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Gou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Kil</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Su</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2401.01614</idno>\n\t\t<title level=\"m\">Gpt-4v (ision) is a generalist web agent, if grounded</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b46\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Webarena: A realistic web environment for building autonomous agents</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><forename type=\"middle\">F</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Lo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Sridhar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Cheng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Ou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Bisk</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Fried</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">The Twelfth International Conference on Learning Representations</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+ "pdf_hash": "93f5c46e6a401cf221af9886ce4aa6634b5f64ca1aaa192ffd367339985c50f1",
+ "tables": [
+  {
+   "table_id": "tab_0",
+   "section_path_id": "1~18",
+   "section_ordinal": 25,
+   "caption": "Table 1 :",
+   "coordinates": null,
+   "cells": [
+    {
+     "row": 0,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Observation Type",
+     "coordinates": null,
+     "span": {
+      "start": 76,
+      "end": 92
+     },
+     "digest": "66e5c545c454953e352940e86ba824930d298b27a8b614800d29061a998b2966"
+    },
+    {
+     "row": 0,
+     "column": 1,
+     "colspan": 3,
+     "rowspan": 1,
+     "text": "gpt-4o (text) gpt-4o (visual) gpt-4-vision-preview (visual)",
+     "coordinates": null,
+     "span": {
+      "start": 92,
+      "end": 151
+     },
+     "digest": "b3376c07ddf78f3432e2942f95b8fd0de802f72a10b58ae4436a921563f5cc7e"
+    },
+    {
+     "row": 1,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "End-to-End Agent",
+     "coordinates": null,
+     "span": {
+      "start": 151,
+      "end": 167
+     },
+     "digest": "52171616da5bd780af3d083f91d07bdf1cb9157030004fd0cb3bf1c1fe0f7801"
+    },
+    {
+     "row": 1,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "14.3%",
+     "coordinates": null,
+     "span": {
+      "start": 167,
+      "end": 172
+     },
+     "digest": "14f6ae33b0bc5c2f7e050a336eca2671fdc423b8c724dd0b79dad69829b712d0"
+    },
+    {
+     "row": 1,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "18.2%",
+     "coordinates": null,
+     "span": {
+      "start": 172,
+      "end": 177
+     },
+     "digest": "05d95af608469b4fac2a27600a3a31ac288f341c248197b74b919157ca9a6b72"
+    },
+    {
+     "row": 1,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "18.8%",
+     "coordinates": null,
+     "span": {
+      "start": 177,
+      "end": 182
+     },
+     "digest": "24c43f5979aa7480411ae459c664804d1185fe1f8c0eeb6b8b30230aa5326413"
+    },
+    {
+     "row": 2,
+     "column": 0,
+     "colspan": 3,
+     "rowspan": 1,
+     "text": "Intermediate Interface Design 18.1% (+3.8%) 27.3% (+9.1%)",
+     "coordinates": null,
+     "span": {
+      "start": 182,
+      "end": 239
+     },
+     "digest": "6ca9a5fac228588a00c8011ae45e912312919843ad6bc9f938f2533c16e94c77"
+    },
+    {
+     "row": 2,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "36.4% (+17.6%)",
+     "coordinates": null,
+     "span": {
+      "start": 239,
+      "end": 253
+     },
+     "digest": "acddf01b392da66a20186b87e8e08fab1abb3c938af8ab9a87966755a44b8da8"
+    }
+   ],
+   "source_digest": "d7a0c47cd57b5de5fc05a3bc3fab5cd44cf49d45205c5940edf83c0a589610cc",
+   "missingness": null
+  },
+  {
+   "table_id": "tab_1",
+   "section_path_id": "1~19",
+   "section_ordinal": 26,
+   "caption": "Table 2 :",
+   "coordinates": null,
+   "cells": [
+    {
+     "row": 0,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "APP",
+     "coordinates": null,
+     "span": {
+      "start": 414,
+      "end": 417
+     },
+     "digest": "63acb07378e2b1185c063d9cbd36d38c1064c7363c692b303825b1d9a882eeb5"
+    },
+    {
+     "row": 0,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Test Query Example",
+     "coordinates": null,
+     "span": {
+      "start": 417,
+      "end": 435
+     },
+     "digest": "81141346f8090e4ade91998534fde7cf26225aa52510584fae556d7780e70518"
+    },
+    {
+     "row": 1,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "WeChat",
+     "coordinates": null,
+     "span": {
+      "start": 435,
+      "end": 441
+     },
+     "digest": "83d988c5c0f5a4b815e534a31466eef8ed009d54949edd21bfb2348824343f59"
+    },
+    {
+     "row": 1,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Post a complimentary comment on Alice's latest post on Moments",
+     "coordinates": null,
+     "span": {
+      "start": 441,
+      "end": 503
+     },
+     "digest": "8c5ce92a67591e826abd65a39d30d726a46c4cf0adb0eb87fe2f037a8610a798"
+    },
+    {
+     "row": 2,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Meituan",
+     "coordinates": null,
+     "span": {
+      "start": 503,
+      "end": 510
+     },
+     "digest": "66c77a6036ff787b41e8ab53c27d262a652ca8c9fe207044de645749ea4b1bc3"
+    },
+    {
+     "row": 2,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Order a cold coconut latte from nearest coffee shop, with half sugar",
+     "coordinates": null,
+     "span": {
+      "start": 510,
+      "end": 578
+     },
+     "digest": "67a7364fe222f47fa7db281565122138027ea59bca15e6d6ad3687ffa0468298"
+    }
+   ],
+   "source_digest": "3ccda62fc182d9260203301d94e831046a2fea227d33f4d7045434613325dcd1",
+   "missingness": null
+  }
+ ],
+ "table_missingness": null,
+ "formulas": [
+  {
+   "formula_id": "formula_0",
+   "section_path_id": "2.2",
+   "section_ordinal": 7,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "#"
+   },
+   "span": {
+    "start": 887,
+    "end": 888
+   },
+   "source_digest": "c612269a8b5b0fda0db4edca40f15f364ed1f2781306c4b808b65fd1205f9912",
+   "missingness": null
+  }
+ ],
+ "formula_missingness": null,
+ "page_text_missingness": null
+}

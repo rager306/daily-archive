@@ -1,0 +1,1302 @@
+{
+ "paper_id": "2509.12987",
+ "title": "Toward PDDL Planning Copilot",
+ "abstract_text": "Large Language Models (LLMs) are increasingly being used as autonomous agents capable of performing complicated tasks. However, they lack the ability to perform reliable longhorizon planning on their own. This paper bridges this gap by introducing the Planning Copilot, a chatbot that integrates multiple planning tools and allows users to invoke them through instructions in natural language. The Planning Copilot leverages the Model Context Protocol (MCP), a recently developed standard for connecting LLMs with external tools and systems. This approach allows using any LLM that supports MCP without domain-specific fine-tuning. Our Planning Copilot supports common planning tasks such as checking the syntax of planning problems, selecting an appropriate planner, calling it, validating the plan it generates, and simulating their execution. We empirically evaluate the ability of our Planning Copilot to perform these tasks using three open-source LLMs. The results show that the Planning Copilot highly outperforms using the same LLMs without the planning tools. We also conducted a limited qualitative comparison of our tool against Chat GPT-5, a very recent commercial LLM. Our results shows that our Planning Copilot significantly outperforms GPT-5 despite relying on a much smaller LLM. This suggests dedicated planning tools may be an effective way to enable LLMs to perform planning tasks.",
+ "body_text": "IntroductionLarge Language Models (LLMs) like ChatGPT, Gemini, and Grok, can, among other things, generate coherent text, solve chemistry related problems (Guo et al. 2023), support electronics design (Alvanaki, Lee, and Carloni 2025), and perform various software engineering tasks (Nam et al. 2024;Chen et al. 2024;Achiam et al. 2023;Huang and Chang 2022). However, it has been argued that their abilities stem from statistical pattern recognition rather than true understanding (Kambhampati 2024). Indeed, even state-of-theart LLMs struggle with tasks involving long-horizon planning (Huang et al. 2025;Shojaee et al. 2025).Domain-independent automated planning is a wellestablished approach for solving long-horizon, goaloriented, planning problems (Ghallab, Nau, and Traverso 2004). Unlike Reinforcement Learning (RL) methods that depend on interaction with the environment, domainindependent planning operate on a symbolic domain model that specifies the preconditions and effects of each action. These symbolic domains are often defined using the Planning Domain Definition Language (PDDL) (Howe et al. 1998). A planning problem in the PDDL formalism is defined by two components -a PDDL domain and a PDDL problem. The PDDL domain defines the environment and the agent's capabilities and the PDDL problem defines the specific objects on which it is defined as well as the initial and the goal states.Research on domain-independent planning have produced a diverse set of automated planners over the years. Such planners accept a PDDL domain and problem and produce solutions -plans -with formal guarantees of correctness and in some cases optimality. Some planners only support domains with discrete state variables (Helmert 2006;Hoffmann 2001) while others also support numeric state variables (Scala et al. 2016;Hoffmann 2003), as well as more complex aspects of the planning problem such as time (Baier, Bacchus, and McIlraith 2009;Coles et al. 2009) and non-determinism (Muise, McIlraith, and Beck 2024). Planning research also developed a variety of supporting tools such VAL, which validates a given plan is executable and achieves the intended goals (Howey, Long, and Fox 2004); scripts for parsing PDDLs; and translators facilitate the creation, manipulation, and conversion of planning problems across different syntax and formalisms. Together, these tools form a robust planning ecosystem that provides strong theoretical foundations as well as reliability and predictability of the generated plans.While automated planning provides powerful guarantees and a rich ecosystem of tools, applying these planning tools directly requires substantial manual effort. Users must choose appropriate planners based on the problem type, and leverage separate tools for validating and analyzing plans. Each stage of the pipeline-syntax checking, planner invocation, plan validation, and execution-typically involves different tools and formats, creating a fragmented workflow. This complexity can hinder adoption, especially for users who lack expertise in planning formalisms or want to interact with the system through natural language. A unified framework that integrates these stages into a single, LLMbased interface could therefore drastically reduce this burden and make planning tools more accessible.In this work, we introduce the Planning Copilot 1 -a chatbot that integrates multiple planning tools and allows users to invoke them through plain English instructions. To achieve this, we leverage the Model Context Protocol (MCP) (Anthropic 2024), a recently developed standard for connecting language models with external tools and systems. MCP enables LLMs to augment their reasoning with real-world actions such as image generation, web search, and API calls, enabling overall much better performance. The Planning Copilot includes the following capabilities: (1) automated planner selection, allowing the LLM to choose between classical and numeric planners based on the domain; (2) syntactic domain validation, ensuring that PDDL domains conform to expected standards; (3) plan verification, where the LLM invokes VAL (Howey, Long, and Fox 2004)-a well known plan validator -to validate a given plan; and (4) plan simulation and trace generation, providing state inspection capabilities to support debugging and analysis of planning outcomes. These features allow LLMs to act as effective assistants for AI researchers. In particular, they complement natural language to PDDL (NL-to-PDDL) translation pipelines by enabling the planning, validation, and execution of generated models.\nPreliminariesIn this section, we provide the necessary background and review previous work relevant to our study. We begin by introducing the concept of integrating large language models with external tools. Then, we give a brief introduction to Automatic Planning and the Planning Domain Definition Language (PDDL) (Howe et al. 1998). Next, we discuss prior work on using LLMs to solve planning problems.\nLLMs as AgentsIn recent years, numerous large language models (LLMs) have been developed (Team et al. 2023;Touvron et al. 2023;Gunasekar et al. 2023;Liu et al. 2024, inter alia). These models enable sophisticated natural language understanding and generation, supporting applications ranging from question answering and summarization to code synthesis and educational tools (Lewis et al. 2019;Jiang et al. 2024;Kasneci et al. 2023). Despite their strengths in producing coherent and contextually appropriate text, LLMs natively lack the ability to sense or act within their environments and thus cannot function as autonomous agents on their own. To overcome these limitations, LLMs have been equipped with tools that they can invoke to interact with external environments (e.g., reserving tables in restaurants, booking hotels), thereby enabling them to act autonomously (Zeng et al. 2023). Early efforts such as Toolformer (Schick et al. 2023) investigate pre-training LLMs to recognize when and how to invoke each tool. More recent work on standardized protocols (Ding and Stevens 2025), such as MCP, allows modular, runtime integration, of external tools without any specific fine-tuning. Through such tool integration, agentic AI systems can perform a wide array of tasks -including image While these tools help LLMs perform complex tasks, they still struggle with reliable long-horizon planning and dynamic goal decomposition, which limits their ability to execute multi-step strategies independently (Huang et al. 2025;Shojaee et al. 2025).\nAutomatic PlanningAutomated Planning is a subfield of Artificial Intelligence (AI) focused on generating plans-which are sequences of actions-that intelligent agents can execute to achieve their goals. Automated Planning can be defined through a variety of problem formulations. In this work, we focus on Planning Domain Definition Language (PDDL) (Howe et al. 1998) and its later extension PDDL 2.1 (Fox and Long 2003). The PDDL (and PDDL 2.1) formalism includes two components-the domain and the problem. The domain describes the environment using predicates and functions, as well as the agent's capabilities, i.e., the actions. The problem contains the problem-specific objects, a definition of the initial state from which the planning algorithm begins to find a solution, and the desired goal. Together, with this precise knowledge, planners such as FastDownward (Helmert 2006), Metric-FF (Hoffmann 2003), ENHSP (Scala et al. 2016), and NYX (Piotrowski and Perez 2024) can efficiently generate plans and can offer formal guarantees about their correctness and optimality. We consider two types of planning: classical planning, where actions deterministically change a finite set of propositional states, and numeric planning, which extends this model with numeric functions to capture quantities such as resources or costs.\nLeveraging LLMs for Automated PlanningValmeekam, Stechly, and Kambhampati (2024) demonstrated that LLMs struggle with basic planning tasks, while Pallagani et al. (2023) showed promise using fine-tuned sequence-to-sequence models like Plansformer (Pallagani et al. 2022), though with limited generalization to out-ofdistribution domains. The LLM+P framework (Liu et al. 2023) converts natural language planning problem descriptions into PDDL using GPT-4, then translates the resulting solutions back into natural language for robot planning scenarios. Similarly, GenPlanX (Borrajo et al. 2025) completes a more comprehensive cycle by using LLMs to generate problem instances, which are then processed by a handcoded pipeline that invokes the planner to solve them. How-ever, significant challenges remain not only in generating accurate PDDL models but also in validating, executing, and debugging these models to ensure practical usability. The Planning Copilot we propose in this work addresses these challenges.\nThe Planning CopilotThe Planning Copilot we propose integrates external planning-related tools into a given LLM. It allows the LLM to perform long-term planning and validate its outcome, and relieves users from the burden of running, validating, and adapting inputs for these planning tools by providing a natural language interface mediated by the LLMs.Our Planning Copilot supports three main use cases, denoted here as Solve, Validate, and Simulate. We describe each of these use cases below. Each use case is supported by one or more MCP functions. These MCP functions allow the LLM to call these planning tools and use the information they output to support the desired use case. Notably, this modular design makes it straightforward to integrate with other systems-such as those that generate PDDL domains and problems from natural language-thereby extending our Planning Copilot's capabilities in the future.The Solve use case In this use case, the Planning Copilot is required to solve a planning problem described by a given PDDL domain and problem. It should do so by calling a suitable planner. To support this use case, the Planning Copilot includes two MCP functions, one that calls a classical planner and one that calls a numeric planner. Both calls accepts a PDDL domain and problem specification, executes a planner, and returns the resulting plan to the LLM.Importantly, the user is not obligated to specify which planner to use. The LLM should infer from from the input files which planning algorithm should be called. This is reasonable because LLMs are trained on data from the web, and different planning domains (classical and numerical) are available in open source repositories.The Validate use case In this use case, the Planning Copilot is required to validate either the PDDL domain, the PDDL problem, or the plan generated by some planner. That is, the validation functionality supported by the component includes:• Checking the syntactic correctness of the PDDL domain specifications.• Ensuring the PDDL problem is consistent with given PDDL domain.• Validating a given plan is correct, i.e., it achieve the intended goal state according to the given PDDL domain and problem.The corresponding MCP function supports validation at various stages of planning: domain definition, problem formulation, and generated plans. If the validation fails, the tool will notify the LLM. In plan validation specifically, the LLM is given the reason for failure and a possible fix suggestion.You are a PDDL planner in a tool-based planning system.Your ONLY way to get information or solve problems is by calling the provided tools ONE AT A TIME -never guess or create plan details yourself .On each turn, either:-Call the next tool (name + inputs), or -Give the final answer in natural language BASED ONLY on tool outputs so far.Do not combine tool calls or answer prematurely. Final answers must contain no tool commands or intermediate data.Available tools: {tool_list}. Choose the most suitable based on the problem. If a tool returns nothing, treat the problem as unsolvable. Always wait for results -never guess. The Simulate use case In this use case, the Planning Copilot is required to simulate the step-wise execution of a given plan. Its MCP function takes a domain, problem, and plan as input and generates a detailed execution trace that records the intermediate state after each action activation. Like the other MCP functions, it allows the LLM to incorporate the verified outputs from the tools back into its context, enabling it to use that information for subsequent reasoning and to provide the user with a more reliable and comprehensive response. For example, given a trace, the LLM could retrieve the 5th state or the 10th action.Additionally, a dedicated MCP function saves plans locally to support tool chaining and pipelining, allowing other components or tools to access and continue processing the plan.\nWorkflow Management We implement our PlanningCopilot's control flow using LangGraph (Wang and Duan 2024), an Agentic AI framework that represents workflows as a stateful graph of nodes (LLM calls, tools) and directed edges (control decisions) as seen in Figure 1. Tool selection is handled through a loop between MCP and the LLM: MCP provides the LLM with a list of available tools, including their purpose, inputs, and outputs, and the LLM chooses the one that best matches the current goal. MCP executes the selected tool, records the results in an execution trace, and returns this feedback to the LLM, which reflects on the trace to validate correctness and adjust future selections if needed. Figure 2 shows a snippet of the system prompt used to steer tool selection and error-recovery.You are a PDDL planner capable of directly reasoning about and generating plans.You can analyze PDDL problems, validate syntax, create plans, and simulate state transitions all on your own.Carefully reason step-by-step about problem requirements and constraints before producing outputs.Do NOT wait for or rely on external tools your responses should be fully self contained.For tasks: {task name: required format} Answer only for the specific task you are asked; do not provide information about other tasks.Figure 3: System prompt for the baseline LLMs, which are not given the planning tools.\nExperimental ResultsWe have implemented our Planning Copilot over several open-source LLMs. In this section, we provide information about our implementation and present experimental results comparing the performance of our Planning Copilot with baseline LLMs.\nImplementation DetailsFor the Solve use case, we created an MCP function that call FastDownward (Helmert 2006), which is a planner for classical planning problems, and an MCP function that calls Metric-FF (Hoffmann 2003), a planner for numeric planning problems. For the Validate use case, we created an MCP wrapper of VAL (Howey, Long, and Fox 2004), a plan validation tool. For the Simulate use case, we implemented an MCP function that runs a simple plan simulation script 2 . The choice of LLM is flexible; we only require a model that supports MCP. In our implementation, we chose to compare a family of LLMs by Alibaba called Qwen3 (Yang et al. 2025) and the GPT-OSS 3 model, both of which support MCP and the so-called reasoning capabilities. Qwen implemented an \"think\" mechanisms that allow it multistep self-reflection, often employing techniques such as the Chain-of-Thought (CoT) mechanism (Wei et al. 2022). Previous results showed that the Qwen3:4B model, even without explicit \"thinking\" mechanisms, outperformed other non-thinking models (including LLaMA-3.1-8B-Instruct). When augmented with thinking capabilities, Qwen3:4B achieved competitive performance against larger thinking models (such as DeepSeek-R1-Distill-Qwen-14B), surpassing them in most evaluations. More over, GPT-OSS is the latest open-source model, employs a Mixture-of-Experts 2 https://github.com/argaman-aloni/pddl plus parser 3 https://openai.com/index/introducing-gpt-oss (MoE) (Shazeer et al. 2017) architecture with a focus on tool-augmented reasoning and agentic workflows, making it an ideal candidate for our PDDL tool-using framework.\nExperimental DesignIn our experiments, we used ten domains-BARMAN, BLOCKSWORD, DEPOTS-CLASSICAL, ROVERS, SATEL-LITE, DEPOTS-NUMERIC, COUNTERS, FARMLAND, SAIL-ING, and MINECRAFT-POGO. The first five domains are from the the classical track in International Planning Competition (IPC) (Long and Fox 2003), the next four are from the numeric IPC track 2023 (Taitler et al. 2024), and the last one is non-IPC numeric domain (Benyamin et al. 2024).We evaluate our system in a zero-shot setting, i.e., without any dedicated pre-training. First, we test whether the use of tools improves the LLM's performance in answering the tasks. In Figure 3 we can see the system prompt used when the LLM does not have access to tools. Second, in the toolusing condition, we measure the percentage of correct task answers. The first evaluation compares LLM performance with and without tool usage, while the second considers only runs with tools. Note that in the results we evaluated two versions of each model-with and without the model's internal deliberation (\"thinking\") ability-and reported the better of the two.Each task in our evaluation consists of 10 distinct problems, including 5 numeric problems and 5 classic problems. For each problem type, we generate 5 variations of the task prompt to test model robustness across slightly different formulations. The first evaluation contains five core tasks involving a single request that can be easily solved by an expert using one of the provided tools. These tasks include:(1) given a domain, check its syntax; (2+3) given a domain and problem, check the problem's syntax or find a solution; and (4+5) given a domain, problem, and plan, verify that the plan solves the problem or simulate its execution.When we have simulation task we can also request returning a specific states during its execution. To capture this, we define tasks that can be chained together, where the number of subtasks in the chain is denoted as no.tasks. A task chain of length no.tasks may require up to no.tasks-1 tool calls to solve, with the difficulty increasing as the chain length grows. The evaluation includes tasks across different chain lengths: 250 tasks for no.tasks = 1 (derived from 10 problems × 5 prompt variants × 5 different requests), 100 tasks each for no.tasks = 2, 3, 4, and 50 tasks for no.tasks = 5, resulting in a total of 12 task chains of varying complexity for the second evaluation.We also have a task that request returning specific states within the transition, this task is depend on running the simulation correctly. By chain one task to another we obtain a total of 12 tasks of varying no.tasks (number of task that chain toghether) for the second evaluation. Each of these tasks can require no.tasks-1 tool calling to solve the tasks, with a maximum of no.tasks -1 tools per level. There are 250 tasks in no.tasks = 1 (10 problems, 5 variants per prompt, and 5 different requests), 100 tasks for levels no.tasks = 2, 3, 4, and 50 tasks for the no.tasks = 5.To assess model performance, we performed validation on the plan solutions using VAL. The validation evaluated whether the answers were correct, and the simulated outputs were compared to the real simulation results using the capabilities of pddl plus parser ability. The outputs then were manually evaluated to verify whether the final results provided to the end user were correct. This ensured that both correctness and applicability of the generated plans were taken into account. When evaluating tool usage, we only consider cases where the LLM explicitly employed the correct tools needed to accomplish the task, preventing unverified answers from being returned to the user.Experiments were conducted via API on LangGraph while all code, prompts, temperature, and evaluation scripts were fixed prior to testing to prevent unintended modifications and ensure consistency across experiments. Specifically, the experiments ran on an RTX 6000 GPU with 48 GB of VRAM. Each model used the same system prompt and tool settings, with the randomness parameter (temperature) set to 0. Self-loops within the LangGraph were limited to 10 iterations.\nResults: Single Task ComparisonTable 1 presents the results of our evaluation comparing LLMs with and without access to planning tools. Each row represents a different model , and the columns correspond to the different tasks we have: Solve, Validate Domain, Validate Problem, Validate Plan, and Simulate.As expected, LLMs augmented with these tools outperformed those without them. As an example, without using tools, none of the LLMs could simulate the plan, while Qwen-3:0.6B succeeded 6% of the time, Qwen-3:4B succeeded 24%, and GPT-OSS:20B succeeded 80%. Specifically, except for the problem validation task, GPT-OSS augmented with the tools outperformed all other models. The task that was the most challenging for LLMs without planning tools was the simulation task, as it requires the model to track state changes and manage the add and delete effects of each action across multiple steps. In contrast, the different validation tasks was executed most successfully among all the tasks, though it can occasionally be answered correctly by chance. This highlights the importance of planning tools: they ensure that the plans returned by the LLM are not only applicable but also verified through real validation or simulation. Tools like those in our system provide users with confidence that the results they receive are accurate and reliable.After establishing that tools improve LLM solving performance, we now focus on how well these models select the appropriate tool for the Solve task. In this task, the LLM receives a domain and a problem and must select a planner to generate a solution. Figure 4 shows a subset of the results, highlighting how often the LLM chose the correct tool: a classical planner for classical PDDL problems and a numeric planner for numeric PDDL problems. The results indicate that the LLM was able to solve almost all classical planning problems using the correct tool, while numeric planning proved more challenging. This may be because numeric planning is less common and more complex, so the  model likely has less exposure to numeric problems in its training set.\nResults: Multi-Task ComparisonFigure 5 presents the performance of tool using of LLMs on more challenging tasks that require multiple tool calls in sequence to fulfill the user's request. For instance, tasks that require a single tool run, as shown in Figure 1 are averaged and represented as a single bar at the first position. As expected, we observe that performance declines across different LLMs as the number of required tool calls increases. Notably, GPT-OSS achieves the best results on tasks involving two or fewer tool calls. This highlights the importance of robust multi-step reasoning capabilities in LLMs, as errors can compound across sequential tool executions, significantly impacting overall task performance. Future work could explore strategies for decomposing large prompts into smaller, manageable subtasks, improving error detection and recovery, and dynamically selecting tools based on intermediate outputs to better handle complex, multi-request prompts.\nComparison with GPT-5We performed a small-scale qualitative comparison with the state-of-the-art LLM GPT-5foot_0 . Specifically, we executed queries using the chat itself, and we did not run the code using the API. We allowed the chat to think longer to provide with the best response it could, i.e., we enabled the LLM to select (if needed) to use the GPT-5 Thinking model, which may think longer to provide better response. For each query we opened a new chat to enable each query to run independently. We performed the following tasks: (1) solve, (2) domain validation (3) problem validation, (4) plan validation and (5) plan simulation. Each task was preformed on 5 different instances. We used the same queries as used for the models without the tools. As access to the GPT-5's API is costly, we selected to perform a small preliminary evaluation to compare our approach against this flagship model.Figure 6 presents the comparison results between our tool, based on the GPT-OSS model, and GPT-5. The x-axis represents the different tasks given to the model, the y-axis represents the number of tasks completed by the model. The green columns represent the results for our tool and the blue columns represent the results for GPT-5.For the solving task, GPT-5 generated three valid plans and failed in solving two tasks. Specifically, we observed that it successfully solved the problems for the BARMAN, BLOCKSWORLD, and MINECRAFT domain, but failed to solve the problems for the ROVERS and SAILING domains. Our tool however, succeeded in solving all planning tasks except for the MINECRAFT domain. In this domain the tool did not understand which planning algorithm it should execute, thus failed.GPT-5 coded a parser to parse the planning domain and problem, and using its reasoning it attempted to generate the actions that provide solution for the problem. The LLM understood that it needs to consider the action's preconditions and it even simulated its generated plans internally to validate their correctness. Subsequently, using this approach it solved three out of the five tested problems. Contrary to GPT-5, using a significantly smaller LLM -GPT-OSS, without the ability to code but augmenting with planning algorithms, we were able to solve more problems by providing it with our planning copilot tools.GPT-5 performed the best in the validations tasks with at least 4 out of five tasks successfully completed. This is to be expected as this task only involves syntactic understanding of the text that can be achieved by building an Abstract Syntax Tree (AST). Our tool outperformed GPT-5 in the plan validation -the most difficult validation task, and domain validation tasks with all instances successfully validated. Surprisingly GPT-5 performed better in the problem validation task. We observed that the failed instances belonged to the MINECRAFT and SAILING domains. We observe that in general, our tool had more difficulties correctly resolving MINECRAFT related tasks. For the SAILING instance, the tool's context became corrupted due to internal reasoning issues and it failed to perform the validation.Finally, the least successful task for GPT-5 was the Simulate task with the model only successfully simulating a single instance, specifically the BLOCKSWORLD instance. Our tool, however, successfully simulated all planning instances. For example, in instances from the BARMAN, SAILING, and MINECRAFT domains, we observed that GPT-5 chose to output only part of the simulated trajectory. For the ROVERS instance however, the simulation included all actions but the states were partial, containing a single state variable only.\nConclusions and Future WorkIn this work we presented the Planning Copilot, an LLM tool augmented with AI planning tools. The planning copilot van solve planning problems, perform validation and simulate plans. We implemented the tool using three open-source models and compared them to their un-augmented counterparts. The results show that that augmenting the LLMs with the planning tools highly outperforms using only the LLMs. We also compared our tool to GPT-5, the state-of-the-art LLM model. The comparison showed that in all but one task, our tool, using much smaller model, outperformed GPT-5.One promising direction is using an interactive plan visualization tool that could automatically generate intuitive diagrams of the proposed plan, helping human users quickly understand, validate, and refine the agent's strategy. Similarly, an automated module for generating PDDL domains from free-text descriptions could significantly reduce the effort required for domain modeling. By integrating these capabilities with the other tools presented in this paper, we could enable a seamless pipeline from natural language task descriptions to executable symbolic plans, empowering users to move from intent to validated plan more efficiently and transparently.Figure 1 :1Figure 1: High-level diagram of an LLM using tools.\nFigure 2 :2Figure2: System prompt of our Planning Copilot, which is allowed to call planning tools.\nFigure 4 :4Figure 4: Accuracy of choosing the correct planner for different types of planning problems (classical or numeric).\nFigure 5 :5Figure 5: Accuracy of task completion plotted against the number of distinct tasks in a single prompt.\nFigure 6 :6Figure 6: Preliminary exploration of ChatGPT 5 performance compared to the significantly smaller GPT-OSS:20b augmented with our suite of tools.\nTable 1 :1Success rate of single-task completion shown by task description. We denote the validation task as Val, the domain as dom, and the problem as prob.ModelSolve Val. dom. Val. prob. Val. plan Simulateqwen3:0.6b0.000.000.000.000.00qwen3:0.6b+tools 0.320.140.160.040.06qwen3:4b0.040.420.200.140.00qwen3:4b+tools0.780.340.980.800.24gpt-oss:20b0.280.200.140.540.00gpt-oss:20b+tools 0.780.700.401.000.80\n\t\t\tGPT-5 is a state-of-the-art model published world-wide on August 7th 2025.",
+ "sections": [
+  {
+   "title": "Introduction",
+   "text": "Large Language Models (LLMs) like ChatGPT, Gemini, and Grok, can, among other things, generate coherent text, solve chemistry related problems (Guo et al. 2023), support electronics design (Alvanaki, Lee, and Carloni 2025), and perform various software engineering tasks (Nam et al. 2024;Chen et al. 2024;Achiam et al. 2023;Huang and Chang 2022). However, it has been argued that their abilities stem from statistical pattern recognition rather than true understanding (Kambhampati 2024). Indeed, even state-of-theart LLMs struggle with tasks involving long-horizon planning (Huang et al. 2025;Shojaee et al. 2025).Domain-independent automated planning is a wellestablished approach for solving long-horizon, goaloriented, planning problems (Ghallab, Nau, and Traverso 2004). Unlike Reinforcement Learning (RL) methods that depend on interaction with the environment, domainindependent planning operate on a symbolic domain model that specifies the preconditions and effects of each action. These symbolic domains are often defined using the Planning Domain Definition Language (PDDL) (Howe et al. 1998). A planning problem in the PDDL formalism is defined by two components -a PDDL domain and a PDDL problem. The PDDL domain defines the environment and the agent's capabilities and the PDDL problem defines the specific objects on which it is defined as well as the initial and the goal states.Research on domain-independent planning have produced a diverse set of automated planners over the years. Such planners accept a PDDL domain and problem and produce solutions -plans -with formal guarantees of correctness and in some cases optimality. Some planners only support domains with discrete state variables (Helmert 2006;Hoffmann 2001) while others also support numeric state variables (Scala et al. 2016;Hoffmann 2003), as well as more complex aspects of the planning problem such as time (Baier, Bacchus, and McIlraith 2009;Coles et al. 2009) and non-determinism (Muise, McIlraith, and Beck 2024). Planning research also developed a variety of supporting tools such VAL, which validates a given plan is executable and achieves the intended goals (Howey, Long, and Fox 2004); scripts for parsing PDDLs; and translators facilitate the creation, manipulation, and conversion of planning problems across different syntax and formalisms. Together, these tools form a robust planning ecosystem that provides strong theoretical foundations as well as reliability and predictability of the generated plans.While automated planning provides powerful guarantees and a rich ecosystem of tools, applying these planning tools directly requires substantial manual effort. Users must choose appropriate planners based on the problem type, and leverage separate tools for validating and analyzing plans. Each stage of the pipeline-syntax checking, planner invocation, plan validation, and execution-typically involves different tools and formats, creating a fragmented workflow. This complexity can hinder adoption, especially for users who lack expertise in planning formalisms or want to interact with the system through natural language. A unified framework that integrates these stages into a single, LLMbased interface could therefore drastically reduce this burden and make planning tools more accessible.In this work, we introduce the Planning Copilot 1 -a chatbot that integrates multiple planning tools and allows users to invoke them through plain English instructions. To achieve this, we leverage the Model Context Protocol (MCP) (Anthropic 2024), a recently developed standard for connecting language models with external tools and systems. MCP enables LLMs to augment their reasoning with real-world actions such as image generation, web search, and API calls, enabling overall much better performance. The Planning Copilot includes the following capabilities: (1) automated planner selection, allowing the LLM to choose between classical and numeric planners based on the domain; (2) syntactic domain validation, ensuring that PDDL domains conform to expected standards; (3) plan verification, where the LLM invokes VAL (Howey, Long, and Fox 2004)-a well known plan validator -to validate a given plan; and (4) plan simulation and trace generation, providing state inspection capabilities to support debugging and analysis of planning outcomes. These features allow LLMs to act as effective assistants for AI researchers. In particular, they complement natural language to PDDL (NL-to-PDDL) translation pipelines by enabling the planning, validation, and execution of generated models.",
+   "level": 1,
+   "path_id": "1",
+   "parent_section_id": null,
+   "order_in_parent": 0,
+   "section_id": "sec-1"
+  },
+  {
+   "title": "Preliminaries",
+   "text": "In this section, we provide the necessary background and review previous work relevant to our study. We begin by introducing the concept of integrating large language models with external tools. Then, we give a brief introduction to Automatic Planning and the Planning Domain Definition Language (PDDL) (Howe et al. 1998). Next, we discuss prior work on using LLMs to solve planning problems.",
+   "level": 1,
+   "path_id": "1~2",
+   "parent_section_id": null,
+   "order_in_parent": 1,
+   "section_id": "sec-1~2"
+  },
+  {
+   "title": "LLMs as Agents",
+   "text": "In recent years, numerous large language models (LLMs) have been developed (Team et al. 2023;Touvron et al. 2023;Gunasekar et al. 2023;Liu et al. 2024, inter alia). These models enable sophisticated natural language understanding and generation, supporting applications ranging from question answering and summarization to code synthesis and educational tools (Lewis et al. 2019;Jiang et al. 2024;Kasneci et al. 2023). Despite their strengths in producing coherent and contextually appropriate text, LLMs natively lack the ability to sense or act within their environments and thus cannot function as autonomous agents on their own. To overcome these limitations, LLMs have been equipped with tools that they can invoke to interact with external environments (e.g., reserving tables in restaurants, booking hotels), thereby enabling them to act autonomously (Zeng et al. 2023). Early efforts such as Toolformer (Schick et al. 2023) investigate pre-training LLMs to recognize when and how to invoke each tool. More recent work on standardized protocols (Ding and Stevens 2025), such as MCP, allows modular, runtime integration, of external tools without any specific fine-tuning. Through such tool integration, agentic AI systems can perform a wide array of tasks -including image While these tools help LLMs perform complex tasks, they still struggle with reliable long-horizon planning and dynamic goal decomposition, which limits their ability to execute multi-step strategies independently (Huang et al. 2025;Shojaee et al. 2025).",
+   "level": 1,
+   "path_id": "1~3",
+   "parent_section_id": null,
+   "order_in_parent": 2,
+   "section_id": "sec-1~3"
+  },
+  {
+   "title": "Automatic Planning",
+   "text": "Automated Planning is a subfield of Artificial Intelligence (AI) focused on generating plans-which are sequences of actions-that intelligent agents can execute to achieve their goals. Automated Planning can be defined through a variety of problem formulations. In this work, we focus on Planning Domain Definition Language (PDDL) (Howe et al. 1998) and its later extension PDDL 2.1 (Fox and Long 2003). The PDDL (and PDDL 2.1) formalism includes two components-the domain and the problem. The domain describes the environment using predicates and functions, as well as the agent's capabilities, i.e., the actions. The problem contains the problem-specific objects, a definition of the initial state from which the planning algorithm begins to find a solution, and the desired goal. Together, with this precise knowledge, planners such as FastDownward (Helmert 2006), Metric-FF (Hoffmann 2003), ENHSP (Scala et al. 2016), and NYX (Piotrowski and Perez 2024) can efficiently generate plans and can offer formal guarantees about their correctness and optimality. We consider two types of planning: classical planning, where actions deterministically change a finite set of propositional states, and numeric planning, which extends this model with numeric functions to capture quantities such as resources or costs.",
+   "level": 1,
+   "path_id": "1~4",
+   "parent_section_id": null,
+   "order_in_parent": 3,
+   "section_id": "sec-1~4"
+  },
+  {
+   "title": "Leveraging LLMs for Automated Planning",
+   "text": "Valmeekam, Stechly, and Kambhampati (2024) demonstrated that LLMs struggle with basic planning tasks, while Pallagani et al. (2023) showed promise using fine-tuned sequence-to-sequence models like Plansformer (Pallagani et al. 2022), though with limited generalization to out-ofdistribution domains. The LLM+P framework (Liu et al. 2023) converts natural language planning problem descriptions into PDDL using GPT-4, then translates the resulting solutions back into natural language for robot planning scenarios. Similarly, GenPlanX (Borrajo et al. 2025) completes a more comprehensive cycle by using LLMs to generate problem instances, which are then processed by a handcoded pipeline that invokes the planner to solve them. How-ever, significant challenges remain not only in generating accurate PDDL models but also in validating, executing, and debugging these models to ensure practical usability. The Planning Copilot we propose in this work addresses these challenges.",
+   "level": 1,
+   "path_id": "1~5",
+   "parent_section_id": null,
+   "order_in_parent": 4,
+   "section_id": "sec-1~5"
+  },
+  {
+   "title": "The Planning Copilot",
+   "text": "The Planning Copilot we propose integrates external planning-related tools into a given LLM. It allows the LLM to perform long-term planning and validate its outcome, and relieves users from the burden of running, validating, and adapting inputs for these planning tools by providing a natural language interface mediated by the LLMs.Our Planning Copilot supports three main use cases, denoted here as Solve, Validate, and Simulate. We describe each of these use cases below. Each use case is supported by one or more MCP functions. These MCP functions allow the LLM to call these planning tools and use the information they output to support the desired use case. Notably, this modular design makes it straightforward to integrate with other systems-such as those that generate PDDL domains and problems from natural language-thereby extending our Planning Copilot's capabilities in the future.The Solve use case In this use case, the Planning Copilot is required to solve a planning problem described by a given PDDL domain and problem. It should do so by calling a suitable planner. To support this use case, the Planning Copilot includes two MCP functions, one that calls a classical planner and one that calls a numeric planner. Both calls accepts a PDDL domain and problem specification, executes a planner, and returns the resulting plan to the LLM.Importantly, the user is not obligated to specify which planner to use. The LLM should infer from from the input files which planning algorithm should be called. This is reasonable because LLMs are trained on data from the web, and different planning domains (classical and numerical) are available in open source repositories.The Validate use case In this use case, the Planning Copilot is required to validate either the PDDL domain, the PDDL problem, or the plan generated by some planner. That is, the validation functionality supported by the component includes:• Checking the syntactic correctness of the PDDL domain specifications.• Ensuring the PDDL problem is consistent with given PDDL domain.• Validating a given plan is correct, i.e., it achieve the intended goal state according to the given PDDL domain and problem.The corresponding MCP function supports validation at various stages of planning: domain definition, problem formulation, and generated plans. If the validation fails, the tool will notify the LLM. In plan validation specifically, the LLM is given the reason for failure and a possible fix suggestion.You are a PDDL planner in a tool-based planning system.Your ONLY way to get information or solve problems is by calling the provided tools ONE AT A TIME -never guess or create plan details yourself .On each turn, either:-Call the next tool (name + inputs), or -Give the final answer in natural language BASED ONLY on tool outputs so far.Do not combine tool calls or answer prematurely. Final answers must contain no tool commands or intermediate data.Available tools: {tool_list}. Choose the most suitable based on the problem. If a tool returns nothing, treat the problem as unsolvable. Always wait for results -never guess. The Simulate use case In this use case, the Planning Copilot is required to simulate the step-wise execution of a given plan. Its MCP function takes a domain, problem, and plan as input and generates a detailed execution trace that records the intermediate state after each action activation. Like the other MCP functions, it allows the LLM to incorporate the verified outputs from the tools back into its context, enabling it to use that information for subsequent reasoning and to provide the user with a more reliable and comprehensive response. For example, given a trace, the LLM could retrieve the 5th state or the 10th action.Additionally, a dedicated MCP function saves plans locally to support tool chaining and pipelining, allowing other components or tools to access and continue processing the plan.",
+   "level": 1,
+   "path_id": "1~6",
+   "parent_section_id": null,
+   "order_in_parent": 5,
+   "section_id": "sec-1~6"
+  },
+  {
+   "title": "Workflow Management We implement our Planning",
+   "text": "Copilot's control flow using LangGraph (Wang and Duan 2024), an Agentic AI framework that represents workflows as a stateful graph of nodes (LLM calls, tools) and directed edges (control decisions) as seen in Figure 1. Tool selection is handled through a loop between MCP and the LLM: MCP provides the LLM with a list of available tools, including their purpose, inputs, and outputs, and the LLM chooses the one that best matches the current goal. MCP executes the selected tool, records the results in an execution trace, and returns this feedback to the LLM, which reflects on the trace to validate correctness and adjust future selections if needed. Figure 2 shows a snippet of the system prompt used to steer tool selection and error-recovery.You are a PDDL planner capable of directly reasoning about and generating plans.You can analyze PDDL problems, validate syntax, create plans, and simulate state transitions all on your own.Carefully reason step-by-step about problem requirements and constraints before producing outputs.Do NOT wait for or rely on external tools your responses should be fully self contained.For tasks: {task name: required format} Answer only for the specific task you are asked; do not provide information about other tasks.Figure 3: System prompt for the baseline LLMs, which are not given the planning tools.",
+   "level": 1,
+   "path_id": "1~7",
+   "parent_section_id": null,
+   "order_in_parent": 6,
+   "section_id": "sec-1~7"
+  },
+  {
+   "title": "Experimental Results",
+   "text": "We have implemented our Planning Copilot over several open-source LLMs. In this section, we provide information about our implementation and present experimental results comparing the performance of our Planning Copilot with baseline LLMs.",
+   "level": 1,
+   "path_id": "1~8",
+   "parent_section_id": null,
+   "order_in_parent": 7,
+   "section_id": "sec-1~8"
+  },
+  {
+   "title": "Implementation Details",
+   "text": "For the Solve use case, we created an MCP function that call FastDownward (Helmert 2006), which is a planner for classical planning problems, and an MCP function that calls Metric-FF (Hoffmann 2003), a planner for numeric planning problems. For the Validate use case, we created an MCP wrapper of VAL (Howey, Long, and Fox 2004), a plan validation tool. For the Simulate use case, we implemented an MCP function that runs a simple plan simulation script 2 . The choice of LLM is flexible; we only require a model that supports MCP. In our implementation, we chose to compare a family of LLMs by Alibaba called Qwen3 (Yang et al. 2025) and the GPT-OSS 3 model, both of which support MCP and the so-called reasoning capabilities. Qwen implemented an \"think\" mechanisms that allow it multistep self-reflection, often employing techniques such as the Chain-of-Thought (CoT) mechanism (Wei et al. 2022). Previous results showed that the Qwen3:4B model, even without explicit \"thinking\" mechanisms, outperformed other non-thinking models (including LLaMA-3.1-8B-Instruct). When augmented with thinking capabilities, Qwen3:4B achieved competitive performance against larger thinking models (such as DeepSeek-R1-Distill-Qwen-14B), surpassing them in most evaluations. More over, GPT-OSS is the latest open-source model, employs a Mixture-of-Experts 2 https://github.com/argaman-aloni/pddl plus parser 3 https://openai.com/index/introducing-gpt-oss (MoE) (Shazeer et al. 2017) architecture with a focus on tool-augmented reasoning and agentic workflows, making it an ideal candidate for our PDDL tool-using framework.",
+   "level": 1,
+   "path_id": "1~9",
+   "parent_section_id": null,
+   "order_in_parent": 8,
+   "section_id": "sec-1~9"
+  },
+  {
+   "title": "Experimental Design",
+   "text": "In our experiments, we used ten domains-BARMAN, BLOCKSWORD, DEPOTS-CLASSICAL, ROVERS, SATEL-LITE, DEPOTS-NUMERIC, COUNTERS, FARMLAND, SAIL-ING, and MINECRAFT-POGO. The first five domains are from the the classical track in International Planning Competition (IPC) (Long and Fox 2003), the next four are from the numeric IPC track 2023 (Taitler et al. 2024), and the last one is non-IPC numeric domain (Benyamin et al. 2024).We evaluate our system in a zero-shot setting, i.e., without any dedicated pre-training. First, we test whether the use of tools improves the LLM's performance in answering the tasks. In Figure 3 we can see the system prompt used when the LLM does not have access to tools. Second, in the toolusing condition, we measure the percentage of correct task answers. The first evaluation compares LLM performance with and without tool usage, while the second considers only runs with tools. Note that in the results we evaluated two versions of each model-with and without the model's internal deliberation (\"thinking\") ability-and reported the better of the two.Each task in our evaluation consists of 10 distinct problems, including 5 numeric problems and 5 classic problems. For each problem type, we generate 5 variations of the task prompt to test model robustness across slightly different formulations. The first evaluation contains five core tasks involving a single request that can be easily solved by an expert using one of the provided tools. These tasks include:(1) given a domain, check its syntax; (2+3) given a domain and problem, check the problem's syntax or find a solution; and (4+5) given a domain, problem, and plan, verify that the plan solves the problem or simulate its execution.When we have simulation task we can also request returning a specific states during its execution. To capture this, we define tasks that can be chained together, where the number of subtasks in the chain is denoted as no.tasks. A task chain of length no.tasks may require up to no.tasks-1 tool calls to solve, with the difficulty increasing as the chain length grows. The evaluation includes tasks across different chain lengths: 250 tasks for no.tasks = 1 (derived from 10 problems × 5 prompt variants × 5 different requests), 100 tasks each for no.tasks = 2, 3, 4, and 50 tasks for no.tasks = 5, resulting in a total of 12 task chains of varying complexity for the second evaluation.We also have a task that request returning specific states within the transition, this task is depend on running the simulation correctly. By chain one task to another we obtain a total of 12 tasks of varying no.tasks (number of task that chain toghether) for the second evaluation. Each of these tasks can require no.tasks-1 tool calling to solve the tasks, with a maximum of no.tasks -1 tools per level. There are 250 tasks in no.tasks = 1 (10 problems, 5 variants per prompt, and 5 different requests), 100 tasks for levels no.tasks = 2, 3, 4, and 50 tasks for the no.tasks = 5.To assess model performance, we performed validation on the plan solutions using VAL. The validation evaluated whether the answers were correct, and the simulated outputs were compared to the real simulation results using the capabilities of pddl plus parser ability. The outputs then were manually evaluated to verify whether the final results provided to the end user were correct. This ensured that both correctness and applicability of the generated plans were taken into account. When evaluating tool usage, we only consider cases where the LLM explicitly employed the correct tools needed to accomplish the task, preventing unverified answers from being returned to the user.Experiments were conducted via API on LangGraph while all code, prompts, temperature, and evaluation scripts were fixed prior to testing to prevent unintended modifications and ensure consistency across experiments. Specifically, the experiments ran on an RTX 6000 GPU with 48 GB of VRAM. Each model used the same system prompt and tool settings, with the randomness parameter (temperature) set to 0. Self-loops within the LangGraph were limited to 10 iterations.",
+   "level": 1,
+   "path_id": "1~10",
+   "parent_section_id": null,
+   "order_in_parent": 9,
+   "section_id": "sec-1~10"
+  },
+  {
+   "title": "Results: Single Task Comparison",
+   "text": "Table 1 presents the results of our evaluation comparing LLMs with and without access to planning tools. Each row represents a different model , and the columns correspond to the different tasks we have: Solve, Validate Domain, Validate Problem, Validate Plan, and Simulate.As expected, LLMs augmented with these tools outperformed those without them. As an example, without using tools, none of the LLMs could simulate the plan, while Qwen-3:0.6B succeeded 6% of the time, Qwen-3:4B succeeded 24%, and GPT-OSS:20B succeeded 80%. Specifically, except for the problem validation task, GPT-OSS augmented with the tools outperformed all other models. The task that was the most challenging for LLMs without planning tools was the simulation task, as it requires the model to track state changes and manage the add and delete effects of each action across multiple steps. In contrast, the different validation tasks was executed most successfully among all the tasks, though it can occasionally be answered correctly by chance. This highlights the importance of planning tools: they ensure that the plans returned by the LLM are not only applicable but also verified through real validation or simulation. Tools like those in our system provide users with confidence that the results they receive are accurate and reliable.After establishing that tools improve LLM solving performance, we now focus on how well these models select the appropriate tool for the Solve task. In this task, the LLM receives a domain and a problem and must select a planner to generate a solution. Figure 4 shows a subset of the results, highlighting how often the LLM chose the correct tool: a classical planner for classical PDDL problems and a numeric planner for numeric PDDL problems. The results indicate that the LLM was able to solve almost all classical planning problems using the correct tool, while numeric planning proved more challenging. This may be because numeric planning is less common and more complex, so the  model likely has less exposure to numeric problems in its training set.",
+   "level": 1,
+   "path_id": "1~11",
+   "parent_section_id": null,
+   "order_in_parent": 10,
+   "section_id": "sec-1~11"
+  },
+  {
+   "title": "Results: Multi-Task Comparison",
+   "text": "Figure 5 presents the performance of tool using of LLMs on more challenging tasks that require multiple tool calls in sequence to fulfill the user's request. For instance, tasks that require a single tool run, as shown in Figure 1 are averaged and represented as a single bar at the first position. As expected, we observe that performance declines across different LLMs as the number of required tool calls increases. Notably, GPT-OSS achieves the best results on tasks involving two or fewer tool calls. This highlights the importance of robust multi-step reasoning capabilities in LLMs, as errors can compound across sequential tool executions, significantly impacting overall task performance. Future work could explore strategies for decomposing large prompts into smaller, manageable subtasks, improving error detection and recovery, and dynamically selecting tools based on intermediate outputs to better handle complex, multi-request prompts.",
+   "level": 1,
+   "path_id": "1~12",
+   "parent_section_id": null,
+   "order_in_parent": 11,
+   "section_id": "sec-1~12"
+  },
+  {
+   "title": "Comparison with GPT-5",
+   "text": "We performed a small-scale qualitative comparison with the state-of-the-art LLM GPT-5foot_0 . Specifically, we executed queries using the chat itself, and we did not run the code using the API. We allowed the chat to think longer to provide with the best response it could, i.e., we enabled the LLM to select (if needed) to use the GPT-5 Thinking model, which may think longer to provide better response. For each query we opened a new chat to enable each query to run independently. We performed the following tasks: (1) solve, (2) domain validation (3) problem validation, (4) plan validation and (5) plan simulation. Each task was preformed on 5 different instances. We used the same queries as used for the models without the tools. As access to the GPT-5's API is costly, we selected to perform a small preliminary evaluation to compare our approach against this flagship model.Figure 6 presents the comparison results between our tool, based on the GPT-OSS model, and GPT-5. The x-axis represents the different tasks given to the model, the y-axis represents the number of tasks completed by the model. The green columns represent the results for our tool and the blue columns represent the results for GPT-5.For the solving task, GPT-5 generated three valid plans and failed in solving two tasks. Specifically, we observed that it successfully solved the problems for the BARMAN, BLOCKSWORLD, and MINECRAFT domain, but failed to solve the problems for the ROVERS and SAILING domains. Our tool however, succeeded in solving all planning tasks except for the MINECRAFT domain. In this domain the tool did not understand which planning algorithm it should execute, thus failed.GPT-5 coded a parser to parse the planning domain and problem, and using its reasoning it attempted to generate the actions that provide solution for the problem. The LLM understood that it needs to consider the action's preconditions and it even simulated its generated plans internally to validate their correctness. Subsequently, using this approach it solved three out of the five tested problems. Contrary to GPT-5, using a significantly smaller LLM -GPT-OSS, without the ability to code but augmenting with planning algorithms, we were able to solve more problems by providing it with our planning copilot tools.GPT-5 performed the best in the validations tasks with at least 4 out of five tasks successfully completed. This is to be expected as this task only involves syntactic understanding of the text that can be achieved by building an Abstract Syntax Tree (AST). Our tool outperformed GPT-5 in the plan validation -the most difficult validation task, and domain validation tasks with all instances successfully validated. Surprisingly GPT-5 performed better in the problem validation task. We observed that the failed instances belonged to the MINECRAFT and SAILING domains. We observe that in general, our tool had more difficulties correctly resolving MINECRAFT related tasks. For the SAILING instance, the tool's context became corrupted due to internal reasoning issues and it failed to perform the validation.Finally, the least successful task for GPT-5 was the Simulate task with the model only successfully simulating a single instance, specifically the BLOCKSWORLD instance. Our tool, however, successfully simulated all planning instances. For example, in instances from the BARMAN, SAILING, and MINECRAFT domains, we observed that GPT-5 chose to output only part of the simulated trajectory. For the ROVERS instance however, the simulation included all actions but the states were partial, containing a single state variable only.",
+   "level": 1,
+   "path_id": "1~13",
+   "parent_section_id": null,
+   "order_in_parent": 12,
+   "section_id": "sec-1~13"
+  },
+  {
+   "title": "Conclusions and Future Work",
+   "text": "In this work we presented the Planning Copilot, an LLM tool augmented with AI planning tools. The planning copilot van solve planning problems, perform validation and simulate plans. We implemented the tool using three open-source models and compared them to their un-augmented counterparts. The results show that that augmenting the LLMs with the planning tools highly outperforms using only the LLMs. We also compared our tool to GPT-5, the state-of-the-art LLM model. The comparison showed that in all but one task, our tool, using much smaller model, outperformed GPT-5.One promising direction is using an interactive plan visualization tool that could automatically generate intuitive diagrams of the proposed plan, helping human users quickly understand, validate, and refine the agent's strategy. Similarly, an automated module for generating PDDL domains from free-text descriptions could significantly reduce the effort required for domain modeling. By integrating these capabilities with the other tools presented in this paper, we could enable a seamless pipeline from natural language task descriptions to executable symbolic plans, empowering users to move from intent to validated plan more efficiently and transparently.",
+   "level": 1,
+   "path_id": "1~14",
+   "parent_section_id": null,
+   "order_in_parent": 13,
+   "section_id": "sec-1~14"
+  },
+  {
+   "title": "Figure 1 :",
+   "text": "1Figure 1: High-level diagram of an LLM using tools.",
+   "level": 1,
+   "path_id": "1~15",
+   "parent_section_id": null,
+   "order_in_parent": 14,
+   "section_id": "sec-1~15"
+  },
+  {
+   "title": "Figure 2 :",
+   "text": "2Figure2: System prompt of our Planning Copilot, which is allowed to call planning tools.",
+   "level": 1,
+   "path_id": "1~16",
+   "parent_section_id": null,
+   "order_in_parent": 15,
+   "section_id": "sec-1~16"
+  },
+  {
+   "title": "Figure 4 :",
+   "text": "4Figure 4: Accuracy of choosing the correct planner for different types of planning problems (classical or numeric).",
+   "level": 1,
+   "path_id": "1~17",
+   "parent_section_id": null,
+   "order_in_parent": 16,
+   "section_id": "sec-1~17"
+  },
+  {
+   "title": "Figure 5 :",
+   "text": "5Figure 5: Accuracy of task completion plotted against the number of distinct tasks in a single prompt.",
+   "level": 1,
+   "path_id": "1~18",
+   "parent_section_id": null,
+   "order_in_parent": 17,
+   "section_id": "sec-1~18"
+  },
+  {
+   "title": "Figure 6 :",
+   "text": "6Figure 6: Preliminary exploration of ChatGPT 5 performance compared to the significantly smaller GPT-OSS:20b augmented with our suite of tools.",
+   "level": 1,
+   "path_id": "1~19",
+   "parent_section_id": null,
+   "order_in_parent": 18,
+   "section_id": "sec-1~19"
+  },
+  {
+   "title": "Table 1 :",
+   "text": "1Success rate of single-task completion shown by task description. We denote the validation task as Val, the domain as dom, and the problem as prob.ModelSolve Val. dom. Val. prob. Val. plan Simulateqwen3:0.6b0.000.000.000.000.00qwen3:0.6b+tools 0.320.140.160.040.06qwen3:4b0.040.420.200.140.00qwen3:4b+tools0.780.340.980.800.24gpt-oss:20b0.280.200.140.540.00gpt-oss:20b+tools 0.780.700.401.000.80\n\t\t\tGPT-5 is a state-of-the-art model published world-wide on August 7th 2025.",
+   "level": 1,
+   "path_id": "1~20",
+   "parent_section_id": null,
+   "order_in_parent": 19,
+   "section_id": "sec-1~20"
+  }
+ ],
+ "citations": [
+  {
+   "raw_text": "JAchiam\n\t\t\n\t\t\n\t\t\tSAdler\n\t\t\n\t\t\n\t\t\tSAgarwal\n\t\t\n\t\t\n\t\t\tLAhmad\n\t\t\n\t\t\n\t\t\tIAkkaya\n\t\t\n\t\t\n\t\t\tFLAleman\n\t\t\n\t\t\n\t\t\tDAlmeida\n\t\t\n\t\t\n\t\t\tJAltenschmidt\n\t\t\n\t\t\n\t\t\tSAltman\n\t\t\n\t\t\n\t\t\tSAnadkat\n\t\t\n\t\tarXiv:2303.08774\n\t\tGpt-4 technical report\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2303.08774",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b0",
+     "section_path_id": "1",
+     "quote": "Achiam et al. 2023;",
+     "offset": 305
+    }
+   ]
+  },
+  {
+   "raw_text": "SLDB: An End-To-End Heterogeneous System-on-Chip Benchmark Suite for LLM-Aided Design\n\t\t\n\t\t\tELAlvanaki\n\t\t\n\t\t\n\t\t\tKLee\n\t\t\n\t\t\n\t\t\tLPCarloni\n\t\t\n\t\n\t\n\t\tIEEE International Conference on LLM-Aided Design (ICLAD)\n\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "SLDB: An End-To-End Heterogeneous System-on-Chip Benchmark Suite for LLM-Aided Design",
+   "anchors": [
+    {
+     "ref_id": "b1",
+     "section_path_id": "1",
+     "quote": "(Alvanaki, Lee, and Carloni 2025)",
+     "offset": 189
+    }
+   ]
+  },
+  {
+   "raw_text": "Introducing the Model Context Protocol (MCP)\n\t\t\n\t\t\tAnthropic\n\t\t\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b2",
+     "section_path_id": "1",
+     "quote": "(Anthropic 2024",
+     "offset": 3532
+    }
+   ]
+  },
+  {
+   "raw_text": "A heuristic search approach to planning with temporally extended preferences\n\t\t\n\t\t\tJABaier\n\t\t\n\t\t\n\t\t\tFBacchus\n\t\t\n\t\t\n\t\t\tSAMcilraith\n\t\t\n\t\t\n\t\t\tYBenyamin\n\t\t\n\t\t\n\t\t\tAMordoch\n\t\t\n\t\t\n\t\t\tSShperberg\n\t\t\n\t\t\n\t\t\tWPiotrowski\n\t\t\n\t\t\n\t\t\tRStern\n\t\t\n\t\n\t\n\t\tProceedings of the International Symposium on Combinatorial Search\n\t\tthe International Symposium on Combinatorial Search\n\t\t\n\t\t\t2009. 2024\n\t\t\t173\n\t\t\t\n\t\t\n\t\n\tCrafting a pogo stick in minecraft with heuristic search",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "A heuristic search approach to planning with temporally extended preferences",
+   "anchors": [
+    {
+     "ref_id": "b3",
+     "section_path_id": "1",
+     "quote": "(Baier, Bacchus, and McIlraith 2009;",
+     "offset": 1894
+    },
+    {
+     "ref_id": "b3",
+     "section_path_id": "1~10",
+     "quote": "(Benyamin et al. 2024)",
+     "offset": 401
+    }
+   ]
+  },
+  {
+   "raw_text": "DBorrajo\n\t\t\n\t\t\n\t\t\tGCanonaco\n\t\t\n\t\t\n\t\t\tTDe La Rosa\n\t\t\n\t\t\n\t\t\tAGarrachón\n\t\t\n\t\t\n\t\t\tSGopalakrishnan\n\t\t\n\t\t\n\t\t\tSKaur\n\t\t\n\t\t\n\t\t\tMMorales\n\t\t\n\t\t\n\t\t\tSPatra\n\t\t\n\t\t\n\t\t\tAPozanco\n\t\t\n\t\t\n\t\t\tKRamani\n\t\t\n\t\tarXiv:2506.10897\n\t\tGeneration of Plans and Execution\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2506.10897",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b4",
+     "section_path_id": "1~5",
+     "quote": "(Borrajo et al. 2025",
+     "offset": 534
+    }
+   ]
+  },
+  {
+   "raw_text": "Chatunitest: A framework for llm-based test generation\n\t\t\n\t\t\tYChen\n\t\t\n\t\t\n\t\t\tZHu\n\t\t\n\t\t\n\t\t\tCZhi\n\t\t\n\t\t\n\t\t\tJHan\n\t\t\n\t\t\n\t\t\tSDeng\n\t\t\n\t\t\n\t\t\tJYin\n\t\t\n\t\n\t\n\t\tACM International Conference on the Foundations of Software Engineering\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Chatunitest: A framework for llm-based test generation",
+   "anchors": [
+    {
+     "ref_id": "b5",
+     "section_path_id": "1",
+     "quote": "Chen et al. 2024;",
+     "offset": 288
+    }
+   ]
+  },
+  {
+   "raw_text": "Temporal planning in domains with linear processes\n\t\t\n\t\t\tAColes\n\t\t\n\t\t\n\t\t\tAColes\n\t\t\n\t\t\n\t\t\tMFox\n\t\t\n\t\t\n\t\t\tDLong\n\t\t\n\t\n\t\n\t\tInternational Joint Conference on Artificial Intelligence (IJCAI)\n\t\t\n\t\t\t2009",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Temporal planning in domains with linear processes",
+   "anchors": [
+    {
+     "ref_id": "b6",
+     "section_path_id": "1",
+     "quote": "Coles et al. 2009",
+     "offset": 1930
+    }
+   ]
+  },
+  {
+   "raw_text": "PDing\n\t\t\n\t\t\n\t\t\tRStevens\n\t\t\n\t\tarXiv:2508.02979\n\t\tUnified Tool Integration for LLMs: A Protocol-Agnostic Approach to Function Calling\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2508.02979",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b7",
+     "section_path_id": "1~3",
+     "quote": "(Ding and Stevens 2025)",
+     "offset": 1052
+    }
+   ]
+  },
+  {
+   "raw_text": "PDDL2.1: An extension to PDDL for expressing temporal planning domains\n\t\t\n\t\t\tMFox\n\t\t\n\t\t\n\t\t\tDLong\n\t\t\n\t\n\t\n\t\tJournal of Artificial Intelligence Research\n\t\t\n\t\t\t20\n\t\t\t\n\t\t\t2003",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "PDDL2.1: An extension to PDDL for expressing temporal planning domains",
+   "anchors": [
+    {
+     "ref_id": "b8",
+     "section_path_id": "1~4",
+     "quote": "(Fox and Long 2003)",
+     "offset": 382
+    }
+   ]
+  },
+  {
+   "raw_text": "MGhallab\n\t\t\n\t\t\n\t\t\tDNau\n\t\t\n\t\t\n\t\t\tPTraverso\n\t\t\n\t\tAutomated Planning: theory and practice\n\t\t\n\t\t\tElsevier\n\t\t\t2004",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b9",
+     "section_path_id": "1",
+     "quote": "(Ghallab, Nau, and Traverso 2004)",
+     "offset": 741
+    }
+   ]
+  },
+  {
+   "raw_text": "SGunasekar\n\t\t\n\t\t\n\t\t\tYZhang\n\t\t\n\t\t\n\t\t\tJAneja\n\t\t\n\t\t\n\t\t\tCC TMendes\n\t\t\n\t\t\n\t\t\tADel Giorno\n\t\t\n\t\t\n\t\t\tSGopi\n\t\t\n\t\t\n\t\t\tMJavaheripi\n\t\t\n\t\t\n\t\t\tPKauffmann\n\t\t\n\t\t\n\t\t\tGDe Rosa\n\t\t\n\t\t\n\t\t\tOSaarikivi\n\t\t\n\t\tarXiv:2306.11644\n\t\tTextbooks are all you need\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2306.11644",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b10",
+     "section_path_id": "1~3",
+     "quote": "Gunasekar et al. 2023;",
+     "offset": 113
+    }
+   ]
+  },
+  {
+   "raw_text": "What can large language models do in chemistry? a comprehensive benchmark on eight tasks\n\t\t\n\t\t\tTGuo\n\t\t\n\t\t\n\t\t\tBNan\n\t\t\n\t\t\n\t\t\tZLiang\n\t\t\n\t\t\n\t\t\tZGuo\n\t\t\n\t\t\n\t\t\tNChawla\n\t\t\n\t\t\n\t\t\tOWiest\n\t\t\n\t\t\n\t\t\tXZhang\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t36\n\t\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "What can large language models do in chemistry? a comprehensive benchmark on eight tasks",
+   "anchors": [
+    {
+     "ref_id": "b11",
+     "section_path_id": "1",
+     "quote": "(Guo et al. 2023)",
+     "offset": 143
+    }
+   ]
+  },
+  {
+   "raw_text": "The fast downward planning system\n\t\t\n\t\t\tMHelmert\n\t\t\n\t\n\t\n\t\tJournal of Artificial Intelligence Research\n\t\t\n\t\t\t26\n\t\t\t\n\t\t\t2006",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "The fast downward planning system",
+   "anchors": [
+    {
+     "ref_id": "b12",
+     "section_path_id": "1",
+     "quote": "(Helmert 2006;",
+     "offset": 1711
+    },
+    {
+     "ref_id": "b12",
+     "section_path_id": "1~4",
+     "quote": "(Helmert 2006)",
+     "offset": 851
+    },
+    {
+     "ref_id": "b12",
+     "section_path_id": "1~9",
+     "quote": "(Helmert 2006)",
+     "offset": 74
+    }
+   ]
+  },
+  {
+   "raw_text": "FF: The fast-forward planning system\n\t\t\n\t\t\tJHoffmann\n\t\t\n\t\n\t\n\t\tAI magazine\n\t\t\n\t\t\t22\n\t\t\t3\n\t\t\t\n\t\t\t2001",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "FF: The fast-forward planning system",
+   "anchors": [
+    {
+     "ref_id": "b13",
+     "section_path_id": "1",
+     "quote": "Hoffmann 2001",
+     "offset": 1725
+    }
+   ]
+  },
+  {
+   "raw_text": "The Metric-FF Planning System: Translating &quot;Ignoring Delete Lists&quot; to Numeric State Variables\n\t\t\n\t\t\tJHoffmann\n\t\t\n\t\n\t\n\t\tJournal of Artificial Intelligence Research\n\t\t\n\t\t\t20\n\t\t\t\n\t\t\t2003",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "The Metric-FF Planning System: Translating &quot;Ignoring Delete Lists&quot; to Numeric State Variables",
+   "anchors": [
+    {
+     "ref_id": "b14",
+     "section_path_id": "1",
+     "quote": "Hoffmann 2003)",
+     "offset": 1809
+    },
+    {
+     "ref_id": "b14",
+     "section_path_id": "1~4",
+     "quote": "(Hoffmann 2003)",
+     "offset": 877
+    },
+    {
+     "ref_id": "b14",
+     "section_path_id": "1~9",
+     "quote": "(Hoffmann 2003)",
+     "offset": 183
+    }
+   ]
+  },
+  {
+   "raw_text": "PDDL -The Planning Domain Definition Language\n\t\t\n\t\t\tAHowe\n\t\t\n\t\t\n\t\t\tCKnoblock\n\t\t\n\t\t\n\t\t\tDMcdermott\n\t\t\n\t\t\n\t\t\tARam\n\t\t\n\t\t\n\t\t\tMVeloso\n\t\t\n\t\t\n\t\t\tDWeld\n\t\t\n\t\t\n\t\t\tDWilkins\n\t\t\n\t\t\n\t\t\tABarrett\n\t\t\n\t\t\n\t\t\tDChristianson\n\t\t\n\t\t\n\t\t\t1998\n\t\t\n\t\n\tTech. Rep",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b15",
+     "section_path_id": "1",
+     "quote": "(Howe et al. 1998)",
+     "offset": 1085
+    },
+    {
+     "ref_id": "b15",
+     "section_path_id": "1~2",
+     "quote": "(Howe et al. 1998)",
+     "offset": 303
+    },
+    {
+     "ref_id": "b15",
+     "section_path_id": "1~4",
+     "quote": "(Howe et al. 1998)",
+     "offset": 330
+    }
+   ]
+  },
+  {
+   "raw_text": "VAL: Automatic plan validation, continuous effects and mixed initiative planning using PDDL\n\t\t\n\t\t\tRHowey\n\t\t\n\t\t\n\t\t\tDLong\n\t\t\n\t\t\n\t\t\tMFox\n\t\t\n\t\t\n\t\t\tIeee\n\t\t\n\t\t\n\t\t\tJHuang\n\t\t\n\t\t\n\t\t\tKCChang\n\t\t\n\t\t\n\t\t\t-C\n\t\t\n\t\tarXiv:2212.10403\n\t\n\t\n\t\t16th IEEE International Conference on Tools with Artificial Intelligence\n\t\t\n\t\t\t2004. 2022\n\t\t\t\n\t\t\n\t\n\tarXiv preprint\n\tTowards reasoning in large language models: A survey",
+   "doi": null,
+   "arxiv_id": "2212.10403",
+   "title": "VAL: Automatic plan validation, continuous effects and mixed initiative planning using PDDL",
+   "anchors": [
+    {
+     "ref_id": "b16",
+     "section_path_id": "1",
+     "quote": "Huang and Chang 2022)",
+     "offset": 324
+    },
+    {
+     "ref_id": "b16",
+     "section_path_id": "1",
+     "quote": "(Howey, Long, and Fox 2004)",
+     "offset": 2152
+    },
+    {
+     "ref_id": "b16",
+     "section_path_id": "1",
+     "quote": "(Howey, Long, and Fox 2004",
+     "offset": 4125
+    },
+    {
+     "ref_id": "b16",
+     "section_path_id": "1~9",
+     "quote": "(Howey, Long, and Fox 2004)",
+     "offset": 301
+    }
+   ]
+  },
+  {
+   "raw_text": "A survey on hallucination in large language models: Principles, taxonomy, challenges, and open questions\n\t\t\n\t\t\tLHuang\n\t\t\n\t\t\n\t\t\tWYu\n\t\t\n\t\t\n\t\t\tWMa\n\t\t\n\t\t\n\t\t\tWZhong\n\t\t\n\t\t\n\t\t\tZFeng\n\t\t\n\t\t\n\t\t\tHWang\n\t\t\n\t\t\n\t\t\tQChen\n\t\t\n\t\t\n\t\t\tWPeng\n\t\t\n\t\t\n\t\t\tXFeng\n\t\t\n\t\t\n\t\t\tBQin\n\t\t\n\t\n\t\n\t\tACM Transactions on Information Systems\n\t\t\n\t\t\t43\n\t\t\t2\n\t\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "A survey on hallucination in large language models: Principles, taxonomy, challenges, and open questions",
+   "anchors": [
+    {
+     "ref_id": "b17",
+     "section_path_id": "1",
+     "quote": "(Huang et al. 2025;",
+     "offset": 575
+    },
+    {
+     "ref_id": "b17",
+     "section_path_id": "1~3",
+     "quote": "(Huang et al. 2025;",
+     "offset": 1493
+    }
+   ]
+  },
+  {
+   "raw_text": "JJiang\n\t\t\n\t\t\n\t\t\tFWang\n\t\t\n\t\t\n\t\t\tJShen\n\t\t\n\t\t\n\t\t\tSKim\n\t\t\n\t\t\n\t\t\tSKim\n\t\t\n\t\tarXiv:2406.00515\n\t\tA survey on large language models for code generation\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2406.00515",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b18",
+     "section_path_id": "1~3",
+     "quote": "Jiang et al. 2024;",
+     "offset": 379
+    }
+   ]
+  },
+  {
+   "raw_text": "Can large language models reason and plan?\n\t\t\n\t\t\tSKambhampati\n\t\t\n\t\n\t\n\t\tAnnals of the New York Academy of Sciences\n\t\t\n\t\t\t1534\n\t\t\t1\n\t\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Can large language models reason and plan?",
+   "anchors": [
+    {
+     "ref_id": "b19",
+     "section_path_id": "1",
+     "quote": "(Kambhampati 2024)",
+     "offset": 469
+    }
+   ]
+  },
+  {
+   "raw_text": "ChatGPT for good? On opportunities and challenges of large language models for education\n\t\t\n\t\t\tEKasneci\n\t\t\n\t\t\n\t\t\tKSeßler\n\t\t\n\t\t\n\t\t\tSKüchemann\n\t\t\n\t\t\n\t\t\tMBannert\n\t\t\n\t\t\n\t\t\tDDementieva\n\t\t\n\t\t\n\t\t\tFFischer\n\t\t\n\t\t\n\t\t\tUGasser\n\t\t\n\t\t\n\t\t\tGGroh\n\t\t\n\t\t\n\t\t\tSGünnemann\n\t\t\n\t\t\n\t\t\tEHüllermeier\n\t\t\n\t\n\t\n\t\tLearning and individual differences\n\t\t\n\t\t\t103\n\t\t\t102274\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "ChatGPT for good? On opportunities and challenges of large language models for education",
+   "anchors": [
+    {
+     "ref_id": "b20",
+     "section_path_id": "1~3",
+     "quote": "Kasneci et al. 2023)",
+     "offset": 397
+    }
+   ]
+  },
+  {
+   "raw_text": "BART: Denoising sequence-to-sequence pre-training for natural language generation, translation, and comprehension\n\t\t\n\t\t\tMLewis\n\t\t\n\t\t\n\t\t\tYLiu\n\t\t\n\t\t\n\t\t\tNGoyal\n\t\t\n\t\t\n\t\t\tMGhazvininejad\n\t\t\n\t\t\n\t\t\tAMohamed\n\t\t\n\t\t\n\t\t\tOLevy\n\t\t\n\t\t\n\t\t\tVStoyanov\n\t\t\n\t\t\n\t\t\tLZettlemoyer\n\t\t\n\t\tarXiv:1910.13461\n\t\t\n\t\t\t2019\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "1910.13461",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b21",
+     "section_path_id": "1~3",
+     "quote": "(Lewis et al. 2019;",
+     "offset": 360
+    }
+   ]
+  },
+  {
+   "raw_text": "ALiu\n\t\t\n\t\t\n\t\t\tBFeng\n\t\t\n\t\t\n\t\t\tBXue\n\t\t\n\t\t\n\t\t\tBWang\n\t\t\n\t\t\n\t\t\tBWu\n\t\t\n\t\t\n\t\t\tCLu\n\t\t\n\t\t\n\t\t\tCZhao\n\t\t\n\t\t\n\t\t\tCDeng\n\t\t\n\t\t\n\t\t\tCZhang\n\t\t\n\t\t\n\t\t\tCRuan\n\t\t\n\t\tarXiv:2412.19437\n\t\tDeepseek-v3 technical report\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2412.19437",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "BLiu\n\t\t\n\t\t\n\t\t\tYJiang\n\t\t\n\t\t\n\t\t\tXZhang\n\t\t\n\t\t\n\t\t\tQLiu\n\t\t\n\t\t\n\t\t\tSZhang\n\t\t\n\t\t\n\t\t\tJBiswas\n\t\t\n\t\t\n\t\t\tPStone\n\t\t\n\t\tarXiv:2304.11477\n\t\tLlm+ p: Empowering large language models with optimal planning proficiency\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2304.11477",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b23",
+     "section_path_id": "1~5",
+     "quote": "(Liu et al. 2023",
+     "offset": 320
+    }
+   ]
+  },
+  {
+   "raw_text": "The 3rd international planning competition: Results and analysis\n\t\t\n\t\t\tDLong\n\t\t\n\t\t\n\t\t\tMFox\n\t\t\n\t\n\t\n\t\tJournal of Artificial Intelligence Research\n\t\t\n\t\t\t20\n\t\t\t\n\t\t\t2003",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "The 3rd international planning competition: Results and analysis",
+   "anchors": [
+    {
+     "ref_id": "b24",
+     "section_path_id": "1~10",
+     "quote": "(Long and Fox 2003)",
+     "offset": 264
+    }
+   ]
+  },
+  {
+   "raw_text": "PRP rebooted: Advancing the state of the art in FOND planning\n\t\t\n\t\t\tCMuise\n\t\t\n\t\t\n\t\t\tSAMcilraith\n\t\t\n\t\t\n\t\t\tJCBeck\n\t\t\n\t\n\t\n\t\tAAAI Conference on Artificial Intelligence\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "PRP rebooted: Advancing the state of the art in FOND planning",
+   "anchors": [
+    {
+     "ref_id": "b25",
+     "section_path_id": "1",
+     "quote": "(Muise, McIlraith, and Beck 2024)",
+     "offset": 1969
+    }
+   ]
+  },
+  {
+   "raw_text": "Using an LLM to help with code understanding\n\t\t\n\t\t\tDNam\n\t\t\n\t\t\n\t\t\tAMacvean\n\t\t\n\t\t\n\t\t\tVHellendoorn\n\t\t\n\t\t\n\t\t\tBVasilescu\n\t\t\n\t\t\n\t\t\tBMyers\n\t\t\n\t\n\t\n\t\tIEEE/ACM International Conference on Software Engineering\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Using an LLM to help with code understanding",
+   "anchors": [
+    {
+     "ref_id": "b26",
+     "section_path_id": "1",
+     "quote": "(Nam et al. 2024;",
+     "offset": 271
+    }
+   ]
+  },
+  {
+   "raw_text": "Plansformer: Generating symbolic plans using transformers\n\t\t\n\t\t\tVPallagani\n\t\t\n\t\t\n\t\t\tBMuppasani\n\t\t\n\t\t\n\t\t\tKMurugesan\n\t\t\n\t\t\n\t\t\tFRossi\n\t\t\n\t\t\n\t\t\tLHoresh\n\t\t\n\t\t\n\t\t\tBSrivastava\n\t\t\n\t\t\n\t\t\tFFabiano\n\t\t\n\t\t\n\t\t\tALoreggia\n\t\t\n\t\tarXiv:2212.08681\n\t\t\n\t\t\t2022\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2212.08681",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b27",
+     "section_path_id": "1~5",
+     "quote": "(Pallagani et al. 2022)",
+     "offset": 209
+    }
+   ]
+  },
+  {
+   "raw_text": "Understanding the capabilities of large language models for automated planning\n\t\t\n\t\t\tVPallagani\n\t\t\n\t\t\n\t\t\tBMuppasani\n\t\t\n\t\t\n\t\t\tKMurugesan\n\t\t\n\t\t\n\t\t\tFRossi\n\t\t\n\t\t\n\t\t\tBSrivastava\n\t\t\n\t\t\n\t\t\tLHoresh\n\t\t\n\t\t\n\t\t\tFFabiano\n\t\t\n\t\t\n\t\t\tALoreggia\n\t\t\n\t\tarXiv:2305.16151\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2305.16151",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b28",
+     "section_path_id": "1~5",
+     "quote": "Pallagani et al. (2023)",
+     "offset": 108
+    }
+   ]
+  },
+  {
+   "raw_text": "WPiotrowski\n\t\t\n\t\t\n\t\t\tAPerez\n\t\t\n\t\tarXiv:2402.11901\n\t\tReal-World Planning with PDDL+ and Beyond\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2402.11901",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Interval-based relaxation for general numeric planning\n\t\t\n\t\t\tEScala\n\t\t\n\t\t\n\t\t\tPHaslum\n\t\t\n\t\t\n\t\t\tSThiébaux\n\t\t\n\t\t\n\t\t\tMRamirez\n\t\t\n\t\n\t\n\t\tECAI 2016\n\t\t\n\t\t\tIOS Press\n\t\t\t2016",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Interval-based relaxation for general numeric planning",
+   "anchors": [
+    {
+     "ref_id": "b30",
+     "section_path_id": "1",
+     "quote": "(Scala et al. 2016;",
+     "offset": 1790
+    },
+    {
+     "ref_id": "b30",
+     "section_path_id": "1~4",
+     "quote": "(Scala et al. 2016)",
+     "offset": 900
+    }
+   ]
+  },
+  {
+   "raw_text": "Toolformer: Language models can teach themselves to use tools\n\t\t\n\t\t\tTSchick\n\t\t\n\t\t\n\t\t\tJDwivedi-Yu\n\t\t\n\t\t\n\t\t\tRDessì\n\t\t\n\t\t\n\t\t\tRRaileanu\n\t\t\n\t\t\n\t\t\tMLomeli\n\t\t\n\t\t\n\t\t\tEHambro\n\t\t\n\t\t\n\t\t\tLZettlemoyer\n\t\t\n\t\t\n\t\t\tNCancedda\n\t\t\n\t\t\n\t\t\tTScialom\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t36\n\t\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Toolformer: Language models can teach themselves to use tools",
+   "anchors": [
+    {
+     "ref_id": "b31",
+     "section_path_id": "1~3",
+     "quote": "(Schick et al. 2023)",
+     "offset": 911
+    }
+   ]
+  },
+  {
+   "raw_text": "NShazeer\n\t\t\n\t\t\n\t\t\tAMirhoseini\n\t\t\n\t\t\n\t\t\tKMaziarz\n\t\t\n\t\t\n\t\t\tADavis\n\t\t\n\t\t\n\t\t\tQLe\n\t\t\n\t\t\n\t\t\tGHinton\n\t\t\n\t\t\n\t\t\tJDean\n\t\t\n\t\tarXiv:1701.06538\n\t\tOutrageously large neural networks: The sparsely-gated mixture-of-experts layer\n\t\t\n\t\t\t2017\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "1701.06538",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b32",
+     "section_path_id": "1~9",
+     "quote": "(Shazeer et al. 2017",
+     "offset": 1446
+    }
+   ]
+  },
+  {
+   "raw_text": "PShojaee\n\t\t\n\t\t\n\t\t\tIMirzadeh\n\t\t\n\t\t\n\t\t\tKAlizadeh\n\t\t\n\t\t\n\t\t\tMHorton\n\t\t\n\t\t\n\t\t\tSBengio\n\t\t\n\t\t\n\t\t\tMFarajtabar\n\t\t\n\t\tarXiv:2506.06941\n\t\tThe Illusion of Thinking: Understanding the Strengths and Limitations of Reasoning Models via the Lens of Problem Complexity\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2506.06941",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b33",
+     "section_path_id": "1",
+     "quote": "Shojaee et al. 2025)",
+     "offset": 594
+    },
+    {
+     "ref_id": "b33",
+     "section_path_id": "1~3",
+     "quote": "Shojaee et al. 2025)",
+     "offset": 1512
+    }
+   ]
+  },
+  {
+   "raw_text": "ATaitler\n\t\t\n\t\t\n\t\t\tRAlford\n\t\t\n\t\t\n\t\t\tJEspasa\n\t\t\n\t\t\n\t\t\tGBehnke\n\t\t\n\t\t\n\t\t\tDFišer\n\t\t\n\t\t\n\t\t\tMGimelfarb\n\t\t\n\t\t\n\t\t\tFPommerening\n\t\t\n\t\t\n\t\t\tSSanner\n\t\t\n\t\t\n\t\t\tEScala\n\t\t\n\t\t\n\t\t\tDSchreiber\n\t\t\n\t\t\n\t\n\tet al. 2024. The 2023 International Planning Competition",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "GTeam\n\t\t\n\t\t\n\t\t\tRAnil\n\t\t\n\t\t\n\t\t\tSBorgeaud\n\t\t\n\t\t\n\t\t\tJ.-BAlayrac\n\t\t\n\t\t\n\t\t\tJYu\n\t\t\n\t\t\n\t\t\tRSoricut\n\t\t\n\t\t\n\t\t\tJSchalkwyk\n\t\t\n\t\t\n\t\t\tAMDai\n\t\t\n\t\t\n\t\t\tAHauth\n\t\t\n\t\t\n\t\t\tKMillican\n\t\t\n\t\tarXiv:2312.11805\n\t\tGemini: a family of highly capable multimodal models\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2312.11805",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b35",
+     "section_path_id": "1~3",
+     "quote": "(Team et al. 2023;",
+     "offset": 75
+    }
+   ]
+  },
+  {
+   "raw_text": "HTouvron\n\t\t\n\t\t\n\t\t\tTLavril\n\t\t\n\t\t\n\t\t\tGIzacard\n\t\t\n\t\t\n\t\t\tXMartinet\n\t\t\n\t\t\n\t\t\tM.-ALachaux\n\t\t\n\t\t\n\t\t\tTLacroix\n\t\t\n\t\t\n\t\t\tBRozière\n\t\t\n\t\t\n\t\t\tNGoyal\n\t\t\n\t\t\n\t\t\tEHambro\n\t\t\n\t\t\n\t\t\tFAzhar\n\t\t\n\t\tarXiv:2302.13971\n\t\tarXiv:2409.13373\n\t\tLLMs Still Can&apos;t Plan; Can LRMs? A Preliminary Evaluation of OpenAI&apos;s o1 on PlanBench\n\t\t\n\t\t\t2023. 2024\n\t\t\n\t\n\tarXiv preprint\n\tLlama: Open and efficient foundation language models",
+   "doi": null,
+   "arxiv_id": "2302.13971",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b36",
+     "section_path_id": "1~3",
+     "quote": "Touvron et al. 2023;",
+     "offset": 93
+    }
+   ]
+  },
+  {
+   "raw_text": "Agent AI with Lang-Graph: A Modular Framework for Enhancing Machine Translation Using Large Language Models\n\t\t\n\t\t\tJWang\n\t\t\n\t\t\n\t\t\tZDuan\n\t\t\n\t\tarXiv:2412.03801\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2412.03801",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Chain-ofthought prompting elicits reasoning in large language models\n\t\t\n\t\t\tJWei\n\t\t\n\t\t\n\t\t\tXWang\n\t\t\n\t\t\n\t\t\tDSchuurmans\n\t\t\n\t\t\n\t\t\tMBosma\n\t\t\n\t\t\n\t\t\tFXia\n\t\t\n\t\t\n\t\t\tEChi\n\t\t\n\t\t\n\t\t\tQVLe\n\t\t\n\t\t\n\t\t\tDZhou\n\t\t\n\t\n\t\n\t\tAdvances in neural information processing systems\n\t\t\n\t\t\t2022\n\t\t\t35",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Chain-ofthought prompting elicits reasoning in large language models",
+   "anchors": [
+    {
+     "ref_id": "b38",
+     "section_path_id": "1~9",
+     "quote": "(Wei et al. 2022)",
+     "offset": 880
+    }
+   ]
+  },
+  {
+   "raw_text": "AYang\n\t\t\n\t\t\n\t\t\tALi\n\t\t\n\t\t\n\t\t\tBYang\n\t\t\n\t\t\n\t\t\tBZhang\n\t\t\n\t\t\n\t\t\tBHui\n\t\t\n\t\t\n\t\t\tBZheng\n\t\t\n\t\t\n\t\t\tBYu\n\t\t\n\t\t\n\t\t\tCGao\n\t\t\n\t\t\n\t\t\tCHuang\n\t\t\n\t\t\n\t\t\tCLv\n\t\t\n\t\tarXiv:2505.09388\n\t\tQwen3 technical report\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2505.09388",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b39",
+     "section_path_id": "1~9",
+     "quote": "(Yang et al. 2025",
+     "offset": 616
+    }
+   ]
+  },
+  {
+   "raw_text": "AZeng\n\t\t\n\t\t\n\t\t\tMLiu\n\t\t\n\t\t\n\t\t\tRLu\n\t\t\n\t\t\n\t\t\tBWang\n\t\t\n\t\t\n\t\t\tXLiu\n\t\t\n\t\t\n\t\t\tYDong\n\t\t\n\t\t\n\t\t\tJTang\n\t\t\n\t\tarXiv:2310.12823\n\t\tAgenttuning: Enabling generalized agent abilities for llms\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2310.12823",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b40",
+     "section_path_id": "1~3",
+     "quote": "(Zeng et al. 2023)",
+     "offset": 858
+    }
+   ]
+  }
+ ],
+ "layout_json": null,
+ "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">Toward PDDL Planning Copilot</title>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability  status=\"unknown\">\n\t\t\t\t\t<licence/>\n\t\t\t\t</availability>\n\t\t\t\t<date type=\"published\" when=\"2025-09-16\">16 Sep 2025</date>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Yarin</forename><surname>Benyamin</surname></persName>\n\t\t\t\t\t\t\t<email>bnyamin@post.bgu.ac.il</email>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">Ben-Gurion University of the Negev</orgName>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Argaman</forename><surname>Mordoch</surname></persName>\n\t\t\t\t\t\t\t<email>mordocha@post.bgu.ac.il</email>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">Ben-Gurion University of the Negev</orgName>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Shahaf</forename><forename type=\"middle\">S</forename><surname>Shperberg</surname></persName>\n\t\t\t\t\t\t\t<email>shperbsh@bgu.ac.il</email>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">Ben-Gurion University of the Negev</orgName>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Roni</forename><surname>Stern</surname></persName>\n\t\t\t\t\t\t\t<email>roni.stern@gmail.com</email>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">Ben-Gurion University of the Negev</orgName>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">Toward PDDL Planning Copilot</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date type=\"published\" when=\"2025-09-16\">16 Sep 2025</date>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">FACFBD025DA10EE3DFB47D971D396AD4</idno>\n\t\t\t\t\t<idno type=\"arXiv\">arXiv:2509.12987v1[cs.AI]</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.0\" ident=\"GROBID\" when=\"2026-08-21T15:09+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.0</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>Large Language Models (LLMs) are increasingly being used as autonomous agents capable of performing complicated tasks. However, they lack the ability to perform reliable longhorizon planning on their own. This paper bridges this gap by introducing the Planning Copilot, a chatbot that integrates multiple planning tools and allows users to invoke them through instructions in natural language. The Planning Copilot leverages the Model Context Protocol (MCP), a recently developed standard for connecting LLMs with external tools and systems. This approach allows using any LLM that supports MCP without domain-specific fine-tuning. Our Planning Copilot supports common planning tasks such as checking the syntax of planning problems, selecting an appropriate planner, calling it, validating the plan it generates, and simulating their execution. We empirically evaluate the ability of our Planning Copilot to perform these tasks using three open-source LLMs. The results show that the Planning Copilot highly outperforms using the same LLMs without the planning tools. We also conducted a limited qualitative comparison of our tool against Chat GPT-5, a very recent commercial LLM. Our results shows that our Planning Copilot significantly outperforms GPT-5 despite relying on a much smaller LLM. This suggests dedicated planning tools may be an effective way to enable LLMs to perform planning tasks.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"8\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Introduction</head><p>Large Language Models (LLMs) like ChatGPT, Gemini, and Grok, can, among other things, generate coherent text, solve chemistry related problems <ref type=\"bibr\" target=\"#b11\">(Guo et al. 2023)</ref>, support electronics design <ref type=\"bibr\" target=\"#b1\">(Alvanaki, Lee, and Carloni 2025)</ref>, and perform various software engineering tasks <ref type=\"bibr\" target=\"#b26\">(Nam et al. 2024;</ref><ref type=\"bibr\" target=\"#b5\">Chen et al. 2024;</ref><ref type=\"bibr\" target=\"#b0\">Achiam et al. 2023;</ref><ref type=\"bibr\" target=\"#b16\">Huang and Chang 2022)</ref>. However, it has been argued that their abilities stem from statistical pattern recognition rather than true understanding <ref type=\"bibr\" target=\"#b19\">(Kambhampati 2024)</ref>. Indeed, even state-of-theart LLMs struggle with tasks involving long-horizon planning <ref type=\"bibr\" target=\"#b17\">(Huang et al. 2025;</ref><ref type=\"bibr\" target=\"#b33\">Shojaee et al. 2025)</ref>.</p><p>Domain-independent automated planning is a wellestablished approach for solving long-horizon, goaloriented, planning problems <ref type=\"bibr\" target=\"#b9\">(Ghallab, Nau, and Traverso 2004)</ref>. Unlike Reinforcement Learning (RL) methods that depend on interaction with the environment, domainindependent planning operate on a symbolic domain model that specifies the preconditions and effects of each action. These symbolic domains are often defined using the Planning Domain Definition Language (PDDL) <ref type=\"bibr\" target=\"#b15\">(Howe et al. 1998)</ref>. A planning problem in the PDDL formalism is defined by two components -a PDDL domain and a PDDL problem. The PDDL domain defines the environment and the agent's capabilities and the PDDL problem defines the specific objects on which it is defined as well as the initial and the goal states.</p><p>Research on domain-independent planning have produced a diverse set of automated planners over the years. Such planners accept a PDDL domain and problem and produce solutions -plans -with formal guarantees of correctness and in some cases optimality. Some planners only support domains with discrete state variables <ref type=\"bibr\" target=\"#b12\">(Helmert 2006;</ref><ref type=\"bibr\" target=\"#b13\">Hoffmann 2001</ref>) while others also support numeric state variables <ref type=\"bibr\" target=\"#b30\">(Scala et al. 2016;</ref><ref type=\"bibr\" target=\"#b14\">Hoffmann 2003)</ref>, as well as more complex aspects of the planning problem such as time <ref type=\"bibr\" target=\"#b3\">(Baier, Bacchus, and McIlraith 2009;</ref><ref type=\"bibr\" target=\"#b6\">Coles et al. 2009</ref>) and non-determinism <ref type=\"bibr\" target=\"#b25\">(Muise, McIlraith, and Beck 2024)</ref>. Planning research also developed a variety of supporting tools such VAL, which validates a given plan is executable and achieves the intended goals <ref type=\"bibr\" target=\"#b16\">(Howey, Long, and Fox 2004)</ref>; scripts for parsing PDDLs; and translators facilitate the creation, manipulation, and conversion of planning problems across different syntax and formalisms. Together, these tools form a robust planning ecosystem that provides strong theoretical foundations as well as reliability and predictability of the generated plans.</p><p>While automated planning provides powerful guarantees and a rich ecosystem of tools, applying these planning tools directly requires substantial manual effort. Users must choose appropriate planners based on the problem type, and leverage separate tools for validating and analyzing plans. Each stage of the pipeline-syntax checking, planner invocation, plan validation, and execution-typically involves different tools and formats, creating a fragmented workflow. This complexity can hinder adoption, especially for users who lack expertise in planning formalisms or want to interact with the system through natural language. A unified framework that integrates these stages into a single, LLMbased interface could therefore drastically reduce this burden and make planning tools more accessible.</p><p>In this work, we introduce the Planning Copilot 1 -a chatbot that integrates multiple planning tools and allows users to invoke them through plain English instructions. To achieve this, we leverage the Model Context Protocol (MCP) <ref type=\"bibr\" target=\"#b2\">(Anthropic 2024</ref>), a recently developed standard for connecting language models with external tools and systems. MCP enables LLMs to augment their reasoning with real-world actions such as image generation, web search, and API calls, enabling overall much better performance. The Planning Copilot includes the following capabilities: (1) automated planner selection, allowing the LLM to choose between classical and numeric planners based on the domain; (2) syntactic domain validation, ensuring that PDDL domains conform to expected standards; (3) plan verification, where the LLM invokes VAL <ref type=\"bibr\" target=\"#b16\">(Howey, Long, and Fox 2004</ref>)-a well known plan validator -to validate a given plan; and (4) plan simulation and trace generation, providing state inspection capabilities to support debugging and analysis of planning outcomes. These features allow LLMs to act as effective assistants for AI researchers. In particular, they complement natural language to PDDL (NL-to-PDDL) translation pipelines by enabling the planning, validation, and execution of generated models.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Preliminaries</head><p>In this section, we provide the necessary background and review previous work relevant to our study. We begin by introducing the concept of integrating large language models with external tools. Then, we give a brief introduction to Automatic Planning and the Planning Domain Definition Language (PDDL) <ref type=\"bibr\" target=\"#b15\">(Howe et al. 1998)</ref>. Next, we discuss prior work on using LLMs to solve planning problems.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>LLMs as Agents</head><p>In recent years, numerous large language models (LLMs) have been developed <ref type=\"bibr\" target=\"#b35\">(Team et al. 2023;</ref><ref type=\"bibr\" target=\"#b36\">Touvron et al. 2023;</ref><ref type=\"bibr\" target=\"#b10\">Gunasekar et al. 2023;</ref><ref type=\"bibr\">Liu et al. 2024, inter alia)</ref>. These models enable sophisticated natural language understanding and generation, supporting applications ranging from question answering and summarization to code synthesis and educational tools <ref type=\"bibr\" target=\"#b21\">(Lewis et al. 2019;</ref><ref type=\"bibr\" target=\"#b18\">Jiang et al. 2024;</ref><ref type=\"bibr\" target=\"#b20\">Kasneci et al. 2023)</ref>. Despite their strengths in producing coherent and contextually appropriate text, LLMs natively lack the ability to sense or act within their environments and thus cannot function as autonomous agents on their own. To overcome these limitations, LLMs have been equipped with tools that they can invoke to interact with external environments (e.g., reserving tables in restaurants, booking hotels), thereby enabling them to act autonomously <ref type=\"bibr\" target=\"#b40\">(Zeng et al. 2023)</ref>. Early efforts such as Toolformer <ref type=\"bibr\" target=\"#b31\">(Schick et al. 2023)</ref> investigate pre-training LLMs to recognize when and how to invoke each tool. More recent work on standardized protocols <ref type=\"bibr\" target=\"#b7\">(Ding and Stevens 2025)</ref>, such as MCP, allows modular, runtime integration, of external tools without any specific fine-tuning. Through such tool integration, agentic AI systems can perform a wide array of tasks -including image While these tools help LLMs perform complex tasks, they still struggle with reliable long-horizon planning and dynamic goal decomposition, which limits their ability to execute multi-step strategies independently <ref type=\"bibr\" target=\"#b17\">(Huang et al. 2025;</ref><ref type=\"bibr\" target=\"#b33\">Shojaee et al. 2025)</ref>.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Automatic Planning</head><p>Automated Planning is a subfield of Artificial Intelligence (AI) focused on generating plans-which are sequences of actions-that intelligent agents can execute to achieve their goals. Automated Planning can be defined through a variety of problem formulations. In this work, we focus on Planning Domain Definition Language (PDDL) <ref type=\"bibr\" target=\"#b15\">(Howe et al. 1998)</ref> and its later extension PDDL 2.1 <ref type=\"bibr\" target=\"#b8\">(Fox and Long 2003)</ref>. The PDDL (and PDDL 2.1) formalism includes two components-the domain and the problem. The domain describes the environment using predicates and functions, as well as the agent's capabilities, i.e., the actions. The problem contains the problem-specific objects, a definition of the initial state from which the planning algorithm begins to find a solution, and the desired goal. Together, with this precise knowledge, planners such as FastDownward <ref type=\"bibr\" target=\"#b12\">(Helmert 2006)</ref>, Metric-FF <ref type=\"bibr\" target=\"#b14\">(Hoffmann 2003)</ref>, ENHSP <ref type=\"bibr\" target=\"#b30\">(Scala et al. 2016)</ref>, and NYX (Piotrowski and Perez 2024) can efficiently generate plans and can offer formal guarantees about their correctness and optimality. We consider two types of planning: classical planning, where actions deterministically change a finite set of propositional states, and numeric planning, which extends this model with numeric functions to capture quantities such as resources or costs.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Leveraging LLMs for Automated Planning</head><p>Valmeekam, Stechly, and Kambhampati (2024) demonstrated that LLMs struggle with basic planning tasks, while <ref type=\"bibr\" target=\"#b28\">Pallagani et al. (2023)</ref> showed promise using fine-tuned sequence-to-sequence models like Plansformer <ref type=\"bibr\" target=\"#b27\">(Pallagani et al. 2022)</ref>, though with limited generalization to out-ofdistribution domains. The LLM+P framework <ref type=\"bibr\" target=\"#b23\">(Liu et al. 2023</ref>) converts natural language planning problem descriptions into PDDL using GPT-4, then translates the resulting solutions back into natural language for robot planning scenarios. Similarly, GenPlanX <ref type=\"bibr\" target=\"#b4\">(Borrajo et al. 2025</ref>) completes a more comprehensive cycle by using LLMs to generate problem instances, which are then processed by a handcoded pipeline that invokes the planner to solve them. How-ever, significant challenges remain not only in generating accurate PDDL models but also in validating, executing, and debugging these models to ensure practical usability. The Planning Copilot we propose in this work addresses these challenges.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>The Planning Copilot</head><p>The Planning Copilot we propose integrates external planning-related tools into a given LLM. It allows the LLM to perform long-term planning and validate its outcome, and relieves users from the burden of running, validating, and adapting inputs for these planning tools by providing a natural language interface mediated by the LLMs.</p><p>Our Planning Copilot supports three main use cases, denoted here as Solve, Validate, and Simulate. We describe each of these use cases below. Each use case is supported by one or more MCP functions. These MCP functions allow the LLM to call these planning tools and use the information they output to support the desired use case. Notably, this modular design makes it straightforward to integrate with other systems-such as those that generate PDDL domains and problems from natural language-thereby extending our Planning Copilot's capabilities in the future.</p><p>The Solve use case In this use case, the Planning Copilot is required to solve a planning problem described by a given PDDL domain and problem. It should do so by calling a suitable planner. To support this use case, the Planning Copilot includes two MCP functions, one that calls a classical planner and one that calls a numeric planner. Both calls accepts a PDDL domain and problem specification, executes a planner, and returns the resulting plan to the LLM.</p><p>Importantly, the user is not obligated to specify which planner to use. The LLM should infer from from the input files which planning algorithm should be called. This is reasonable because LLMs are trained on data from the web, and different planning domains (classical and numerical) are available in open source repositories.</p><p>The Validate use case In this use case, the Planning Copilot is required to validate either the PDDL domain, the PDDL problem, or the plan generated by some planner. That is, the validation functionality supported by the component includes:</p><p>• Checking the syntactic correctness of the PDDL domain specifications.</p><p>• Ensuring the PDDL problem is consistent with given PDDL domain.</p><p>• Validating a given plan is correct, i.e., it achieve the intended goal state according to the given PDDL domain and problem.</p><p>The corresponding MCP function supports validation at various stages of planning: domain definition, problem formulation, and generated plans. If the validation fails, the tool will notify the LLM. In plan validation specifically, the LLM is given the reason for failure and a possible fix suggestion.</p><p>You are a PDDL planner in a tool-based planning system.</p><p>Your ONLY way to get information or solve problems is by calling the provided tools ONE AT A TIME -never guess or create plan details yourself .</p><p>On each turn, either:</p><p>-Call the next tool (name + inputs), or -Give the final answer in natural language BASED ONLY on tool outputs so far.</p><p>Do not combine tool calls or answer prematurely. Final answers must contain no tool commands or intermediate data.</p><p>Available tools: {tool_list}. Choose the most suitable based on the problem. If a tool returns nothing, treat the problem as unsolvable. Always wait for results -never guess. The Simulate use case In this use case, the Planning Copilot is required to simulate the step-wise execution of a given plan. Its MCP function takes a domain, problem, and plan as input and generates a detailed execution trace that records the intermediate state after each action activation. Like the other MCP functions, it allows the LLM to incorporate the verified outputs from the tools back into its context, enabling it to use that information for subsequent reasoning and to provide the user with a more reliable and comprehensive response. For example, given a trace, the LLM could retrieve the 5th state or the 10th action.</p><p>Additionally, a dedicated MCP function saves plans locally to support tool chaining and pipelining, allowing other components or tools to access and continue processing the plan.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Workflow Management We implement our Planning</head><p>Copilot's control flow using LangGraph (Wang and Duan 2024), an Agentic AI framework that represents workflows as a stateful graph of nodes (LLM calls, tools) and directed edges (control decisions) as seen in Figure <ref type=\"figure\" target=\"#fig_0\">1</ref>. Tool selection is handled through a loop between MCP and the LLM: MCP provides the LLM with a list of available tools, including their purpose, inputs, and outputs, and the LLM chooses the one that best matches the current goal. MCP executes the selected tool, records the results in an execution trace, and returns this feedback to the LLM, which reflects on the trace to validate correctness and adjust future selections if needed. Figure <ref type=\"figure\" target=\"#fig_1\">2</ref> shows a snippet of the system prompt used to steer tool selection and error-recovery.</p><p>You are a PDDL planner capable of directly reasoning about and generating plans.</p><p>You can analyze PDDL problems, validate syntax, create plans, and simulate state transitions all on your own.</p><p>Carefully reason step-by-step about problem requirements and constraints before producing outputs.</p><p>Do NOT wait for or rely on external tools your responses should be fully self contained.</p><p>For tasks: {task name: required format} Answer only for the specific task you are asked; do not provide information about other tasks.</p><p>Figure <ref type=\"figure\">3</ref>: System prompt for the baseline LLMs, which are not given the planning tools.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Experimental Results</head><p>We have implemented our Planning Copilot over several open-source LLMs. In this section, we provide information about our implementation and present experimental results comparing the performance of our Planning Copilot with baseline LLMs.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Implementation Details</head><p>For the Solve use case, we created an MCP function that call FastDownward <ref type=\"bibr\" target=\"#b12\">(Helmert 2006)</ref>, which is a planner for classical planning problems, and an MCP function that calls Metric-FF <ref type=\"bibr\" target=\"#b14\">(Hoffmann 2003)</ref>, a planner for numeric planning problems. For the Validate use case, we created an MCP wrapper of VAL <ref type=\"bibr\" target=\"#b16\">(Howey, Long, and Fox 2004)</ref>, a plan validation tool. For the Simulate use case, we implemented an MCP function that runs a simple plan simulation script 2 . The choice of LLM is flexible; we only require a model that supports MCP. In our implementation, we chose to compare a family of LLMs by Alibaba called Qwen3 <ref type=\"bibr\" target=\"#b39\">(Yang et al. 2025</ref>) and the GPT-OSS 3 model, both of which support MCP and the so-called reasoning capabilities. Qwen implemented an \"think\" mechanisms that allow it multistep self-reflection, often employing techniques such as the Chain-of-Thought (CoT) mechanism <ref type=\"bibr\" target=\"#b38\">(Wei et al. 2022)</ref>. Previous results showed that the Qwen3:4B model, even without explicit \"thinking\" mechanisms, outperformed other non-thinking models (including LLaMA-3.1-8B-Instruct). When augmented with thinking capabilities, Qwen3:4B achieved competitive performance against larger thinking models (such as DeepSeek-R1-Distill-Qwen-14B), surpassing them in most evaluations. More over, GPT-OSS is the latest open-source model, employs a Mixture-of-Experts 2 <ref type=\"url\" target=\"https://github.com/argaman-aloni/pddl\">https://github.com/argaman-aloni/pddl</ref> plus parser 3 <ref type=\"url\" target=\"https://openai.com/index/introducing-gpt-oss\">https://openai.com/index/introducing-gpt-oss</ref> (MoE) <ref type=\"bibr\" target=\"#b32\">(Shazeer et al. 2017</ref>) architecture with a focus on tool-augmented reasoning and agentic workflows, making it an ideal candidate for our PDDL tool-using framework.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Experimental Design</head><p>In our experiments, we used ten domains-BARMAN, BLOCKSWORD, DEPOTS-CLASSICAL, ROVERS, SATEL-LITE, DEPOTS-NUMERIC, COUNTERS, FARMLAND, SAIL-ING, and MINECRAFT-POGO. The first five domains are from the the classical track in International Planning Competition (IPC) <ref type=\"bibr\" target=\"#b24\">(Long and Fox 2003)</ref>, the next four are from the numeric IPC track 2023 <ref type=\"bibr\">(Taitler et al. 2024)</ref>, and the last one is non-IPC numeric domain <ref type=\"bibr\" target=\"#b3\">(Benyamin et al. 2024)</ref>.</p><p>We evaluate our system in a zero-shot setting, i.e., without any dedicated pre-training. First, we test whether the use of tools improves the LLM's performance in answering the tasks. In Figure <ref type=\"figure\">3</ref> we can see the system prompt used when the LLM does not have access to tools. Second, in the toolusing condition, we measure the percentage of correct task answers. The first evaluation compares LLM performance with and without tool usage, while the second considers only runs with tools. Note that in the results we evaluated two versions of each model-with and without the model's internal deliberation (\"thinking\") ability-and reported the better of the two.</p><p>Each task in our evaluation consists of 10 distinct problems, including 5 numeric problems and 5 classic problems. For each problem type, we generate 5 variations of the task prompt to test model robustness across slightly different formulations. The first evaluation contains five core tasks involving a single request that can be easily solved by an expert using one of the provided tools. These tasks include:</p><p>(1) given a domain, check its syntax; (2+3) given a domain and problem, check the problem's syntax or find a solution; and (4+5) given a domain, problem, and plan, verify that the plan solves the problem or simulate its execution.</p><p>When we have simulation task we can also request returning a specific states during its execution. To capture this, we define tasks that can be chained together, where the number of subtasks in the chain is denoted as no.tasks. A task chain of length no.tasks may require up to no.tasks-1 tool calls to solve, with the difficulty increasing as the chain length grows. The evaluation includes tasks across different chain lengths: 250 tasks for no.tasks = 1 (derived from 10 problems × 5 prompt variants × 5 different requests), 100 tasks each for no.tasks = 2, 3, 4, and 50 tasks for no.tasks = 5, resulting in a total of 12 task chains of varying complexity for the second evaluation.</p><p>We also have a task that request returning specific states within the transition, this task is depend on running the simulation correctly. By chain one task to another we obtain a total of 12 tasks of varying no.tasks (number of task that chain toghether) for the second evaluation. Each of these tasks can require no.tasks-1 tool calling to solve the tasks, with a maximum of no.tasks -1 tools per level. There are 250 tasks in no.tasks = 1 (10 problems, 5 variants per prompt, and 5 different requests), 100 tasks for levels no.tasks = 2, 3, 4, and 50 tasks for the no.tasks = 5.</p><p>To assess model performance, we performed validation on the plan solutions using VAL. The validation evaluated whether the answers were correct, and the simulated outputs were compared to the real simulation results using the capabilities of pddl plus parser ability. The outputs then were manually evaluated to verify whether the final results provided to the end user were correct. This ensured that both correctness and applicability of the generated plans were taken into account. When evaluating tool usage, we only consider cases where the LLM explicitly employed the correct tools needed to accomplish the task, preventing unverified answers from being returned to the user.</p><p>Experiments were conducted via API on LangGraph while all code, prompts, temperature, and evaluation scripts were fixed prior to testing to prevent unintended modifications and ensure consistency across experiments. Specifically, the experiments ran on an RTX 6000 GPU with 48 GB of VRAM. Each model used the same system prompt and tool settings, with the randomness parameter (temperature) set to 0. Self-loops within the LangGraph were limited to 10 iterations.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Results: Single Task Comparison</head><p>Table <ref type=\"table\" target=\"#tab_0\">1</ref> presents the results of our evaluation comparing LLMs with and without access to planning tools. Each row represents a different model , and the columns correspond to the different tasks we have: Solve, Validate Domain, Validate Problem, Validate Plan, and Simulate.</p><p>As expected, LLMs augmented with these tools outperformed those without them. As an example, without using tools, none of the LLMs could simulate the plan, while Qwen-3:0.6B succeeded 6% of the time, Qwen-3:4B succeeded 24%, and GPT-OSS:20B succeeded 80%. Specifically, except for the problem validation task, GPT-OSS augmented with the tools outperformed all other models. The task that was the most challenging for LLMs without planning tools was the simulation task, as it requires the model to track state changes and manage the add and delete effects of each action across multiple steps. In contrast, the different validation tasks was executed most successfully among all the tasks, though it can occasionally be answered correctly by chance. This highlights the importance of planning tools: they ensure that the plans returned by the LLM are not only applicable but also verified through real validation or simulation. Tools like those in our system provide users with confidence that the results they receive are accurate and reliable.</p><p>After establishing that tools improve LLM solving performance, we now focus on how well these models select the appropriate tool for the Solve task. In this task, the LLM receives a domain and a problem and must select a planner to generate a solution. Figure <ref type=\"figure\" target=\"#fig_2\">4</ref> shows a subset of the results, highlighting how often the LLM chose the correct tool: a classical planner for classical PDDL problems and a numeric planner for numeric PDDL problems. The results indicate that the LLM was able to solve almost all classical planning problems using the correct tool, while numeric planning proved more challenging. This may be because numeric planning is less common and more complex, so the  model likely has less exposure to numeric problems in its training set.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Results: Multi-Task Comparison</head><p>Figure <ref type=\"figure\" target=\"#fig_3\">5</ref> presents the performance of tool using of LLMs on more challenging tasks that require multiple tool calls in sequence to fulfill the user's request. For instance, tasks that require a single tool run, as shown in Figure <ref type=\"figure\" target=\"#fig_0\">1</ref> are averaged and represented as a single bar at the first position. As expected, we observe that performance declines across different LLMs as the number of required tool calls increases. Notably, GPT-OSS achieves the best results on tasks involving two or fewer tool calls. This highlights the importance of robust multi-step reasoning capabilities in LLMs, as errors can compound across sequential tool executions, significantly impacting overall task performance. Future work could explore strategies for decomposing large prompts into smaller, manageable subtasks, improving error detection and recovery, and dynamically selecting tools based on intermediate outputs to better handle complex, multi-request prompts.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Comparison with GPT-5</head><p>We performed a small-scale qualitative comparison with the state-of-the-art LLM GPT-5<ref type=\"foot\" target=\"#foot_0\">foot_0</ref> . Specifically, we executed queries using the chat itself, and we did not run the code using the API. We allowed the chat to think longer to provide with the best response it could, i.e., we enabled the LLM to select (if needed) to use the GPT-5 Thinking model, which may think longer to provide better response. For each query we opened a new chat to enable each query to run independently. We performed the following tasks: (1) solve, (2) domain validation (3) problem validation, (4) plan validation and (5) plan simulation. Each task was preformed on 5 different instances. We used the same queries as used for the models without the tools. As access to the GPT-5's API is costly, we selected to perform a small preliminary evaluation to compare our approach against this flagship model.</p><p>Figure <ref type=\"figure\" target=\"#fig_4\">6</ref> presents the comparison results between our tool, based on the GPT-OSS model, and GPT-5. The x-axis represents the different tasks given to the model, the y-axis represents the number of tasks completed by the model. The green columns represent the results for our tool and the blue columns represent the results for GPT-5.</p><p>For the solving task, GPT-5 generated three valid plans and failed in solving two tasks. Specifically, we observed that it successfully solved the problems for the BARMAN, BLOCKSWORLD, and MINECRAFT domain, but failed to solve the problems for the ROVERS and SAILING domains. Our tool however, succeeded in solving all planning tasks except for the MINECRAFT domain. In this domain the tool did not understand which planning algorithm it should execute, thus failed.</p><p>GPT-5 coded a parser to parse the planning domain and problem, and using its reasoning it attempted to generate the actions that provide solution for the problem. The LLM understood that it needs to consider the action's preconditions and it even simulated its generated plans internally to validate their correctness. Subsequently, using this approach it solved three out of the five tested problems. Contrary to GPT-5, using a significantly smaller LLM -GPT-OSS, without the ability to code but augmenting with planning algorithms, we were able to solve more problems by providing it with our planning copilot tools.</p><p>GPT-5 performed the best in the validations tasks with at least 4 out of five tasks successfully completed. This is to be expected as this task only involves syntactic understanding of the text that can be achieved by building an Abstract Syntax Tree (AST). Our tool outperformed GPT-5 in the plan validation -the most difficult validation task, and domain validation tasks with all instances successfully validated. Surprisingly GPT-5 performed better in the problem validation task. We observed that the failed instances belonged to the MINECRAFT and SAILING domains. We observe that in general, our tool had more difficulties correctly resolving MINECRAFT related tasks. For the SAILING instance, the tool's context became corrupted due to internal reasoning issues and it failed to perform the validation.</p><p>Finally, the least successful task for GPT-5 was the Simulate task with the model only successfully simulating a single instance, specifically the BLOCKSWORLD instance. Our tool, however, successfully simulated all planning instances. For example, in instances from the BARMAN, SAILING, and MINECRAFT domains, we observed that GPT-5 chose to output only part of the simulated trajectory. For the ROVERS instance however, the simulation included all actions but the states were partial, containing a single state variable only.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Conclusions and Future Work</head><p>In this work we presented the Planning Copilot, an LLM tool augmented with AI planning tools. The planning copilot van solve planning problems, perform validation and simulate plans. We implemented the tool using three open-source models and compared them to their un-augmented counterparts. The results show that that augmenting the LLMs with the planning tools highly outperforms using only the LLMs. We also compared our tool to GPT-5, the state-of-the-art LLM model. The comparison showed that in all but one task, our tool, using much smaller model, outperformed GPT-5.</p><p>One promising direction is using an interactive plan visualization tool that could automatically generate intuitive diagrams of the proposed plan, helping human users quickly understand, validate, and refine the agent's strategy. Similarly, an automated module for generating PDDL domains from free-text descriptions could significantly reduce the effort required for domain modeling. By integrating these capabilities with the other tools presented in this paper, we could enable a seamless pipeline from natural language task descriptions to executable symbolic plans, empowering users to move from intent to validated plan more efficiently and transparently.</p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: High-level diagram of an LLM using tools.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_1\"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: System prompt of our Planning Copilot, which is allowed to call planning tools.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_2\"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Accuracy of choosing the correct planner for different types of planning problems (classical or numeric).</figDesc><graphic coords=\"5,361.24,185.61,155.03,129.19\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_3\"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Accuracy of task completion plotted against the number of distinct tasks in a single prompt.</figDesc><graphic coords=\"6,71.89,54.00,202.72,126.70\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_4\"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Preliminary exploration of ChatGPT 5 performance compared to the significantly smaller GPT-OSS:20b augmented with our suite of tools.</figDesc><graphic coords=\"6,331.43,54.00,214.65,134.15\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_0\"><head>Table 1 :</head><label>1</label><figDesc>Success rate of single-task completion shown by task description. We denote the validation task as Val, the domain as dom, and the problem as prob.</figDesc><table><row><cell>Model</cell><cell cols=\"5\">Solve Val. dom. Val. prob. Val. plan Simulate</cell></row><row><cell>qwen3:0.6b</cell><cell>0.00</cell><cell>0.00</cell><cell>0.00</cell><cell>0.00</cell><cell>0.00</cell></row><row><cell cols=\"2\">qwen3:0.6b+tools 0.32</cell><cell>0.14</cell><cell>0.16</cell><cell>0.04</cell><cell>0.06</cell></row><row><cell>qwen3:4b</cell><cell>0.04</cell><cell>0.42</cell><cell>0.20</cell><cell>0.14</cell><cell>0.00</cell></row><row><cell>qwen3:4b+tools</cell><cell>0.78</cell><cell>0.34</cell><cell>0.98</cell><cell>0.80</cell><cell>0.24</cell></row><row><cell>gpt-oss:20b</cell><cell>0.28</cell><cell>0.20</cell><cell>0.14</cell><cell>0.54</cell><cell>0.00</cell></row><row><cell cols=\"2\">gpt-oss:20b+tools 0.78</cell><cell>0.70</cell><cell>0.40</cell><cell>1.00</cell><cell>0.80</cell></row></table></figure>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"4\" xml:id=\"foot_0\"><p>GPT-5 is a state-of-the-art model published world-wide on August 7th 2025.</p></note>\n\t\t</body>\n\t\t<back>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Achiam</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Adler</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Agarwal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Ahmad</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Akkaya</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><forename type=\"middle\">L</forename><surname>Aleman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Almeida</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Altenschmidt</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Altman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Anadkat</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2303.08774</idno>\n\t\t<title level=\"m\">Gpt-4 technical report</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">SLDB: An End-To-End Heterogeneous System-on-Chip Benchmark Suite for LLM-Aided Design</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><forename type=\"middle\">L</forename><surname>Alvanaki</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Lee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><forename type=\"middle\">P</forename><surname>Carloni</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">IEEE International Conference on LLM-Aided Design (ICLAD)</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t\t<biblScope unit=\"page\" from=\"227\" to=\"234\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Introducing the Model Context Protocol (MCP)</title>\n\t\t<author>\n\t\t\t<persName><surname>Anthropic</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://www.anthropic.com/news/model-context-protocol\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">A heuristic search approach to planning with temporally extended preferences</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><forename type=\"middle\">A</forename><surname>Baier</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Bacchus</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><forename type=\"middle\">A</forename><surname>Mcilraith</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Benyamin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Mordoch</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Shperberg</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Piotrowski</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Stern</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the International Symposium on Combinatorial Search</title>\n\t\t<meeting>the International Symposium on Combinatorial Search</meeting>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2009\">2009. 2024</date>\n\t\t\t<biblScope unit=\"volume\">173</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"261\" to=\"262\" />\n\t\t</imprint>\n\t</monogr>\n\t<note>Crafting a pogo stick in minecraft with heuristic search</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Borrajo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Canonaco</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>De La Rosa</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Garrachón</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Gopalakrishnan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Kaur</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Morales</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Patra</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Pozanco</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Ramani</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2506.10897</idno>\n\t\t<title level=\"m\">Generation of Plans and Execution</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Chatunitest: A framework for llm-based test generation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Hu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Zhi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Han</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Deng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Yin</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">ACM International Conference on the Foundations of Software Engineering</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t\t<biblScope unit=\"page\" from=\"572\" to=\"576\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Temporal planning in domains with linear processes</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Coles</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Coles</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Fox</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Long</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">International Joint Conference on Artificial Intelligence (IJCAI)</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2009\">2009</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b7\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Ding</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Stevens</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2508.02979</idno>\n\t\t<title level=\"m\">Unified Tool Integration for LLMs: A Protocol-Agnostic Approach to Function Calling</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b8\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">PDDL2.1: An extension to PDDL for expressing temporal planning domains</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Fox</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Long</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Journal of Artificial Intelligence Research</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">20</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"61\" to=\"124\" />\n\t\t\t<date type=\"published\" when=\"2003\">2003</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b9\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Ghallab</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Nau</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Traverso</surname></persName>\n\t\t</author>\n\t\t<title level=\"m\">Automated Planning: theory and practice</title>\n\t\t<imprint>\n\t\t\t<publisher>Elsevier</publisher>\n\t\t\t<date type=\"published\" when=\"2004\">2004</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b10\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Gunasekar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Aneja</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><forename type=\"middle\">C T</forename><surname>Mendes</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Del Giorno</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Gopi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Javaheripi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Kauffmann</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>De Rosa</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O</forename><surname>Saarikivi</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2306.11644</idno>\n\t\t<title level=\"m\">Textbooks are all you need</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b11\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">What can large language models do in chemistry? a comprehensive benchmark on eight tasks</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Guo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Nan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Liang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Guo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Chawla</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O</forename><surname>Wiest</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">36</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"59662\" to=\"59688\" />\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b12\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">The fast downward planning system</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Helmert</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Journal of Artificial Intelligence Research</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">26</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"191\" to=\"246\" />\n\t\t\t<date type=\"published\" when=\"2006\">2006</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b13\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">FF: The fast-forward planning system</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Hoffmann</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">AI magazine</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">22</biblScope>\n\t\t\t<biblScope unit=\"issue\">3</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"57\" to=\"57\" />\n\t\t\t<date type=\"published\" when=\"2001\">2001</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b14\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">The Metric-FF Planning System: Translating &quot;Ignoring Delete Lists&quot; to Numeric State Variables</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Hoffmann</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Journal of Artificial Intelligence Research</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">20</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"291\" to=\"341\" />\n\t\t\t<date type=\"published\" when=\"2003\">2003</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b15\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">PDDL -The Planning Domain Definition Language</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Howe</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Knoblock</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Mcdermott</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Ram</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Veloso</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Weld</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Wilkins</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Barrett</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Christianson</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"1998\">1998</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">Tech. Rep</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b16\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">VAL: Automatic plan validation, continuous effects and mixed initiative planning using PDDL</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Howey</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Long</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Fox</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Ieee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><forename type=\"middle\">C</forename><surname>Chang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">-C</forename></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2212.10403</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">16th IEEE International Conference on Tools with Artificial Intelligence</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2004\">2004. 2022</date>\n\t\t\t<biblScope unit=\"page\" from=\"294\" to=\"301\" />\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n\t<note>Towards reasoning in large language models: A survey</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b17\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">A survey on hallucination in large language models: Principles, taxonomy, challenges, and open questions</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Ma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Zhong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Feng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Peng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Feng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Qin</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">ACM Transactions on Information Systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">43</biblScope>\n\t\t\t<biblScope unit=\"issue\">2</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"1\" to=\"55\" />\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b18\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Shen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Kim</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Kim</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2406.00515</idno>\n\t\t<title level=\"m\">A survey on large language models for code generation</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b19\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Can large language models reason and plan?</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Kambhampati</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Annals of the New York Academy of Sciences</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">1534</biblScope>\n\t\t\t<biblScope unit=\"issue\">1</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"15\" to=\"18\" />\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b20\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">ChatGPT for good? On opportunities and challenges of large language models for education</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Kasneci</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Seßler</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Küchemann</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Bannert</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Dementieva</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Fischer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">U</forename><surname>Gasser</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Groh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Günnemann</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Hüllermeier</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Learning and individual differences</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">103</biblScope>\n\t\t\t<biblScope unit=\"page\">102274</biblScope>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b21\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">BART: Denoising sequence-to-sequence pre-training for natural language generation, translation, and comprehension</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Lewis</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Goyal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Ghazvininejad</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Mohamed</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O</forename><surname>Levy</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Stoyanov</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Zettlemoyer</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1910.13461</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2019\">2019</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b22\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Feng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Xue</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Lu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Deng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Ruan</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2412.19437</idno>\n\t\t<title level=\"m\">Deepseek-v3 technical report</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b23\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Biswas</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Stone</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2304.11477</idno>\n\t\t<title level=\"m\">Llm+ p: Empowering large language models with optimal planning proficiency</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b24\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">The 3rd international planning competition: Results and analysis</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Long</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Fox</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Journal of Artificial Intelligence Research</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">20</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"1\" to=\"59\" />\n\t\t\t<date type=\"published\" when=\"2003\">2003</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b25\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">PRP rebooted: Advancing the state of the art in FOND planning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Muise</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><forename type=\"middle\">A</forename><surname>Mcilraith</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><forename type=\"middle\">C</forename><surname>Beck</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">AAAI Conference on Artificial Intelligence</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t\t<biblScope unit=\"page\" from=\"20212\" to=\"20221\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b26\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Using an LLM to help with code understanding</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Nam</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Macvean</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Hellendoorn</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Vasilescu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Myers</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">IEEE/ACM International Conference on Software Engineering</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t\t<biblScope unit=\"page\" from=\"1\" to=\"13\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b27\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Plansformer: Generating symbolic plans using transformers</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Pallagani</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Muppasani</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Murugesan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Rossi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Horesh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Srivastava</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Fabiano</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Loreggia</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2212.08681</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b28\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Understanding the capabilities of large language models for automated planning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">V</forename><surname>Pallagani</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Muppasani</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Murugesan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Rossi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Srivastava</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Horesh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Fabiano</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Loreggia</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2305.16151</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b29\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Piotrowski</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Perez</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2402.11901</idno>\n\t\t<title level=\"m\">Real-World Planning with PDDL+ and Beyond</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b30\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Interval-based relaxation for general numeric planning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Scala</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Haslum</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Thiébaux</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Ramirez</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">ECAI 2016</title>\n\t\t<imprint>\n\t\t\t<publisher>IOS Press</publisher>\n\t\t\t<date type=\"published\" when=\"2016\">2016</date>\n\t\t\t<biblScope unit=\"page\" from=\"655\" to=\"663\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b31\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Toolformer: Language models can teach themselves to use tools</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Schick</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Dwivedi-Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Dessì</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Raileanu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Lomeli</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Hambro</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Zettlemoyer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Cancedda</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Scialom</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">36</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"68539\" to=\"68551\" />\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b32\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Shazeer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Mirhoseini</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Maziarz</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Davis</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Le</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Hinton</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Dean</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1701.06538</idno>\n\t\t<title level=\"m\">Outrageously large neural networks: The sparsely-gated mixture-of-experts layer</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2017\">2017</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b33\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Shojaee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Mirzadeh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Alizadeh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Horton</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Bengio</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Farajtabar</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2506.06941</idno>\n\t\t<title level=\"m\">The Illusion of Thinking: Understanding the Strengths and Limitations of Reasoning Models via the Lens of Problem Complexity</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b34\">\n\t<monogr>\n\t\t<title/>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Taitler</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Alford</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Espasa</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Behnke</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Fišer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Gimelfarb</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Pommerening</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Sanner</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Scala</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Schreiber</surname></persName>\n\t\t</author>\n\t\t<imprint/>\n\t</monogr>\n\t<note>et al. 2024. The 2023 International Planning Competition</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b35\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Team</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Anil</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Borgeaud</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J.-B</forename><surname>Alayrac</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Soricut</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Schalkwyk</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><forename type=\"middle\">M</forename><surname>Dai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Hauth</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Millican</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2312.11805</idno>\n\t\t<title level=\"m\">Gemini: a family of highly capable multimodal models</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b36\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Touvron</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Lavril</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Izacard</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Martinet</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M.-A</forename><surname>Lachaux</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Lacroix</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Rozière</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Goyal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Hambro</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Azhar</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2302.13971</idno>\n\t\t<idno>arXiv:2409.13373</idno>\n\t\t<title level=\"m\">LLMs Still Can&apos;t Plan; Can LRMs? A Preliminary Evaluation of OpenAI&apos;s o1 on PlanBench</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023. 2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n\t<note>Llama: Open and efficient foundation language models</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b37\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Agent AI with Lang-Graph: A Modular Framework for Enhancing Machine Translation Using Large Language Models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Duan</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2412.03801</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b38\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Chain-ofthought prompting elicits reasoning in large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Wei</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Schuurmans</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Bosma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Xia</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Chi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><forename type=\"middle\">V</forename><surname>Le</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Advances in neural information processing systems</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t\t<biblScope unit=\"volume\">35</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"24824\" to=\"24837\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b39\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Hui</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Zheng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Gao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Lv</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2505.09388</idno>\n\t\t<title level=\"m\">Qwen3 technical report</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b40\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Zeng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Lu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Dong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2310.12823</idno>\n\t\t<title level=\"m\">Agenttuning: Enabling generalized agent abilities for llms</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+ "pdf_hash": "fba75c87a2167e3936055ec679dc8059501b0bbcf573871d91a3756b75b914de",
+ "tables": [
+  {
+   "table_id": "tab_0",
+   "section_path_id": "1~20",
+   "section_ordinal": 19,
+   "caption": "Table 1 :",
+   "coordinates": null,
+   "cells": [
+    {
+     "row": 0,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Model",
+     "coordinates": null,
+     "span": {
+      "start": 148,
+      "end": 153
+     },
+     "digest": "74afbc17928f31a6022088a15e51a1f6418a187392f08d3a5c83b9d581947aa9"
+    },
+    {
+     "row": 0,
+     "column": 1,
+     "colspan": 5,
+     "rowspan": 1,
+     "text": "Solve Val. dom. Val. prob. Val. plan Simulate",
+     "coordinates": null,
+     "span": {
+      "start": 153,
+      "end": 198
+     },
+     "digest": "1f81f4c2af2641cb0ac97e7a2c68f7a6545b6816391f6ae6c40768cafbfcf50c"
+    },
+    {
+     "row": 1,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "qwen3:0.6b",
+     "coordinates": null,
+     "span": {
+      "start": 198,
+      "end": 208
+     },
+     "digest": "9d505c83f9c2d9a9273c509f3d42bf12ccd10ed3f394dacad003ac8384af3153"
+    },
+    {
+     "row": 1,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.00",
+     "coordinates": null,
+     "span": {
+      "start": 208,
+      "end": 212
+     },
+     "digest": "02b04e8678e0c19618858625b1b58829c5fa871ec00715d059f8af3ffc8af85e"
+    },
+    {
+     "row": 1,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.00",
+     "coordinates": null,
+     "span": {
+      "start": 212,
+      "end": 216
+     },
+     "digest": "a660739581ee3479b18236f661eaad521b918cd0b3b5aad1d013e4ddd2961379"
+    },
+    {
+     "row": 1,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.00",
+     "coordinates": null,
+     "span": {
+      "start": 216,
+      "end": 220
+     },
+     "digest": "e9379bf7bbcd0156241fe0a044c6d0b52a86437c6ef6943c8515c5ada3e20978"
+    },
+    {
+     "row": 1,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.00",
+     "coordinates": null,
+     "span": {
+      "start": 220,
+      "end": 224
+     },
+     "digest": "842008a7d8a035895810abaafe5338249f2120e524e738a6af777cac371f0eb4"
+    },
+    {
+     "row": 1,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.00",
+     "coordinates": null,
+     "span": {
+      "start": 224,
+      "end": 228
+     },
+     "digest": "d4171b3920dbcb0bca595063fe0ad552711488406c2a2d2734ad1fc35a61b53b"
+    },
+    {
+     "row": 2,
+     "column": 0,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "qwen3:0.6b+tools 0.32",
+     "coordinates": null,
+     "span": {
+      "start": 228,
+      "end": 249
+     },
+     "digest": "bbc785b6d879fc5242caa0a5f563de656c9a6c7e0e1a0f8ca1ded76bf4a01230"
+    },
+    {
+     "row": 2,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.14",
+     "coordinates": null,
+     "span": {
+      "start": 249,
+      "end": 253
+     },
+     "digest": "d67ffafc9741c9b77733e63b074b3de5071c2236fe76c18dceff26098319da9d"
+    },
+    {
+     "row": 2,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.16",
+     "coordinates": null,
+     "span": {
+      "start": 253,
+      "end": 257
+     },
+     "digest": "1482f556d3ddabd4922217d89f1e1df08c983e4ca1ad22f881fefb3a34da7fe0"
+    },
+    {
+     "row": 2,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.04",
+     "coordinates": null,
+     "span": {
+      "start": 257,
+      "end": 261
+     },
+     "digest": "a0f593308e1bb02f3df0ee566fbe2f6023e58b1963feb97c0f63f94886fe81a8"
+    },
+    {
+     "row": 2,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.06",
+     "coordinates": null,
+     "span": {
+      "start": 261,
+      "end": 265
+     },
+     "digest": "fcd1db7ef8b2e63bea9c4f986d74b55a627e7314eea28cd03dfddd1208ac8c89"
+    },
+    {
+     "row": 3,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "qwen3:4b",
+     "coordinates": null,
+     "span": {
+      "start": 265,
+      "end": 273
+     },
+     "digest": "fb7a17ab0c627fc902b8b08ecb3eb162dcb036f1adf02fc08803bdfab5486a30"
+    },
+    {
+     "row": 3,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.04",
+     "coordinates": null,
+     "span": {
+      "start": 273,
+      "end": 277
+     },
+     "digest": "67308402af387a35f56c49a553cb184ef6d2b1a49c078d646c1472e65216ca72"
+    },
+    {
+     "row": 3,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.42",
+     "coordinates": null,
+     "span": {
+      "start": 277,
+      "end": 281
+     },
+     "digest": "c04ec48d22b067e0debe135ef3e34b8477f4208f48bc8ef4f9e460a2bea52a6f"
+    },
+    {
+     "row": 3,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.20",
+     "coordinates": null,
+     "span": {
+      "start": 281,
+      "end": 285
+     },
+     "digest": "d648fb8a125a8faaf9a479ed57f2e869150286d907619e3fee60270cbb2a1378"
+    },
+    {
+     "row": 3,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.14",
+     "coordinates": null,
+     "span": {
+      "start": 285,
+      "end": 289
+     },
+     "digest": "c5cd488115e369ad1c0c5a3d9f078f78fe8bb7717d60f34dfb1d212bcb96cd3d"
+    },
+    {
+     "row": 3,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.00",
+     "coordinates": null,
+     "span": {
+      "start": 289,
+      "end": 293
+     },
+     "digest": "dfa33336a77496fe6a505b5fae360b1b23e5f51f39413003d4de929051b583b1"
+    },
+    {
+     "row": 4,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "qwen3:4b+tools",
+     "coordinates": null,
+     "span": {
+      "start": 293,
+      "end": 307
+     },
+     "digest": "bccc1f077b36913543d4b6cf920d329625d5b0f06287d234aed317e76278fe35"
+    },
+    {
+     "row": 4,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.78",
+     "coordinates": null,
+     "span": {
+      "start": 307,
+      "end": 311
+     },
+     "digest": "cbdb409428c1783d334dfb9fc91c4dde5e189ff773705a6f562a8bd3782c4767"
+    },
+    {
+     "row": 4,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.34",
+     "coordinates": null,
+     "span": {
+      "start": 311,
+      "end": 315
+     },
+     "digest": "3f9ef1b4eeb61e6d4cb83a00eb4cf20d5d400b6c81d7717a32147d16ffdb956f"
+    },
+    {
+     "row": 4,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.98",
+     "coordinates": null,
+     "span": {
+      "start": 315,
+      "end": 319
+     },
+     "digest": "b9e88709f7361acecc2e0299c3dadc6722d491004ab9338446d52fe116c742eb"
+    },
+    {
+     "row": 4,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.80",
+     "coordinates": null,
+     "span": {
+      "start": 319,
+      "end": 323
+     },
+     "digest": "cc6f03e0784ac4fb9a7ea77b8352a0553621f0c86d2628a74e36d309c2db4686"
+    },
+    {
+     "row": 4,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.24",
+     "coordinates": null,
+     "span": {
+      "start": 323,
+      "end": 327
+     },
+     "digest": "7628f638069a49ea1a586482d81902d7c0457809de8f5a839767c2bfe411c7f4"
+    },
+    {
+     "row": 5,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "gpt-oss:20b",
+     "coordinates": null,
+     "span": {
+      "start": 327,
+      "end": 338
+     },
+     "digest": "773c30e9474560c3d88e6bde430ab220326f91017756d582885b334b6a4420cb"
+    },
+    {
+     "row": 5,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.28",
+     "coordinates": null,
+     "span": {
+      "start": 338,
+      "end": 342
+     },
+     "digest": "1448e6e48c778bf7244288a98d5f368b6cd5a358e4010b68d665f0b072cbfac5"
+    },
+    {
+     "row": 5,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.20",
+     "coordinates": null,
+     "span": {
+      "start": 342,
+      "end": 346
+     },
+     "digest": "f2a5517bb7a21013cc472067e2339498c85fdbe8075e815084c47ea8000d6f99"
+    },
+    {
+     "row": 5,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.14",
+     "coordinates": null,
+     "span": {
+      "start": 346,
+      "end": 350
+     },
+     "digest": "1045280784cd4cd2d5c3e6ba15b157d66512e12d65ed984ad0ba26a4e8c469fe"
+    },
+    {
+     "row": 5,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.54",
+     "coordinates": null,
+     "span": {
+      "start": 350,
+      "end": 354
+     },
+     "digest": "7eee811b39914ec15d093659eed536a4d161bf8d44eaf152f8a9f0590e5a1ee6"
+    },
+    {
+     "row": 5,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.00",
+     "coordinates": null,
+     "span": {
+      "start": 354,
+      "end": 358
+     },
+     "digest": "020c7ab8f2aab72f15569d408e3cf457c8a4ac1dd5d8a74a90e5d6ae1c3743bd"
+    },
+    {
+     "row": 6,
+     "column": 0,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "gpt-oss:20b+tools 0.78",
+     "coordinates": null,
+     "span": {
+      "start": 358,
+      "end": 380
+     },
+     "digest": "fe490808a077ef5f815aa1b4053d5124185811e837357f27f68d4d17a9313f0c"
+    },
+    {
+     "row": 6,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.70",
+     "coordinates": null,
+     "span": {
+      "start": 380,
+      "end": 384
+     },
+     "digest": "d5fd2f9a90b6cc77df45cf55c18f0f5be2bae7586e2fec7464b9fb1cc3c65888"
+    },
+    {
+     "row": 6,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.40",
+     "coordinates": null,
+     "span": {
+      "start": 384,
+      "end": 388
+     },
+     "digest": "20dcf7998883c200acc792e6d90cb0b4cac6aec767d78c1b58353e88172b439c"
+    },
+    {
+     "row": 6,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "1.00",
+     "coordinates": null,
+     "span": {
+      "start": 388,
+      "end": 392
+     },
+     "digest": "32e703c512a1bb9c308323469b038299bfbe07f9ac99a689df9f12a95181d926"
+    },
+    {
+     "row": 6,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.80",
+     "coordinates": null,
+     "span": {
+      "start": 392,
+      "end": 396
+     },
+     "digest": "6385225dcbd37c72f4be7ca7dc1164bcd8a05f8175102563a6aaaac76ccf0312"
+    }
+   ],
+   "source_digest": "bc359ec3214c1ab9dea08681c9b030d2987d7a308571385b5bfdf844e520947d",
+   "missingness": null
+  }
+ ],
+ "table_missingness": null,
+ "formulas": [],
+ "formula_missingness": "no_formula_elements",
+ "page_text_missingness": null
+}

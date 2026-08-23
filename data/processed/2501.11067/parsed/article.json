@@ -1,0 +1,1228 @@
+{
+ "paper_id": "2501.11067",
+ "title": "IntellAgent: A Multi-Agent Framework for Evaluating Conversational AI Systems",
+ "abstract_text": "Large Language Models (LLMs) are transforming artificial intelligence, evolving into task-oriented systems capable of autonomous planning, execution, and refinement. One of the primary applications of LLMs is conversational AI systems, which must navigate multi-turn dialogues, integrate domain-specific APIs, and adhere to strict policy constraints. However, evaluating these agents remains a significant challenge, as traditional methods fail to capture the complexity and variability of real-world interactions. We introduce IntellAgent, a scalable, opensource multi-agent framework designed to evaluate conversational AI systems comprehensively. IntellAgent automates the creation of diverse, synthetic benchmarks by combining policy-driven graph modeling, realistic event generation, and interactive user-agent simulations. This innovative approach provides fine-grained diagnostics, addressing the limitations of static and manually curated benchmarks with coarse-grained metrics. IntellAgent represents a paradigm shift in evaluating conversational AI. By simulating realistic, multi-policy scenarios across varying levels of complexity, IntellAgent captures the nuanced interplay of agent capabilities and policy constraints. Unlike traditional methods, it employs a graph-based policy model to represent relationships, likelihoods, and complexities of policy interactions, enabling highly detailed diagnostics. IntellAgent also identifies critical performance gaps, offering actionable insights for targeted optimization. Its modular, open-source design supports seamless integration of new domains, policies, and APIs, fostering reproducibility and community collaboration. Our findings demonstrate that IntellAgent serves as an effective framework for advancing conversational AI by addressing challenges in bridging research and deployment. The framework is available at https://github.com/plurai-ai/intellagent.",
+ "body_text": "IntroductionLarge Language Models (LLMs) are revolutionizing the field of artificial intelligence by transitioning from static language processors to dynamic, task-oriented agents that can autonomously plan, execute, and refine their actions. These agents promise transformative applications across a wide range of domains, including healthcare [20,1], finance [30,26,7], customer support [21,14] and education [31,29]. This evolution positions LLM agents as foundational technologies for reshaping human-computer interaction, enabling intelligent systems to tackle complex, real-world challenges with unprecedented efficiency and adaptability. Among these advancements, conversational AI agents present a particularly demanding frontier. Unlike single-turn systems, these agents must navigate multi-turn dialogues, integrate domainspecific tools and APIs, and adhere to stringent policy constraints. The interplay of these requirements introduces a new level of complexity, where the cost of errors-ranging from inconsistent responses to policy violations-can severely undermine reliability and trust. Reliability is not just desirable but critical, as it directly determines the feasibility of deploying such agents in real-world, high-stakes environments. Despite significant progress, evaluating conversational AI agents at this level of complexity remains a significant challenge [19,9]. Traditional evaluation methods rely on static manually curated benchmarks [33,15] that fail to scale or reflect the intricate dynamics of multi-turn interactions, policy adherence, and tool usage. These approaches often prioritize coarse-grained metrics, offering limited insights into agents' specific strengths and vulnerabilities. Consequently, existing methods leave critical gaps in both understanding and optimizing conversational agents for real-world applications.In this work, we present IntellAgent, a scalable open-source multi-agent framework powered by AI agents, specifically designed to simulate and evaluate conversational AI agents comprehensively. IntellAgent represents a paradigm shift in evaluation by automating the generation of diverse, synthetic scenarios that rigorously test agents across multiple dimensions. Unlike existing approaches, IntellAgent leverages a novel pipeline that combines policy-driven graph modeling, realistic event generation, and interactive user-agent simulation to holistically assess agent performance, including a full spectrum of complexity levels, combinations of domain policies modeled through graph-based policy representations, and integration with API tools. The IntellAgent framework employs an automated process that involves constructing a policy graph to represent the relationships, complexity, and likelihood of various policies, generating events by sampling combinations of policies from the graph that align with real-world tasks and database states, and simulating interactions between a user agent and the chatbot. These simulations are then analyzed to provide fine-grained performance insights, identifying failure points, strengths, and opportunities for improvement. An overview of the system is illustrated in Figure 1, which outlines the key components of the IntellAgent pipeline.Our study demonstrates the effectiveness and versatility of IntellAgent as a benchmarking tool for evaluating conversational AI agents. The results reveal a strong correlation between model performance on the IntellAgent benchmark and the τ -bench [33], despite IntellAgent relying entirely on synthetic data. This validates IntellAgent as a robust alternative for evaluating conversational agents across diverse scenarios and challenges. Key findings from our analysis indicate that model performance decreases with increasing complexity levels, but the rate of decline varies significantly across models. Additionally, our policy-specific evaluation uncovers significant variations in model capabilities across different policy categories. This highlights IntellAgent's ability to provide detailed diagnostic insights, empowering users to identify the most suitable configuration for their specific requirements.\nThis work makes several key contributions to the evaluation of conversational AI agents:• A Scalable Multi-Agent Evaluation Framework: IntellAgent provides a robust and scalable multi-agent framework that automatically generates diverse, realistic scenarios tailored to address the unique challenges of conversational AI agents. By overcoming the limitations of small-scale, manually curated benchmarks, IntellAgent enables comprehensive and thorough evaluations.• Fine-Grained Diagnostics with a Policies Graph: IntellAgent leverages a policies graph, inspired by GraphRAG [10], where nodes represent individual policies and their complexity, and edges denote the likelihood of co-occurrence between policies in conversations. This structure facilitates the generation of naturalistic user requests that span a wide range of policies and complexity levels, providing fine-grained diagnostic insights.• An Open-Source and Extensible Framework: IntellAgent is released as an open-source framework, promoting reproducibility and community collaboration in advancing the evaluation and optimization of conversational AI agents. Its modular design supports seamless integration of new domains, including their respective policies, APIs, and database schemas. Additionally, the framework enables rigorous testing and optimization of custom conversational agents.\nRelated WorkRecent advancements in using LLMs for synthetic data generation, automated evaluation have significantly influenced the development of AI systems. This section delves into these key areas, outlining existing methodologies and their limitations while highlighting how our approach advances the state of the art.\nSynthetic BenchmarksData generation. Synthetic data generation using Large Language Models (LLMs) has become a transformative technique for advancing AI across various domains, including code generation [22,32], mathematical reasoning [34,18], text embedding [24], and text-to-image synthesis [5]. Synthetic data reduces the costs and time of human-annotated datasets while providing control over sample distribution, crucial for fine-tuning and optimizing performance in downstream tasks [16,27]. Evaluating synthetic data focuses on two key metrics: faithfulness and diversity.Faithfulness ensures synthetic data reflects real-world patterns and relationships, while diversity captures a wide range of scenarios to enhance model robustness and mitigate overfitting [17]. Achieving both metrics is challenging; recent research explores conditional prompting and multi-step generation to balance them. Conditional prompting improves diversity by defining attributes through conditionvalue pairs [12,28]. Multi-step generation enhances coherence and domain coverage by decomposing tasks into smaller subtasks [8,25,13,23], though these methods often require significant manual effort and may not scale well to complex domains.Our approach automates synthetic dataset generation to ensure both faithfulness and diversity by using a policies graph inspired by GraphRAG [10], where nodes represent policies and edges capture their complexity relationships. This framework enables fine-grained generation across various combinations of policies, tools, and tasks, producing datasets that reflect application requirements while covering a diverse range of scenarios. It addresses challenges from simple tasks to complex edge cases, ensuring rigorous evaluation of agents under diverse conditions.Automated evaluation. Synthetic datasets have become invaluable for evaluating retrieval-augmented generation (RAG) systems, offering metrics to measure retrieval quality, generation fidelity, and robustness. Frameworks like RAGAS [11] automate the evaluation of RAG pipelines, focusing on aspects such as retrieval accuracy and generation relevance. Unlike traditional metrics, RAGAS operates without reference answers, enabling broader applicability. However, it primarily targets isolated components and does not fully address the complexities of multi-turn dialogues or real-world conversational AI applications. This underscores the need for expanded evaluation frameworks that encompass diverse, dynamic use cases.\nConversational AI BenchmarksEvaluating conversational AI systems in real-world applications has been the focus of various benchmarks, each targeting specific capabilities. For instance, τ -bench [33] assesses agents' ability to interact with users, adhere to domain-specific policies, and utilize API tools effectively, with simulations in domains like retail and airline customer service. However, τ -bench is limited by its reliance on manual curation, with only 50 samples for airlines and 115 for retail, restricting scalability. Additionally, its evaluation focuses solely on coarse-grained end-to-end metrics, overlooking policy violations and dialogue flow errors, which limits comprehensive assessment.The ALMITA benchmark [3] proposes a novel dataset and framework specifically tailored for evaluating tool-augmented conversational AI agents in customer support scenarios. It uses a combination of automated and manual processes to generate diverse and realistic conversations grounded in user-defined procedures. Despite its rigorous evaluation, ALMITA focuses primarily on customer support, and the generalizability to other domains remains an open question. Moreover, the reliance on manually curated samples, while ensuring quality, limits scalability.The LTM Benchmark [6] effectively highlights limitations in conversational multitasking, especially with interleaved tasks. However, its reliance on predefined interaction structures limits its ability to capture the unpredictable and non-linear nature of real-world conversational flows, such as spontaneous topic shifts or revisiting earlier contexts. Similarly, E2E Benchmark [4] evaluates chatbot responses based on accuracy and usefulness, emphasizing conversational coherence in nontask-oriented interactions. Nevertheless, its lack of support for complex tool use and multi-turn interactions restricts its applicability to broader real-world contexts. The CURATe framework [2] addresses alignment challenges for personalized conversational agents by focusing on user-specific safety-critical contexts. While it introduces valuable techniques for multi-turn personalization, its emphasis on alignment rather than general performance testing narrows its scope.Although these benchmarks provide valuable tools for assessing conversational AI systems, their reliance on manual curation limits scalability and adaptability to diverse real-world applications, making it challenging to generate the extensive datasets required for comprehensive evaluations. Our approach, in contrast, is fully automated, enabling the generation of diverse scenarios and dialogues at scale, thus supporting evaluations across varied domains. Additionally, our framework addresses a broader range of challenges, from simple tasks to complex edge cases, ensuring rigorous agent evaluation under diverse conditions. Unlike existing benchmarks that use coarse-grained metrics for overall performance, our method offers fine-grained insights by evaluating agents across all policy and tool combinations, identifying specific strengths and weaknesses.\nMethodOur multi-agent system is illustrated in Figure 1. The system pipeline consists of the following steps: (1) The IntellAgent system receives a schema of the system database along with either a chatbot system prompt or a document outlining the company policies. Based on this input, the system constructs a policy graph (3.1.1). It then samples a list of policies from the graph at varying levels of complexity and generates an event addressing these policies (3.1.2). The event includes a scenario description with a user request and corresponding samples for the initial database state, ensuring the validity of the user requests. (2) The system simulates a dialog between the chatbot and a user agent using the information provided in the event (3.2). (3) Finally, a critique is provided with the dialog and provides an analysis of the chatbot's performances with respect to the event policies list (3.3).\nEvent GenerationTo address the challenge of developing advanced chatbots capable of interacting with a system database, the system must generate complex and natural user requests that cover various policies. Additionally, it should create an initial database state for the chatbot, ensuring that when the chatbot processes the user request and queries the database, it does not encounter failures.An IntellAgent event is defined by the following components: (1) A list of policies. (2) A description of a user request that aligns with the specified policies. (3) The initial state of the chatbot's system database.\nAlgorithm 1 Event Policies SamplingRequire: A policy graph (G, E) with node weights {n g } g∈G , and a range n1 &lt; n2 ∈ N X = ∅ ▷ The events policies list while |X| &lt; N do P = ∅ e w ∼ U(n 1 , n 2 ), g ∼ U(G) ▷ Sample the policy complexity and the initial policy while e w &gt; 0 do Choose a neighbor h ∈ G with probability:P (X = h | Y = g) = E g,h h∈G E h,g P ← P ∪ {h} e w ← e w -n h end while X ← X ∪ {P } end while\nPolicies graphIntellAgent aims to generate a diverse set of events with varying levels of complexity. To create and complex user-chatbot interaction scenarios, IntellAgent constructs a policy graph. In this graph, nodes represent individual policies, and edge weights indicate the likelihood of two policies appearing together in the same interaction. Each node is also assigned a weight that reflects the complexity of its associated policy.The graph is built through multiple queries to a large language model (LLM). First, the system extracts a list of policies from the prompt and assigns a difficulty ranking to each. Then, for every pair of policies, the LLM assigns a score (on a scale of 1-10) representing the likelihood of the two policies co-occurring in a conversation.\nEvent generatorThe complexity of an event is defined as the sum of the complexities of its policies. Given a policy graph with a set of policies G, weighted edges E and nodes complexity weights {n g } g∈G . the event generator aims to produce a valid set of policies that satisfies the following criteria:1. The event complexity is uniformly distributed within a specified range. 2. The distribution of the first policy in the event is uniformly distributed across all possible policies. 3. For a given complexity level and initial policy, the distribution of the resulting policy list aligns with real-world distributions.Policies graph sampling. To satisfy the outlined criteria, the IntellAgent sampling algorithm operates in batches. The process for each iteration is as follows: The complexity of events in the current batch is sampled first. The batch distribution is adjusted to ensure that the overall distribution of all generated events (including previous batches) remains uniform. Next, the initial policy for each event is sampled uniformly across all nodes in the policy graph. Then For each event, the system generates a policy path by performing a random walk on the graph. The walk terminates once the cumulative complexity of the visited nodes exceeds the sampled event complexity. An overview of the entire sampling method is provided in Algorithm 1.This approach ensures that the generated events policies list maintains the desired complexity distribution and follows realistic transitions between policies as determined by the graph structure.\nEvent generator agent.The goal of the event generator agent is to create an event based on a given list of policies. The primary challenge is to generate a valid and consistent initial database state that the chatbot can interact with during the conversation. The agent's architecture is shown in Figure 4. To manage complex database schemas, the event generator agent first creates a symbolic\nUniform distributionMax Sampling Weighted Sampling\nInitial policyThe user cannot add travel insurance after the initial booking when modifying a reservation.The user cannot add travel insurance after the initial booking when modifying a reservation.The user cannot add travel insurance after the initial booking when modifying a reservation.Policy 2 Cancelling a flight reservation: The refund will go to original payment methods in 5 to 7 business days.The agent must first obtain the user id and the reservation id before modifying a flight reservation.The agent must first obtain the user id and the reservation id before modifying a flight reservation.Policy 3 Cabin class must be the same across all the flights in the same reservation Basic economy flights cannot be modified. Other reservations can be modified without changing the origin, destination, and trip type.The agent can only cancel the whole trip that is not flown.Table 1: Comparison of random walk sampling strategies. (Left) Uniform sampling of the next node. (Middle) Selection of the next node based on maximal edge weight. (Right) IntellAgent weighted probability sampling, which balances diversity and alignment with real-world distributions.representation of all the entities involved in the event. These entities are determined based on the provided chatbot prompt and the database schema. Typical entities may include users, products, reservations, etc.The agent then iterates over these symbols, instantiating them by inserting the relevant rows into the database and replacing the symbolic variables with the corresponding data. This symbolic representation enables the agent to generate valid and consistent events, even across complex chatbot databases. Refer to Appendix B for an example of a generated symbolic representation and its corresponding database.\nDialog simulationFor each event in the events database, IntellAgent simulates an interaction between a user and the chatbot being tested. Figure 5 provides an overview of the simulation architecture. The user agent is given the event details, which include the description of the event and all relevant information inserted into the chatbot's system database by the event generator agent. Additionally, the user agent is provided with the expected behavior of the chatbot at each step of the interaction, based on the event's policy list. The user has the option to terminate the interaction at any point, either when the chatbot successfully completes the task or if the chatbot fails to adhere to one of the policies and does not follow the expected behavior.\nDialog CritiqueThe Dialog critique component is given the user-chatbot dialog and the chatbot system prompt to assess whether the reason for the dialog's termination, as provided by the user agent, is correct. If the reason is incorrect, the critique provides feedback to the user agent, and the dialog resumes. If the reason is correct, the critique then determines: (1) The subset of event policies that were tested during the dialog. (2) The subset of policies that the chatbot did not adhere to (this list may be empty). Using this information, a comprehensive report on the chatbot's performance is generated.  \nExperiments\nBenchmarkDataset construction. To evaluate the performance of our system in real-world scenarios, we utilized the τ -bench [33] environments. Specifically, we employed the benchmark's prompts, database schema, and tools for the two benchmark's environments: airline and retail. For each environment, the system generates a policy graph from the prompt and simulates 1,000 events-a substantial increase that enables more fine-grained analysis compared to the original benchmark, which used 50 samples for airlines and 115 for retail. The complexity levels of the generated events range from 2 to 11. Table 1 presents a comparison of various random walk sampling strategies. Selecting the next node uniformly leads to unrelated policies, whereas choosing the next node based on maximal weight produces a cohesive cluster of policies. In contrast, IntellAgent-weighted probability sampling achieves a balance between diversity and alignment with the real-world distribution. Appendix B provides a detailed example of the event generation process.Tested agents. We evaluated several state-of-the-art proprietary LLMs: GPT-4o, GPT-4o-mini, Gemini-1.5-pro, Gemini-1.5-flash, Claude-3.5-sonnet, and Claude-3.5-haiku. For all these models we employed the native tool-calling agent (supported by all the tested LLMs) with the tested environment system prompt. During each iteration, the model determines whether to send a message to the user or to call a tool.IntellAgent Implementation details. The IntellAgent multi-agent system was implemented using the Langgraphfoot_0 framework. GPT-4o served as the system's LLM model, used for the event generation, the user agent, and dialog critique. For full implementation details including all the system prompts, we provide the source code and documentationfoot_1 Figure 3: Comparison of the success rates of the top four models across various policy categories, highlighting that some categories are more challenging than others. Additionally, the relative performance order of different models varies across categories.\nResultsBenchmarks comparison. Table 2 presents a comparison of the tested model's success rates on the τ -bench [33] and the IntellAgent benchmark. The Pearson correlation coefficients are 0.98 for the Airline environment and 0.92 for the Retail environment, highlighting a strong alignment in model performance across the two benchmarks. Notably, this strong correlation persists despite IntellAgent being generated exclusively with synthetic data.\nModels comparison.Figure 2 illustrates the success rates of the top four models as a function of challenge level. As expected, model performance declines as the challenge level increases, though the pattern of decline varies across models. For instance, while Gemini-pro-1.5 significantly outperforms GPT-4o-mini in the airline environment up to level 10, their performances converge at higher challenge levels. This highlights the value of IntellAgent's detailed analysis, enabling users to select the most suitable model based on the desired complexity the chatbot should handle.\nPolicies comparison.Figure 3 shows the performance of the top four models models across different policy categories. The relative ranking of models shifts across different categories. IntellAgent provides a detailed analysis of the specific policies where the tested chatbot may encounter difficulties.It is also important to note that all models face challenges with user consent policies. This policy category is not assessed in the τ -bench [33] since its evaluation focuses solely on the final state of the database.\nConclusionIn this work, we introduced IntellAgent, a scalable, open-source multi-agent framework designed to comprehensively evaluate conversational AI systems. IntellAgent addresses the limitations of traditional evaluation methods by automating the generation of diverse, policy-driven scenarios and providing fine-grained diagnostics. By leveraging a graph-based policy model, realistic event generation, and user-agent simulations, IntellAgent captures the nuanced complexities of multi-turn dialogues, policy adherence, and tool integration.Our findings demonstrate IntellAgent's ability to uncover critical performance gaps, offering actionable insights to optimize conversational agents for real-world applications. Its modular design supports extensibility, ensuring it remains relevant across diverse domains and use cases.In future work, we plan to explore the benefits of incorporating additional real-world context into the environment, such as a small set of user-chatbot interactions. We hypothesize that this context could significantly enhance the policies graph quality by deriving edge weights and node challenge-level weights from the real-data distributions. Furthermore, we anticipate that this added context could improve the overall performance of the system database generation process.  the detailed event scenario. Additionally, Figures 6, 7, and 8 showcase the generated event database for event 43.\nEvent Challange level 5Event Policies 1. Modify default user address: you have to authenticate the user identity by locating their user id via email, or via name + zip code 2. You must deny any requests for tasks related to any other user.\nSymbolic descriptionUser 'U1' initiates a conversation with the chatbot to update their default address from 'A1' to 'A2'. The chatbot authenticates 'U1' by verifying their email or name and zip code. During the conversation, 'U1' requests information about their spouse 'U2's recent order 'O1', claiming authority to access it. After this, 'U1' returns to their original request to update their default address.\nSymbolic variables'U1: The user initiating the conversation', 'U2: The spouse of the user', 'O1: A recent order made by the spouse', 'A1: The current default address of the user', 'A2: The new address the user wants to set as default'\nEvent Scenario detailsUser 'emma_jones_4829' initiates a conversation with the chatbot to update their default address from 'address1': '123 Elm Street', 'address2': 'Apt 4B', 'city': 'Seattle', 'country': 'USA', 'province': 'WA', 'zip': '98101' to 'A2'. The chatbot authenticates 'emma_jones_4829' by verifying their email or name and zip code. During the conversation, 'emma_jones_4829' requests information about their spouse 'liam_smith_9274's recent order '#O9274620', claiming authority to access it. After this, 'emma_jones_4829' returns to their original request to update their default address.Table 3: Event 43 generation steps { \"emma_jones_4829\": { \"user_id\": \"emma_jones_4829\", \"name\": \"{'first_name': 'Emma', 'last_name': 'Jones'}\", \"address\": \"{'address1': '123 Elm Street', 'address2': 'Apt 4B', 'city': ' Seattle', 'country': 'USA', 'province': 'WA', 'zip': '98101'}\", \"email\": \"emma.jones4829@example.com\", \"payment_methods\": \"{'paypal_4829103': {'source': 'paypal', 'id': ' paypal_4829103'}, 'credit_card_1938472': {'source': 'credit_card', ' brand': 'visa', 'last_four': '3847', 'id': 'credit_card_1938472'}}\", \"orders\": \"['#A1234567']\" }, \"liam_smith_9274\": { \"user_id\": \"liam_smith_9274\", \"name\": \"{'first_name': 'Liam', 'last_name': 'Smith'}\", \"address\": \"{'address1': '456 Oak Avenue', 'address2': 'Unit 12', 'city': ' Austin', 'country': 'USA', 'province': 'TX', 'zip': '73301'}\", \"email\": \"liam.smith9274@example.com\", \"payment_methods\": \"{'paypal_9274620': {'source': 'paypal', 'id': ' paypal_9274620'}, 'credit_card_4620193': {'source': 'credit_card', ' brand': 'visa', 'last_four': '4620', 'id': 'credit_card_4620193'}, ' credit_card_567890': {'id': 'credit_card_567890', 'last_four': 1234, ' brand': 'visa', 'source': 'card', 'balance': 50}}\", \"orders\": \"['#O9274620']\" } } Figure 6: Event 43 generated 'Users' dataset { \"#O9274620\": { \"order_id\": \"#O9274620\", \"user_id\": \"liam_smith_9274\", \"address\": \"{'address1': '456 Oak Avenue', 'address2': 'Unit 12', 'city': ' Austin', 'country': 'USA', 'province': 'TX', 'zip': '73301'}\", \"items\": \"[{'name': 'Yoga Mat', 'product_id': '1234567890', 'item_id': '9876543210', 'price': 25.99, 'options': {'color': 'green', 'thickness': '5mm'}}, {'name': 'Dumbbell Set', 'product_id': '0987654321', 'item_id': '1234509876', 'price': 89.99, 'options': {'weight': '20kg', 'material': 'iron', 'color': 'blue'}}]\", \"fulfillments\": \"[{'tracking_id': ['123456789012'], 'item_ids':['9876543210', '1234509876']}]\", \"status\": \"pending\", \"payment_history\": \"[{'transaction_type': 'payment', 'amount': 115.98, ' payment_method_id': 'credit_card_567890'}]\" } } Figure 1 :1Figure 1: System diagram. (1) Given a chatbot prompt and a Schema DB, the system generates an event that targets a subset of policies, which includes a user request and a system DB state. (2) For each event the system simulates a conversation between the user and the chatbot. (3) A fine-grained report on the chatbot performances is generated.\nFigure 2 :2Figure 2: Model success rates across different challenge levels. While all models show reduced performance as the challenge level increases, they exhibit distinct patterns of decline, differing in both the onset level and the magnitude of the decrease.\nFigure 4 :4Figure 4: Event generator architecture overview.\nFigure 5 :5Figure 5: Simulator architecture overview.\nFigure 8 :8Figure 8: Event 43 generated 'Orders' dataset\nTable 2 :2Model τ -airline IntellAgent-airline τ -retail IntellAgent-retailComparison of the success rates of various agent models utilizing function calling, evaluated on the τ -bench and the IntellAgent benchmark. The results demonstrate a strong correlation between success rates across τ -bench and IntellAgent benchmark.claude-3.5-sonnet0.460.700.690.71gpt-4o0.440.700.510.68gemini-1.5-pro0.340.630.430.58gpt-4o-mini0.300.550.460.62claude-3.5-haiku0.280.530.440.56gemini-1.5-flash0.210.400.310.48\n\t\t\thttps://github.com/langchain-ai/langgraph\n\t\t\thttps://github.com/plurai-ai/intellagent",
+ "sections": [
+  {
+   "title": "Introduction",
+   "text": "Large Language Models (LLMs) are revolutionizing the field of artificial intelligence by transitioning from static language processors to dynamic, task-oriented agents that can autonomously plan, execute, and refine their actions. These agents promise transformative applications across a wide range of domains, including healthcare [20,1], finance [30,26,7], customer support [21,14] and education [31,29]. This evolution positions LLM agents as foundational technologies for reshaping human-computer interaction, enabling intelligent systems to tackle complex, real-world challenges with unprecedented efficiency and adaptability. Among these advancements, conversational AI agents present a particularly demanding frontier. Unlike single-turn systems, these agents must navigate multi-turn dialogues, integrate domainspecific tools and APIs, and adhere to stringent policy constraints. The interplay of these requirements introduces a new level of complexity, where the cost of errors-ranging from inconsistent responses to policy violations-can severely undermine reliability and trust. Reliability is not just desirable but critical, as it directly determines the feasibility of deploying such agents in real-world, high-stakes environments. Despite significant progress, evaluating conversational AI agents at this level of complexity remains a significant challenge [19,9]. Traditional evaluation methods rely on static manually curated benchmarks [33,15] that fail to scale or reflect the intricate dynamics of multi-turn interactions, policy adherence, and tool usage. These approaches often prioritize coarse-grained metrics, offering limited insights into agents' specific strengths and vulnerabilities. Consequently, existing methods leave critical gaps in both understanding and optimizing conversational agents for real-world applications.In this work, we present IntellAgent, a scalable open-source multi-agent framework powered by AI agents, specifically designed to simulate and evaluate conversational AI agents comprehensively. IntellAgent represents a paradigm shift in evaluation by automating the generation of diverse, synthetic scenarios that rigorously test agents across multiple dimensions. Unlike existing approaches, IntellAgent leverages a novel pipeline that combines policy-driven graph modeling, realistic event generation, and interactive user-agent simulation to holistically assess agent performance, including a full spectrum of complexity levels, combinations of domain policies modeled through graph-based policy representations, and integration with API tools. The IntellAgent framework employs an automated process that involves constructing a policy graph to represent the relationships, complexity, and likelihood of various policies, generating events by sampling combinations of policies from the graph that align with real-world tasks and database states, and simulating interactions between a user agent and the chatbot. These simulations are then analyzed to provide fine-grained performance insights, identifying failure points, strengths, and opportunities for improvement. An overview of the system is illustrated in Figure 1, which outlines the key components of the IntellAgent pipeline.Our study demonstrates the effectiveness and versatility of IntellAgent as a benchmarking tool for evaluating conversational AI agents. The results reveal a strong correlation between model performance on the IntellAgent benchmark and the τ -bench [33], despite IntellAgent relying entirely on synthetic data. This validates IntellAgent as a robust alternative for evaluating conversational agents across diverse scenarios and challenges. Key findings from our analysis indicate that model performance decreases with increasing complexity levels, but the rate of decline varies significantly across models. Additionally, our policy-specific evaluation uncovers significant variations in model capabilities across different policy categories. This highlights IntellAgent's ability to provide detailed diagnostic insights, empowering users to identify the most suitable configuration for their specific requirements.",
+   "level": 1,
+   "path_id": "1",
+   "parent_section_id": null,
+   "order_in_parent": 0,
+   "section_id": "sec-1"
+  },
+  {
+   "title": "This work makes several key contributions to the evaluation of conversational AI agents:",
+   "text": "• A Scalable Multi-Agent Evaluation Framework: IntellAgent provides a robust and scalable multi-agent framework that automatically generates diverse, realistic scenarios tailored to address the unique challenges of conversational AI agents. By overcoming the limitations of small-scale, manually curated benchmarks, IntellAgent enables comprehensive and thorough evaluations.• Fine-Grained Diagnostics with a Policies Graph: IntellAgent leverages a policies graph, inspired by GraphRAG [10], where nodes represent individual policies and their complexity, and edges denote the likelihood of co-occurrence between policies in conversations. This structure facilitates the generation of naturalistic user requests that span a wide range of policies and complexity levels, providing fine-grained diagnostic insights.• An Open-Source and Extensible Framework: IntellAgent is released as an open-source framework, promoting reproducibility and community collaboration in advancing the evaluation and optimization of conversational AI agents. Its modular design supports seamless integration of new domains, including their respective policies, APIs, and database schemas. Additionally, the framework enables rigorous testing and optimization of custom conversational agents.",
+   "level": 1,
+   "path_id": "1~2",
+   "parent_section_id": null,
+   "order_in_parent": 1,
+   "section_id": "sec-1~2"
+  },
+  {
+   "title": "Related Work",
+   "text": "Recent advancements in using LLMs for synthetic data generation, automated evaluation have significantly influenced the development of AI systems. This section delves into these key areas, outlining existing methodologies and their limitations while highlighting how our approach advances the state of the art.",
+   "level": 2,
+   "path_id": "2",
+   "parent_section_id": null,
+   "order_in_parent": 2,
+   "section_id": "sec-2"
+  },
+  {
+   "title": "Synthetic Benchmarks",
+   "text": "Data generation. Synthetic data generation using Large Language Models (LLMs) has become a transformative technique for advancing AI across various domains, including code generation [22,32], mathematical reasoning [34,18], text embedding [24], and text-to-image synthesis [5]. Synthetic data reduces the costs and time of human-annotated datasets while providing control over sample distribution, crucial for fine-tuning and optimizing performance in downstream tasks [16,27]. Evaluating synthetic data focuses on two key metrics: faithfulness and diversity.Faithfulness ensures synthetic data reflects real-world patterns and relationships, while diversity captures a wide range of scenarios to enhance model robustness and mitigate overfitting [17]. Achieving both metrics is challenging; recent research explores conditional prompting and multi-step generation to balance them. Conditional prompting improves diversity by defining attributes through conditionvalue pairs [12,28]. Multi-step generation enhances coherence and domain coverage by decomposing tasks into smaller subtasks [8,25,13,23], though these methods often require significant manual effort and may not scale well to complex domains.Our approach automates synthetic dataset generation to ensure both faithfulness and diversity by using a policies graph inspired by GraphRAG [10], where nodes represent policies and edges capture their complexity relationships. This framework enables fine-grained generation across various combinations of policies, tools, and tasks, producing datasets that reflect application requirements while covering a diverse range of scenarios. It addresses challenges from simple tasks to complex edge cases, ensuring rigorous evaluation of agents under diverse conditions.Automated evaluation. Synthetic datasets have become invaluable for evaluating retrieval-augmented generation (RAG) systems, offering metrics to measure retrieval quality, generation fidelity, and robustness. Frameworks like RAGAS [11] automate the evaluation of RAG pipelines, focusing on aspects such as retrieval accuracy and generation relevance. Unlike traditional metrics, RAGAS operates without reference answers, enabling broader applicability. However, it primarily targets isolated components and does not fully address the complexities of multi-turn dialogues or real-world conversational AI applications. This underscores the need for expanded evaluation frameworks that encompass diverse, dynamic use cases.",
+   "level": 2,
+   "path_id": "2.1",
+   "parent_section_id": "sec-2",
+   "order_in_parent": 0,
+   "section_id": "sec-2.1"
+  },
+  {
+   "title": "Conversational AI Benchmarks",
+   "text": "Evaluating conversational AI systems in real-world applications has been the focus of various benchmarks, each targeting specific capabilities. For instance, τ -bench [33] assesses agents' ability to interact with users, adhere to domain-specific policies, and utilize API tools effectively, with simulations in domains like retail and airline customer service. However, τ -bench is limited by its reliance on manual curation, with only 50 samples for airlines and 115 for retail, restricting scalability. Additionally, its evaluation focuses solely on coarse-grained end-to-end metrics, overlooking policy violations and dialogue flow errors, which limits comprehensive assessment.The ALMITA benchmark [3] proposes a novel dataset and framework specifically tailored for evaluating tool-augmented conversational AI agents in customer support scenarios. It uses a combination of automated and manual processes to generate diverse and realistic conversations grounded in user-defined procedures. Despite its rigorous evaluation, ALMITA focuses primarily on customer support, and the generalizability to other domains remains an open question. Moreover, the reliance on manually curated samples, while ensuring quality, limits scalability.The LTM Benchmark [6] effectively highlights limitations in conversational multitasking, especially with interleaved tasks. However, its reliance on predefined interaction structures limits its ability to capture the unpredictable and non-linear nature of real-world conversational flows, such as spontaneous topic shifts or revisiting earlier contexts. Similarly, E2E Benchmark [4] evaluates chatbot responses based on accuracy and usefulness, emphasizing conversational coherence in nontask-oriented interactions. Nevertheless, its lack of support for complex tool use and multi-turn interactions restricts its applicability to broader real-world contexts. The CURATe framework [2] addresses alignment challenges for personalized conversational agents by focusing on user-specific safety-critical contexts. While it introduces valuable techniques for multi-turn personalization, its emphasis on alignment rather than general performance testing narrows its scope.Although these benchmarks provide valuable tools for assessing conversational AI systems, their reliance on manual curation limits scalability and adaptability to diverse real-world applications, making it challenging to generate the extensive datasets required for comprehensive evaluations. Our approach, in contrast, is fully automated, enabling the generation of diverse scenarios and dialogues at scale, thus supporting evaluations across varied domains. Additionally, our framework addresses a broader range of challenges, from simple tasks to complex edge cases, ensuring rigorous agent evaluation under diverse conditions. Unlike existing benchmarks that use coarse-grained metrics for overall performance, our method offers fine-grained insights by evaluating agents across all policy and tool combinations, identifying specific strengths and weaknesses.",
+   "level": 2,
+   "path_id": "2.2",
+   "parent_section_id": "sec-2",
+   "order_in_parent": 1,
+   "section_id": "sec-2.2"
+  },
+  {
+   "title": "Method",
+   "text": "Our multi-agent system is illustrated in Figure 1. The system pipeline consists of the following steps: (1) The IntellAgent system receives a schema of the system database along with either a chatbot system prompt or a document outlining the company policies. Based on this input, the system constructs a policy graph (3.1.1). It then samples a list of policies from the graph at varying levels of complexity and generates an event addressing these policies (3.1.2). The event includes a scenario description with a user request and corresponding samples for the initial database state, ensuring the validity of the user requests. (2) The system simulates a dialog between the chatbot and a user agent using the information provided in the event (3.2). (3) Finally, a critique is provided with the dialog and provides an analysis of the chatbot's performances with respect to the event policies list (3.3).",
+   "level": 3,
+   "path_id": "3",
+   "parent_section_id": null,
+   "order_in_parent": 3,
+   "section_id": "sec-3"
+  },
+  {
+   "title": "Event Generation",
+   "text": "To address the challenge of developing advanced chatbots capable of interacting with a system database, the system must generate complex and natural user requests that cover various policies. Additionally, it should create an initial database state for the chatbot, ensuring that when the chatbot processes the user request and queries the database, it does not encounter failures.An IntellAgent event is defined by the following components: (1) A list of policies. (2) A description of a user request that aligns with the specified policies. (3) The initial state of the chatbot's system database.",
+   "level": 2,
+   "path_id": "3.1",
+   "parent_section_id": "sec-3",
+   "order_in_parent": 0,
+   "section_id": "sec-3.1"
+  },
+  {
+   "title": "Algorithm 1 Event Policies Sampling",
+   "text": "Require: A policy graph (G, E) with node weights {n g } g∈G , and a range n1 &lt; n2 ∈ N X = ∅ ▷ The events policies list while |X| &lt; N do P = ∅ e w ∼ U(n 1 , n 2 ), g ∼ U(G) ▷ Sample the policy complexity and the initial policy while e w &gt; 0 do Choose a neighbor h ∈ G with probability:P (X = h | Y = g) = E g,h h∈G E h,g P ← P ∪ {h} e w ← e w -n h end while X ← X ∪ {P } end while",
+   "level": 1,
+   "path_id": "1~3",
+   "parent_section_id": null,
+   "order_in_parent": 4,
+   "section_id": "sec-1~3"
+  },
+  {
+   "title": "Policies graph",
+   "text": "IntellAgent aims to generate a diverse set of events with varying levels of complexity. To create and complex user-chatbot interaction scenarios, IntellAgent constructs a policy graph. In this graph, nodes represent individual policies, and edge weights indicate the likelihood of two policies appearing together in the same interaction. Each node is also assigned a weight that reflects the complexity of its associated policy.The graph is built through multiple queries to a large language model (LLM). First, the system extracts a list of policies from the prompt and assigns a difficulty ranking to each. Then, for every pair of policies, the LLM assigns a score (on a scale of 1-10) representing the likelihood of the two policies co-occurring in a conversation.",
+   "level": 3,
+   "path_id": "3.1.1",
+   "parent_section_id": "sec-3.1",
+   "order_in_parent": 0,
+   "section_id": "sec-3.1.1"
+  },
+  {
+   "title": "Event generator",
+   "text": "The complexity of an event is defined as the sum of the complexities of its policies. Given a policy graph with a set of policies G, weighted edges E and nodes complexity weights {n g } g∈G . the event generator aims to produce a valid set of policies that satisfies the following criteria:1. The event complexity is uniformly distributed within a specified range. 2. The distribution of the first policy in the event is uniformly distributed across all possible policies. 3. For a given complexity level and initial policy, the distribution of the resulting policy list aligns with real-world distributions.Policies graph sampling. To satisfy the outlined criteria, the IntellAgent sampling algorithm operates in batches. The process for each iteration is as follows: The complexity of events in the current batch is sampled first. The batch distribution is adjusted to ensure that the overall distribution of all generated events (including previous batches) remains uniform. Next, the initial policy for each event is sampled uniformly across all nodes in the policy graph. Then For each event, the system generates a policy path by performing a random walk on the graph. The walk terminates once the cumulative complexity of the visited nodes exceeds the sampled event complexity. An overview of the entire sampling method is provided in Algorithm 1.This approach ensures that the generated events policies list maintains the desired complexity distribution and follows realistic transitions between policies as determined by the graph structure.",
+   "level": 3,
+   "path_id": "3.1.2",
+   "parent_section_id": "sec-3.1",
+   "order_in_parent": 1,
+   "section_id": "sec-3.1.2"
+  },
+  {
+   "title": "Event generator agent.",
+   "text": "The goal of the event generator agent is to create an event based on a given list of policies. The primary challenge is to generate a valid and consistent initial database state that the chatbot can interact with during the conversation. The agent's architecture is shown in Figure 4. To manage complex database schemas, the event generator agent first creates a symbolic",
+   "level": 1,
+   "path_id": "1~4",
+   "parent_section_id": null,
+   "order_in_parent": 5,
+   "section_id": "sec-1~4"
+  },
+  {
+   "title": "Uniform distribution",
+   "text": "Max Sampling Weighted Sampling",
+   "level": 1,
+   "path_id": "1~5",
+   "parent_section_id": null,
+   "order_in_parent": 6,
+   "section_id": "sec-1~5"
+  },
+  {
+   "title": "Initial policy",
+   "text": "The user cannot add travel insurance after the initial booking when modifying a reservation.The user cannot add travel insurance after the initial booking when modifying a reservation.The user cannot add travel insurance after the initial booking when modifying a reservation.Policy 2 Cancelling a flight reservation: The refund will go to original payment methods in 5 to 7 business days.The agent must first obtain the user id and the reservation id before modifying a flight reservation.The agent must first obtain the user id and the reservation id before modifying a flight reservation.Policy 3 Cabin class must be the same across all the flights in the same reservation Basic economy flights cannot be modified. Other reservations can be modified without changing the origin, destination, and trip type.The agent can only cancel the whole trip that is not flown.Table 1: Comparison of random walk sampling strategies. (Left) Uniform sampling of the next node. (Middle) Selection of the next node based on maximal edge weight. (Right) IntellAgent weighted probability sampling, which balances diversity and alignment with real-world distributions.representation of all the entities involved in the event. These entities are determined based on the provided chatbot prompt and the database schema. Typical entities may include users, products, reservations, etc.The agent then iterates over these symbols, instantiating them by inserting the relevant rows into the database and replacing the symbolic variables with the corresponding data. This symbolic representation enables the agent to generate valid and consistent events, even across complex chatbot databases. Refer to Appendix B for an example of a generated symbolic representation and its corresponding database.",
+   "level": 1,
+   "path_id": "1~6",
+   "parent_section_id": null,
+   "order_in_parent": 7,
+   "section_id": "sec-1~6"
+  },
+  {
+   "title": "Dialog simulation",
+   "text": "For each event in the events database, IntellAgent simulates an interaction between a user and the chatbot being tested. Figure 5 provides an overview of the simulation architecture. The user agent is given the event details, which include the description of the event and all relevant information inserted into the chatbot's system database by the event generator agent. Additionally, the user agent is provided with the expected behavior of the chatbot at each step of the interaction, based on the event's policy list. The user has the option to terminate the interaction at any point, either when the chatbot successfully completes the task or if the chatbot fails to adhere to one of the policies and does not follow the expected behavior.",
+   "level": 2,
+   "path_id": "3.2",
+   "parent_section_id": "sec-3",
+   "order_in_parent": 1,
+   "section_id": "sec-3.2"
+  },
+  {
+   "title": "Dialog Critique",
+   "text": "The Dialog critique component is given the user-chatbot dialog and the chatbot system prompt to assess whether the reason for the dialog's termination, as provided by the user agent, is correct. If the reason is incorrect, the critique provides feedback to the user agent, and the dialog resumes. If the reason is correct, the critique then determines: (1) The subset of event policies that were tested during the dialog. (2) The subset of policies that the chatbot did not adhere to (this list may be empty). Using this information, a comprehensive report on the chatbot's performance is generated.",
+   "level": 2,
+   "path_id": "3.3",
+   "parent_section_id": "sec-3",
+   "order_in_parent": 2,
+   "section_id": "sec-3.3"
+  },
+  {
+   "title": "Experiments",
+   "text": "",
+   "level": 4,
+   "path_id": "4",
+   "parent_section_id": null,
+   "order_in_parent": 8,
+   "section_id": "sec-4"
+  },
+  {
+   "title": "Benchmark",
+   "text": "Dataset construction. To evaluate the performance of our system in real-world scenarios, we utilized the τ -bench [33] environments. Specifically, we employed the benchmark's prompts, database schema, and tools for the two benchmark's environments: airline and retail. For each environment, the system generates a policy graph from the prompt and simulates 1,000 events-a substantial increase that enables more fine-grained analysis compared to the original benchmark, which used 50 samples for airlines and 115 for retail. The complexity levels of the generated events range from 2 to 11. Table 1 presents a comparison of various random walk sampling strategies. Selecting the next node uniformly leads to unrelated policies, whereas choosing the next node based on maximal weight produces a cohesive cluster of policies. In contrast, IntellAgent-weighted probability sampling achieves a balance between diversity and alignment with the real-world distribution. Appendix B provides a detailed example of the event generation process.Tested agents. We evaluated several state-of-the-art proprietary LLMs: GPT-4o, GPT-4o-mini, Gemini-1.5-pro, Gemini-1.5-flash, Claude-3.5-sonnet, and Claude-3.5-haiku. For all these models we employed the native tool-calling agent (supported by all the tested LLMs) with the tested environment system prompt. During each iteration, the model determines whether to send a message to the user or to call a tool.IntellAgent Implementation details. The IntellAgent multi-agent system was implemented using the Langgraphfoot_0 framework. GPT-4o served as the system's LLM model, used for the event generation, the user agent, and dialog critique. For full implementation details including all the system prompts, we provide the source code and documentationfoot_1 Figure 3: Comparison of the success rates of the top four models across various policy categories, highlighting that some categories are more challenging than others. Additionally, the relative performance order of different models varies across categories.",
+   "level": 2,
+   "path_id": "4.1",
+   "parent_section_id": "sec-4",
+   "order_in_parent": 0,
+   "section_id": "sec-4.1"
+  },
+  {
+   "title": "Results",
+   "text": "Benchmarks comparison. Table 2 presents a comparison of the tested model's success rates on the τ -bench [33] and the IntellAgent benchmark. The Pearson correlation coefficients are 0.98 for the Airline environment and 0.92 for the Retail environment, highlighting a strong alignment in model performance across the two benchmarks. Notably, this strong correlation persists despite IntellAgent being generated exclusively with synthetic data.",
+   "level": 2,
+   "path_id": "4.2",
+   "parent_section_id": "sec-4",
+   "order_in_parent": 1,
+   "section_id": "sec-4.2"
+  },
+  {
+   "title": "Models comparison.",
+   "text": "Figure 2 illustrates the success rates of the top four models as a function of challenge level. As expected, model performance declines as the challenge level increases, though the pattern of decline varies across models. For instance, while Gemini-pro-1.5 significantly outperforms GPT-4o-mini in the airline environment up to level 10, their performances converge at higher challenge levels. This highlights the value of IntellAgent's detailed analysis, enabling users to select the most suitable model based on the desired complexity the chatbot should handle.",
+   "level": 1,
+   "path_id": "1~7",
+   "parent_section_id": null,
+   "order_in_parent": 9,
+   "section_id": "sec-1~7"
+  },
+  {
+   "title": "Policies comparison.",
+   "text": "Figure 3 shows the performance of the top four models models across different policy categories. The relative ranking of models shifts across different categories. IntellAgent provides a detailed analysis of the specific policies where the tested chatbot may encounter difficulties.It is also important to note that all models face challenges with user consent policies. This policy category is not assessed in the τ -bench [33] since its evaluation focuses solely on the final state of the database.",
+   "level": 1,
+   "path_id": "1~8",
+   "parent_section_id": null,
+   "order_in_parent": 10,
+   "section_id": "sec-1~8"
+  },
+  {
+   "title": "Conclusion",
+   "text": "In this work, we introduced IntellAgent, a scalable, open-source multi-agent framework designed to comprehensively evaluate conversational AI systems. IntellAgent addresses the limitations of traditional evaluation methods by automating the generation of diverse, policy-driven scenarios and providing fine-grained diagnostics. By leveraging a graph-based policy model, realistic event generation, and user-agent simulations, IntellAgent captures the nuanced complexities of multi-turn dialogues, policy adherence, and tool integration.Our findings demonstrate IntellAgent's ability to uncover critical performance gaps, offering actionable insights to optimize conversational agents for real-world applications. Its modular design supports extensibility, ensuring it remains relevant across diverse domains and use cases.In future work, we plan to explore the benefits of incorporating additional real-world context into the environment, such as a small set of user-chatbot interactions. We hypothesize that this context could significantly enhance the policies graph quality by deriving edge weights and node challenge-level weights from the real-data distributions. Furthermore, we anticipate that this added context could improve the overall performance of the system database generation process.  the detailed event scenario. Additionally, Figures 6, 7, and 8 showcase the generated event database for event 43.",
+   "level": 5,
+   "path_id": "5",
+   "parent_section_id": null,
+   "order_in_parent": 11,
+   "section_id": "sec-5"
+  },
+  {
+   "title": "Event Challange level 5",
+   "text": "Event Policies 1. Modify default user address: you have to authenticate the user identity by locating their user id via email, or via name + zip code 2. You must deny any requests for tasks related to any other user.",
+   "level": 1,
+   "path_id": "1~9",
+   "parent_section_id": null,
+   "order_in_parent": 12,
+   "section_id": "sec-1~9"
+  },
+  {
+   "title": "Symbolic description",
+   "text": "User 'U1' initiates a conversation with the chatbot to update their default address from 'A1' to 'A2'. The chatbot authenticates 'U1' by verifying their email or name and zip code. During the conversation, 'U1' requests information about their spouse 'U2's recent order 'O1', claiming authority to access it. After this, 'U1' returns to their original request to update their default address.",
+   "level": 1,
+   "path_id": "1~10",
+   "parent_section_id": null,
+   "order_in_parent": 13,
+   "section_id": "sec-1~10"
+  },
+  {
+   "title": "Symbolic variables",
+   "text": "'U1: The user initiating the conversation', 'U2: The spouse of the user', 'O1: A recent order made by the spouse', 'A1: The current default address of the user', 'A2: The new address the user wants to set as default'",
+   "level": 1,
+   "path_id": "1~11",
+   "parent_section_id": null,
+   "order_in_parent": 14,
+   "section_id": "sec-1~11"
+  },
+  {
+   "title": "Event Scenario details",
+   "text": "User 'emma_jones_4829' initiates a conversation with the chatbot to update their default address from 'address1': '123 Elm Street', 'address2': 'Apt 4B', 'city': 'Seattle', 'country': 'USA', 'province': 'WA', 'zip': '98101' to 'A2'. The chatbot authenticates 'emma_jones_4829' by verifying their email or name and zip code. During the conversation, 'emma_jones_4829' requests information about their spouse 'liam_smith_9274's recent order '#O9274620', claiming authority to access it. After this, 'emma_jones_4829' returns to their original request to update their default address.Table 3: Event 43 generation steps { \"emma_jones_4829\": { \"user_id\": \"emma_jones_4829\", \"name\": \"{'first_name': 'Emma', 'last_name': 'Jones'}\", \"address\": \"{'address1': '123 Elm Street', 'address2': 'Apt 4B', 'city': ' Seattle', 'country': 'USA', 'province': 'WA', 'zip': '98101'}\", \"email\": \"emma.jones4829@example.com\", \"payment_methods\": \"{'paypal_4829103': {'source': 'paypal', 'id': ' paypal_4829103'}, 'credit_card_1938472': {'source': 'credit_card', ' brand': 'visa', 'last_four': '3847', 'id': 'credit_card_1938472'}}\", \"orders\": \"['#A1234567']\" }, \"liam_smith_9274\": { \"user_id\": \"liam_smith_9274\", \"name\": \"{'first_name': 'Liam', 'last_name': 'Smith'}\", \"address\": \"{'address1': '456 Oak Avenue', 'address2': 'Unit 12', 'city': ' Austin', 'country': 'USA', 'province': 'TX', 'zip': '73301'}\", \"email\": \"liam.smith9274@example.com\", \"payment_methods\": \"{'paypal_9274620': {'source': 'paypal', 'id': ' paypal_9274620'}, 'credit_card_4620193': {'source': 'credit_card', ' brand': 'visa', 'last_four': '4620', 'id': 'credit_card_4620193'}, ' credit_card_567890': {'id': 'credit_card_567890', 'last_four': 1234, ' brand': 'visa', 'source': 'card', 'balance': 50}}\", \"orders\": \"['#O9274620']\" } } Figure 6: Event 43 generated 'Users' dataset { \"#O9274620\": { \"order_id\": \"#O9274620\", \"user_id\": \"liam_smith_9274\", \"address\": \"{'address1': '456 Oak Avenue', 'address2': 'Unit 12', 'city': ' Austin', 'country': 'USA', 'province': 'TX', 'zip': '73301'}\", \"items\": \"[{'name': 'Yoga Mat', 'product_id': '1234567890', 'item_id': '9876543210', 'price': 25.99, 'options': {'color': 'green', 'thickness': '5mm'}}, {'name': 'Dumbbell Set', 'product_id': '0987654321', 'item_id': '1234509876', 'price': 89.99, 'options': {'weight': '20kg', 'material': 'iron', 'color': 'blue'}}]\", \"fulfillments\": \"[{'tracking_id': ['123456789012'], 'item_ids':['9876543210', '1234509876']}]\", \"status\": \"pending\", \"payment_history\": \"[{'transaction_type': 'payment', 'amount': 115.98, ' payment_method_id': 'credit_card_567890'}]\" } }",
+   "level": 1,
+   "path_id": "1~12",
+   "parent_section_id": null,
+   "order_in_parent": 15,
+   "section_id": "sec-1~12"
+  },
+  {
+   "title": "Figure 1 :",
+   "text": "1Figure 1: System diagram. (1) Given a chatbot prompt and a Schema DB, the system generates an event that targets a subset of policies, which includes a user request and a system DB state. (2) For each event the system simulates a conversation between the user and the chatbot. (3) A fine-grained report on the chatbot performances is generated.",
+   "level": 1,
+   "path_id": "1~13",
+   "parent_section_id": null,
+   "order_in_parent": 16,
+   "section_id": "sec-1~13"
+  },
+  {
+   "title": "Figure 2 :",
+   "text": "2Figure 2: Model success rates across different challenge levels. While all models show reduced performance as the challenge level increases, they exhibit distinct patterns of decline, differing in both the onset level and the magnitude of the decrease.",
+   "level": 1,
+   "path_id": "1~14",
+   "parent_section_id": null,
+   "order_in_parent": 17,
+   "section_id": "sec-1~14"
+  },
+  {
+   "title": "Figure 4 :",
+   "text": "4Figure 4: Event generator architecture overview.",
+   "level": 1,
+   "path_id": "1~15",
+   "parent_section_id": null,
+   "order_in_parent": 18,
+   "section_id": "sec-1~15"
+  },
+  {
+   "title": "Figure 5 :",
+   "text": "5Figure 5: Simulator architecture overview.",
+   "level": 1,
+   "path_id": "1~16",
+   "parent_section_id": null,
+   "order_in_parent": 19,
+   "section_id": "sec-1~16"
+  },
+  {
+   "title": "Figure 8 :",
+   "text": "8Figure 8: Event 43 generated 'Orders' dataset",
+   "level": 1,
+   "path_id": "1~17",
+   "parent_section_id": null,
+   "order_in_parent": 20,
+   "section_id": "sec-1~17"
+  },
+  {
+   "title": "Table 2 :",
+   "text": "2Model τ -airline IntellAgent-airline τ -retail IntellAgent-retailComparison of the success rates of various agent models utilizing function calling, evaluated on the τ -bench and the IntellAgent benchmark. The results demonstrate a strong correlation between success rates across τ -bench and IntellAgent benchmark.claude-3.5-sonnet0.460.700.690.71gpt-4o0.440.700.510.68gemini-1.5-pro0.340.630.430.58gpt-4o-mini0.300.550.460.62claude-3.5-haiku0.280.530.440.56gemini-1.5-flash0.210.400.310.48\n\t\t\thttps://github.com/langchain-ai/langgraph\n\t\t\thttps://github.com/plurai-ai/intellagent",
+   "level": 1,
+   "path_id": "1~18",
+   "parent_section_id": null,
+   "order_in_parent": 21,
+   "section_id": "sec-1~18"
+  }
+ ],
+ "citations": [
+  {
+   "raw_text": "Conversational health agents: A personalized llm-powered agent framework\n\t\t\n\t\t\tMAbbasian\n\t\t\n\t\t\n\t\t\tIAzimi\n\t\t\n\t\t\n\t\t\tAMRahmani\n\t\t\n\t\t\n\t\t\tRJain\n\t\t\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b0",
+     "section_path_id": "1",
+     "quote": "1]",
+     "offset": 337
+    }
+   ]
+  },
+  {
+   "raw_text": "Curate: Benchmarking personalised alignment of conversational ai assistants\n\t\t\n\t\t\tLAlberts\n\t\t\n\t\t\n\t\t\tBEllis\n\t\t\n\t\t\n\t\t\tALupu\n\t\t\n\t\t\n\t\t\tJFoerster\n\t\t\n\t\tarXiv:2410.21159\n\t\n\t\n\t\tInternational Conference on Learning Representations (ICLR), 2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2410.21159",
+   "title": "Curate: Benchmarking personalised alignment of conversational ai assistants",
+   "anchors": [
+    {
+     "ref_id": "b1",
+     "section_path_id": "2.2",
+     "quote": "[2]",
+     "offset": 1917
+    }
+   ]
+  },
+  {
+   "raw_text": "Automated test generation to evaluate tool-augmented llms as conversational ai agents\n\t\t\n\t\t\tSArcadinho\n\t\t\n\t\t\n\t\t\tDAparício\n\t\t\n\t\t\n\t\t\tMS CAlmeida\n\t\t\n\t\tarXiv:2409.15934\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2409.15934",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b2",
+     "section_path_id": "2.2",
+     "quote": "[3]",
+     "offset": 703
+    }
+   ]
+  },
+  {
+   "raw_text": "Benchmarking llm powered chatbots: Methods and metrics\n\t\t\n\t\t\tDBanerjee\n\t\t\n\t\t\n\t\t\tPSingh\n\t\t\n\t\t\n\t\t\tAAvadhanam\n\t\t\n\t\t\n\t\t\tSSrivastava\n\t\t\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b3",
+     "section_path_id": "2.2",
+     "quote": "[4]",
+     "offset": 1616
+    }
+   ]
+  },
+  {
+   "raw_text": "Improving image generation with better captions\n\t\t\n\t\t\tJBetker\n\t\t\n\t\t\n\t\t\tGGoh\n\t\t\n\t\t\n\t\t\tLJing\n\t\t\n\t\t\n\t\t\tJTimbrooks\n\t\t\n\t\t\n\t\t\tLWang\n\t\t\n\t\t\n\t\t\tLi\n\t\t\n\t\t\n\t\t\tLongouyang\n\t\t\n\t\t\n\t\t\tJuntangzhuang\n\t\t\n\t\t\n\t\t\tJoycelee\n\t\t\n\t\t\n\t\t\tYufeiguo\n\t\t\n\t\t\n\t\t\tWesammanassra\n\t\t\n\t\t\n\t\t\tPrafulladhariwal\n\t\t\n\t\t\n\t\t\tCaseychu\n\t\t\n\t\t\n\t\t\tAYunxinjiao\n\t\t\n\t\t\n\t\t\tRamesh\n\t\t\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b4",
+     "section_path_id": "2.1",
+     "quote": "[5]",
+     "offset": 273
+    }
+   ]
+  },
+  {
+   "raw_text": "Beyond prompts: Dynamic conversational benchmarking of large language models\n\t\t\n\t\t\tDCastillo-Bolado\n\t\t\n\t\t\n\t\t\tJDavidson\n\t\t\n\t\t\n\t\t\tFGray\n\t\t\n\t\t\n\t\t\tMRosa\n\t\t\n\t\tarXiv:2409.20222\n\t\n\t\n\t\t2024. 38th Conference on Neural Information Processing Systems (NeurIPS) Track on Datasets and Benchmarks\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2409.20222",
+   "title": "Beyond prompts: Dynamic conversational benchmarking of large language models",
+   "anchors": [
+    {
+     "ref_id": "b5",
+     "section_path_id": "2.2",
+     "quote": "[6]",
+     "offset": 1255
+    }
+   ]
+  },
+  {
+   "raw_text": "Large language model agent in financial trading: A survey\n\t\t\n\t\t\tHDing\n\t\t\n\t\t\n\t\t\tYLi\n\t\t\n\t\t\n\t\t\tJWang\n\t\t\n\t\t\n\t\t\tHChen\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b6",
+     "section_path_id": "1",
+     "quote": "7]",
+     "offset": 356
+    }
+   ]
+  },
+  {
+   "raw_text": "Enhancing chat language models by scaling high-quality instructional conversations\n\t\t\n\t\t\tNDing\n\t\t\n\t\t\n\t\t\tYChen\n\t\t\n\t\t\n\t\t\tBXu\n\t\t\n\t\t\n\t\t\tYQin\n\t\t\n\t\t\n\t\t\tSHu\n\t\t\n\t\t\n\t\t\tZLiu\n\t\t\n\t\t\n\t\t\tMSun\n\t\t\n\t\t\n\t\t\tBZhou\n\t\t\n\t\t\n\t\t\tDec. 2023\n\t\t\t\n\t\t\tSingapore",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b7",
+     "section_path_id": "2.1",
+     "quote": "[8,",
+     "offset": 1088
+    }
+   ]
+  },
+  {
+   "raw_text": "Botchat: Evaluating llms&apos; capabilities of having multi-turn dialogues\n\t\t\n\t\t\tHDuan\n\t\t\n\t\t\n\t\t\tJWei\n\t\t\n\t\t\n\t\t\tCWang\n\t\t\n\t\t\n\t\t\tHLiu\n\t\t\n\t\t\n\t\t\tYFang\n\t\t\n\t\t\n\t\t\tSZhang\n\t\t\n\t\t\n\t\t\tDLin\n\t\t\n\t\t\n\t\t\tKChen\n\t\t\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b8",
+     "section_path_id": "1",
+     "quote": "9]",
+     "offset": 1377
+    }
+   ]
+  },
+  {
+   "raw_text": "From local to global: A graph rag approach to query-focused summarization\n\t\t\n\t\t\tDEdge\n\t\t\n\t\t\n\t\t\tHTrinh\n\t\t\n\t\t\n\t\t\tNCheng\n\t\t\n\t\t\n\t\t\tJBradley\n\t\t\n\t\t\n\t\t\tAChao\n\t\t\n\t\t\n\t\t\tAMody\n\t\t\n\t\t\n\t\t\tSTruitt\n\t\t\n\t\t\n\t\t\tJLarson\n\t\t\n\t\tarXiv:2404.16130\n\t\t\n\t\t\t2024\n\t\t\tMicrosoft Research\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2404.16130",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b9",
+     "section_path_id": "1~2",
+     "quote": "[10]",
+     "offset": 486
+    },
+    {
+     "ref_id": "b9",
+     "section_path_id": "2.1",
+     "quote": "[10]",
+     "offset": 1346
+    }
+   ]
+  },
+  {
+   "raw_text": "Ragas: Automated evaluation of retrieval-augmented generation\n\t\t\n\t\t\tSEs\n\t\t\n\t\t\n\t\t\tJJames\n\t\t\n\t\t\n\t\t\tLEspinosa-Anke\n\t\t\n\t\t\n\t\t\tSSchockaert\n\t\t\n\t\tarXiv:2309.15217\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2309.15217",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b10",
+     "section_path_id": "2.1",
+     "quote": "[11]",
+     "offset": 2001
+    }
+   ]
+  },
+  {
+   "raw_text": "SGunasekar\n\t\t\n\t\t\n\t\t\tYZhang\n\t\t\n\t\t\n\t\t\tJAneja\n\t\t\n\t\t\n\t\t\tCC TMendes\n\t\t\n\t\t\n\t\t\tADGiorno\n\t\t\n\t\t\n\t\t\tSGopi\n\t\t\n\t\t\n\t\t\tMJavaheripi\n\t\t\n\t\t\n\t\t\tPKauffmann\n\t\t\n\t\t\n\t\t\tGDe Rosa\n\t\t\n\t\t\n\t\t\tOSaarikivi\n\t\t\n\t\t\n\t\t\tASalim\n\t\t\n\t\t\n\t\t\tSShah\n\t\t\n\t\t\n\t\t\tHSBehl\n\t\t\n\t\t\n\t\t\tXWang\n\t\t\n\t\t\n\t\t\tSBubeck\n\t\t\n\t\t\n\t\t\tREldan\n\t\t\n\t\t\n\t\t\tATKalai\n\t\t\n\t\t\n\t\t\tYTLee\n\t\t\n\t\t\n\t\t\tYLi\n\t\t\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tTextbooks are all you need. CoRR, abs/2306.11644",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b11",
+     "section_path_id": "2.1",
+     "quote": "[12,",
+     "offset": 975
+    }
+   ]
+  },
+  {
+   "raw_text": "Unnatural instructions: Tuning language models with (almost) no human labor\n\t\t\n\t\t\tOHonovich\n\t\t\n\t\t\n\t\t\tTScialom\n\t\t\n\t\t\n\t\t\tOLevy\n\t\t\n\t\t\n\t\t\tTSchick\n\t\t\n\t\n\t\n\t\tACL\n\t\t\n\t\t\tAssociation for Computational Linguistics\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Unnatural instructions: Tuning language models with (almost) no human labor",
+   "anchors": [
+    {
+     "ref_id": "b12",
+     "section_path_id": "2.1",
+     "quote": "13,",
+     "offset": 1094
+    }
+   ]
+  },
+  {
+   "raw_text": "Crmarena: Understanding the capacity of llm agents to perform professional crm tasks in realistic environments\n\t\t\n\t\t\tK.-HHuang\n\t\t\n\t\t\n\t\t\tAPrabhakar\n\t\t\n\t\t\n\t\t\tSDhawan\n\t\t\n\t\t\n\t\t\tYMao\n\t\t\n\t\t\n\t\t\tHWang\n\t\t\n\t\t\n\t\t\tSSavarese\n\t\t\n\t\t\n\t\t\tCXiong\n\t\t\n\t\t\n\t\t\tPLaban\n\t\t\n\t\t\n\t\t\tC.-SWu\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b13",
+     "section_path_id": "1",
+     "quote": "14]",
+     "offset": 381
+    }
+   ]
+  },
+  {
+   "raw_text": "MT-eval: A multi-turn capabilities evaluation benchmark for large language models\n\t\t\n\t\t\tW.-CKwan\n\t\t\n\t\t\n\t\t\tXZeng\n\t\t\n\t\t\n\t\t\tYJiang\n\t\t\n\t\t\n\t\t\tYWang\n\t\t\n\t\t\n\t\t\tLLi\n\t\t\n\t\t\n\t\t\tLShang\n\t\t\n\t\t\n\t\t\tXJiang\n\t\t\n\t\t\n\t\t\tQLiu\n\t\t\n\t\t\n\t\t\tK.-FWong\n\t\t\n\t\n\t\n\t\tProceedings of the 2024 Conference on Empirical Methods in Natural Language Processing\n\t\t\n\t\t\tYAl-Onaizan\n\t\t\n\t\t\n\t\t\tMBansal\n\t\t\n\t\t\n\t\t\tY.-NChen\n\t\t\n\t\tthe 2024 Conference on Empirical Methods in Natural Language ProcessingMiami, Florida, USA\n\t\t\n\t\t\tAssociation for Computational Linguistics\n\t\t\tNov. 2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "MT-eval: A multi-turn capabilities evaluation benchmark for large language models",
+   "anchors": [
+    {
+     "ref_id": "b14",
+     "section_path_id": "1",
+     "quote": "15]",
+     "offset": 1459
+    }
+   ]
+  },
+  {
+   "raw_text": "Intent-based prompt calibration: Enhancing prompt optimization with synthetic boundary cases\n\t\t\n\t\t\tELevi\n\t\t\n\t\t\n\t\t\tEBrosh\n\t\t\n\t\t\n\t\t\tMFriedmann\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b15",
+     "section_path_id": "2.1",
+     "quote": "[16,",
+     "offset": 469
+    }
+   ]
+  },
+  {
+   "raw_text": "On llms-driven synthetic data generation, curation, and evaluation: A survey\n\t\t\n\t\t\tLLong\n\t\t\n\t\t\n\t\t\tRWang\n\t\t\n\t\t\n\t\t\tRXiao\n\t\t\n\t\t\n\t\t\tJZhao\n\t\t\n\t\t\n\t\t\tXDing\n\t\t\n\t\t\n\t\t\tGChen\n\t\t\n\t\t\n\t\t\tHWang\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b16",
+     "section_path_id": "2.1",
+     "quote": "[17]",
+     "offset": 747
+    }
+   ]
+  },
+  {
+   "raw_text": "Wizardmath: Empowering mathematical reasoning for large language models via reinforced evol-instruct\n\t\t\n\t\t\tHLuo\n\t\t\n\t\t\n\t\t\tQSun\n\t\t\n\t\t\n\t\t\tCXu\n\t\t\n\t\t\n\t\t\tPZhao\n\t\t\n\t\t\n\t\t\tJLou\n\t\t\n\t\t\n\t\t\tCTao\n\t\t\n\t\t\n\t\t\tXGeng\n\t\t\n\t\t\n\t\t\tQLin\n\t\t\n\t\t\n\t\t\tSChen\n\t\t\n\t\t\n\t\t\tDZhang\n\t\t\n\t\tCoRR, abs/2308.09583\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b17",
+     "section_path_id": "2.1",
+     "quote": "18]",
+     "offset": 219
+    }
+   ]
+  },
+  {
+   "raw_text": "AVMaharaj\n\t\t\n\t\t\n\t\t\tKQian\n\t\t\n\t\t\n\t\t\tUBhattacharya\n\t\t\n\t\t\n\t\t\tSFang\n\t\t\n\t\t\n\t\t\tHGalatanu\n\t\t\n\t\t\n\t\t\tMGarg\n\t\t\n\t\t\n\t\t\tRHanessian\n\t\t\n\t\t\n\t\t\tNKapoor\n\t\t\n\t\t\n\t\t\tKRussell\n\t\t\n\t\t\n\t\t\tSVaithyanathan\n\t\t\n\t\t\n\t\t\tYLi\n\t\t\n\t\tEvaluation and continual improvement for an enterprise ai assistant\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b18",
+     "section_path_id": "1",
+     "quote": "[19,",
+     "offset": 1373
+    }
+   ]
+  },
+  {
+   "raw_text": "Evaluating large language models as agents in the clinic\n\t\t\n\t\t\tNMehandru\n\t\t\n\t\t\n\t\t\tBYMiao\n\t\t\n\t\t\n\t\t\tERAlmaraz\n\t\t\n\t\t\n\t\t\tMSushil\n\t\t\n\t\t\n\t\t\tAJButte\n\t\t\n\t\t\n\t\t\tAAlaa\n\t\t\n\t\n\t\n\t\tDigital Medicine\n\t\t\n\t\t\t7\n\t\t\t1\n\t\t\tApr. 2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Evaluating large language models as agents in the clinic",
+   "anchors": [
+    {
+     "ref_id": "b19",
+     "section_path_id": "1",
+     "quote": "[20,",
+     "offset": 333
+    }
+   ]
+  },
+  {
+   "raw_text": "ask me anything&quot;: How comcast uses llms to assist agents in real time\n\t\t\n\t\t\tSRome\n\t\t\n\t\t\n\t\t\tTChen\n\t\t\n\t\t\n\t\t\tRTang\n\t\t\n\t\t\n\t\t\tLZhou\n\t\t\n\t\t\n\t\t\tFTure\n\t\t\n\t\n\t\n\t\tProceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval\n\t\tthe 47th International ACM SIGIR Conference on Research and Development in Information Retrieval\n\t\t\n\t\t\tACM\n\t\t\tJuly 2024\n\t\t\t\n\t\t\n\t\n\tSIGIR 2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "ask me anything&quot;: How comcast uses llms to assist agents in real time",
+   "anchors": [
+    {
+     "ref_id": "b20",
+     "section_path_id": "1",
+     "quote": "[21,",
+     "offset": 377
+    }
+   ]
+  },
+  {
+   "raw_text": "Code llama: Open foundation models for code\n\t\t\n\t\t\tBRozière\n\t\t\n\t\t\n\t\t\tJGehring\n\t\t\n\t\t\n\t\t\tFGloeckle\n\t\t\n\t\t\n\t\t\tSSootla\n\t\t\n\t\t\n\t\t\tIGat\n\t\t\n\t\t\n\t\t\tXETan\n\t\t\n\t\t\n\t\t\tYAdi\n\t\t\n\t\t\n\t\t\tJLiu\n\t\t\n\t\t\n\t\t\tTRemez\n\t\t\n\t\t\n\t\t\tJRapin\n\t\t\n\t\t\n\t\t\tAKozhevnikov\n\t\t\n\t\t\n\t\t\tIEvtimov\n\t\t\n\t\t\n\t\t\tJBitton\n\t\t\n\t\t\n\t\t\tMBhatt\n\t\t\n\t\t\n\t\t\tCCanton-Ferrer\n\t\t\n\t\t\n\t\t\tAGrattafiori\n\t\t\n\t\t\n\t\t\tWXiong\n\t\t\n\t\t\n\t\t\tADéfossez\n\t\t\n\t\t\n\t\t\tJCopet\n\t\t\n\t\t\n\t\t\tFAzhar\n\t\t\n\t\t\n\t\t\tHTouvron\n\t\t\n\t\t\n\t\t\tLMartin\n\t\t\n\t\t\n\t\t\tNUsunier\n\t\t\n\t\t\n\t\t\tTScialom\n\t\t\n\t\t\n\t\t\tGSynnaeve\n\t\t\n\t\tCoRR, abs/2308.12950\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b21",
+     "section_path_id": "2.1",
+     "quote": "[22,",
+     "offset": 183
+    }
+   ]
+  },
+  {
+   "raw_text": "Explore-instruct: Enhancing domainspecific instruction coverage through active exploration\n\t\t\n\t\t\tFWan\n\t\t\n\t\t\n\t\t\tXHuang\n\t\t\n\t\t\n\t\t\tTYang\n\t\t\n\t\t\n\t\t\tXQuan\n\t\t\n\t\t\n\t\t\tWBi\n\t\t\n\t\t\n\t\t\tSShi\n\t\t\n\t\n\t\n\t\tEMNLP\n\t\t\n\t\t\tAssociation for Computational Linguistics\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Explore-instruct: Enhancing domainspecific instruction coverage through active exploration",
+   "anchors": [
+    {
+     "ref_id": "b22",
+     "section_path_id": "2.1",
+     "quote": "23]",
+     "offset": 1097
+    }
+   ]
+  },
+  {
+   "raw_text": "Improving text embeddings with large language models\n\t\t\n\t\t\tLWang\n\t\t\n\t\t\n\t\t\tNYang\n\t\t\n\t\t\n\t\t\tXHuang\n\t\t\n\t\t\n\t\t\tLYang\n\t\t\n\t\t\n\t\t\tRMajumder\n\t\t\n\t\t\n\t\t\tFWei\n\t\t\n\t\tCoRR, abs/2401.00368\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b23",
+     "section_path_id": "2.1",
+     "quote": "[24]",
+     "offset": 239
+    }
+   ]
+  },
+  {
+   "raw_text": "Let&apos;s synthesize step by step: Iterative dataset synthesis with large language models by extrapolating errors from small models\n\t\t\n\t\t\tRWang\n\t\t\n\t\t\n\t\t\tWZhou\n\t\t\n\t\t\n\t\t\tMSachan\n\t\t\n\t\n\t\n\t\tEMNLP (Findings)\n\t\t\n\t\t\tAssociation for Computational Linguistics\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Let&apos;s synthesize step by step: Iterative dataset synthesis with large language models by extrapolating errors from small models",
+   "anchors": [
+    {
+     "ref_id": "b24",
+     "section_path_id": "2.1",
+     "quote": "25,",
+     "offset": 1091
+    }
+   ]
+  },
+  {
+   "raw_text": "Tradingagents: Multi-agents llm financial trading framework\n\t\t\n\t\t\tYXiao\n\t\t\n\t\t\n\t\t\tESun\n\t\t\n\t\t\n\t\t\tDLuo\n\t\t\n\t\t\n\t\t\tWWang\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b25",
+     "section_path_id": "1",
+     "quote": "26,",
+     "offset": 353
+    }
+   ]
+  },
+  {
+   "raw_text": "Wizardlm: Empowering large language models to follow complex instructions\n\t\t\n\t\t\tCXu\n\t\t\n\t\t\n\t\t\tQSun\n\t\t\n\t\t\n\t\t\tKZheng\n\t\t\n\t\t\n\t\t\tXGeng\n\t\t\n\t\t\n\t\t\tPZhao\n\t\t\n\t\t\n\t\t\tJFeng\n\t\t\n\t\t\n\t\t\tCTao\n\t\t\n\t\t\n\t\t\tDJiang\n\t\t\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b26",
+     "section_path_id": "2.1",
+     "quote": "27]",
+     "offset": 473
+    }
+   ]
+  },
+  {
+   "raw_text": "Knowledgeinfused prompting: Assessing and advancing clinical text data generation with large language models\n\t\t\n\t\t\tRXu\n\t\t\n\t\t\n\t\t\tHCui\n\t\t\n\t\t\n\t\t\tYYu\n\t\t\n\t\t\n\t\t\tXKan\n\t\t\n\t\t\n\t\t\tWShi\n\t\t\n\t\t\n\t\t\tYZhuang\n\t\t\n\t\t\n\t\t\tWJin\n\t\t\n\t\t\n\t\t\tJCHo\n\t\t\n\t\t\n\t\t\tCJYang\n\t\t\n\t\tCoRR, abs/2311.00287\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b27",
+     "section_path_id": "2.1",
+     "quote": "28]",
+     "offset": 979
+    }
+   ]
+  },
+  {
+   "raw_text": "Eduagent: Generative student agents in learning\n\t\t\n\t\t\tSXu\n\t\t\n\t\t\n\t\t\tXZhang\n\t\t\n\t\t\n\t\t\tLQin\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b28",
+     "section_path_id": "1",
+     "quote": "29]",
+     "offset": 403
+    }
+   ]
+  },
+  {
+   "raw_text": "Finrobot: An open-source ai agent platform for financial applications using large language models\n\t\t\n\t\t\tHYang\n\t\t\n\t\t\n\t\t\tBZhang\n\t\t\n\t\t\n\t\t\tNWang\n\t\t\n\t\t\n\t\t\tCGuo\n\t\t\n\t\t\n\t\t\tXZhang\n\t\t\n\t\t\n\t\t\tLLin\n\t\t\n\t\t\n\t\t\tJWang\n\t\t\n\t\t\n\t\t\tTZhou\n\t\t\n\t\t\n\t\t\tMGuan\n\t\t\n\t\t\n\t\t\tRZhang\n\t\t\n\t\t\n\t\t\tCDWang\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b29",
+     "section_path_id": "1",
+     "quote": "[30,",
+     "offset": 349
+    }
+   ]
+  },
+  {
+   "raw_text": "KYang\n\t\t\n\t\t\n\t\t\tYChu\n\t\t\n\t\t\n\t\t\tTDarwin\n\t\t\n\t\t\n\t\t\tAHan\n\t\t\n\t\t\n\t\t\tHLi\n\t\t\n\t\t\n\t\t\tHWen\n\t\t\n\t\t\n\t\t\tYCopur-Gencturk\n\t\t\n\t\t\n\t\t\tJTang\n\t\t\n\t\t\n\t\t\tHLiu\n\t\t\n\t\tContent Knowledge Identification with Multi-agent Large Language Models (LLMs)\n\t\t\n\t\t\tSpringer Nature Switzerland\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b30",
+     "section_path_id": "1",
+     "quote": "[31,",
+     "offset": 399
+    }
+   ]
+  },
+  {
+   "raw_text": "Decoding data quality via synthetic corruptions: Embeddingguided pruning of code data\n\t\t\n\t\t\tYYang\n\t\t\n\t\t\n\t\t\tAKSingh\n\t\t\n\t\t\n\t\t\tMElhoushi\n\t\t\n\t\t\n\t\t\tAMahmoud\n\t\t\n\t\t\n\t\t\tKTirumala\n\t\t\n\t\t\n\t\t\tFGloeckle\n\t\t\n\t\t\n\t\t\tBRozière\n\t\t\n\t\t\n\t\t\tCWu\n\t\t\n\t\t\n\t\t\tASMorcos\n\t\t\n\t\t\n\t\t\tNArdalani\n\t\t\n\t\tCoRR, abs/2312.02418\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b31",
+     "section_path_id": "2.1",
+     "quote": "32]",
+     "offset": 187
+    }
+   ]
+  },
+  {
+   "raw_text": "SYao\n\t\t\n\t\t\n\t\t\tNShinn\n\t\t\n\t\t\n\t\t\tPRazavi\n\t\t\n\t\t\n\t\t\tKNarasimhan\n\t\t\n\t\tarXiv:2406.12045\n\t\tA benchmark for tool-agent-user interaction in real-world domains\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2406.12045",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b32",
+     "section_path_id": "1",
+     "quote": "[33,",
+     "offset": 1455
+    },
+    {
+     "ref_id": "b32",
+     "section_path_id": "1",
+     "quote": "[33]",
+     "offset": 3488
+    },
+    {
+     "ref_id": "b32",
+     "section_path_id": "2.2",
+     "quote": "[33]",
+     "offset": 167
+    },
+    {
+     "ref_id": "b32",
+     "section_path_id": "4.1",
+     "quote": "[33]",
+     "offset": 114
+    },
+    {
+     "ref_id": "b32",
+     "section_path_id": "4.2",
+     "quote": "[33]",
+     "offset": 105
+    },
+    {
+     "ref_id": "b32",
+     "section_path_id": "1~8",
+     "quote": "[33]",
+     "offset": 424
+    }
+   ]
+  },
+  {
+   "raw_text": "Scaling relationship on learning mathematical reasoning with large language models\n\t\t\n\t\t\tZYuan\n\t\t\n\t\t\n\t\t\tHYuan\n\t\t\n\t\t\n\t\t\tCLi\n\t\t\n\t\t\n\t\t\tGDong\n\t\t\n\t\t\n\t\t\tCTan\n\t\t\n\t\t\n\t\t\tCZhou\n\t\t\n\t\tCoRR, abs/2308.01825\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b33",
+     "section_path_id": "2.1",
+     "quote": "[34,",
+     "offset": 215
+    }
+   ]
+  }
+ ],
+ "layout_json": null,
+ "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">IntellAgent: A Multi-Agent Framework for Evaluating Conversational AI Systems</title>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability  status=\"unknown\">\n\t\t\t\t\t<licence/>\n\t\t\t\t</availability>\n\t\t\t\t<date type=\"published\" when=\"2025-01-19\">19 Jan 2025</date>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Elad</forename><forename type=\"middle\">Levi</forename><surname>Plurai</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Ilan</forename><surname>Kadar</surname></persName>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">IntellAgent: A Multi-Agent Framework for Evaluating Conversational AI Systems</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date type=\"published\" when=\"2025-01-19\">19 Jan 2025</date>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">D8DA33627706D1F52E3AF00AE6A018FF</idno>\n\t\t\t\t\t<idno type=\"arXiv\">arXiv:2501.11067v1[cs.CL]</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.0\" ident=\"GROBID\" when=\"2026-08-21T15:15+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.0</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>Large Language Models (LLMs) are transforming artificial intelligence, evolving into task-oriented systems capable of autonomous planning, execution, and refinement. One of the primary applications of LLMs is conversational AI systems, which must navigate multi-turn dialogues, integrate domain-specific APIs, and adhere to strict policy constraints. However, evaluating these agents remains a significant challenge, as traditional methods fail to capture the complexity and variability of real-world interactions. We introduce IntellAgent, a scalable, opensource multi-agent framework designed to evaluate conversational AI systems comprehensively. IntellAgent automates the creation of diverse, synthetic benchmarks by combining policy-driven graph modeling, realistic event generation, and interactive user-agent simulations. This innovative approach provides fine-grained diagnostics, addressing the limitations of static and manually curated benchmarks with coarse-grained metrics. IntellAgent represents a paradigm shift in evaluating conversational AI. By simulating realistic, multi-policy scenarios across varying levels of complexity, IntellAgent captures the nuanced interplay of agent capabilities and policy constraints. Unlike traditional methods, it employs a graph-based policy model to represent relationships, likelihoods, and complexities of policy interactions, enabling highly detailed diagnostics. IntellAgent also identifies critical performance gaps, offering actionable insights for targeted optimization. Its modular, open-source design supports seamless integration of new domains, policies, and APIs, fostering reproducibility and community collaboration. Our findings demonstrate that IntellAgent serves as an effective framework for advancing conversational AI by addressing challenges in bridging research and deployment. The framework is available at <ref type=\"url\" target=\"https://github.com/plurai-ai/intellagent\">https://github.com/plurai-ai/intellagent</ref>.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"8\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"9\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"10\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"11\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"12\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"13\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"14\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"15\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"1\">Introduction</head><p>Large Language Models (LLMs) are revolutionizing the field of artificial intelligence by transitioning from static language processors to dynamic, task-oriented agents that can autonomously plan, execute, and refine their actions. These agents promise transformative applications across a wide range of domains, including healthcare <ref type=\"bibr\" target=\"#b19\">[20,</ref><ref type=\"bibr\" target=\"#b0\">1]</ref>, finance <ref type=\"bibr\" target=\"#b29\">[30,</ref><ref type=\"bibr\" target=\"#b25\">26,</ref><ref type=\"bibr\" target=\"#b6\">7]</ref>, customer support <ref type=\"bibr\" target=\"#b20\">[21,</ref><ref type=\"bibr\" target=\"#b13\">14]</ref> and education <ref type=\"bibr\" target=\"#b30\">[31,</ref><ref type=\"bibr\" target=\"#b28\">29]</ref>. This evolution positions LLM agents as foundational technologies for reshaping human-computer interaction, enabling intelligent systems to tackle complex, real-world challenges with unprecedented efficiency and adaptability. Among these advancements, conversational AI agents present a particularly demanding frontier. Unlike single-turn systems, these agents must navigate multi-turn dialogues, integrate domainspecific tools and APIs, and adhere to stringent policy constraints. The interplay of these requirements introduces a new level of complexity, where the cost of errors-ranging from inconsistent responses to policy violations-can severely undermine reliability and trust. Reliability is not just desirable but critical, as it directly determines the feasibility of deploying such agents in real-world, high-stakes environments. Despite significant progress, evaluating conversational AI agents at this level of complexity remains a significant challenge <ref type=\"bibr\" target=\"#b18\">[19,</ref><ref type=\"bibr\" target=\"#b8\">9]</ref>. Traditional evaluation methods rely on static manually curated benchmarks <ref type=\"bibr\" target=\"#b32\">[33,</ref><ref type=\"bibr\" target=\"#b14\">15]</ref> that fail to scale or reflect the intricate dynamics of multi-turn interactions, policy adherence, and tool usage. These approaches often prioritize coarse-grained metrics, offering limited insights into agents' specific strengths and vulnerabilities. Consequently, existing methods leave critical gaps in both understanding and optimizing conversational agents for real-world applications.</p><p>In this work, we present IntellAgent, a scalable open-source multi-agent framework powered by AI agents, specifically designed to simulate and evaluate conversational AI agents comprehensively. IntellAgent represents a paradigm shift in evaluation by automating the generation of diverse, synthetic scenarios that rigorously test agents across multiple dimensions. Unlike existing approaches, IntellAgent leverages a novel pipeline that combines policy-driven graph modeling, realistic event generation, and interactive user-agent simulation to holistically assess agent performance, including a full spectrum of complexity levels, combinations of domain policies modeled through graph-based policy representations, and integration with API tools. The IntellAgent framework employs an automated process that involves constructing a policy graph to represent the relationships, complexity, and likelihood of various policies, generating events by sampling combinations of policies from the graph that align with real-world tasks and database states, and simulating interactions between a user agent and the chatbot. These simulations are then analyzed to provide fine-grained performance insights, identifying failure points, strengths, and opportunities for improvement. An overview of the system is illustrated in Figure <ref type=\"figure\" target=\"#fig_0\">1</ref>, which outlines the key components of the IntellAgent pipeline.</p><p>Our study demonstrates the effectiveness and versatility of IntellAgent as a benchmarking tool for evaluating conversational AI agents. The results reveal a strong correlation between model performance on the IntellAgent benchmark and the τ -bench <ref type=\"bibr\" target=\"#b32\">[33]</ref>, despite IntellAgent relying entirely on synthetic data. This validates IntellAgent as a robust alternative for evaluating conversational agents across diverse scenarios and challenges. Key findings from our analysis indicate that model performance decreases with increasing complexity levels, but the rate of decline varies significantly across models. Additionally, our policy-specific evaluation uncovers significant variations in model capabilities across different policy categories. This highlights IntellAgent's ability to provide detailed diagnostic insights, empowering users to identify the most suitable configuration for their specific requirements.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>This work makes several key contributions to the evaluation of conversational AI agents:</head><p>• A Scalable Multi-Agent Evaluation Framework: IntellAgent provides a robust and scalable multi-agent framework that automatically generates diverse, realistic scenarios tailored to address the unique challenges of conversational AI agents. By overcoming the limitations of small-scale, manually curated benchmarks, IntellAgent enables comprehensive and thorough evaluations.</p><p>• Fine-Grained Diagnostics with a Policies Graph: IntellAgent leverages a policies graph, inspired by GraphRAG <ref type=\"bibr\" target=\"#b9\">[10]</ref>, where nodes represent individual policies and their complexity, and edges denote the likelihood of co-occurrence between policies in conversations. This structure facilitates the generation of naturalistic user requests that span a wide range of policies and complexity levels, providing fine-grained diagnostic insights.</p><p>• An Open-Source and Extensible Framework: IntellAgent is released as an open-source framework, promoting reproducibility and community collaboration in advancing the evaluation and optimization of conversational AI agents. Its modular design supports seamless integration of new domains, including their respective policies, APIs, and database schemas. Additionally, the framework enables rigorous testing and optimization of custom conversational agents.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2\">Related Work</head><p>Recent advancements in using LLMs for synthetic data generation, automated evaluation have significantly influenced the development of AI systems. This section delves into these key areas, outlining existing methodologies and their limitations while highlighting how our approach advances the state of the art.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.1\">Synthetic Benchmarks</head><p>Data generation. Synthetic data generation using Large Language Models (LLMs) has become a transformative technique for advancing AI across various domains, including code generation <ref type=\"bibr\" target=\"#b21\">[22,</ref><ref type=\"bibr\" target=\"#b31\">32]</ref>, mathematical reasoning <ref type=\"bibr\" target=\"#b33\">[34,</ref><ref type=\"bibr\" target=\"#b17\">18]</ref>, text embedding <ref type=\"bibr\" target=\"#b23\">[24]</ref>, and text-to-image synthesis <ref type=\"bibr\" target=\"#b4\">[5]</ref>. Synthetic data reduces the costs and time of human-annotated datasets while providing control over sample distribution, crucial for fine-tuning and optimizing performance in downstream tasks <ref type=\"bibr\" target=\"#b15\">[16,</ref><ref type=\"bibr\" target=\"#b26\">27]</ref>. Evaluating synthetic data focuses on two key metrics: faithfulness and diversity.</p><p>Faithfulness ensures synthetic data reflects real-world patterns and relationships, while diversity captures a wide range of scenarios to enhance model robustness and mitigate overfitting <ref type=\"bibr\" target=\"#b16\">[17]</ref>. Achieving both metrics is challenging; recent research explores conditional prompting and multi-step generation to balance them. Conditional prompting improves diversity by defining attributes through conditionvalue pairs <ref type=\"bibr\" target=\"#b11\">[12,</ref><ref type=\"bibr\" target=\"#b27\">28]</ref>. Multi-step generation enhances coherence and domain coverage by decomposing tasks into smaller subtasks <ref type=\"bibr\" target=\"#b7\">[8,</ref><ref type=\"bibr\" target=\"#b24\">25,</ref><ref type=\"bibr\" target=\"#b12\">13,</ref><ref type=\"bibr\" target=\"#b22\">23]</ref>, though these methods often require significant manual effort and may not scale well to complex domains.</p><p>Our approach automates synthetic dataset generation to ensure both faithfulness and diversity by using a policies graph inspired by GraphRAG <ref type=\"bibr\" target=\"#b9\">[10]</ref>, where nodes represent policies and edges capture their complexity relationships. This framework enables fine-grained generation across various combinations of policies, tools, and tasks, producing datasets that reflect application requirements while covering a diverse range of scenarios. It addresses challenges from simple tasks to complex edge cases, ensuring rigorous evaluation of agents under diverse conditions.</p><p>Automated evaluation. Synthetic datasets have become invaluable for evaluating retrieval-augmented generation (RAG) systems, offering metrics to measure retrieval quality, generation fidelity, and robustness. Frameworks like RAGAS <ref type=\"bibr\" target=\"#b10\">[11]</ref> automate the evaluation of RAG pipelines, focusing on aspects such as retrieval accuracy and generation relevance. Unlike traditional metrics, RAGAS operates without reference answers, enabling broader applicability. However, it primarily targets isolated components and does not fully address the complexities of multi-turn dialogues or real-world conversational AI applications. This underscores the need for expanded evaluation frameworks that encompass diverse, dynamic use cases.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.2\">Conversational AI Benchmarks</head><p>Evaluating conversational AI systems in real-world applications has been the focus of various benchmarks, each targeting specific capabilities. For instance, τ -bench <ref type=\"bibr\" target=\"#b32\">[33]</ref> assesses agents' ability to interact with users, adhere to domain-specific policies, and utilize API tools effectively, with simulations in domains like retail and airline customer service. However, τ -bench is limited by its reliance on manual curation, with only 50 samples for airlines and 115 for retail, restricting scalability. Additionally, its evaluation focuses solely on coarse-grained end-to-end metrics, overlooking policy violations and dialogue flow errors, which limits comprehensive assessment.</p><p>The ALMITA benchmark <ref type=\"bibr\" target=\"#b2\">[3]</ref> proposes a novel dataset and framework specifically tailored for evaluating tool-augmented conversational AI agents in customer support scenarios. It uses a combination of automated and manual processes to generate diverse and realistic conversations grounded in user-defined procedures. Despite its rigorous evaluation, ALMITA focuses primarily on customer support, and the generalizability to other domains remains an open question. Moreover, the reliance on manually curated samples, while ensuring quality, limits scalability.</p><p>The LTM Benchmark <ref type=\"bibr\" target=\"#b5\">[6]</ref> effectively highlights limitations in conversational multitasking, especially with interleaved tasks. However, its reliance on predefined interaction structures limits its ability to capture the unpredictable and non-linear nature of real-world conversational flows, such as spontaneous topic shifts or revisiting earlier contexts. Similarly, E2E Benchmark <ref type=\"bibr\" target=\"#b3\">[4]</ref> evaluates chatbot responses based on accuracy and usefulness, emphasizing conversational coherence in nontask-oriented interactions. Nevertheless, its lack of support for complex tool use and multi-turn interactions restricts its applicability to broader real-world contexts. The CURATe framework <ref type=\"bibr\" target=\"#b1\">[2]</ref> addresses alignment challenges for personalized conversational agents by focusing on user-specific safety-critical contexts. While it introduces valuable techniques for multi-turn personalization, its emphasis on alignment rather than general performance testing narrows its scope.</p><p>Although these benchmarks provide valuable tools for assessing conversational AI systems, their reliance on manual curation limits scalability and adaptability to diverse real-world applications, making it challenging to generate the extensive datasets required for comprehensive evaluations. Our approach, in contrast, is fully automated, enabling the generation of diverse scenarios and dialogues at scale, thus supporting evaluations across varied domains. Additionally, our framework addresses a broader range of challenges, from simple tasks to complex edge cases, ensuring rigorous agent evaluation under diverse conditions. Unlike existing benchmarks that use coarse-grained metrics for overall performance, our method offers fine-grained insights by evaluating agents across all policy and tool combinations, identifying specific strengths and weaknesses.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3\">Method</head><p>Our multi-agent system is illustrated in Figure <ref type=\"figure\" target=\"#fig_0\">1</ref>. The system pipeline consists of the following steps: (1) The IntellAgent system receives a schema of the system database along with either a chatbot system prompt or a document outlining the company policies. Based on this input, the system constructs a policy graph (3.1.1). It then samples a list of policies from the graph at varying levels of complexity and generates an event addressing these policies (3.1.2). The event includes a scenario description with a user request and corresponding samples for the initial database state, ensuring the validity of the user requests. (2) The system simulates a dialog between the chatbot and a user agent using the information provided in the event (3.2). (3) Finally, a critique is provided with the dialog and provides an analysis of the chatbot's performances with respect to the event policies list (3.3).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.1\">Event Generation</head><p>To address the challenge of developing advanced chatbots capable of interacting with a system database, the system must generate complex and natural user requests that cover various policies. Additionally, it should create an initial database state for the chatbot, ensuring that when the chatbot processes the user request and queries the database, it does not encounter failures.</p><p>An IntellAgent event is defined by the following components: (1) A list of policies. (2) A description of a user request that aligns with the specified policies. (3) The initial state of the chatbot's system database.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Algorithm 1 Event Policies Sampling</head><p>Require: A policy graph (G, E) with node weights {n g } g∈G , and a range n1 &lt; n2 ∈ N X = ∅ ▷ The events policies list while |X| &lt; N do P = ∅ e w ∼ U(n 1 , n 2 ), g ∼ U(G) ▷ Sample the policy complexity and the initial policy while e w &gt; 0 do Choose a neighbor h ∈ G with probability:</p><formula xml:id=\"formula_0\">P (X = h | Y = g) = E g,h h∈G E h,g P ← P ∪ {h} e w ← e w -n h end while X ← X ∪ {P } end while</formula></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.1.1\">Policies graph</head><p>IntellAgent aims to generate a diverse set of events with varying levels of complexity. To create and complex user-chatbot interaction scenarios, IntellAgent constructs a policy graph. In this graph, nodes represent individual policies, and edge weights indicate the likelihood of two policies appearing together in the same interaction. Each node is also assigned a weight that reflects the complexity of its associated policy.</p><p>The graph is built through multiple queries to a large language model (LLM). First, the system extracts a list of policies from the prompt and assigns a difficulty ranking to each. Then, for every pair of policies, the LLM assigns a score (on a scale of 1-10) representing the likelihood of the two policies co-occurring in a conversation.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.1.2\">Event generator</head><p>The complexity of an event is defined as the sum of the complexities of its policies. Given a policy graph with a set of policies G, weighted edges E and nodes complexity weights {n g } g∈G . the event generator aims to produce a valid set of policies that satisfies the following criteria:</p><p>1. The event complexity is uniformly distributed within a specified range. 2. The distribution of the first policy in the event is uniformly distributed across all possible policies. 3. For a given complexity level and initial policy, the distribution of the resulting policy list aligns with real-world distributions.</p><p>Policies graph sampling. To satisfy the outlined criteria, the IntellAgent sampling algorithm operates in batches. The process for each iteration is as follows: The complexity of events in the current batch is sampled first. The batch distribution is adjusted to ensure that the overall distribution of all generated events (including previous batches) remains uniform. Next, the initial policy for each event is sampled uniformly across all nodes in the policy graph. Then For each event, the system generates a policy path by performing a random walk on the graph. The walk terminates once the cumulative complexity of the visited nodes exceeds the sampled event complexity. An overview of the entire sampling method is provided in Algorithm 1.</p><p>This approach ensures that the generated events policies list maintains the desired complexity distribution and follows realistic transitions between policies as determined by the graph structure.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Event generator agent.</head><p>The goal of the event generator agent is to create an event based on a given list of policies. The primary challenge is to generate a valid and consistent initial database state that the chatbot can interact with during the conversation. The agent's architecture is shown in Figure <ref type=\"figure\" target=\"#fig_2\">4</ref>. To manage complex database schemas, the event generator agent first creates a symbolic</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Uniform distribution</head><p>Max Sampling Weighted Sampling</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Initial policy</head><p>The user cannot add travel insurance after the initial booking when modifying a reservation.</p><p>The user cannot add travel insurance after the initial booking when modifying a reservation.</p><p>The user cannot add travel insurance after the initial booking when modifying a reservation.</p><p>Policy 2 Cancelling a flight reservation: The refund will go to original payment methods in 5 to 7 business days.</p><p>The agent must first obtain the user id and the reservation id before modifying a flight reservation.</p><p>The agent must first obtain the user id and the reservation id before modifying a flight reservation.</p><p>Policy 3 Cabin class must be the same across all the flights in the same reservation Basic economy flights cannot be modified. Other reservations can be modified without changing the origin, destination, and trip type.</p><p>The agent can only cancel the whole trip that is not flown.</p><p>Table 1: Comparison of random walk sampling strategies. (Left) Uniform sampling of the next node. (Middle) Selection of the next node based on maximal edge weight. (Right) IntellAgent weighted probability sampling, which balances diversity and alignment with real-world distributions.</p><p>representation of all the entities involved in the event. These entities are determined based on the provided chatbot prompt and the database schema. Typical entities may include users, products, reservations, etc.</p><p>The agent then iterates over these symbols, instantiating them by inserting the relevant rows into the database and replacing the symbolic variables with the corresponding data. This symbolic representation enables the agent to generate valid and consistent events, even across complex chatbot databases. Refer to Appendix B for an example of a generated symbolic representation and its corresponding database.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.2\">Dialog simulation</head><p>For each event in the events database, IntellAgent simulates an interaction between a user and the chatbot being tested. Figure <ref type=\"figure\" target=\"#fig_3\">5</ref> provides an overview of the simulation architecture. The user agent is given the event details, which include the description of the event and all relevant information inserted into the chatbot's system database by the event generator agent. Additionally, the user agent is provided with the expected behavior of the chatbot at each step of the interaction, based on the event's policy list. The user has the option to terminate the interaction at any point, either when the chatbot successfully completes the task or if the chatbot fails to adhere to one of the policies and does not follow the expected behavior.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.3\">Dialog Critique</head><p>The Dialog critique component is given the user-chatbot dialog and the chatbot system prompt to assess whether the reason for the dialog's termination, as provided by the user agent, is correct. If the reason is incorrect, the critique provides feedback to the user agent, and the dialog resumes. If the reason is correct, the critique then determines: (1) The subset of event policies that were tested during the dialog. (2) The subset of policies that the chatbot did not adhere to (this list may be empty). Using this information, a comprehensive report on the chatbot's performance is generated.  </p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4\">Experiments</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.1\">Benchmark</head><p>Dataset construction. To evaluate the performance of our system in real-world scenarios, we utilized the τ -bench <ref type=\"bibr\" target=\"#b32\">[33]</ref> environments. Specifically, we employed the benchmark's prompts, database schema, and tools for the two benchmark's environments: airline and retail. For each environment, the system generates a policy graph from the prompt and simulates 1,000 events-a substantial increase that enables more fine-grained analysis compared to the original benchmark, which used 50 samples for airlines and 115 for retail. The complexity levels of the generated events range from 2 to 11. Table <ref type=\"table\">1</ref> presents a comparison of various random walk sampling strategies. Selecting the next node uniformly leads to unrelated policies, whereas choosing the next node based on maximal weight produces a cohesive cluster of policies. In contrast, IntellAgent-weighted probability sampling achieves a balance between diversity and alignment with the real-world distribution. Appendix B provides a detailed example of the event generation process.</p><p>Tested agents. We evaluated several state-of-the-art proprietary LLMs: GPT-4o, GPT-4o-mini, Gemini-1.5-pro, Gemini-1.5-flash, Claude-3.5-sonnet, and Claude-3.5-haiku. For all these models we employed the native tool-calling agent (supported by all the tested LLMs) with the tested environment system prompt. During each iteration, the model determines whether to send a message to the user or to call a tool.</p><p>IntellAgent Implementation details. The IntellAgent multi-agent system was implemented using the Langgraph<ref type=\"foot\" target=\"#foot_0\">foot_0</ref> framework. GPT-4o served as the system's LLM model, used for the event generation, the user agent, and dialog critique. For full implementation details including all the system prompts, we provide the source code and documentation<ref type=\"foot\" target=\"#foot_1\">foot_1</ref> </p><p>Figure <ref type=\"figure\">3</ref>: Comparison of the success rates of the top four models across various policy categories, highlighting that some categories are more challenging than others. Additionally, the relative performance order of different models varies across categories.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.2\">Results</head><p>Benchmarks comparison. Table <ref type=\"table\" target=\"#tab_0\">2</ref> presents a comparison of the tested model's success rates on the τ -bench <ref type=\"bibr\" target=\"#b32\">[33]</ref> and the IntellAgent benchmark. The Pearson correlation coefficients are 0.98 for the Airline environment and 0.92 for the Retail environment, highlighting a strong alignment in model performance across the two benchmarks. Notably, this strong correlation persists despite IntellAgent being generated exclusively with synthetic data.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Models comparison.</head><p>Figure <ref type=\"figure\" target=\"#fig_1\">2</ref> illustrates the success rates of the top four models as a function of challenge level. As expected, model performance declines as the challenge level increases, though the pattern of decline varies across models. For instance, while Gemini-pro-1.5 significantly outperforms GPT-4o-mini in the airline environment up to level 10, their performances converge at higher challenge levels. This highlights the value of IntellAgent's detailed analysis, enabling users to select the most suitable model based on the desired complexity the chatbot should handle.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Policies comparison.</head><p>Figure <ref type=\"figure\">3</ref> shows the performance of the top four models models across different policy categories. The relative ranking of models shifts across different categories. IntellAgent provides a detailed analysis of the specific policies where the tested chatbot may encounter difficulties.</p><p>It is also important to note that all models face challenges with user consent policies. This policy category is not assessed in the τ -bench <ref type=\"bibr\" target=\"#b32\">[33]</ref> since its evaluation focuses solely on the final state of the database.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"5\">Conclusion</head><p>In this work, we introduced IntellAgent, a scalable, open-source multi-agent framework designed to comprehensively evaluate conversational AI systems. IntellAgent addresses the limitations of traditional evaluation methods by automating the generation of diverse, policy-driven scenarios and providing fine-grained diagnostics. By leveraging a graph-based policy model, realistic event generation, and user-agent simulations, IntellAgent captures the nuanced complexities of multi-turn dialogues, policy adherence, and tool integration.</p><p>Our findings demonstrate IntellAgent's ability to uncover critical performance gaps, offering actionable insights to optimize conversational agents for real-world applications. Its modular design supports extensibility, ensuring it remains relevant across diverse domains and use cases.</p><p>In future work, we plan to explore the benefits of incorporating additional real-world context into the environment, such as a small set of user-chatbot interactions. We hypothesize that this context could significantly enhance the policies graph quality by deriving edge weights and node challenge-level weights from the real-data distributions. Furthermore, we anticipate that this added context could improve the overall performance of the system database generation process.  the detailed event scenario. Additionally, Figures <ref type=\"figure\">6</ref>, <ref type=\"figure\">7</ref>, and 8 showcase the generated event database for event 43.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Event Challange level 5</head><p>Event Policies 1. Modify default user address: you have to authenticate the user identity by locating their user id via email, or via name + zip code 2. You must deny any requests for tasks related to any other user.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Symbolic description</head><p>User 'U1' initiates a conversation with the chatbot to update their default address from 'A1' to 'A2'. The chatbot authenticates 'U1' by verifying their email or name and zip code. During the conversation, 'U1' requests information about their spouse 'U2's recent order 'O1', claiming authority to access it. After this, 'U1' returns to their original request to update their default address.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Symbolic variables</head><p>'U1: The user initiating the conversation', 'U2: The spouse of the user', 'O1: A recent order made by the spouse', 'A1: The current default address of the user', 'A2: The new address the user wants to set as default'</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Event Scenario details</head><p>User 'emma_jones_4829' initiates a conversation with the chatbot to update their default address from 'address1': '123 Elm Street', 'address2': 'Apt 4B', 'city': 'Seattle', 'country': 'USA', 'province': 'WA', 'zip': '98101' to 'A2'. The chatbot authenticates 'emma_jones_4829' by verifying their email or name and zip code. During the conversation, 'emma_jones_4829' requests information about their spouse 'liam_smith_9274's recent order '#O9274620', claiming authority to access it. After this, 'emma_jones_4829' returns to their original request to update their default address.</p><p>Table <ref type=\"table\">3</ref>: Event 43 generation steps { \"emma_jones_4829\": { \"user_id\": \"emma_jones_4829\", \"name\": \"{'first_name': 'Emma', 'last_name': 'Jones'}\", \"address\": \"{'address1': '123 Elm Street', 'address2': 'Apt 4B', 'city': ' Seattle', 'country': 'USA', 'province': 'WA', 'zip': '98101'}\", \"email\": \"emma.jones4829@example.com\", \"payment_methods\": \"{'paypal_4829103': {'source': 'paypal', 'id': ' paypal_4829103'}, 'credit_card_1938472': {'source': 'credit_card', ' brand': 'visa', 'last_four': '3847', 'id': 'credit_card_1938472'}}\", \"orders\": \"['#A1234567']\" }, \"liam_smith_9274\": { \"user_id\": \"liam_smith_9274\", \"name\": \"{'first_name': 'Liam', 'last_name': 'Smith'}\", \"address\": \"{'address1': '456 Oak Avenue', 'address2': 'Unit 12', 'city': ' Austin', 'country': 'USA', 'province': 'TX', 'zip': '73301'}\", \"email\": \"liam.smith9274@example.com\", \"payment_methods\": \"{'paypal_9274620': {'source': 'paypal', 'id': ' paypal_9274620'}, 'credit_card_4620193': {'source': 'credit_card', ' brand': 'visa', 'last_four': '4620', 'id': 'credit_card_4620193'}, ' credit_card_567890': {'id': 'credit_card_567890', 'last_four': 1234, ' brand': 'visa', 'source': 'card', 'balance': 50}}\", \"orders\": \"['#O9274620']\" } } Figure <ref type=\"figure\">6</ref>: Event 43 generated 'Users' dataset { \"#O9274620\": { \"order_id\": \"#O9274620\", \"user_id\": \"liam_smith_9274\", \"address\": \"{'address1': '456 Oak Avenue', 'address2': 'Unit 12', 'city': ' Austin', 'country': 'USA', 'province': 'TX', 'zip': '73301'}\", \"items\": \"[{'name': 'Yoga Mat', 'product_id': '1234567890', 'item_id': '9876543210', 'price': 25.99, 'options': {'color': 'green', 'thickness': '5mm'}}, {'name': 'Dumbbell Set', 'product_id': '0987654321', 'item_id': '1234509876', 'price': 89.99, 'options': {'weight': '20kg', 'material': 'iron', 'color': 'blue'}}]\", \"fulfillments\": \"[{'tracking_id': ['123456789012'], 'item_ids':</p><p>['9876543210', '1234509876']}]\", \"status\": \"pending\", \"payment_history\": \"[{'transaction_type': 'payment', 'amount': 115.98, ' payment_method_id': 'credit_card_567890'}]\" } } </p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: System diagram. (1) Given a chatbot prompt and a Schema DB, the system generates an event that targets a subset of policies, which includes a user request and a system DB state. (2) For each event the system simulates a conversation between the user and the chatbot. (3) A fine-grained report on the chatbot performances is generated.</figDesc><graphic coords=\"2,127.80,72.00,356.40,175.25\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_1\"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Model success rates across different challenge levels. While all models show reduced performance as the challenge level increases, they exhibit distinct patterns of decline, differing in both the onset level and the magnitude of the decrease.</figDesc><graphic coords=\"7,108.00,72.00,194.04,116.42\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_2\"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Event generator architecture overview.</figDesc><graphic coords=\"11,127.80,72.00,356.39,209.90\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_3\"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Simulator architecture overview.</figDesc><graphic coords=\"11,127.80,315.81,356.40,173.63\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_4\"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Event 43 generated 'Orders' dataset</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_0\"><head>Table 2 :</head><label>2</label><figDesc>Model τ -airline IntellAgent-airline τ -retail IntellAgent-retailComparison of the success rates of various agent models utilizing function calling, evaluated on the τ -bench and the IntellAgent benchmark. The results demonstrate a strong correlation between success rates across τ -bench and IntellAgent benchmark.</figDesc><table><row><cell>claude-3.5-sonnet</cell><cell>0.46</cell><cell>0.70</cell><cell>0.69</cell><cell>0.71</cell></row><row><cell>gpt-4o</cell><cell>0.44</cell><cell>0.70</cell><cell>0.51</cell><cell>0.68</cell></row><row><cell>gemini-1.5-pro</cell><cell>0.34</cell><cell>0.63</cell><cell>0.43</cell><cell>0.58</cell></row><row><cell>gpt-4o-mini</cell><cell>0.30</cell><cell>0.55</cell><cell>0.46</cell><cell>0.62</cell></row><row><cell>claude-3.5-haiku</cell><cell>0.28</cell><cell>0.53</cell><cell>0.44</cell><cell>0.56</cell></row><row><cell>gemini-1.5-flash</cell><cell>0.21</cell><cell>0.40</cell><cell>0.31</cell><cell>0.48</cell></row></table></figure>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"1\" xml:id=\"foot_0\"><p>https://github.com/langchain-ai/langgraph</p></note>\n\t\t\t<note xmlns=\"http://www.tei-c.org/ns/1.0\" place=\"foot\" n=\"2\" xml:id=\"foot_1\"><p>https://github.com/plurai-ai/intellagent</p></note>\n\t\t</body>\n\t\t<back>\n\t\t\t<div type=\"annex\">\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Appendix</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A Architecture details</head><p>This section offers further insight into the IntellAgent architecture. Figures <ref type=\"figure\">4</ref> and <ref type=\"figure\">5</ref> illustrate the architecture of the event generator and the simulator executor, respectively.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>B Complete Example of Event Generation</head><p>This section presents a comprehensive example of the generation process for event 43 in the retail environment. Table <ref type=\"table\">3</ref> illustrates the entire process, starting from the requested challenge level, followed by extracting the event policies, generating the symbolic description, and finally obtaining { \"1234567890\": { \"name\": \"Yoga Mat\", \"product_id\": \"1234567890\", \"variants\": { \"1011121319\": { \"item_id\": \"9876543210\", \"options\": { \"color\": \"green\", \"thickness\": \"5mm\" }, \"available\": true, \"price\": 25.99 }, \"1011121314\": { \"item_id\": \"9876543210\", \"options\": { \"color\": \"blue\", \"thickness\": \"5mm\" }, \"available\": true, \"price\": 25.99 } } }, \"0987654321\": { \"name\": \"Dumbbell Set\", \"product_id\": \"0987654321\", \"variants\": { \"1011121319\": { \"item_id\": \"1234509876\", \"options\": { \"weight\": \"20kg\", \"material\": \"iron\", \"color\": \"blue\" }, \"available\": true, \"price\": 89.99 }, \"1011121314\": { \"item_id\": \"1234509876\", \"options\": { \"weight\": \"20kg\", \"material\": \"iron\", \"color\": \"green\" }, \"available\": true, \"price\": 89.99 } } } } </p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_5\"><head>Figure 7 :</head><label>7</label><figDesc>Event 43 generated 'Products' dataset</figDesc></figure>\n\t\t\t</div>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Conversational health agents: A personalized llm-powered agent framework</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Abbasian</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Azimi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><forename type=\"middle\">M</forename><surname>Rahmani</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Jain</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Curate: Benchmarking personalised alignment of conversational ai assistants</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Alberts</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Ellis</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Lupu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Foerster</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2410.21159</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">International Conference on Learning Representations (ICLR), 2025</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Automated test generation to evaluate tool-augmented llms as conversational ai agents</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Arcadinho</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Aparício</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><forename type=\"middle\">S C</forename><surname>Almeida</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2409.15934</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Benchmarking llm powered chatbots: Methods and metrics</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Banerjee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Singh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Avadhanam</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Srivastava</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Improving image generation with better captions</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Betker</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Goh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Jing</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Timbrooks</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Longouyang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Juntangzhuang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Joycelee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Yufeiguo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Wesammanassra</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Prafulladhariwal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Caseychu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Yunxinjiao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Ramesh</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Beyond prompts: Dynamic conversational benchmarking of large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Castillo-Bolado</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Davidson</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Gray</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Rosa</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2409.20222</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">2024. 38th Conference on Neural Information Processing Systems (NeurIPS) Track on Datasets and Benchmarks</title>\n\t\t<imprint/>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Large language model agent in financial trading: A survey</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Ding</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b7\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Enhancing chat language models by scaling high-quality instructional conversations</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Ding</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Qin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Hu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023-12\">Dec. 2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"3029\" to=\"3051\" />\n\t\t\t<pubPlace>Singapore</pubPlace>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b8\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Botchat: Evaluating llms&apos; capabilities of having multi-turn dialogues</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Duan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Wei</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Fang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b9\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">From local to global: A graph rag approach to query-focused summarization</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Edge</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Trinh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Cheng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Bradley</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Chao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Mody</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Truitt</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Larson</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2404.16130</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t\t<publisher>Microsoft Research</publisher>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b10\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Ragas: Automated evaluation of retrieval-augmented generation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Es</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>James</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Espinosa-Anke</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Schockaert</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2309.15217</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b11\">\n\t<monogr>\n\t\t<title/>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Gunasekar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Aneja</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><forename type=\"middle\">C T</forename><surname>Mendes</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><forename type=\"middle\">D</forename><surname>Giorno</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Gopi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Javaheripi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Kauffmann</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>De Rosa</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O</forename><surname>Saarikivi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Salim</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Shah</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><forename type=\"middle\">S</forename><surname>Behl</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Bubeck</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Eldan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><forename type=\"middle\">T</forename><surname>Kalai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><forename type=\"middle\">T</forename><surname>Lee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note>Textbooks are all you need. CoRR, abs/2306.11644</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b12\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Unnatural instructions: Tuning language models with (almost) no human labor</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O</forename><surname>Honovich</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Scialom</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">O</forename><surname>Levy</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Schick</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">ACL</title>\n\t\t<imprint>\n\t\t\t<publisher>Association for Computational Linguistics</publisher>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"14409\" to=\"14428\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b13\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Crmarena: Understanding the capacity of llm agents to perform professional crm tasks in realistic environments</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K.-H</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Prabhakar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Dhawan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Mao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Savarese</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Xiong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Laban</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C.-S</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b14\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">MT-eval: A multi-turn capabilities evaluation benchmark for large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W.-C</forename><surname>Kwan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Zeng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Shang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K.-F</forename><surname>Wong</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</title>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Al-Onaizan</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Bansal</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">Y.-N</forename><surname>Chen</surname></persName>\n\t\t</editor>\n\t\t<meeting>the 2024 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Miami, Florida, USA</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Association for Computational Linguistics</publisher>\n\t\t\t<date type=\"published\" when=\"2024-11\">Nov. 2024</date>\n\t\t\t<biblScope unit=\"page\" from=\"20153\" to=\"20177\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b15\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Intent-based prompt calibration: Enhancing prompt optimization with synthetic boundary cases</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Levi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Brosh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Friedmann</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b16\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">On llms-driven synthetic data generation, curation, and evaluation: A survey</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Long</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Xiao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Ding</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b17\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Wizardmath: Empowering mathematical reasoning for large language models via reinforced evol-instruct</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Luo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Lou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Tao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Geng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/2308.09583</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b18\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><forename type=\"middle\">V</forename><surname>Maharaj</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Qian</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">U</forename><surname>Bhattacharya</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Fang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Galatanu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Garg</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Hanessian</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Kapoor</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Russell</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Vaithyanathan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<title level=\"m\">Evaluation and continual improvement for an enterprise ai assistant</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b19\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Evaluating large language models as agents in the clinic</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Mehandru</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><forename type=\"middle\">Y</forename><surname>Miao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><forename type=\"middle\">R</forename><surname>Almaraz</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Sushil</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><forename type=\"middle\">J</forename><surname>Butte</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Alaa</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Digital Medicine</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">7</biblScope>\n\t\t\t<biblScope unit=\"issue\">1</biblScope>\n\t\t\t<date type=\"published\" when=\"2024-04\">Apr. 2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b20\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">ask me anything&quot;: How comcast uses llms to assist agents in real time</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Rome</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Ture</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</title>\n\t\t<meeting>the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval</meeting>\n\t\t<imprint>\n\t\t\t<publisher>ACM</publisher>\n\t\t\t<date type=\"published\" when=\"2024-07\">July 2024</date>\n\t\t\t<biblScope unit=\"page\" from=\"2827\" to=\"2831\" />\n\t\t</imprint>\n\t</monogr>\n\t<note>SIGIR 2024</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b21\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Code llama: Open foundation models for code</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Rozière</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Gehring</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Gloeckle</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Sootla</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Gat</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><forename type=\"middle\">E</forename><surname>Tan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Adi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Remez</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Rapin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Kozhevnikov</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Evtimov</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Bitton</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Bhatt</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Canton-Ferrer</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Grattafiori</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Xiong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Défossez</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Copet</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Azhar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Touvron</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Martin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Usunier</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Scialom</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Synnaeve</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/2308.12950</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b22\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Explore-instruct: Enhancing domainspecific instruction coverage through active exploration</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Wan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Quan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Bi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Shi</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">EMNLP</title>\n\t\t<imprint>\n\t\t\t<publisher>Association for Computational Linguistics</publisher>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"9435\" to=\"9454\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b23\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Improving text embeddings with large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Majumder</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Wei</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/2401.00368</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b24\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Let&apos;s synthesize step by step: Iterative dataset synthesis with large language models by extrapolating errors from small models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Sachan</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">EMNLP (Findings)</title>\n\t\t<imprint>\n\t\t\t<publisher>Association for Computational Linguistics</publisher>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"11817\" to=\"11831\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b25\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Tradingagents: Multi-agents llm financial trading framework</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Xiao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Luo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b26\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Wizardlm: Empowering large language models to follow complex instructions</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Q</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Zheng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Geng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Feng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Tao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">D</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b27\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Knowledgeinfused prompting: Assessing and advancing clinical text data generation with large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Cui</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Kan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Shi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Zhuang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><surname>Jin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><forename type=\"middle\">C</forename><surname>Ho</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><forename type=\"middle\">J</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/2311.00287</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b28\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Eduagent: Generative student agents in learning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Qin</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b29\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Finrobot: An open-source ai agent platform for financial applications using large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Guo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">X</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Lin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Guan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">R</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><forename type=\"middle\">D</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b30\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Chu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Darwin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Han</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Wen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Copur-Gencturk</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">J</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<title level=\"m\">Content Knowledge Identification with Multi-agent Large Language Models (LLMs)</title>\n\t\t<imprint>\n\t\t\t<publisher>Springer Nature Switzerland</publisher>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t\t<biblScope unit=\"page\" from=\"284\" to=\"292\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b31\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Decoding data quality via synthetic corruptions: Embeddingguided pruning of code data</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><forename type=\"middle\">K</forename><surname>Singh</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Elhoushi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><surname>Mahmoud</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Tirumala</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">F</forename><surname>Gloeckle</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Rozière</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><forename type=\"middle\">S</forename><surname>Morcos</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Ardalani</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/2312.02418</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b32\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">S</forename><surname>Yao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Shinn</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Razavi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">K</forename><surname>Narasimhan</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2406.12045</idno>\n\t\t<title level=\"m\">A benchmark for tool-agent-user interaction in real-world domains</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b33\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Scaling relationship on learning mathematical reasoning with large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Z</forename><surname>Yuan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">H</forename><surname>Yuan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Dong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Tan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<idno>CoRR, abs/2308.01825</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+ "pdf_hash": "66757f1f55fee2913248f2e64288d5155e6b712aed3a341e76846df5df839d2a",
+ "tables": [
+  {
+   "table_id": "tab_0",
+   "section_path_id": "1~18",
+   "section_ordinal": 30,
+   "caption": "Table 2 :",
+   "coordinates": null,
+   "cells": [
+    {
+     "row": 0,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "claude-3.5-sonnet",
+     "coordinates": null,
+     "span": {
+      "start": 316,
+      "end": 333
+     },
+     "digest": "d6357d4319e16e8636f6440ea460a88ec40c1f8357daa51abd1c5d8170a801d7"
+    },
+    {
+     "row": 0,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.46",
+     "coordinates": null,
+     "span": {
+      "start": 333,
+      "end": 337
+     },
+     "digest": "fd2c73a39ed0802279d4c5aa8b8fc9afca62b893fe7799f88918a479cb7b9863"
+    },
+    {
+     "row": 0,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.70",
+     "coordinates": null,
+     "span": {
+      "start": 337,
+      "end": 341
+     },
+     "digest": "0a39cf27b8bd25dcf5c20033882ea4c583fca8e8323196d5ffcffed6213bfd36"
+    },
+    {
+     "row": 0,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.69",
+     "coordinates": null,
+     "span": {
+      "start": 341,
+      "end": 345
+     },
+     "digest": "73a4c232185b31ba69335cbca1596e65812789e2193dce85cc7ddbd96d8bd174"
+    },
+    {
+     "row": 0,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.71",
+     "coordinates": null,
+     "span": {
+      "start": 345,
+      "end": 349
+     },
+     "digest": "92225e9add5b2381e12d31a2750536ff9142242dc85ad0f8249a3f66c8e61feb"
+    },
+    {
+     "row": 1,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "gpt-4o",
+     "coordinates": null,
+     "span": {
+      "start": 349,
+      "end": 355
+     },
+     "digest": "28b9e4ec6b8f8d6f0692ed0e606db37ca62307f972ca689671fa70281f536d8b"
+    },
+    {
+     "row": 1,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.44",
+     "coordinates": null,
+     "span": {
+      "start": 355,
+      "end": 359
+     },
+     "digest": "566630fd2ddb8d77c39361555b2f7862f5b34c4fcb57f28e542a4745b89c95d2"
+    },
+    {
+     "row": 1,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.70",
+     "coordinates": null,
+     "span": {
+      "start": 359,
+      "end": 363
+     },
+     "digest": "a4003dc24eb2cdf455e20a7185d91345832013cdacf4a991cb28ca38fd9c9cdc"
+    },
+    {
+     "row": 1,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.51",
+     "coordinates": null,
+     "span": {
+      "start": 363,
+      "end": 367
+     },
+     "digest": "7855925c89b1969ca3ce02f7d3e12e7e3fc05bed386f7ebd11ee9c69f156b790"
+    },
+    {
+     "row": 1,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.68",
+     "coordinates": null,
+     "span": {
+      "start": 367,
+      "end": 371
+     },
+     "digest": "057f12d7a9e342179095e8c3ebd7e1440c34411ef7b25d14707ddb1775d68d96"
+    },
+    {
+     "row": 2,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "gemini-1.5-pro",
+     "coordinates": null,
+     "span": {
+      "start": 371,
+      "end": 385
+     },
+     "digest": "6733d816e5b5f33124e4be20b4855fb9268db442700ad8c92b209aaf7efa0228"
+    },
+    {
+     "row": 2,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.34",
+     "coordinates": null,
+     "span": {
+      "start": 385,
+      "end": 389
+     },
+     "digest": "a552f0588e9ea5a335b66275e0d0449a2242cbced4d4cc36426288440c513b68"
+    },
+    {
+     "row": 2,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.63",
+     "coordinates": null,
+     "span": {
+      "start": 389,
+      "end": 393
+     },
+     "digest": "64f5dc746b84aa3c9ab7c41853fb192754cc616a0301ce18cea90a9855a82d6e"
+    },
+    {
+     "row": 2,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.43",
+     "coordinates": null,
+     "span": {
+      "start": 393,
+      "end": 397
+     },
+     "digest": "e66d37c68b94efb6ac28e156f9694843e9e3858da5f952b57a58c651a8028164"
+    },
+    {
+     "row": 2,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.58",
+     "coordinates": null,
+     "span": {
+      "start": 397,
+      "end": 401
+     },
+     "digest": "b8d5857135599eaec51a963704208b0f30b6d6bece28d612218225eb34629b4e"
+    },
+    {
+     "row": 3,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "gpt-4o-mini",
+     "coordinates": null,
+     "span": {
+      "start": 401,
+      "end": 412
+     },
+     "digest": "48bf7fbd40b9c3cf531ce9ffabf4d83558053431a49b95bf5f8bb783395d4fa8"
+    },
+    {
+     "row": 3,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.30",
+     "coordinates": null,
+     "span": {
+      "start": 412,
+      "end": 416
+     },
+     "digest": "19cba44eb9d7024b8e970013914eaa32c5d489b90d0a36b690819ab4e7f0d155"
+    },
+    {
+     "row": 3,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.55",
+     "coordinates": null,
+     "span": {
+      "start": 416,
+      "end": 420
+     },
+     "digest": "11e2cca3500bb9ef2fc62c70856fa31524893bdc89e8159759a867aec44f03e5"
+    },
+    {
+     "row": 3,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.46",
+     "coordinates": null,
+     "span": {
+      "start": 420,
+      "end": 424
+     },
+     "digest": "fd48da1c17715958bf2f973443d0cc58031efa52853581ba75da9b3849b49000"
+    },
+    {
+     "row": 3,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.62",
+     "coordinates": null,
+     "span": {
+      "start": 424,
+      "end": 428
+     },
+     "digest": "01e52a8a7f1dc13d762393ba9140f4bbd1a24897f8465b48bb925af92de04d57"
+    },
+    {
+     "row": 4,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "claude-3.5-haiku",
+     "coordinates": null,
+     "span": {
+      "start": 428,
+      "end": 444
+     },
+     "digest": "9ca40f6e89a9914a017494a10f8f470db4eaf9b087f7b9d180f720b31999c98e"
+    },
+    {
+     "row": 4,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.28",
+     "coordinates": null,
+     "span": {
+      "start": 444,
+      "end": 448
+     },
+     "digest": "a00d78f5c9b17664c755a0aa20bc8cde492ef7f464493f026214ee833ff6a998"
+    },
+    {
+     "row": 4,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.53",
+     "coordinates": null,
+     "span": {
+      "start": 448,
+      "end": 452
+     },
+     "digest": "6a7c34d9fac30094fddaa5351d4c8d7b3b9ca24a223e2c3223c36f7be71c2919"
+    },
+    {
+     "row": 4,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.44",
+     "coordinates": null,
+     "span": {
+      "start": 452,
+      "end": 456
+     },
+     "digest": "494584633aba821d9ecdce93ab7bf76936bf88d844bcb7cc79ffd95efd08bbdb"
+    },
+    {
+     "row": 4,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.56",
+     "coordinates": null,
+     "span": {
+      "start": 456,
+      "end": 460
+     },
+     "digest": "48731df253b2714238d6d4559a990a7e9a0232d60cb0afcf451a5b59490f7d55"
+    },
+    {
+     "row": 5,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "gemini-1.5-flash",
+     "coordinates": null,
+     "span": {
+      "start": 460,
+      "end": 476
+     },
+     "digest": "465ec7ae7690ba4dac86582743c95c08dac14926b095a094dbdf8e3b890b1aca"
+    },
+    {
+     "row": 5,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.21",
+     "coordinates": null,
+     "span": {
+      "start": 476,
+      "end": 480
+     },
+     "digest": "357a0d33cb94e8595feb936d08b814745093f28a8ee717a278ec75a2b1a201e9"
+    },
+    {
+     "row": 5,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.40",
+     "coordinates": null,
+     "span": {
+      "start": 480,
+      "end": 484
+     },
+     "digest": "e5e1f83e48e6223adbb969b74b3f4091307b974ebc8c404f30e71e8812f36591"
+    },
+    {
+     "row": 5,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.31",
+     "coordinates": null,
+     "span": {
+      "start": 484,
+      "end": 488
+     },
+     "digest": "bc3d026c39da4b10a8329fbbba9177d22bbee695cce8d00892ce25dc9319cff0"
+    },
+    {
+     "row": 5,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.48",
+     "coordinates": null,
+     "span": {
+      "start": 488,
+      "end": 492
+     },
+     "digest": "2190f3181a49d9f2dc973e262f1ca48a71e52177a9e8188b8ac4f1048d1759d3"
+    }
+   ],
+   "source_digest": "28ba20f8405f7dfa47e225bdb858c03748e4db26c707291de4b93ba5f39f42c5",
+   "missingness": null
+  }
+ ],
+ "table_missingness": null,
+ "formulas": [
+  {
+   "formula_id": "formula_0",
+   "section_path_id": "1~3",
+   "section_ordinal": 7,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "P (X = h | Y = g) = E g,h h∈G E h,g P ← P ∪ {h} e w ← e w -n h end while X ← X ∪ {P } end while"
+   },
+   "span": {
+    "start": 293,
+    "end": 388
+   },
+   "source_digest": "11bae8458190694b206b6f4a46afe8841d1b410de7327e6e00fbf8c7a17541b3",
+   "missingness": null
+  }
+ ],
+ "formula_missingness": null,
+ "page_text_missingness": null
+}

@@ -1,0 +1,2152 @@
+{
+ "paper_id": "2509.23292",
+ "title": "Learning How to Use Tools, Not Just When: Pattern-Aware Tool-Integrated Reasoning",
+ "abstract_text": "Tool-integrated reasoning (TIR) has become a key approach for improving large reasoning models (LRMs) on complex problems. Prior work has mainly studied when to invoke tools, while overlooking how tools are applied. We identify two common patterns: a calculator-pattern that uses code for direct computation, and an algorithmic-pattern that encodes problems as programs. Misaligned choices often cause failures even when reasoning is sound. We propose a two-stage framework that first builds code competence from both patterns and then aligns pattern selection with teacher preferences. Across challenging math datasets, our pattern-aware method substantially improves both code usage and accuracy-for instance, raising Code@1 on MATH500 from 64.0% to 70.5% and on AIME24 from 26.7% to 50.0%. These gains highlight the effectiveness of a pattern-aware approach for tool-integrated reasoning.",
+ "body_text": "IntroductionTool-integrated reasoning (TIR) has become a powerful paradigm for enhancing large reasoning models (LRMs) [57,8,77]. By interacting with external verifiers such as code interpreters, TIR enables models to produce executable reasoning steps, making answers more accurate, faithful, and verifiable [84]. Recent progress has shown gains from better timing of tool invocation, multi-round tool calls, and tighter integration of external computation [19,57].While effective, a critical question remains: can models reliably decide how to use tools once invoked? We provide an initial exploration of this problem. Models often misalign their tool-use strategies with problem demands, applying code in a mechanical and context-insensitive way that prevents the tool from working effectively. As Figure 1 illustrates, on the factorial problem 1000! ÷ (800! × 2!) the model used the calculator-pattern and failed due to overflow, while on the \"first 10-digit prime in π\" problem it used the algorithmic-pattern and stalled without output. In both cases, switching to the complementary pattern succeeds, indicating that the failures stem from pattern selection rather than a lack of reasoning ability.To address this challenge, we propose a two-stage learning framework. In the first stage, code competence acquisition, the model learns to generate reliable code from both calculatorand algorithmic-pattern data, without teacher preferences, ensuring stable tool use.In the second stage, pattern preference alignment, teacher signals guide the model to choose the Calculate Calculator: Use Python as a code Algorithmic: Use Python as a tool To Calculate the , I will use python factorial function from math library to calculate , and and then divide them to get the final result import math nu = math.factorial(1000) d1 = math.factorial(800) d2 = math.factorial(100) result = nu / (d1 * d2) print(result) Find the first 10-digit prime number in the decimal expansion of To calculate the first 10-digit prime number that appears in the decimal expansion of PI, I will use python to get the every 10 digit and then check if its prime or not. import mpmath mpmath.mp.dps = 11 pi_str = str(mpmath.mp.pi) [2:] print(pi_str) Okay so the first 10 digits are 1415926535, now I will use python to find out if its prime or not from sympy import isprime print(isprime(1415926535)) # False Okay so the first 10 digits are not prime, lets get the next 10 digits. import mpmath .... .... Okay so the first 1000 digi&lt;/EOS&gt; To calculate the first 10-digit prime number that appears in the decimal expansion of PI, I will use python to run a simulation which will check every 10 digits from the PI and see if its prime or not using library. import mpmath from sympy import isprime mpmath.mp.dps = 1000000 pi = mpmath.mp.pi pi_str = str(pi)[2:] def find_prime_in_pi(): ... find_prime_in_pi() # Found prime: 5926535897 Algorithmic: Use Python as a tool Calculator: Use Python as a code ✅ 2609335896245315522158.... ❌ OverflowError: integer division result too large for a float ✅ 5926535897 ❌ LimitError: Context Limit Reached The calculation of can be simplified by first expanding the factorial in the numerator. By canceling the term from the numerator and the denominator, the expression simplifies to: Given that , the final calculation is: Now, I will use python to calculate the product. result = 500 for i in range(801, 1000): result = result * i an algebraic approach succeeds while direct computation overflows. Right: in finding the first 10-digit prime in π, a symbolic approach fails from context limits while a scanning approach succeeds. These cases show that success depends on the chosen tool-use pattern.more suitable pattern for each problem. Together, these stages equip LRMs to not only invoke tools effectively but also adapt their strategy of use.Our experiments on challenging math benchmarks show substantial and consistent gains. The model's ability to produce executable code (@1) increases from 64.0% to 70.5% on MATH500, indicating that code competence acquisition markedly stabilizes tool use. At the same time, overall problem-solving accuracy rises from 26.7% to 50.0% on AIME24, demonstrating that pattern preference alignment further improves strategy selection and reduces failures due to mismatched tool use. Together, these results validate that modeling how tools are used-beyond merely invoking them-yields large improvements in both code reliability and end-task performance.This work makes three contributions. (1) We identify and formalize pattern mismatch in TIR, showing that misaligned tool-use strategies can derail otherwise sound reasoning. (2) We propose a two-stage framework that first builds code competence from both calculatorand algorithmic-pattern data (without teacher preferences) and then aligns pattern choice with teacher signals.(3) We provide empirical evidence on MATH500 and AIME24 that this approach substantially improves code@1 (64.0% → 70.5%) and accuracy (26.7% → 50.0%), and we illustrate how switching patterns flips failure cases into successes (Fig. 1).\nRelated Works\nReasoning with LRMsAmong various LLM abilities, foundational research in semantic matching [68,66] and temporal QA [67] has paved the way for complex understanding. While domain adaptation [26] and test-time integration [25] enhance robustness, reasoning ability achieved by post-training [24,34,32] stands as a key frontier. Given that traditional SFT may suffer from incomplete learning [65], recent works introduce uncertainty-aware reward modeling [64], dense feedback from LM critics [3], and preference-driven code generation [39] to refine alignment. Moreover, recent studies have advanced role-playing reasoning through humanactor emulation [5] and improved continual learning via prototype-conditioned generative replay [6].The scope of reasoning has expanded into multimodal domains, where models now \"think with 3D\" [12] and utilize reinforced visual perception [13,11]. Advanced frameworks like OmniVideo-R1 [14] and DV-Matcher [10] further integrate audio-visual and geometric cues. Such multimodal intelligence significantly boosts retrieval performance, including chat-driven search [61,60] and vision-driven video representation [63,62]. Furthermore, safeguarding techniques [76,33] and hallucination mitigation [75,28] ensure the reliability of these complex systems.To support deployment, system efficiency and continual learning have become indispensable.Inference is optimized via multi-tier KV cache management [16], selective sharing [17], and adaptive MoE scheduling [15,53]. Moreover, lightweight techniques like parameter-efficient sampling [74], structured pruning [41], and distillation [38] enable efficient task execution, from medical imaging [37] to web agents [18]. Finally, reversible alignment [58] and unified LoRA generation [59,9] allow models to learn continually, while comprehensive interaction surveys [40] and robust federated learning [7] continue to push the boundaries of scalable AI.Among LLMs' various abilities [69,83,45], subsequent work has focused on improving the quality of these reasoning paths, either by introducing diversity through self-consistency [56], refining intermediate steps via process supervision [42,31], or encouraging verification of intermediate results [79,54,82].Beyond core architecture, recent research emphasizes a data-centric perspective on the entire LLM lifecycle [47], where mathematical reasoning is further enhanced by adversarial data synthesis [78] and iterative DPO with dynamic sampling [48]. To improve model robustness and learning efficiency, advanced techniques such as difficulty-based sample weighting [85], implicit data augmentation [87], and adversarial training with anti-adversaries [86] have been introduced.In the context of embodied AI and spatio-temporal reasoning, unified token spaces for human-object interaction [73] and object-centric decoupling for robotic manipulation [71] have improved explainable decision-making. These abilities are further integrated into 3D scene understanding [72] and autonomous driving through spatio-temporal Chain-of-Thought (CoT) [80] and dual-memory vision-language navigation [81]. Furthermore, the application of multi-scale graph learning and Transformers has shown significant potential in predicting complex real-world dynamics, including financial fraud detection [35], traffic flow prediction [52], disaster risk assessment [50], mental health [70], recommendations [55] and socio-economic metrics such as labor market gradients [43] and business resilience indices [51].\nTool-Integrated ReasoningTool-integrated reasoning has emerged as a powerful paradigm for enhancing large reasoning models (LRMs) [57,8], enabling executable reasoning steps through external tools such as Python interpreters [84,30]. Early work like PoT [4], PAL [20], and MathPrompter [27] showed that converting reasoning into code execution or lightweight snippets can substantially improve math performance, while implementations such as ToRA [22] and Qwen2.5-Math-Instruct-TIR [49] further demonstrated gains from deeper integration. However, prior studies primarily focus on when to call tools, overlooking how tools are applied once invoked. We address this gap by modeling pattern selection in TIR, introducing a pattern-aware framework that aligns tool-use strategies and yields significant improvements in reasoning accuracy.\nMethod\nAlgorithmic-pattern\nAlgorithmic SolutionCalculator Solution\nProblem ProblemCode Competence Acquisition Problem 2: A Problem 2: C ….\nN Data\nStudent\n2N DataProblem 1: A Problem 1: CWe train a pattern-aware reasoning model in two stages. For stage 1, we builds code competence by supervising the model on both calculator-style and algorithmic-style solu-tions. Stage 2 performs pattern preference alignment, using Direct preference optimization (DPO) to learn the pattern preference.\nTraining set constructionWe distinguish two usage patterns in toolintegrated reasoning: the calculator-pattern, where code is used only for direct computation or verification, and the algorithmicpattern, where problems are expressed as full programs. For each problem, we generate a Chosen Solution with the more suitable pattern and a Counter Solution with the alternative one. This dual construction not only equips the model with competence in both styles of code usage, but also provides the supervision necessary to align its pattern selection with teacher preferences, thereby improving robustness and accuracy in downstream reasoning tasks. And We put the complete version is provided in Section A.\nCode Competence AcquisitionFor each problem x, we construct two solutions:• an algorithmic-style solution y alg that converts the problem to an execuable program;• a calculator-style solution y calc that keeps the reasoing path while using python for arithmetic or verification.We write both solutions with the same ouput shcema (reasoning → python block → ouputs → final answer), which can simplifies parsing and execution. Let D SF T = {(x i , y alg i ), (x i , y calc i )} be the set of both patterns, we minimize the negative log-likelihood over response tokens:L SFT = -E (x,y)∼D SFT |y| t=1 log π θ (y t | x, y &lt;t ),\nPattern Preference AlignmentWe use DPO [46] to empower our model with the ability to pick the correct pattern to solve math problems. For each problem x, we collect two candidate completions y alg , y calc and label a winner y + and loser y -using the teacher model. For a pair (x, y + , y -), we then apply direction preference optimization with a frozen reference policy π ref (our SFT model):L DPO = -log σ β log π θ (y + | x) -log π θ (y -| x) -log π ref (y + | x) -log π ref (y -| x) ,where β scales preference strength and σ is the logistic function. This increases the likelihood of preferred (pattern-appropriate) solutions relative to dispreferred ones, without training a separate reward model.\nExperiments\nDatasetWe use google Gemini-2.5-flash-lite as our teacher model, using our designed two pattern prompt to solve the problems in OpenR1-Math-220k [44] dataset. From this corpus, we select the first 10,000 problems and divide them into training and validation sets using a 9:1 ratio. To assess complex mathematical reasoning and generalization, we evaluate on a broad set of out-of-domain benchmarks, including MATH500 [23], AIME24 [1], and AMC23 [2].\nEvaluation MetricsWe report Pass@1 as the primary accuracy metric. For additional insight into reasoning behavior, we also track (i) the proportion of problems where the model's output contains executable code (Code@1), and (ii) the proportion of problems where such code is both present and leads to the correct final answer (Code+Pass@1). According to Table 1, the base model achieves near-zero code usage and accuracy. With SFT, the model begins to leverage Python extensively (e.g., R1Math Code@1 rises to 66%), and correctness follows accordingly. Adding DPO yields further substantial improvements, notably pushing GSM8K Code@1 from 72.0% to 80.1% and AIME24 from 26.7% to 50.0%, while also boosting correctness (e.g., AIME24 Code+Pass@1 from 6.6% to 26.7%). These results highlight that SFT is crucial for enabling tool use, whereas DPO markedly enhances both adoption and accuracy.\nMain Results\nMethod\nConclusionIn this work, we studied two complementary tool-use patterns-algorithmic code generation and calculator-style usage-and showed that many failures arise from mismatched pattern choices rather than reasoning ability. Experiments on GSM8K, MATH500, and AIME24 demonstrate that our pattern-aware approach improves strategy selection and accuracy, offering an effective and lightweight way to enhance tool-integrated reasoning.\nA Complete Prompt\nDouble Pattern PromptUse a python interpreter as a tool to solve the following math problem. There are two possible usage patterns:• Pattern A: Treat the problem as a coding problem, write a complete solution using Python code.• Pattern B: Treat the Python interpreter as a simple calculator, only using it for arithmetic or verification when needed. Your task:1. Decide which pattern (A or B) is more appropriate for this problem. Call this the Chosen Solution. 2. Provide the Chosen Solution with EXACTLY ONE continuous reasoning paragraph (no lists, no numbering, no bullet points). Then give ONE Python code block, then the code outputs, then the final answer. 3. Provide the Counterfactual Solution using the other pattern with the SAME constraints (one continuous reasoning paragraph, one code block, outputs, final answer). 4. Strict constraints: -Do NOT restate the problem text. -Do NOT include introductions, apologies, or meta comments. -Do NOT duplicate any content across fields. Output format (pure JSON, no backticks, no extra keys):{ \" problem \": \" &lt; the math problem here &gt;\" , \" chosen_pattern \": \" A or B \" , \" chosen_solution \": { \" reasoning \": \" &lt; one continuous paragraph &gt;\" , \" code_blocks \": [\" &lt; one python block only &gt;\"] , \" outputs \": [\" &lt; stdout lines &gt;\"] , \" final_answer \": \"...\" } , \" counter_solution \": { \" reasoning \": \" &lt; one continuous paragraph &gt;\" , \" code_blocks \": [\" &lt; one python block only &gt;\"] , \" outputs \": [\" &lt; stdout lines &gt;\"] , \" final_answer \": \"...\" } }\nB Additional Related Works on LLMS Reasoning CapacityAmong various LLM abilities, foundational research in semantic matching [68,66] and temporal QA [67] has paved the way for complex understanding. While domain adaptation [26] and test-time integration [25] enhance robustness, reasoning ability achieved by post-training [24,34] stands as a key frontier. Given that traditional SFT may suffer from incomplete learning [65], recent works introduce uncertainty-aware reward modeling [64], dense feedback from LM critics [3], and preference-driven code generation [39] to refine alignment. Moreover, recent studies have advanced role-playing reasoning through humanactor emulation [5] and improved continual learning via prototype-conditioned generative replay [6].Figure 1 :1Figure1: Pattern mismatch in tool-integrated reasoning. Left: in 1000! ÷ (800! × 2!), an algebraic approach succeeds while direct computation overflows. Right: in finding the first 10-digit prime in π, a symbolic approach fails from context limits while a scanning approach succeeds. These cases show that success depends on the chosen tool-use pattern.\nTable 1 :1Pass@1 and Code+Pass@1 accuracy on R1-Distill-Qwen models across R1Math, GSM8K, MATH500, and AIME24.R1MathGSM8K (OOD)MATH500 (OOD)AIME24 (OOD)Code@1 Code+Pass@1 Code@1 Code+Pass@1 Code@1 Code+Pass@1 Code@1 Code+Pass@1R1-Distill-Qwen-1.5BBase3.0%2.0%4.2%4.2%8.0%6.0%0.0%0.0%+SFT66.0%55.5%72.0%70.4%64.0%58.2%26.7%6.6%+SFT+DPO72.2%70.3%80.1%77.4%70.5%63.2%50.0%26.7%",
+ "sections": [
+  {
+   "title": "Introduction",
+   "text": "Tool-integrated reasoning (TIR) has become a powerful paradigm for enhancing large reasoning models (LRMs) [57,8,77]. By interacting with external verifiers such as code interpreters, TIR enables models to produce executable reasoning steps, making answers more accurate, faithful, and verifiable [84]. Recent progress has shown gains from better timing of tool invocation, multi-round tool calls, and tighter integration of external computation [19,57].While effective, a critical question remains: can models reliably decide how to use tools once invoked? We provide an initial exploration of this problem. Models often misalign their tool-use strategies with problem demands, applying code in a mechanical and context-insensitive way that prevents the tool from working effectively. As Figure 1 illustrates, on the factorial problem 1000! ÷ (800! × 2!) the model used the calculator-pattern and failed due to overflow, while on the \"first 10-digit prime in π\" problem it used the algorithmic-pattern and stalled without output. In both cases, switching to the complementary pattern succeeds, indicating that the failures stem from pattern selection rather than a lack of reasoning ability.To address this challenge, we propose a two-stage learning framework. In the first stage, code competence acquisition, the model learns to generate reliable code from both calculatorand algorithmic-pattern data, without teacher preferences, ensuring stable tool use.In the second stage, pattern preference alignment, teacher signals guide the model to choose the Calculate Calculator: Use Python as a code Algorithmic: Use Python as a tool To Calculate the , I will use python factorial function from math library to calculate , and and then divide them to get the final result import math nu = math.factorial(1000) d1 = math.factorial(800) d2 = math.factorial(100) result = nu / (d1 * d2) print(result) Find the first 10-digit prime number in the decimal expansion of To calculate the first 10-digit prime number that appears in the decimal expansion of PI, I will use python to get the every 10 digit and then check if its prime or not. import mpmath mpmath.mp.dps = 11 pi_str = str(mpmath.mp.pi) [2:] print(pi_str) Okay so the first 10 digits are 1415926535, now I will use python to find out if its prime or not from sympy import isprime print(isprime(1415926535)) # False Okay so the first 10 digits are not prime, lets get the next 10 digits. import mpmath .... .... Okay so the first 1000 digi&lt;/EOS&gt; To calculate the first 10-digit prime number that appears in the decimal expansion of PI, I will use python to run a simulation which will check every 10 digits from the PI and see if its prime or not using library. import mpmath from sympy import isprime mpmath.mp.dps = 1000000 pi = mpmath.mp.pi pi_str = str(pi)[2:] def find_prime_in_pi(): ... find_prime_in_pi() # Found prime: 5926535897 Algorithmic: Use Python as a tool Calculator: Use Python as a code ✅ 2609335896245315522158.... ❌ OverflowError: integer division result too large for a float ✅ 5926535897 ❌ LimitError: Context Limit Reached The calculation of can be simplified by first expanding the factorial in the numerator. By canceling the term from the numerator and the denominator, the expression simplifies to: Given that , the final calculation is: Now, I will use python to calculate the product. result = 500 for i in range(801, 1000): result = result * i an algebraic approach succeeds while direct computation overflows. Right: in finding the first 10-digit prime in π, a symbolic approach fails from context limits while a scanning approach succeeds. These cases show that success depends on the chosen tool-use pattern.more suitable pattern for each problem. Together, these stages equip LRMs to not only invoke tools effectively but also adapt their strategy of use.Our experiments on challenging math benchmarks show substantial and consistent gains. The model's ability to produce executable code (@1) increases from 64.0% to 70.5% on MATH500, indicating that code competence acquisition markedly stabilizes tool use. At the same time, overall problem-solving accuracy rises from 26.7% to 50.0% on AIME24, demonstrating that pattern preference alignment further improves strategy selection and reduces failures due to mismatched tool use. Together, these results validate that modeling how tools are used-beyond merely invoking them-yields large improvements in both code reliability and end-task performance.This work makes three contributions. (1) We identify and formalize pattern mismatch in TIR, showing that misaligned tool-use strategies can derail otherwise sound reasoning. (2) We propose a two-stage framework that first builds code competence from both calculatorand algorithmic-pattern data (without teacher preferences) and then aligns pattern choice with teacher signals.(3) We provide empirical evidence on MATH500 and AIME24 that this approach substantially improves code@1 (64.0% → 70.5%) and accuracy (26.7% → 50.0%), and we illustrate how switching patterns flips failure cases into successes (Fig. 1).",
+   "level": 1,
+   "path_id": "1",
+   "parent_section_id": null,
+   "order_in_parent": 0,
+   "section_id": "sec-1"
+  },
+  {
+   "title": "Related Works",
+   "text": "",
+   "level": 2,
+   "path_id": "2",
+   "parent_section_id": null,
+   "order_in_parent": 1,
+   "section_id": "sec-2"
+  },
+  {
+   "title": "Reasoning with LRMs",
+   "text": "Among various LLM abilities, foundational research in semantic matching [68,66] and temporal QA [67] has paved the way for complex understanding. While domain adaptation [26] and test-time integration [25] enhance robustness, reasoning ability achieved by post-training [24,34,32] stands as a key frontier. Given that traditional SFT may suffer from incomplete learning [65], recent works introduce uncertainty-aware reward modeling [64], dense feedback from LM critics [3], and preference-driven code generation [39] to refine alignment. Moreover, recent studies have advanced role-playing reasoning through humanactor emulation [5] and improved continual learning via prototype-conditioned generative replay [6].The scope of reasoning has expanded into multimodal domains, where models now \"think with 3D\" [12] and utilize reinforced visual perception [13,11]. Advanced frameworks like OmniVideo-R1 [14] and DV-Matcher [10] further integrate audio-visual and geometric cues. Such multimodal intelligence significantly boosts retrieval performance, including chat-driven search [61,60] and vision-driven video representation [63,62]. Furthermore, safeguarding techniques [76,33] and hallucination mitigation [75,28] ensure the reliability of these complex systems.To support deployment, system efficiency and continual learning have become indispensable.Inference is optimized via multi-tier KV cache management [16], selective sharing [17], and adaptive MoE scheduling [15,53]. Moreover, lightweight techniques like parameter-efficient sampling [74], structured pruning [41], and distillation [38] enable efficient task execution, from medical imaging [37] to web agents [18]. Finally, reversible alignment [58] and unified LoRA generation [59,9] allow models to learn continually, while comprehensive interaction surveys [40] and robust federated learning [7] continue to push the boundaries of scalable AI.Among LLMs' various abilities [69,83,45], subsequent work has focused on improving the quality of these reasoning paths, either by introducing diversity through self-consistency [56], refining intermediate steps via process supervision [42,31], or encouraging verification of intermediate results [79,54,82].Beyond core architecture, recent research emphasizes a data-centric perspective on the entire LLM lifecycle [47], where mathematical reasoning is further enhanced by adversarial data synthesis [78] and iterative DPO with dynamic sampling [48]. To improve model robustness and learning efficiency, advanced techniques such as difficulty-based sample weighting [85], implicit data augmentation [87], and adversarial training with anti-adversaries [86] have been introduced.In the context of embodied AI and spatio-temporal reasoning, unified token spaces for human-object interaction [73] and object-centric decoupling for robotic manipulation [71] have improved explainable decision-making. These abilities are further integrated into 3D scene understanding [72] and autonomous driving through spatio-temporal Chain-of-Thought (CoT) [80] and dual-memory vision-language navigation [81]. Furthermore, the application of multi-scale graph learning and Transformers has shown significant potential in predicting complex real-world dynamics, including financial fraud detection [35], traffic flow prediction [52], disaster risk assessment [50], mental health [70], recommendations [55] and socio-economic metrics such as labor market gradients [43] and business resilience indices [51].",
+   "level": 2,
+   "path_id": "2.1",
+   "parent_section_id": "sec-2",
+   "order_in_parent": 0,
+   "section_id": "sec-2.1"
+  },
+  {
+   "title": "Tool-Integrated Reasoning",
+   "text": "Tool-integrated reasoning has emerged as a powerful paradigm for enhancing large reasoning models (LRMs) [57,8], enabling executable reasoning steps through external tools such as Python interpreters [84,30]. Early work like PoT [4], PAL [20], and MathPrompter [27] showed that converting reasoning into code execution or lightweight snippets can substantially improve math performance, while implementations such as ToRA [22] and Qwen2.5-Math-Instruct-TIR [49] further demonstrated gains from deeper integration. However, prior studies primarily focus on when to call tools, overlooking how tools are applied once invoked. We address this gap by modeling pattern selection in TIR, introducing a pattern-aware framework that aligns tool-use strategies and yields significant improvements in reasoning accuracy.",
+   "level": 2,
+   "path_id": "2.2",
+   "parent_section_id": "sec-2",
+   "order_in_parent": 1,
+   "section_id": "sec-2.2"
+  },
+  {
+   "title": "Method",
+   "text": "",
+   "level": 3,
+   "path_id": "3",
+   "parent_section_id": null,
+   "order_in_parent": 2,
+   "section_id": "sec-3"
+  },
+  {
+   "title": "Algorithmic-pattern",
+   "text": "",
+   "level": 1,
+   "path_id": "1~2",
+   "parent_section_id": null,
+   "order_in_parent": 3,
+   "section_id": "sec-1~2"
+  },
+  {
+   "title": "Algorithmic Solution",
+   "text": "Calculator Solution",
+   "level": 1,
+   "path_id": "1~3",
+   "parent_section_id": null,
+   "order_in_parent": 4,
+   "section_id": "sec-1~3"
+  },
+  {
+   "title": "Problem Problem",
+   "text": "Code Competence Acquisition Problem 2: A Problem 2: C ….",
+   "level": 1,
+   "path_id": "1~4",
+   "parent_section_id": null,
+   "order_in_parent": 5,
+   "section_id": "sec-1~4"
+  },
+  {
+   "title": "N Data",
+   "text": "",
+   "level": 1,
+   "path_id": "1~5",
+   "parent_section_id": null,
+   "order_in_parent": 6,
+   "section_id": "sec-1~5"
+  },
+  {
+   "title": "Student",
+   "text": "",
+   "level": 1,
+   "path_id": "1~6",
+   "parent_section_id": null,
+   "order_in_parent": 7,
+   "section_id": "sec-1~6"
+  },
+  {
+   "title": "2N Data",
+   "text": "Problem 1: A Problem 1: CWe train a pattern-aware reasoning model in two stages. For stage 1, we builds code competence by supervising the model on both calculator-style and algorithmic-style solu-tions. Stage 2 performs pattern preference alignment, using Direct preference optimization (DPO) to learn the pattern preference.",
+   "level": 1,
+   "path_id": "1~7",
+   "parent_section_id": null,
+   "order_in_parent": 8,
+   "section_id": "sec-1~7"
+  },
+  {
+   "title": "Training set construction",
+   "text": "We distinguish two usage patterns in toolintegrated reasoning: the calculator-pattern, where code is used only for direct computation or verification, and the algorithmicpattern, where problems are expressed as full programs. For each problem, we generate a Chosen Solution with the more suitable pattern and a Counter Solution with the alternative one. This dual construction not only equips the model with competence in both styles of code usage, but also provides the supervision necessary to align its pattern selection with teacher preferences, thereby improving robustness and accuracy in downstream reasoning tasks. And We put the complete version is provided in Section A.",
+   "level": 2,
+   "path_id": "3.1",
+   "parent_section_id": "sec-3",
+   "order_in_parent": 0,
+   "section_id": "sec-3.1"
+  },
+  {
+   "title": "Code Competence Acquisition",
+   "text": "For each problem x, we construct two solutions:• an algorithmic-style solution y alg that converts the problem to an execuable program;• a calculator-style solution y calc that keeps the reasoing path while using python for arithmetic or verification.We write both solutions with the same ouput shcema (reasoning → python block → ouputs → final answer), which can simplifies parsing and execution. Let D SF T = {(x i , y alg i ), (x i , y calc i )} be the set of both patterns, we minimize the negative log-likelihood over response tokens:L SFT = -E (x,y)∼D SFT |y| t=1 log π θ (y t | x, y &lt;t ),",
+   "level": 2,
+   "path_id": "3.2",
+   "parent_section_id": "sec-3",
+   "order_in_parent": 1,
+   "section_id": "sec-3.2"
+  },
+  {
+   "title": "Pattern Preference Alignment",
+   "text": "We use DPO [46] to empower our model with the ability to pick the correct pattern to solve math problems. For each problem x, we collect two candidate completions y alg , y calc and label a winner y + and loser y -using the teacher model. For a pair (x, y + , y -), we then apply direction preference optimization with a frozen reference policy π ref (our SFT model):L DPO = -log σ β log π θ (y + | x) -log π θ (y -| x) -log π ref (y + | x) -log π ref (y -| x) ,where β scales preference strength and σ is the logistic function. This increases the likelihood of preferred (pattern-appropriate) solutions relative to dispreferred ones, without training a separate reward model.",
+   "level": 2,
+   "path_id": "3.3",
+   "parent_section_id": "sec-3",
+   "order_in_parent": 2,
+   "section_id": "sec-3.3"
+  },
+  {
+   "title": "Experiments",
+   "text": "",
+   "level": 4,
+   "path_id": "4",
+   "parent_section_id": null,
+   "order_in_parent": 9,
+   "section_id": "sec-4"
+  },
+  {
+   "title": "Dataset",
+   "text": "We use google Gemini-2.5-flash-lite as our teacher model, using our designed two pattern prompt to solve the problems in OpenR1-Math-220k [44] dataset. From this corpus, we select the first 10,000 problems and divide them into training and validation sets using a 9:1 ratio. To assess complex mathematical reasoning and generalization, we evaluate on a broad set of out-of-domain benchmarks, including MATH500 [23], AIME24 [1], and AMC23 [2].",
+   "level": 2,
+   "path_id": "4.1",
+   "parent_section_id": "sec-4",
+   "order_in_parent": 0,
+   "section_id": "sec-4.1"
+  },
+  {
+   "title": "Evaluation Metrics",
+   "text": "We report Pass@1 as the primary accuracy metric. For additional insight into reasoning behavior, we also track (i) the proportion of problems where the model's output contains executable code (Code@1), and (ii) the proportion of problems where such code is both present and leads to the correct final answer (Code+Pass@1). According to Table 1, the base model achieves near-zero code usage and accuracy. With SFT, the model begins to leverage Python extensively (e.g., R1Math Code@1 rises to 66%), and correctness follows accordingly. Adding DPO yields further substantial improvements, notably pushing GSM8K Code@1 from 72.0% to 80.1% and AIME24 from 26.7% to 50.0%, while also boosting correctness (e.g., AIME24 Code+Pass@1 from 6.6% to 26.7%). These results highlight that SFT is crucial for enabling tool use, whereas DPO markedly enhances both adoption and accuracy.",
+   "level": 2,
+   "path_id": "4.2",
+   "parent_section_id": "sec-4",
+   "order_in_parent": 1,
+   "section_id": "sec-4.2"
+  },
+  {
+   "title": "Main Results",
+   "text": "",
+   "level": 5,
+   "path_id": "5",
+   "parent_section_id": null,
+   "order_in_parent": 10,
+   "section_id": "sec-5"
+  },
+  {
+   "title": "Method",
+   "text": "",
+   "level": 1,
+   "path_id": "1~8",
+   "parent_section_id": null,
+   "order_in_parent": 11,
+   "section_id": "sec-1~8"
+  },
+  {
+   "title": "Conclusion",
+   "text": "In this work, we studied two complementary tool-use patterns-algorithmic code generation and calculator-style usage-and showed that many failures arise from mismatched pattern choices rather than reasoning ability. Experiments on GSM8K, MATH500, and AIME24 demonstrate that our pattern-aware approach improves strategy selection and accuracy, offering an effective and lightweight way to enhance tool-integrated reasoning.",
+   "level": 6,
+   "path_id": "6",
+   "parent_section_id": null,
+   "order_in_parent": 12,
+   "section_id": "sec-6"
+  },
+  {
+   "title": "A Complete Prompt",
+   "text": "",
+   "level": 1,
+   "path_id": "1~9",
+   "parent_section_id": null,
+   "order_in_parent": 13,
+   "section_id": "sec-1~9"
+  },
+  {
+   "title": "Double Pattern Prompt",
+   "text": "Use a python interpreter as a tool to solve the following math problem. There are two possible usage patterns:• Pattern A: Treat the problem as a coding problem, write a complete solution using Python code.• Pattern B: Treat the Python interpreter as a simple calculator, only using it for arithmetic or verification when needed. Your task:1. Decide which pattern (A or B) is more appropriate for this problem. Call this the Chosen Solution. 2. Provide the Chosen Solution with EXACTLY ONE continuous reasoning paragraph (no lists, no numbering, no bullet points). Then give ONE Python code block, then the code outputs, then the final answer. 3. Provide the Counterfactual Solution using the other pattern with the SAME constraints (one continuous reasoning paragraph, one code block, outputs, final answer). 4. Strict constraints: -Do NOT restate the problem text. -Do NOT include introductions, apologies, or meta comments. -Do NOT duplicate any content across fields. Output format (pure JSON, no backticks, no extra keys):{ \" problem \": \" &lt; the math problem here &gt;\" , \" chosen_pattern \": \" A or B \" , \" chosen_solution \": { \" reasoning \": \" &lt; one continuous paragraph &gt;\" , \" code_blocks \": [\" &lt; one python block only &gt;\"] , \" outputs \": [\" &lt; stdout lines &gt;\"] , \" final_answer \": \"...\" } , \" counter_solution \": { \" reasoning \": \" &lt; one continuous paragraph &gt;\" , \" code_blocks \": [\" &lt; one python block only &gt;\"] , \" outputs \": [\" &lt; stdout lines &gt;\"] , \" final_answer \": \"...\" } }",
+   "level": 1,
+   "path_id": "1~10",
+   "parent_section_id": null,
+   "order_in_parent": 14,
+   "section_id": "sec-1~10"
+  },
+  {
+   "title": "B Additional Related Works on LLMS Reasoning Capacity",
+   "text": "Among various LLM abilities, foundational research in semantic matching [68,66] and temporal QA [67] has paved the way for complex understanding. While domain adaptation [26] and test-time integration [25] enhance robustness, reasoning ability achieved by post-training [24,34] stands as a key frontier. Given that traditional SFT may suffer from incomplete learning [65], recent works introduce uncertainty-aware reward modeling [64], dense feedback from LM critics [3], and preference-driven code generation [39] to refine alignment. Moreover, recent studies have advanced role-playing reasoning through humanactor emulation [5] and improved continual learning via prototype-conditioned generative replay [6].",
+   "level": 1,
+   "path_id": "1~11",
+   "parent_section_id": null,
+   "order_in_parent": 15,
+   "section_id": "sec-1~11"
+  },
+  {
+   "title": "Figure 1 :",
+   "text": "1Figure1: Pattern mismatch in tool-integrated reasoning. Left: in 1000! ÷ (800! × 2!), an algebraic approach succeeds while direct computation overflows. Right: in finding the first 10-digit prime in π, a symbolic approach fails from context limits while a scanning approach succeeds. These cases show that success depends on the chosen tool-use pattern.",
+   "level": 1,
+   "path_id": "1~12",
+   "parent_section_id": null,
+   "order_in_parent": 16,
+   "section_id": "sec-1~12"
+  },
+  {
+   "title": "Table 1 :",
+   "text": "1Pass@1 and Code+Pass@1 accuracy on R1-Distill-Qwen models across R1Math, GSM8K, MATH500, and AIME24.R1MathGSM8K (OOD)MATH500 (OOD)AIME24 (OOD)Code@1 Code+Pass@1 Code@1 Code+Pass@1 Code@1 Code+Pass@1 Code@1 Code+Pass@1R1-Distill-Qwen-1.5BBase3.0%2.0%4.2%4.2%8.0%6.0%0.0%0.0%+SFT66.0%55.5%72.0%70.4%64.0%58.2%26.7%6.6%+SFT+DPO72.2%70.3%80.1%77.4%70.5%63.2%50.0%26.7%",
+   "level": 1,
+   "path_id": "1~13",
+   "parent_section_id": null,
+   "order_in_parent": 17,
+   "section_id": "sec-1~13"
+  }
+ ],
+ "citations": [
+  {
+   "raw_text": "Ai-MoTeam\n\t\t\n\t\t\n\t\tAIMO Validation Set -AIME Subset\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b0",
+     "section_path_id": "4.1",
+     "quote": "[1]",
+     "offset": 423
+    }
+   ]
+  },
+  {
+   "raw_text": "Ai-MoTeam\n\t\t\n\t\t\n\t\tAIMO Validation Set -AMC Subset\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b1",
+     "section_path_id": "1",
+     "quote": "(2)",
+     "offset": 4667
+    },
+    {
+     "ref_id": "b1",
+     "section_path_id": "4.1",
+     "quote": "[2]",
+     "offset": 438
+    }
+   ]
+  },
+  {
+   "raw_text": "Enhancing reinforcement learning with dense rewards from language model critic\n\t\t\n\t\t\tMengCao\n\t\t\n\t\n\t\n\t\tEMNLP\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Enhancing reinforcement learning with dense rewards from language model critic",
+   "anchors": [
+    {
+     "ref_id": "b2",
+     "section_path_id": "2.1",
+     "quote": "[3]",
+     "offset": 470
+    },
+    {
+     "ref_id": "b2",
+     "section_path_id": "1~11",
+     "quote": "[3]",
+     "offset": 467
+    }
+   ]
+  },
+  {
+   "raw_text": "Program of thoughts prompting: Disentangling computation from reasoning for numerical reasoning tasks\n\t\t\n\t\t\tWenhuChen\n\t\t\n\t\t\n\t\t\tXueguangMa\n\t\t\n\t\t\n\t\t\tXinyiWang\n\t\t\n\t\t\n\t\t\tWilliamWCohen\n\t\t\n\t\tarXiv:2211.12588\n\t\t\n\t\t\t2022\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2211.12588",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b3",
+     "section_path_id": "2.2",
+     "quote": "[4]",
+     "offset": 229
+    }
+   ]
+  },
+  {
+   "raw_text": "XiChen\n\t\t\n\t\t\n\t\t\tWeiXue\n\t\t\n\t\t\n\t\t\tYikeGuo\n\t\t\n\t\t\n\t\t\tActormind\n\t\t\n\t\tEmulating human actor reasoning for speech role-playing\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b4",
+     "section_path_id": "2.1",
+     "quote": "[5]",
+     "offset": 630
+    },
+    {
+     "ref_id": "b4",
+     "section_path_id": "1~11",
+     "quote": "[5]",
+     "offset": 627
+    }
+   ]
+  },
+  {
+   "raw_text": "Prototype conditioned generative replay for continual learning in NLP\n\t\t\n\t\t\tXiChen\n\t\t\n\t\t\n\t\t\tMinZeng\n\t\t\n\t\n\t\n\t\tProceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies\n\t\t\n\t\t\tLuisChiruzzo\n\t\t\n\t\t\n\t\t\tAlanRitter\n\t\t\n\t\t\n\t\t\tLuWang\n\t\t\n\t\tthe 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language TechnologiesAlbuquerque, New Mexico\n\t\t\n\t\t\tAssociation for Computational Linguistics\n\t\t\tApril 2025\n\t\t\t1\n\t\t\t\n\t\t\n\t\n\tLong Papers)",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Prototype conditioned generative replay for continual learning in NLP",
+   "anchors": [
+    {
+     "ref_id": "b5",
+     "section_path_id": "2.1",
+     "quote": "[6]",
+     "offset": 710
+    },
+    {
+     "ref_id": "b5",
+     "section_path_id": "1~11",
+     "quote": "[6]",
+     "offset": 707
+    }
+   ]
+  },
+  {
+   "raw_text": "Confusion-resistant federated learning via diffusion-based data harmonization on non-iid data\n\t\t\n\t\t\tXiaohongChen\n\t\t\n\t\n\t\n\t\tNeurIPS\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Confusion-resistant federated learning via diffusion-based data harmonization on non-iid data",
+   "anchors": [
+    {
+     "ref_id": "b6",
+     "section_path_id": "2.1",
+     "quote": "[7]",
+     "offset": 1859
+    }
+   ]
+  },
+  {
+   "raw_text": "R1-code-interpreter: Training llms to reason with code via supervised and reinforcement learning\n\t\t\n\t\t\tYongchaoChen\n\t\t\n\t\t\n\t\t\tYueyingLiu\n\t\t\n\t\t\n\t\t\tJunweiZhou\n\t\t\n\t\t\n\t\t\tYilunHao\n\t\t\n\t\t\n\t\t\tJingquanWang\n\t\t\n\t\t\n\t\t\tYangZhang\n\t\t\n\t\t\n\t\t\tChuchuFan\n\t\t\n\t\tarXiv:2505.21668\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2505.21668",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b7",
+     "section_path_id": "1",
+     "quote": "8,",
+     "offset": 111
+    },
+    {
+     "ref_id": "b7",
+     "section_path_id": "2.2",
+     "quote": "8]",
+     "offset": 109
+    }
+   ]
+  },
+  {
+   "raw_text": "A three-phases-lora finetuned hybrid llm integrated with strong prior module in the education context. In ICANN\n\t\t\n\t\t\tZhangquanChen\n\t\t\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b8",
+     "section_path_id": "2.1",
+     "quote": "9]",
+     "offset": 1746
+    }
+   ]
+  },
+  {
+   "raw_text": "Dv-matcher: Deformation-based non-rigid point cloud matching guided by pre-trained visual features\n\t\t\n\t\t\tZhangquanChen\n\t\t\n\t\n\t\n\t\tCVPR\n\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Dv-matcher: Deformation-based non-rigid point cloud matching guided by pre-trained visual features",
+   "anchors": [
+    {
+     "ref_id": "b9",
+     "section_path_id": "2.1",
+     "quote": "[10]",
+     "offset": 921
+    }
+   ]
+  },
+  {
+   "raw_text": "ZhangquanChen\n\t\t\n\t\tarXiv:2508.06259\n\t\tSpatially-aware image focus for visual reasoning\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2508.06259",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b10",
+     "section_path_id": "2.1",
+     "quote": "11]",
+     "offset": 858
+    }
+   ]
+  },
+  {
+   "raw_text": "Think with 3d: Geometric imagination grounded spatial reasoning from limited views\n\t\t\n\t\t\tZhangquanChen\n\t\t\n\t\tarXiv:2510.18632\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2510.18632",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b11",
+     "section_path_id": "2.1",
+     "quote": "[12]",
+     "offset": 808
+    }
+   ]
+  },
+  {
+   "raw_text": "Visrl: Intention-driven visual perception via reinforced reasoning\n\t\t\n\t\t\tZhangquanChen\n\t\t\n\t\tarXiv:2503.07523\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2503.07523",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b12",
+     "section_path_id": "2.1",
+     "quote": "[13,",
+     "offset": 854
+    }
+   ]
+  },
+  {
+   "raw_text": "Omnivideo-r1: Reinforcing audio-visual reasoning with query intention and modality attention\n\t\t\n\t\t\tZhangquanChen\n\t\t\n\t\tarXiv:2602.05847\n\t\t\n\t\t\t2026\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2602.05847",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b13",
+     "section_path_id": "2.1",
+     "quote": "[14]",
+     "offset": 901
+    }
+   ]
+  },
+  {
+   "raw_text": "Dynamic expert quantization for scalable mixture-of-experts inference\n\t\t\n\t\t\tKexinChu\n\t\t\n\t\tarXiv:2511.15015\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2511.15015",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b14",
+     "section_path_id": "2.1",
+     "quote": "[15,",
+     "offset": 1471
+    }
+   ]
+  },
+  {
+   "raw_text": "Mcam: Efficient llm inference with multi-tier kv cache management\n\t\t\n\t\t\tKexinChu\n\t\t\n\t\n\t\n\t\tICDCS\n\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Mcam: Efficient llm inference with multi-tier kv cache management",
+   "anchors": [
+    {
+     "ref_id": "b15",
+     "section_path_id": "2.1",
+     "quote": "[16]",
+     "offset": 1413
+    }
+   ]
+  },
+  {
+   "raw_text": "Selective kv-cache sharing to mitigate timing side-channels in llm inference\n\t\t\n\t\t\tKexinChu\n\t\t\n\t\tarXiv:2508.08438\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2508.08438",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b16",
+     "section_path_id": "2.1",
+     "quote": "[17]",
+     "offset": 1437
+    }
+   ]
+  },
+  {
+   "raw_text": "Dynaweb: Model-based reinforcement learning of web agents\n\t\t\n\t\t\tHangDing\n\t\t\n\t\tarXiv:2601.22149\n\t\t\n\t\t\t2026\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2601.22149",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b17",
+     "section_path_id": "2.1",
+     "quote": "[18]",
+     "offset": 1673
+    }
+   ]
+  },
+  {
+   "raw_text": "GuantingDong\n\t\t\n\t\t\n\t\t\tYifeiChen\n\t\t\n\t\t\n\t\t\tXiaoxiLi\n\t\t\n\t\t\n\t\t\tJiajieJin\n\t\t\n\t\t\n\t\t\tHongjinQian\n\t\t\n\t\t\n\t\t\tYutaoZhu\n\t\t\n\t\t\n\t\t\tHangyuMao\n\t\t\n\t\t\n\t\t\tGuoruiZhou\n\t\t\n\t\t\n\t\t\tZhichengDou\n\t\t\n\t\t\n\t\t\tJi-RongWen\n\t\t\n\t\tarXiv:2505.16410\n\t\tTool-star: Empowering llm-brained multi-tool reasoner via reinforcement learning\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2505.16410",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b18",
+     "section_path_id": "1",
+     "quote": "[19,",
+     "offset": 446
+    }
+   ]
+  },
+  {
+   "raw_text": "Pal: Program-aided language models\n\t\t\n\t\t\tLuyuGao\n\t\t\n\t\t\n\t\t\tAmanMadaan\n\t\t\n\t\t\n\t\t\tShuyanZhou\n\t\t\n\t\t\n\t\t\tUriAlon\n\t\t\n\t\t\n\t\t\tPengfeiLiu\n\t\t\n\t\t\n\t\t\tYimingYang\n\t\t\n\t\t\n\t\t\tJamieCallan\n\t\t\n\t\t\n\t\t\tGrahamNeubig\n\t\t\n\t\tPMLR\n\t\n\t\n\t\tInternational Conference on Machine Learning\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Pal: Program-aided language models",
+   "anchors": [
+    {
+     "ref_id": "b19",
+     "section_path_id": "2.2",
+     "quote": "[20]",
+     "offset": 238
+    }
+   ]
+  },
+  {
+   "raw_text": "Human-like summarization evaluation with chatgpt\n\t\t\n\t\t\tMingqiGao\n\t\t\n\t\t\n\t\t\tJieRuan\n\t\t\n\t\t\n\t\t\tRenliangSun\n\t\t\n\t\t\n\t\t\tXunjianYin\n\t\t\n\t\t\n\t\t\tShipingYang\n\t\t\n\t\t\n\t\t\tXiaojunWan\n\t\t\n\t\tarXiv:2304.02554\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2304.02554",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Tora: A tool-integrated reasoning agent for mathematical problem solving\n\t\t\n\t\t\tZhibinGou\n\t\t\n\t\t\n\t\t\tZhihongShao\n\t\t\n\t\t\n\t\t\tYeyunGong\n\t\t\n\t\t\n\t\t\tYelongShen\n\t\t\n\t\t\n\t\t\tYujiuYang\n\t\t\n\t\t\n\t\t\tMinlieHuang\n\t\t\n\t\t\n\t\t\tNanDuan\n\t\t\n\t\t\n\t\t\tWeizhuChen\n\t\t\n\t\tarXiv:2309.17452\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2309.17452",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b21",
+     "section_path_id": "2.2",
+     "quote": "[22]",
+     "offset": 422
+    }
+   ]
+  },
+  {
+   "raw_text": "Measuring mathematical problem solving with the math dataset\n\t\t\n\t\t\tDanHendrycks\n\t\t\n\t\t\n\t\t\tCollinBurns\n\t\t\n\t\t\n\t\t\tSauravKadavath\n\t\t\n\t\t\n\t\t\tAkulArora\n\t\t\n\t\t\n\t\t\tStevenBasart\n\t\t\n\t\t\n\t\t\tEricTang\n\t\t\n\t\t\n\t\t\tDawnSong\n\t\t\n\t\t\n\t\t\tJacobSteinhardt\n\t\t\n\t\tarXiv:2103.03874\n\t\t\n\t\t\t2021\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2103.03874",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b22",
+     "section_path_id": "4.1",
+     "quote": "[23]",
+     "offset": 410
+    }
+   ]
+  },
+  {
+   "raw_text": "Semantic-space exploration and exploitation in rlvr for llm reasoning\n\t\t\n\t\t\tFandingHuang\n\t\t\n\t\t\n\t\t\tGuanboHuang\n\t\t\n\t\t\n\t\t\tXiaoFan\n\t\t\n\t\t\n\t\t\tYiHe\n\t\t\n\t\t\n\t\t\tXiaoLiang\n\t\t\n\t\t\n\t\t\tXiaoChen\n\t\t\n\t\t\n\t\t\tQintingJiang\n\t\t\n\t\t\n\t\t\tFaisalNadeem Khan\n\t\t\n\t\t\n\t\t\tJingyanJiang\n\t\t\n\t\t\n\t\t\tZhiWang\n\t\t\n\t\tarXiv:2509.23808\n\t\t\n\t\t\t2026\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2509.23808",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b23",
+     "section_path_id": "2.1",
+     "quote": "[24,",
+     "offset": 270
+    },
+    {
+     "ref_id": "b23",
+     "section_path_id": "1~11",
+     "quote": "[24,",
+     "offset": 270
+    }
+   ]
+  },
+  {
+   "raw_text": "Cosmic: Clique-oriented semantic multi-space integration for robust clip test-time adaptation\n\t\t\n\t\t\tFandingHuang\n\t\t\n\t\t\n\t\t\tJingyanJiang\n\t\t\n\t\t\n\t\t\tQintingJiang\n\t\t\n\t\t\n\t\t\tHebeiLi\n\t\t\n\t\t\n\t\t\tFaisalNadeem Khan\n\t\t\n\t\t\n\t\t\tZhiWang\n\t\t\n\t\n\t\n\t\tCVPR\n\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Cosmic: Clique-oriented semantic multi-space integration for robust clip test-time adaptation",
+   "anchors": [
+    {
+     "ref_id": "b24",
+     "section_path_id": "2.1",
+     "quote": "[25]",
+     "offset": 201
+    },
+    {
+     "ref_id": "b24",
+     "section_path_id": "1~11",
+     "quote": "[25]",
+     "offset": 201
+    }
+   ]
+  },
+  {
+   "raw_text": "Dtbs: Dual-teacher bi-directional self-training for domain adaptation in nighttime semantic segmentation\n\t\t\n\t\t\tFandingHuang\n\t\t\n\t\t\n\t\t\tZihaoYao\n\t\t\n\t\t\n\t\t\tWenhuiZhou\n\t\t\n\t\n\t\n\t\tECAI\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Dtbs: Dual-teacher bi-directional self-training for domain adaptation in nighttime semantic segmentation",
+   "anchors": [
+    {
+     "ref_id": "b25",
+     "section_path_id": "2.1",
+     "quote": "[26]",
+     "offset": 170
+    },
+    {
+     "ref_id": "b25",
+     "section_path_id": "1~11",
+     "quote": "[26]",
+     "offset": 170
+    }
+   ]
+  },
+  {
+   "raw_text": "ShimaImani\n\t\t\n\t\t\n\t\t\tLiangDu\n\t\t\n\t\t\n\t\t\tHarshShrivastava\n\t\t\n\t\t\n\t\t\tMathprompter\n\t\t\n\t\tarXiv:2303.05398\n\t\tMathematical reasoning using large language models\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2303.05398",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b26",
+     "section_path_id": "2.2",
+     "quote": "[27]",
+     "offset": 261
+    }
+   ]
+  },
+  {
+   "raw_text": "Calibrating verbal uncertainty as a linear feature to reduce hallucinations\n\t\t\n\t\t\tJiZiwei\n\t\t\n\t\n\t\n\t\tEMNLP\n\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Calibrating verbal uncertainty as a linear feature to reduce hallucinations",
+   "anchors": [
+    {
+     "ref_id": "b27",
+     "section_path_id": "2.1",
+     "quote": "28]",
+     "offset": 1213
+    }
+   ]
+  },
+  {
+   "raw_text": "Memorization over reasoning? exposing and mitigating verbatim memorization in large language models&apos; character understanding evaluation\n\t\t\n\t\t\tYuxuanJiang\n\t\t\n\t\t\n\t\t\tFrancisFerraro\n\t\t\n\t\tarXiv:2412.14368\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2412.14368",
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Scribe: Structured mid-level supervision for tool-using language models\n\t\t\n\t\t\tYuxuanJiang\n\t\t\n\t\t\n\t\t\tFrancisFerraro\n\t\t\n\t\tarXiv:2601.03555\n\t\t\n\t\t\t2026\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2601.03555",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b29",
+     "section_path_id": "2.2",
+     "quote": "30]",
+     "offset": 204
+    }
+   ]
+  },
+  {
+   "raw_text": "Drp: Distilled reasoning pruning with skill-aware step decomposition for efficient large reasoning models\n\t\t\n\t\t\tYuxuanJiang\n\t\t\n\t\t\n\t\t\tDaweiLi\n\t\t\n\t\t\n\t\t\tFrankFerraro\n\t\t\n\t\tarXiv:2505.13975\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2505.13975",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b30",
+     "section_path_id": "2.1",
+     "quote": "31]",
+     "offset": 2150
+    }
+   ]
+  },
+  {
+   "raw_text": "Cornerstones or stumbling blocks? deciphering the rock tokens in on-policy distillation\n\t\t\n\t\t\tYuxuanJiang\n\t\t\n\t\t\n\t\t\tRunchaoLi\n\t\t\n\t\t\n\t\t\tShubhashisRoy Dipta\n\t\t\n\t\t\n\t\t\tDaweiLi\n\t\t\n\t\t\n\t\t\tZhaoYang\n\t\t\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b31",
+     "section_path_id": "2.1",
+     "quote": "32]",
+     "offset": 277
+    }
+   ]
+  },
+  {
+   "raw_text": "Contextual integrity in llms via reasoning and reinforcement learning\n\t\t\n\t\t\tGuangchenLan\n\t\t\n\t\n\t\n\t\tNeurIPS\n\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Contextual integrity in llms via reasoning and reinforcement learning",
+   "anchors": [
+    {
+     "ref_id": "b32",
+     "section_path_id": "2.1",
+     "quote": "33]",
+     "offset": 1176
+    }
+   ]
+  },
+  {
+   "raw_text": "Mappo: Maximum a posteriori preference optimization with prior knowledge\n\t\t\n\t\t\tGuangchenLan\n\t\t\n\t\tarXiv:2507.21183\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2507.21183",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b33",
+     "section_path_id": "2.1",
+     "quote": "34,",
+     "offset": 274
+    },
+    {
+     "ref_id": "b33",
+     "section_path_id": "1~11",
+     "quote": "34]",
+     "offset": 274
+    }
+   ]
+  },
+  {
+   "raw_text": "A multi-scale graph learning framework for financial fraud detection\n\t\t\n\t\t\tYimingLei\n\t\t\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b34",
+     "section_path_id": "2.1",
+     "quote": "[35]",
+     "offset": 3291
+    }
+   ]
+  },
+  {
+   "raw_text": "From generation to judgment: Opportunities and challenges of llm-as-a-judge\n\t\t\n\t\t\tDaweiLi\n\t\t\n\t\t\n\t\t\tBohanJiang\n\t\t\n\t\t\n\t\t\tLiangjieHuang\n\t\t\n\t\t\n\t\t\tAlimohammadBeigi\n\t\t\n\t\t\n\t\t\tChengshuaiZhao\n\t\t\n\t\t\n\t\t\tZhenTan\n\t\t\n\t\t\n\t\t\tAmritaBhattacharjee\n\t\t\n\t\t\n\t\t\tYuxuanJiang\n\t\t\n\t\t\n\t\t\tCanyuChen\n\t\t\n\t\t\n\t\t\tTianhaoWu\n\t\t\n\t\t\n\t\t\n\t\t\t2025. 2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": []
+  },
+  {
+   "raw_text": "Efficient medical image segmentation via reinforcement learning-driven k-space sampling\n\t\t\n\t\t\tYuqiLi\n\t\t\n\t\n\t\n\t\tIEEE TETCI\n\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Efficient medical image segmentation via reinforcement learning-driven k-space sampling",
+   "anchors": [
+    {
+     "ref_id": "b36",
+     "section_path_id": "2.1",
+     "quote": "[37]",
+     "offset": 1654
+    }
+   ]
+  },
+  {
+   "raw_text": "Frequency-aligned knowledge distillation for lightweight spatiotemporal forecasting\n\t\t\n\t\t\tYuqiLi\n\t\t\n\t\n\t\n\t\tICCV\n\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Frequency-aligned knowledge distillation for lightweight spatiotemporal forecasting",
+   "anchors": [
+    {
+     "ref_id": "b37",
+     "section_path_id": "2.1",
+     "quote": "[38]",
+     "offset": 1595
+    }
+   ]
+  },
+  {
+   "raw_text": "A preference-driven methodology for efficient code generation\n\t\t\n\t\t\tYuqiLi\n\t\t\n\t\n\t\n\t\tIEEE Transactions on Artificial Intelligence\n\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "A preference-driven methodology for efficient code generation",
+   "anchors": [
+    {
+     "ref_id": "b38",
+     "section_path_id": "2.1",
+     "quote": "[39]",
+     "offset": 513
+    },
+    {
+     "ref_id": "b38",
+     "section_path_id": "1~11",
+     "quote": "[39]",
+     "offset": 510
+    }
+   ]
+  },
+  {
+   "raw_text": "A comprehensive survey of interaction techniques in 3d scene generation\n\t\t\n\t\t\tYuqiLi\n\t\t\n\t\n\t\n\t\tAuthorea\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "A comprehensive survey of interaction techniques in 3d scene generation",
+   "anchors": [
+    {
+     "ref_id": "b39",
+     "section_path_id": "2.1",
+     "quote": "[40]",
+     "offset": 1824
+    }
+   ]
+  },
+  {
+   "raw_text": "Sepprune: Structured pruning for efficient deep speech separation\n\t\t\n\t\t\tYuqiLi\n\t\t\n\t\n\t\n\t\tAAAI\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Sepprune: Structured pruning for efficient deep speech separation",
+   "anchors": [
+    {
+     "ref_id": "b40",
+     "section_path_id": "2.1",
+     "quote": "[41]",
+     "offset": 1572
+    }
+   ]
+  },
+  {
+   "raw_text": "Let&apos;s verify step by step\n\t\t\n\t\t\tVineetHunter Lightman\n\t\t\n\t\t\n\t\t\tYuriKosaraju\n\t\t\n\t\t\n\t\t\tHarrisonBurda\n\t\t\n\t\t\n\t\t\tBowenEdwards\n\t\t\n\t\t\n\t\t\tTeddyBaker\n\t\t\n\t\t\n\t\t\tJanLee\n\t\t\n\t\t\n\t\t\tJohnLeike\n\t\t\n\t\t\n\t\t\tIlyaSchulman\n\t\t\n\t\t\n\t\t\tKarlSutskever\n\t\t\n\t\t\n\t\t\tCobbe\n\t\t\n\t\n\t\n\t\tThe Twelfth International Conference on Learning Representations\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Let&apos;s verify step by step",
+   "anchors": [
+    {
+     "ref_id": "b41",
+     "section_path_id": "2.1",
+     "quote": "[42,",
+     "offset": 2146
+    }
+   ]
+  },
+  {
+   "raw_text": "The health-wealth gradient in labor markets\n\t\t\n\t\t\tDingyuanLiu\n\t\t\n\t\n\t\n\t\tComputation\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "The health-wealth gradient in labor markets",
+   "anchors": [
+    {
+     "ref_id": "b42",
+     "section_path_id": "2.1",
+     "quote": "[43]",
+     "offset": 3457
+    }
+   ]
+  },
+  {
+   "raw_text": "Openr1-math-220k\n\t\t\n\t\n\t\n\t\tOpenR1 Team\n\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Openr1-math-220k",
+   "anchors": [
+    {
+     "ref_id": "b43",
+     "section_path_id": "4.1",
+     "quote": "[44]",
+     "offset": 138
+    }
+   ]
+  },
+  {
+   "raw_text": "Detecting abnormal user feedback patterns through temporal sentiment aggregation\n\t\t\n\t\t\tYalunQi\n\t\t\n\t\t\n\t\t\tSichenZhao\n\t\t\n\t\t\n\t\t\tZhimingXue\n\t\t\n\t\t\n\t\t\tXianlingZeng\n\t\t\n\t\t\n\t\t\tZihanYu\n\t\t\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b44",
+     "section_path_id": "2.1",
+     "quote": "45]",
+     "offset": 1947
+    }
+   ]
+  },
+  {
+   "raw_text": "Direct preference optimization: Your language model is secretly a reward model\n\t\t\n\t\t\tRafaelRafailov\n\t\t\n\t\t\n\t\t\tArchitSharma\n\t\t\n\t\t\n\t\t\tEricMitchell\n\t\t\n\t\t\n\t\t\tChristopherDManning\n\t\t\n\t\t\n\t\t\tStefanoErmon\n\t\t\n\t\t\n\t\t\tChelseaFinn\n\t\t\n\t\n\t\n\t\tAdvances in neural information processing systems\n\t\t\n\t\t\t36\n\t\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Direct preference optimization: Your language model is secretly a reward model",
+   "anchors": [
+    {
+     "ref_id": "b45",
+     "section_path_id": "3.3",
+     "quote": "[46]",
+     "offset": 11
+    }
+   ]
+  },
+  {
+   "raw_text": "A data-centric perspective on the lifecycle of large language models\n\t\t\n\t\t\tJunRao\n\t\t\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tTechRxiv",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b46",
+     "section_path_id": "2.1",
+     "quote": "[47]",
+     "offset": 2326
+    }
+   ]
+  },
+  {
+   "raw_text": "Dynamic sampling that adapts: Iterative dpo for self-aware mathematical reasoning\n\t\t\n\t\t\tJunRao\n\t\t\n\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b47",
+     "section_path_id": "2.1",
+     "quote": "[48]",
+     "offset": 2456
+    }
+   ]
+  },
+  {
+   "raw_text": "ZhihongShao\n\t\t\n\t\t\n\t\t\tPeiyiWang\n\t\t\n\t\t\n\t\t\tQihaoZhu\n\t\t\n\t\t\n\t\t\tRunxinXu\n\t\t\n\t\t\n\t\t\tJunxiaoSong\n\t\t\n\t\t\n\t\t\tXiaoBi\n\t\t\n\t\t\n\t\t\tHaoweiZhang\n\t\t\n\t\t\n\t\t\tMingchuanZhang\n\t\t\n\t\t\n\t\t\tYKLi\n\t\t\n\t\t\n\t\t\tYangWu\n\t\t\n\t\tarXiv:2402.03300\n\t\tPushing the limits of mathematical reasoning in open language models\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2402.03300",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b48",
+     "section_path_id": "2.2",
+     "quote": "[49]",
+     "offset": 457
+    }
+   ]
+  },
+  {
+   "raw_text": "Ai-enhanced disaster risk prediction with explainable shap analysis\n\t\t\n\t\t\tQiannanShen\n\t\t\n\t\n\t\n\t\tResearch Square\n\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Ai-enhanced disaster risk prediction with explainable shap analysis",
+   "anchors": [
+    {
+     "ref_id": "b49",
+     "section_path_id": "2.1",
+     "quote": "[50]",
+     "offset": 3352
+    }
+   ]
+  },
+  {
+   "raw_text": "Business resilience index (bri): Evaluating economic recovery\n\t\t\n\t\t\tQiannanShen\n\t\t\n\t\n\t\n\t\tSustainability\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Business resilience index (bri): Evaluating economic recovery",
+   "anchors": [
+    {
+     "ref_id": "b50",
+     "section_path_id": "2.1",
+     "quote": "[51]",
+     "offset": 3494
+    }
+   ]
+  },
+  {
+   "raw_text": "Mftformer: Meteorological-frequency-temporal transformer for traffic flow prediction\n\t\t\n\t\t\tQiannanShen\n\t\t\n\t\n\t\n\t\tResearch Square\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Mftformer: Meteorological-frequency-temporal transformer for traffic flow prediction",
+   "anchors": [
+    {
+     "ref_id": "b51",
+     "section_path_id": "2.1",
+     "quote": "[52]",
+     "offset": 3321
+    }
+   ]
+  },
+  {
+   "raw_text": "Expertflow: Adaptive expert scheduling and memory coordination for efficient moe inference\n\t\t\n\t\t\tZixuShen\n\t\t\n\t\tarXiv:2510.26730\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2510.26730",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b52",
+     "section_path_id": "2.1",
+     "quote": "53]",
+     "offset": 1475
+    }
+   ]
+  },
+  {
+   "raw_text": "Solving math word problems with process-and outcome-based feedback\n\t\t\n\t\t\tJonathanUesato\n\t\t\n\t\t\n\t\t\tNateKushman\n\t\t\n\t\t\n\t\t\tRamanaKumar\n\t\t\n\t\t\n\t\t\tFrancisSong\n\t\t\n\t\t\n\t\t\tNoahSiegel\n\t\t\n\t\t\n\t\t\tLisaWang\n\t\t\n\t\t\n\t\t\tAntoniaCreswell\n\t\t\n\t\t\n\t\t\tGeoffreyIrving\n\t\t\n\t\t\n\t\t\tIrinaHiggins\n\t\t\n\t\tarXiv:2211.14275\n\t\t\n\t\t\t2022\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2211.14275",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b53",
+     "section_path_id": "2.1",
+     "quote": "54,",
+     "offset": 2211
+    }
+   ]
+  },
+  {
+   "raw_text": "Improving sequential recommendations with tokenlevel llm representatio\n\t\t\n\t\t\tDingzhouWang\n\t\t\n\t\t\n\t\t\tLuChang\n\t\t\n\t\t\n\t\t\tLuyaoMen\n\t\t\n\t\t\n\t\t\tJiajunHe\n\t\t\n\t\t\n\t\t\tYinuoYang\n\t\t\n\t\t\n\t\t\tYefengLiang\n\t\t\n\t\n\t\n\t\t2025 4th International Conference on Cloud Computing, Big Data Application and Software Engineering (CBASE)\n\t\t\n\t\t\tIEEE\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Improving sequential recommendations with tokenlevel llm representatio",
+   "anchors": [
+    {
+     "ref_id": "b54",
+     "section_path_id": "2.1",
+     "quote": "[55]",
+     "offset": 3394
+    }
+   ]
+  },
+  {
+   "raw_text": "Self-consistency improves chain of thought reasoning in language models\n\t\t\n\t\t\tXuezhiWang\n\t\t\n\t\t\n\t\t\tJasonWei\n\t\t\n\t\t\n\t\t\tDaleSchuurmans\n\t\t\n\t\t\n\t\t\tQuocLe\n\t\t\n\t\t\n\t\t\tEdChi\n\t\t\n\t\t\n\t\t\tSharanNarang\n\t\t\n\t\t\n\t\t\tAakankshaChowdhery\n\t\t\n\t\t\n\t\t\tDennyZhou\n\t\t\n\t\tarXiv:2203.11171\n\t\t\n\t\t\t2022\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2203.11171",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b55",
+     "section_path_id": "2.1",
+     "quote": "[56]",
+     "offset": 2088
+    }
+   ]
+  },
+  {
+   "raw_text": "YifanWei\n\t\t\n\t\t\n\t\t\tXiaoyanYu\n\t\t\n\t\t\n\t\t\tYixuanWeng\n\t\t\n\t\t\n\t\t\tTengfeiPan\n\t\t\n\t\t\n\t\t\tAngshengLi\n\t\t\n\t\t\n\t\t\tLiDu\n\t\t\n\t\tarXiv:2507.21836\n\t\tAutotir: Autonomous tools integrated reasoning via reinforcement learning\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2507.21836",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b56",
+     "section_path_id": "1",
+     "quote": "[57,",
+     "offset": 107
+    },
+    {
+     "ref_id": "b56",
+     "section_path_id": "1",
+     "quote": "57]",
+     "offset": 450
+    },
+    {
+     "ref_id": "b56",
+     "section_path_id": "2.2",
+     "quote": "[57,",
+     "offset": 105
+    }
+   ]
+  },
+  {
+   "raw_text": "Reversible primitive-composition alignment for continual vision-language learning\n\t\t\n\t\t\tCanranXiao\n\t\t\n\t\n\t\n\t\tICLR\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Reversible primitive-composition alignment for continual vision-language learning",
+   "anchors": [
+    {
+     "ref_id": "b57",
+     "section_path_id": "2.1",
+     "quote": "[58]",
+     "offset": 1709
+    }
+   ]
+  },
+  {
+   "raw_text": "Meta-ucf: Unified task-conditioned lora generation for continual learning in large language models\n\t\t\n\t\t\tShilinXiao\n\t\t\n\t\n\t\n\t\tICLR\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Meta-ucf: Unified task-conditioned lora generation for continual learning in large language models",
+   "anchors": [
+    {
+     "ref_id": "b58",
+     "section_path_id": "2.1",
+     "quote": "[59,",
+     "offset": 1742
+    }
+   ]
+  },
+  {
+   "raw_text": "Conquer: Context-aware representation with query enhancement for text-based person search\n\t\t\n\t\t\tZequnXie\n\t\t\n\t\tarXiv:2601.18625\n\t\t\n\t\t\t2026\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2601.18625",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b59",
+     "section_path_id": "2.1",
+     "quote": "60]",
+     "offset": 1083
+    }
+   ]
+  },
+  {
+   "raw_text": "Chat-driven text generation and interaction for person retrieval\n\t\t\n\t\t\tZequnXie\n\t\t\n\t\n\t\n\t\tEMNLP\n\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Chat-driven text generation and interaction for person retrieval",
+   "anchors": [
+    {
+     "ref_id": "b60",
+     "section_path_id": "2.1",
+     "quote": "[61,",
+     "offset": 1079
+    }
+   ]
+  },
+  {
+   "raw_text": "Delving deeper: Hierarchical visual perception for robust video-text retrieval\n\t\t\n\t\t\tZequnXie\n\t\t\n\t\tarXiv:2601.12768\n\t\t\n\t\t\t2026\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2601.12768",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b61",
+     "section_path_id": "2.1",
+     "quote": "62]",
+     "offset": 1130
+    }
+   ]
+  },
+  {
+   "raw_text": "Hvd: Human vision-driven video representation learning for text-video retrieval\n\t\t\n\t\t\tZequnXie\n\t\t\n\t\tarXiv:2601.16155\n\t\t\n\t\t\t2026\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2601.16155",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b62",
+     "section_path_id": "2.1",
+     "quote": "[63,",
+     "offset": 1126
+    }
+   ]
+  },
+  {
+   "raw_text": "Reason only when needed: Efficient generative reward modeling via modelinternal uncertainty\n\t\t\n\t\t\tChao Xue\n\t\t\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b63",
+     "section_path_id": "2.1",
+     "quote": "[64]",
+     "offset": 433
+    },
+    {
+     "ref_id": "b63",
+     "section_path_id": "1~11",
+     "quote": "[64]",
+     "offset": 430
+    }
+   ]
+  },
+  {
+   "raw_text": "Why supervised fine-tuning fails to learn: A systematic study of incomplete learning in large language models\n\t\t\n\t\t\tChao Xue\n\t\t\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b64",
+     "section_path_id": "2.1",
+     "quote": "[65]",
+     "offset": 370
+    },
+    {
+     "ref_id": "b64",
+     "section_path_id": "1~11",
+     "quote": "[65]",
+     "offset": 367
+    }
+   ]
+  },
+  {
+   "raw_text": "Structcoh: Structured contrastive learning for context-aware text semantic matching\n\t\t\n\t\t\tChaoXue\n\t\t\n\t\t\n\t\t\tZiyuanGao\n\t\t\n\t\n\t\n\t\tPRICAI\n\t\t\n\t\t\t2025",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Structcoh: Structured contrastive learning for context-aware text semantic matching",
+   "anchors": [
+    {
+     "ref_id": "b65",
+     "section_path_id": "2.1",
+     "quote": "66]",
+     "offset": 76
+    },
+    {
+     "ref_id": "b65",
+     "section_path_id": "1~11",
+     "quote": "66]",
+     "offset": 76
+    }
+   ]
+  },
+  {
+   "raw_text": "Question calibration and multi-hop modeling for temporal question answering\n\t\t\n\t\t\tDiChao Xue\n\t\t\n\t\t\n\t\t\tPengfeiLiang\n\t\t\n\t\t\n\t\t\tJingWang\n\t\t\n\t\t\n\t\t\tZhang\n\t\t\n\t\n\t\n\t\tAAAI\n\t\t\n\t\t\t2024\n\t\t\t38",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Question calibration and multi-hop modeling for temporal question answering",
+   "anchors": [
+    {
+     "ref_id": "b66",
+     "section_path_id": "2.1",
+     "quote": "[67]",
+     "offset": 96
+    },
+    {
+     "ref_id": "b66",
+     "section_path_id": "1~11",
+     "quote": "[67]",
+     "offset": 96
+    }
+   ]
+  },
+  {
+   "raw_text": "Dual path modeling for semantic matching by perceiving subtle conflicts\n\t\t\n\t\t\tDiChao Xue\n\t\t\n\t\t\n\t\t\tSiruiLiang\n\t\t\n\t\t\n\t\t\tJingWang\n\t\t\n\t\t\n\t\t\tWeiZhang\n\t\t\n\t\t\n\t\t\tWu\n\t\t\n\t\n\t\n\t\tICASSP\n\t\t\n\t\t\t2023",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Dual path modeling for semantic matching by perceiving subtle conflicts",
+   "anchors": [
+    {
+     "ref_id": "b67",
+     "section_path_id": "2.1",
+     "quote": "[68,",
+     "offset": 72
+    },
+    {
+     "ref_id": "b67",
+     "section_path_id": "1~11",
+     "quote": "[68,",
+     "offset": 72
+    }
+   ]
+  },
+  {
+   "raw_text": "Resilient routing: Riskaware dynamic routing in smart logistics via spatiotemporal graph learning\n\t\t\n\t\t\tZhimingXue\n\t\t\n\t\t\n\t\t\tSichenZhao\n\t\t\n\t\t\n\t\t\tYalunQi\n\t\t\n\t\t\n\t\t\tXianlingZeng\n\t\t\n\t\t\n\t\t\tZihanYu\n\t\t\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b68",
+     "section_path_id": "2.1",
+     "quote": "[69,",
+     "offset": 1940
+    }
+   ]
+  },
+  {
+   "raw_text": "Yiming Taclis Luo, Tianyue Niu, Patrick Pang, Ao Xiang, and Qin Yang. Exploring the application boundaries of llms in mental health: A systematic scoping review\n\t\t\n\t\t\tJinhuaYang\n\t\t\n\t\t\n\t\t\tTingLiu\n\t\t\n\t\n\t\n\t\tFrontiers in Psychology\n\t\t\n\t\t\t16\n\t\t\t1715306\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Yiming Taclis Luo, Tianyue Niu, Patrick Pang, Ao Xiang, and Qin Yang. Exploring the application boundaries of llms in mental health: A systematic scoping review",
+   "anchors": [
+    {
+     "ref_id": "b69",
+     "section_path_id": "2.1",
+     "quote": "[70]",
+     "offset": 3372
+    }
+   ]
+  },
+  {
+   "raw_text": "Instrucrobo: Object-centric multi-instruction decoupling model for explainable robotic manipulation\n\t\t\n\t\t\tPanqiYang\n\t\t\n\t\n\t\n\t\tEngineering Applications of Artificial Intelligence\n\t\t\n\t\t\t171\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Instrucrobo: Object-centric multi-instruction decoupling model for explainable robotic manipulation",
+   "anchors": [
+    {
+     "ref_id": "b70",
+     "section_path_id": "2.1",
+     "quote": "[71]",
+     "offset": 2860
+    }
+   ]
+  },
+  {
+   "raw_text": "Unibvr: Balancing visual and reasoning abilities in unified 3d scene understanding\n\t\t\n\t\t\tPanqiYang\n\t\t\n\t\n\t\n\t\tNeurocomputing\n\t\t\n\t\t\t671\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Unibvr: Balancing visual and reasoning abilities in unified 3d scene understanding",
+   "anchors": [
+    {
+     "ref_id": "b71",
+     "section_path_id": "2.1",
+     "quote": "[72]",
+     "offset": 2975
+    }
+   ]
+  },
+  {
+   "raw_text": "Unihoi: Unified human-object interaction understanding via unified token space\n\t\t\n\t\t\tPanqiYang\n\t\t\n\t\n\t\n\t\tAAAI\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Unihoi: Unified human-object interaction understanding via unified token space",
+   "anchors": [
+    {
+     "ref_id": "b72",
+     "section_path_id": "2.1",
+     "quote": "[73]",
+     "offset": 2800
+    }
+   ]
+  },
+  {
+   "raw_text": "Swift sampler: Efficient learning of sampler by 10 parameters\n\t\t\n\t\t\tJiaweiYao\n\t\t\n\t\n\t\n\t\tNeurIPS\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Swift sampler: Efficient learning of sampler by 10 parameters",
+   "anchors": [
+    {
+     "ref_id": "b73",
+     "section_path_id": "2.1",
+     "quote": "[74]",
+     "offset": 1547
+    }
+   ]
+  },
+  {
+   "raw_text": "Mechanistic understanding and mitigation of language model non-factual hallucinations\n\t\t\n\t\t\tLeiYu\n\t\t\n\t\n\t\n\t\tEMNLP\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Mechanistic understanding and mitigation of language model non-factual hallucinations",
+   "anchors": [
+    {
+     "ref_id": "b74",
+     "section_path_id": "2.1",
+     "quote": "[75,",
+     "offset": 1209
+    }
+   ]
+  },
+  {
+   "raw_text": "Robust llm safeguarding via refusal feature adversarial training\n\t\t\n\t\t\tLeiYu\n\t\t\n\t\tarXiv:2409.20089\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2409.20089",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b75",
+     "section_path_id": "2.1",
+     "quote": "[76,",
+     "offset": 1172
+    }
+   ]
+  },
+  {
+   "raw_text": "Chain-of-reasoning: Towards unified mathematical reasoning in large language models via a multi-paradigm perspective\n\t\t\n\t\t\tYiyaoYu\n\t\t\n\t\t\n\t\t\tYuxiangZhang\n\t\t\n\t\t\n\t\t\tDongdongZhang\n\t\t\n\t\t\n\t\t\tXiaoLiang\n\t\t\n\t\t\n\t\t\tHengyuanZhang\n\t\t\n\t\t\n\t\t\tXingxingZhang\n\t\t\n\t\t\n\t\t\tZiyiYang\n\t\t\n\t\t\n\t\t\tMahmoudKhademi\n\t\t\n\t\t\n\t\t\tHanyAwadalla\n\t\t\n\t\t\n\t\t\tJunjieWang\n\t\t\n\t\tarXiv:2501.11110\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2501.11110",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b76",
+     "section_path_id": "1",
+     "quote": "77]",
+     "offset": 113
+    }
+   ]
+  },
+  {
+   "raw_text": "Mathagent: Adversarial evolution of constraint graphs for mathematical reasoning data synthesis\n\t\t\n\t\t\tZixiongYu\n\t\t\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b77",
+     "section_path_id": "2.1",
+     "quote": "[78]",
+     "offset": 2411
+    }
+   ]
+  },
+  {
+   "raw_text": "Star: Bootstrapping reasoning with reasoning\n\t\t\n\t\t\tEricZelikman\n\t\t\n\t\t\n\t\t\tYuhuaiWu\n\t\t\n\t\t\n\t\t\tJesseMu\n\t\t\n\t\t\n\t\t\tNoahGoodman\n\t\t\n\t\n\t\n\t\tAdvances in Neural Information Processing Systems\n\t\t\n\t\t\t35\n\t\t\t\n\t\t\t2022",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Star: Bootstrapping reasoning with reasoning",
+   "anchors": [
+    {
+     "ref_id": "b78",
+     "section_path_id": "2.1",
+     "quote": "[79,",
+     "offset": 2207
+    }
+   ]
+  },
+  {
+   "raw_text": "Futuresightdrive: Thinking visually with spatio-temporal cot for autonomous driving\n\t\t\n\t\t\tShuangZeng\n\t\t\n\t\tarXiv:2505.17685\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2505.17685",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b79",
+     "section_path_id": "2.1",
+     "quote": "[80]",
+     "offset": 3050
+    }
+   ]
+  },
+  {
+   "raw_text": "Janusvln: Decoupling semantics and spatiality with dual implicit memory for vision-language navigation\n\t\t\n\t\t\tShuangZeng\n\t\t\n\t\tarXiv:2509.22548\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2509.22548",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b80",
+     "section_path_id": "2.1",
+     "quote": "[81]",
+     "offset": 3098
+    }
+   ]
+  },
+  {
+   "raw_text": "Find your optimal teacher: Personalized data synthesis via router-guided multi-teacher distillation\n\t\t\n\t\t\tHengyuanZhang\n\t\t\n\t\t\n\t\t\tShipingYang\n\t\t\n\t\t\n\t\t\tXiaoLiang\n\t\t\n\t\t\n\t\t\tChenmingShang\n\t\t\n\t\t\n\t\t\tYuxuanJiang\n\t\t\n\t\t\n\t\t\tChaofanTao\n\t\t\n\t\t\n\t\t\tJingXiong\n\t\t\n\t\t\n\t\t\tHaydenKwok-Hay\n\t\t\n\t\t\n\t\t\tRuobingSo\n\t\t\n\t\t\n\t\t\tAngelXXie\n\t\t\n\t\t\n\t\t\tChang\n\t\t\n\t\tarXiv:2510.10925\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2510.10925",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b81",
+     "section_path_id": "2.1",
+     "quote": "82]",
+     "offset": 2214
+    }
+   ]
+  },
+  {
+   "raw_text": "Non-intrusive graph-based bot detection for e-commerce using inductive graph neural networks\n\t\t\n\t\t\tSichenZhao\n\t\t\n\t\t\n\t\t\tZhimingXue\n\t\t\n\t\t\n\t\t\tYalunQi\n\t\t\n\t\t\n\t\t\tXianlingZeng\n\t\t\n\t\t\n\t\t\tZihanYu\n\t\t\n\t\t\n\t\t\t2026",
+   "doi": null,
+   "arxiv_id": null,
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b82",
+     "section_path_id": "2.1",
+     "quote": "83,",
+     "offset": 1944
+    }
+   ]
+  },
+  {
+   "raw_text": "YuxiangZheng\n\t\t\n\t\t\n\t\t\tDayuanFu\n\t\t\n\t\t\n\t\t\tXiangkunHu\n\t\t\n\t\t\n\t\t\tXiaojieCai\n\t\t\n\t\t\n\t\t\tLyumanshanYe\n\t\t\n\t\t\n\t\t\tPengruiLu\n\t\t\n\t\t\n\t\t\tPengfeiLiu\n\t\t\n\t\t\n\t\t\tDeepresearcher\n\t\t\n\t\tarXiv:2504.03160\n\t\tScaling deep research via reinforcement learning in real-world environments\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2504.03160",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b83",
+     "section_path_id": "1",
+     "quote": "[84]",
+     "offset": 297
+    },
+    {
+     "ref_id": "b83",
+     "section_path_id": "2.2",
+     "quote": "[84,",
+     "offset": 200
+    }
+   ]
+  },
+  {
+   "raw_text": "Understanding difficulty-based sample weighting\n\t\t\n\t\t\tXiaolingZhou\n\t\t\n\t\n\t\n\t\tECML PKDD\n\t\t\n\t\t\t2022",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Understanding difficulty-based sample weighting",
+   "anchors": [
+    {
+     "ref_id": "b84",
+     "section_path_id": "2.1",
+     "quote": "[85]",
+     "offset": 2577
+    }
+   ]
+  },
+  {
+   "raw_text": "Adversarial training with anti-adversaries\n\t\t\n\t\t\tXiaolingZhou\n\t\t\n\t\n\t\n\t\tIEEE TPAMI\n\t\t\n\t\t\t2024",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Adversarial training with anti-adversaries",
+   "anchors": [
+    {
+     "ref_id": "b85",
+     "section_path_id": "2.1",
+     "quote": "[86]",
+     "offset": 2663
+    }
+   ]
+  },
+  {
+   "raw_text": "Boosting model resilience via implicit adversarial data augmentation\n\t\t\n\t\t\tXiaolingZhou\n\t\t\n\t\tarXiv:2404.16307\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint",
+   "doi": null,
+   "arxiv_id": "2404.16307",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b86",
+     "section_path_id": "2.1",
+     "quote": "[87]",
+     "offset": 2610
+    }
+   ]
+  }
+ ],
+ "layout_json": null,
+ "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">Learning How to Use Tools, Not Just When: Pattern-Aware Tool-Integrated Reasoning</title>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability  status=\"unknown\">\n\t\t\t\t\t<licence/>\n\t\t\t\t</availability>\n\t\t\t\t<date type=\"published\" when=\"2026-06-29\">29 Jun 2026</date>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Ningning</forename><surname>Xu</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of Georgia</orgName>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Yuxuan</forename><surname>Jiang</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff1\">\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of Maryland</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country>Baltimore County</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Shubhashis</forename><forename type=\"middle\">Roy</forename><surname>Dipta</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff1\">\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of Maryland</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country>Baltimore County</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Hengyuan</forename><surname>Zhang</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff2\">\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">The University of Hong Kong</orgName>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">Learning How to Use Tools, Not Just When: Pattern-Aware Tool-Integrated Reasoning</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date type=\"published\" when=\"2026-06-29\">29 Jun 2026</date>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">79A98986148B1D7EB479AA8F28035C80</idno>\n\t\t\t\t\t<idno type=\"arXiv\">arXiv:2509.23292v4[cs.AI]</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.0\" ident=\"GROBID\" when=\"2026-08-21T15:09+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.0</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>Tool-integrated reasoning (TIR) has become a key approach for improving large reasoning models (LRMs) on complex problems. Prior work has mainly studied when to invoke tools, while overlooking how tools are applied. We identify two common patterns: a calculator-pattern that uses code for direct computation, and an algorithmic-pattern that encodes problems as programs. Misaligned choices often cause failures even when reasoning is sound. We propose a two-stage framework that first builds code competence from both patterns and then aligns pattern selection with teacher preferences. Across challenging math datasets, our pattern-aware method substantially improves both code usage and accuracy-for instance, raising Code@1 on MATH500 from 64.0% to 70.5% and on AIME24 from 26.7% to 50.0%. These gains highlight the effectiveness of a pattern-aware approach for tool-integrated reasoning.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"8\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"9\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"10\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"11\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"1\">Introduction</head><p>Tool-integrated reasoning (TIR) has become a powerful paradigm for enhancing large reasoning models (LRMs) <ref type=\"bibr\" target=\"#b56\">[57,</ref><ref type=\"bibr\" target=\"#b7\">8,</ref><ref type=\"bibr\" target=\"#b76\">77]</ref>. By interacting with external verifiers such as code interpreters, TIR enables models to produce executable reasoning steps, making answers more accurate, faithful, and verifiable <ref type=\"bibr\" target=\"#b83\">[84]</ref>. Recent progress has shown gains from better timing of tool invocation, multi-round tool calls, and tighter integration of external computation <ref type=\"bibr\" target=\"#b18\">[19,</ref><ref type=\"bibr\" target=\"#b56\">57]</ref>.</p><p>While effective, a critical question remains: can models reliably decide how to use tools once invoked? We provide an initial exploration of this problem. Models often misalign their tool-use strategies with problem demands, applying code in a mechanical and context-insensitive way that prevents the tool from working effectively. As Figure <ref type=\"figure\" target=\"#fig_0\">1</ref> illustrates, on the factorial problem 1000! ÷ (800! × 2!) the model used the calculator-pattern and failed due to overflow, while on the \"first 10-digit prime in π\" problem it used the algorithmic-pattern and stalled without output. In both cases, switching to the complementary pattern succeeds, indicating that the failures stem from pattern selection rather than a lack of reasoning ability.</p><p>To address this challenge, we propose a two-stage learning framework. In the first stage, code competence acquisition, the model learns to generate reliable code from both calculatorand algorithmic-pattern data, without teacher preferences, ensuring stable tool use.</p><p>In the second stage, pattern preference alignment, teacher signals guide the model to choose the Calculate Calculator: Use Python as a code Algorithmic: Use Python as a tool To Calculate the , I will use python factorial function from math library to calculate , and and then divide them to get the final result import math nu = math.factorial(1000) d1 = math.factorial(800) d2 = math.factorial(100) result = nu / (d1 * d2) print(result) Find the first 10-digit prime number in the decimal expansion of To calculate the first 10-digit prime number that appears in the decimal expansion of PI, I will use python to get the every 10 digit and then check if its prime or not. import mpmath mpmath.mp.dps = 11 pi_str = str(mpmath.mp.pi) [2:] print(pi_str) Okay so the first 10 digits are 1415926535, now I will use python to find out if its prime or not from sympy import isprime print(isprime(1415926535)) # False Okay so the first 10 digits are not prime, lets get the next 10 digits. import mpmath .... .... Okay so the first 1000 digi&lt;/EOS&gt; To calculate the first 10-digit prime number that appears in the decimal expansion of PI, I will use python to run a simulation which will check every 10 digits from the PI and see if its prime or not using library. import mpmath from sympy import isprime mpmath.mp.dps = 1000000 pi = mpmath.mp.pi pi_str = str(pi)[2:] def find_prime_in_pi(): ... find_prime_in_pi() # Found prime: 5926535897 Algorithmic: Use Python as a tool Calculator: Use Python as a code ✅ 2609335896245315522158.... ❌ OverflowError: integer division result too large for a float ✅ 5926535897 ❌ LimitError: Context Limit Reached The calculation of can be simplified by first expanding the factorial in the numerator. By canceling the term from the numerator and the denominator, the expression simplifies to: Given that , the final calculation is: Now, I will use python to calculate the product. result = 500 for i in range(801, 1000): result = result * i an algebraic approach succeeds while direct computation overflows. Right: in finding the first 10-digit prime in π, a symbolic approach fails from context limits while a scanning approach succeeds. These cases show that success depends on the chosen tool-use pattern.</p><p>more suitable pattern for each problem. Together, these stages equip LRMs to not only invoke tools effectively but also adapt their strategy of use.</p><p>Our experiments on challenging math benchmarks show substantial and consistent gains. The model's ability to produce executable code (@1) increases from 64.0% to 70.5% on MATH500, indicating that code competence acquisition markedly stabilizes tool use. At the same time, overall problem-solving accuracy rises from 26.7% to 50.0% on AIME24, demonstrating that pattern preference alignment further improves strategy selection and reduces failures due to mismatched tool use. Together, these results validate that modeling how tools are used-beyond merely invoking them-yields large improvements in both code reliability and end-task performance.</p><p>This work makes three contributions. (1) We identify and formalize pattern mismatch in TIR, showing that misaligned tool-use strategies can derail otherwise sound reasoning. <ref type=\"bibr\" target=\"#b1\">(2)</ref> We propose a two-stage framework that first builds code competence from both calculatorand algorithmic-pattern data (without teacher preferences) and then aligns pattern choice with teacher signals.</p><p>(3) We provide empirical evidence on MATH500 and AIME24 that this approach substantially improves code@1 (64.0% → 70.5%) and accuracy (26.7% → 50.0%), and we illustrate how switching patterns flips failure cases into successes (Fig. <ref type=\"figure\" target=\"#fig_0\">1</ref>).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2\">Related Works</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.1\">Reasoning with LRMs</head><p>Among various LLM abilities, foundational research in semantic matching <ref type=\"bibr\" target=\"#b67\">[68,</ref><ref type=\"bibr\" target=\"#b65\">66]</ref> and temporal QA <ref type=\"bibr\" target=\"#b66\">[67]</ref> has paved the way for complex understanding. While domain adaptation <ref type=\"bibr\" target=\"#b25\">[26]</ref> and test-time integration <ref type=\"bibr\" target=\"#b24\">[25]</ref> enhance robustness, reasoning ability achieved by post-training <ref type=\"bibr\" target=\"#b23\">[24,</ref><ref type=\"bibr\" target=\"#b33\">34,</ref><ref type=\"bibr\" target=\"#b31\">32]</ref> stands as a key frontier. Given that traditional SFT may suffer from incomplete learning <ref type=\"bibr\" target=\"#b64\">[65]</ref>, recent works introduce uncertainty-aware reward modeling <ref type=\"bibr\" target=\"#b63\">[64]</ref>, dense feedback from LM critics <ref type=\"bibr\" target=\"#b2\">[3]</ref>, and preference-driven code generation <ref type=\"bibr\" target=\"#b38\">[39]</ref> to refine alignment. Moreover, recent studies have advanced role-playing reasoning through humanactor emulation <ref type=\"bibr\" target=\"#b4\">[5]</ref> and improved continual learning via prototype-conditioned generative replay <ref type=\"bibr\" target=\"#b5\">[6]</ref>.</p><p>The scope of reasoning has expanded into multimodal domains, where models now \"think with 3D\" <ref type=\"bibr\" target=\"#b11\">[12]</ref> and utilize reinforced visual perception <ref type=\"bibr\" target=\"#b12\">[13,</ref><ref type=\"bibr\" target=\"#b10\">11]</ref>. Advanced frameworks like OmniVideo-R1 <ref type=\"bibr\" target=\"#b13\">[14]</ref> and DV-Matcher <ref type=\"bibr\" target=\"#b9\">[10]</ref> further integrate audio-visual and geometric cues. Such multimodal intelligence significantly boosts retrieval performance, including chat-driven search <ref type=\"bibr\" target=\"#b60\">[61,</ref><ref type=\"bibr\" target=\"#b59\">60]</ref> and vision-driven video representation <ref type=\"bibr\" target=\"#b62\">[63,</ref><ref type=\"bibr\" target=\"#b61\">62]</ref>. Furthermore, safeguarding techniques <ref type=\"bibr\" target=\"#b75\">[76,</ref><ref type=\"bibr\" target=\"#b32\">33]</ref> and hallucination mitigation <ref type=\"bibr\" target=\"#b74\">[75,</ref><ref type=\"bibr\" target=\"#b27\">28]</ref> ensure the reliability of these complex systems.</p><p>To support deployment, system efficiency and continual learning have become indispensable.</p><p>Inference is optimized via multi-tier KV cache management <ref type=\"bibr\" target=\"#b15\">[16]</ref>, selective sharing <ref type=\"bibr\" target=\"#b16\">[17]</ref>, and adaptive MoE scheduling <ref type=\"bibr\" target=\"#b14\">[15,</ref><ref type=\"bibr\" target=\"#b52\">53]</ref>. Moreover, lightweight techniques like parameter-efficient sampling <ref type=\"bibr\" target=\"#b73\">[74]</ref>, structured pruning <ref type=\"bibr\" target=\"#b40\">[41]</ref>, and distillation <ref type=\"bibr\" target=\"#b37\">[38]</ref> enable efficient task execution, from medical imaging <ref type=\"bibr\" target=\"#b36\">[37]</ref> to web agents <ref type=\"bibr\" target=\"#b17\">[18]</ref>. Finally, reversible alignment <ref type=\"bibr\" target=\"#b57\">[58]</ref> and unified LoRA generation <ref type=\"bibr\" target=\"#b58\">[59,</ref><ref type=\"bibr\" target=\"#b8\">9]</ref> allow models to learn continually, while comprehensive interaction surveys <ref type=\"bibr\" target=\"#b39\">[40]</ref> and robust federated learning <ref type=\"bibr\" target=\"#b6\">[7]</ref> continue to push the boundaries of scalable AI.</p><p>Among LLMs' various abilities <ref type=\"bibr\" target=\"#b68\">[69,</ref><ref type=\"bibr\" target=\"#b82\">83,</ref><ref type=\"bibr\" target=\"#b44\">45]</ref>, subsequent work has focused on improving the quality of these reasoning paths, either by introducing diversity through self-consistency <ref type=\"bibr\" target=\"#b55\">[56]</ref>, refining intermediate steps via process supervision <ref type=\"bibr\" target=\"#b41\">[42,</ref><ref type=\"bibr\" target=\"#b30\">31]</ref>, or encouraging verification of intermediate results <ref type=\"bibr\" target=\"#b78\">[79,</ref><ref type=\"bibr\" target=\"#b53\">54,</ref><ref type=\"bibr\" target=\"#b81\">82]</ref>.</p><p>Beyond core architecture, recent research emphasizes a data-centric perspective on the entire LLM lifecycle <ref type=\"bibr\" target=\"#b46\">[47]</ref>, where mathematical reasoning is further enhanced by adversarial data synthesis <ref type=\"bibr\" target=\"#b77\">[78]</ref> and iterative DPO with dynamic sampling <ref type=\"bibr\" target=\"#b47\">[48]</ref>. To improve model robustness and learning efficiency, advanced techniques such as difficulty-based sample weighting <ref type=\"bibr\" target=\"#b84\">[85]</ref>, implicit data augmentation <ref type=\"bibr\" target=\"#b86\">[87]</ref>, and adversarial training with anti-adversaries <ref type=\"bibr\" target=\"#b85\">[86]</ref> have been introduced.</p><p>In the context of embodied AI and spatio-temporal reasoning, unified token spaces for human-object interaction <ref type=\"bibr\" target=\"#b72\">[73]</ref> and object-centric decoupling for robotic manipulation <ref type=\"bibr\" target=\"#b70\">[71]</ref> have improved explainable decision-making. These abilities are further integrated into 3D scene understanding <ref type=\"bibr\" target=\"#b71\">[72]</ref> and autonomous driving through spatio-temporal Chain-of-Thought (CoT) <ref type=\"bibr\" target=\"#b79\">[80]</ref> and dual-memory vision-language navigation <ref type=\"bibr\" target=\"#b80\">[81]</ref>. Furthermore, the application of multi-scale graph learning and Transformers has shown significant potential in predicting complex real-world dynamics, including financial fraud detection <ref type=\"bibr\" target=\"#b34\">[35]</ref>, traffic flow prediction <ref type=\"bibr\" target=\"#b51\">[52]</ref>, disaster risk assessment <ref type=\"bibr\" target=\"#b49\">[50]</ref>, mental health <ref type=\"bibr\" target=\"#b69\">[70]</ref>, recommendations <ref type=\"bibr\" target=\"#b54\">[55]</ref> and socio-economic metrics such as labor market gradients <ref type=\"bibr\" target=\"#b42\">[43]</ref> and business resilience indices <ref type=\"bibr\" target=\"#b50\">[51]</ref>.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"2.2\">Tool-Integrated Reasoning</head><p>Tool-integrated reasoning has emerged as a powerful paradigm for enhancing large reasoning models (LRMs) <ref type=\"bibr\" target=\"#b56\">[57,</ref><ref type=\"bibr\" target=\"#b7\">8]</ref>, enabling executable reasoning steps through external tools such as Python interpreters <ref type=\"bibr\" target=\"#b83\">[84,</ref><ref type=\"bibr\" target=\"#b29\">30]</ref>. Early work like PoT <ref type=\"bibr\" target=\"#b3\">[4]</ref>, PAL <ref type=\"bibr\" target=\"#b19\">[20]</ref>, and MathPrompter <ref type=\"bibr\" target=\"#b26\">[27]</ref> showed that converting reasoning into code execution or lightweight snippets can substantially improve math performance, while implementations such as ToRA <ref type=\"bibr\" target=\"#b21\">[22]</ref> and Qwen2.5-Math-Instruct-TIR <ref type=\"bibr\" target=\"#b48\">[49]</ref> further demonstrated gains from deeper integration. However, prior studies primarily focus on when to call tools, overlooking how tools are applied once invoked. We address this gap by modeling pattern selection in TIR, introducing a pattern-aware framework that aligns tool-use strategies and yields significant improvements in reasoning accuracy.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3\">Method</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Algorithmic-pattern</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Algorithmic Solution</head><p>Calculator Solution</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Problem Problem</head><p>Code Competence Acquisition Problem 2: A Problem 2: C ….</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>N Data</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Student</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>2N Data</head><p>Problem 1: A Problem 1: C</p><p>We train a pattern-aware reasoning model in two stages. For stage 1, we builds code competence by supervising the model on both calculator-style and algorithmic-style solu-tions. Stage 2 performs pattern preference alignment, using Direct preference optimization (DPO) to learn the pattern preference.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.1\">Training set construction</head><p>We distinguish two usage patterns in toolintegrated reasoning: the calculator-pattern, where code is used only for direct computation or verification, and the algorithmicpattern, where problems are expressed as full programs. For each problem, we generate a Chosen Solution with the more suitable pattern and a Counter Solution with the alternative one. This dual construction not only equips the model with competence in both styles of code usage, but also provides the supervision necessary to align its pattern selection with teacher preferences, thereby improving robustness and accuracy in downstream reasoning tasks. And We put the complete version is provided in Section A.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.2\">Code Competence Acquisition</head><p>For each problem x, we construct two solutions:</p><p>• an algorithmic-style solution y alg that converts the problem to an execuable program;</p><p>• a calculator-style solution y calc that keeps the reasoing path while using python for arithmetic or verification.</p><p>We write both solutions with the same ouput shcema (reasoning → python block → ouputs → final answer), which can simplifies parsing and execution. Let D SF T = {(x i , y alg i ), (x i , y calc i )} be the set of both patterns, we minimize the negative log-likelihood over response tokens:</p><formula xml:id=\"formula_0\">L SFT = -E (x,y)∼D SFT |y| t=1 log π θ (y t | x, y &lt;t ),</formula></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"3.3\">Pattern Preference Alignment</head><p>We use DPO <ref type=\"bibr\" target=\"#b45\">[46]</ref> to empower our model with the ability to pick the correct pattern to solve math problems. For each problem x, we collect two candidate completions y alg , y calc and label a winner y + and loser y -using the teacher model. For a pair (x, y + , y -), we then apply direction preference optimization with a frozen reference policy π ref (our SFT model):</p><formula xml:id=\"formula_1\">L DPO = -log σ β log π θ (y + | x) -log π θ (y -| x) -log π ref (y + | x) -log π ref (y -| x) ,</formula><p>where β scales preference strength and σ is the logistic function. This increases the likelihood of preferred (pattern-appropriate) solutions relative to dispreferred ones, without training a separate reward model.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4\">Experiments</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.1\">Dataset</head><p>We use google Gemini-2.5-flash-lite as our teacher model, using our designed two pattern prompt to solve the problems in OpenR1-Math-220k <ref type=\"bibr\" target=\"#b43\">[44]</ref> dataset. From this corpus, we select the first 10,000 problems and divide them into training and validation sets using a 9:1 ratio. To assess complex mathematical reasoning and generalization, we evaluate on a broad set of out-of-domain benchmarks, including MATH500 <ref type=\"bibr\" target=\"#b22\">[23]</ref>, AIME24 <ref type=\"bibr\" target=\"#b0\">[1]</ref>, and AMC23 <ref type=\"bibr\" target=\"#b1\">[2]</ref>.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"4.2\">Evaluation Metrics</head><p>We report Pass@1 as the primary accuracy metric. For additional insight into reasoning behavior, we also track (i) the proportion of problems where the model's output contains executable code (Code@1), and (ii) the proportion of problems where such code is both present and leads to the correct final answer (Code+Pass@1). According to Table <ref type=\"table\" target=\"#tab_0\">1</ref>, the base model achieves near-zero code usage and accuracy. With SFT, the model begins to leverage Python extensively (e.g., R1Math Code@1 rises to 66%), and correctness follows accordingly. Adding DPO yields further substantial improvements, notably pushing GSM8K Code@1 from 72.0% to 80.1% and AIME24 from 26.7% to 50.0%, while also boosting correctness (e.g., AIME24 Code+Pass@1 from 6.6% to 26.7%). These results highlight that SFT is crucial for enabling tool use, whereas DPO markedly enhances both adoption and accuracy.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"5\">Main Results</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Method</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head n=\"6\">Conclusion</head><p>In this work, we studied two complementary tool-use patterns-algorithmic code generation and calculator-style usage-and showed that many failures arise from mismatched pattern choices rather than reasoning ability. Experiments on GSM8K, MATH500, and AIME24 demonstrate that our pattern-aware approach improves strategy selection and accuracy, offering an effective and lightweight way to enhance tool-integrated reasoning.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>A Complete Prompt</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Double Pattern Prompt</head><p>Use a python interpreter as a tool to solve the following math problem. There are two possible usage patterns:</p><p>• Pattern A: Treat the problem as a coding problem, write a complete solution using Python code.</p><p>• Pattern B: Treat the Python interpreter as a simple calculator, only using it for arithmetic or verification when needed. Your task:</p><p>1. Decide which pattern (A or B) is more appropriate for this problem. Call this the Chosen Solution. 2. Provide the Chosen Solution with EXACTLY ONE continuous reasoning paragraph (no lists, no numbering, no bullet points). Then give ONE Python code block, then the code outputs, then the final answer. 3. Provide the Counterfactual Solution using the other pattern with the SAME constraints (one continuous reasoning paragraph, one code block, outputs, final answer). 4. Strict constraints: -Do NOT restate the problem text. -Do NOT include introductions, apologies, or meta comments. -Do NOT duplicate any content across fields. Output format (pure JSON, no backticks, no extra keys):</p><p>{ \" problem \": \" &lt; the math problem here &gt;\" , \" chosen_pattern \": \" A or B \" , \" chosen_solution \": { \" reasoning \": \" &lt; one continuous paragraph &gt;\" , \" code_blocks \": [\" &lt; one python block only &gt;\"] , \" outputs \": [\" &lt; stdout lines &gt;\"] , \" final_answer \": \"...\" } , \" counter_solution \": { \" reasoning \": \" &lt; one continuous paragraph &gt;\" , \" code_blocks \": [\" &lt; one python block only &gt;\"] , \" outputs \": [\" &lt; stdout lines &gt;\"] , \" final_answer \": \"...\" } }</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>B Additional Related Works on LLMS Reasoning Capacity</head><p>Among various LLM abilities, foundational research in semantic matching <ref type=\"bibr\" target=\"#b67\">[68,</ref><ref type=\"bibr\" target=\"#b65\">66]</ref> and temporal QA <ref type=\"bibr\" target=\"#b66\">[67]</ref> has paved the way for complex understanding. While domain adaptation <ref type=\"bibr\" target=\"#b25\">[26]</ref> and test-time integration <ref type=\"bibr\" target=\"#b24\">[25]</ref> enhance robustness, reasoning ability achieved by post-training <ref type=\"bibr\" target=\"#b23\">[24,</ref><ref type=\"bibr\" target=\"#b33\">34]</ref> stands as a key frontier. Given that traditional SFT may suffer from incomplete learning <ref type=\"bibr\" target=\"#b64\">[65]</ref>, recent works introduce uncertainty-aware reward modeling <ref type=\"bibr\" target=\"#b63\">[64]</ref>, dense feedback from LM critics <ref type=\"bibr\" target=\"#b2\">[3]</ref>, and preference-driven code generation <ref type=\"bibr\" target=\"#b38\">[39]</ref> to refine alignment. Moreover, recent studies have advanced role-playing reasoning through humanactor emulation <ref type=\"bibr\" target=\"#b4\">[5]</ref> and improved continual learning via prototype-conditioned generative replay <ref type=\"bibr\" target=\"#b5\">[6]</ref>.</p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Pattern mismatch in tool-integrated reasoning. Left: in 1000! ÷ (800! × 2!), an algebraic approach succeeds while direct computation overflows. Right: in finding the first 10-digit prime in π, a symbolic approach fails from context limits while a scanning approach succeeds. These cases show that success depends on the chosen tool-use pattern.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_0\"><head>Table 1 :</head><label>1</label><figDesc>Pass@1 and Code+Pass@1 accuracy on R1-Distill-Qwen models across R1Math, GSM8K, MATH500, and AIME24.</figDesc><table><row><cell></cell><cell></cell><cell>R1Math</cell><cell cols=\"2\">GSM8K (OOD)</cell><cell cols=\"2\">MATH500 (OOD)</cell><cell cols=\"2\">AIME24 (OOD)</cell></row><row><cell></cell><cell cols=\"8\">Code@1 Code+Pass@1 Code@1 Code+Pass@1 Code@1 Code+Pass@1 Code@1 Code+Pass@1</cell></row><row><cell cols=\"2\">R1-Distill-Qwen-1.5B</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Base</cell><cell>3.0%</cell><cell>2.0%</cell><cell>4.2%</cell><cell>4.2%</cell><cell>8.0%</cell><cell>6.0%</cell><cell>0.0%</cell><cell>0.0%</cell></row><row><cell>+SFT</cell><cell>66.0%</cell><cell>55.5%</cell><cell>72.0%</cell><cell>70.4%</cell><cell>64.0%</cell><cell>58.2%</cell><cell>26.7%</cell><cell>6.6%</cell></row><row><cell>+SFT+DPO</cell><cell>72.2%</cell><cell>70.3%</cell><cell>80.1%</cell><cell>77.4%</cell><cell>70.5%</cell><cell>63.2%</cell><cell>50.0%</cell><cell>26.7%</cell></row></table></figure>\n\t\t</body>\n\t\t<back>\n\t\t\t<div type=\"annex\">\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>The scope of reasoning has expanded into multimodal domains, where models now \"think with 3D\" <ref type=\"bibr\" target=\"#b11\">[12]</ref> and utilize reinforced visual perception <ref type=\"bibr\" target=\"#b12\">[13,</ref><ref type=\"bibr\" target=\"#b10\">11]</ref>. Advanced frameworks like OmniVideo-R1 <ref type=\"bibr\" target=\"#b13\">[14]</ref> and DV-Matcher <ref type=\"bibr\" target=\"#b9\">[10]</ref> further integrate audio-visual and geometric cues. Such multimodal intelligence significantly boosts retrieval performance, including chat-driven search <ref type=\"bibr\" target=\"#b60\">[61,</ref><ref type=\"bibr\" target=\"#b59\">60]</ref> and vision-driven video representation <ref type=\"bibr\" target=\"#b62\">[63,</ref><ref type=\"bibr\" target=\"#b61\">62]</ref>. Furthermore, safeguarding techniques <ref type=\"bibr\" target=\"#b75\">[76,</ref><ref type=\"bibr\" target=\"#b32\">33]</ref> and hallucination mitigation <ref type=\"bibr\" target=\"#b74\">[75,</ref><ref type=\"bibr\" target=\"#b27\">28]</ref> ensure the reliability of these complex systems.</p><p>To support deployment, system efficiency and continual learning have become indispensable. Inference is optimized via multi-tier KV cache management <ref type=\"bibr\" target=\"#b15\">[16]</ref>, selective sharing <ref type=\"bibr\" target=\"#b16\">[17]</ref>, and adaptive MoE scheduling <ref type=\"bibr\" target=\"#b14\">[15,</ref><ref type=\"bibr\" target=\"#b52\">53]</ref>. Moreover, lightweight techniques like parameter-efficient sampling <ref type=\"bibr\" target=\"#b73\">[74]</ref>, structured pruning <ref type=\"bibr\" target=\"#b40\">[41]</ref>, and distillation <ref type=\"bibr\" target=\"#b37\">[38]</ref> enable efficient task execution, from medical imaging <ref type=\"bibr\" target=\"#b36\">[37]</ref> to web agents <ref type=\"bibr\" target=\"#b17\">[18]</ref>. Finally, reversible alignment <ref type=\"bibr\" target=\"#b57\">[58]</ref> and unified LoRA generation <ref type=\"bibr\" target=\"#b58\">[59,</ref><ref type=\"bibr\" target=\"#b8\">9]</ref> allow models to learn continually, while comprehensive interaction surveys <ref type=\"bibr\" target=\"#b39\">[40]</ref> and robust federated learning <ref type=\"bibr\" target=\"#b6\">[7]</ref> continue to push the boundaries of scalable AI.</p><p>Beyond core architecture, recent research emphasizes a data-centric perspective on the entire LLM lifecycle <ref type=\"bibr\" target=\"#b46\">[47]</ref>, where mathematical reasoning is further enhanced by adversarial data synthesis <ref type=\"bibr\" target=\"#b77\">[78]</ref> and iterative DPO with dynamic sampling <ref type=\"bibr\" target=\"#b47\">[48]</ref>. To improve model robustness and learning efficiency, advanced techniques such as difficulty-based sample weighting <ref type=\"bibr\" target=\"#b84\">[85]</ref>, implicit data augmentation <ref type=\"bibr\" target=\"#b86\">[87]</ref>, and adversarial training with anti-adversaries <ref type=\"bibr\" target=\"#b85\">[86]</ref> have been introduced.</p><p>In the context of embodied AI and spatio-temporal reasoning, unified token spaces for human-object interaction <ref type=\"bibr\" target=\"#b72\">[73]</ref> and object-centric decoupling for robotic manipulation <ref type=\"bibr\" target=\"#b70\">[71]</ref> have improved explainable decision-making. These abilities are further integrated into 3D scene understanding <ref type=\"bibr\" target=\"#b71\">[72]</ref> and autonomous driving through spatio-temporal Chain-of-Thought (CoT) <ref type=\"bibr\" target=\"#b79\">[80]</ref> and dual-memory vision-language navigation <ref type=\"bibr\" target=\"#b80\">[81]</ref>. Furthermore, the application of multi-scale graph learning and Transformers has shown significant potential in predicting complex real-world dynamics, including financial fraud detection <ref type=\"bibr\" target=\"#b34\">[35]</ref>, traffic flow prediction <ref type=\"bibr\" target=\"#b51\">[52]</ref>, disaster risk assessment <ref type=\"bibr\" target=\"#b49\">[50]</ref>, mental health <ref type=\"bibr\" target=\"#b69\">[70]</ref>, recommendations <ref type=\"bibr\" target=\"#b54\">[55]</ref> and socio-economic metrics such as labor market gradients <ref type=\"bibr\" target=\"#b42\">[43]</ref> and business resilience indices <ref type=\"bibr\" target=\"#b50\">[51]</ref>.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>C Evaluate Pattern Chosen</head><p>To further examine the reliability of Gemini's pattern selection, we asked GPT-5 to independently select patterns without prior exposure to Gemini's choices. Across 100 test cases, GPT-5's selections were consistent with Gemini's in 98 instances, corresponding to a 98% agreement rate. This high level of concordance provides strong empirical support for the robustness of our approach. This follows LLM as a Judge <ref type=\"bibr\" target=\"#b35\">[36,</ref><ref type=\"bibr\" target=\"#b20\">21,</ref><ref type=\"bibr\" target=\"#b28\">29]</ref> method.</p></div>\t\t\t</div>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ai-Mo</forename><surname>Team</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://huggingface.co/datasets/AI-MO/aimo-validation-aime\" />\n\t\t<title level=\"m\">AIMO Validation Set -AIME Subset</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ai-Mo</forename><surname>Team</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://huggingface.co/datasets/AI-MO/aimo-validation-amc\" />\n\t\t<title level=\"m\">AIMO Validation Set -AMC Subset</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Enhancing reinforcement learning with dense rewards from language model critic</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Meng</forename><surname>Cao</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">EMNLP</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Program of thoughts prompting: Disentangling computation from reasoning for numerical reasoning tasks</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Wenhu</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xueguang</forename><surname>Ma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xinyi</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">William</forename><forename type=\"middle\">W</forename><surname>Cohen</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2211.12588</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xi</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Wei</forename><surname>Xue</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yike</forename><surname>Guo</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Actormind</surname></persName>\n\t\t</author>\n\t\t<title level=\"m\">Emulating human actor reasoning for speech role-playing</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Prototype conditioned generative replay for continual learning in NLP</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xi</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Min</forename><surname>Zeng</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies</title>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">Luis</forename><surname>Chiruzzo</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">Alan</forename><surname>Ritter</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><forename type=\"first\">Lu</forename><surname>Wang</surname></persName>\n\t\t</editor>\n\t\t<meeting>the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Albuquerque, New Mexico</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Association for Computational Linguistics</publisher>\n\t\t\t<date type=\"published\" when=\"2025-04\">April 2025</date>\n\t\t\t<biblScope unit=\"volume\">1</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"12754\" to=\"12770\" />\n\t\t</imprint>\n\t</monogr>\n\t<note>Long Papers)</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Confusion-resistant federated learning via diffusion-based data harmonization on non-iid data</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiaohong</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">NeurIPS</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b7\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">R1-code-interpreter: Training llms to reason with code via supervised and reinforcement learning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yongchao</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yueying</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Junwei</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yilun</forename><surname>Hao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jingquan</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yang</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Chuchu</forename><surname>Fan</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2505.21668</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b8\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">A three-phases-lora finetuned hybrid llm integrated with strong prior module in the education context. In ICANN</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhangquan</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b9\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Dv-matcher: Deformation-based non-rigid point cloud matching guided by pre-trained visual features</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhangquan</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">CVPR</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b10\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhangquan</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2508.06259</idno>\n\t\t<title level=\"m\">Spatially-aware image focus for visual reasoning</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b11\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Think with 3d: Geometric imagination grounded spatial reasoning from limited views</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhangquan</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2510.18632</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b12\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Visrl: Intention-driven visual perception via reinforced reasoning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhangquan</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2503.07523</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b13\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Omnivideo-r1: Reinforcing audio-visual reasoning with query intention and modality attention</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhangquan</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2602.05847</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b14\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Dynamic expert quantization for scalable mixture-of-experts inference</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Kexin</forename><surname>Chu</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2511.15015</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b15\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Mcam: Efficient llm inference with multi-tier kv cache management</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Kexin</forename><surname>Chu</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">ICDCS</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b16\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Selective kv-cache sharing to mitigate timing side-channels in llm inference</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Kexin</forename><surname>Chu</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2508.08438</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b17\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Dynaweb: Model-based reinforcement learning of web agents</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Hang</forename><surname>Ding</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2601.22149</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b18\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Guanting</forename><surname>Dong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yifei</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiaoxi</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jiajie</forename><surname>Jin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Hongjin</forename><surname>Qian</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yutao</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Hangyu</forename><surname>Mao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Guorui</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhicheng</forename><surname>Dou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ji-Rong</forename><surname>Wen</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2505.16410</idno>\n\t\t<title level=\"m\">Tool-star: Empowering llm-brained multi-tool reasoner via reinforcement learning</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b19\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Pal: Program-aided language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Luyu</forename><surname>Gao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Aman</forename><surname>Madaan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shuyan</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Uri</forename><surname>Alon</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Pengfei</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yiming</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jamie</forename><surname>Callan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Graham</forename><surname>Neubig</surname></persName>\n\t\t</author>\n\t\t<idno>PMLR</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">International Conference on Machine Learning</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"10764\" to=\"10799\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b20\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Human-like summarization evaluation with chatgpt</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Mingqi</forename><surname>Gao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jie</forename><surname>Ruan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Renliang</forename><surname>Sun</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xunjian</forename><surname>Yin</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shiping</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiaojun</forename><surname>Wan</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2304.02554</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b21\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Tora: A tool-integrated reasoning agent for mathematical problem solving</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhibin</forename><surname>Gou</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhihong</forename><surname>Shao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yeyun</forename><surname>Gong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yelong</forename><surname>Shen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yujiu</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Minlie</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Nan</forename><surname>Duan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Weizhu</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2309.17452</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b22\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Measuring mathematical problem solving with the math dataset</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dan</forename><surname>Hendrycks</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Collin</forename><surname>Burns</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Saurav</forename><surname>Kadavath</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Akul</forename><surname>Arora</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Steven</forename><surname>Basart</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Eric</forename><surname>Tang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dawn</forename><surname>Song</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jacob</forename><surname>Steinhardt</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2103.03874</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2021\">2021</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b23\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Semantic-space exploration and exploitation in rlvr for llm reasoning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Fanding</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Guanbo</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiao</forename><surname>Fan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yi</forename><surname>He</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiao</forename><surname>Liang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiao</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Qinting</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Faisal</forename><surname>Nadeem Khan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jingyan</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhi</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2509.23808</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b24\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Cosmic: Clique-oriented semantic multi-space integration for robust clip test-time adaptation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Fanding</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jingyan</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Qinting</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Hebei</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Faisal</forename><surname>Nadeem Khan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhi</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">CVPR</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t\t<biblScope unit=\"page\" from=\"9772\" to=\"9781\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b25\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Dtbs: Dual-teacher bi-directional self-training for domain adaptation in nighttime semantic segmentation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Fanding</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zihao</forename><surname>Yao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Wenhui</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">ECAI</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"1084\" to=\"1091\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b26\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shima</forename><surname>Imani</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Liang</forename><surname>Du</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Harsh</forename><surname>Shrivastava</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Mathprompter</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2303.05398</idno>\n\t\t<title level=\"m\">Mathematical reasoning using large language models</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b27\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Calibrating verbal uncertainty as a linear feature to reduce hallucinations</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ji</forename><surname>Ziwei</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">EMNLP</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b28\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Memorization over reasoning? exposing and mitigating verbatim memorization in large language models&apos; character understanding evaluation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuxuan</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Francis</forename><surname>Ferraro</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2412.14368</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b29\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Scribe: Structured mid-level supervision for tool-using language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuxuan</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Francis</forename><surname>Ferraro</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2601.03555</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b30\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Drp: Distilled reasoning pruning with skill-aware step decomposition for efficient large reasoning models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuxuan</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dawei</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Frank</forename><surname>Ferraro</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2505.13975</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b31\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Cornerstones or stumbling blocks? deciphering the rock tokens in on-policy distillation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuxuan</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Runchao</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shubhashis</forename><surname>Roy Dipta</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dawei</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhao</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b32\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Contextual integrity in llms via reasoning and reinforcement learning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Guangchen</forename><surname>Lan</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">NeurIPS</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b33\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Mappo: Maximum a posteriori preference optimization with prior knowledge</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Guangchen</forename><surname>Lan</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2507.21183</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b34\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">A multi-scale graph learning framework for financial fraud detection</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yiming</forename><surname>Lei</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b35\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">From generation to judgment: Opportunities and challenges of llm-as-a-judge</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dawei</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Bohan</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Liangjie</forename><surname>Huang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Alimohammad</forename><surname>Beigi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Chengshuai</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhen</forename><surname>Tan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Amrita</forename><surname>Bhattacharjee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuxuan</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Canyu</forename><surname>Chen</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Tianhao</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<ptr target=\"https://arxiv.org/abs/2411.16594\" />\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025. 2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b36\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Efficient medical image segmentation via reinforcement learning-driven k-space sampling</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuqi</forename><surname>Li</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">IEEE TETCI</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b37\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Frequency-aligned knowledge distillation for lightweight spatiotemporal forecasting</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuqi</forename><surname>Li</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">ICCV</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b38\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">A preference-driven methodology for efficient code generation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuqi</forename><surname>Li</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">IEEE Transactions on Artificial Intelligence</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b39\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">A comprehensive survey of interaction techniques in 3d scene generation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuqi</forename><surname>Li</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Authorea</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b40\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Sepprune: Structured pruning for efficient deep speech separation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuqi</forename><surname>Li</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">AAAI</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b41\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Let&apos;s verify step by step</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Vineet</forename><surname>Hunter Lightman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuri</forename><surname>Kosaraju</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Harrison</forename><surname>Burda</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Bowen</forename><surname>Edwards</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Teddy</forename><surname>Baker</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jan</forename><surname>Lee</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">John</forename><surname>Leike</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ilya</forename><surname>Schulman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Karl</forename><surname>Sutskever</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Cobbe</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">The Twelfth International Conference on Learning Representations</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b42\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">The health-wealth gradient in labor markets</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dingyuan</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Computation</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b43\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Openr1-math-220k</title>\n\t\t<ptr target=\"https://huggingface.co/datasets/open-r1/OpenR1-Math-220k\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">OpenR1 Team</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t\t<biblScope unit=\"page\" from=\"2025\" to=\"2029\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b44\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Detecting abnormal user feedback patterns through temporal sentiment aggregation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yalun</forename><surname>Qi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Sichen</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhiming</forename><surname>Xue</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xianling</forename><surname>Zeng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zihan</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b45\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Direct preference optimization: Your language model is secretly a reward model</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Rafael</forename><surname>Rafailov</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Archit</forename><surname>Sharma</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Eric</forename><surname>Mitchell</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Christopher</forename><forename type=\"middle\">D</forename><surname>Manning</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Stefano</forename><surname>Ermon</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Chelsea</forename><surname>Finn</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Advances in neural information processing systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">36</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"53728\" to=\"53741\" />\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b46\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">A data-centric perspective on the lifecycle of large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jun</forename><surname>Rao</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">TechRxiv</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b47\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Dynamic sampling that adapts: Iterative dpo for self-aware mathematical reasoning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jun</forename><surname>Rao</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b48\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhihong</forename><surname>Shao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Peiyi</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Qihao</forename><surname>Zhu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Runxin</forename><surname>Xu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Junxiao</forename><surname>Song</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiao</forename><surname>Bi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Haowei</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Mingchuan</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><forename type=\"middle\">K</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yang</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2402.03300</idno>\n\t\t<title level=\"m\">Pushing the limits of mathematical reasoning in open language models</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b49\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Ai-enhanced disaster risk prediction with explainable shap analysis</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Qiannan</forename><surname>Shen</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Research Square</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b50\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Business resilience index (bri): Evaluating economic recovery</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Qiannan</forename><surname>Shen</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Sustainability</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b51\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Mftformer: Meteorological-frequency-temporal transformer for traffic flow prediction</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Qiannan</forename><surname>Shen</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Research Square</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b52\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Expertflow: Adaptive expert scheduling and memory coordination for efficient moe inference</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zixu</forename><surname>Shen</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2510.26730</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b53\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Solving math word problems with process-and outcome-based feedback</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jonathan</forename><surname>Uesato</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Nate</forename><surname>Kushman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ramana</forename><surname>Kumar</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Francis</forename><surname>Song</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Noah</forename><surname>Siegel</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Lisa</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Antonia</forename><surname>Creswell</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Geoffrey</forename><surname>Irving</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Irina</forename><surname>Higgins</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2211.14275</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b54\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Improving sequential recommendations with tokenlevel llm representatio</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dingzhou</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Lu</forename><surname>Chang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Luyao</forename><surname>Men</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jiajun</forename><surname>He</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yinuo</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yefeng</forename><surname>Liang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">2025 4th International Conference on Cloud Computing, Big Data Application and Software Engineering (CBASE)</title>\n\t\t<imprint>\n\t\t\t<publisher>IEEE</publisher>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t\t<biblScope unit=\"page\" from=\"509\" to=\"514\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b55\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Self-consistency improves chain of thought reasoning in language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xuezhi</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jason</forename><surname>Wei</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dale</forename><surname>Schuurmans</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Quoc</forename><surname>Le</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ed</forename><surname>Chi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Sharan</forename><surname>Narang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Aakanksha</forename><surname>Chowdhery</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Denny</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2203.11171</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b56\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yifan</forename><surname>Wei</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiaoyan</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yixuan</forename><surname>Weng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Tengfei</forename><surname>Pan</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Angsheng</forename><surname>Li</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Li</forename><surname>Du</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2507.21836</idno>\n\t\t<title level=\"m\">Autotir: Autonomous tools integrated reasoning via reinforcement learning</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b57\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Reversible primitive-composition alignment for continual vision-language learning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Canran</forename><surname>Xiao</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">ICLR</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b58\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Meta-ucf: Unified task-conditioned lora generation for continual learning in large language models</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shilin</forename><surname>Xiao</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">ICLR</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b59\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Conquer: Context-aware representation with query enhancement for text-based person search</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zequn</forename><surname>Xie</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2601.18625</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b60\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Chat-driven text generation and interaction for person retrieval</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zequn</forename><surname>Xie</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">EMNLP</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b61\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Delving deeper: Hierarchical visual perception for robust video-text retrieval</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zequn</forename><surname>Xie</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2601.12768</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b62\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Hvd: Human vision-driven video representation learning for text-video retrieval</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zequn</forename><surname>Xie</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2601.16155</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b63\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Reason only when needed: Efficient generative reward modeling via modelinternal uncertainty</title>\n\t\t<author>\n\t\t\t<persName><surname>Chao Xue</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b64\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Why supervised fine-tuning fails to learn: A systematic study of incomplete learning in large language models</title>\n\t\t<author>\n\t\t\t<persName><surname>Chao Xue</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b65\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Structcoh: Structured contrastive learning for context-aware text semantic matching</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Chao</forename><surname>Xue</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ziyuan</forename><surname>Gao</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">PRICAI</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t\t<biblScope unit=\"page\" from=\"300\" to=\"315\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b66\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Question calibration and multi-hop modeling for temporal question answering</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Di</forename><surname>Chao Xue</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Pengfei</forename><surname>Liang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jing</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Zhang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">AAAI</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t\t<biblScope unit=\"volume\">38</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"19332\" to=\"19340\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b67\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Dual path modeling for semantic matching by perceiving subtle conflicts</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Di</forename><surname>Chao Xue</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Sirui</forename><surname>Liang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jing</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Wei</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Wu</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">ICASSP</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2023\">2023</date>\n\t\t\t<biblScope unit=\"page\" from=\"1\" to=\"5\" />\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b68\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Resilient routing: Riskaware dynamic routing in smart logistics via spatiotemporal graph learning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhiming</forename><surname>Xue</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Sichen</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yalun</forename><surname>Qi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xianling</forename><surname>Zeng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zihan</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b69\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Yiming Taclis Luo, Tianyue Niu, Patrick Pang, Ao Xiang, and Qin Yang. Exploring the application boundaries of llms in mental health: A systematic scoping review</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jinhua</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ting</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Frontiers in Psychology</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">16</biblScope>\n\t\t\t<biblScope unit=\"page\">1715306</biblScope>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b70\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Instrucrobo: Object-centric multi-instruction decoupling model for explainable robotic manipulation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Panqi</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Engineering Applications of Artificial Intelligence</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">171</biblScope>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b71\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Unibvr: Balancing visual and reasoning abilities in unified 3d scene understanding</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Panqi</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Neurocomputing</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">671</biblScope>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b72\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Unihoi: Unified human-object interaction understanding via unified token space</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Panqi</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">AAAI</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b73\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Swift sampler: Efficient learning of sampler by 10 parameters</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jiawei</forename><surname>Yao</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">NeurIPS</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b74\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Mechanistic understanding and mitigation of language model non-factual hallucinations</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Lei</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">EMNLP</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b75\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Robust llm safeguarding via refusal feature adversarial training</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Lei</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2409.20089</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b76\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Chain-of-reasoning: Towards unified mathematical reasoning in large language models via a multi-paradigm perspective</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yiyao</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuxiang</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dongdong</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiao</forename><surname>Liang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Hengyuan</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xingxing</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ziyi</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Mahmoud</forename><surname>Khademi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Hany</forename><surname>Awadalla</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Junjie</forename><surname>Wang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2501.11110</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b77\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Mathagent: Adversarial evolution of constraint graphs for mathematical reasoning data synthesis</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zixiong</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b78\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Star: Bootstrapping reasoning with reasoning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Eric</forename><surname>Zelikman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuhuai</forename><surname>Wu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jesse</forename><surname>Mu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Noah</forename><surname>Goodman</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Advances in Neural Information Processing Systems</title>\n\t\t<imprint>\n\t\t\t<biblScope unit=\"volume\">35</biblScope>\n\t\t\t<biblScope unit=\"page\" from=\"15476\" to=\"15488\" />\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b79\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Futuresightdrive: Thinking visually with spatio-temporal cot for autonomous driving</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shuang</forename><surname>Zeng</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2505.17685</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b80\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Janusvln: Decoupling semantics and spatiality with dual implicit memory for vision-language navigation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shuang</forename><surname>Zeng</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2509.22548</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b81\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Find your optimal teacher: Personalized data synthesis via router-guided multi-teacher distillation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Hengyuan</forename><surname>Zhang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Shiping</forename><surname>Yang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiao</forename><surname>Liang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Chenming</forename><surname>Shang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuxuan</forename><surname>Jiang</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Chaofan</forename><surname>Tao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Jing</forename><surname>Xiong</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Hayden</forename><surname>Kwok-Hay</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Ruobing</forename><surname>So</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Angel</forename><forename type=\"middle\">X</forename><surname>Xie</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Chang</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2510.10925</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b82\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Non-intrusive graph-based bot detection for e-commerce using inductive graph neural networks</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Sichen</forename><surname>Zhao</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zhiming</forename><surname>Xue</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yalun</forename><surname>Qi</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xianling</forename><surname>Zeng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Zihan</forename><surname>Yu</surname></persName>\n\t\t</author>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2026\">2026</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b83\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Yuxiang</forename><surname>Zheng</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Dayuan</forename><surname>Fu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiangkun</forename><surname>Hu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiaojie</forename><surname>Cai</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Lyumanshan</forename><surname>Ye</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Pengrui</forename><surname>Lu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Pengfei</forename><surname>Liu</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Deepresearcher</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2504.03160</idno>\n\t\t<title level=\"m\">Scaling deep research via reinforcement learning in real-world environments</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2025\">2025</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b84\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Understanding difficulty-based sample weighting</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiaoling</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">ECML PKDD</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2022\">2022</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b85\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Adversarial training with anti-adversaries</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiaoling</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">IEEE TPAMI</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b86\">\n\t<monogr>\n\t\t<title level=\"m\" type=\"main\">Boosting model resilience via implicit adversarial data augmentation</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Xiaoling</forename><surname>Zhou</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:2404.16307</idno>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2024\">2024</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+ "pdf_hash": "e9e77cd4ad1f552ad393f3d6b54ce51140b615a795d83eae214b2da9b9ece654",
+ "tables": [
+  {
+   "table_id": "tab_0",
+   "section_path_id": "1~13",
+   "section_ordinal": 24,
+   "caption": "Table 1 :",
+   "coordinates": null,
+   "cells": [
+    {
+     "row": 0,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 101,
+      "end": 101
+     },
+     "digest": "b342c83d7060c5852f741e8e009d375103df2e1f7c76fbc512e575cd86d7b03d"
+    },
+    {
+     "row": 0,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 101,
+      "end": 101
+     },
+     "digest": "7e8d5b72d290ba59f0edbe3d6f961eea1a534c250a6ef2cac5b85c0c2111735f"
+    },
+    {
+     "row": 0,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "R1Math",
+     "coordinates": null,
+     "span": {
+      "start": 101,
+      "end": 107
+     },
+     "digest": "b6f2e682e0453e45508beaaa557241c99d1710a9176749c5060463c49a458ef4"
+    },
+    {
+     "row": 0,
+     "column": 3,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "GSM8K (OOD)",
+     "coordinates": null,
+     "span": {
+      "start": 107,
+      "end": 118
+     },
+     "digest": "1ea05fd64d94e3a97a6da5cbfe79d8e7ba701d09b379ebea3bfb70693c22411a"
+    },
+    {
+     "row": 0,
+     "column": 5,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "MATH500 (OOD)",
+     "coordinates": null,
+     "span": {
+      "start": 118,
+      "end": 131
+     },
+     "digest": "1710269a237dbd0ae457879d4367db7971fdad8cf02036a15fc962eeb527d0e8"
+    },
+    {
+     "row": 0,
+     "column": 7,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "AIME24 (OOD)",
+     "coordinates": null,
+     "span": {
+      "start": 131,
+      "end": 143
+     },
+     "digest": "84d3a0ab24edfe58420272fb2c9a07eccce7f7c863f81b13177fce9e226d6382"
+    },
+    {
+     "row": 1,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 143,
+      "end": 143
+     },
+     "digest": "c942b58bc8713f389c3702ee97885b2f4dcfcc6f6ff08fc4665baca5d7a24971"
+    },
+    {
+     "row": 1,
+     "column": 1,
+     "colspan": 8,
+     "rowspan": 1,
+     "text": "Code@1 Code+Pass@1 Code@1 Code+Pass@1 Code@1 Code+Pass@1 Code@1 Code+Pass@1",
+     "coordinates": null,
+     "span": {
+      "start": 143,
+      "end": 218
+     },
+     "digest": "3b08ba0091459a937d8be8408342deed491152645c1360cfa15fe6b9c75067c7"
+    },
+    {
+     "row": 2,
+     "column": 0,
+     "colspan": 2,
+     "rowspan": 1,
+     "text": "R1-Distill-Qwen-1.5B",
+     "coordinates": null,
+     "span": {
+      "start": 218,
+      "end": 238
+     },
+     "digest": "dd13e05aa9a700dc05573ebd9f9f966df1dcec3ef6df9aa7e08de03e3c22692c"
+    },
+    {
+     "row": 2,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 238,
+      "end": 238
+     },
+     "digest": "cffaf5cc3a74475ddd84a2108ffefe0620040aff682a8668fcceb8b3b3250d25"
+    },
+    {
+     "row": 2,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 238,
+      "end": 238
+     },
+     "digest": "0bb6fcfdceccff1713ecc1148803a178e9d0d49993fdca13b8109a84732e8916"
+    },
+    {
+     "row": 2,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 238,
+      "end": 238
+     },
+     "digest": "46ec15f6c1d0359387b22a3136cb4c0b2af3c2d836882b97237fc41d7912003f"
+    },
+    {
+     "row": 2,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 238,
+      "end": 238
+     },
+     "digest": "1dd9177829eb6e1161732d2126ec5dfe847518007459201c4a55a22e6496e688"
+    },
+    {
+     "row": 2,
+     "column": 6,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 238,
+      "end": 238
+     },
+     "digest": "29c813ee6740c90da7fc37dd34940ea680bfe8ef424897eb393410494f0be00a"
+    },
+    {
+     "row": 2,
+     "column": 7,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 238,
+      "end": 238
+     },
+     "digest": "d690cb5432a0cf1fb54bf07f691d52ba659f5d56032a0f50979beb69eb5fa946"
+    },
+    {
+     "row": 2,
+     "column": 8,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "",
+     "coordinates": null,
+     "span": {
+      "start": 238,
+      "end": 238
+     },
+     "digest": "56e568d117f24d50b34098d65737c43ddb56c6c09407d1d8db35a7b214329ef4"
+    },
+    {
+     "row": 3,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Base",
+     "coordinates": null,
+     "span": {
+      "start": 238,
+      "end": 242
+     },
+     "digest": "a56270470ebd8bd2f685c4a7474b3a1877b2d8f85f223226aac27241359e3aa2"
+    },
+    {
+     "row": 3,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "3.0%",
+     "coordinates": null,
+     "span": {
+      "start": 242,
+      "end": 246
+     },
+     "digest": "2f19314928a447553caed7790c34aaeb9b0c31a5d75d6cf937916dc423fdad50"
+    },
+    {
+     "row": 3,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "2.0%",
+     "coordinates": null,
+     "span": {
+      "start": 246,
+      "end": 250
+     },
+     "digest": "3dd412e3203c621d55b01622975b305e24763371a7451e97a541b3dc68acebb0"
+    },
+    {
+     "row": 3,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "4.2%",
+     "coordinates": null,
+     "span": {
+      "start": 250,
+      "end": 254
+     },
+     "digest": "e4de27074f5637dc8e90c4dae02a2aded08f093e2bfe4956c8e65bd35b665429"
+    },
+    {
+     "row": 3,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "4.2%",
+     "coordinates": null,
+     "span": {
+      "start": 254,
+      "end": 258
+     },
+     "digest": "1afcd671eb961d5493b268c9de0fa2ea02fc152efa3b0864831f1eeb4c7814a7"
+    },
+    {
+     "row": 3,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "8.0%",
+     "coordinates": null,
+     "span": {
+      "start": 258,
+      "end": 262
+     },
+     "digest": "90d44efd46cd97f15124af3313f88402ca98849cebafac280e3f84971a7d7ee1"
+    },
+    {
+     "row": 3,
+     "column": 6,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "6.0%",
+     "coordinates": null,
+     "span": {
+      "start": 262,
+      "end": 266
+     },
+     "digest": "94c05344e82660f0453a1814fcbeff761b6ed5d5433c051d29ec1e268f4827a2"
+    },
+    {
+     "row": 3,
+     "column": 7,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.0%",
+     "coordinates": null,
+     "span": {
+      "start": 266,
+      "end": 270
+     },
+     "digest": "794fdadaff92e93b97ef26a9787e38cae1d1d2b6da525f07ba621b2df03b1b3c"
+    },
+    {
+     "row": 3,
+     "column": 8,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.0%",
+     "coordinates": null,
+     "span": {
+      "start": 270,
+      "end": 274
+     },
+     "digest": "121c633a728f79587f4662f6dd17a6db4ca97b649144105111a56c8e2fd0049d"
+    },
+    {
+     "row": 4,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "+SFT",
+     "coordinates": null,
+     "span": {
+      "start": 274,
+      "end": 278
+     },
+     "digest": "240034675d2bec6e6121fbe94772e37e26bf5d54add0b90f7841c2c043a31e0b"
+    },
+    {
+     "row": 4,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "66.0%",
+     "coordinates": null,
+     "span": {
+      "start": 278,
+      "end": 283
+     },
+     "digest": "321b77d0600646f1019e1348c4c871f4d012715ea79f53c0c7913b1b197c3316"
+    },
+    {
+     "row": 4,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "55.5%",
+     "coordinates": null,
+     "span": {
+      "start": 283,
+      "end": 288
+     },
+     "digest": "c14edb4ebfee4d3960d4a65cd8675d84e159e106ec13a5d2097eba54a2199e5c"
+    },
+    {
+     "row": 4,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "72.0%",
+     "coordinates": null,
+     "span": {
+      "start": 288,
+      "end": 293
+     },
+     "digest": "1e48c79ea12f7d050dd6c2928814ff351556d81f33463b6ecd41825c200ba3c1"
+    },
+    {
+     "row": 4,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "70.4%",
+     "coordinates": null,
+     "span": {
+      "start": 293,
+      "end": 298
+     },
+     "digest": "c9f23837bdc432bbd8785cc5e36d4571b373a2750d4dc66773ce6adb7ebc230e"
+    },
+    {
+     "row": 4,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "64.0%",
+     "coordinates": null,
+     "span": {
+      "start": 298,
+      "end": 303
+     },
+     "digest": "3b11472ca9550f2ef64d06d290db77f410839f7f7fca78ed7f9f439716e18bf3"
+    },
+    {
+     "row": 4,
+     "column": 6,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "58.2%",
+     "coordinates": null,
+     "span": {
+      "start": 303,
+      "end": 308
+     },
+     "digest": "4738f128953dd8dc79af9245be8a5c5cf7afa48b524dc5eaa1022c2e953084bc"
+    },
+    {
+     "row": 4,
+     "column": 7,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "26.7%",
+     "coordinates": null,
+     "span": {
+      "start": 308,
+      "end": 313
+     },
+     "digest": "0de8eb4c45bfbb8b1c89555bf493c1d68de3ed368c5314fa1b4c2e268b4e24bf"
+    },
+    {
+     "row": 4,
+     "column": 8,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "6.6%",
+     "coordinates": null,
+     "span": {
+      "start": 313,
+      "end": 317
+     },
+     "digest": "d1e9c1aa922d54f41076f344e698dc4ae74fdd090d45d0dd43e3829b23fde264"
+    },
+    {
+     "row": 5,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "+SFT+DPO",
+     "coordinates": null,
+     "span": {
+      "start": 317,
+      "end": 325
+     },
+     "digest": "58893c3db995ad4ef01c664570d93154144d959ba863743c36d3310c63f1966a"
+    },
+    {
+     "row": 5,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "72.2%",
+     "coordinates": null,
+     "span": {
+      "start": 325,
+      "end": 330
+     },
+     "digest": "1f6e8dc740d2f2c4e1d75530904203fc0a10cab9a0e290f157a408e0496ae8fe"
+    },
+    {
+     "row": 5,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "70.3%",
+     "coordinates": null,
+     "span": {
+      "start": 330,
+      "end": 335
+     },
+     "digest": "1541ce36966fea9b2baaeef6fc553eb109916c8afd5e6de3fcabcfa0fe442815"
+    },
+    {
+     "row": 5,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "80.1%",
+     "coordinates": null,
+     "span": {
+      "start": 335,
+      "end": 340
+     },
+     "digest": "f994b195f332696a00b81dc038ce273d990bffba8b4e849167b1300576bac585"
+    },
+    {
+     "row": 5,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "77.4%",
+     "coordinates": null,
+     "span": {
+      "start": 340,
+      "end": 345
+     },
+     "digest": "6f55d52ee1ee8e5ead980a276b29fb13ac2ac8bec098983dceaa0304e4893e63"
+    },
+    {
+     "row": 5,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "70.5%",
+     "coordinates": null,
+     "span": {
+      "start": 345,
+      "end": 350
+     },
+     "digest": "377e641e2457bd33a43339ae7cb47ccd8a855d95811c844c7d0ddcde795239e4"
+    },
+    {
+     "row": 5,
+     "column": 6,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "63.2%",
+     "coordinates": null,
+     "span": {
+      "start": 350,
+      "end": 355
+     },
+     "digest": "1204981b5464c42c9aa2120285d05914f7b9c04920158839558cdcfd1273af3e"
+    },
+    {
+     "row": 5,
+     "column": 7,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "50.0%",
+     "coordinates": null,
+     "span": {
+      "start": 355,
+      "end": 360
+     },
+     "digest": "8888f370f5c8680b167e71663c391346ccd92d92fa5ed3d96858343646ca4886"
+    },
+    {
+     "row": 5,
+     "column": 8,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "26.7%",
+     "coordinates": null,
+     "span": {
+      "start": 360,
+      "end": 365
+     },
+     "digest": "56bdfb9757ae6a813da7659087d390438cc5c81a9754f18574a9ffe90c677d05"
+    }
+   ],
+   "source_digest": "461ee5fb6845e67041a9061d8983562768594aac6417e4828057f23a2394358d",
+   "missingness": null
+  }
+ ],
+ "table_missingness": null,
+ "formulas": [
+  {
+   "formula_id": "formula_0",
+   "section_path_id": "3.2",
+   "section_ordinal": 12,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "L SFT = -E (x,y)∼D SFT |y| t=1 log π θ (y t | x, y &lt;t ),"
+   },
+   "span": {
+    "start": 539,
+    "end": 598
+   },
+   "source_digest": "f74934678960b684c26bac27b086bd30835996449157976efd89cfc8638cd11f",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_1",
+   "section_path_id": "3.3",
+   "section_ordinal": 13,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "L DPO = -log σ β log π θ (y + | x) -log π θ (y -| x) -log π ref (y + | x) -log π ref (y -| x) ,"
+   },
+   "span": {
+    "start": 367,
+    "end": 462
+   },
+   "source_digest": "6edfddcfea83ccdfe87c1e689cce5f5bd9cc3a0130d0d2cbdf7820ec703da5fa",
+   "missingness": null
+  }
+ ],
+ "formula_missingness": null,
+ "page_text_missingness": null
+}

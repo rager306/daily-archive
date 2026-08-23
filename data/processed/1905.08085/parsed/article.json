@@ -1,0 +1,1033 @@
+{
+ "paper_id": "1905.08085",
+ "title": "Arena: A General Evaluation Platform and Building Toolkit for Multi-Agent Intelligence",
+ "abstract_text": "Learning agents that are not only capable of taking tests, but also innovating is becoming a hot topic in AI. One of the most promising paths towards this vision is multi-agent learning, where agents act as the environment for each other, and improving each agent means proposing new problems for others. However, existing evaluation platforms are either not compatible with multi-agent settings, or limited to a specific game. That is, there is not yet a general evaluation platform for research on multi-agent intelligence. To this end, we introduce Arena, a general evaluation platform for multi-agent intelligence with 35 games of diverse logics and representations. Furthermore, multi-agent intelligence is still at the stage where many problems remain unexplored. Therefore, we provide a building toolkit for researchers to easily invent and build novel multi-agent problems from the provided game set based on a GUI-configurable social tree and five basic multi-agent reward schemes. Finally, we provide Python implementations of five state-of-the-art deep multi-agent reinforcement learning baselines. Along with the baseline implementations, we release a set of 100 best agents/teams that we can train with different training schemes for each game, as the base for evaluating agents with population performance. As such, the research community can perform comparisons under a stable and uniform standard. All the implementations and accompanied tutorials have been open-sourced for the community at https://sites.google.com/view/arena-unity/.",
+ "body_text": "IntroductionModern learning algorithms are more of outstanding testtakers, but less of innovators, i.e., the ceiling of an agent's intelligence may be limited by the complexity of its environment (Leibo et al. 2019). Thus, the emergence of innovation is becoming a hot topic for AI. One of the most promising paths towards such a vision is learning via social interaction, i.e., multi-agent learning. In multi-agent learning, how the agents should beat the opponents or collaborate with each other is not defined or limited by the creator of the environment, e.g., the inventor of the ancient Go never defines what strategies are good. However, enormous and sophisticated strategies are invented while a population of human players/artificial agents evolves by improving themselves over the others, i.e., each agent is acting as an environment for the others and improving itself means proposing new problems for the others.To study a new class of intelligence, general evaluation platforms with diverse games are milestones that push forward the research to the next levels. For example, ALE (Bellemare et al. 2013), Mujoco (Todorov, Erez, and Tassa 2012), and DM-Suite (Tassa et al. 2018) are the most spread general evaluation platforms that greatly accelerate the research in general reinforcement learning. However, there is no such general evaluation platform for multiagent intelligence. Although some platforms support multiagent settings (Wydmuch, Kempka, and Jaśkowski 2018;Vinyals et al. 2017), they are not general evaluation platforms, i.e., built for specific games. Thus, in this paper, we propose the first general evaluation platform for multi-agent intelligence, called Arena, containing 35 multi-agent games in total, with diverse logics and representations; see Fig. 1.Apart from training and evaluation, multi-agent intelligence research is still at a stage where many problems remain undiscovered or unexplored. Thus, the second contribution of Arena is a building toolkit for multi-agent intelligence, enabling the easy creation of different multi-agent scenarios. For example, in the sample game in Fig. 2 (a), after defining the basic behavior of the agent (i.e., moving and turning) and the \"alive\" state of the agent (i.e., it stays on the playground), it can be extended to different multi-agent scenarios with minimal effort. For example, (1) five players fight each other until only one agent is left alive (see Fig. 2 (b)), or (2) 5 ˆ2 players form 2 teams, and each agent fights for its own team until all players in a team are dead (see Fig. 2 (c)), or (3) multiple players form multiple teams in hierarchies, where the collaboration and competition relationships between the teams are customized (see Fig. 3).Thus, Arena is not just a research platform for the evaluation with a fixed set of games, but also a building toolkit for researchers to invent and build novel multi-agent problems.To achieve the above vision of building a toolkit for multiagent intelligence, (1) we provide a GUI-configurable tree that defines the social structure of agents, called social tree; Soccers BattleCity-TP Tennis PushBox DestroyPyramid TransportBricks RunToGoal YouShallNotPass Sumo PushBall TowerDefense LiftBall Reacher GoBang CaptureFlag Runner Figure 1: Game set of Arena.and (2) based on the social tree, we propose 5 basic multiagent reward schemes (BMaRSs), which define different social paradigms at each node in the social tree. Specifically, each BMaRS is a restriction applied to the reward function, so it corresponds to a batch of reward functions that can lead to a specific social paradigm. For each BMaRS, Arena provides multiple ready-to-use reward functions, simplifying the construction of games with complex social relationships. Furthermore, if the agent is controlling each joint of a robot, it has long been a burden for researchers that low-level intelligence (such as the basic skill of moving) must first be built, before they can study high-level multi-agent intelligence (Heess et al. 2017). Thus, Arena provides many ready-to-use dense reward functions in each BMaRS that handle such low-level intelligence. Additionally, Arena also offers a verification option for customized reward functions, so the researchers can make sure that the programmed reward functions lie in one of the BMaRSs that produces a specific social paradigm. Thus, with the above efforts towards a building toolkit for multi-agent intelligence and the provided set of 35 games for a general evaluation platform, one can easily customize a set of games of a new social paradigm to study a yet unexplored problem.Finally, we provide Python implementations of several state-of-the-art deep multi-agent reinforcement learning baselines, which can be used as starting points for the development of novel multi-agent algorithms, as well as the validation of new environments. Along with the baseline implementations, we also release a set of 100 best agents/teams that we can train with different training schemes for each game, as the base for evaluating agents with population performance (Balduzzi et al. 2019;Balduzzi et al. 2018). So, the research community can perform comparisons under a stable and uniform standard.To summarize, this paper's contributions are as follows:(1) a general evaluation platform for multi-agent intelligence with a set of diverse games, most of which are new to the community or still stand as a challenge for state-of-the-art algorithms, (2) a building toolkit for multi-agent games, enabling the easy creation of new social paradigms based on GUI-configurable social trees and BMaRSs, (3) the baseline implementations of 5 state-of-the-art multi-agent algorithms for both competitive and collaborative settings, and (4) sets of benchmark agents/teams for the community to conduct stable and uniform population evaluation (Balduzzi et al. 2018). Code for games, building toolkit, and baselines, as well as all corresponding tutorials have been released online at https://sites.google.com/view/arena-unity/.\nThe Platform State-of-the-Art Engine.The engine behind Arena is the world-leading game engine Unity (Juliani et al. 2018), which provides Arena with several desirable features on rendering, physics, customizability, and community. There are also other choices of popular engines. Some platforms contain a wide set of diverse games (Bellemare et al. 2013;Nichol et al. 2018;Perez-Liebana et al. 2016;OpenAI 2016). However, they are designed mostly for single-agent scenarios and are extremely hard to customize (adding multiple players or creating new games), since the games are provided as compiled binary ROMs. Other downsides of these choices include deterministic environments, unrealistic rendering, and unrealistic physics. Other platforms (Todorov, Erez, and Tassa 2012;Tassa et al. 2018) are, in nature, more physics engines than game engines, which lack a visual editor for easily creating customized games, and cannot handle more \"game-like\" features, such as instantiating and destroying objects in real-time during the simulation. The rest of the platforms are limited in the sense that they are built for specific tasks, such as for first-person shooting (Wyd- much, Kempka, and Jaśkowski 2018), Real-Time Strategy (RTS) (Tian et al. 2017), vision understanding (Qiu et al. 2017), in-door scene understanding (Handa et al. 2016; Brodeur et al. 2017; Savva et al. 2017; Chang et al. 2017; Puig et al. 2018; Gao et al. 2019), surviving (Suarez et al. 2019), and interaction (Wu et al. 2018; Savva et al. 2019; Kolve et al. 2017), or specific games, such as Starcraft (Vinyals et al. 2017) and Dota2 (OpenAI 2018). Thus, creating a general evaluation platform on these engines is not a reasonable choice. DeepMind Lab (Beattie et al. 2016), Psychlab (Leibo et al. 2018), and Malmo (Johnson et al. 2016) are more appropriate choices when building a customizable general evaluation platform. However, the main drawbacks of the above engines are tied to their dated nature. The rendering system of these engines are either low-polygon pixelated (Malmo, based on Minecraft) or outdated (DeepMind Lab and Psychlab, based on Quake III). The physics systems of these engines are either rudimentary (Malmo), or have a gap (Juliani et al. 2018) to the physical world (DeepMind Lab and Psychlab). Besides, they are all incompatible with a visual editor, making it quite cumbersome to build customized scenarios.To summarize, built on Unity, Arena has the following advantages over other platforms: (1) realistic rendering, so that features, such as complex lighting, textures, and shaders, are fully handled by the background engine and easily produced in a customized game, (2) realistic physics, so that enough and realistic stochasticity is introduced in the game and transferring a policy learned within a simulator to the real world is easier, (3) user-friendly visual editor, so that building new multi-agent scenarios in Arena is easy, and (4) a large and active development community, so that creating new games is easy with millions of off-the-shelf assets.Game Sets Towards General Intelligence. The first contribution of Arena is to provide a set of multi-agent games with diverse game logics and representations, so that it may push forward the research of general multi-agent intelligence. Specifically, Arena provides: (1) 27 new games that are not yet studied in the community, (2) 8 games, of which the basic logics are inspired by other research, but equipped with realistic rendering effects, physics engine, and all features described in the following two paragraphs, such as extensibility to other social paradigms, and (3) interface to the popular stand-alone domain StarCraft. The game set is shown in Fig. 1. For more detailed information, see Tables 234567in the extended paper (Song et al. 2019).Building Toolkit for Multi-Agent Environments. As the second contribution, we provide a building toolkit for multi-agent environments: we provide (1) a GUI-configurable social tree that defines how agents are grouped together with each other, and (2) 5 basic multi-agent reward schemes (BMaRSs) applied on each node in the social tree, so that different social relationships can be easily built and verified, and low-level intelligence (like motor skills) can be handled.\nOther Features.Learning to communicate is an important research area in multi-agent intelligence (Das et al. 2017;Mordatch and Abbeel 2018). Thus, Arena provides a broadcast board at each node of the social tree (accessible for any agent as a child of the node), which enables the study of learning communication at each level. Also, global states may be used in research for different purposes (Lowe et al. 2017;Gupta, Egorov, and Kochenderfer 2017;Foerster et al. 2017;Foerster et al. 2018). Thus, Arena provides the option to broadcast it to all agents. Besides, a top-down view of the global game is often appreciated for visualizing population behavior (Johnson et al. 2016;Wydmuch, Kempka, and Jaśkowski 2018;Jaderberg et al. 2018;Liu et al. 2019). Thus, Arena by default enables this option. Finally, there is a necessity for competitive agents to evaluate against human players, and also a research trend for collaborative agents to team up with human players. Thus, Arena provides a gaming interface for humans, so that a human player can take the place of any agent in the game.\nBasic Multi-Agent Reward Schemes and Social TreesPreliminaries. We consider a Markov game as defined in (Littman 1994), consisting of multiple agents x P X , a finite global state space S, a finite action space A x for each agent x, and a bounded-step reward space r x,t P R for each agent x. The environment consists of a transition function g :S ˆŚ A x : x P X ( Ñ S, which is a stochastic function s t`1 \" g `st , pa x,t q xPX ˘, a reward function for each agent f x : S ˆŚ A x : x P X ( Ñ R, which is a deterministic function r x,t`1 \" f x `st , pa x,t q xPX ˘, a joint reward function f \" pf x q xPX , and episode reward R fx \" ř T t\"1 r x,t for each agent x under the joint reward function f . For the agent, we consider that it observes s x,t P S x , where S x consists of a part of the information from the global state space S. Thus, we have a policy π x : S x Ñ A x , which is a stochastic function a x,t \" π x ps x,t q. Besides, we consider that the agent x can take a policy π x from a set of policies Π x and assume that the random seed of all sampling operations is k, which is sampled from the whole seed space K.We investigate the effect of tx : x P X u and tπ x : π x P Π x u on tR f x : x P X u. By applying different restrictions on the effect, we have different BMaRSs, each one of which is a set of joint reward functions F \" tf : ¨u that produce a similar effect on the population X . The term reward scheme first appears in (Tampuu et al. 2017) as a tabular, which is applied to a special case of Pong. While we define it in a general form and show that many examples are special cases within this general form.In a non-sequential setting (normal-form game), the reward scheme serves a similar purpose as the payoff matrix (Myerson 2013), which is also represented as a tabular. See Lemma 2 in the extended paper (Song et al. 2019) for how the payoff matrix is aligned with BMaRSs. In the following, we define 5 different BMaRSs. Along defining these BMaRSs, we also describe the ready-to-use reward functions f within these BMaRSs, which is provided by Arena as a dropdown list. Non-learnable BMaRSs (F N L ) are a set of joint reward functions f as follows:F N L \" f : @k P K, @x P X , @π x P Π x , BR f x { Bπ x \" 0 ( , (1)where 0 is a zero matrix of the same size and shape as the parameter space that defines π x . Intuitively, F N L means that R f x for any agent x P X cannot be optimized by improving its policy π x . Isolated BMaRSs (F IS ) are a set of joint reward functions f as follows:F IS \" f : f R F N L and @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x Bπ x 1 \" 0 ( ,(2)Intuitively, F IS means that the episode reward R f x received by any agent x P X is not related to any policy π x 1 taken by any other agent x 1 P X ztxu.Reward functions f x in f of F IS are often called internal reward functions in other multi-agent approaches (Hendtlass 2004;Jaderberg et al. 2018;Bansal et al. 2018), meaning that apart from the reward functions applied at a population level (such as win/loss), which are too sparse to learn, there are also reward functions directing the learning process towards receiving the population-level rewards, but are more frequently available, i.e., more dense (Heess et al. 2017). F IS is especially practical if the agent is a robot requiring continuous control of applying force on each of its joints, which means basic motor skills (such as moving) need to be learned before generating population-level intelligence. Thus, we provide f in F IS of energy cost, punishment of applying a big force, encouragement of keeping a steady velocity, and moving distance towards target. Competitive BMaRSs (F CP ), inspired by (Cai and Daskalakis 2011), are defined asF CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , B ş x 1 PX R f x 1 dx 1 Bπ x \" 0 ( ,(3)which intuitively means that for any agent x P X , taking any possible policy π x P Π x , the sum of the episode reward of all agents will not change. If the episode length is 1, it expresses a classic multi-player zero-sum game (Cai and Daskalakis 2011). Useful examples of f within F CP are: (1) agents fight for a limited amount of resources that are always exhausted at the end of the episode, and the agent is rewarded for the amount of resources that it gained, and (2) fight till death, and the reward is given based on the order of death (the reward can also be based on the reversed order, so that the one departing the game first receives the highest reward, such as in some poker games, the one who first discards all cards wins).Rock, Paper, and Scissors in normal-form game (Myerson 2013) and Cyclic Game in (Balduzzi et al. 2019) are both special cases of F CP ; see Lemmas 2 and 3 in the extended paper (Song et al. 2019). Collaborative BMaRSs (F CL ), inspired by (Cai and Daskalakis 2011), are defined asF CL \" f : f R F N L Y F IS and @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x 1 BR f x ě 0 ( ,(4)which, intuitively, means that there is no conflict of interest (BR f x 1 { BR f x ă 0) for any pair of agents px 1 , xq. Besides, since f R F N L Y F IS , there is at least one pair of agents px, x 1 q that makes BR fx 1 { BR f x ą 0. This indicates that this pair of agents shares a common interest, so that improving R fx for agent x means improving R f x 1 for agent x 1 . The most common example of f within F CL is that f x for all x P X is identical, such as the moving distance of an object that can be pushed forward by the joint effort of multiple agents, or the alive duration of the population (as long as there is at least one agent alive in the population, the population is alive). Thus, we provide f in F CL : living time of the team (both positive and negative, since some games require the team to survive as long as possible, while other games require the team to depart as early as possible, such as poker). Competitive and Collaborative Mixed BMaRSs (F CC ) are defined as a catch-all for any other than the above four ones. First, the term B ş (Song et al. 2019), which makes an alternative (3). Considering F CP in this alternative (3) and F CL in (4), an intuitive explanation of F CC is that there exist circumstances when BR fx 1 PX R f x 1 dx 1 { Bπ x \" 0 in (3) can be written as ş x 1 PX BR f x 1 { BR f x dx 1 \" 0 (see Lemma 1 in ex- tended paperx 1 { BR f x ă 0, meaning that the agents are competitive at this point. But the derivative of total interest ş x 1 PX BR fx 1 { BR f x dx 1 is not always 0; thus, the total interest can be maximized with specific policies, meaning that the agents are collaborative at this point.Apart from providing several practical f in each BMaRS, we also provide a verification option for each BMaRS, meaning that one can customize an f and use this verification option to make sure that the programmed f lies in a specific BMaRS. The implementation of verification option can be found in Section 1 in the extended paper (Song et al. 2019). The Social Tree. The BMaRSs defined above apply to an agent group of all sizes. To define more complex and structured social paradigms, we use a tree structure (social tree) to organize the agents and apply BMaRSs on each node of the tree. We illustrate this by an example. The GUI interface in Fig. 3 (a) defines a tree structure in Fig. 3 (b), representing a population of 4 agents.The tree structure can be easily reconfigured by dragging, duplicating, or deleting nodes in the GUI interface in Fig. 3 (a). In this example, each agent has an agent-level BMaRS. The agent is a robot ant, so that the agent-level BMaRSs are F IS , specifically, the option of ant-motion that directs the learning towards basic motion skills such as moving forward, as shown in Fig. 3 (c). Each two agents form a team (which is a set of agents or teams), the two agents have team-level BMaRSs. In this example, the two robot ants collaborate with each other to push a box forward, as shown in Fig. 3 (d). Thus, the team-level BMaRSs are F CL , specifically, the moving distance of the box. On the two teams, we have global-level BMaRSs. In this example, the two teams are set to have a match regarding which team pushes its box to the target point first, as shown in Fig. 3 (e). Thus, the global-level BMaRSs are F CP , specifically, the ranking of the box reaching the target. The final reward function applied to each agent is a weighted sum of the above three BMaRSs at three levels. One can imagine defining a social tree of more than three levels, where small teams form bigger teams, and BMaRSs are defined at each node to give more complex and structured social problems. After defining the social tree and applying BMaRSs on each node, the environment is ready for use with an abstraction layer handling everything else, such as assigning viewports to each agent in the window, applying the team color, displaying the agent ID, and generating a top-down view.\nThe Learning AgentsThe Baselines. We provide Python implementations of several state-of-the-art baselines that can be used as starting points for the development of novel multi-agent algorithms, as well as for the validation of new environments. Specifically, we first implement a fully decentralized system, where each agent is a self-contained PPO (Schulman et al. 2017), with independent critic, actor, and optimizer. We also implement two state-of-the-art methods based on self-play in ( OpenAI 2018 The Evaluation Metric. It is recently raising attention that evaluating an agent against a single-agent or hand-coded bot is unstable and misleading (Balduzzi et al. 2018). Thus, the population performance is introduced to evaluate an agent's (or an agent group's) performance among a base population. To enable population evaluation, we release 100 best agents, which we can train with different training schemes for each game as the base population. One can call the provided function to get the ranking of an agent among the base population, or get the averaged ranking of a population among the base population. Moreover, we provide a human ranking among the base population, which provides an indication of humanlevel intelligence in the game. We will accept the submission of agents from the community as well as keep implementing algorithms introduced in the future, so that the base population will be upgraded, as the level of research in multi-agent intelligence advances.\nExperimentsExperiments are conducted from three aspects. First, we evaluate our game set from the perspective of stochasticity, realistic rendering, and simulation speed, all of which are presented in the extended paper (Song et al. 2019) due to page limit. Other advantages from the Unity engine have been verified by (Juliani et al. 2018). Second, we evaluate our design of the extensible multi-agent building toolkit with a case study, showing that by applying different social trees and BMaRSs, different population-level strategies can be learned. Third, we report the experimental results of 5 baselines that we implemented and show that by using the provided population performance evaluation metric, the training progress can be visualized in a less noisy and more analyzable way. Case Study of Social Tree and BMaRSs. We use the game Crossroads from Arena to study the effectiveness of the proposed social tree and BMaRSs via designing different social paradigms. Specifically, in the game Crossroads shown in Fig. 5 (a), the agent can move and turn, the final goal of the agent is to reach the target on the other side of the crossroad. By defining different social trees and applying different BMaRSs, as shown in Fig. 5 (b) to (d), the agents learn different strategies. In Fig. 5 (b), isolated BMaRSs (F IS ) are applied to all agents, i.e., each agent minimizes the time that it takes to reach the target. The result shows that the learned agents simply rush forward, and they easily crash with each other at the center of the crossroad, producing a traffic jam. In Fig. 5 (c), collaborative BMaRSs (F CL ) are applied to the parent (b) (a) (c) (d) Figure 5: Case Study of Social Tree and BMaRSs.node of all agents, i.e., all agents are rewarded with the time that the last one of them takes to reach the target. The result shows that the agents learn to wait for each other to go across the crossroad, so that they can all get across as efficiently as possible. In Fig. 5 (d), collaborative BMaRSs (F CL ) are applied on the parent node of every 4 agents (which form a team), and competitive BMaRSs (F CP ) are applied on the parent node of the two teams. Specifically speaking, each two agents in the same team are rewarded with the same reward, and the reward is 1 for the team that gets all of its agents to the target first, 0 for the other team. The results show that each team learns to block the road of the other team with one agent, so that the other agents in the team can get across undisturbed. Then, the agent that blocks the road leaves for the target, after all its teammates have reached the target.Baselines and Evaluation Metric. We compare 5 baselines on two games: (1) Crossroads in Fig. \nRelated WorkSurveys of multi-agent intelligence research can be found in (Hernandez-Leal, Kartal, and Taylor 2018). Different ideas have been explored on competitive and collaborative multiagent settings.Collaborative Settings. The simplest way to deploy multiagent collaborative systems is to make each agent have a completely independent learning process (fully decentralized) (Matignon, Laurent, and Le Fort-Piat 2012). However, collaborative behaviors are hardly observed under such fully decentralized setting; thus, a fully centralized system is utilized in (Peng et al. 2017), where the policy has access to the global state and is shared by all agents. However, it is impractical, since the global state is mostly unavailable in practice, and the system does not support extending the number of agents. Thus, centralized training and decentralized execution are gaining attention (Kraemer and Banerjee 2016). Experiments: Realistic Rendering, Simulation Speed and Stochasticity Realistic Rendering. Realistic rendering in games is gaining more consideration, as the research community is moving towards transferring the algorithms to real-world scenarios. Some of such platforms are (Brodeur et al. 2017;Qiu et al. 2017;Yan et al. 2018;Kolve et al. 2017;Wu et al. 2018). In Fig. 6, we report an objective comparison of the most realistic scenes provided in these works against those in our platform. The results show that our platform provides a realistic rendering effect at the same level as the best of them. Simulation Speed. Simulation speed and parallelism of an environment are two important factors for carrying out research. Thus, we compare our game Boomer in Fig. ) by running a fixed sequence of 1000 actions repeatedly 1000 times and investigating how many branches are produced (averaged over all games in the corresponding platform). Table 1 shows that our platform generates most stochasticity among them, measured by the number of branches that the environment produces when applying the same action sequence on it. This is accomplished by introducing stochasticity from the initial setup (e.g., a randomly generated map), the rendering effect (e.g., randomized light conditions and particle systems), and the physics system (e.g., randomized physics properties).\nHow Verification for BMaRSs is ImplementedSince the definitions of BMaRSs contain the statement of @, which requires enumerating over the entire space of some variables, we first set a hyper-parameter of N , denoting the number of samples that we will apply the verification operation to. If a statement Y of sample i P I holds true for all N samples from I, we approximately make the judgement that p@i P I, Yq is true. If a statement Y of sample i P I holds false for any one of N samples from I, we make the judgement that p@i P I, Yq is false. Thus, in the following, we describe how to make the judgment of whether a statement Y of sample i holds true or not. Non-learnable BMaRSs (F N L ) are defined as:F N L \" f : @k P K, @x P X , @π x P Π x , BR f x Bπ x \" 0 ( , (5)where 0 is a zero matrix of the same size and shape as the parameter space that defines π x . For each sample i, we first sample k P K, x P X , tπ x P Π xu xPX randomly. Then, we first run one episode to get R f x . We denote it R f x 1 , since it is from the first episode. We run the second episode to get R f x and denote it R fx 2 , since it is from the second episode. In the second episode, we keep the following variables the same as the first episode: k, tπ xu for all x P X ztxu. In the second episode, we sample a different π x from that in the first episode. The π x in the first and second episode are denoted π 1x and π 2 x respectively. Then, we can compute one sample ofBR f x Bπx \" R f x 1 1 ´Rf x 1 2 π 1 x ´π2x and make the judgement whether BR f x Bπx \" 0 for sample i holds true. Isolated BMaRSs (F IS ) are defined as:F IS \" f : @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x Bπ x 1 \" 0 ( .(6)For each sample i, we first sample k P K, x P X , x 1 P X ztxu, tπ x P Π xu xPX randomly. Then, we first run one episode to get R f x . We denote it R f x 1 , since it is from the first episode. We run the second episode to get R f x and denote it R f x 2 , since it is from the second episode. In the second episode, we keep the following variables the same as the first episode: k, tπ xu for all x P X ztx 1 u. In the second episode, we sample a different π x 1 from that in the first episode. The π x 1 in the first and second episode are denoted π 1 x 1 and π 2 x 1 respectively. Then, we can compute one sample ofBR f x Bπ x 1 \" R f x 1 ´Rf x 2 π 1 x 1 ´π2 x 1and make the judgement whether BR fx Bπ x 1 \" 0 for sample i holds true. Competitive BMaRSs (F CP ) are defined as:F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , B ş x 1 PX R f x 1 dx 1 Bπ x \" 0 ( .(7)HoME AI2-THOR CHALET UnrealCV House3D Arena (a) Boomer (Arena) (b) MsPacman (Atari) FPS Number of Concurrent Threads Number of CPU Threads (c) Comparison of train Frames Per Second (FPS) under different numbers of concurrent threads.  For each sample i, we first sample k P K, x P X , tπ x P Π xu xPX randomly. Then, we first run one episode to get şx 1 PX R f x 1 dx 1 . We denote it ş x 1 PX R f x 1 1 dx 1, since it is from the first episode. We run the second episode to get ş x 1 PX R f x 1 dx 1 and denote it ş x 1 PX R f x 1 2 dx 1 , since it is from the second episode. In the second episode, we keep the following variables the same as the first episode: k, tπ xu for all x P X ztxu and we sample a different π x from that in the first episode. The π x in the first and second episode are denoted π 1x and π 2 x respectively. Then, we can compute one sample ofB ş x 1 PX R f x 1 dx 1 Bπx \" ş x 1 PX R f x 1 1 dx 1 ´şx 1 PX R f x 1 2 dx 1 π 1 x ´π2x and make the judgement of whetherB ş x 1 PX R f x 1 dx 1 Bπx \" 0 for sample i holds true.Collaborative BMaRSs (F CL ) are inspired by (Cai and Daskalakis 2011) and defined as,F CL \" f : f R F N L Y F IS and @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x 1 BR f x ě 0 ( .(8)For each sample i, we first sample k P K, x P X , x 1 P X ztxu, tπ x P Π xu xPX randomly. Then, we first run one episode to get R f x and R f x 1 . We denote itR f x 1 and R f x 1 1 , respectively, since it is from the first episode. We run the second episode to get R f x and R f x 1 and denote it R f x 2 and R f x 1 2, respectively, since it is from the second episode. In the second episode, we keep the following variables the same as the first episode: k, tπ xu for all x P X ztxu and we sample a different π x from that in the first episode.Then, we can compute one sample ofBR f x 1 BR f x \" R f x 1 1 ´Rf x 1 2 R f x 1 ´Rf x 2 and make the judgement whether BR f x 1 BR f x ě 0 for sample i holds true.Competitive and Collaborative Mixed BMaRSs (F CC ) are defined to be any situations other than the above four ones:F CC \" f : f R F N L Y F IS Y F CP Y F CL ( ,(9)which means if a reward function f is verified to be not among above F N L , F IS , F CP or F CL , it is verified to be among F CC .Lemma 1 An equivalent expression ofF CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , B ş x 1 PX R f x 1 dx 1 Bπ x \" 0 ((10)is:F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , ż x 1 PX BR f x 1 BR f x dx 1 \" 0 ( .(11)Proof of Lemma 1: Following the defination of F CP , since f R F N L , we have:Dk P K, Dx P X , Dπ x P Π x , BR f x Bπ x ‰ 0.(12)Thus, F CP equals to:F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , ż x 1 PX BR f x 1 Bπ x dx 1 Bπ x BR f x \" 0 ((13)\" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , ż x 1 PX BR f x 1 BR f x dx 1 \" 0 ( ,(14)completing the proof.Lemma 2 Rock, Paper, and Scissors in normal-form game (Myerson 2013) is a special case of F CP , which is defined in (11).Player 2 Strategy 1: Rock Strategy 2: Paper Strategy 3: Scissors Player 1 Strategy 1: Rock p0, 0q p´1, 1q p1, ´1q Strategy 2: Paper p1, ´1q p0, 0q p´1, 1q Strategy 3: Scissors p´1, 1q p1, ´1q p0, 0qTable 2: Payoff matrix of Rock, Paper, and Scissors.Proof of Lemma 2: The payoff matrix in a normal-form game (Myerson 2013) is a matrix aligning the tuple of tplayer, strategyu with the payoff received by each player. The reward scheme in a multi-agent learning context is a map aligning the tuple of tagent x, policy π x u to the episode reward R f x received by the agent x. Thus, player is equivalent to agent, strategy is a special case of policy when the episode length is one, payoff is equivalent to episode reward R fx when the episode length is one. Payoff matrix of Rock, Paper, and Scissors is shown in Table 2. By selecting any pair of cells in the payoff matrix, say p1, ´1q and p´1, 1q, we can compute aBR f x 1 BR f x \" 1´p´1qp´1q´1 . Thus, by enumerating over all possible pairs of cells in the payoff matrix to compute allBR f x 1 BR f x, we can verify that the payoff matrix satisfies the definition of F CP in (11).Lemma 3 Symmetric zero-sum games and cyclic games in (Balduzzi et al. 2019) are a special case of F CP , which is defined in (11).Proof of Lemma 3: In ( Balduzzi et al. 2019), W denotes a set of agents parameterized by the weights of a neural net. For instance, w P W and v P W are two agents of specific policies from the full policy set W . φpv, wq evaluates a pair of agents pw, vq φ : W ˆW Ñ R.The higher φpv, wq, the better for agent v. They refer to φ ą 0, φ ă 0, and φ \" 0 as wins, losses, and ties, respectively, for v. A game is defined as symmetric zero-sum game if:@w P W, @v P W, φpv, wq \" ´φpv, wq.(16)A cyclic game is a symmetric zero-sum game. As can be seen, when the game is symmetric @x P X , Π x is the same andΠ x \" Π X ,(17)W is equivalent to Π X . When the game has only two players x 1 and x 2tx 1 u \" X ztx 2 u,(18)φ is equivalent to R x1 . Thus, v and w are equivalent to π x1 and π x2 , respectively and the equivalent expression of symmetric zero-sum game in ( 16) is:@π x1 P Π X , @π x2 P Π X , R x1 \" ´Rx2 .(19)The equivalent expression of (11) when there are only two players x 1 x 2 , i.e., satisfying (18), is:F CP \" f : f R F N L Y F IS and @x 1 P X , tx 2 u \" X ztx 1 u, @π x1 P Π X , @π x2 P Π X , BR x1 BR x2 \" ´1( .(20)This shows that symmetric zero-sum games are a special case of F CP . Since cyclic games are symmetric zero-sum games, cyclic games are also a special case of F CP .Figure 1 :1FightForFood\nFigure 2 :2Figure2: Game examples of the extensible multi-agent platform.\nFigure 3 :3Figure 3: An example of a social tree and BMaRSs applied on it.\n) (SP) and population-based training in (Jaderberg et al. 2018; DeepMind 2019) (PB). For collaborative agents, we implement two state of the arts: centralized critic (Lowe et al. 2017) (CC) and centralized critic with a counterfactual baseline (Fo-erster et al. 2018) (CF).\nFigure 4 :Figure 5 :45Figure 4: Visualizing training progress over episode reward (a,b) and population performance (c,d) of different baselines: D-PPO (Decentralized Proximal Policy Optimization), SP (Self-Play), PB (Population-Based training), CC (Centralized Critic), and CF (Counterfactual Baseline).\n5 (a) with the BMaRS settings of Fig. 5 (d) and (2) PushBox in Fig. 3 (e) with the BMaRS settings of Fig. 3 (b). The BMaRS settings of both games contain competitive as well as collaborative social relationships, i.e., multiple agents form collaborative teams, and teams compete with each other. Thus, we investigate SP and PB baselines at the level of teams competing with each other, as well as investigate CC and CF baselines at the level of agents collaborating with each other in a team. As can be seen, the curve of episode reward shown in Fig. 4 (a) and (b) is extremely noisy, as the environment is non-stationary with the strategy of other collaborators and/or competitors evolving during the training. However, in Fig. 4 (c) and (d), which is the curve of ranking in the released base population, i.e., population performance, all methods are comparable with clear performance gaps.\nFor multi-agent systems, this idea is mostly explored under actorcritic algorithms (Foerster et al. 2018). Other ideas include using a joint action-value function, (Lauer and Riedmiller 2004) addressing the variance problem by a large batch size (Bansal et al. 2018), and learning grounded cooperative communication protocols between agents (Foerster et al. 2016). Competitive Settings. Competitive multi-agent intelligence originally comes from computational game theory (Bowling et al. 2015). Later on, deep multi-agent reinforcement learning (D-MARL) is preferred, due to its scalability, and as it achieves notable advances on two-player games, such as Poker and Go (Moravčík et al. 2017; Silver et al. 2017). Later, D-MARL was applied to more diverse problems, such as high-dimensional video games (OpenAI 2018; DeepMind 2019) and those involving physics control (Bansal et al. 2018). When solving more practical problems, many issues have been raised, such as ensuring diversity amongst agents (Marivate 2015), avoiding overfitting to the policy of the opponents (Lanctot et al. 2017). Many ideas address such issues (Kleiman-Weiner et al. 2016). Following on D-MARL, a very promising recent direction is self-play (Tesauro 1995). Fictitious self-play (Heinrich and Silver 2016) first shows promising performance on the competitive game Leduc Poker. However, as the stability and parallelizability are improving with the invention of new reinforcement learning algorithms, state-of-the-art approaches adopt a simpler form of self-play (OpenAI 2018), which produces a superior-human intelligence on large video games, like Dota2. Another promising\n7 (a) with MsPacman in Fig. 7 (b) from the most widely used general evaluation platform ALE (Bellemare et al. 2013), both of which run on our parallel implementation of the PPO (D-PPO) baseline on a server with 32 CPU threads. Then, we compare these two games, as they are of similar complexity. The result in Fig. 7 (c) shows that Arena allows for parallel implementations while maintaining a similar simulation speed as ALE (Bellemare et al. 2013) on games of similar complexity when the number of concurrent threads is below the number of CPU threads of the machine, i.e., smaller than 32. Stochasticity. According to (Jaderberg et al. 2018), having enough stochasticity is essential for researchers to verify that their algorithms are learning general knowledge instead of memorizing action sequences. Thus, we conduct a stochasticity study on the existing general evaluation platforms ALE (Bellemare et al. 2013), Retro (Nichol et al. 2018), GVG-AI (Perez-Liebana et al. 2016), Mujoco (Todorov, Erez, and Tassa 2012), and DM-Suite (Tassa et al. 2018\nFigure 6 :6Figure 6: Comparison of realistic rendering effect.\nFigure 7 :7Figure 7: Comparison of simulation speed.\nTable 1 :1Comparison of the stochasticity of platforms.Platform ALE Retro GVG-AI Mujoco DM-Suite ArenaBranches0.0431.223.112.250.2922.4",
+ "sections": [
+  {
+   "title": "Introduction",
+   "text": "Modern learning algorithms are more of outstanding testtakers, but less of innovators, i.e., the ceiling of an agent's intelligence may be limited by the complexity of its environment (Leibo et al. 2019). Thus, the emergence of innovation is becoming a hot topic for AI. One of the most promising paths towards such a vision is learning via social interaction, i.e., multi-agent learning. In multi-agent learning, how the agents should beat the opponents or collaborate with each other is not defined or limited by the creator of the environment, e.g., the inventor of the ancient Go never defines what strategies are good. However, enormous and sophisticated strategies are invented while a population of human players/artificial agents evolves by improving themselves over the others, i.e., each agent is acting as an environment for the others and improving itself means proposing new problems for the others.To study a new class of intelligence, general evaluation platforms with diverse games are milestones that push forward the research to the next levels. For example, ALE (Bellemare et al. 2013), Mujoco (Todorov, Erez, and Tassa 2012), and DM-Suite (Tassa et al. 2018) are the most spread general evaluation platforms that greatly accelerate the research in general reinforcement learning. However, there is no such general evaluation platform for multiagent intelligence. Although some platforms support multiagent settings (Wydmuch, Kempka, and Jaśkowski 2018;Vinyals et al. 2017), they are not general evaluation platforms, i.e., built for specific games. Thus, in this paper, we propose the first general evaluation platform for multi-agent intelligence, called Arena, containing 35 multi-agent games in total, with diverse logics and representations; see Fig. 1.Apart from training and evaluation, multi-agent intelligence research is still at a stage where many problems remain undiscovered or unexplored. Thus, the second contribution of Arena is a building toolkit for multi-agent intelligence, enabling the easy creation of different multi-agent scenarios. For example, in the sample game in Fig. 2 (a), after defining the basic behavior of the agent (i.e., moving and turning) and the \"alive\" state of the agent (i.e., it stays on the playground), it can be extended to different multi-agent scenarios with minimal effort. For example, (1) five players fight each other until only one agent is left alive (see Fig. 2 (b)), or (2) 5 ˆ2 players form 2 teams, and each agent fights for its own team until all players in a team are dead (see Fig. 2 (c)), or (3) multiple players form multiple teams in hierarchies, where the collaboration and competition relationships between the teams are customized (see Fig. 3).Thus, Arena is not just a research platform for the evaluation with a fixed set of games, but also a building toolkit for researchers to invent and build novel multi-agent problems.To achieve the above vision of building a toolkit for multiagent intelligence, (1) we provide a GUI-configurable tree that defines the social structure of agents, called social tree; Soccers BattleCity-TP Tennis PushBox DestroyPyramid TransportBricks RunToGoal YouShallNotPass Sumo PushBall TowerDefense LiftBall Reacher GoBang CaptureFlag Runner Figure 1: Game set of Arena.and (2) based on the social tree, we propose 5 basic multiagent reward schemes (BMaRSs), which define different social paradigms at each node in the social tree. Specifically, each BMaRS is a restriction applied to the reward function, so it corresponds to a batch of reward functions that can lead to a specific social paradigm. For each BMaRS, Arena provides multiple ready-to-use reward functions, simplifying the construction of games with complex social relationships. Furthermore, if the agent is controlling each joint of a robot, it has long been a burden for researchers that low-level intelligence (such as the basic skill of moving) must first be built, before they can study high-level multi-agent intelligence (Heess et al. 2017). Thus, Arena provides many ready-to-use dense reward functions in each BMaRS that handle such low-level intelligence. Additionally, Arena also offers a verification option for customized reward functions, so the researchers can make sure that the programmed reward functions lie in one of the BMaRSs that produces a specific social paradigm. Thus, with the above efforts towards a building toolkit for multi-agent intelligence and the provided set of 35 games for a general evaluation platform, one can easily customize a set of games of a new social paradigm to study a yet unexplored problem.Finally, we provide Python implementations of several state-of-the-art deep multi-agent reinforcement learning baselines, which can be used as starting points for the development of novel multi-agent algorithms, as well as the validation of new environments. Along with the baseline implementations, we also release a set of 100 best agents/teams that we can train with different training schemes for each game, as the base for evaluating agents with population performance (Balduzzi et al. 2019;Balduzzi et al. 2018). So, the research community can perform comparisons under a stable and uniform standard.To summarize, this paper's contributions are as follows:(1) a general evaluation platform for multi-agent intelligence with a set of diverse games, most of which are new to the community or still stand as a challenge for state-of-the-art algorithms, (2) a building toolkit for multi-agent games, enabling the easy creation of new social paradigms based on GUI-configurable social trees and BMaRSs, (3) the baseline implementations of 5 state-of-the-art multi-agent algorithms for both competitive and collaborative settings, and (4) sets of benchmark agents/teams for the community to conduct stable and uniform population evaluation (Balduzzi et al. 2018). Code for games, building toolkit, and baselines, as well as all corresponding tutorials have been released online at https://sites.google.com/view/arena-unity/.",
+   "level": 1,
+   "path_id": "1",
+   "parent_section_id": null,
+   "order_in_parent": 0,
+   "section_id": "sec-1"
+  },
+  {
+   "title": "The Platform State-of-the-Art Engine.",
+   "text": "The engine behind Arena is the world-leading game engine Unity (Juliani et al. 2018), which provides Arena with several desirable features on rendering, physics, customizability, and community. There are also other choices of popular engines. Some platforms contain a wide set of diverse games (Bellemare et al. 2013;Nichol et al. 2018;Perez-Liebana et al. 2016;OpenAI 2016). However, they are designed mostly for single-agent scenarios and are extremely hard to customize (adding multiple players or creating new games), since the games are provided as compiled binary ROMs. Other downsides of these choices include deterministic environments, unrealistic rendering, and unrealistic physics. Other platforms (Todorov, Erez, and Tassa 2012;Tassa et al. 2018) are, in nature, more physics engines than game engines, which lack a visual editor for easily creating customized games, and cannot handle more \"game-like\" features, such as instantiating and destroying objects in real-time during the simulation. The rest of the platforms are limited in the sense that they are built for specific tasks, such as for first-person shooting (Wyd- much, Kempka, and Jaśkowski 2018), Real-Time Strategy (RTS) (Tian et al. 2017), vision understanding (Qiu et al. 2017), in-door scene understanding (Handa et al. 2016; Brodeur et al. 2017; Savva et al. 2017; Chang et al. 2017; Puig et al. 2018; Gao et al. 2019), surviving (Suarez et al. 2019), and interaction (Wu et al. 2018; Savva et al. 2019; Kolve et al. 2017), or specific games, such as Starcraft (Vinyals et al. 2017) and Dota2 (OpenAI 2018). Thus, creating a general evaluation platform on these engines is not a reasonable choice. DeepMind Lab (Beattie et al. 2016), Psychlab (Leibo et al. 2018), and Malmo (Johnson et al. 2016) are more appropriate choices when building a customizable general evaluation platform. However, the main drawbacks of the above engines are tied to their dated nature. The rendering system of these engines are either low-polygon pixelated (Malmo, based on Minecraft) or outdated (DeepMind Lab and Psychlab, based on Quake III). The physics systems of these engines are either rudimentary (Malmo), or have a gap (Juliani et al. 2018) to the physical world (DeepMind Lab and Psychlab). Besides, they are all incompatible with a visual editor, making it quite cumbersome to build customized scenarios.To summarize, built on Unity, Arena has the following advantages over other platforms: (1) realistic rendering, so that features, such as complex lighting, textures, and shaders, are fully handled by the background engine and easily produced in a customized game, (2) realistic physics, so that enough and realistic stochasticity is introduced in the game and transferring a policy learned within a simulator to the real world is easier, (3) user-friendly visual editor, so that building new multi-agent scenarios in Arena is easy, and (4) a large and active development community, so that creating new games is easy with millions of off-the-shelf assets.Game Sets Towards General Intelligence. The first contribution of Arena is to provide a set of multi-agent games with diverse game logics and representations, so that it may push forward the research of general multi-agent intelligence. Specifically, Arena provides: (1) 27 new games that are not yet studied in the community, (2) 8 games, of which the basic logics are inspired by other research, but equipped with realistic rendering effects, physics engine, and all features described in the following two paragraphs, such as extensibility to other social paradigms, and (3) interface to the popular stand-alone domain StarCraft. The game set is shown in Fig. 1. For more detailed information, see Tables 234567in the extended paper (Song et al. 2019).Building Toolkit for Multi-Agent Environments. As the second contribution, we provide a building toolkit for multi-agent environments: we provide (1) a GUI-configurable social tree that defines how agents are grouped together with each other, and (2) 5 basic multi-agent reward schemes (BMaRSs) applied on each node in the social tree, so that different social relationships can be easily built and verified, and low-level intelligence (like motor skills) can be handled.",
+   "level": 1,
+   "path_id": "1~2",
+   "parent_section_id": null,
+   "order_in_parent": 1,
+   "section_id": "sec-1~2"
+  },
+  {
+   "title": "Other Features.",
+   "text": "Learning to communicate is an important research area in multi-agent intelligence (Das et al. 2017;Mordatch and Abbeel 2018). Thus, Arena provides a broadcast board at each node of the social tree (accessible for any agent as a child of the node), which enables the study of learning communication at each level. Also, global states may be used in research for different purposes (Lowe et al. 2017;Gupta, Egorov, and Kochenderfer 2017;Foerster et al. 2017;Foerster et al. 2018). Thus, Arena provides the option to broadcast it to all agents. Besides, a top-down view of the global game is often appreciated for visualizing population behavior (Johnson et al. 2016;Wydmuch, Kempka, and Jaśkowski 2018;Jaderberg et al. 2018;Liu et al. 2019). Thus, Arena by default enables this option. Finally, there is a necessity for competitive agents to evaluate against human players, and also a research trend for collaborative agents to team up with human players. Thus, Arena provides a gaming interface for humans, so that a human player can take the place of any agent in the game.",
+   "level": 1,
+   "path_id": "1~3",
+   "parent_section_id": null,
+   "order_in_parent": 2,
+   "section_id": "sec-1~3"
+  },
+  {
+   "title": "Basic Multi-Agent Reward Schemes and Social Trees",
+   "text": "Preliminaries. We consider a Markov game as defined in (Littman 1994), consisting of multiple agents x P X , a finite global state space S, a finite action space A x for each agent x, and a bounded-step reward space r x,t P R for each agent x. The environment consists of a transition function g :S ˆŚ A x : x P X ( Ñ S, which is a stochastic function s t`1 \" g `st , pa x,t q xPX ˘, a reward function for each agent f x : S ˆŚ A x : x P X ( Ñ R, which is a deterministic function r x,t`1 \" f x `st , pa x,t q xPX ˘, a joint reward function f \" pf x q xPX , and episode reward R fx \" ř T t\"1 r x,t for each agent x under the joint reward function f . For the agent, we consider that it observes s x,t P S x , where S x consists of a part of the information from the global state space S. Thus, we have a policy π x : S x Ñ A x , which is a stochastic function a x,t \" π x ps x,t q. Besides, we consider that the agent x can take a policy π x from a set of policies Π x and assume that the random seed of all sampling operations is k, which is sampled from the whole seed space K.We investigate the effect of tx : x P X u and tπ x : π x P Π x u on tR f x : x P X u. By applying different restrictions on the effect, we have different BMaRSs, each one of which is a set of joint reward functions F \" tf : ¨u that produce a similar effect on the population X . The term reward scheme first appears in (Tampuu et al. 2017) as a tabular, which is applied to a special case of Pong. While we define it in a general form and show that many examples are special cases within this general form.In a non-sequential setting (normal-form game), the reward scheme serves a similar purpose as the payoff matrix (Myerson 2013), which is also represented as a tabular. See Lemma 2 in the extended paper (Song et al. 2019) for how the payoff matrix is aligned with BMaRSs. In the following, we define 5 different BMaRSs. Along defining these BMaRSs, we also describe the ready-to-use reward functions f within these BMaRSs, which is provided by Arena as a dropdown list. Non-learnable BMaRSs (F N L ) are a set of joint reward functions f as follows:F N L \" f : @k P K, @x P X , @π x P Π x , BR f x { Bπ x \" 0 ( , (1)where 0 is a zero matrix of the same size and shape as the parameter space that defines π x . Intuitively, F N L means that R f x for any agent x P X cannot be optimized by improving its policy π x . Isolated BMaRSs (F IS ) are a set of joint reward functions f as follows:F IS \" f : f R F N L and @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x Bπ x 1 \" 0 ( ,(2)Intuitively, F IS means that the episode reward R f x received by any agent x P X is not related to any policy π x 1 taken by any other agent x 1 P X ztxu.Reward functions f x in f of F IS are often called internal reward functions in other multi-agent approaches (Hendtlass 2004;Jaderberg et al. 2018;Bansal et al. 2018), meaning that apart from the reward functions applied at a population level (such as win/loss), which are too sparse to learn, there are also reward functions directing the learning process towards receiving the population-level rewards, but are more frequently available, i.e., more dense (Heess et al. 2017). F IS is especially practical if the agent is a robot requiring continuous control of applying force on each of its joints, which means basic motor skills (such as moving) need to be learned before generating population-level intelligence. Thus, we provide f in F IS of energy cost, punishment of applying a big force, encouragement of keeping a steady velocity, and moving distance towards target. Competitive BMaRSs (F CP ), inspired by (Cai and Daskalakis 2011), are defined asF CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , B ş x 1 PX R f x 1 dx 1 Bπ x \" 0 ( ,(3)which intuitively means that for any agent x P X , taking any possible policy π x P Π x , the sum of the episode reward of all agents will not change. If the episode length is 1, it expresses a classic multi-player zero-sum game (Cai and Daskalakis 2011). Useful examples of f within F CP are: (1) agents fight for a limited amount of resources that are always exhausted at the end of the episode, and the agent is rewarded for the amount of resources that it gained, and (2) fight till death, and the reward is given based on the order of death (the reward can also be based on the reversed order, so that the one departing the game first receives the highest reward, such as in some poker games, the one who first discards all cards wins).Rock, Paper, and Scissors in normal-form game (Myerson 2013) and Cyclic Game in (Balduzzi et al. 2019) are both special cases of F CP ; see Lemmas 2 and 3 in the extended paper (Song et al. 2019). Collaborative BMaRSs (F CL ), inspired by (Cai and Daskalakis 2011), are defined asF CL \" f : f R F N L Y F IS and @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x 1 BR f x ě 0 ( ,(4)which, intuitively, means that there is no conflict of interest (BR f x 1 { BR f x ă 0) for any pair of agents px 1 , xq. Besides, since f R F N L Y F IS , there is at least one pair of agents px, x 1 q that makes BR fx 1 { BR f x ą 0. This indicates that this pair of agents shares a common interest, so that improving R fx for agent x means improving R f x 1 for agent x 1 . The most common example of f within F CL is that f x for all x P X is identical, such as the moving distance of an object that can be pushed forward by the joint effort of multiple agents, or the alive duration of the population (as long as there is at least one agent alive in the population, the population is alive). Thus, we provide f in F CL : living time of the team (both positive and negative, since some games require the team to survive as long as possible, while other games require the team to depart as early as possible, such as poker). Competitive and Collaborative Mixed BMaRSs (F CC ) are defined as a catch-all for any other than the above four ones. First, the term B ş (Song et al. 2019), which makes an alternative (3). Considering F CP in this alternative (3) and F CL in (4), an intuitive explanation of F CC is that there exist circumstances when BR fx 1 PX R f x 1 dx 1 { Bπ x \" 0 in (3) can be written as ş x 1 PX BR f x 1 { BR f x dx 1 \" 0 (see Lemma 1 in ex- tended paperx 1 { BR f x ă 0, meaning that the agents are competitive at this point. But the derivative of total interest ş x 1 PX BR fx 1 { BR f x dx 1 is not always 0; thus, the total interest can be maximized with specific policies, meaning that the agents are collaborative at this point.Apart from providing several practical f in each BMaRS, we also provide a verification option for each BMaRS, meaning that one can customize an f and use this verification option to make sure that the programmed f lies in a specific BMaRS. The implementation of verification option can be found in Section 1 in the extended paper (Song et al. 2019). The Social Tree. The BMaRSs defined above apply to an agent group of all sizes. To define more complex and structured social paradigms, we use a tree structure (social tree) to organize the agents and apply BMaRSs on each node of the tree. We illustrate this by an example. The GUI interface in Fig. 3 (a) defines a tree structure in Fig. 3 (b), representing a population of 4 agents.The tree structure can be easily reconfigured by dragging, duplicating, or deleting nodes in the GUI interface in Fig. 3 (a). In this example, each agent has an agent-level BMaRS. The agent is a robot ant, so that the agent-level BMaRSs are F IS , specifically, the option of ant-motion that directs the learning towards basic motion skills such as moving forward, as shown in Fig. 3 (c). Each two agents form a team (which is a set of agents or teams), the two agents have team-level BMaRSs. In this example, the two robot ants collaborate with each other to push a box forward, as shown in Fig. 3 (d). Thus, the team-level BMaRSs are F CL , specifically, the moving distance of the box. On the two teams, we have global-level BMaRSs. In this example, the two teams are set to have a match regarding which team pushes its box to the target point first, as shown in Fig. 3 (e). Thus, the global-level BMaRSs are F CP , specifically, the ranking of the box reaching the target. The final reward function applied to each agent is a weighted sum of the above three BMaRSs at three levels. One can imagine defining a social tree of more than three levels, where small teams form bigger teams, and BMaRSs are defined at each node to give more complex and structured social problems. After defining the social tree and applying BMaRSs on each node, the environment is ready for use with an abstraction layer handling everything else, such as assigning viewports to each agent in the window, applying the team color, displaying the agent ID, and generating a top-down view.",
+   "level": 1,
+   "path_id": "1~4",
+   "parent_section_id": null,
+   "order_in_parent": 3,
+   "section_id": "sec-1~4"
+  },
+  {
+   "title": "The Learning Agents",
+   "text": "The Baselines. We provide Python implementations of several state-of-the-art baselines that can be used as starting points for the development of novel multi-agent algorithms, as well as for the validation of new environments. Specifically, we first implement a fully decentralized system, where each agent is a self-contained PPO (Schulman et al. 2017), with independent critic, actor, and optimizer. We also implement two state-of-the-art methods based on self-play in ( OpenAI 2018 The Evaluation Metric. It is recently raising attention that evaluating an agent against a single-agent or hand-coded bot is unstable and misleading (Balduzzi et al. 2018). Thus, the population performance is introduced to evaluate an agent's (or an agent group's) performance among a base population. To enable population evaluation, we release 100 best agents, which we can train with different training schemes for each game as the base population. One can call the provided function to get the ranking of an agent among the base population, or get the averaged ranking of a population among the base population. Moreover, we provide a human ranking among the base population, which provides an indication of humanlevel intelligence in the game. We will accept the submission of agents from the community as well as keep implementing algorithms introduced in the future, so that the base population will be upgraded, as the level of research in multi-agent intelligence advances.",
+   "level": 1,
+   "path_id": "1~5",
+   "parent_section_id": null,
+   "order_in_parent": 4,
+   "section_id": "sec-1~5"
+  },
+  {
+   "title": "Experiments",
+   "text": "Experiments are conducted from three aspects. First, we evaluate our game set from the perspective of stochasticity, realistic rendering, and simulation speed, all of which are presented in the extended paper (Song et al. 2019) due to page limit. Other advantages from the Unity engine have been verified by (Juliani et al. 2018). Second, we evaluate our design of the extensible multi-agent building toolkit with a case study, showing that by applying different social trees and BMaRSs, different population-level strategies can be learned. Third, we report the experimental results of 5 baselines that we implemented and show that by using the provided population performance evaluation metric, the training progress can be visualized in a less noisy and more analyzable way. Case Study of Social Tree and BMaRSs. We use the game Crossroads from Arena to study the effectiveness of the proposed social tree and BMaRSs via designing different social paradigms. Specifically, in the game Crossroads shown in Fig. 5 (a), the agent can move and turn, the final goal of the agent is to reach the target on the other side of the crossroad. By defining different social trees and applying different BMaRSs, as shown in Fig. 5 (b) to (d), the agents learn different strategies. In Fig. 5 (b), isolated BMaRSs (F IS ) are applied to all agents, i.e., each agent minimizes the time that it takes to reach the target. The result shows that the learned agents simply rush forward, and they easily crash with each other at the center of the crossroad, producing a traffic jam. In Fig. 5 (c), collaborative BMaRSs (F CL ) are applied to the parent (b) (a) (c) (d) Figure 5: Case Study of Social Tree and BMaRSs.node of all agents, i.e., all agents are rewarded with the time that the last one of them takes to reach the target. The result shows that the agents learn to wait for each other to go across the crossroad, so that they can all get across as efficiently as possible. In Fig. 5 (d), collaborative BMaRSs (F CL ) are applied on the parent node of every 4 agents (which form a team), and competitive BMaRSs (F CP ) are applied on the parent node of the two teams. Specifically speaking, each two agents in the same team are rewarded with the same reward, and the reward is 1 for the team that gets all of its agents to the target first, 0 for the other team. The results show that each team learns to block the road of the other team with one agent, so that the other agents in the team can get across undisturbed. Then, the agent that blocks the road leaves for the target, after all its teammates have reached the target.Baselines and Evaluation Metric. We compare 5 baselines on two games: (1) Crossroads in Fig.",
+   "level": 1,
+   "path_id": "1~6",
+   "parent_section_id": null,
+   "order_in_parent": 5,
+   "section_id": "sec-1~6"
+  },
+  {
+   "title": "Related Work",
+   "text": "Surveys of multi-agent intelligence research can be found in (Hernandez-Leal, Kartal, and Taylor 2018). Different ideas have been explored on competitive and collaborative multiagent settings.Collaborative Settings. The simplest way to deploy multiagent collaborative systems is to make each agent have a completely independent learning process (fully decentralized) (Matignon, Laurent, and Le Fort-Piat 2012). However, collaborative behaviors are hardly observed under such fully decentralized setting; thus, a fully centralized system is utilized in (Peng et al. 2017), where the policy has access to the global state and is shared by all agents. However, it is impractical, since the global state is mostly unavailable in practice, and the system does not support extending the number of agents. Thus, centralized training and decentralized execution are gaining attention (Kraemer and Banerjee 2016). Experiments: Realistic Rendering, Simulation Speed and Stochasticity Realistic Rendering. Realistic rendering in games is gaining more consideration, as the research community is moving towards transferring the algorithms to real-world scenarios. Some of such platforms are (Brodeur et al. 2017;Qiu et al. 2017;Yan et al. 2018;Kolve et al. 2017;Wu et al. 2018). In Fig. 6, we report an objective comparison of the most realistic scenes provided in these works against those in our platform. The results show that our platform provides a realistic rendering effect at the same level as the best of them. Simulation Speed. Simulation speed and parallelism of an environment are two important factors for carrying out research. Thus, we compare our game Boomer in Fig. ) by running a fixed sequence of 1000 actions repeatedly 1000 times and investigating how many branches are produced (averaged over all games in the corresponding platform). Table 1 shows that our platform generates most stochasticity among them, measured by the number of branches that the environment produces when applying the same action sequence on it. This is accomplished by introducing stochasticity from the initial setup (e.g., a randomly generated map), the rendering effect (e.g., randomized light conditions and particle systems), and the physics system (e.g., randomized physics properties).",
+   "level": 1,
+   "path_id": "1~7",
+   "parent_section_id": null,
+   "order_in_parent": 6,
+   "section_id": "sec-1~7"
+  },
+  {
+   "title": "How Verification for BMaRSs is Implemented",
+   "text": "Since the definitions of BMaRSs contain the statement of @, which requires enumerating over the entire space of some variables, we first set a hyper-parameter of N , denoting the number of samples that we will apply the verification operation to. If a statement Y of sample i P I holds true for all N samples from I, we approximately make the judgement that p@i P I, Yq is true. If a statement Y of sample i P I holds false for any one of N samples from I, we make the judgement that p@i P I, Yq is false. Thus, in the following, we describe how to make the judgment of whether a statement Y of sample i holds true or not. Non-learnable BMaRSs (F N L ) are defined as:F N L \" f : @k P K, @x P X , @π x P Π x , BR f x Bπ x \" 0 ( , (5)where 0 is a zero matrix of the same size and shape as the parameter space that defines π x . For each sample i, we first sample k P K, x P X , tπ x P Π xu xPX randomly. Then, we first run one episode to get R f x . We denote it R f x 1 , since it is from the first episode. We run the second episode to get R f x and denote it R fx 2 , since it is from the second episode. In the second episode, we keep the following variables the same as the first episode: k, tπ xu for all x P X ztxu. In the second episode, we sample a different π x from that in the first episode. The π x in the first and second episode are denoted π 1x and π 2 x respectively. Then, we can compute one sample ofBR f x Bπx \" R f x 1 1 ´Rf x 1 2 π 1 x ´π2x and make the judgement whether BR f x Bπx \" 0 for sample i holds true. Isolated BMaRSs (F IS ) are defined as:F IS \" f : @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x Bπ x 1 \" 0 ( .(6)For each sample i, we first sample k P K, x P X , x 1 P X ztxu, tπ x P Π xu xPX randomly. Then, we first run one episode to get R f x . We denote it R f x 1 , since it is from the first episode. We run the second episode to get R f x and denote it R f x 2 , since it is from the second episode. In the second episode, we keep the following variables the same as the first episode: k, tπ xu for all x P X ztx 1 u. In the second episode, we sample a different π x 1 from that in the first episode. The π x 1 in the first and second episode are denoted π 1 x 1 and π 2 x 1 respectively. Then, we can compute one sample ofBR f x Bπ x 1 \" R f x 1 ´Rf x 2 π 1 x 1 ´π2 x 1and make the judgement whether BR fx Bπ x 1 \" 0 for sample i holds true. Competitive BMaRSs (F CP ) are defined as:F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , B ş x 1 PX R f x 1 dx 1 Bπ x \" 0 ( .(7)HoME AI2-THOR CHALET UnrealCV House3D Arena (a) Boomer (Arena) (b) MsPacman (Atari) FPS Number of Concurrent Threads Number of CPU Threads (c) Comparison of train Frames Per Second (FPS) under different numbers of concurrent threads.  For each sample i, we first sample k P K, x P X , tπ x P Π xu xPX randomly. Then, we first run one episode to get şx 1 PX R f x 1 dx 1 . We denote it ş x 1 PX R f x 1 1 dx 1, since it is from the first episode. We run the second episode to get ş x 1 PX R f x 1 dx 1 and denote it ş x 1 PX R f x 1 2 dx 1 , since it is from the second episode. In the second episode, we keep the following variables the same as the first episode: k, tπ xu for all x P X ztxu and we sample a different π x from that in the first episode. The π x in the first and second episode are denoted π 1x and π 2 x respectively. Then, we can compute one sample ofB ş x 1 PX R f x 1 dx 1 Bπx \" ş x 1 PX R f x 1 1 dx 1 ´şx 1 PX R f x 1 2 dx 1 π 1 x ´π2x and make the judgement of whetherB ş x 1 PX R f x 1 dx 1 Bπx \" 0 for sample i holds true.Collaborative BMaRSs (F CL ) are inspired by (Cai and Daskalakis 2011) and defined as,F CL \" f : f R F N L Y F IS and @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x 1 BR f x ě 0 ( .(8)For each sample i, we first sample k P K, x P X , x 1 P X ztxu, tπ x P Π xu xPX randomly. Then, we first run one episode to get R f x and R f x 1 . We denote itR f x 1 and R f x 1 1 , respectively, since it is from the first episode. We run the second episode to get R f x and R f x 1 and denote it R f x 2 and R f x 1 2, respectively, since it is from the second episode. In the second episode, we keep the following variables the same as the first episode: k, tπ xu for all x P X ztxu and we sample a different π x from that in the first episode.Then, we can compute one sample ofBR f x 1 BR f x \" R f x 1 1 ´Rf x 1 2 R f x 1 ´Rf x 2 and make the judgement whether BR f x 1 BR f x ě 0 for sample i holds true.Competitive and Collaborative Mixed BMaRSs (F CC ) are defined to be any situations other than the above four ones:F CC \" f : f R F N L Y F IS Y F CP Y F CL ( ,(9)which means if a reward function f is verified to be not among above F N L , F IS , F CP or F CL , it is verified to be among F CC .Lemma 1 An equivalent expression ofF CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , B ş x 1 PX R f x 1 dx 1 Bπ x \" 0 ((10)is:F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , ż x 1 PX BR f x 1 BR f x dx 1 \" 0 ( .(11)Proof of Lemma 1: Following the defination of F CP , since f R F N L , we have:Dk P K, Dx P X , Dπ x P Π x , BR f x Bπ x ‰ 0.(12)Thus, F CP equals to:F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , ż x 1 PX BR f x 1 Bπ x dx 1 Bπ x BR f x \" 0 ((13)\" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , ż x 1 PX BR f x 1 BR f x dx 1 \" 0 ( ,(14)completing the proof.Lemma 2 Rock, Paper, and Scissors in normal-form game (Myerson 2013) is a special case of F CP , which is defined in (11).Player 2 Strategy 1: Rock Strategy 2: Paper Strategy 3: Scissors Player 1 Strategy 1: Rock p0, 0q p´1, 1q p1, ´1q Strategy 2: Paper p1, ´1q p0, 0q p´1, 1q Strategy 3: Scissors p´1, 1q p1, ´1q p0, 0qTable 2: Payoff matrix of Rock, Paper, and Scissors.Proof of Lemma 2: The payoff matrix in a normal-form game (Myerson 2013) is a matrix aligning the tuple of tplayer, strategyu with the payoff received by each player. The reward scheme in a multi-agent learning context is a map aligning the tuple of tagent x, policy π x u to the episode reward R f x received by the agent x. Thus, player is equivalent to agent, strategy is a special case of policy when the episode length is one, payoff is equivalent to episode reward R fx when the episode length is one. Payoff matrix of Rock, Paper, and Scissors is shown in Table 2. By selecting any pair of cells in the payoff matrix, say p1, ´1q and p´1, 1q, we can compute aBR f x 1 BR f x \" 1´p´1qp´1q´1 . Thus, by enumerating over all possible pairs of cells in the payoff matrix to compute allBR f x 1 BR f x, we can verify that the payoff matrix satisfies the definition of F CP in (11).Lemma 3 Symmetric zero-sum games and cyclic games in (Balduzzi et al. 2019) are a special case of F CP , which is defined in (11).Proof of Lemma 3: In ( Balduzzi et al. 2019), W denotes a set of agents parameterized by the weights of a neural net. For instance, w P W and v P W are two agents of specific policies from the full policy set W . φpv, wq evaluates a pair of agents pw, vq φ : W ˆW Ñ R.The higher φpv, wq, the better for agent v. They refer to φ ą 0, φ ă 0, and φ \" 0 as wins, losses, and ties, respectively, for v. A game is defined as symmetric zero-sum game if:@w P W, @v P W, φpv, wq \" ´φpv, wq.(16)A cyclic game is a symmetric zero-sum game. As can be seen, when the game is symmetric @x P X , Π x is the same andΠ x \" Π X ,(17)W is equivalent to Π X . When the game has only two players x 1 and x 2tx 1 u \" X ztx 2 u,(18)φ is equivalent to R x1 . Thus, v and w are equivalent to π x1 and π x2 , respectively and the equivalent expression of symmetric zero-sum game in ( 16) is:@π x1 P Π X , @π x2 P Π X , R x1 \" ´Rx2 .(19)The equivalent expression of (11) when there are only two players x 1 x 2 , i.e., satisfying (18), is:F CP \" f : f R F N L Y F IS and @x 1 P X , tx 2 u \" X ztx 1 u, @π x1 P Π X , @π x2 P Π X , BR x1 BR x2 \" ´1( .(20)This shows that symmetric zero-sum games are a special case of F CP . Since cyclic games are symmetric zero-sum games, cyclic games are also a special case of F CP .",
+   "level": 1,
+   "path_id": "1~8",
+   "parent_section_id": null,
+   "order_in_parent": 7,
+   "section_id": "sec-1~8"
+  },
+  {
+   "title": "Figure 1 :",
+   "text": "1FightForFood",
+   "level": 1,
+   "path_id": "1~9",
+   "parent_section_id": null,
+   "order_in_parent": 8,
+   "section_id": "sec-1~9"
+  },
+  {
+   "title": "Figure 2 :",
+   "text": "2Figure2: Game examples of the extensible multi-agent platform.",
+   "level": 1,
+   "path_id": "1~10",
+   "parent_section_id": null,
+   "order_in_parent": 9,
+   "section_id": "sec-1~10"
+  },
+  {
+   "title": "Figure 3 :",
+   "text": "3Figure 3: An example of a social tree and BMaRSs applied on it.\n) (SP) and population-based training in (Jaderberg et al. 2018; DeepMind 2019) (PB). For collaborative agents, we implement two state of the arts: centralized critic (Lowe et al. 2017) (CC) and centralized critic with a counterfactual baseline (Fo-erster et al. 2018) (CF).",
+   "level": 1,
+   "path_id": "1~11",
+   "parent_section_id": null,
+   "order_in_parent": 10,
+   "section_id": "sec-1~11"
+  },
+  {
+   "title": "Figure 4 :Figure 5 :",
+   "text": "45Figure 4: Visualizing training progress over episode reward (a,b) and population performance (c,d) of different baselines: D-PPO (Decentralized Proximal Policy Optimization), SP (Self-Play), PB (Population-Based training), CC (Centralized Critic), and CF (Counterfactual Baseline).\n5 (a) with the BMaRS settings of Fig. 5 (d) and (2) PushBox in Fig. 3 (e) with the BMaRS settings of Fig. 3 (b). The BMaRS settings of both games contain competitive as well as collaborative social relationships, i.e., multiple agents form collaborative teams, and teams compete with each other. Thus, we investigate SP and PB baselines at the level of teams competing with each other, as well as investigate CC and CF baselines at the level of agents collaborating with each other in a team. As can be seen, the curve of episode reward shown in Fig. 4 (a) and (b) is extremely noisy, as the environment is non-stationary with the strategy of other collaborators and/or competitors evolving during the training. However, in Fig. 4 (c) and (d), which is the curve of ranking in the released base population, i.e., population performance, all methods are comparable with clear performance gaps.\nFor multi-agent systems, this idea is mostly explored under actorcritic algorithms (Foerster et al. 2018). Other ideas include using a joint action-value function, (Lauer and Riedmiller 2004) addressing the variance problem by a large batch size (Bansal et al. 2018), and learning grounded cooperative communication protocols between agents (Foerster et al. 2016). Competitive Settings. Competitive multi-agent intelligence originally comes from computational game theory (Bowling et al. 2015). Later on, deep multi-agent reinforcement learning (D-MARL) is preferred, due to its scalability, and as it achieves notable advances on two-player games, such as Poker and Go (Moravčík et al. 2017; Silver et al. 2017). Later, D-MARL was applied to more diverse problems, such as high-dimensional video games (OpenAI 2018; DeepMind 2019) and those involving physics control (Bansal et al. 2018). When solving more practical problems, many issues have been raised, such as ensuring diversity amongst agents (Marivate 2015), avoiding overfitting to the policy of the opponents (Lanctot et al. 2017). Many ideas address such issues (Kleiman-Weiner et al. 2016). Following on D-MARL, a very promising recent direction is self-play (Tesauro 1995). Fictitious self-play (Heinrich and Silver 2016) first shows promising performance on the competitive game Leduc Poker. However, as the stability and parallelizability are improving with the invention of new reinforcement learning algorithms, state-of-the-art approaches adopt a simpler form of self-play (OpenAI 2018), which produces a superior-human intelligence on large video games, like Dota2. Another promising\n7 (a) with MsPacman in Fig. 7 (b) from the most widely used general evaluation platform ALE (Bellemare et al. 2013), both of which run on our parallel implementation of the PPO (D-PPO) baseline on a server with 32 CPU threads. Then, we compare these two games, as they are of similar complexity. The result in Fig. 7 (c) shows that Arena allows for parallel implementations while maintaining a similar simulation speed as ALE (Bellemare et al. 2013) on games of similar complexity when the number of concurrent threads is below the number of CPU threads of the machine, i.e., smaller than 32. Stochasticity. According to (Jaderberg et al. 2018), having enough stochasticity is essential for researchers to verify that their algorithms are learning general knowledge instead of memorizing action sequences. Thus, we conduct a stochasticity study on the existing general evaluation platforms ALE (Bellemare et al. 2013), Retro (Nichol et al. 2018), GVG-AI (Perez-Liebana et al. 2016), Mujoco (Todorov, Erez, and Tassa 2012), and DM-Suite (Tassa et al. 2018",
+   "level": 1,
+   "path_id": "1~12",
+   "parent_section_id": null,
+   "order_in_parent": 11,
+   "section_id": "sec-1~12"
+  },
+  {
+   "title": "Figure 6 :",
+   "text": "6Figure 6: Comparison of realistic rendering effect.",
+   "level": 1,
+   "path_id": "1~13",
+   "parent_section_id": null,
+   "order_in_parent": 12,
+   "section_id": "sec-1~13"
+  },
+  {
+   "title": "Figure 7 :",
+   "text": "7Figure 7: Comparison of simulation speed.",
+   "level": 1,
+   "path_id": "1~14",
+   "parent_section_id": null,
+   "order_in_parent": 13,
+   "section_id": "sec-1~14"
+  },
+  {
+   "title": "Table 1 :",
+   "text": "1Comparison of the stochasticity of platforms.Platform ALE Retro GVG-AI Mujoco DM-Suite ArenaBranches0.0431.223.112.250.2922.4",
+   "level": 1,
+   "path_id": "1~15",
+   "parent_section_id": null,
+   "order_in_parent": 14,
+   "section_id": "sec-1~15"
+  }
+ ],
+ "citations": [
+  {
+   "raw_text": "VRKitchen: An interactive 3D environment for learning real life cooking tasks\n\t\t\n\t\t\tBalduzzi\n\t\t\n\t\tarXiv:1901.08106.[Bansaletal.2018\n\t\tarXiv:1603.01121\n\t\n\t\n\t\tAlphaStar: Mastering the real-time strategy game StarCraft II. In DeepMind\n\t\t\n\t\t\tIcra\n\t\t\n\t\t\n\t\t\t2018. 2018. 2019. 2019. 2018. 2016. 2016. 2013. 2015. 2017. 2017. 2011. 2017. 2017. DeepMind 2019] DeepMind. 2019. 2016. 2017. 2018. 2019. 2017. 2017. 2016. 2016\n\t\t\n\t\n\tRe-evaluating evaluation Emergent complexity via multi-agent competition ICLR Deepmind lab Bellemare et al. 2013 Open-ended learning in symmetric zero-sum games Heads-up limit hold&apos;em poker is solved JAIR NIPS On minmax theorems for multiplayer games SIAM A household multimodal environment Learning cooperative visual dialog agents with deep reinforcement learning ICCV Matterport3D: Learning from RGB-D data in indoor environments Foerster et al. 2016 Learning to communicate with deep multi-agent reinforcement learning NIPS Foerster et al. 2017 Stabilising experience replay for deep multi-agent reinforcement learning ICML Foerster et al. 2018] Foerster J. Counterfactual multi-agent policy gradients AAAI Gao et al. 2019] Gao, X.; Gong, The Arcade learning environment: An evaluation platform for general agents ICML Workshop RL4RealLife Cooperative multi-agent control using deep reinforcement learning AAMAS SceneNet: An annotated model generator for indoor scene understanding et al. 2017. Emergence of locomotion behaviours in rich environments Heinrich and Silver 2016] Heinrich, J., and Silver, D. 2016. Deep reinforcement learning from self-play in imperfectinformation games Hendtlass 2004] Hendtlass, T. 2004. An introduction to collective intelligence. In SAP",
+   "doi": null,
+   "arxiv_id": "1901.08106.[Bansaletal.2018",
+   "title": "VRKitchen: An interactive 3D environment for learning real life cooking tasks",
+   "anchors": [
+    {
+     "ref_id": "b0",
+     "section_path_id": "1",
+     "quote": "(Bellemare et al. 2013)",
+     "offset": 1081
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "1",
+     "quote": "(Heess et al. 2017)",
+     "offset": 4010
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "1",
+     "quote": "(Balduzzi et al. 2019;",
+     "offset": 5098
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "1",
+     "quote": "Balduzzi et al. 2018)",
+     "offset": 5120
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "1",
+     "quote": "(Balduzzi et al. 2018)",
+     "offset": 5864
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "1~2",
+     "quote": "(Bellemare et al. 2013;",
+     "offset": 294
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "1~3",
+     "quote": "(Das et al. 2017;",
+     "offset": 82
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "1~3",
+     "quote": "Gupta, Egorov, and Kochenderfer 2017;",
+     "offset": 398
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "1~3",
+     "quote": "Foerster et al. 2017;",
+     "offset": 435
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "1~3",
+     "quote": "Foerster et al. 2018)",
+     "offset": 456
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "1~4",
+     "quote": "Bansal et al. 2018)",
+     "offset": 2886
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "1~4",
+     "quote": "(Cai and Daskalakis 2011)",
+     "offset": 4043
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "1~5",
+     "quote": "(Balduzzi et al. 2018",
+     "offset": 634
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "1~7",
+     "quote": "(Brodeur et al. 2017;",
+     "offset": 1179
+    },
+    {
+     "ref_id": "b0",
+     "section_path_id": "1~8",
+     "quote": "(Balduzzi et al. 2019",
+     "offset": 6823
+    }
+   ]
+  },
+  {
+   "raw_text": "Human-level performance in first-person multiplayer games with population-based deep reinforcement learning\n\t\t\n\t\t\tKartalHernandez-Leal\n\t\t\n\t\t\n\t\t\tTaylor;Hernandez-Leal\n\t\t\n\t\t\n\t\t\tPKartal\n\t\t\n\t\t\n\t\t\tBTaylor\n\t\t\n\t\t\n\t\t\tMEJaderberg\n\t\t\n\t\t\n\t\t\tMCzarnecki\n\t\t\n\t\t\n\t\t\tWMDunning\n\t\t\n\t\t\n\t\t\tIMarris\n\t\t\n\t\t\n\t\t\tLLever\n\t\t\n\t\t\n\t\t\tGCastaneda\n\t\t\n\t\t\n\t\t\tAGBeattie\n\t\t\n\t\t\n\t\t\tCRabinowitz\n\t\t\n\t\t\n\t\t\tNCMorcos\n\t\t\n\t\t\n\t\t\tASRuderman\n\t\t\n\t\t\n\t\t\tA\n\t\t\n\t\tarXiv:1810.05587\n\t\tICLR. [Lowe et al. 2017\n\t\n\t\n\t\tAutocurricula and the emergence of innovation from social interaction: A manifesto for multi-agent intelligence research\n\t\t\n\t\t\t[Cogsci\n\t\t\n\t\t\n\t\t\tKolve\n\t\t\n\t\tAI2-THOR; Littman\n\t\t\n\t\t\tMarivate\n\t\t\t2018. 2018. 2018. 2016. 2018. 2016. 2016. 2017. 2016. 2016. 2017. 2004. 2004. 2018. 2019. 1994. 1994. 2019. 2019. 2017. Marivate 2015. 2015\n\t\t\n\t\t\n\t\t\tRutgers University-Graduate School-New Brunswick\n\t\t\n\t\n\tarXiv preprint\n\tCoRR The Malmo platform for artificial intelligence experimentation IJCAI Juliani et al. 2018 Unity: A general platform for intelligent agents Coordinate to cooperate or compete: abstract goals and joint intentions in social interaction An interactive 3D environment for visual AI Multi-agent reinforcement learning as a rehearsal for decentralized planning Lanctot et al. 2017 A unified game-theoretic approach to multiagent reinforcement learning NIPS Reinforcement learning for stochastic cooperative multi-agent systems AAMAS Leibo et al. 2018 Psychlab: A psychology laboratory for deep reinforcement learning agents Leibo et al. 2019 Is multiagent deep reinforcement learning the answer or the question? A brief survey Markov games as a framework for multi-agent reinforcement learning ICML Emergent coordination through competition J Multi-agent actorcritic for mixed cooperative-competitive environments NIPS Improved Empirical Methods in Reinforcement-Learning Evaluation. Ph.D. Dissertation",
+   "doi": null,
+   "arxiv_id": "1810.05587",
+   "title": "Human-level performance in first-person multiplayer games with population-based deep reinforcement learning",
+   "anchors": [
+    {
+     "ref_id": "b1",
+     "section_path_id": "1~2",
+     "quote": "(Juliani et al. 2018)",
+     "offset": 63
+    },
+    {
+     "ref_id": "b1",
+     "section_path_id": "1~3",
+     "quote": "(Lowe et al. 2017;",
+     "offset": 380
+    },
+    {
+     "ref_id": "b1",
+     "section_path_id": "1~3",
+     "quote": "(Johnson et al. 2016;",
+     "offset": 643
+    },
+    {
+     "ref_id": "b1",
+     "section_path_id": "1~6",
+     "quote": "(Juliani et al. 2018)",
+     "offset": 308
+    },
+    {
+     "ref_id": "b1",
+     "section_path_id": "1~7",
+     "quote": "Kolve et al. 2017;",
+     "offset": 1232
+    }
+   ]
+  },
+  {
+   "raw_text": "Independent reinforcement learners in cooperative Markov games: A survey regarding coordination problems. The Knowledge Engineering Review\n\t\t\n\t\t\tLaurentMatignon\n\t\t\n\t\t\n\t\t\tLeFort-Piat ; Matignon\n\t\t\n\t\t\n\t\t\tLLaurent\n\t\t\n\t\t\n\t\t\tGJ\n\t\t\n\t\t\n\t\t\tLeFort-Piat\n\t\t\n\t\t\n\t\t\tNMoravčík\n\t\t\n\t\n\t\n\t\tScience\n\t\t\n\t\t\t2012. 2012. 2017. 2017. 2018\n\t\t\tHarvard University Press\n\t\t\n\t\n\tDeepStack: Expert-level artificial intelligence in heads-up no-limit poker Mordatch and Abbeel 2018 Emergence of grounded compositional language in multi-agent populations In AAAI. [Myerson 2013] Myerson, R. B. 2013. Game theory",
+   "doi": null,
+   "arxiv_id": null,
+   "title": "Independent reinforcement learners in cooperative Markov games: A survey regarding coordination problems. The Knowledge Engineering Review",
+   "anchors": [
+    {
+     "ref_id": "b2",
+     "section_path_id": "1~3",
+     "quote": "Mordatch and Abbeel 2018)",
+     "offset": 99
+    },
+    {
+     "ref_id": "b2",
+     "section_path_id": "1~7",
+     "quote": "(Matignon, Laurent, and Le Fort-Piat 2012)",
+     "offset": 367
+    }
+   ]
+  },
+  {
+   "raw_text": "Openai universe\n\t\t\n\t\t\tNichol\n\t\t\n\t\tarXiv:1804.03720.[OpenAI2016]OpenAI.2016\n\t\t\n\t\n\t\n\t\tGotta learn fast: A new benchmark for generalization in RL\n\t\t\n\t\t\t2018. 2018\n\t\t\n\t\n\tOpenAI 2018] OpenAI. 2018. Openai five",
+   "doi": null,
+   "arxiv_id": "1804.03720.[OpenAI2016]OpenAI.2016",
+   "title": "Openai universe",
+   "anchors": [
+    {
+     "ref_id": "b3",
+     "section_path_id": "1~2",
+     "quote": "Nichol et al. 2018;",
+     "offset": 317
+    }
+   ]
+  },
+  {
+   "raw_text": "Peng\n\t\t\n\t\tarXiv:1703.10069\n\t\tMultiagent bidirectionallycoordinated nets for learning to play StarCraft combat games\n\t\t\n\t\t\t2017. 2017",
+   "doi": null,
+   "arxiv_id": "1703.10069",
+   "title": null,
+   "anchors": [
+    {
+     "ref_id": "b4",
+     "section_path_id": "1~7",
+     "quote": "(Peng et al. 2017)",
+     "offset": 552
+    }
+   ]
+  },
+  {
+   "raw_text": "Arena: A general evaluation platform and building toolkit for multi-agent intelligence\n\t\t\n\t\t\tPerez-Liebana\n\t\t\n\t\tarXiv:1712.03931\n\t\tarXiv:1801.00690\n\t\n\t\n\t\tNeural MMO: A massively multiagent game environment for training and evaluating intelligent agents\n\t\t\n\t\t\t2016. 2016. 2018. 2017. 2017. 2017. 2019. 2019. 2017. 2017. Song et al. 2019. 2019. 2019. 2017. 1995. 1995\n\t\t\n\t\n\tarXiv preprint\n\tAAAI Puig et al. 2018 CVPR UnrealCV: Virtual worlds for computer vision International Conference on Multimedia Savva et al. 2017 VirtualHome: Simulating household activities via programs Habitat: A platform for embodied AI research Proximal policy optimization algorithms Mastering the game of Go without human knowledge MINOS: Multimodal indoor simulator for navigation in complex environments Suarez et al. 2019 General video game AI: Competition, challenges and opportunities Tampuu et al. 2017 Multiagent cooperation and competition with deep reinforcement learning Nature Tassa et al. 2018 et al. 2018. Deepmind control suite Temporal difference learning and TD-Gammon PloS one Tian et al. 2017] Tian, Y.; Gong, Q.; Shang, W.; Wu, Y.; and Zitnick, C. L. 2017. Elf: An extensive, lightweight and flexible research platform for real-time strategy games NIPS",
+   "doi": null,
+   "arxiv_id": "1712.03931",
+   "title": "Arena: A general evaluation platform and building toolkit for multi-agent intelligence",
+   "anchors": [
+    {
+     "ref_id": "b5",
+     "section_path_id": "1~2",
+     "quote": "Perez-Liebana et al. 2016;",
+     "offset": 336
+    },
+    {
+     "ref_id": "b5",
+     "section_path_id": "1~4",
+     "quote": "(Tampuu et al. 2017)",
+     "offset": 1398
+    },
+    {
+     "ref_id": "b5",
+     "section_path_id": "1~7",
+     "quote": "Qiu et al. 2017;",
+     "offset": 1200
+    }
+   ]
+  },
+  {
+   "raw_text": "MuJoCo: A physics engine for model-based control\n\t\t\n\t\t\tErezTodorov\n\t\t\n\t\t\n\t\t\tETassa ; Todorov\n\t\t\n\t\t\n\t\t\tTErez\n\t\t\n\t\t\n\t\t\tYTassa\n\t\t\n\t\t\n\t\t\tVinyals\n\t\t\n\t\tarXiv:1708.04782.[Wuetal.2018\n\t\tarXiv:1801.07357\n\t\n\t\n\t\tBuilding generalizable agents with a realistic and rich 3D environment\n\t\t\n\t\t\t2012. 2012. 2017. 2017. 2018. 2018. 2018\n\t\t\n\t\n\tIROS StarCraft II: A new challenge for reinforcement learning Wydmuch, Kempka, and Jaśkowski 2018 ViZDoom competitions: Playing doom from pixels Chalet: Cornell house agent learning environment",
+   "doi": null,
+   "arxiv_id": "1708.04782.[Wuetal.2018",
+   "title": "MuJoCo: A physics engine for model-based control",
+   "anchors": [
+    {
+     "ref_id": "b6",
+     "section_path_id": "1",
+     "quote": "(Todorov, Erez, and Tassa 2012)",
+     "offset": 1113
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "1",
+     "quote": "(Wydmuch, Kempka, and Jaśkowski 2018;",
+     "offset": 1435
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "1",
+     "quote": "Vinyals et al. 2017)",
+     "offset": 1472
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "1~2",
+     "quote": "(Todorov, Erez, and Tassa 2012;",
+     "offset": 709
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "1~3",
+     "quote": "Wydmuch, Kempka, and Jaśkowski 2018;",
+     "offset": 664
+    },
+    {
+     "ref_id": "b6",
+     "section_path_id": "1~7",
+     "quote": "Yan et al. 2018;",
+     "offset": 1216
+    }
+   ]
+  }
+ ],
+ "layout_json": null,
+ "tei_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<TEI xml:space=\"preserve\" xmlns=\"http://www.tei-c.org/ns/1.0\" \nxmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \nxsi:schemaLocation=\"http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd\"\n xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\t<teiHeader xml:lang=\"en\">\n\t\t<fileDesc>\n\t\t\t<titleStmt>\n\t\t\t\t<title level=\"a\" type=\"main\">Arena: A General Evaluation Platform and Building Toolkit for Multi-Agent Intelligence</title>\n\t\t\t\t<funder ref=\"#_gsUPRft\">\n\t\t\t\t\t<orgName type=\"full\">Graduate Travel</orgName>\n\t\t\t\t</funder>\n\t\t\t\t<funder>\n\t\t\t\t\t<orgName type=\"full\">Alan Turing Institute</orgName>\n\t\t\t\t</funder>\n\t\t\t\t<funder ref=\"#_DmTstbQ\">\n\t\t\t\t\t<orgName type=\"full\">Natural Science Foundation of Tianjin</orgName>\n\t\t\t\t</funder>\n\t\t\t\t<funder>\n\t\t\t\t\t<orgName type=\"full\">Yuanguang Scholar Fund of Hebei University of Technology</orgName>\n\t\t\t\t</funder>\n\t\t\t\t<funder ref=\"#_kPts8qE\">\n\t\t\t\t\t<orgName type=\"full\">China Scholarship Council</orgName>\n\t\t\t\t</funder>\n\t\t\t\t<funder>\n\t\t\t\t\t<orgName type=\"full\">AXA Reseach Fund</orgName>\n\t\t\t\t</funder>\n\t\t\t\t<funder ref=\"#_6Vb6kBy\">\n\t\t\t\t\t<orgName type=\"full\">UK EPSRC</orgName>\n\t\t\t\t</funder>\n\t\t\t\t<funder ref=\"#_bEhqKxu #_K5KEj8Y #_SYBva2P\">\n\t\t\t\t\t<orgName type=\"full\">National Natural Science Foundation of China</orgName>\n\t\t\t\t</funder>\n\t\t\t\t<funder>\n\t\t\t\t\t<orgName type=\"full\">Somerville College of the University of Oxford</orgName>\n\t\t\t\t</funder>\n\t\t\t</titleStmt>\n\t\t\t<publicationStmt>\n\t\t\t\t<publisher/>\n\t\t\t\t<availability status=\"unknown\"><licence/></availability>\n\t\t\t</publicationStmt>\n\t\t\t<sourceDesc>\n\t\t\t\t<biblStruct status=\"extracted\">\n\t\t\t\t\t<analytic>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Yuhang</forename><surname>Song</surname></persName>\n\t\t\t\t\t\t\t<email>yuhang.song@cs.ox.ac.uk</email>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Department of Computer Science</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of Oxford</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"GB\">United Kingdom</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Andrzej</forename><surname>Wojcicki</surname></persName>\n\t\t\t\t\t\t\t<email>andrzej@wojcicki.xyz</email>\n\t\t\t\t\t\t\t<affiliation key=\"aff2\">\n\t\t\t\t\t\t\t\t<orgName type=\"laboratory\">Lighthouse</orgName>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Thomas</forename><surname>Lukasiewicz</surname></persName>\n\t\t\t\t\t\t\t<email>thomas.lukasiewicz@cs.ox.ac.uk</email>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Department of Computer Science</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of Oxford</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"GB\">United Kingdom</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Jianyi</forename><surname>Wang</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff3\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">School of Electronic and Information Engineering</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">Beihang University</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"CN\">China</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Abi</forename><surname>Aryan</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff4\">\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of California</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<settlement>Los Angeles</settlement>\n\t\t\t\t\t\t\t\t\t<country key=\"US\">United States</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Zhenghua</forename><surname>Xu</surname></persName>\n\t\t\t\t\t\t\t<email>zhenghua.xu@hebut.edu.cn</email>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Department of Computer Science</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of Oxford</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"GB\">United Kingdom</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t\t<affiliation key=\"aff1\">\n\t\t\t\t\t\t\t\t<orgName type=\"laboratory\">State Key Laboratory of Reliability and Intelligence of Electrical Equipment</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">Hebei University of Technology</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"CN\">China</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Mai</forename><surname>Xu</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff3\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">School of Electronic and Information Engineering</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">Beihang University</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"CN\">China</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Zihan</forename><surname>Ding</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff5\">\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">Imperial College London</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"GB\">United Kingdom</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<author>\n\t\t\t\t\t\t\t<persName><forename type=\"first\">Lianlong</forename><surname>Wu</surname></persName>\n\t\t\t\t\t\t\t<affiliation key=\"aff0\">\n\t\t\t\t\t\t\t\t<orgName type=\"department\">Department of Computer Science</orgName>\n\t\t\t\t\t\t\t\t<orgName type=\"institution\">University of Oxford</orgName>\n\t\t\t\t\t\t\t\t<address>\n\t\t\t\t\t\t\t\t\t<country key=\"GB\">United Kingdom</country>\n\t\t\t\t\t\t\t\t</address>\n\t\t\t\t\t\t\t</affiliation>\n\t\t\t\t\t\t</author>\n\t\t\t\t\t\t<title level=\"a\" type=\"main\">Arena: A General Evaluation Platform and Building Toolkit for Multi-Agent Intelligence</title>\n\t\t\t\t\t</analytic>\n\t\t\t\t\t<monogr>\n\t\t\t\t\t\t<imprint>\n\t\t\t\t\t\t\t<date/>\n\t\t\t\t\t\t</imprint>\n\t\t\t\t\t</monogr>\n\t\t\t\t\t<idno type=\"MD5\">C010D83A130CA757BB93DC57E1D81E02</idno>\n\t\t\t\t</biblStruct>\n\t\t\t</sourceDesc>\n\t\t</fileDesc>\n\t\t<encodingDesc>\n\t\t\t<appInfo>\n\t\t\t\t<application version=\"0.9.0\" ident=\"GROBID\" when=\"2026-08-21T15:26+0000\">\n\t\t\t\t\t<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>\n\t\t\t\t\t<label type=\"revision\">0.9.0</label>\n\t\t\t\t\t<label type=\"parameters\">startPage=-1, endPage=-1, consolidateCitations=0, consolidateHeader=0, consolidateFunders=0, includeRawAffiliations=false, includeRawCitations=false, includeRawCopyrights=false, generateTeiIds=false, generateTeiCoordinates=[[\"figure\",\"table\",\"note\",\"formula\"]], flavor=null</label>\n\t\t\t\t\t<ref target=\"https://github.com/kermitt2/grobid\"/>\n\t\t\t\t</application>\n\t\t\t</appInfo>\n\t\t</encodingDesc>\n\t\t<profileDesc>\n\t\t\t<abstract>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><p>Learning agents that are not only capable of taking tests, but also innovating is becoming a hot topic in AI. One of the most promising paths towards this vision is multi-agent learning, where agents act as the environment for each other, and improving each agent means proposing new problems for others. However, existing evaluation platforms are either not compatible with multi-agent settings, or limited to a specific game. That is, there is not yet a general evaluation platform for research on multi-agent intelligence. To this end, we introduce Arena, a general evaluation platform for multi-agent intelligence with 35 games of diverse logics and representations. Furthermore, multi-agent intelligence is still at the stage where many problems remain unexplored. Therefore, we provide a building toolkit for researchers to easily invent and build novel multi-agent problems from the provided game set based on a GUI-configurable social tree and five basic multi-agent reward schemes. Finally, we provide Python implementations of five state-of-the-art deep multi-agent reinforcement learning baselines. Along with the baseline implementations, we release a set of 100 best agents/teams that we can train with different training schemes for each game, as the base for evaluating agents with population performance. As such, the research community can perform comparisons under a stable and uniform standard. All the implementations and accompanied tutorials have been open-sourced for the community at <ref type=\"url\" target=\"https://sites.google.com/view/arena-unity/\">https://sites.google.com/view/arena-unity/</ref>.</p></div>\n\t\t\t</abstract>\n\t\t</profileDesc>\n\t</teiHeader>\n\t<facsimile>\n\t\t<surface n=\"1\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"2\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"3\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"4\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"5\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"6\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"7\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"8\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"9\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"10\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"11\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"12\" ulx=\"0.0\" uly=\"0.0\" lrx=\"792.0\" lry=\"612.0\"/>\n\t\t<surface n=\"13\" ulx=\"0.0\" uly=\"0.0\" lrx=\"792.0\" lry=\"612.0\"/>\n\t\t<surface n=\"14\" ulx=\"0.0\" uly=\"0.0\" lrx=\"792.0\" lry=\"612.0\"/>\n\t\t<surface n=\"15\" ulx=\"0.0\" uly=\"0.0\" lrx=\"792.0\" lry=\"612.0\"/>\n\t\t<surface n=\"16\" ulx=\"0.0\" uly=\"0.0\" lrx=\"792.0\" lry=\"612.0\"/>\n\t\t<surface n=\"17\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t\t<surface n=\"18\" ulx=\"0.0\" uly=\"0.0\" lrx=\"612.0\" lry=\"792.0\"/>\n\t</facsimile>\n\t<text xml:lang=\"en\">\n\t\t<body>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Introduction</head><p>Modern learning algorithms are more of outstanding testtakers, but less of innovators, i.e., the ceiling of an agent's intelligence may be limited by the complexity of its environment <ref type=\"bibr\">(Leibo et al. 2019)</ref>. Thus, the emergence of innovation is becoming a hot topic for AI. One of the most promising paths towards such a vision is learning via social interaction, i.e., multi-agent learning. In multi-agent learning, how the agents should beat the opponents or collaborate with each other is not defined or limited by the creator of the environment, e.g., the inventor of the ancient Go never defines what strategies are good. However, enormous and sophisticated strategies are invented while a population of human players/artificial agents evolves by improving themselves over the others, i.e., each agent is acting as an environment for the others and improving itself means proposing new problems for the others.</p><p>To study a new class of intelligence, general evaluation platforms with diverse games are milestones that push forward the research to the next levels. For example, ALE <ref type=\"bibr\" target=\"#b0\">(Bellemare et al. 2013)</ref>, Mujoco <ref type=\"bibr\" target=\"#b6\">(Todorov, Erez, and Tassa 2012)</ref>, and DM-Suite <ref type=\"bibr\">(Tassa et al. 2018</ref>) are the most spread general evaluation platforms that greatly accelerate the research in general reinforcement learning. However, there is no such general evaluation platform for multiagent intelligence. Although some platforms support multiagent settings <ref type=\"bibr\" target=\"#b6\">(Wydmuch, Kempka, and Jaśkowski 2018;</ref><ref type=\"bibr\" target=\"#b6\">Vinyals et al. 2017)</ref>, they are not general evaluation platforms, i.e., built for specific games. Thus, in this paper, we propose the first general evaluation platform for multi-agent intelligence, called Arena, containing 35 multi-agent games in total, with diverse logics and representations; see Fig. <ref type=\"figure\" target=\"#fig_0\">1</ref>.</p><p>Apart from training and evaluation, multi-agent intelligence research is still at a stage where many problems remain undiscovered or unexplored. Thus, the second contribution of Arena is a building toolkit for multi-agent intelligence, enabling the easy creation of different multi-agent scenarios. For example, in the sample game in Fig. <ref type=\"figure\" target=\"#fig_1\">2 (a)</ref>, after defining the basic behavior of the agent (i.e., moving and turning) and the \"alive\" state of the agent (i.e., it stays on the playground), it can be extended to different multi-agent scenarios with minimal effort. For example, (1) five players fight each other until only one agent is left alive (see Fig. <ref type=\"figure\" target=\"#fig_1\">2 (b)</ref>), or (2) 5 ˆ2 players form 2 teams, and each agent fights for its own team until all players in a team are dead (see Fig. <ref type=\"figure\" target=\"#fig_1\">2 (c</ref>)), or (3) multiple players form multiple teams in hierarchies, where the collaboration and competition relationships between the teams are customized (see Fig. <ref type=\"figure\" target=\"#fig_2\">3</ref>).</p><p>Thus, Arena is not just a research platform for the evaluation with a fixed set of games, but also a building toolkit for researchers to invent and build novel multi-agent problems.</p><p>To achieve the above vision of building a toolkit for multiagent intelligence, (1) we provide a GUI-configurable tree that defines the social structure of agents, called social tree; Soccers BattleCity-TP Tennis PushBox DestroyPyramid TransportBricks RunToGoal YouShallNotPass Sumo PushBall TowerDefense LiftBall Reacher GoBang CaptureFlag Runner Figure 1: Game set of Arena.</p><p>and (2) based on the social tree, we propose 5 basic multiagent reward schemes (BMaRSs), which define different social paradigms at each node in the social tree. Specifically, each BMaRS is a restriction applied to the reward function, so it corresponds to a batch of reward functions that can lead to a specific social paradigm. For each BMaRS, Arena provides multiple ready-to-use reward functions, simplifying the construction of games with complex social relationships. Furthermore, if the agent is controlling each joint of a robot, it has long been a burden for researchers that low-level intelligence (such as the basic skill of moving) must first be built, before they can study high-level multi-agent intelligence <ref type=\"bibr\" target=\"#b0\">(Heess et al. 2017)</ref>. Thus, Arena provides many ready-to-use dense reward functions in each BMaRS that handle such low-level intelligence. Additionally, Arena also offers a verification option for customized reward functions, so the researchers can make sure that the programmed reward functions lie in one of the BMaRSs that produces a specific social paradigm. Thus, with the above efforts towards a building toolkit for multi-agent intelligence and the provided set of 35 games for a general evaluation platform, one can easily customize a set of games of a new social paradigm to study a yet unexplored problem.</p><p>Finally, we provide Python implementations of several state-of-the-art deep multi-agent reinforcement learning baselines, which can be used as starting points for the development of novel multi-agent algorithms, as well as the validation of new environments. Along with the baseline implementations, we also release a set of 100 best agents/teams that we can train with different training schemes for each game, as the base for evaluating agents with population performance <ref type=\"bibr\" target=\"#b0\">(Balduzzi et al. 2019;</ref><ref type=\"bibr\" target=\"#b0\">Balduzzi et al. 2018)</ref>. So, the research community can perform comparisons under a stable and uniform standard.</p><p>To summarize, this paper's contributions are as follows:</p><p>(1) a general evaluation platform for multi-agent intelligence with a set of diverse games, most of which are new to the community or still stand as a challenge for state-of-the-art algorithms, (2) a building toolkit for multi-agent games, enabling the easy creation of new social paradigms based on GUI-configurable social trees and BMaRSs, (3) the baseline implementations of 5 state-of-the-art multi-agent algorithms for both competitive and collaborative settings, and (4) sets of benchmark agents/teams for the community to conduct stable and uniform population evaluation <ref type=\"bibr\" target=\"#b0\">(Balduzzi et al. 2018)</ref>. Code for games, building toolkit, and baselines, as well as all corresponding tutorials have been released online at <ref type=\"url\" target=\"https://sites.google.com/view/arena-unity/\">https://sites.google.com/view/arena-unity/</ref>.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>The Platform State-of-the-Art Engine.</head><p>The engine behind Arena is the world-leading game engine Unity <ref type=\"bibr\" target=\"#b1\">(Juliani et al. 2018)</ref>, which provides Arena with several desirable features on rendering, physics, customizability, and community. There are also other choices of popular engines. Some platforms contain a wide set of diverse games <ref type=\"bibr\" target=\"#b0\">(Bellemare et al. 2013;</ref><ref type=\"bibr\" target=\"#b3\">Nichol et al. 2018;</ref><ref type=\"bibr\" target=\"#b5\">Perez-Liebana et al. 2016;</ref><ref type=\"bibr\">OpenAI 2016)</ref>. However, they are designed mostly for single-agent scenarios and are extremely hard to customize (adding multiple players or creating new games), since the games are provided as compiled binary ROMs. Other downsides of these choices include deterministic environments, unrealistic rendering, and unrealistic physics. Other platforms <ref type=\"bibr\" target=\"#b6\">(Todorov, Erez, and Tassa 2012;</ref><ref type=\"bibr\">Tassa et al. 2018</ref>) are, in nature, more physics engines than game engines, which lack a visual editor for easily creating customized games, and cannot handle more \"game-like\" features, such as instantiating and destroying objects in real-time during the simulation. The rest of the platforms are limited in the sense that they are built for specific tasks, such as for first-person shooting (Wyd- much, Kempka, and Jaśkowski 2018), Real-Time Strategy (RTS) (Tian et al. 2017), vision understanding (Qiu et al. 2017), in-door scene understanding (Handa et al. 2016; Brodeur et al. 2017; Savva et al. 2017; Chang et al. 2017; Puig et al. 2018; Gao et al. 2019), surviving (Suarez et al. 2019), and interaction (Wu et al. 2018; Savva et al. 2019; Kolve et al. 2017), or specific games, such as Starcraft (Vinyals et al. 2017) and Dota2 (OpenAI 2018). Thus, creating a general evaluation platform on these engines is not a reasonable choice. DeepMind Lab (Beattie et al. 2016), Psychlab (Leibo et al. 2018), and Malmo (Johnson et al. 2016) are more appropriate choices when building a customizable general evaluation platform. However, the main drawbacks of the above engines are tied to their dated nature. The rendering system of these engines are either low-polygon pixelated (Malmo, based on Minecraft) or outdated (DeepMind Lab and Psychlab, based on Quake III). The physics systems of these engines are either rudimentary (Malmo), or have a gap (Juliani et al. 2018) to the physical world (DeepMind Lab and Psychlab). Besides, they are all incompatible with a visual editor, making it quite cumbersome to build customized scenarios.</p><p>To summarize, built on Unity, Arena has the following advantages over other platforms: (1) realistic rendering, so that features, such as complex lighting, textures, and shaders, are fully handled by the background engine and easily produced in a customized game, (2) realistic physics, so that enough and realistic stochasticity is introduced in the game and transferring a policy learned within a simulator to the real world is easier, (3) user-friendly visual editor, so that building new multi-agent scenarios in Arena is easy, and (4) a large and active development community, so that creating new games is easy with millions of off-the-shelf assets.</p><p>Game Sets Towards General Intelligence. The first contribution of Arena is to provide a set of multi-agent games with diverse game logics and representations, so that it may push forward the research of general multi-agent intelligence. Specifically, Arena provides: (1) 27 new games that are not yet studied in the community, (2) 8 games, of which the basic logics are inspired by other research, but equipped with realistic rendering effects, physics engine, and all features described in the following two paragraphs, such as extensibility to other social paradigms, and (3) interface to the popular stand-alone domain StarCraft. The game set is shown in Fig. <ref type=\"figure\" target=\"#fig_0\">1</ref>. For more detailed information, see Tables <ref type=\"table\">2</ref><ref type=\"table\">3</ref><ref type=\"table\">4</ref><ref type=\"table\">5</ref><ref type=\"table\">6</ref><ref type=\"table\">7</ref>in the extended paper <ref type=\"bibr\">(Song et al. 2019)</ref>.</p><p>Building Toolkit for Multi-Agent Environments. As the second contribution, we provide a building toolkit for multi-agent environments: we provide (1) a GUI-configurable social tree that defines how agents are grouped together with each other, and (2) 5 basic multi-agent reward schemes (BMaRSs) applied on each node in the social tree, so that different social relationships can be easily built and verified, and low-level intelligence (like motor skills) can be handled.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Other Features.</head><p>Learning to communicate is an important research area in multi-agent intelligence <ref type=\"bibr\" target=\"#b0\">(Das et al. 2017;</ref><ref type=\"bibr\" target=\"#b2\">Mordatch and Abbeel 2018)</ref>. Thus, Arena provides a broadcast board at each node of the social tree (accessible for any agent as a child of the node), which enables the study of learning communication at each level. Also, global states may be used in research for different purposes <ref type=\"bibr\" target=\"#b1\">(Lowe et al. 2017;</ref><ref type=\"bibr\" target=\"#b0\">Gupta, Egorov, and Kochenderfer 2017;</ref><ref type=\"bibr\" target=\"#b0\">Foerster et al. 2017;</ref><ref type=\"bibr\" target=\"#b0\">Foerster et al. 2018)</ref>. Thus, Arena provides the option to broadcast it to all agents. Besides, a top-down view of the global game is often appreciated for visualizing population behavior <ref type=\"bibr\" target=\"#b1\">(Johnson et al. 2016;</ref><ref type=\"bibr\" target=\"#b6\">Wydmuch, Kempka, and Jaśkowski 2018;</ref><ref type=\"bibr\">Jaderberg et al. 2018;</ref><ref type=\"bibr\">Liu et al. 2019)</ref>. Thus, Arena by default enables this option. Finally, there is a necessity for competitive agents to evaluate against human players, and also a research trend for collaborative agents to team up with human players. Thus, Arena provides a gaming interface for humans, so that a human player can take the place of any agent in the game.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Basic Multi-Agent Reward Schemes and Social Trees</head><p>Preliminaries. We consider a Markov game as defined in (Littman 1994), consisting of multiple agents x P X , a finite global state space S, a finite action space A x for each agent x, and a bounded-step reward space r x,t P R for each agent x. The environment consists of a transition function g :</p><formula xml:id=\"formula_0\">S ˆŚ A x : x P X ( Ñ S, which is a stochastic function s t`1 \" g `st , pa x,t q xPX ˘, a reward function for each agent f x : S ˆŚ A x : x P X ( Ñ R, which is a deterministic function r x,t`1 \" f x `st , pa x,t q xPX ˘, a joint reward function f \" pf x q xPX , and episode reward R f</formula><p>x \" ř T t\"1 r x,t for each agent x under the joint reward function f . For the agent, we consider that it observes s x,t P S x , where S x consists of a part of the information from the global state space S. Thus, we have a policy π x : S x Ñ A x , which is a stochastic function a x,t \" π x ps x,t q. Besides, we consider that the agent x can take a policy π x from a set of policies Π x and assume that the random seed of all sampling operations is k, which is sampled from the whole seed space K.</p><p>We investigate the effect of tx : x P X u and tπ x : π x P Π x u on tR f x : x P X u. By applying different restrictions on the effect, we have different BMaRSs, each one of which is a set of joint reward functions F \" tf : ¨u that produce a similar effect on the population X . The term reward scheme first appears in <ref type=\"bibr\" target=\"#b5\">(Tampuu et al. 2017)</ref> as a tabular, which is applied to a special case of Pong. While we define it in a general form and show that many examples are special cases within this general form.</p><p>In a non-sequential setting (normal-form game), the reward scheme serves a similar purpose as the payoff matrix (Myerson 2013), which is also represented as a tabular. See Lemma 2 in the extended paper (Song et al. 2019) for how the payoff matrix is aligned with BMaRSs. In the following, we define 5 different BMaRSs. Along defining these BMaRSs, we also describe the ready-to-use reward functions f within these BMaRSs, which is provided by Arena as a dropdown list. Non-learnable BMaRSs (F N L ) are a set of joint reward functions f as follows:</p><formula xml:id=\"formula_1\">F N L \" f : @k P K, @x P X , @π x P Π x , BR f x { Bπ x \" 0 ( , (<label>1</label></formula><formula xml:id=\"formula_2\">)</formula><p>where 0 is a zero matrix of the same size and shape as the parameter space that defines π x . Intuitively, F N L means that R f x for any agent x P X cannot be optimized by improving its policy π x . Isolated BMaRSs (F IS ) are a set of joint reward functions f as follows:</p><formula xml:id=\"formula_3\">F IS \" f : f R F N L and @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x Bπ x 1 \" 0 ( ,<label>(2)</label></formula><p>Intuitively, F IS means that the episode reward R f x received by any agent x P X is not related to any policy π x 1 taken by any other agent x 1 P X ztxu.</p><p>Reward functions f x in f of F IS are often called internal reward functions in other multi-agent approaches <ref type=\"bibr\">(Hendtlass 2004;</ref><ref type=\"bibr\">Jaderberg et al. 2018;</ref><ref type=\"bibr\" target=\"#b0\">Bansal et al. 2018)</ref>, meaning that apart from the reward functions applied at a population level (such as win/loss), which are too sparse to learn, there are also reward functions directing the learning process towards receiving the population-level rewards, but are more frequently available, i.e., more dense (Heess et al. 2017). F IS is especially practical if the agent is a robot requiring continuous control of applying force on each of its joints, which means basic motor skills (such as moving) need to be learned before generating population-level intelligence. Thus, we provide f in F IS of energy cost, punishment of applying a big force, encouragement of keeping a steady velocity, and moving distance towards target. Competitive BMaRSs (F CP ), inspired by (Cai and Daskalakis 2011), are defined as</p><formula xml:id=\"formula_4\">F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , B ş x 1 PX R f x 1 dx 1 Bπ x \" 0 ( ,<label>(3)</label></formula><p>which intuitively means that for any agent x P X , taking any possible policy π x P Π x , the sum of the episode reward of all agents will not change. If the episode length is 1, it expresses a classic multi-player zero-sum game <ref type=\"bibr\" target=\"#b0\">(Cai and Daskalakis 2011)</ref>. Useful examples of f within F CP are: (1) agents fight for a limited amount of resources that are always exhausted at the end of the episode, and the agent is rewarded for the amount of resources that it gained, and (2) fight till death, and the reward is given based on the order of death (the reward can also be based on the reversed order, so that the one departing the game first receives the highest reward, such as in some poker games, the one who first discards all cards wins).</p><p>Rock, Paper, and Scissors in normal-form game (Myerson 2013) and Cyclic Game in (Balduzzi et al. 2019) are both special cases of F CP ; see Lemmas 2 and 3 in the extended paper (Song et al. 2019). Collaborative BMaRSs (F CL ), inspired by (Cai and Daskalakis 2011), are defined as</p><formula xml:id=\"formula_5\">F CL \" f : f R F N L Y F IS and @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x 1 BR f x ě 0 ( ,<label>(4)</label></formula><p>which, intuitively, means that there is no conflict of interest (BR f x 1 { BR f x ă 0) for any pair of agents px 1 , xq. Besides, since f R F N L Y F IS , there is at least one pair of agents px, x 1 q that makes BR f</p><p>x 1 { BR f x ą 0. This indicates that this pair of agents shares a common interest, so that improving R f</p><p>x for agent x means improving R f x 1 for agent x 1 . The most common example of f within F CL is that f x for all x P X is identical, such as the moving distance of an object that can be pushed forward by the joint effort of multiple agents, or the alive duration of the population (as long as there is at least one agent alive in the population, the population is alive). Thus, we provide f in F CL : living time of the team (both positive and negative, since some games require the team to survive as long as possible, while other games require the team to depart as early as possible, such as poker). Competitive and Collaborative Mixed BMaRSs (F CC ) are defined as a catch-all for any other than the above four ones. First, the term B ş <ref type=\"bibr\">(Song et al. 2019)</ref>, which makes an alternative (3). Considering F CP in this alternative (3) and F CL in (4), an intuitive explanation of F CC is that there exist circumstances when BR f</p><formula xml:id=\"formula_6\">x 1 PX R f x 1 dx 1 { Bπ x \" 0 in (3) can be written as ş x 1 PX BR f x 1 { BR f x dx 1 \" 0 (see Lemma 1 in ex- tended paper</formula><p>x 1 { BR f x ă 0, meaning that the agents are competitive at this point. But the derivative of total interest ş x 1 PX BR f</p><p>x 1 { BR f x dx 1 is not always 0; thus, the total interest can be maximized with specific policies, meaning that the agents are collaborative at this point.</p><p>Apart from providing several practical f in each BMaRS, we also provide a verification option for each BMaRS, meaning that one can customize an f and use this verification option to make sure that the programmed f lies in a specific BMaRS. The implementation of verification option can be found in Section 1 in the extended paper <ref type=\"bibr\">(Song et al. 2019)</ref>. The Social Tree. The BMaRSs defined above apply to an agent group of all sizes. To define more complex and structured social paradigms, we use a tree structure (social tree) to organize the agents and apply BMaRSs on each node of the tree. We illustrate this by an example. The GUI interface in Fig. <ref type=\"figure\" target=\"#fig_2\">3</ref> (a) defines a tree structure in Fig. <ref type=\"figure\" target=\"#fig_2\">3 (b)</ref>, representing a population of 4 agents.</p><p>The tree structure can be easily reconfigured by dragging, duplicating, or deleting nodes in the GUI interface in Fig. <ref type=\"figure\" target=\"#fig_2\">3</ref> (a). In this example, each agent has an agent-level BMaRS. The agent is a robot ant, so that the agent-level BMaRSs are F IS , specifically, the option of ant-motion that directs the learning towards basic motion skills such as moving forward, as shown in Fig. <ref type=\"figure\" target=\"#fig_2\">3 (c</ref>). Each two agents form a team (which is a set of agents or teams), the two agents have team-level BMaRSs. In this example, the two robot ants collaborate with each other to push a box forward, as shown in Fig. <ref type=\"figure\" target=\"#fig_2\">3 (d</ref>). Thus, the team-level BMaRSs are F CL , specifically, the moving distance of the box. On the two teams, we have global-level BMaRSs. In this example, the two teams are set to have a match regarding which team pushes its box to the target point first, as shown in Fig. <ref type=\"figure\" target=\"#fig_2\">3 (e</ref>). Thus, the global-level BMaRSs are F CP , specifically, the ranking of the box reaching the target. The final reward function applied to each agent is a weighted sum of the above three BMaRSs at three levels. One can imagine defining a social tree of more than three levels, where small teams form bigger teams, and BMaRSs are defined at each node to give more complex and structured social problems. After defining the social tree and applying BMaRSs on each node, the environment is ready for use with an abstraction layer handling everything else, such as assigning viewports to each agent in the window, applying the team color, displaying the agent ID, and generating a top-down view.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>The Learning Agents</head><p>The Baselines. We provide Python implementations of several state-of-the-art baselines that can be used as starting points for the development of novel multi-agent algorithms, as well as for the validation of new environments. Specifically, we first implement a fully decentralized system, where each agent is a self-contained <ref type=\"bibr\">PPO (Schulman et al. 2017)</ref>, with independent critic, actor, and optimizer. We also implement two state-of-the-art methods based on self-play in ( <ref type=\"formula\">OpenAI 2018</ref> The Evaluation Metric. It is recently raising attention that evaluating an agent against a single-agent or hand-coded bot is unstable and misleading <ref type=\"bibr\" target=\"#b0\">(Balduzzi et al. 2018</ref>). Thus, the population performance is introduced to evaluate an agent's (or an agent group's) performance among a base population. To enable population evaluation, we release 100 best agents, which we can train with different training schemes for each game as the base population. One can call the provided function to get the ranking of an agent among the base population, or get the averaged ranking of a population among the base population. Moreover, we provide a human ranking among the base population, which provides an indication of humanlevel intelligence in the game. We will accept the submission of agents from the community as well as keep implementing algorithms introduced in the future, so that the base population will be upgraded, as the level of research in multi-agent intelligence advances.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Experiments</head><p>Experiments are conducted from three aspects. First, we evaluate our game set from the perspective of stochasticity, realistic rendering, and simulation speed, all of which are presented in the extended paper (Song et al. 2019) due to page limit. Other advantages from the Unity engine have been verified by <ref type=\"bibr\" target=\"#b1\">(Juliani et al. 2018)</ref>. Second, we evaluate our design of the extensible multi-agent building toolkit with a case study, showing that by applying different social trees and BMaRSs, different population-level strategies can be learned. Third, we report the experimental results of 5 baselines that we implemented and show that by using the provided population performance evaluation metric, the training progress can be visualized in a less noisy and more analyzable way. Case Study of Social Tree and BMaRSs. We use the game Crossroads from Arena to study the effectiveness of the proposed social tree and BMaRSs via designing different social paradigms. Specifically, in the game Crossroads shown in Fig. <ref type=\"figure\">5</ref> (a), the agent can move and turn, the final goal of the agent is to reach the target on the other side of the crossroad. By defining different social trees and applying different BMaRSs, as shown in Fig. <ref type=\"figure\">5 (b</ref>) to (d), the agents learn different strategies. In Fig. <ref type=\"figure\">5</ref> (b), isolated BMaRSs (F IS ) are applied to all agents, i.e., each agent minimizes the time that it takes to reach the target. The result shows that the learned agents simply rush forward, and they easily crash with each other at the center of the crossroad, producing a traffic jam. In Fig. <ref type=\"figure\">5</ref> (c), collaborative BMaRSs (F CL ) are applied to the parent (b) (a) (c) (d) Figure 5: Case Study of Social Tree and BMaRSs.</p><p>node of all agents, i.e., all agents are rewarded with the time that the last one of them takes to reach the target. The result shows that the agents learn to wait for each other to go across the crossroad, so that they can all get across as efficiently as possible. In Fig. <ref type=\"figure\">5</ref> (d), collaborative BMaRSs (F CL ) are applied on the parent node of every 4 agents (which form a team), and competitive BMaRSs (F CP ) are applied on the parent node of the two teams. Specifically speaking, each two agents in the same team are rewarded with the same reward, and the reward is 1 for the team that gets all of its agents to the target first, 0 for the other team. The results show that each team learns to block the road of the other team with one agent, so that the other agents in the team can get across undisturbed. Then, the agent that blocks the road leaves for the target, after all its teammates have reached the target.</p><p>Baselines and Evaluation Metric. We compare 5 baselines on two games: (1) Crossroads in Fig. </p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Related Work</head><p>Surveys of multi-agent intelligence research can be found in (Hernandez-Leal, Kartal, and Taylor 2018). Different ideas have been explored on competitive and collaborative multiagent settings.</p><p>Collaborative Settings. The simplest way to deploy multiagent collaborative systems is to make each agent have a completely independent learning process (fully decentralized) <ref type=\"bibr\" target=\"#b2\">(Matignon, Laurent, and Le Fort-Piat 2012)</ref>. However, collaborative behaviors are hardly observed under such fully decentralized setting; thus, a fully centralized system is utilized in <ref type=\"bibr\" target=\"#b4\">(Peng et al. 2017)</ref>, where the policy has access to the global state and is shared by all agents. However, it is impractical, since the global state is mostly unavailable in practice, and the system does not support extending the number of agents. Thus, centralized training and decentralized execution are gaining attention (Kraemer and Banerjee 2016). Experiments: Realistic Rendering, Simulation Speed and Stochasticity Realistic Rendering. Realistic rendering in games is gaining more consideration, as the research community is moving towards transferring the algorithms to real-world scenarios. Some of such platforms are <ref type=\"bibr\" target=\"#b0\">(Brodeur et al. 2017;</ref><ref type=\"bibr\" target=\"#b5\">Qiu et al. 2017;</ref><ref type=\"bibr\" target=\"#b6\">Yan et al. 2018;</ref><ref type=\"bibr\" target=\"#b1\">Kolve et al. 2017;</ref><ref type=\"bibr\">Wu et al. 2018)</ref>. In Fig. <ref type=\"figure\" target=\"#fig_8\">6</ref>, we report an objective comparison of the most realistic scenes provided in these works against those in our platform. The results show that our platform provides a realistic rendering effect at the same level as the best of them. Simulation Speed. Simulation speed and parallelism of an environment are two important factors for carrying out research. Thus, we compare our game Boomer in Fig. ) by running a fixed sequence of 1000 actions repeatedly 1000 times and investigating how many branches are produced (averaged over all games in the corresponding platform). Table <ref type=\"table\" target=\"#tab_0\">1</ref> shows that our platform generates most stochasticity among them, measured by the number of branches that the environment produces when applying the same action sequence on it. This is accomplished by introducing stochasticity from the initial setup (e.g., a randomly generated map), the rendering effect (e.g., randomized light conditions and particle systems), and the physics system (e.g., randomized physics properties).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>How Verification for BMaRSs is Implemented</head><p>Since the definitions of BMaRSs contain the statement of @, which requires enumerating over the entire space of some variables, we first set a hyper-parameter of N , denoting the number of samples that we will apply the verification operation to. If a statement Y of sample i P I holds true for all N samples from I, we approximately make the judgement that p@i P I, Yq is true. If a statement Y of sample i P I holds false for any one of N samples from I, we make the judgement that p@i P I, Yq is false. Thus, in the following, we describe how to make the judgment of whether a statement Y of sample i holds true or not. Non-learnable BMaRSs (F N L ) are defined as:</p><formula xml:id=\"formula_7\">F N L \" f : @k P K, @x P X , @π x P Π x , BR f x Bπ x \" 0 ( , (<label>5</label></formula><formula xml:id=\"formula_8\">)</formula><p>where 0 is a zero matrix of the same size and shape as the parameter space that defines π x . For each sample i, we first sample k P K, x P X , tπ x P Π xu xPX randomly. Then, we first run one episode to get R f x . We denote it R f x 1 , since it is from the first episode. We run the second episode to get R f x and denote it R f</p><p>x 2 , since it is from the second episode. In the second episode, we keep the following variables the same as the first episode: k, tπ xu for all x P X ztxu. In the second episode, we sample a different π x from that in the first episode. The π x in the first and second episode are denoted π 1</p><p>x and π 2 x respectively. Then, we can compute one sample of</p><formula xml:id=\"formula_9\">BR f x Bπx \" R f x 1 1 ´Rf x 1 2 π 1 x ´π2</formula><p>x and make the judgement whether BR f x Bπx \" 0 for sample i holds true. Isolated BMaRSs (F IS ) are defined as:</p><formula xml:id=\"formula_10\">F IS \" f : @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x Bπ x 1 \" 0 ( .<label>(6)</label></formula><p>For each sample i, we first sample k P K, x P X , x 1 P X ztxu, tπ x P Π xu xPX randomly. Then, we first run one episode to get R f x . We denote it R f x 1 , since it is from the first episode. We run the second episode to get R f x and denote it R f x 2 , since it is from the second episode. In the second episode, we keep the following variables the same as the first episode: k, tπ xu for all x P X ztx 1 u. In the second episode, we sample a different π x 1 from that in the first episode. The π x 1 in the first and second episode are denoted π 1 x 1 and π 2 x 1 respectively. Then, we can compute one sample of</p><formula xml:id=\"formula_11\">BR f x Bπ x 1 \" R f x 1 ´Rf x 2 π 1 x 1 ´π2 x 1</formula><p>and make the judgement whether BR f</p><p>x Bπ x 1 \" 0 for sample i holds true. Competitive BMaRSs (F CP ) are defined as:</p><formula xml:id=\"formula_12\">F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , B ş x 1 PX R f x 1 dx 1 Bπ x \" 0 ( .<label>(7)</label></formula><p>HoME AI2-THOR CHALET UnrealCV House3D Arena (a) Boomer (Arena) (b) MsPacman (Atari) FPS Number of Concurrent Threads Number of CPU Threads (c) Comparison of train Frames Per Second (FPS) under different numbers of concurrent threads.  For each sample i, we first sample k P K, x P X , tπ x P Π xu xPX randomly. Then, we first run one episode to get ş</p><formula xml:id=\"formula_13\">x 1 PX R f x 1 dx 1 . We denote it ş x 1 PX R f x 1 1 dx 1</formula><p>, since it is from the first episode. We run the second episode to get ş x 1 PX R f x 1 dx 1 and denote it ş x 1 PX R f x 1 2 dx 1 , since it is from the second episode. In the second episode, we keep the following variables the same as the first episode: k, tπ xu for all x P X ztxu and we sample a different π x from that in the first episode. The π x in the first and second episode are denoted π 1</p><p>x and π 2 x respectively. Then, we can compute one sample of</p><formula xml:id=\"formula_14\">B ş x 1 PX R f x 1 dx 1 Bπx \" ş x 1 PX R f x 1 1 dx 1 ´şx 1 PX R f x 1 2 dx 1 π 1 x ´π2</formula><p>x and make the judgement of whether</p><formula xml:id=\"formula_15\">B ş x 1 PX R f x 1 dx 1 Bπx \" 0 for sample i holds true.</formula><p>Collaborative BMaRSs (F CL ) are inspired by (Cai and Daskalakis 2011) and defined as,</p><formula xml:id=\"formula_16\">F CL \" f : f R F N L Y F IS and @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x 1 BR f x ě 0 ( .<label>(8)</label></formula><p>For each sample i, we first sample k P K, x P X , x 1 P X ztxu, tπ x P Π xu xPX randomly. Then, we first run one episode to get R f x and R f x 1 . We denote it</p><p>R f x 1 and R f x 1 1 , respectively, since it is from the first episode. We run the second episode to get R f x and R f x 1 and denote it R f x 2 and R f x 1 2</p><p>, respectively, since it is from the second episode. In the second episode, we keep the following variables the same as the first episode: k, tπ xu for all x P X ztxu and we sample a different π x from that in the first episode.</p><p>Then, we can compute one sample of</p><formula xml:id=\"formula_17\">BR f x 1 BR f x \" R f x 1 1 ´Rf x 1 2 R f x 1 ´Rf x 2 and make the judgement whether BR f x 1 BR f x ě 0 for sample i holds true.</formula><p>Competitive and Collaborative Mixed BMaRSs (F CC ) are defined to be any situations other than the above four ones:</p><formula xml:id=\"formula_18\">F CC \" f : f R F N L Y F IS Y F CP Y F CL ( ,<label>(9)</label></formula><p>which means if a reward function f is verified to be not among above F N L , F IS , F CP or F CL , it is verified to be among F CC .</p><p>Lemma 1 An equivalent expression of</p><formula xml:id=\"formula_19\">F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , B ş x 1 PX R f x 1 dx 1 Bπ x \" 0 (<label>(10)</label></formula><p>is:</p><formula xml:id=\"formula_20\">F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , ż x 1 PX BR f x 1 BR f x dx 1 \" 0 ( .<label>(11)</label></formula><p>Proof of Lemma 1: Following the defination of F CP , since f R F N L , we have:</p><formula xml:id=\"formula_21\">Dk P K, Dx P X , Dπ x P Π x , BR f x Bπ x ‰ 0.<label>(12)</label></formula><p>Thus, F CP equals to:</p><formula xml:id=\"formula_22\">F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , ż x 1 PX BR f x 1 Bπ x dx 1 Bπ x BR f x \" 0 (<label>(13)</label></formula><formula xml:id=\"formula_23\">\" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , ż x 1 PX BR f x 1 BR f x dx 1 \" 0 ( ,<label>(14)</label></formula><p>completing the proof.</p><p>Lemma 2 Rock, Paper, and Scissors in normal-form game (Myerson 2013) is a special case of F CP , which is defined in (11).</p><p>Player 2 Strategy 1: Rock Strategy 2: Paper Strategy 3: Scissors Player 1 Strategy 1: Rock p0, 0q p´1, 1q p1, ´1q Strategy 2: Paper p1, ´1q p0, 0q p´1, 1q Strategy 3: Scissors p´1, 1q p1, ´1q p0, 0q</p><p>Table 2: Payoff matrix of Rock, Paper, and Scissors.</p><p>Proof of Lemma 2: The payoff matrix in a normal-form game (Myerson 2013) is a matrix aligning the tuple of tplayer, strategyu with the payoff received by each player. The reward scheme in a multi-agent learning context is a map aligning the tuple of tagent x, policy π x u to the episode reward R f x received by the agent x. Thus, player is equivalent to agent, strategy is a special case of policy when the episode length is one, payoff is equivalent to episode reward R f</p><p>x when the episode length is one. Payoff matrix of Rock, Paper, and Scissors is shown in Table <ref type=\"table\">2</ref>. By selecting any pair of cells in the payoff matrix, say p1, ´1q and p´1, 1q, we can compute a</p><formula xml:id=\"formula_24\">BR f x 1 BR f x \" 1´p´1q</formula><p>p´1q´1 . Thus, by enumerating over all possible pairs of cells in the payoff matrix to compute all</p><formula xml:id=\"formula_25\">BR f x 1 BR f x</formula><p>, we can verify that the payoff matrix satisfies the definition of F CP in (11).</p><p>Lemma 3 Symmetric zero-sum games and cyclic games in <ref type=\"bibr\" target=\"#b0\">(Balduzzi et al. 2019</ref>) are a special case of F CP , which is defined in (11).</p><p>Proof of Lemma 3: In ( <ref type=\"formula\">Balduzzi et al. 2019</ref>), W denotes a set of agents parameterized by the weights of a neural net. For instance, w P W and v P W are two agents of specific policies from the full policy set W . φpv, wq evaluates a pair of agents pw, vq φ : W ˆW Ñ R.</p><p>The higher φpv, wq, the better for agent v. They refer to φ ą 0, φ ă 0, and φ \" 0 as wins, losses, and ties, respectively, for v. A game is defined as symmetric zero-sum game if:</p><formula xml:id=\"formula_27\">@w P W, @v P W, φpv, wq \" ´φpv, wq.<label>(16)</label></formula><p>A cyclic game is a symmetric zero-sum game. As can be seen, when the game is symmetric @x P X , Π x is the same and</p><formula xml:id=\"formula_28\">Π x \" Π X ,<label>(17)</label></formula><p>W is equivalent to Π X . When the game has only two players x 1 and x 2</p><formula xml:id=\"formula_29\">tx 1 u \" X ztx 2 u,<label>(18)</label></formula><p>φ is equivalent to R x1 . Thus, v and w are equivalent to π x1 and π x2 , respectively and the equivalent expression of symmetric zero-sum game in ( <ref type=\"formula\" target=\"#formula_27\">16</ref>) is:</p><formula xml:id=\"formula_30\">@π x1 P Π X , @π x2 P Π X , R x1 \" ´Rx2 .<label>(19)</label></formula><p>The equivalent expression of (11) when there are only two players x 1 x 2 , i.e., satisfying (18), is:</p><formula xml:id=\"formula_31\">F CP \" f : f R F N L Y F IS and @x 1 P X , tx 2 u \" X ztx 1 u, @π x1 P Π X , @π x2 P Π X , BR x1 BR x2 \" ´1( .<label>(20)</label></formula><p>This shows that symmetric zero-sum games are a special case of F CP . Since cyclic games are symmetric zero-sum games, cyclic games are also a special case of F CP .</p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_0\"><head>Figure 1 :</head><label>1</label><figDesc>FightForFood</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_1\"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: Game examples of the extensible multi-agent platform.</figDesc><graphic coords=\"3,372.69,51.03,135.03,75.84\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_2\"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: An example of a social tree and BMaRSs applied on it.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_3\"><figDesc>) (SP) and population-based training in (Jaderberg et al. 2018; DeepMind 2019) (PB). For collaborative agents, we implement two state of the arts: centralized critic (Lowe et al. 2017) (CC) and centralized critic with a counterfactual baseline (Fo-erster et al. 2018) (CF).</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_4\"><head>Figure 4 :Figure 5 :</head><label>45</label><figDesc>Figure 4: Visualizing training progress over episode reward (a,b) and population performance (c,d) of different baselines: D-PPO (Decentralized Proximal Policy Optimization), SP (Self-Play), PB (Population-Based training), CC (Centralized Critic), and CF (Counterfactual Baseline).</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_5\"><figDesc>5 (a) with the BMaRS settings of Fig. 5 (d) and (2) PushBox in Fig. 3 (e) with the BMaRS settings of Fig. 3 (b). The BMaRS settings of both games contain competitive as well as collaborative social relationships, i.e., multiple agents form collaborative teams, and teams compete with each other. Thus, we investigate SP and PB baselines at the level of teams competing with each other, as well as investigate CC and CF baselines at the level of agents collaborating with each other in a team. As can be seen, the curve of episode reward shown in Fig. 4 (a) and (b) is extremely noisy, as the environment is non-stationary with the strategy of other collaborators and/or competitors evolving during the training. However, in Fig. 4 (c) and (d), which is the curve of ranking in the released base population, i.e., population performance, all methods are comparable with clear performance gaps.</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_6\"><figDesc>For multi-agent systems, this idea is mostly explored under actorcritic algorithms (Foerster et al. 2018). Other ideas include using a joint action-value function, (Lauer and Riedmiller 2004) addressing the variance problem by a large batch size (Bansal et al. 2018), and learning grounded cooperative communication protocols between agents (Foerster et al. 2016). Competitive Settings. Competitive multi-agent intelligence originally comes from computational game theory (Bowling et al. 2015). Later on, deep multi-agent reinforcement learning (D-MARL) is preferred, due to its scalability, and as it achieves notable advances on two-player games, such as Poker and Go (Moravčík et al. 2017; Silver et al. 2017). Later, D-MARL was applied to more diverse problems, such as high-dimensional video games (OpenAI 2018; DeepMind 2019) and those involving physics control (Bansal et al. 2018). When solving more practical problems, many issues have been raised, such as ensuring diversity amongst agents (Marivate 2015), avoiding overfitting to the policy of the opponents (Lanctot et al. 2017). Many ideas address such issues (Kleiman-Weiner et al. 2016). Following on D-MARL, a very promising recent direction is self-play (Tesauro 1995). Fictitious self-play (Heinrich and Silver 2016) first shows promising performance on the competitive game Leduc Poker. However, as the stability and parallelizability are improving with the invention of new reinforcement learning algorithms, state-of-the-art approaches adopt a simpler form of self-play (OpenAI 2018), which produces a superior-human intelligence on large video games, like Dota2. Another promising</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_7\"><figDesc>7 (a) with MsPacman in Fig. 7 (b) from the most widely used general evaluation platform ALE (Bellemare et al. 2013), both of which run on our parallel implementation of the PPO (D-PPO) baseline on a server with 32 CPU threads. Then, we compare these two games, as they are of similar complexity. The result in Fig. 7 (c) shows that Arena allows for parallel implementations while maintaining a similar simulation speed as ALE (Bellemare et al. 2013) on games of similar complexity when the number of concurrent threads is below the number of CPU threads of the machine, i.e., smaller than 32. Stochasticity. According to (Jaderberg et al. 2018), having enough stochasticity is essential for researchers to verify that their algorithms are learning general knowledge instead of memorizing action sequences. Thus, we conduct a stochasticity study on the existing general evaluation platforms ALE (Bellemare et al. 2013), Retro (Nichol et al. 2018), GVG-AI (Perez-Liebana et al. 2016), Mujoco (Todorov, Erez, and Tassa 2012), and DM-Suite (Tassa et al. 2018</figDesc></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_8\"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Comparison of realistic rendering effect.</figDesc><graphic coords=\"9,154.80,182.14,99.13,65.94\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_9\"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Comparison of simulation speed.</figDesc><graphic coords=\"9,193.85,374.15,76.07,97.77\" type=\"bitmap\" /></figure>\n<figure xmlns=\"http://www.tei-c.org/ns/1.0\" type=\"table\" xml:id=\"tab_0\"><head>Table 1 :</head><label>1</label><figDesc>Comparison of the stochasticity of platforms.</figDesc><table><row><cell cols=\"7\">Platform ALE Retro GVG-AI Mujoco DM-Suite Arena</cell></row><row><cell>Branches</cell><cell>0.0</cell><cell>431.2</cell><cell>23.1</cell><cell>12.2</cell><cell>50.2</cell><cell>922.4</cell></row></table></figure>\n\t\t</body>\n\t\t<back>\n\n\t\t\t<div type=\"acknowledgement\">\n<div><p>Acknowledgments. This work was supported by the <rs type=\"funder\">China Scholarship Council</rs> under the <rs type=\"grantName\">State Scholarship Fund</rs>, by the <rs type=\"funder\">Graduate Travel</rs> and <rs type=\"grantName\">Special Project Grants</rs> from the <rs type=\"funder\">Somerville College of the University of Oxford</rs>, by the <rs type=\"funder\">Alan Turing Institute</rs> under the <rs type=\"funder\">UK EPSRC</rs> grant <rs type=\"grantNumber\">EP/N510129/1</rs>, by the <rs type=\"funder\">AXA Reseach Fund</rs>, by the <rs type=\"funder\">National Natural Science Foundation of China</rs> under the grants <rs type=\"grantNumber\">61906063</rs>, <rs type=\"grantNumber\">61876013</rs>, and <rs type=\"grantNumber\">61922009</rs>, by the <rs type=\"funder\">Natural Science Foundation of Tianjin</rs> under the grant <rs type=\"grantNumber\">19JCQNJC00400</rs>, by the \"<rs type=\"programName\">100 Talents Plan\" of Hebei Province</rs>, and by the <rs type=\"funder\">Yuanguang Scholar Fund of Hebei University of Technology</rs>.</p></div>\n\t\t\t</div>\n\t\t\t<listOrg type=\"funding\">\n\t\t\t\t<org type=\"funding\" xml:id=\"_kPts8qE\">\n\t\t\t\t\t<orgName type=\"grant-name\">State Scholarship Fund</orgName>\n\t\t\t\t</org>\n\t\t\t\t<org type=\"funding\" xml:id=\"_gsUPRft\">\n\t\t\t\t\t<orgName type=\"grant-name\">Special Project Grants</orgName>\n\t\t\t\t</org>\n\t\t\t\t<org type=\"funding\" xml:id=\"_6Vb6kBy\">\n\t\t\t\t\t<idno type=\"grant-number\">EP/N510129/1</idno>\n\t\t\t\t</org>\n\t\t\t\t<org type=\"funding\" xml:id=\"_bEhqKxu\">\n\t\t\t\t\t<idno type=\"grant-number\">61906063</idno>\n\t\t\t\t</org>\n\t\t\t\t<org type=\"funding\" xml:id=\"_K5KEj8Y\">\n\t\t\t\t\t<idno type=\"grant-number\">61876013</idno>\n\t\t\t\t</org>\n\t\t\t\t<org type=\"funding\" xml:id=\"_SYBva2P\">\n\t\t\t\t\t<idno type=\"grant-number\">61922009</idno>\n\t\t\t\t</org>\n\t\t\t\t<org type=\"funding\" xml:id=\"_DmTstbQ\">\n\t\t\t\t\t<idno type=\"grant-number\">19JCQNJC00400</idno>\n\t\t\t\t\t<orgName type=\"program\" subtype=\"full\">100 Talents Plan&quot; of Hebei Province</orgName>\n\t\t\t\t</org>\n\t\t\t</listOrg>\n\n\t\t\t<div type=\"availability\">\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Summary and Outlook</head><p>This paper has introduced the first general evaluation platform for multi-agent intelligence research. Besides, with the efforts on a building toolkit of multi-agent environments, the platform also allows for easily building new multi-agent problems. Additionally, with the released implementations of several state-of-the-art baselines, researchers can start their adventure instantly. Finally, by releasing a base population, the community can conduct comparisons under a stable and uniform evaluation metric.</p></div>\n\t\t\t</div>\n\n\t\t\t<div type=\"annex\">\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>AirHockey.</head><p>Visual; Continuous / Discrete; See (Wiki Page).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Billiards.</head><p>Visual; Discrete; See (Wiki Page).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>BlowBlow.</head><p>Visual; Continuous / Discrete; Stay on the playground, push the opponent off the playground using your body, or the particles blown from you.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Boomer.</head><p>Visual; Discrete; Inspired by (Wiki Page).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>PushBox.</head><p>Visual; Continuous (forces at every joint of the robot ant); Push the box forward as a team, and try to push the box to the target point first.</p><p>OffTheGround.</p><p>Visual; Continuous / Discrete; Stay on the playground, push the opponent using your body and try to take advantages of the terrain.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>KickBoxing.</head><p>Visual; Discrete; Learn to use 18 different movements, such as Jab, Cross, Hook, Uppercut and etc. See (Wiki Page) for more information about the movements. Different movements cost different amount of energy. If the energy runs out, no movements can be made. Hitting different parts of the opponent's body results in different levels of harm. Thus, the agent is expected to learn to hit the soft part of the opponent's body with the hard part of its own body, meanwhile, try to keep a budget of the energy cost.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>MiniPUBG-Village.</head><p>Visual; Discrete;</p><p>(Wiki Page) for basic rules of PlayerUnknown's Battlegrounds (PUBG). In this map of Village, the agent is expected to learn to take various advantages of the buildings, grass and trees.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>MiniPUBG-FloodedGround.</head><p>Visual<ref type=\"url\" target=\"https://en.wikipedia.org/wiki/PlayerUnknown%27s_Battlegrounds\">;  Discrete;</ref> See (Wiki Page) for basic rules of PlayerUnknown's Battlegrounds (PUBG). In this map of FloodedGround, the playground is relatively large, so this game is designed for agents to learn in a larger population and learn long term planning.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>MiniPUBG-Windridge.</head><p>Visual; Discrete; See (Wiki Page) for basic rules of PlayerUnknown's Battlegrounds (PUBG). In this map of FloodedGround, there are both city areas and grass land areas. Thus, the agent is expected to learn the strategies of surviving between city and grassland areas.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>MiniPUBG-SunTemple.</head><p>Visual; Discrete; See (Wiki Page) for basic rules of PlayerUnknown's Battlegrounds (PUBG). In this map of SunTemple, there are mainly various buildings. Thus, the agent is expected to learn to hide, fight and take the advantages of the buildings.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>PingPong.</head><p>Visual; Continuous / Discrete;</p><p>Adopt with full rules of standard table tennis, see (Wiki Page).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>RealRace-Lakes.</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Visual;</head><p>Discrete; This track is general.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>RealRace-Sprint.</head><p>Visual; Discrete; This track contains many long straight roads, where driving too fast will result in the car easily losing control. Thus, the agent is expected to learn to maintain the speed within a range that is high enough but safe and controllable at the same time.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>RealRace-Drift.</head><p>Visual; Discrete; This track is designed for learning drafting.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>RealRace-Night.</head><p>Visual; Discrete; This scene is at night, so the agent is dealing with more complex night rendering conditions. Besides, this track contains lots of crossroads, where the agent needs to learn to recognize the road signs.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Snake.</head><p>Visual; Continuous / Discrete;</p><p>Based on a classic video game, see (Wiki Page). If two players collide with each other, the one of smaller length will be killed.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Soccers.</head><p>Visual; Continuous / Discrete; Adopted from <ref type=\"bibr\">(Liu et al. 2019)</ref>.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>BattleCity-TP.</head><p>Visual; Continuous / Discrete; See (Wiki Page). This version of BettleCity is of third-person view.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Tennis.</head><p>Visual; Continuous / Discrete;</p><p>Adopted from Unity ML-Agents (Juliani et al. 2018).</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>DestroyPyRAMid.</head></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Visual / RAM;</head><p>Continuous;</p><p>The goal is to destroy the pyramid.</p><formula xml:id=\"formula_32\">TransportBricks. Visual / RAM; Continuous;</formula><p>The task is to transport all bricks to the target point.</p><p>RunToGoal. Visual / RAM; Continuous; Adopted from (Bansal et al. 2018). YouShallNotPass. Visual / RAM; Continuous; Adopted from (Bansal et al. 2018). Sumo. Visual / RAM; Continuous; Adopted from (Bansal et al. 2018). Reacher. Visual / RAM; Continuous; Reach the target first. LiftBall. Visual / RAM; Continuous; Collaborate to lift the ball. TowerDefense. Visual; Discrete; Adopted from (Tian et al. 2017). PushBall. Visual / RAM; Continuous; Control the robot arm to push the ball to the base of the opponent. GoBang. Visual / RAM; Discrete; See (Wiki Page). CaptureFlag. Visual / RAM; Discrete; Adopted from (Jaderberg et al. 2018). BattleCity-FP. Visual; Continuous / Discrete; See (Wiki Page). This version of BettleCity is of first-person view.</p><p><ref type=\"url\" target=\"https://en.wikipedia.org/wiki/Battle_City_(video_game)\">Fighter</ref>.</p><p>Visual; Continuous / Discrete; Take advantages of various bunkers and destroy the opponent.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>MiniPUBG-Forest. Visual;</head><p>Discrete; See (Wiki Page) for basic rules of PlayerUnknown's Battlegrounds (PUBG). In this map of FloodedGround, there are mainly grasslands. Thus, the agent is expected to learn the strategies of hiding and attacking.</p><p>FightForFood.</p><p>Visual; Continuous / Discrete;</p><p>A simple game where agents fight for limited food. When the food is exhausted, the episode ends.</p></div>\n<div xmlns=\"http://www.tei-c.org/ns/1.0\"><head>Runner.</head><p>Visual; Discrete; A simple game where agents fight for higher score. When there is a score reach the specified threshold, the episode ends.</p></div><figure xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"fig_10\"><figDesc>target at the other side of the crossroad. The game uses dense reward function of IS_Target at agent level (Reward-SchemeScale at this level is 1), and use reward function of CP_Ranking at global level (RewardSchemeScale at this level is 100). target in the middle. The game uses dense reward function of IS_Target at agent level (RewardSchemeScale at this level is 1), specifically, it uses IsRewardMovingTowardsTarget and Is-PenaltyHeadDown, and use reward function of CP_Ranking at global level (RewardSchemeScale at this level is 100).</figDesc></figure>\n\t\t\t</div>\n\t\t\t<div type=\"references\">\n\n\t\t\t\t<listBibl>\n\n<biblStruct status=\"extracted\" xml:id=\"b0\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">VRKitchen: An interactive 3D environment for learning real life cooking tasks</title>\n\t\t<author>\n\t\t\t<persName><surname>Balduzzi</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1901.08106.[Bansaletal.2018</idno>\n\t\t<idno>arXiv:1603.01121</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">AlphaStar: Mastering the real-time strategy game StarCraft II. In DeepMind</title>\n\t\t<editor>\n\t\t\t<persName><surname>Icra</surname></persName>\n\t\t</editor>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2011\">2018. 2018. 2019. 2019. 2018. 2016. 2016. 2013. 2015. 2017. 2017. 2011. 2017. 2017. DeepMind 2019] DeepMind. 2019. 2016. 2017. 2018. 2019. 2017. 2017. 2016. 2016</date>\n\t\t</imprint>\n\t</monogr>\n\t<note>Re-evaluating evaluation Emergent complexity via multi-agent competition ICLR Deepmind lab Bellemare et al. 2013 Open-ended learning in symmetric zero-sum games Heads-up limit hold&apos;em poker is solved JAIR NIPS On minmax theorems for multiplayer games SIAM A household multimodal environment Learning cooperative visual dialog agents with deep reinforcement learning ICCV Matterport3D: Learning from RGB-D data in indoor environments Foerster et al. 2016 Learning to communicate with deep multi-agent reinforcement learning NIPS Foerster et al. 2017 Stabilising experience replay for deep multi-agent reinforcement learning ICML Foerster et al. 2018] Foerster J. Counterfactual multi-agent policy gradients AAAI Gao et al. 2019] Gao, X.; Gong, The Arcade learning environment: An evaluation platform for general agents ICML Workshop RL4RealLife Cooperative multi-agent control using deep reinforcement learning AAMAS SceneNet: An annotated model generator for indoor scene understanding et al. 2017. Emergence of locomotion behaviours in rich environments Heinrich and Silver 2016] Heinrich, J., and Silver, D. 2016. Deep reinforcement learning from self-play in imperfectinformation games Hendtlass 2004] Hendtlass, T. 2004. An introduction to collective intelligence. In SAP</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b1\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Human-level performance in first-person multiplayer games with population-based deep reinforcement learning</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Kartal</forename><surname>Hernandez-Leal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Taylor</forename><forename type=\"middle\">;</forename><surname>Hernandez-Leal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">P</forename><surname>Kartal</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">B</forename><surname>Taylor</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><forename type=\"middle\">E</forename><surname>Jaderberg</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">M</forename><surname>Czarnecki</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">W</forename><forename type=\"middle\">M</forename><surname>Dunning</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">I</forename><surname>Marris</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Lever</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><surname>Castaneda</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><forename type=\"middle\">G</forename><surname>Beattie</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">C</forename><surname>Rabinowitz</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><forename type=\"middle\">C</forename><surname>Morcos</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename><forename type=\"middle\">S</forename><surname>Ruderman</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">A</forename></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1810.05587</idno>\n\t\t<idno>ICLR. [Lowe et al. 2017</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Autocurricula and the emergence of innovation from social interaction: A manifesto for multi-agent intelligence research</title>\n\t\t<editor>\n\t\t\t<persName><forename type=\"middle\">[</forename><surname>Cogsci</surname></persName>\n\t\t</editor>\n\t\t<editor>\n\t\t\t<persName><surname>Kolve</surname></persName>\n\t\t</editor>\n\t\t<meeting><address><addrLine>AI2-THOR; Littman</addrLine></address></meeting>\n\t\t<imprint>\n\t\t\t<publisher>Marivate</publisher>\n\t\t\t<date type=\"published\" when=\"1994\">2018. 2018. 2018. 2016. 2018. 2016. 2016. 2017. 2016. 2016. 2017. 2004. 2004. 2018. 2019. 1994. 1994. 2019. 2019. 2017. Marivate 2015. 2015</date>\n\t\t</imprint>\n\t\t<respStmt>\n\t\t\t<orgName>Rutgers University-Graduate School-New Brunswick</orgName>\n\t\t</respStmt>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n\t<note>CoRR The Malmo platform for artificial intelligence experimentation IJCAI Juliani et al. 2018 Unity: A general platform for intelligent agents Coordinate to cooperate or compete: abstract goals and joint intentions in social interaction An interactive 3D environment for visual AI Multi-agent reinforcement learning as a rehearsal for decentralized planning Lanctot et al. 2017 A unified game-theoretic approach to multiagent reinforcement learning NIPS Reinforcement learning for stochastic cooperative multi-agent systems AAMAS Leibo et al. 2018 Psychlab: A psychology laboratory for deep reinforcement learning agents Leibo et al. 2019 Is multiagent deep reinforcement learning the answer or the question? A brief survey Markov games as a framework for multi-agent reinforcement learning ICML Emergent coordination through competition J Multi-agent actorcritic for mixed cooperative-competitive environments NIPS Improved Empirical Methods in Reinforcement-Learning Evaluation. Ph.D. Dissertation</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b2\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Independent reinforcement learners in cooperative Markov games: A survey regarding coordination problems. The Knowledge Engineering Review</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Laurent</forename><surname>Matignon</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Le</forename><surname>Fort-Piat ; Matignon</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">L</forename><surname>Laurent</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">G</forename><forename type=\"middle\">J</forename></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Le</forename><surname>Fort-Piat</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">N</forename><surname>Moravčík</surname></persName>\n\t\t</author>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"j\">Science</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2012\">2012. 2012. 2017. 2017. 2018</date>\n\t\t\t<publisher>Harvard University Press</publisher>\n\t\t</imprint>\n\t</monogr>\n\t<note>DeepStack: Expert-level artificial intelligence in heads-up no-limit poker Mordatch and Abbeel 2018 Emergence of grounded compositional language in multi-agent populations In AAAI. [Myerson 2013] Myerson, R. B. 2013. Game theory</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b3\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Openai universe</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Nichol</forename></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1804.03720.[OpenAI2016]OpenAI.2016</idno>\n\t\t<ptr target=\"https://blog.openai.com/openai-five/\" />\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Gotta learn fast: A new benchmark for generalization in RL</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2018\">2018. 2018</date>\n\t\t</imprint>\n\t</monogr>\n\t<note>OpenAI 2018] OpenAI. 2018. Openai five</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b4\">\n\t<monogr>\n\t\t<author>\n\t\t\t<persName><surname>Peng</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1703.10069</idno>\n\t\t<title level=\"m\">Multiagent bidirectionallycoordinated nets for learning to play StarCraft combat games</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2017\">2017. 2017</date>\n\t\t</imprint>\n\t</monogr>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b5\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">Arena: A general evaluation platform and building toolkit for multi-agent intelligence</title>\n\t\t<author>\n\t\t\t<persName><surname>Perez-Liebana</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1712.03931</idno>\n\t\t<idno>arXiv:1801.00690</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Neural MMO: A massively multiagent game environment for training and evaluating intelligent agents</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"1995\">2016. 2016. 2018. 2017. 2017. 2017. 2019. 2019. 2017. 2017. Song et al. 2019. 2019. 2019. 2017. 1995. 1995</date>\n\t\t</imprint>\n\t</monogr>\n\t<note type=\"report_type\">arXiv preprint</note>\n\t<note>AAAI Puig et al. 2018 CVPR UnrealCV: Virtual worlds for computer vision International Conference on Multimedia Savva et al. 2017 VirtualHome: Simulating household activities via programs Habitat: A platform for embodied AI research Proximal policy optimization algorithms Mastering the game of Go without human knowledge MINOS: Multimodal indoor simulator for navigation in complex environments Suarez et al. 2019 General video game AI: Competition, challenges and opportunities Tampuu et al. 2017 Multiagent cooperation and competition with deep reinforcement learning Nature Tassa et al. 2018 et al. 2018. Deepmind control suite Temporal difference learning and TD-Gammon PloS one Tian et al. 2017] Tian, Y.; Gong, Q.; Shang, W.; Wu, Y.; and Zitnick, C. L. 2017. Elf: An extensive, lightweight and flexible research platform for real-time strategy games NIPS</note>\n</biblStruct>\n\n<biblStruct status=\"extracted\" xml:id=\"b6\">\n\t<analytic>\n\t\t<title level=\"a\" type=\"main\">MuJoCo: A physics engine for model-based control</title>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Erez</forename><surname>Todorov</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">E</forename><surname>Tassa ; Todorov</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">T</forename><surname>Erez</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><forename type=\"first\">Y</forename><surname>Tassa</surname></persName>\n\t\t</author>\n\t\t<author>\n\t\t\t<persName><surname>Vinyals</surname></persName>\n\t\t</author>\n\t\t<idno type=\"arXiv\">arXiv:1708.04782.[Wuetal.2018</idno>\n\t\t<idno>arXiv:1801.07357</idno>\n\t</analytic>\n\t<monogr>\n\t\t<title level=\"m\">Building generalizable agents with a realistic and rich 3D environment</title>\n\t\t<imprint>\n\t\t\t<date type=\"published\" when=\"2012\">2012. 2012. 2017. 2017. 2018. 2018. 2018</date>\n\t\t</imprint>\n\t</monogr>\n\t<note>IROS StarCraft II: A new challenge for reinforcement learning Wydmuch, Kempka, and Jaśkowski 2018 ViZDoom competitions: Playing doom from pixels Chalet: Cornell house agent learning environment</note>\n</biblStruct>\n\n\t\t\t\t</listBibl>\n\t\t\t</div>\n\t\t</back>\n\t</text>\n</TEI>\n",
+ "pdf_hash": "d594d50244da6031f60eb9ec34b19750db0ab4bb090775c4474b01266f7fba47",
+ "tables": [
+  {
+   "table_id": "tab_0",
+   "section_path_id": "1~15",
+   "section_ordinal": 14,
+   "caption": "Table 1 :",
+   "coordinates": null,
+   "cells": [
+    {
+     "row": 0,
+     "column": 0,
+     "colspan": 7,
+     "rowspan": 1,
+     "text": "Platform ALE Retro GVG-AI Mujoco DM-Suite Arena",
+     "coordinates": null,
+     "span": {
+      "start": 46,
+      "end": 93
+     },
+     "digest": "5d916bc72d064ede76e31edeb0c6d48a0e6b7009b8fd87b2a1cfde70a3274656"
+    },
+    {
+     "row": 1,
+     "column": 0,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "Branches",
+     "coordinates": null,
+     "span": {
+      "start": 93,
+      "end": 101
+     },
+     "digest": "58e900f17be829ab0f988a4bb8b3bba0223c3863ecc9a88d7334894d658efc05"
+    },
+    {
+     "row": 1,
+     "column": 1,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "0.0",
+     "coordinates": null,
+     "span": {
+      "start": 101,
+      "end": 104
+     },
+     "digest": "d9a40cc4470e0a70fd9361c2f2f9dd977fa9f13ea06a4113c4799eb5dfdbabb6"
+    },
+    {
+     "row": 1,
+     "column": 2,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "431.2",
+     "coordinates": null,
+     "span": {
+      "start": 104,
+      "end": 109
+     },
+     "digest": "0c59be36aae9459d748162e9b4f075e41d320af459293b9336b2910103d5ad17"
+    },
+    {
+     "row": 1,
+     "column": 3,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "23.1",
+     "coordinates": null,
+     "span": {
+      "start": 109,
+      "end": 113
+     },
+     "digest": "387fb11338f75df84b345cd5cbe8f04b4b6bf620e2f6edc7dfe9806e9b649463"
+    },
+    {
+     "row": 1,
+     "column": 4,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "12.2",
+     "coordinates": null,
+     "span": {
+      "start": 113,
+      "end": 117
+     },
+     "digest": "539c47391ee7d0568045be08fcdf9ff310cdda7b61c75cb4f30b704107e9df32"
+    },
+    {
+     "row": 1,
+     "column": 5,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "50.2",
+     "coordinates": null,
+     "span": {
+      "start": 117,
+      "end": 121
+     },
+     "digest": "dbc83c90c56346f2195b2391a706f1b913ada8c4a924ce7c78ff8eb6fdb6c1db"
+    },
+    {
+     "row": 1,
+     "column": 6,
+     "colspan": 1,
+     "rowspan": 1,
+     "text": "922.4",
+     "coordinates": null,
+     "span": {
+      "start": 121,
+      "end": 126
+     },
+     "digest": "498737c7d223051fb683d04278077751890142d1b7770e09f8540b1977f9aef8"
+    }
+   ],
+   "source_digest": "263b578121affda4f4e2c10266bf1c738ad939902053112b4c4d386b70580399",
+   "missingness": null
+  }
+ ],
+ "table_missingness": null,
+ "formulas": [
+  {
+   "formula_id": "formula_0",
+   "section_path_id": "1~4",
+   "section_ordinal": 3,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "S ˆŚ A x : x P X ( Ñ S, which is a stochastic function s t`1 \" g `st , pa x,t q xPX ˘, a reward function for each agent f x : S ˆŚ A x : x P X ( Ñ R, which is a deterministic function r x,t`1 \" f x `st , pa x,t q xPX ˘, a joint reward function f \" pf x q xPX , and episode reward R f"
+   },
+   "span": {
+    "start": 297,
+    "end": 580
+   },
+   "source_digest": "2d4163b194d1495c09ea09eec5766b146223f0cdcab36c33e40b9608f1b76ad3",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_1",
+   "section_path_id": "1~4",
+   "section_ordinal": 3,
+   "label": "1",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "F N L \" f : @k P K, @x P X , @π x P Π x , BR f x { Bπ x \" 0 ( , (1"
+   },
+   "span": {
+    "start": 2133,
+    "end": 2199
+   },
+   "source_digest": "2b3a8a940fc4936ca2a28c580f21486cecc5a40baa7a462e6ec34449f84e2c19",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_2",
+   "section_path_id": "1~4",
+   "section_ordinal": 3,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": ")"
+   },
+   "span": {
+    "start": 2199,
+    "end": 2200
+   },
+   "source_digest": "520471d9a535af4fd992abd07dbed7975e062bf29a067a5839e3fea0de0a2506",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_3",
+   "section_path_id": "1~4",
+   "section_ordinal": 3,
+   "label": "(2)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "F IS \" f : f R F N L and @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x Bπ x 1 \" 0 ( ,(2)"
+   },
+   "span": {
+    "start": 2473,
+    "end": 2584
+   },
+   "source_digest": "2137f65dad58a107a2020ad4a9d59e9af0598f88a908d619d0969d3866ba9ce0",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_4",
+   "section_path_id": "1~4",
+   "section_ordinal": 3,
+   "label": "(3)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , B ş x 1 PX R f x 1 dx 1 Bπ x \" 0 ( ,(3)"
+   },
+   "span": {
+    "start": 3696,
+    "end": 3814
+   },
+   "source_digest": "20197257d21a45b5996bb2d03800c17e8bfd258aeea72ecbef8e944d09ca757a",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_5",
+   "section_path_id": "1~4",
+   "section_ordinal": 3,
+   "label": "(4)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "F CL \" f : f R F N L Y F IS and @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x 1 BR f x ě 0 ( ,(4)"
+   },
+   "span": {
+    "start": 4835,
+    "end": 4955
+   },
+   "source_digest": "cc40b7834bb98a8c7b4ed41a0d0f38eefed3493f282ab72163e4aa3a2da27e8a",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_6",
+   "section_path_id": "1~4",
+   "section_ordinal": 3,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "x 1 PX R f x 1 dx 1 { Bπ x \" 0 in (3) can be written as ş x 1 PX BR f x 1 { BR f x dx 1 \" 0 (see Lemma 1 in ex- tended paper"
+   },
+   "span": {
+    "start": 6207,
+    "end": 6331
+   },
+   "source_digest": "09e697e4e401fbcf0dc3a219b19dc55c1fc2507adda34d71e4a826fbe11b03cc",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_7",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "5",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "F N L \" f : @k P K, @x P X , @π x P Π x , BR f x Bπ x \" 0 ( , (5"
+   },
+   "span": {
+    "start": 668,
+    "end": 732
+   },
+   "source_digest": "7a1a50f9ac76f825aa74778bf32a30bb2e0f1819d3e066058b68fc8e0d543c96",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_8",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": ")"
+   },
+   "span": {
+    "start": 732,
+    "end": 733
+   },
+   "source_digest": "ff4aaea9edbe5d420de275d5169925d00f225663c85f87bfb58c26fb16ea85e2",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_9",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "BR f x Bπx \" R f x 1 1 ´Rf x 1 2 π 1 x ´π2"
+   },
+   "span": {
+    "start": 1418,
+    "end": 1460
+   },
+   "source_digest": "7e9da0a0fba3bfc4058ef2ada73a1cd2ad3eda1d6c35071f489fd5023b089345",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_10",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "(6)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "F IS \" f : @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x Bπ x 1 \" 0 ( .(6)"
+   },
+   "span": {
+    "start": 1572,
+    "end": 1669
+   },
+   "source_digest": "62773477091b0a4ca425bb41ae4bdaa992ee0e362a3a2bcb68aa7ade2a94435a",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_11",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "BR f x Bπ x 1 \" R f x 1 ´Rf x 2 π 1 x 1 ´π2 x 1"
+   },
+   "span": {
+    "start": 2287,
+    "end": 2334
+   },
+   "source_digest": "e7a3a10141c047bc0819207cd18165f46e4a3c180b634510e23fca517a87fd0d",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_12",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "(7)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , B ş x 1 PX R f x 1 dx 1 Bπ x \" 0 ( .(7)"
+   },
+   "span": {
+    "start": 2449,
+    "end": 2567
+   },
+   "source_digest": "b324a4e40738bf121eed152267214bd5cea44c9efdda3c1a956ee8c51f7f910a",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_13",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "x 1 PX R f x 1 dx 1 . We denote it ş x 1 PX R f x 1 1 dx 1"
+   },
+   "span": {
+    "start": 2917,
+    "end": 2975
+   },
+   "source_digest": "cb2c55bdef1c43d28bb17861f21acf356afec4df31d3ec53338345834d29fabd",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_14",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "B ş x 1 PX R f x 1 dx 1 Bπx \" ş x 1 PX R f x 1 1 dx 1 ´şx 1 PX R f x 1 2 dx 1 π 1 x ´π2"
+   },
+   "span": {
+    "start": 3436,
+    "end": 3523
+   },
+   "source_digest": "b96fca8589f04a87b33505ab2e8a37d8bb666508882760397781842d45f995c5",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_15",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "B ş x 1 PX R f x 1 dx 1 Bπx \" 0 for sample i holds true."
+   },
+   "span": {
+    "start": 3558,
+    "end": 3614
+   },
+   "source_digest": "c47c8bc019ecb3ab5785f2fa359383f2ef3af5205d69307fcf2d96518efd5f84",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_16",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "(8)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "F CL \" f : f R F N L Y F IS and @k P K, @x P X , @x 1 P X ztxu, @π x P Π x , @π x 1 P Π x 1 , BR f x 1 BR f x ě 0 ( .(8)"
+   },
+   "span": {
+    "start": 3700,
+    "end": 3820
+   },
+   "source_digest": "b80a083eaf990069999e63ddf52867a29817d3d5f9c158c6c8faaceb32146546",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_17",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "BR f x 1 BR f x \" R f x 1 1 ´Rf x 1 2 R f x 1 ´Rf x 2 and make the judgement whether BR f x 1 BR f x ě 0 for sample i holds true."
+   },
+   "span": {
+    "start": 4402,
+    "end": 4531
+   },
+   "source_digest": "adb26e88890cdde7175a1139362e143e6aeea685be7cc371c437d2ff4a640f20",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_18",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "(9)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "F CC \" f : f R F N L Y F IS Y F CP Y F CL ( ,(9)"
+   },
+   "span": {
+    "start": 4646,
+    "end": 4694
+   },
+   "source_digest": "2aff43e420f8d9b719807a90465e610558ee43df475d7d4235d9aefd528f9c1e",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_19",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "(10)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , B ş x 1 PX R f x 1 dx 1 Bπ x \" 0 ((10)"
+   },
+   "span": {
+    "start": 4861,
+    "end": 4978
+   },
+   "source_digest": "1b1833c0fcfbbe021a04754132d9cce078381fe3c089342b52dd16accb10938c",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_20",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "(11)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , ż x 1 PX BR f x 1 BR f x dx 1 \" 0 ( .(11)"
+   },
+   "span": {
+    "start": 4981,
+    "end": 5101
+   },
+   "source_digest": "c59bba41bef2e1c04c62482b7123c9043b5d7e3e83fcc41c825b84f4f2579c54",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_21",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "(12)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "Dk P K, Dx P X , Dπ x P Π x , BR f x Bπ x ‰ 0.(12)"
+   },
+   "span": {
+    "start": 5180,
+    "end": 5230
+   },
+   "source_digest": "59b2b65e4184c74e04d3b38728dbb592b079dbe01690d4d9bba8d3f87468cb8b",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_22",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "(13)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "F CP \" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , ż x 1 PX BR f x 1 Bπ x dx 1 Bπ x BR f x \" 0 ((13)"
+   },
+   "span": {
+    "start": 5251,
+    "end": 5379
+   },
+   "source_digest": "438e43d163f0b37aed689f2ed3170a5859a7cc0367e028c19cc284597d5d3287",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_23",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "(14)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "\" f : f R F N L Y F IS and @k P K, @x P X , @π x P Π x , @π x 1 P Π x 1 , ż x 1 PX BR f x 1 BR f x dx 1 \" 0 ( ,(14)"
+   },
+   "span": {
+    "start": 5379,
+    "end": 5494
+   },
+   "source_digest": "545a862455185a85444d9c7c461cd28d13d7805c71d9592c9f6188c7e5878d38",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_24",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "BR f x 1 BR f x \" 1´p´1q"
+   },
+   "span": {
+    "start": 6553,
+    "end": 6577
+   },
+   "source_digest": "7926d53060107308cae3b2fa398eed504616927fce949e97f0d0064d8c19637e",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_25",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "BR f x 1 BR f x"
+   },
+   "span": {
+    "start": 6675,
+    "end": 6690
+   },
+   "source_digest": "d810bb42f602b9ef8b04d6facb0f74eee9d78cfb91364cc9aa3cacfcdae8c65d",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_27",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "(16)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "@w P W, @v P W, φpv, wq \" ´φpv, wq.(16)"
+   },
+   "span": {
+    "start": 7346,
+    "end": 7385
+   },
+   "source_digest": "fc30f9e40fd29e1d63154051a238c5deaac32bf755a55e8e6e2971dc851acad0",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_28",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "(17)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "Π x \" Π X ,(17)"
+   },
+   "span": {
+    "start": 7500,
+    "end": 7515
+   },
+   "source_digest": "6f719a64c4d051fd914f74ba1bd5b133326a0948727fd4b421653077b940180a",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_29",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "(18)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "tx 1 u \" X ztx 2 u,(18)"
+   },
+   "span": {
+    "start": 7586,
+    "end": 7609
+   },
+   "source_digest": "953b7a9ad254b50f0d4b71ce3d7bbb056dfbec25603f55731d72a802ac5b5a9f",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_30",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "(19)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "@π x1 P Π X , @π x2 P Π X , R x1 \" ´Rx2 .(19)"
+   },
+   "span": {
+    "start": 7765,
+    "end": 7810
+   },
+   "source_digest": "273809d4fcb34e85bbc0dea25d612a9f36d00a234ed85ef501e0d9c3a325fcdd",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_31",
+   "section_path_id": "1~8",
+   "section_ordinal": 7,
+   "label": "(20)",
+   "coordinates": null,
+   "representation": {
+    "plain_text": "F CP \" f : f R F N L Y F IS and @x 1 P X , tx 2 u \" X ztx 1 u, @π x1 P Π X , @π x2 P Π X , BR x1 BR x2 \" ´1( .(20)"
+   },
+   "span": {
+    "start": 7912,
+    "end": 8026
+   },
+   "source_digest": "1e50d95ee4b4e068c7ad6dbcff10453c9e16f4464b399cb77babc0a53b64bed8",
+   "missingness": null
+  },
+  {
+   "formula_id": "formula_32",
+   "section_path_id": null,
+   "section_ordinal": null,
+   "label": null,
+   "coordinates": null,
+   "representation": {
+    "plain_text": "TransportBricks. Visual / RAM; Continuous;"
+   },
+   "span": null,
+   "source_digest": "f05aa8cd6ed9d3212e96fb452f24ee40324412bfa05e7c1d60871f526e4afab4",
+   "missingness": null
+  }
+ ],
+ "formula_missingness": null,
+ "page_text_missingness": null
+}
