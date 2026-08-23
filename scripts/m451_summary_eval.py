@@ -217,7 +217,22 @@ def build_user(policy: dict, parsed: dict) -> str:
 
 def main(argv):
     policy = yaml.safe_load(POLICY_PATH.read_text())
-    pids = argv[1:] or ["2402.18361", "2408.06292", "1203.2295", "2201.11903", "1712.00600", "2503.22732"]
+    # Candidate mode: --prompt-file <path> swaps the system prompt for this
+    # eval run ONLY (baseline in prod stays untouched). Cache fingerprint
+    # includes the prompt sha, so runs never mix.
+    args = [a for a in argv[1:]]
+    prompt_file = None
+    if "--prompt-file" in args:
+        i = args.index("--prompt-file")
+        prompt_file = args[i + 1]
+        del args[i:i + 2]
+        pf = Path(prompt_file)
+        policy = dict(policy)
+        policy["prompt"] = pf.read_text()
+        policy.setdefault("label_suffix", "")
+        policy["label_suffix"] = f" [prompt:{hashlib.sha256(policy['prompt'].encode()).hexdigest()[:8]}]"
+        pids = args
+    pids = args or ["2402.18361", "2408.06292", "1203.2295", "2201.11903", "1712.00600", "2503.22732"]
     models = policy["models"]
 
     rows = []
