@@ -8,8 +8,11 @@
 # Ничто не дублирует эти правила в другом месте.
 # ═══════════════════════════════════════════════════════════════════
 
-schema_version: article-schema.v1
+schema_version: article-schema.v2   # v2: manifest contract extended after hand-tuned pilots (2402.18361, 2408.06292)
 adr_ref: ADR-068
+changes:
+  v2: "artifacts: present/missingness/not_reached/built_at/actor/inputs; citations_resolved vocabulary"
+  v1: "initial definition (layers, lifecycle, invariants, forbidden edges)" 
 path: data/schemas/article_schema.yaml
 
 # ── Layout: плоско по умолчанию, версии по требованию ───────────────
@@ -166,10 +169,41 @@ manifest:
     - source                  # {type, category, sha256, acquired_at}
     - lifecycle               # DERIVED из последнего события
     - lifecycle_events        # append-only
-    - artifacts               # граф: слой → {file, stage, sha256, derived_from}
+    - artifacts               # граф слоёв (см. artifact_entry)
   optional_fields:
     - revision                # присутствует только у мультиверсионных
     - notes
+
+  # Контракт одной записи artifacts (v2)
+  artifact_entry:
+    built:                    # слой материализован
+      file: str               # путь внутри processed/<paper_id>/
+      derived_from: [layer_id]
+      sha256: str
+      built_at: timestamp     # recorded_at семантика
+      actor: str              # кто построил (стадия/инструмент)
+      stats: dict             # счётчики слоя (производные)
+      inputs: [path]          # DATA-словари, повлиявшие на сбор (optional)
+    missing:                  # слой отсутствует — типизированная причина
+      present: false
+      missingness: str        # типизированная причина (missingness_vocabulary)
+      derived_from: [layer_id]
+    not_reached:              # lifecycle статьи ещё не дошёл до слоя
+      not_reached: true
+
+  # Словарь причин отсутствия слоя (typed missingness, ADR-055)
+  missingness_vocabulary:
+    no_table_elements: "парсер не нашёл таблиц в источнике"
+    no_figure_elements: "парсер не извлекает рисунки (нет coords/фигур в GROBID-профиле)"
+    no_formula_elements: "парсер не нашёл формул"
+    parser_not_configured: "слой предусмотрен схемой, пайплайн не реализован"
+
+  # Цитаты: словарь состояний разрешения (классификация, НЕ резолв)
+  citations_resolved_vocabulary:
+    resolved_arxiv: "arxiv_id присутствует в parsed.citations"
+    resolved_doi: "doi присутствует в parsed.citations"
+    candidate_title: "ID нет, title есть — кандидат на матч против citation_styles/venue_registry"
+    raw_only: "только сырой GROBID-текст — неразрешимо без LLM/внешних источников"
   events:
     fields: [stage, recorded_at, observed_at, actor, evidence_sha256]
     observed_at_optional: true   # только когда есть внешний якорь
