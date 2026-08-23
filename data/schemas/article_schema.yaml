@@ -8,7 +8,7 @@
 # Ничто не дублирует эти правила в другом месте.
 # ═══════════════════════════════════════════════════════════════════
 
-schema_version: article-schema.v6   # v6: quality_signals layer real — deterministic signals, policy as DATA
+schema_version: article-schema.v7   # v7: citations_resolved enrichment — corpus title-match, venue_id, style classification
 adr_ref: ADR-068
 changes:
   v2: "artifacts: present/missingness/not_reached/built_at/actor/inputs; citations_resolved vocabulary"
@@ -16,6 +16,7 @@ changes:
   v4: "missingness_vocabulary += no_citation_elements; equations/citations слои уважают parsed missingness"
   v5: "figures слой наполняется из TEI (8833 figure-элементов корпуса); НОВЫЙ слой external_resources (6189 ptr-URL); словарь external_resource_domains.yaml"
   v6: "quality_signals слой: 7 детерминированных сигналов из уже собранных слоёв; пороги/набор = data/ontology/quality_signal_policy.yaml"
+  v7: "citations_resolved: title-match против корпуса (resolved_corpus), venue_id из venue_registry, style из citation_styles, сжатые авторы"
   v1: "initial definition (layers, lifecycle, invariants, forbidden edges)" 
 path: data/schemas/article_schema.yaml
 
@@ -218,12 +219,23 @@ manifest:
     no_external_resources: "TEI не содержит ptr-URL"
     parser_not_configured: "слой предусмотрен схемой, пайплайн не реализован"
 
-  # Цитаты: словарь состояний разрешения (классификация, НЕ резолв)
+  # Цитаты: словарь состояний разрешения (детерминированный матч — DATA)
+  # Принцип: индексы цитирования опираются на ID; имя-матч — явно
+  # помеченный фолбэк пониженного доверия (resolved_by обязателен).
   citations_resolved_vocabulary:
-    resolved_arxiv: "arxiv_id присутствует в parsed.citations"
-    resolved_doi: "doi присутствует в parsed.citations"
-    candidate_title: "ID нет, title есть — кандидат на матч против citation_styles/venue_registry"
-    raw_only: "только сырой GROBID-текст — неразрешимо без LLM/внешних источников"
+    resolved_arxiv: "arxiv_id присутствует (resolved_by=arxiv_id)"
+    resolved_doi: "doi присутствует (resolved_by=doi)"
+    resolved_corpus_arxiv: "arxiv_id цитаты указывает на статью корпуса (resolved_by=corpus_arxiv_id) — ID-основа"
+    corpus_title_fallback: "имя-фолбэк: title матчится на корпус (resolved_by=title_normalized) — пониженное доверие"
+    candidate_title: "ID нет; venue/style/authors извлечены, внешняя идентичность не установлена"
+    raw_only: "только сырой GROBID-текст"
+  citation_record_fields:
+    resolved_state: vocab
+    resolved_by: "метод резолва (обязателен при любом resolved_*): arxiv_id|doi|corpus_arxiv_id|title_normalized"
+    matched_paper_id: "статья корпуса при corpus-резолве"
+    venue_id: "canonical из venue_registry.yaml"
+    style: "id из citation_styles.yaml (journal_article/book/…)"
+    authors_compressed: "список {author_key (внутренний ID-базис, norm(initials+surname)), compressed, label?, identity_method: unmatched|tei_directory_name_fallback, seen_in_paper?} — полное имя это LABEL, не идентичность; внешние ID (OpenAlex A-id/ORCID) подключаются на enriched"
   events:
     fields: [stage, recorded_at, observed_at, actor, evidence_sha256]
     observed_at_optional: true   # только когда есть внешний якорь

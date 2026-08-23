@@ -27,6 +27,110 @@ def sha256_file(p: Path) -> str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
+_CORPUS_TITLES = None
+
+
+def _norm_title(t):
+    """NFKD -> lowercase -> only [a-z0-9]. Shared by title and author matching."""
+    import re as _re
+    import unicodedata as _ud
+    t = _ud.normalize("NFKD", t or "").lower()
+    return _re.sub(r"[^a-z0-9]+", "", t)
+
+
+def _corpus_title_index(repo: Path) -> dict:
+    """paper titles of the processed corpus, normalized -> paper_id.
+    Deterministic base for intra-corpus citation resolution."""
+    global _CORPUS_TITLES
+    if _CORPUS_TITLES is not None:
+        return _CORPUS_TITLES
+    import re as _re
+    import unicodedata as _ud
+    idx = {}
+    root = repo / "data/processed"
+    if root.is_dir():
+        for d in root.iterdir():
+            p = d / "parsed" / "article.json"
+            if not p.is_file():
+                continue
+            try:
+                a = json.loads(p.read_text())
+            except (OSError, ValueError):
+                continue
+            t = a.get("title")
+            if t:
+                n = _ud.normalize("NFKD", t).lower()
+                n = _re.sub(r"[^a-z0-9]+", "", n)
+                idx.setdefault(n, d.name)
+    _CORPUS_TITLES = idx
+    return idx
+
+
+_CORPUS_AUTHORS = None
+
+
+_CORPUS_ARXIV = None
+
+
+def _corpus_arxiv_index(repo: Path) -> dict:
+    """arxiv_id -> paper_id for corpus articles (ID-based citation base).
+    Corpus paper ids ARE arxiv ids here; identity comes from the article
+    identity (catalog), not from names."""
+    global _CORPUS_ARXIV
+    if _CORPUS_ARXIV is not None:
+        return _CORPUS_ARXIV
+    idx = {}
+    root = repo / "data/processed"
+    if root.is_dir():
+        for d in root.iterdir():
+            if (d / "parsed" / "article.json").is_file():
+                idx.setdefault(d.name, d.name)
+    _CORPUS_ARXIV = idx
+    return idx
+
+
+def _corpus_author_index(repo: Path) -> dict:
+    """normalized(full name) -> [(paper_id, full_name)] from TEI headers.
+    The LOCAL author directory: deterministic, no network. OpenAlex A-IDs
+    and ORCID join later on the enriched stage."""
+    global _CORPUS_AUTHORS
+    if _CORPUS_AUTHORS is not None:
+        return _CORPUS_AUTHORS
+    import re as _re
+    idx = {}
+    root = repo / "data/processed"
+    if root.is_dir():
+        for d in root.iterdir():
+            p = d / "parsed" / "article.json"
+            if not p.is_file():
+                continue
+            try:
+                a = json.loads(p.read_text())
+            except (OSError, ValueError):
+                continue
+            m = _re.search(r"<fileDesc>(.*?)</fileDesc>", a.get("tei_xml") or "", _re.S)
+            if not m:
+                continue
+            for pn in _re.findall(r"<persName>(.*?)</persName>", m.group(1), _re.S):
+                fores = _re.findall(
+                    r"<forename[^>]*>([^<]+)</forename>", pn)
+                surs = _re.findall(
+                    r"<surname[^>]*>([^<]+)</surname>", pn)
+                if not surs:
+                    continue
+                surname = "".join(surs)
+                initials = "".join(f[0] for f in fores if f)
+                full = " ".join(fores + surs)
+                # primary key matches GROBID compressed form: initials+surname
+                # e.g. "Madhu S. Advani" -> "msadvani" == norm("MSAdvani")
+                if initials:
+                    idx.setdefault(_norm_title(initials + surname), []).append((d.name, full))
+                # secondary key: full name normalized (for spelled-out names)
+                idx.setdefault(_norm_title(full), []).append((d.name, full))
+    _CORPUS_AUTHORS = idx
+    return idx
+
+
 def _verdict(value, thresholds, direction="above"):
     """Map value to ok/warn/alarm per policy thresholds (DATA)."""
     if not thresholds:
@@ -160,6 +264,27 @@ def build(paper_id: str, root: Path = Path("data/processed")) -> None:
         citations = []
     else:
         citations = []
+    # DATA dictionaries for deterministic matching (meta/prompt)
+    repo = Path(__file__).resolve().parent.parent
+    try:
+        venue_cfg = yaml.safe_load((repo / "data/ontology/venue_registry.yaml").read_text()) or {}
+    except OSError:
+        venue_cfg = {}
+    venue_pats = []
+    for v in venue_cfg.get("venues", []):
+        for alias in [v.get("canonical", "")] + (v.get("aliases") or []):
+            if len(alias) >= 6:
+                venue_pats.append((alias.lower(), v["canonical"]))
+    try:
+        style_cfg = yaml.safe_load((repo / "data/ontology/citation_styles.yaml").read_text()) or {}
+    except OSError:
+        style_cfg = {}
+    styles = style_cfg.get("styles", [])
+    # corpus titles for intra-corpus resolution (built lazily once)
+    corpus_titles = _corpus_title_index(repo)
+    corpus_by_arxiv = _corpus_arxiv_index(repo)
+    author_pat = re.compile(r"\b([A-Z]{1,3}[A-Z][a-z][a-z\-]{2,})\b")
+
     for i, c in enumerate(raw_citations):
         if c.get("arxiv_id"):
             state = "resolved_arxiv"
@@ -169,7 +294,11 @@ def build(paper_id: str, root: Path = Path("data/processed")) -> None:
             state = "candidate_title"
         else:
             state = "raw_only"
-        citations.append({
+        # ID-based intra-corpus resolution FIRST (user principle:
+        # citation indexes rest on IDs; name-match is a marked fallback)
+        if c.get("arxiv_id") and c["arxiv_id"] in corpus_by_arxiv:
+            state = "resolved_corpus_arxiv"
+        rec = {
             "index": i,
             "resolved_state": state,
             "arxiv_id": c.get("arxiv_id"),
@@ -177,19 +306,86 @@ def build(paper_id: str, root: Path = Path("data/processed")) -> None:
             "title": c.get("title"),
             "anchors": c.get("anchors"),
             "raw_text": c.get("raw_text"),
-        })
+        }
+        if state == "resolved_arxiv":
+            rec["resolved_by"] = "arxiv_id"
+        elif state == "resolved_doi":
+            rec["resolved_by"] = "doi"
+        elif state == "resolved_corpus_arxiv":
+            rec["resolved_by"] = "corpus_arxiv_id"
+            rec["matched_paper_id"] = corpus_by_arxiv[c["arxiv_id"]]
+        if state in ("candidate_title", "raw_only"):
+            raw = (c.get("raw_text") or "")
+            # name-based fallback — EXPLICITLY marked, lower trust
+            matched = corpus_titles.get(_norm_title(c.get("title")))
+            if matched:
+                rec["resolved_state"] = "corpus_title_fallback"
+                rec["matched_paper_id"] = matched
+                rec["resolved_by"] = "title_normalized"
+            else:
+                # venue from registry aliases (DATA)
+                raw_l = raw.lower()
+                venue_id = next((canon for alias, canon in venue_pats if alias in raw_l), None)
+                if venue_id:
+                    rec["venue_id"] = venue_id
+                # style classification by shape signals (DATA)
+                style_id = None
+                for st in styles:
+                    sigs = st.get("signals") or []
+                    antis = st.get("anti_signals") or []
+                    if any(re.search(s, raw) for s in sigs) and not any(
+                        re.search(a, raw) for a in antis
+                    ):
+                        style_id = st.get("id")
+                        break
+                if style_id:
+                    rec["style"] = style_id
+                # compressed GROBID authors -> INTERNAL author_key (id-of-record);
+                # canonical full name is a LABEL, not the identity.
+                if state in ("candidate_title", "raw_only"):
+                    corpus_authors = _corpus_author_index(repo)
+                    authors = []
+                    for comp in author_pat.findall(raw)[:12]:
+                        canon = corpus_authors.get(_norm_title(comp))
+                        entry = {
+                            "author_key": _norm_title(comp),  # internal id basis
+                            "compressed": comp,
+                            "identity_method": "unmatched",
+                        }
+                        if canon:
+                            seen_in, full = canon[0]
+                            entry["label"] = full
+                            entry["identity_method"] = "tei_directory_name_fallback"
+                            entry["seen_in_paper"] = seen_in
+                        authors.append(entry)
+                    rec["authors_compressed"] = authors
+        citations.append(rec)
     if raw_citations:
         (article / "citations_resolved.json").write_text(
             json.dumps(citations, ensure_ascii=False, indent=1))
         from collections import Counter
         states = dict(Counter(c["resolved_state"] for c in citations))
+        authors_seen = sum(
+            len(c.get("authors_compressed") or []) for c in citations
+        )
+        authors_matched = sum(
+            1
+            for c in citations
+            for a in (c.get("authors_compressed") or [])
+            if isinstance(a, dict) and a.get("label")
+        )
         artifacts["citations_resolved"] = {
             "file": "citations_resolved.json",
             "derived_from": ["parsed"],   # enricher joins later (W5)
             "sha256": sha256_file(article / "citations_resolved.json"),
             "built_at": now,
             "actor": "m451-reference-builder",
-            "stats": {"total": len(citations), **states},
+            "stats": {
+                "total": len(citations),
+                **states,
+                "authors_matched": authors_matched,
+                "authors_seen": authors_seen,
+            },
             "inputs": ["data/ontology/citation_styles.yaml",
                        "data/ontology/venue_registry.yaml"],  # dictionaries for the future title-matching
         }
