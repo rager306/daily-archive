@@ -13,9 +13,20 @@ use std::path::PathBuf;
 ///
 /// Every path constant in the pipeline is defined here — no crate
 /// should have hardcoded `"data/..."` strings.
+/// Binding of one schema-manifest object class (ADR-068): where its
+/// instances live, which manifest file describes each instance, and
+/// which schema (norm) defines the class. All DATA — no code defaults.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SchemaObjectBinding {
+    pub root: PathBuf,
+    pub manifest: String,
+    pub norm: PathBuf,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct PathConfig {
     paths: BTreeMap<String, PathBuf>,
+    schema_objects: BTreeMap<String, SchemaObjectBinding>,
 }
 
 impl PathConfig {
@@ -42,6 +53,8 @@ impl PathConfig {
     pub fn parse(text: &str) -> Self {
         let mut paths = BTreeMap::new();
 
+        let mut schema_objects = BTreeMap::new();
+
         if let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(text)
             && let Some(map) = value.get("paths").and_then(|v| v.as_mapping())
         {
@@ -49,10 +62,43 @@ impl PathConfig {
                 if let (Some(k), Some(v)) = (key.as_str(), val.as_str()) {
                     paths.insert(k.to_string(), PathBuf::from(v));
                 }
+                // nested class table: schema_objects.<class> = {root, manifest, norm}
+                if key.as_str() == Some("schema_objects")
+                    && let Some(classes) = val.as_mapping()
+                {
+                    for (class, binding) in classes {
+                        let Some(class) = class.as_str() else { continue };
+                        let (Some(root), Some(manifest), Some(norm)) = (
+                            binding.get("root").and_then(|v| v.as_str()),
+                            binding.get("manifest").and_then(|v| v.as_str()),
+                            binding.get("norm").and_then(|v| v.as_str()),
+                        ) else {
+                            continue;
+                        };
+                        schema_objects.insert(
+                            class.to_string(),
+                            SchemaObjectBinding {
+                                root: PathBuf::from(root),
+                                manifest: manifest.to_string(),
+                                norm: PathBuf::from(norm),
+                            },
+                        );
+                    }
+                }
             }
         }
 
-        Self { paths }
+        Self { paths, schema_objects }
+    }
+
+    /// Binding for one schema-manifest object class (e.g. "article").
+    pub fn schema_object(&self, class: &str) -> Option<&SchemaObjectBinding> {
+        self.schema_objects.get(class)
+    }
+
+    /// All registered object classes.
+    pub fn schema_object_classes(&self) -> Vec<&str> {
+        self.schema_objects.keys().map(String::as_str).collect()
     }
 
     /// Get a path by key. Checks env override first (DA_PATH_<KEY>),

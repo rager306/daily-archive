@@ -8,10 +8,11 @@
 # Ничто не дублирует эти правила в другом месте.
 # ═══════════════════════════════════════════════════════════════════
 
-schema_version: article-schema.v2   # v2: manifest contract extended after hand-tuned pilots (2402.18361, 2408.06292)
+schema_version: article-schema.v3   # v3: invariants as machine-readable declarations (generic validation engine, M451)
 adr_ref: ADR-068
 changes:
   v2: "artifacts: present/missingness/not_reached/built_at/actor/inputs; citations_resolved vocabulary"
+  v3: "invariants: машиночитаемые декларации паттернов — общий движок валидации, статья лишь первый объект"
   v1: "initial definition (layers, lifecycle, invariants, forbidden edges)" 
 path: data/schemas/article_schema.yaml
 
@@ -213,28 +214,52 @@ manifest:
       Текущий lifecycle = стадия последнего события. Регенерация манифеста
       сохраняет журнал (append-only) и пересчитывает производные поля.
 
-# ── Инварианты (Governor читает отсюда, не дублирует) ───────────────
+# ── Инварианты: машиночитаемые декларации паттернов ─────────────────
+# Паттерны — переиспользуемые правила ОБЩЕГО движка валидации
+# (da-domain::schema_invariants). Какие поля/словари — декларирует
+# схема объекта; статья — первый объект, дальше главы/словари/снапшоты.
+# Формулировки-проза прежних версий перенесены в `documentation`.
+
 invariants:
-  - id: lifecycle_monotonic
-    rule: stage_index(artifact) <= stage_index(article.lifecycle)
-  - id: derived_from_exists
-    rule: каждый derived_from указывает на существующий слой
-  - id: derived_from_acyclic
-    rule: граф слоёв ацикличен
-  - id: ast_covers_sections
-    rule: pageindex.ast_nodes == parsed.sections_count
-  - id: no_orphan_entities
-    rule: каждая сущность привязана к секции (section ordinal)
-  - id: enrichment_after_parse
-    rule: enriched.stage_index >= parsed.stage_index
-  - id: source_immutable
-    rule: source.sha256 неизменен с первого manifest
-  - id: events_append_only
-    rule: регенерация манифеста не теряет и не переписывает события
-  - id: transaction_time_monotonic
-    rule: recorded_at не убывает внутри журнала статьи
-  - id: authority_no_downgrade
-    rule: слой с меньшим authority не зависит от слоя с большим
+  - pattern: derived_state_from_events        # состояние выводится из последнего события
+    state_field: lifecycle
+    events_field: lifecycle_events
+    stage_field: stage
+    default_state: raw
+
+  - pattern: monotonic_timestamp              # время не убывает в журнале
+    field: lifecycle_events[].recorded_at
+
+  - pattern: enum_membership                  # значения из словаря нормы
+    field: lifecycle_events[].stage
+    vocabulary: lifecycle_order
+
+  - pattern: graph_edges_known                # рёбра графа указывают на известные узлы
+    graph_field: artifacts
+    edge_field: derived_from
+    node_vocabulary: layers
+    allowed_roots: [source]
+
+  - pattern: cross_layer_stat_eq              # статистики слоёв согласованы
+    layer_a: parsed
+    stat_a: sections
+    layer_b: context
+    stat_b: ast_nodes
+
+  - pattern: collection_records               # записи коллекции удовлетворяют полю
+    layer: extracted
+    file: extracted/entities.json
+    field: section_ordinal
+    required: true
+    min: 0
+
+documentation:
+  lifecycle_monotonic: "stage_index(artifact) <= stage_index(article.lifecycle)"
+  derived_from_acyclic: "граф слоёв ацикличен (гарантируется топологией схемы)"
+  enrichment_after_parse: "enriched.stage_index >= parsed.stage_index"
+  source_immutable: "source.sha256 неизменен с первого manifest"
+  events_append_only: "регенерация манифеста не теряет и не переписывает события"
+  authority_no_downgrade: "слой с меньшим authority не зависит от слоя с большим"
 
 # ── Запрещено ────────────────────────────────────────────────────────
 forbidden:

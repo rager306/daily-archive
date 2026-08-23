@@ -118,6 +118,17 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Validate schema-manifest objects against their DATA norm
+    /// (ADR-068: articles today, any schema_objects class later)
+    ValidateObjects {
+        /// Object class from path_config schema_objects table (default: article)
+        #[arg(long, default_value = "article")]
+        class: String,
+
+        /// Specific object ids (default: all)
+        ids: Vec<String>,
+    },
+
     /// Check infrastructure health
     Health,
 
@@ -436,6 +447,52 @@ fn main() {
     });
 
     match cli.command {
+        Commands::ValidateObjects { class, ids } => {
+            use da_adapters::fs_schema_objects::FsSchemaObjectStore;
+            use da_application::validate_schema_objects::validate_schema_objects;
+            use da_ports::path_config::PathConfig;
+
+            let config = PathConfig::load();
+            let store = match FsSchemaObjectStore::from_path_config(&config, class.as_str()) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("validate-objects: {e}");
+                    std::process::exit(2);
+                }
+            };
+            let only: Option<Vec<String>> =
+                if ids.is_empty() { None } else { Some(ids.clone()) };
+            match validate_schema_objects(&store, only.as_deref()) {
+                Ok(report) => {
+                    for v in &report.violations {
+                        println!(
+                            "  [{}] {}: {} ({})",
+                            format_args!("{:?}", v.kind)
+                                .to_string()
+                                .to_lowercase(),
+                            v.object_id,
+                            v.evidence,
+                            v.pattern
+                        );
+                    }
+                    println!(
+                        "validated: {} {} objects, {} violations",
+                        report.checked,
+                        report.object_class,
+                        report.violations.len()
+                    );
+                    if report.is_clean() {
+                        std::process::exit(0);
+                    } else {
+                        std::process::exit(1);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("validate-objects: {e}");
+                    std::process::exit(2);
+                }
+            }
+        }
         Commands::Health => {
             rt.block_on(async {
                 check_health().await;

@@ -991,10 +991,6 @@ class TrajectoryService:
         from governor.adapters.schema_hierarchy_checker import check_schema_hierarchy
         drift_flags.extend(check_schema_hierarchy(self.root))
 
-        # M451 W4: per-article manifest content invariants (ADR-068)
-        from governor.adapters.article_manifest_checker import check_article_manifests
-        drift_flags.extend(check_article_manifests(self.root))
-
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
         milestone_ctx = self._build_milestone_context()

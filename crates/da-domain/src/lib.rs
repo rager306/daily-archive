@@ -8,6 +8,7 @@
 //! ADR-040 §11: Schema enforcement lives here, not in DDL.
 
 pub mod acquisition_batch;
+pub mod article_manifest;
 pub mod agent;
 pub mod article;
 pub mod assurance;
@@ -49,6 +50,7 @@ pub mod revision_readiness;
 pub mod revision_schema;
 pub mod scheduler;
 pub mod schema;
+pub mod schema_invariants;
 pub mod scholarly_evidence;
 pub mod section_summary_policy;
 pub mod source;
