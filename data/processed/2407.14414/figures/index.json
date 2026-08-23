@@ -1,0 +1,114 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Figure 1: Comparative overview of a System-1 Planner, a System-2 Planner, and our hybrid and controllable System-1.x Planner. Given a Maze Navigation task, a System-1 Planner directly generates a plan as a sequence of steps without search, thus making it fast but inaccurate. A System-2 Planner performs search before generating a plan and hence is more accurate but much slower. Our System-1.x Planner generates hybrid plans, where the level of hybridization is controlled by a user-defined hyperparameter. Hybrid plans balance System-1 sub-plans for easier sub-goals and System-2 sub-plans for harder ones, making System-1.x fast, accurate, and controllable.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 660
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "2",
+  "caption": "Figure 2: Overview of our System-1.x Planner. Left: The process for training data construction. We generate three kinds of data to fine-tune our three components: (1) System-1 data (linear chains), (2) System-2 data (search trees), and (3) controller data (consisting of sub-goals and easy/hard annotations) conditioned on a user-specified hybridization factor x. Right: During inference, the controller generates the sub-goals and predicts whether each is easy or hard. Then, it invokes System-1 and System-2 for easy and hard sub-goals respectively to construct the final plan.",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 579
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "Baselines. We compare our System-1.x Planner with (1) a System-1 Planner, (2) a System-2 Planner, and (3) a System-1.x Planner without sub-goal decomposition. The latter is also a hybrid planner but the controller is trained to predict an instance as either fully System-1 or fully System-2, thus allowing us to evaluate the effectiveness of sub-goal decomposition of our full System-1.x model. For showing the effectiveness of our neuro-symbolic System-1.x variant, we compare it to A * by matching their #States-Explored. Under the umbrella of System-2 Planners, we train multiple variants that are fine-tuned with data obtained from different search algorithms. In particular, we consider two uninformed search algorithms (Breadth-First Search and Depth-First Search) and an informed search algorithm (A * ). Given the superiority of A * , our primary experiments will be based on A * traces while we reserve the other search algorithms for further analysis in §4.3. Refer to Appendix A for a short background on A * .",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1021
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "3",
+  "caption": "Figure 3: Comparison of System-1.x Planner (with and without sub-goals) with a System-1 Planner and a System-2 Planner. (a) Maze Navigation: System-1.x with sub-goals matches or generally outperforms all baselines. (b) Blocksworld: For out-of-distribution generalization, System-1.x with sub-goals leads to much higher plan validity at lower #States-Explored.to fairly compare all systems, their #States-Explored should be matched, such that we compare performance at a fixed budget for each system. First, since System-1 does not do any exploration, it is constant w.r.t. budget and hence has the same plan validity irrespective of #States-Explored. Next, to adapt System-2 and System-1.x to lower budgets, we truncate the search when the maximum number of states allowed by the budget has been reached. This value of maximum allowed states is given by the highest possible value such that the average #States-Explored matches the desired budget. We refer to this as truncation below. Finally, to adapt System-1.x to higher budgets, we use System-1.x's test-time controllability, increasing the bias term on System-2 reasoning (cf. §2.4). As this term increases, the model uses more and more System-2 planning, i.e., x → 1 in System-1.x. We refer to this as test-time control. We perform this matching and report plan validity for the following values of #States-Explored. First, we vary the maximum budget of states explored in intervals of 5 for Maze and 10 for Blocksworld, up to the number of states used by System-2 (the most compute-intensive system we consider). We also consider two specific points in the range of #States-Explored: we match System-2's #States-Explored to the number of states that System-1.x uses by default. In the other direction, we match System-1.x's #States-Explored to the number of states used by System-2. These points let us directly compare the two systems without any truncation or test-time control. In the main paper, we present our results with plots while we refer to the Appendix E for detailed tables.Implementation Details. We choose Mistral-7B-Instruct-v0.2(Jiang et al., 2023)  as the base LLM and fine-tune all our components with LoRA<ref type=\"bibr\" target=\"#b13\">(Hu et al., 2021)</ref> with a rank of 8 for a maximum of 3 epochs and a batch size of 4, resulting in three adapters for System-1, System-2, and the controller. For the purposes of §4.1, System-1.x will specifically refer to a System-1.5 Planner (i.e., x = 0.5, which is a balanced hybrid between a System-1 Planner and System-2 Planner) and fine-tuned from A * traces. Refer to Appendix A for additional implementation details e.g., our hardness functions and System-2 implementations.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2701
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "Fig. 3(a) (cf.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 14
+ },
+ {
+  "figure_id": "fig_5",
+  "label": null,
+  "caption": "Fig. 3(b) (cf.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 14
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": "Fig. 4 (cf.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 11
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "4",
+  "caption": "Figure 4: Performance of System-1.x in conjunction with a symbolic (A * ) System-2 Planner on Maze.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 99
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "5",
+  "caption": "Figure 5: Train-time controllability of System-1.x Planner by setting x = 0.75. System-1.75 largely outperforms System-2. Compared to Fig. 3(a), System-1.75 yields 75.7% valid plans vs. 70.4% (with System-1.5) by utilizing 3 more states.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 237
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "6",
+  "caption": "Figure 6: Comparison of System-1.x Planner on Maze Navigation using (a) Breadth-First Search and (b) Depth-First Search traces. The System-1.x Planner generally outperforms System-2 Planner in both cases, converging to System-2, showing robustness to the underlying search algorithm.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 283
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "78",
+  "caption": "Figure 7: Comparison of System-1.x Planner with and without sliding window-based sub-goal decomposition on the Maze Navigation task. Sliding window-based decomposition outperforms the variant without it at all budgets.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 218
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "10",
+  "caption": "Figure 10: A qualitative example showing (1) a failure case for a System-1 Planner because it generates a plan through the obstacles, (2) a failure case for a System-2 Planner because the generated plan leads to a dead end and the model does not recover from it, and (3) a successful case for our System-1.x Planner that solves the easy sub-goals near the start state and the goal state using System-1 and the hard sub-goal in the middle using System-2.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 453
+ },
+ {
+  "figure_id": "fig_12",
+  "label": null,
+  "caption": "You are in a 2d maze of dimensions 5 and 5 and some of the cells have walls. The walls are placed in cells [[3, 4], [0, 4], [3, 3], [1, 1], [2, 3], [0, 0], [2, 0], [4, 0], [1, 0], [2, 4]].",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 188
+ },
+ {
+  "figure_id": "fig_13",
+  "label": null,
+  "caption": "Comparison of Planner (x = 0.5) with all baselines on Maze Navigation (corresponding to Fig.3(a)). The blue rows indicate plan validity obtained by all methods when #States-Explored is matched to that of System 1.5 with sub-goals. The green rows indicate plan validity obtained when #States-Explored is maximized. All tables, henceforth, will use the same color coding.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 369
+ }
+]

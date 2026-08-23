@@ -1,0 +1,90 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": null,
+  "caption": "Our key contributions can be summarized as follows: we abstract the end-to-end web agents building pipeline into four key stages: Step I: Construct diverse and challenging deep information seeking QA pairs based on the real-world web environment ( §2.1); Step II: Sample high-quality trajectories from QA pairs using both LLMs and LRMs to guide the agency learning process ( §2.2); Step III: Perform fine-tuning to adapt the format instruction following to agentic tasks and environments ( §3.1); Step IV: Apply RL to optimize the agent's decision-making and generalization capabilities in real-world web environments ( §3.2). We offer a systematic, end-to-end pipeline for building long-term information-seeking web agents.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 724
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "2",
+  "caption": "Figure 2: The overview of training framework. (I) The SFT stage for cold start utilizes the reformatted ReAct datasets, where the thought includes both short and long CoT, respectively. (II) The RL stage performs rollouts with the tool calls on the QA pairs that are not utilized during the SFT stage, and optimizes the policy using the DAPO algorithm.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 352
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "The reward design plays a critical role during the RL training process<ref type=\"bibr\" target=\"#b10\">Guo et al. (2025)</ref>. Our reward system mainly consists of two types of rewards, score format and score answer . Given that format consistency has been largely addressed during the initial RFT stage, we assign a small weight to the score format in the overall reward. The score format is binary: it is set to 1 only if the entire output strictly conforms to the required format and all tool calls in json format are valid. Considering that the QA answers are inherently non-verifiable, cannot be reliably evaluated using rule-based F1/EM metrics, despite the brevity of the responses, and that the final evaluation relies on LLM-as-Judge<ref type=\"bibr\" target=\"#b62\">Zheng et al. (2023)</ref> which the judge model is M j , we opt to employ model-based prompt evaluation as the answer reward signal<ref type=\"bibr\" target=\"#b29\">Seed et al. (2025)</ref>;<ref type=\"bibr\" target=\"#b47\">Xu et al. (2025)</ref>;Liu et al. (2025b). The score answer is also binary, assigned as 1 only when the response is judged as correct by the LLMs. The final reward function is: R( ŷi , y) = 0.1 * score format + 0.9 * score answer (5)",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1223
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "3",
+  "caption": "Figure3: Results on data efficiency using GAIA benchmark. Open-only refers to using only challenging QA datasets from open-source sources.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 138
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "4",
+  "caption": "Figure4: Detailed evaluation results using Pass@1, Pass@3 and Cons@3 metric on GAIA benchmark.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 94
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "5",
+  "caption": "Figure5: Analysis on RL algorithm, emergent agency, and agent environments using GAIA benchmark.",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 96
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": "Agent learning has evolved from in-context learning towards training-based methodsLiu et  al. (2025a); Zhou et al. (2024; 2023). Recent studies Qiao et al. (2024); Zeng et al. (2024); Chen et al. (2024) have primarily focused on leveraging SFT with curated task-solving trajectories following the ReAct paradigm. However, empirical evidence suggests that pure SFT-based agents often exhibit limited generalization performance when confronted with adaptive operational contexts Zheng et al. (2025); Zhang et al. (2025d); Qian et al. (2025); Yu et al. (2024). Building upon these limitations, RL-based methods Song et al. (2025); Zheng et al. (2025;?); Zhang et al. (2025d;c) have demonstrated remarkable potential in developing sophisticated search strategies through learned exploration policies. Despite their theoretical advantages, practical implementations face persistent challenges in training stability and sample efficiency. WebDancer implements a two-stage framework: an initial cold-start phase employing trajectory-based SFT to establish fundamental agency patterns, followed by targeted RL to cultivate adaptive long-term agency capabilities.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1154
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "7",
+  "caption": "Figure 7: Prompts for ReAct using LRMs.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 39
+ },
+ {
+  "figure_id": "fig_8",
+  "label": null,
+  "caption": "No Agency: which denotes direct use base ability of models and simply uses retrieval-augmented generation (RAG). Includes Qwen2.5-7/32/72B-Instruct Yang et al. (2024), QwQ-32B Team (2025a), DeepSeek-R1-671B Guo et al. (2025), GPT-4o OpenAI (2022).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 247
+ },
+ {
+  "figure_id": "fig_9",
+  "label": null,
+  "caption": "Search-o1Li et al. (2025a)  performs information-seeking by first generating search queries, retrieving web documents, and then using an LLM to answer based on the retrieved content, without optimizing the search process itself. R1-Searcher<ref type=\"bibr\" target=\"#b33\">Song et al. (2025)</ref> trains an LLM to learn when and how to search using outcome-based reinforcement learning, without any supervised demonstrations.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 424
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "68",
+  "caption": "Prompts for ReAct using LLMs. Modified ReAct for LRMs &lt;answer&gt;34689 &lt;answer&gt; ✓ Case Study.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 102
+ }
+]

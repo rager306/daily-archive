@@ -1,0 +1,162 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Figure1: Self-Evaluation can calibrate the decoding direction in multi-step reasoning. We illustrate our method in the form of stepwise stochastic beam search with the beam size equal to 1. The scale of the self-evaluation score is visualized in the colormap. We adopt Program-Aided Language models (PAL) reasoning<ref type=\"bibr\" target=\"#b8\">(Gao et al., 2023;</ref><ref type=\"bibr\" target=\"#b4\">Chen et al., 2022)</ref> for this math word problem.",
+  "ref_count": 7,
+  "has_graphic": false,
+  "caption_chars": 450
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": "Considering the input prompt and question Q represented as x, we formulate the answer distribution P (a | x) by decomposing it as a reasoning chain generation process P (R | x) and an answer generation process P (a | R, x):P (a | x) = E R∼P (R|x) P (a | R, x),(1)where R is the intermediate reasoning chain variable that is typically a text sequence. P (a | R, x) = 1 A (a) max (|A|,1) , where A = execute(R) represents the set of predicted answer(s) interpreted from R, and 1 A is the indicator function of the subset A. In practice, |A| ≥ 0 can be 0 or larger than 1 when the reasoning R returns no valid answer or produces more than one possible answers, respectively. s 1 s 2 … s T R = [s 1 , s 2 , …, s T ] = s 1",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 717
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "2",
+  "caption": "Figure 2: Our framework of self-evaluation guided stochastic beam search for multi-step reasoning. The schema of the decoding process is on the left, where we keep k = 2 candidates at each timestep, with the detailed illustration of timestep t at the bottom. Here \"Gen\" and \"Self-Eval\" represent the generation and evaluation LLMs, respectively. The corresponding prompt formulations are provided on the right, where the questions Q, reasoning steps R, and evaluation scripts are highlighted in orange , green , and yellow , respectively. Steps in light green (e.g., s t ) are for models to generate or evaluate at the current timestep. Specifically, we follow Kadavath et al. (2022) to prompt the LLM evaluation by answering the multiple-choice question, i.e., the lines starting with #.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 788
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "6",
+  "caption": "Figure 6: Accuracy curves and distributions of our approach on GSM8K with different hyperparameter settings: (a) Changes in performance (Llama-2 backboned) when the beam size k varies. Methods of the same k have equal computational costs; (b) Accuracy distributions (Codex backboned) with different generation temperature γ and sampling temperature τ (with decay ratio α).",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 372
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "C P Ɛ grace_weight = 125 C P Ɛ alex_weight = 4 * grace_weight -2 C P Ɛ answer = grace_weight + alex_weight C P Ɛ yards_per_skein = 364 C P Ɛ mariah_yards = 1 / 4 * yards_per_skein C P Ɛ grandma_yards = 1 / 2 * yards_per_skein C P Ɛ answer = mariah_yards + grandma_yards C P Ɛ grace_weight = 125 C P Ɛ alex_weight = 2 C P Ɛ weight_multiplier = 4 C P Ɛ alex_total = alex_weight + weight_multiplier * grace_weight C P Ɛ answer = grace_weight + alex_total C P Ɛ yarn_mariah = 1 / 4 C P Ɛ yarn_grandma = 1 / 2 C P Ɛ yards_per_skein = 364 C P Ɛ total_yards = yarn_mariah + yarn_grandma C P Ɛ yards_used = total_yards * yards_per_skein ✔ ✔ ✔ ❌ (a) Examples of self-evaluation score distribution of different predictions on the GSM8K dataset. [Q 4 ] Is Freya a combination of Athena and Aphrodite? [Ground-Truth a 4 *] yes [Explanation] Athena was the Greek goddess of war. Aphrodite was the Greek goddess of love. Freya was the Norse goddess of war, love, and fertility. [Predicted a 41 ] no [R 41 ] in Chain-of-Thought",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1012
+ },
+ {
+  "figure_id": "fig_5",
+  "label": null,
+  "caption": "Predicted a 42 ] yes [R 42 ] in Chain-of-Thought [Q 3 ] Did Columbus obtain his funding from the rulers of the Portugese Empire? [Ground-Truth a 3 *] no [Explanation] King Ferdinand and Queen Isabella funded Columbus' voyage. They were the joint rulers of the Iberian Peninsula, which included Spain but excludes Portugal. King John II of Portugal rejected Columbus' request for funding. [Predicted a 31 ] no [R 31 ] in Chain-of-Thought",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 436
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": "Predicted a 32 ] no [R 32 ] in Chain-of-Thought C P Ɛ Freya is a Norse goddess. C P Ɛ Athena and Aphrodite are Greek goddesses. C P Ɛ Thus, Freya is not a combination of Athena and Aphrodite. C P Ɛ So the answer is no. C P Ɛ Freya is the goddess of love, beauty and fertility. C P Ɛ You can compare these to the Greek gods Athena and Aphrodite. C P Ɛ It is not clear how their powers exactly compare. C P Ɛ However, it seems that Freya must have attributes that match both. C P Ɛ So the answer is yes. C P Ɛ Columbus obtained his funding from the rulers of the Spanish Empire. C P Ɛ Thus, Columbus didn't obtain his funding ... Portugese Empire. C P Ɛ So the answer is no. C P Ɛ Columbus was Italian and the Portugese Empire was Portugese. C P Ɛ Thus, Columbus didn't obtain funding ... Portugese Empire. C P Ɛ So the answer is no.Examples of self-evaluation score distribution of different predictions on the StrategyQA dataset. We also provide explanations corresponding to the ground-truth answers for reference.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1015
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "7",
+  "caption": "Figure7: Comparisons among predictions of high and low self-evaluation scores on arithmetic (7a for GSM8K) and commonsense (7b for StrategyQA) reasoning tasks. Scores from low to high are visualized from orange (0.0), yellow (0.4), to green (1.0). Here C, P, and E represent the evaluation confidence, the generation confidence, and their combination as the final score, respectively.",
+  "ref_count": 8,
+  "has_graphic": false,
+  "caption_chars": 384
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "8",
+  "caption": "Figure8: Accuracy curves with different sampling diversity. The two plots show the changes in performance on GSM8K when the sampling temperature τ and its decay ratio α vary, respectively.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 188
+ },
+ {
+  "figure_id": "fig_9",
+  "label": null,
+  "caption": "λ-AUC curves of E λ on GSM8K (PAL).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 35
+ },
+ {
+  "figure_id": "fig_10",
+  "label": null,
+  "caption": "λ-AUC curves of E λ on StrategyQA (CoT).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 40
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "910",
+  "caption": "Figure 9: The change of AUC scores with different values of λ in E λ . We calculate the AUC score as how E λ can successfully determine whether the corresponding predicted reasoning chain can produce the ground-truth answer. The predictions here are from the baseline methods (i.e., CoT &amp; PAL) with different LM temperatures γ, as represented by curves of different colors.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 377
+ },
+ {
+  "figure_id": "fig_12",
+  "label": "12",
+  "caption": "Figure 12: Score from low to high values visualized using colormap from orange to green .",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 89
+ },
+ {
+  "figure_id": "fig_13",
+  "label": "13",
+  "caption": "Figure13: Comparison between Codex (C) and GPT-4 (S) on evaluating the reasoning chains in arithmetic reasoning. The example (R 12 for Q 1 ) is the same one from Figure7a. We underline the key statements in explanations that justify the judgment of GPT-4.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 255
+ },
+ {
+  "figure_id": "fig_14",
+  "label": ":",
+  "caption": "Allison brought some CDs online. Each CD cost $7. There was an additional charge of $4 per order for shipping costs. The total bill came to $60. How many CDs did Allison buy? A: Each CD cost 7 dollars. # Is the above step of reasoning: # (A) Correct # (B) Incorrect # The above step of reasoning is (A) And there was an additional charge of 4 dollars. # Is the above step of reasoning: # (A) Correct # (B) Incorrect # The above step of reasoning is (A) So the total cost of each CD is 7 + 4 = 11 dollars. # Is the above step of reasoning: # (A) Correct # (B) Incorrect # The above step of reasoning is (B), because each CD costs 7 dollars. So 60 / 11 = 5.45. # Is the above step of reasoning: # (A) Correct # (B) Incorrect # The above step of reasoning is (B), because it cost 4 dollars for shipping costs. So the cost of CDs is 60 -4 = 56 dollars. So Allison bought 56 / 7 = 8 CDs. So the answer is 5. # Is the above step of reasoning: # (A) Correct # (B) Incorrect # The above step of reasoning is (A), but the value of the number of CDs is incorrect.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1053
+ },
+ {
+  "figure_id": "fig_15",
+  "label": null,
+  "caption": "line of code is: (A), because the total area of the square can be calculated by (perimeter / 4) ** 2 ↩→ area_remaining = (1 -fraction_torn) * area_total # Is the above line of code: # line of code is: (A), but the value of result is incorrect",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 242
+ },
+ {
+  "figure_id": "fig_16",
+  "label": null,
+  "caption": "Two trains of length 150 m and 200 m are 100 m apart. They start moving towards each other on parallel tracks, at speeds 54 kmph and 72 kmph. In how much time will the trains cross each other? Answer Choices: A)100/7 sec; B)80/7 sec; C)57/7 sec; D)110/7 sec; E)50line of code is: (B), because to cross each other, the total distance should also contain the train length ↩→ result = time_to_cross # ... # The above line of code is: (B), because the final result should be in seconds, and the value of time_to_cross is incorrect ↩→ return result # ... # The above line of code is: (A), but the value of result is incorrect",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 620
+ },
+ {
+  "figure_id": "fig_17",
+  "label": null,
+  "caption": "line of code is: (B), beacuse values in the rows of Stem and Leaf represent the decimal and individual digits, respectively ↩→ number_of_amusement_parks_with_fewer_than_40_roller_coasters = 0 # Is the above line of code: # (A) Correct # (B) Incorrect # The above line of code is: (A), because this is to initialize the number_of_amusement_parks_with_fewer_than_40_roller_coasters above line of code is: (A), but the value of result is incorrect",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 444
+ },
+ {
+  "figure_id": "fig_18",
+  "label": null,
+  "caption": "Is the above step of reasoning: # (A) Correct # (B) Incorrect # The above step of reasoning is: (B), because it fails to reason out that John will check the place when taking a shower (taking off clothes) Of the above choices, only wallet makes sense. # Is the above step of reasoning: # (A) Correct # (B) Incorrect # The above step of reasoning is: (B), because wallet is too small to put his appointment book, and it cannot be the only one which makes sense (pocket is also plausible) So the answer is (b). # Is the above step of reasoning: # (A) Correct # (B) Incorrect # The above step of reasoning is: (A), but the previous step is incorrect",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 646
+ },
+ {
+  "figure_id": "fig_19",
+  "label": null,
+  "caption": "Is the above step of reasoning: # (A) Correct # (B) Incorrect # The above step of reasoning is: (A) Scary movies are designed to make the viewer feel stressed. # Is the above step of reasoning: # (A) Correct # (B) Incorrect # The above step of reasoning is: (B), because Scary Movie is a film that is a comedy take on horror, intended to make viewers laugh Thus, the viewer is likely to experience an increase in adrenaline. # Is the above step of reasoning: # (A) Correct # (B) Incorrect # The above step of reasoning is: (A), but the previous step is incorrect So the answer is yes. # Is the above step of reasoning: # (A) Correct # (B) Incorrect # The above step of reasoning is: (A), but the previous step is incorrect",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 722
+ }
+]

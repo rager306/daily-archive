@@ -1,0 +1,74 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Figure1. DualPipe example combining PP-4 across layers with EP-2 for the expert layer and DP-2 for the non-expert attention layer. This placement uses PP stage interleaving; PP rank 0 gets the first and last layers, etc. We show a variant of DualPipe known as DualPipeV<ref type=\"bibr\" target=\"#b34\">[35]</ref> that places each layer on one PP rank instead of two.",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 364
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "2334",
+  "caption": "Figure2. DualPipeV schedule<ref type=\"bibr\" target=\"#b34\">[35]</ref> for 4-way PP, 8 microbatches, 8 layers. The placement is shown in Figure1. Combined forward-backward microbatches in bolded boxes get overlapped.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 214
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "5",
+  "caption": "Figure 5. Piper overview. White rounded boxes are user inputs. Grey areas are system.",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 85
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "6",
+  "caption": "Figure 6. Transformations on the DAG IR. Each rounded box is a Chunk. Boxes with corners are Comms. Thin arrows are data dependencies. Wide arrows are transforms corresponding to scheduling directives. The schedule at the bottom shows the execution order once all data dependencies specified by the model and temporal dependencies specified by Order have been applied.",
+  "ref_count": 13,
+  "has_graphic": false,
+  "caption_chars": 368
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "3131",
+  "caption": "forward ( self , x ) -&gt; 4 with sys . annotate ( PP ) : 5 h = self . embeddings ( x ) 6 h = self . layer2 ( self . layer1 ( x ) ) 7 with sys . annotate ( PP ) : 8 h = self . layer4 ( self . layer3 ( x ) ) 9 h = self . output ( h ) forward ( self , x ) : 14 x = self . router ( x ) 15 with sys . annotate ( EP ) : 16 x = self . experts ( x ) 17 return x MoE model annotated with PP and EP components.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 401
+ },
+ {
+  "figure_id": "fig_5",
+  "label": null,
+  "caption": "PPStr, EPStr, DPStr = sys.stream(), sys.stream(), sys.stream() 2 Place((PP=0), device=[0,2], stream=PPStr) 3 Place((PP=1), device=[1,3], stream=PPStr) 4 Replicate((PP=0, EP=-), devices=[0,2], reduce_stream=DPStr) 5 Replicate((PP=1, EP=-), devices=[1,3], reduce_stream=DPStr) 6 Shard((PP=0, EP=*), devices=[0,2], stream=EPStr) 7 Shard((PP=1, EP=*), devices=[1,3], stream=EPStr) 8 MB = \"microbatch\" 9 Split((), dim=MB, num_microbatches=2) 10 Order([(PP=0, MB=0, PASS=F), (PP=0, MB=1, PASS=F), (PP=0, MB=0, PASS=B), (PP=0, MB=1, PASS=B)]) 11 Order([(PP=1, MB=0, PASS=F), [(PP=1, MB=1, PASS=F), (PP=1, MB=0, PASS=B)], (PP=1, MB=1, PASS=B)])",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 636
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "7",
+  "caption": "Figure 7. PP x EP throughput for 1F1B, Interleaved 1F1B and DualPipeV schedules.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 80
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "8",
+  "caption": "Figure 8. Peak Memory consumption of ZeRO-2 and ZeRO-3 sharding strategies for Piper and TorchTitan. full copy of parameters and gradients across multiple microbatches and OOMs at batch size 8 for ZeRO-2 and batch size 16 for ZeRO-3. TorchTitan's PP x ZeRO-3 implementation also does not save significant memory compared to ZeRO-2.For Piper, we achieve correct resharding by reducing gradients after every backward pass instead of accumulating gradients between PP microbatches. This adds communication time compared to TorchTitan but achieves the full ZeRO memory savings. As a result, Piper is able to execute with much higher batch sizes than TorchTitan without OOM: 8x higher for ZeRO-2 (up to batch size 32) and 3.3x higher for ZeRO-3 (up to batch size 40).",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 762
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "9",
+  "caption": "Figure 9. Piper PP x DP Scalability.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 36
+ }
+]

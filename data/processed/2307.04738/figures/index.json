@@ -1,0 +1,106 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": null,
+  "caption": "EXECUTE Alice PLACE banana bin_front_left PATH [(-0.25, 0.39, 0.49), ...] Bob PLACE apple bin_front_right PATH [(-0.74, 0.40, 0.54), ...] History == Round 0 == [Chat] … [Actions] … == Round 1 == … Robot Dialog I have successfully picked up the banana. I will now try to place it in the front slot. My initial PATH is …… I have the apple in my gripper. I will attempt to place it in the right slot.My initial PATH is ……There should be no collisions.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 448
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "2",
+  "caption": "Figure 2: RoCo consists of three main components: 1) Multi-agent dialog via LLMs: each robot is equipped",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 104
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "3",
+  "caption": "Figure 3: Spatial reasoning by LLM. GPT-4 plans 3D collision-free paths for three agents.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 89
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "4",
+  "caption": "Figure 4: We demonstrate the utility of LLM-proposed waypoints by comparing with two alternatives: a linear waypoint path that interpolates between start and goal; 'Hard-code', a predefined waypoint path that always performs top-down pick or place.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 248
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "7",
+  "caption": "Figure 7: Sweep Floor task",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 26
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "9",
+  "caption": "Figure 9: Sort Cubes task",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 25
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "10",
+  "caption": "Figure 10: Pack Grocery task",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 28
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "12",
+  "caption": "Figure 12: Arrange Cabinet task",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 31
+ },
+ {
+  "figure_id": "fig_8",
+  "label": null,
+  "caption": "Alice]: [...] we have successfully completed our task. [...], let's wait for further instructions. [Bob]: I agree that we have successfully completed our task. Great teamwork, everyone! Let's wait [...] [Chad]: I concur that we have accomplished our goal. Excellent teamwork! Let's wait [...].",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 293
+ },
+ {
+  "figure_id": "fig_9",
+  "label": null,
+  "caption": "Toy Example on LLM for 3D Path Planning13.1 Experiment Setup",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 60
+ },
+ {
+  "figure_id": "fig_10",
+  "label": null,
+  "caption": "System Prompt ==== Plan paths for agents to navigate a 3D grid to reach their respective goals and avoid collision. You are given: 1) a list of obstacle coordinates (x, y, z): locations of the obstacle grid cells, agents must avoid them. 2) a list of [([name], [init], [goal]) tuples], [init] and [goal] are 3D coordinates of the initial position and goal position of agent named [name]. 3) a previous plan, if any, and why it failed. Analyze this information and re-plan a collision-free path. How to plan a path: 1) Make sure each path does not touch any obstacle, ... [planning instructions] [instruction on output format] ==== User Prompt ==== At the current step: Grid size: 10 x 10 x 10 Obstacles:(4, 9, 6) (0, 2, 0)... [list of all obstacle 3D locations] Agent Alice init: (7, 6, 2) goal: (5, 3, 2) Agent Bob init: (9, 9, 5) goal: (7, 1, 4) Agent Chad init: (1, 0, 0) goal: (9, 3, 6) Agent Dave init: (9, 1, 1) goal: (7, 1, 0) Feedback: this previous plan failed: [past plan, omitted] Some steps in this plan are not exactly 1 step away from each other: Bob: (7, 4, 5), (7, 1, 5); Use this information to try again, update this plan so it has collision-free, strictly one-step-apart paths. Feedback: this previous plan failed: ...[another feedback, same format as above] Your reasoning and plan is: response from GPT-4: PLAN NAME Alice PATH [(7, 6, 2), (6, 6, 2), ...[omitted] ] NAME Bob PATH [(9, 9, 5), (8, 9, 5), ...[omitted] ] NAME Chad PATH [(1, 0, 0), (2, 0, 0), ...omitted ] NAME Dave PATH [(9, 1, 1), (8, 1, 1), (7, 1, 1), (7, 1, 0)]",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1548
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "13",
+  "caption": "Figure13: Top right: planning success rate over 30 evaluation runs on a size 5 3 3D grid. The LLM (GPT-4)'s performance shows variation with the temperature parameter. Top left: an example output on a size 5 3 grid. GPT-4 is able to improve the previous plan based on feedback on collided steps, which is appended to the prompt in 3D coordinate format. Bottom: we repeat the same experiments and show example outputs on a more challenging, size 10 3 grid, where the planning success rate is lower, and the model requires more re-planning attempts before reaching a successful plan.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 581
+ },
+ {
+  "figure_id": "fig_12",
+  "label": null,
+  "caption": "Multi-Agent Representation andReasoningDataset14.1 Task: Self-Knowledge Question-Answering 14.1.1 Agent Capability 57 total questions. Sim. Task: sequential transport -Context (system prompt): 7 panels on the table, ordered left to right: panel1,...,panel7. They form a straight assembly line, panel1 is closed to panel2 and farthest from panel7. You are robot Alice in front of panel2. You are collaborating with Bob, Chad to sort cubes into their target panels. The task is NOT done until all three cubes are sorted. At current round: blue square is on panel5 pink polygon is on panel1 yellow trapezoid is on panel3 Your goal is to place blue square on panel2, but you can only reach panel1, panel2, panel3: this means you can only pick cubes from these panels, and can only place cubes on these panels. Never forget you are Alice! Never forget you can only reach panel1, panel2, panel3! -Question (user prompt): You are Alice. List all panels that are out of your reach. Think step-by-step. Answer with a list of panel numbers, e.g. [1, 2] means you can't reach panel 1 and 2. -Solution: panels [4,5,6,7] 14.1.2 Memory Retrieval 44 total questions. Task: Make Sandwich, Sweep Floor 14.5 Challenge: Adaptation to Unexpected Scenarios 31 questions. Multiple choice (A, B, C).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1276
+ }
+]

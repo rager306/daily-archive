@@ -1,0 +1,90 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "2",
+  "caption": "Figure2: Left. The frontier of expected reward vs KL to the reference policy. DPO provides the highest expected reward for all KL values, demonstrating the quality of the optimization. Right. TL;DR summarization win rates vs. human-written summaries, using GPT-4 as evaluator. DPO exceeds PPO's best-case performance on summarization, while being more robust to changes in the sampling temperature.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 398
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "3",
+  "caption": "Figure 3: Left. Win rates computed by GPT-4 for Anthropic-HH one-step dialogue; DPO is the only method that improves over chosen summaries in the Anthropic-HH test set. Right. Win rates for different sampling temperatures over the course of training. DPO's improvement over the dataset labels is fairly stable over the course of training for different sampling temperatures.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 374
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "4",
+  "caption": "Figure 4: Best of N baseline for N = {1, 4, 16, 64, 128}. Performance plateaus after roughly 64-128 samples.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 108
+ },
+ {
+  "figure_id": "fig_3",
+  "label": null,
+  "caption": null,
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 0
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "p r ′ (τ |y 1 , . . . , y K , x) = K k=1 exp(r ′ (x, y τ (k) )) K j=k exp(r ′ (x, y τ (j) )) = K k=1 exp(r(x, y τ (k) ) + f (x)) K j=k exp(r(x, y τ (j) ) + f (x)) = K k=1 exp(f (x)) exp(r(x, y τ (k) )) exp(f (x)) K j=k exp(r(x, y τ (j) )) = K k=1 exp(r(x, y τ (k) )) K j=k exp(r(x, y τ (j) )) = p r (τ |y 1 , . . . , y K , x),which completes the proof.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 352
+ },
+ {
+  "figure_id": "fig_5",
+  "label": null,
+  "caption": "import torch.nn.functional as F def dpo_loss(pi_logps, ref_logps, yw_idxs, yl_idxs, beta): \"\"\" pi_logps: policy logprobs, shape (B,) ref_logps: reference model logprobs, shape (B,) yw_idxs: preferred completion indices in [0, B-1], shape (T,) yl_idxs: dispreferred completion indices in [0, B-1], shape (T,) beta: temperature controlling strength of KL penalty Each pair of (yw_idxs[i], yl_idxs[i]) represents the indices of a single preference pair. \"\"\" pi_yw_logps, pi_yl_logps = pi_logps[yw_idxs], pi_logps[yl_idxs] ref_yw_logps, ref_yl_logps = ref_logps[yw_idxs], ref_logps[yl_idxs] pi_logratios = pi_yw_logps -pi_yl_logps ref_logratios = ref_yw_logps -ref_yl_logps losses = -F.logsigmoid(beta * (pi_logratios -ref_logratios)) rewards = beta * (pi_logps -ref_logps).detach() return losses, rewards",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 801
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": "one-sentence comparison of the two summaries, explaining which \\ you prefer and why. SECOND, on a new line, state only \"A\" or \"B\" to indicate your \\ choice. Your response should use the format: Comparison: &lt;one-sentence comparison and explanation&gt; Preferred: &lt;\"A\" or \"B\"&gt; Summarization GPT-4 win rate prompt (C). Which of the following summaries does a better job of summarizing the most \\ important points in the given forum post, without including unimportant or \\ irrelevant details? A good summary is both precise and concise. one-sentence comparison of the two summaries, explaining which \\ you prefer and why. SECOND, on a new line, state only \"A\" or \"B\" to indicate your \\ choice. Your response should use the format: Comparison: &lt;one-sentence comparison and explanation&gt; Preferred: &lt;\"A\" or \"B\"&gt; Dialogue GPT-4 win rate prompt.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 858
+ },
+ {
+  "figure_id": "fig_7",
+  "label": null,
+  "caption": "the following query to a chatbot, which response is more helpful? Query: &lt;the user query&gt; Response A: &lt;either the test method or baseline&gt; Response B: &lt;the other response&gt; FIRST provide a one-sentence comparison of the two responses and explain \\ which you feel is more helpful. SECOND, on a new line, state only \"A\" or \\ \"B\" to indicate which response is more helpful. Your response should use \\ the format: Comparison: &lt;one-sentence comparison and explanation&gt; More helpful: &lt;\"A\" or \"B\"&gt; C.3 Unlikelihood baseline",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 545
+ },
+ {
+  "figure_id": "fig_8",
+  "label": null,
+  "caption": "for summarization examples, and Tables 7-10 for dialogue examples.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 66
+ },
+ {
+  "figure_id": "fig_9",
+  "label": null,
+  "caption": "SUBREDDIT: r/relationships TITLE: I [22 M] am about to propose to my girlfriend[22F]  of almost 2 years, and I can't calm myself down POST: Alright, so I am preparing to propose to my girlfriend of almost 2 years (we were friends for double that beforehand) in a couple days and I am starting to get EXTREMELY anxious/nervous. We have talked about this for months, and I know she will say yes, but I can't seem to relax. The other day I bought the ring, which I fell in love with myself and know she will too. And then two days ago, I asked her dad's blessing. Everything has gone great so far, but now leading up to it I can't think about anything else. I can't sleep. I am anxious as hell, and all I want to do is pop the question now, but I have to wait since I don't see her until Thursday. I know how I am going to do it. I have thoroughly planned it out and I am more than prepared. But, at the same time, I am freaking out. I asked my best friend for advice since he just got married recently, and all he could say was \"It will feel 10x worse right before you do ask.\" Any suggestions on how to relax leading up to it? I would like to be able to sleep... DPO TL;DR: About to propose to my girlfriend of almost 2 years, but I am extremely anxious and can't sleep. How can I relax? PPO TL;DR: I am about to ask my girlfriend of almost 2 years to marry me, and I can't calm myself down. Any tips on how to relax? I would like to be able to sleep tonight (and the night before).............................................................................................................................. Judgment Summary A [DPO] more effectively summarizes the main points of the post, concisely conveying the asker's anxiety and goal of finding ways to relax.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1763
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "5",
+  "caption": "Layout of the survey in SurveyMonkey. Each respondent completed 25 similarly-formatted judgments.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 97
+ }
+]

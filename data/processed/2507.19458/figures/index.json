@@ -1,0 +1,114 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": null,
+  "caption": "), and updates the residual budget carried forward. Dynamic programming exploits this structure by propagating value functions backward in time, while RL estimates those values on-line. The temporal factorization reduces the dimensionality of each decision step from O(2 nh ) to O(2 n ). In the absence of a shared resource constraint or any other dependency which makes the component-level actions dependent, an additional decomposition is straightforward.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 457
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": "employ hierarchical DQN structures, but their top layer still relies on penalty shaping. The multi-agent approach of Yao et al. (2024) decomposes at the pavement-segment level and aggregates costs through a mixing network, yet feasibility remains approximate. In the next section we build on this line of work and propose a two-level hierarchical deep RL (HDRL) architecture in which the upper actor outputs a continuous budget fraction and the lower actor selects interventions through a knapsack layer, guaranteeing exact satisfaction of both annual and life-cycle constraints while keeping the action dimension linear in the number of assets.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 645
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "1",
+  "caption": "Figure1summarizes the full decision-making flow of the HDRL framework. The agent block consists of two steps: the Budget Planner first allocates the annual budget, and the Maintenance Planner then assigns maintenance priorities to assets. These priorities are translated into binary decisions through the LP block. The resulting annual plan is submitted to the environment block, which updates the system state using the transition function p(s t+1 | s t , a t ) and computes the corresponding reward using r(s t , a t ). The next state and reward are returned to the agent, completing the loop.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 595
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "1",
+  "caption": "Figure 1.. HDRL architecture with two-level decision decomposition. Actor 1 selects the annual budget fraction; Actor 2 computes priority scores for assets. A linear program determines the annual plan. The environment updates the state using a Markov transition model and computes the reward based on the selected actions.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 322
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "Shared topology of the twin soft-Q critics",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 42
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "2",
+  "caption": "Figure 2.. Neural-network architectures used in the hierarchical SAC framework. (a) and (b) depict the two stochastic actors; (c) shows the critic network employed by both Q ϕ1 and Q ϕ2 .",
+  "ref_count": 3,
+  "has_graphic": true,
+  "caption_chars": 187
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": "naive action space at each decision step includes 2 10 = 1024 flush/no-flush combinations. Imposing a budget constraint narrows this to only 20 feasible actions, so the last layer of the Q-network has size 20. Restricting outputs to those 20 actions avoids extra penalty terms in the reward and mitigates variance issues in training. A learning rate of 8 × 10 -5 is used for the Q-network, which has two 256-node hidden layers. A prioritized replay buffer is applied (batch size 256). Over 5,000 episodes, training takes approximately 118 seconds on average (across 100 runs).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 576
+ },
+ {
+  "figure_id": "fig_7",
+  "label": null,
+  "caption": "Figure 3 illustrates sample training statistics for HDRL in the 10-sewershed setting. Subfigure (a) shows how the entropy coefficient α evolves over 5,000 episodes, beginning around 0.1 and gradually decreasing toward zero as the policy learns to reduce excessive exploration. Subfigure (b) depicts the maximum critic loss per mini-batch update on a log scale; a downward trend indicates that the Qvalue approximators are becoming more stable and accurate over time. Subfigure (c) highlights how the Budget Planner's (Actor 1) loss decreases to around -2.5, while subfigure (d) focuses on the Maintenance Planner's (Actor 2) loss, which follows a similar downward trajectory. Each actor's loss captures the interplay of maximizing Q-values while preserving sufficient policy entropy, leading to improved policies as training proceeds.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 834
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "3",
+  "caption": "Figure 3.. HDRL training dynamics for the 10-sewershed case",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 59
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "4",
+  "caption": "Figure 4.. Training Performance (10-Sewershed Network)",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 54
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "6",
+  "caption": "Figure 6.. Zoomed view of the near-optimal region comparing HDRL, DQL, and Hybrid LP-GA in cost-condition space (10 sewersheds). Marginal KDEs along the axes highlight the density of solutions for each method.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 209
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "7",
+  "caption": "Figure 7 depicts DQL (red) and HDRL (green) performance over 5,000 episodes. DQL gradually improves but exhibits higher variance, whereas HDRL maintains more stable returns. In HDRL, the Budget Planner's actor output dimension stays at 1, and the Maintenance Planner's actor output size scales linearly with the number of sewersheds. By contrast, DQL's output layer size grows exponentially with the number of sewersheds, indicating that HDRL's split between budget decisions and maintenance actions is more scalable. When expanded to 20 sewersheds, the baseline combinatorial action space has 2 20 = 1,048,576 possibilities per decision, cut down to 7,448 by the budget filter. Figures 8 display DQL and HDRL training curves. DQL experiences pronounced fluctuations as it contends with a large discrete action set. HDRL still converges more smoothly and achieves higher returns. Again, the hierarchical approach keeps Actor 1's output fixed at a single budget fraction and grows Actor 2's output only linearly with the network size. In contrast, DQL faces a potentially exponential expansion in its final Q-network",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1115
+ },
+ {
+  "figure_id": "fig_12",
+  "label": "7",
+  "caption": "Figure 7.. Training Performance (15-Sewershed Network)",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 54
+ },
+ {
+  "figure_id": "fig_13",
+  "label": null,
+  "caption": "20 sewersheds. Three patterns stand out. First, the dimensionality of DQL's final layer rises exponentially: 20 outputs for the smallest instance, 364 at 15 sewersheds, and 7 448 at 20. HDRL, by contrast, always predicts a single budget fraction and one priority logit per asset, so its output size grows only linearly (1 + n). Second, this difference in network width translates into markedly different training costs. While HDRL is slower on the 10-sewershed case because it must update two actors, two critics, and solve an embedded linear programme, its runtime increases only modestly thereafter (from 264 s to 585 s for 5 000 episodes). DQL, however, sees its runtime almost quintuple over the same range as it struggles to back-propagate through thousands of Q-values. Finally, solution quality diverges as the problem scales. On the smallest instance the average objective values of the two methods are nearly identical, but with 15 sewersheds HDRL is already about eight per cent better, and on 20 sewersheds the gap widens to roughly fifteen per cent. In short, hierarchical decomposition curbs the combinatorial explosion that undermines DQL, allowing HDRL to maintain stable learning and superior outcomes even as the state and action spaces expand dramatically.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1274
+ }
+]

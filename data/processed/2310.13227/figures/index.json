@@ -1,0 +1,114 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": null,
+  "caption": "agent with the API definitions I and demonstration samples D as: p g ∼ ρ(a 0 , a 1 , • • • , a Tg |s 0 ; I, D) : G × I × D → ∆(A Tg ), where ∆(•) is a probability simplex function. The final output is derived after executing the entire plan y ∼ π(y|s 0 , a 1 , a 2 , • • • , a Tg ), where π(•) indicates a plan executor.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 320
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "2",
+  "caption": "Figure 2: A comparison between MCTS and A * search in ToolChain * . Unlike MCTS, A * search only requires one-step expansion guided by cost functions.MCTS vs. A * Search. Despite the performance gains attained by MCTS in planning and reasoning tasks, its direct application to LLM agents comes with significant execution costs. The rollout mechanism within MCTS requires multiple LLM calls to prompt the next actions until a terminal state. Furthermore, unlike two-player zero-sum games, the planning tasks essentially operate as one-player games, where value functions estimated by random rollouts might exhibit significant inaccuracies. To mitigate the issue, ToolChain * is proposed based on a more efficient A * search algorithm. A comparison between MCTS and our proposed ToolChain * is illustrated in Figure2. Unlike MCTS, A * search necessitates only a single LLM call for determining the next actions during expansion according to two cost functions, g(n), quantifying the cost of the path from the root node to n, and h(n), a heuristic function estimating the cost of the most promising path from n to the goal.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1120
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "2. Unlike MCTS, A* search necessitates only a single LLM call for determining the next actions during expansion according to two cost functions, g(n), quantifying the cost of the path from the root node to n, and h(n), a heuristic function estimating the cost of the most promising path from n to the goal.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 306
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "3",
+  "caption": "Figure 3: ToolChain * framework of three phases: (a) selection, (b) expansion, and (c) update. The dark and grey circles indicate the explored actions and the potential but unexplored ones, respectively. The blue circles represent the selected next step.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 254
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "4",
+  "caption": "Figure 4: Case study of ToolChain * and Re-Act (Yao et al., 2023b) on Virtual Home dataset. Compared to ReAct with a unidirectional search (red), ToolChain * effectively enlarges search space (blue) with tree structures.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 220
+ },
+ {
+  "figure_id": "fig_5",
+  "label": null,
+  "caption": "5(b) indicates that ToolChain * ranks among the most efficient tree-based search baselines and has a time efficiency comparable to closed-loop systems without a tree structure. Detailed case studies of action space exploration and efficiency analysis with the number of valid actions are available in Appendix D.4 and D.5, respectively. 4.4 DISCUSSION: EMPIRICAL ANALYSIS From the comprehensive evaluations in planning and reasoning tasks presented in Sections 4.2 and 4.3, we validate that ToolChain * addresses the two core limitations of open-/closedloop LLM-based agents, error propagation in multi-step solutions and constrained exploration in expansive action spaces. Meanwhile, we demonstrate ToolChain * a more efficient searching strategy compared to existing tree search-based agents. From the scaling-up analysis in Figure 10 in Appendix D.5, alongside experimental results in Table1and efficiency metrics in Figure5, we identify a crucial trade-off between effectiveness and efficiency in the direct application of tree search-based reasoning methods to complex tool use scenarios.GPT AdaPlanner ReAct ToolChain*ToT-BFS ToT-DFS MCTS 0",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1146
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "56",
+  "caption": "Figure 5: Time efficiency evaluation on (a) ToolBench and (b) GSM8K. We report the average running time in seconds over all instances in the dataset. ToolChain * achieves competitive efficiency to closed-loop systems without a tree structure and outpaces other tree search-based algorithms.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 290
+ },
+ {
+  "figure_id": "fig_7",
+  "label": null,
+  "caption": "conducted on CPU: Intel(R) Xeon(R) Platinum 8275CL CPU @ 3.00GHz and GPU: NVIDIA A100 SXM4 80 GB using Python 3.8.13.B.2 PARAMETER CONFIGURATION",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 144
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "7",
+  "caption": "Figure7: Case study comparing Chain-of-Thought and ToolChain * on GSM8K dataset. We offer comparison in exploration space (upper part) and planning ordering (lower part). Given the input query, ToolChain * explores a wide range of potential nodes (blue shadowed area) in the decision tree, while Chain-of-Thought only explores one direction (red shadowed area). During the planning process, a chain of thought can fall into a faulty loop or a dead end with a previous incorrect action. However, ToolChain * can gradually abandon the faulty path by increasing the cost after the incorrect action. This enables it to revise previous actions and jump out of the faulty path to try another plan.",
+  "ref_count": 4,
+  "has_graphic": false,
+  "caption_chars": 691
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "89",
+  "caption": "Figure8: Case study comparison between Chain-of-Thought and ToolChain * on the GSM8K dataset. The exploration space is illustrated in the upper section, and the planning order is depicted in the lower section. For a given input query, ToolChain * explores an expansive set of potential nodes (blue) with correct answers, whereas Chain-of-Thought primarily navigates in a singular direction (red).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 396
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "10",
+  "caption": "Figure 10: Scaling analysis of ToT-DFS (Yao et al., 2023a), ToT-BFS (Yao et al., 2023a), MCTS (Hao et al., 2023a), and ToolChain * . (a) Performance and (b) running time on Home Search when scaling up step limitations T .",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 221
+ },
+ {
+  "figure_id": "fig_11",
+  "label": null,
+  "caption": "examples of API documents from the Trip Booking dataset below: &lt;ToolChain * TripBooking Doc&gt; Prompt # To select the transportation type from ['flight', 'train', 'bus', 'cruise']. API.select_transportation(transportation_type) # To select the booking type from ['hotels', 'trip tickets', 'both']. API.select_booking_type(booking_type) # To set the number of child tickets to purchase. API.set_num_children(value) # To set the number of adult tickets to purchase. API.set_num_adults(value) # To set the location for arrival, given a Loc object. API.set_destination(Loc)",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 573
+ },
+ {
+  "figure_id": "fig_12",
+  "label": null,
+  "caption": "'Hello world' in 'A2' cell Actions: worksheet.update('A2', 'Hello world') Task: Sets 'Hello world' in 'A2' cell Actions: worksheet.update_cell(2, 1, 'Hello world') Task: Updates A2 and A3 with values 42 and 43 Actions: worksheet.update('A2:A3', [[42], [43]]) Task: Updates D2 with values 3Preprint G.2 MATH REASONING: GSM8K Below are the prompts utilized for the math reasoning dataset, GSM8K (Silver et al., 2016): &lt;ToolChain * GSM8K&gt; Prompt Please complete the plans to solve the question. Here is several examples: Q: Four years ago, Kody was only half as old as Mohamed. If Mohamed is currently twice 30 years old, how old is Kody? A: Let's think step-by-step: 1. We were told that Mohamed is currently twice 30 years old, so he is currently 30 * 2 = 60 years old. 2. That means that four years ago he must have been 60 -4 = 56 years old. 3. Four years ago, Kody was half as old as Mohamed, so Kody must have been 56 / 2 = 28 years old then. 4. Since Kody was 28 years old four years ago, she must now be 28 + 4 = 32 years old. 5. The answer is 32. Q: Carla bought 2 bags of mini peanut butter cups on clearance. Each bag was $6.00 but was 75% off. How much did she spend on 2 bags of candy? A: Let's think step-by-step: 1. Each bag was $6.00 but was 75% off. So each bag cost $6.00 * (1 -0.75) = $6.00 * 0.25 = $1.50. 2. Carla bought 2 bags. So she spent $1.50 * 2 = $3.00.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1384
+ },
+ {
+  "figure_id": "fig_13",
+  "label": null,
+  "caption": "problem description x in the format of natural language, the systems generate the entire T -step plans as the solution ρ(a 1 , a 2 , • • • , a T |s 0 ) : S → ∆(A T ), where S is the state space, A is the action space, and ∆(•) is probability simplex function. The final output is obtained after executing the entire plan y ∼ p(y|s 0 , a 1 , a 2 , • • • , a T ).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 361
+ }
+]

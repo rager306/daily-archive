@@ -1,0 +1,138 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Vina Score: -4.3 kcal/molMolecule at iteration 2 Vina Score: -5.5 kcal/mol Vina Score: -7.5 kcal/mol Molecule at iteration 3",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 124
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": "tg.BlackboxLLM(\"You are a summarizer.\") Loss CrossEntropyLoss() tg.TextLoss(\"Rate the summary.\") Optimizer SGD(list(model.parameters())) tg.TGD(list(model.parameters())) PyTorch Math Forward pass loss = loss_fn(model(input)) can be improved by...\" = \"this response can be improved by...\" = Output Output Output PyTorch and TextGrad share the same syntax for backpropagation and optimization.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 391
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "Prompt after optimization (Accuracy = 91.9%) Prompt at initialization (Accuracy = 77.8%) You will answer a reasoning question. Think step by step. The last line of your response should be of the following format: 'Answer: $VALUE' where VALUE is a numerical value.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 263
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "1",
+  "caption": "Figure 1: Automatic \"Differentiation\" via Text (a, b). Backpropagation of gradients is the driving force of deep learning. We do not have gradients for compound systems of blackbox AI systems, but we can construct analogous backpropagation for text-based feedback, forming the basis of TEXTGRAD. Abstractions in TEXTGRAD (c). We share the same abstractions and syntax as PyTorch to our framework generalizable and easy-to-learn. Applications of TEXTGRAD (d,e,f,g). In Section 3.4, we optimize molecular structures for properties such as druglikeness and protein binding affinity (d). In Section 3.1, we optimize solutions to coding problems (e). In Section 3.5, we optimize radiotherapy treatment plans to improve patient outcomes (f). In Section 3.3, we optimize prompts to improve the reasoning of language models (g).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 820
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "1",
+  "caption": "Initialize the system prompt 2 system_prompt = tg . Variable ( \" You are a helpful language model . Think step by step . \" , 3 requires_grad = True , 4 r o l e _ d e s c r i p t i o n = \" system prompt to the language model \" ) 5 6 # Set up the model object ' parameterized by ' the prompt . 7 model = tg . BlackboxLLM ( system_prompt = system_prompt ) 8 9 # Optimize the system prompt 10 optimizer = tg . T e x t u a l G r a d i e n t D e s c e n t ( parameters =[ system_prompt ]) 11 12 for iteration in range ( max_it eratio ns ) : 13 batch_x , batch_y = next ( train_loader ) 14 optimizer . zero_grad () 15 # Do the forward pass 16 responses = model ( batch_x ) 17 losses = [ loss_fn ( response , y ) for ( response , y ) in zip ( responses , batch_y ) ] 18 total_loss = tg . sum ( losses ) 19 # Perform the backward pass and compute gradients 20 total_loss . backward () 21 # Update the system prompt 22 optimizer . step () Code Snippet 2: A simple implementation of prompt optimization with TEXTGRAD.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1006
+ },
+ {
+  "figure_id": "fig_5",
+  "label": null,
+  "caption": "[10] 81.1 TEXTGRAD (instruction-only, 0 demonstrations) 81.1 Example: TextGrad optimized prompt for gpt-3.5-turbo-0125 Prompt at initialization (GSM8k Accuracy= 72.9%): You will answer a mathematical reasoning question. Think step by step. Always conclude the last line of your response should be of the following format: 'Answer: $VALUE' where VALUE is a numerical value.\" Prompt after 12 iterations with batch size 3 (GSM8k Accuracy= 81.1%):",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 443
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "2",
+  "caption": "Figure 2: Molecule optimization via Text. TEXTGRAD optimizes a starting benzene fragment to improve its druglikeness (higher QED) and binding affinity (lower vina score) to the protein receptor PPARA. The textual gradients for the first three iterations are shown in (a), and the performance of all ten iterations compared to clinically approved molecules targetting PPARA in (c). The molecule at the final iteration has low structural similarity with its most similar clinically approved counterpart, and better QED and Vina scores (d) with a highly plausible pose geometry shown in (e). Across 29 targets and three initial fragments, TextGrad successfully designs molecules with similar vina scores and greater QED scores than clinically approved molecules (b).",
+  "ref_count": 4,
+  "has_graphic": true,
+  "caption_chars": 763
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "3",
+  "caption": "Figure 3: Radiotherapy treatment plan optimization. Visualization of backpropagated textual gradients adjusting importance weights of planning target volumes (PTVs) and organs at risk (OARs) to balance tumor targeting and protection of OARs. Images in (a) show plan evolution from initialization to iteration 5. TEXTGRAD iteratively improves the mean dose and reduces the dose variance to the PTV, achieving the clinical goal over multiple iterations (b). TEXTGRAD keeps the exposure for the bladder and rectum below clinically allowed maximums (c). TEXTGRAD optimized plans have better dose metrics (mean dose and D 95 ) for PTV than clinically optimized plans (d), and lower doses on bladder and rectum, indicating better protection of OARs (e).",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 747
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "1",
+  "caption": "Backpropagation in TEXTGRAD 1: Input: Variables v ∈ V in a graph, Loss variable L, Backward Engine (LLM) M that will provide textual gradients 2: # Initializing gradients 3: for each v ∈ V do 4: v.gradients = ∅ 5: end for 6: # Topological Sorting 7: Q ← TopologicalSort(G) 8: # Backpropagation 9: for v in Q do 10: Populate gradients in predecessors 11: for each u ∈ PredecessorsOf(v) do 12:",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 391
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "13",
+  "caption": "Semantically, this provides feedback to the variable u, given how v is produced, and the feedback we already collected for v.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 125
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "14",
+  "caption": "u.gradients.add ∇ f u, v, ∂L ∂v 15:end for 16: end for forward and backward, mirroring the PyTorch syntax. Each function has to define both of these methods. Below, we describe a couple of the most used operations in this paper.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 228
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "5",
+  "caption": "constraints = [ \" The last line of your response should be of the following format : ' Answer : \\ $LETTER ' where LETTER is one of ABCD . \" ] 2 optimizer = T e x t u a l G r a d i e n t D e s c e n t ( parameters =[ solution ] , constraints = constraints )An example use for constraints when updating the solution to a problem.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 327
+ },
+ {
+  "figure_id": "fig_12",
+  "label": null,
+  "caption": "optimizer = T e x t u a l G r a d i e n t D e s c e n t ( parameters =[ solution ] , mo m en tu m _w in d ow =3)",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 112
+ },
+ {
+  "figure_id": "fig_13",
+  "label": null,
+  "caption": "provide an example query for each of the tasks in the prompt optimization section.Example Query for Word Sorting Sort the following words alphabetically: List: oakland seaborg jacobi membrane trapezoidal allis marmot toggle anthology.Example Query for Object Counting I have a couch, a bed, a car, a fridge, two tables, an oven, a toaster, and a chair. How many objects do I have? Example Query for GSM8k Amber, Micah, and Ahito ran 52 miles in total. Amber ran 8 miles. Micah ran 3.5 times what Amber ran. How many miles did Ahito run?",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 536
+ },
+ {
+  "figure_id": "fig_14",
+  "label": "1",
+  "caption": "Molecule Initialization.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 24
+ },
+ {
+  "figure_id": "fig_15",
+  "label": null,
+  "caption": "[col]'. You are standing in the top-left cell of the matrix in the '0th' second, and you must move to any adjacent cell in the four directions: up, down, left, and right. Each move you make takes 1 second. Return the minimum time required in which you can visit the bottom-right cell of the matrix. If you cannot visit the bottomright cell, then return '-1'. Example 1: Input: grid = [[0,1,3,2],[5,1,2,5],[4,3,8,6]]",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 415
+ },
+ {
+  "figure_id": "fig_16",
+  "label": "32",
+  "caption": "&lt;= 7. The final time is 7. It can be shown that it is the minimum time possible. Example 2: Input: grid = [[0,2,4],[3,2,1],[1,0,4]] Output: -1 Explanation: There is no path from the top left to the bottom-right cell. Constraints: * 'm == grid.length' * 'n == grid[i].length' * '2 &lt;= m, n &lt;= 1000' * '4 &lt;= m * n &lt;= 105' * '0 &lt;= grid[i][j] &lt;= 105' * 'grid[0][0] == 0' \"\"\" 7.0, QED = 0.735 Tversky sim = 0.18 vina = -9.0, QED = 0.818 Tversky sim = 0.39 vina = -9.0, QED = 0.824 Tversky sim = 0.63 Mesalazine vina = -6.0, QED = 0.409 Carteolol vina = -9.0, QED = 0.772 Ulipristal vina = -5.7, QED = 0.731Structural NoveltyIn panel (a), we observe increasing novelty over optimization updates, where a generated molecule is considered\"novel\" if there does not exist any existing molecule in ChEMBL with a Tanimoto similarity score greater than 0.8. In panels",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 874
+ }
+]

@@ -1,0 +1,106 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Figure 1: Overview of RestGPT. The planner, API selector, executor collaborate to form the coarseto-fine online planning framework. The caller and response parser in the executor provides robust execution of the RESTful API calling plan.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 237
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": "S and an Executor E. The planner decomposes each user instruction into several sub-tasks, while the API selector selects APIs to address each sub-task. The executor, consisting of a Caller and a response Parser, performs RESTful API calls and extracts useful information from the JSON response to form the execution result. The core of each component is an LLM with the corresponding prompt and in-context examples describing the function of the component.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 456
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "3",
+  "caption": "Figure 3: Error breakdown of RestGPT on RestBench. Error types are categorized by the module where the error occurred.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 118
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "4",
+  "caption": "Figure 4: Scaling ability of RestGPT. (a) (b) Scaling curves of the gold solution path on TMDB and Spotify. The length of gold API solution path indicates the complexity of the instruction. (c) Scaling curves of the number of APIs on TMDB scenario.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 248
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "/search to search for Mariah Carey 2. GET /artists/{id} to get the artist id of Mariah Carey 3. GET /artists/{id}/top-tracks to get the top tracks of Mariah Carey 4. POST /users/{user_id}/playlists to create a playlist 5. POST /playlists/{playlist_id}/tracks to add a song by Mariah Carey to the playlist (b) ReAct Planner: I need to search for Mariah Carey's songs. GET /search to search for Mariah Carey's songs Executor: The names and ids of the tracks are Fantasy (6xkry), Touch My Body (2aEux), ... Planner: I need to create a playlist and add the songs to it. POST /playlists/{playlist_id}/tracks to add Fantasy (6xkry) to the playlist. Executor: Error. Invalid playlist_id Planner: I need to create a playlist first. POST /users/{user_id}/playlists to create a playlist called \"Love Mariah\" Executor: Error. You cannot create playlist for other users Planner: I need to get the user_id first. GET /me to get the user_id of current user Executor: The user_id is 31qdt ... (Finally Success) (c) RestGPT Planner: Search for a song of Mariah Carey API selector: GET /search to search for the the songs of Mariah Carey Executor: The names and ids of the tracks are Fantasy (6xkry), Touch My Body (2aEux), We Belong Together (3Lmvf), Without You (1kMOJ), ... Planner: Make a playlist called \"Love Mariah\" API selector: GET /me to get the user_id of the current user Executor: The id of the current user is 31qdt Planner: Continue. Create the playlist for the current user API selector: POST /users/{user_id}/playlists to create a playlist called \"Love Mariah\" Executor: The id of the new playlist is 6GHTQ Planner: Add the track Fantasy (6xkry) to the playlist \"Love Mariah\" (6GHTQ) API selector: POST /playlists/{playlist_id}/tracks to add Fantasy (6xkry) to the playlist \"Love Mariah\" (6GHTQ) Executor: The id of the track added to the playlist is 6xkry Planner: End. I have made a new playlist called \"Love Mariah\" containing Fantasy by Mariah Carey. 6 API calls 4 API calls",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1978
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "5",
+  "caption": "Figure 5: Case study of three methods, (a) Offline [9, 13, 12], (b) ReAct [16], and (c) RestGPT. For offline method, we only show the generated plan. For ReAct and RestGPT, we omit the detailed execution process of the executor.",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 228
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "6",
+  "caption": "Figure 6: A RESTful API from TMDB.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 34
+ },
+ {
+  "figure_id": "fig_7",
+  "label": null,
+  "caption": "This JSON is the movie credit list of the person with the id 96657. What are the names of the movies directed by this person? A: Burning, To the Starry Island, Poetry, Secret Sunshine, Oasis, Peppermint Candy, A Single Rider # the jobs of To the Starry Island and A Single Rider are not Director",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 295
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "8",
+  "caption": "Figure 8: Case study on the response parser. The purpose of response parsing is to extract required information from the API response (b) according to the plan (a). We compare our proposed parser (d) with directly prompting an LLM as a parser (c).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 247
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "8",
+  "caption": "Figure 8 illustrates how RestGPT parses JSON responses of RESTful APIs. We compare RestGPT parser with directly prompting an LLM as a parser. As shown, responses from RESTful APIs are usually in lengthy and complex JSON format (694 lines in Figure 8 (b)) The RestGPT parser generates information extraction code based on the response schema in the OAS to avoid parsing lengthy JSON files directly, significantly improving the efficiency and accuracy of response parsing.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 470
+ },
+ {
+  "figure_id": "fig_10",
+  "label": null,
+  "caption": "12, 13, 14, respectively. ▷ Instruction of TMDB Give me the number of movies directed by Sofia Coppola. ▷ RestGPT Planner: search for the director \"Sofia Coppola\" API Selector: GET /search/person to search for the director \"Sofia Coppola\" Caller: I need to make a GET request to the /search/person endpoint with the query parameter set to \"Sofia Coppola\". Operation: GET Input: { xxxx\"url\": \"https://api.themoviedb.org/3/search/person\", xxxx\"params\": { xxxxxxxx\"query\": \"Sofia Coppola\" xxxx}, xxxx\"description\": \"The API response is a list of people matching the query.\", xxxx\"output_instructions\": \"What is the id of Sofia Coppola?\" } Parser: The id of the person is 1769 Caller: Successfully call GET /search/person to search for the director \"Sofia Coppola\". The id of Sofia Coppola is 1769. Planner: Get the number of movies directed by Sofia Coppola (1769) API Selector: GET /person/1769/movie_credits to get the number of movies directed by Sofia Coppola (id 1769) Caller: I need to call GET /person/1769/movie_credits to get the number of movies directed by Sofia Coppola (id 1769). Operation: GET Input: { xxxx\"url\": \"https://api.themoviedb.org/3/person/1769/movie_credits\", xxxx\"description\": \"The API response is the movie credit list of Sofia Coppola (id 1769)\", xxxx\"output_instructions\": \"What are the names and ids of the movies directed by this person?\" } Parser: The movies directed by Sofia Coppola are Lost in Translation (153), The Virgin Suicides (1443), Marie Antoinette (1887), Somewhere (39210), Lick the Star (92657), The Bling Ring (96936), A Very Murray Christmas (364067), Bed, Bath and Beyond (384947), The Beguiled (399019), On the Rocks (575417), The Custom of the Country (758422), New York City Ballet (826970), Priscilla (1020006), Un matin partout dans le monde (835318) Caller: Successfully call GET /person/1769/movie_credits to get the movie credit list of Sofia Coppola (id 1769). The movies directed by Sofia Coppola are Lost in Translation (153), The Virgin Suicides (1443), Marie Antoinette (1887), Somewhere (39210), Lick the Star (92657), The Bling Ring (96936), A Very Murray Christmas (364067), Bed, Bath and Beyond (384947), The Beguiled (399019), On the Rocks (575417), The Custom of the Country (758422), New York City Ballet (826970), Priscilla (1020006), Un matin partout dans le monde (835318).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2345
+ },
+ {
+  "figure_id": "fig_11",
+  "label": null,
+  "caption": "Instruction of TMDB Give me a photo belong to the second episode of the first season of the Witcher ▷ RestGPT Planner: search for the id of the second episode of the first season of the Witcher API Selector: GET /tv/63926/season/1/episode/2 to get the id of the second episode of the first season of the Witcher Caller: Operation: GET Input: { xxxx\"url\": \"https://api.themoviedb.org/3/tv/63926/season/1/episode/2\", xxxx\"description\": \"Get the id of the second episode of the first season of the Witcher\", xxxx\"output_instructions\": \"What is the id of the second episode of the first season of the Witcher?\" } Parser: The id of the second episode of the first season of the Witcher is 1132654 Caller: Successfully call GET /tv/63926/season/1/episode/2 to get the id of the second episode of the first season of the Witcher. The id of the second episode of the first season of the Witcher is 1132654. Planner: search for the photo belong to the second episode of the first season of the Witcher (1132654) ...(Finally Failed)",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1022
+ },
+ {
+  "figure_id": "fig_12",
+  "label": null,
+  "caption": "Starting below, you should follow this format: User query: the query a User wants help with related to the API. Plan step 1: the first step of your plan for how to solve the query API response: the result of executing the first step of your plan, including the specific API call made. Plan step 2: based on the API response, the second step of your plan for how to solve the query. If the last step result is not what you want, you can output \"Continue\" to let the API selector select another API to fulfill the plan. For example, the last plan is \"add a song (id xxx) in my playlist\", but the last step API response is calling \"GET /me/playlists\" and getting the id of my playlist, then you should output \"Continue\" to let the API selector select another API to add the song to my playlist. Pay attention to the specific API called in the last step API response. If a inproper API is called, then the response may be wrong and you should give a new plan. API response: the result of executing the second step of your plan ... (this Plan step n and API response can repeat N times) Thought: I am finished executing a plan and have the information the user asked for or the data the used asked to create Final Answer: the final output from executing the plan Example: {in-context examples} Begin! User query: {query} Plan step 1:",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1328
+ }
+]

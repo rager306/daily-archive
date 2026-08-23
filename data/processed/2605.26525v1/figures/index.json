@@ -1,0 +1,442 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": null,
+  "caption": "Misses: shot transitions, narrative progression, long-range state.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 66
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "1",
+  "caption": "Figure 1 Multi-Shot Video Extrapolation (MSVE). (a) Single-shot extrapolation extends an anchor into one continuous take but lacks cinematic structure. (b) Multi-shot storytelling imposes shot structure but does not preserve an observed anchor. (c) MSVE combines both: from v0, c, and T the system generates an adaptive shot sequence {si} n i=1 with i di = T that preserves anchor state, advances the narrative, and produces plausible transitions under a finite per-call budget.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 478
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "2",
+  "caption": "Figure 2 Context allocation failures in MSVE. The usable context of a frozen video generator is narrower than its nominal window. The three panels diagnose the three bottlenecks analysed in this section: (a) global planning overload, where over-detailed plans introduce unsupported constraints; (b) shot-level dilution, where longer per-shot prompts reduce the salience of state needed by the current call; and (c) temporal chaining, where generated frames become a lossy and aging memory of identity, scene, object, and action state. Additional context helps only while it raises the density of usable state. Per-panel numerical anchors are in Appendix D.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 656
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "3",
+  "caption": "Figure 3 Recursive Context Allocation (ReCA). (1) Recursive planning decomposes the long-video task (root) into context-bounded subproblems; only leaf nodes (blue) call the frozen generator. The induced sequence of leaves produces a variable-length Generated Video Timeline. (2) Leaf execution. Each leaf invokes one generator call and produces a video segment. (3) Leaf execution logic. Independent leaves can run concurrently as parallel segments (green); leaves that share a boundary frame are chained sequentially with handoff arrows (orange). Segment durations are adaptive to context and budget. (4) Adaptive state update. Each generated segment is read by an extractor for observation and verification, refreshes the persistent state (memory, confidence, freshness), and feeds back into planning and allocation, closing the recursion.",
+  "ref_count": 7,
+  "has_graphic": false,
+  "caption_chars": 841
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "Key frames of each long video.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 30
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "6",
+  "caption": "Figure 6 Duration scaling and qualitative comparison. (a) NB-Q against total duration on a log axis: ReCA holds near-ceiling fidelity across the full sweep, while VGoT and Mora degrade sharply once the duration crosses the per-shot horizon T ⋆ = 60s (the per-call duration budget at which a single short-video generator call still produces a usable shot) and the collapse threshold T coll ∈ (60, 120)s (the duration band beyond which naive last-frame chaining loses cross-shot identity, scene, and event-causality state and cannot be recovered by prompt rewriting alone). (b) Start/end frames from Mora, MovieAgent, and ReCA: ReCA preserves character identity, background, and scene composition across the shot, while Mora and MovieAgent drift in identity and layout.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 767
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": null,
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 0
+ },
+ {
+  "figure_id": "fig_7",
+  "label": null,
+  "caption": "Algorithmic summary. Algorithm 1 compiles the four phases of Figure 3 into a top-down pseudocode reference. The pseudocode follows the recursion of Eq. 1: Plan, Allocate, Compile, Execute (a single leaf call to the frozen generator G within the per-call budgets τ G and B G ), and Refresh are invoked exactly as defined in Sections 4.1, 4.2, and 4.3. Algorithm 1 Recursive Context Allocation (ReCA) Require: anchor v 0 , narrative intent c, target duration T , frozen generator G, per-call budgets τ G and B G Ensure: long video V with anchor-grounded multi-shot extrapolation 1: S 0 ← ExtractAnchorState(v 0 ) ▷ anchor-supported state with provenance and confidence 2: {(g i , d i , b i , prev i )} n i=1 ← Plan(S 0 , c, T ) ▷ shot goals, durations, boundary modes, dependencies 3: R ← [ ]",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 790
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "7",
+  "caption": "Figure 7 Qualitative comparison across three scenes. The figure uses mixed evidence: paired frames show temporal inconsistency, while single frames show visible physical or artifact failures. In the Titans scene, VGoT and MovieAgent show character inconsistency while Mora changes the weapon/action relation; ReCA keeps the action state readable. In the Boxing scene, baseline outputs change character state or physical interaction, while ReCA preserves the same boxer and gym setup. In the Dumplings scene, baseline outputs drift in scene and/or character state, while ReCA keeps the food-preparation process continuous.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 621
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "8",
+  "caption": "Figure 8 Sun Wukong shot-plan evidence. Frames are sampled from the generated MSVE demo. The opening weapon clash remains readable, the combat relation is preserved during aerial expansion, the action escalates into titan-scale shots, and the late detection/resolve beats still refer back to the same duel.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 306
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "10",
+  "caption": "Figure10User-study interface. Participants view each generated long video and rate it along six dimensions: visual appeal, script faithfulness, character consistency, background consistency, physical law, and narrative coherence.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 229
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "12",
+  "caption": "Figure 12 Tianti location reference.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 36
+ },
+ {
+  "figure_id": "fig_12",
+  "label": "1",
+  "caption": "shot01_back_clash (10 s). Story goal: Establish the power level of the first head-on collision between Yang Jian and Sun Wukong, and the combative tone in which neither side is willing to yield.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 194
+ },
+ {
+  "figure_id": "fig_13",
+  "label": "14",
+  "caption": "Figure14Starting anchor frame a01_back_clash_start for Tianti shot 1.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 69
+ },
+ {
+  "figure_id": "fig_14",
+  "label": "15",
+  "caption": "Figure15Starting anchor frame a02_weapon_lock_close_start for Tianti shot 2.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 76
+ },
+ {
+  "figure_id": "fig_15",
+  "label": "16",
+  "caption": "Figure16Starting anchor frame a03_faces_roar_start for Tianti shot 3.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 69
+ },
+ {
+  "figure_id": "fig_16",
+  "label": "17",
+  "caption": "Figure17Starting anchor frame a04_separated_standoff_start for Tianti shot 4.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 77
+ },
+ {
+  "figure_id": "fig_17",
+  "label": "18",
+  "caption": "Figure18Starting anchor frame a05_ascent_through_clouds_start for Tianti shot 5.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 80
+ },
+ {
+  "figure_id": "fig_18",
+  "label": "6",
+  "caption": "shot06_cloud_counter (14 s). Story goal: Stage the first attack-defence reversal in the clouds, showing that Sun Wukong's footwork is agile and Yang Jian's reaction is precise.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 176
+ },
+ {
+  "figure_id": "fig_19",
+  "label": "19",
+  "caption": "Figure19Starting anchor frame a06_cloud_counter_start for Tianti shot 6.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 72
+ },
+ {
+  "figure_id": "fig_20",
+  "label": null,
+  "caption": "(7 s): Cut in above the white-grey vapour of the cloud surface. Sun Wukong twists half his body around, golden eyes laughing, and sweeps the ruyi-jingubang held across his body. The camera arcs around him as he turns; a half-circle of golden energy expands into a bright arc, and the heavy clouds are flicked into rolling layers by the staff-wind. Yang Jian's silver-black armour ducks low to one side, the three-pointed double-edged blade skimming the cloud surface and dodging the leading edge of the energy wave. Gold-white light pillars and dark-blue thunderclouds intersect. End-frame: the golden arc sweeps past Yang Jian's flank as he is already coiled to thrust back. • seg_shot06_cloud_counter_01 (7 s): From the frame in which Yang Jian has crouched and gathered force, the lens pulls off Sun Wukong's golden energy wave and dollies fast along the cloud surface toward the blade tip. Yang Jian raises his cold gaze, his silver-black armour shaking in the wind, and the three-pointed double-edged blade strikes through the gap left by the dodge, and the cold-white blade light cuts through the cloud layer like a long thin lightning bolt; behind him, the residual ring of Sun Wukong's golden sweep diffuses. The cloud surface is opened by the blade into a long deep gash. End-frame: the blade tip pierces the cloud sea and the rift extends into the distance.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1367
+ },
+ {
+  "figure_id": "fig_21",
+  "label": "7",
+  "caption": "shot07_high_sky_battle (24 s). Story goal: Show the high-altitude battle entering a sustained tangle, foregrounding Sun Wukong's unpredictable transformations and Yang Jian's celestial-eye prediction logic.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 206
+ },
+ {
+  "figure_id": "fig_22",
+  "label": "20",
+  "caption": "Figure 20 Starting anchor frame a07_high_sky_battle_start for Tianti shot 7.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 76
+ },
+ {
+  "figure_id": "fig_23",
+  "label": null,
+  "caption": "(8 s): From an oblique downward angle of Yang Jian holding the centre line, continue dollying in. Sun Wukong hangs upside-down beneath the cloud and reverses his staff: half his silhouette is swallowed by the thunderhead and then bursts out again as he tears through the cloud. The lens snaps closer to the strike point of staff and blade, where the gold and silver-white edge light burst into dense small sparks while blue-violet lightning flickers behind the mist. Yang Jian's third eye gleams faintly with cold light for the first time, suppressing the staff path in advance. End-frame: Yang Jian blocks the ruyi-jingubang horizontally with his blade, with Sun Wukong inverted half a step above him. • seg_shot07_high_sky_battle_01 (8 s): Continuing from the mid-air freeze of locked weapons, Sun Wukong rebounds on the recoil and disappears into the side cloud bank. His outline blurs in and out of the vapour, and the after-image of the ruyi-jingubang slashes diagonally from behind Yang Jian's flank. The lens whips through the cloud and lands beside Yang Jian's face; the cold light of the third eye is even cleaner, like a fine line cutting through the smoke, and he turns just in time to seal the centre line before the ambush lands. End-frame: Yang Jian steps sideways and raises the blade to block a blow from behind, with Sun Wukong emerging from the edge of the thunderhead, the staff tip stopped just outside the blade. • seg_shot07_high_sky_battle_02 (8 s): From the over-shoulder block, continue. Sun Wukong shifts his angle continuously, skimming the cloud spine one moment and being swallowed by mist the next, leaving behind only the gold arcs of the ruyi-jingubang and a monkey-king silhouette in the lightning. The lens snap-cuts between long shots and weapon close-ups; each lift of the three-pointed double-edged blade tears out a silver-white air-arc, while Yang Jian's cold third-eye light tracks the real among the feints and presses closer block by block. End-frame: Yang Jian closes in still further with the blade, while several after-images of Sun Wukong's strike stop half a step away.Shot 8: shot08_mountain_staff_press (12 s). Story goal: Let Sun Wukong manifest the giant-form ruyijingubang as an overwhelming threat and push the fight to a higher-intensity flashpoint.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2303
+ },
+ {
+  "figure_id": "fig_24",
+  "label": "21",
+  "caption": "Figure 21 Starting anchor frame a08_mountain_staff_press_start for Tianti shot 8.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 81
+ },
+ {
+  "figure_id": "fig_25",
+  "label": "22",
+  "caption": "Figure 22 Starting anchor frame a09_counter_knockdown_start for Tianti shot 9.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 78
+ },
+ {
+  "figure_id": "fig_26",
+  "label": "23",
+  "caption": "Figure23Starting anchor frame a10_wukong_fall_impact_start for Tianti shot 10.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 78
+ },
+ {
+  "figure_id": "fig_27",
+  "label": "11",
+  "caption": "shot11_giant_ape_transformation (18 s). Story goal: Render Sun Wukong's wounded fury and complete the key state change from human-form monkey king to a mountain-sized giant ape.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 177
+ },
+ {
+  "figure_id": "fig_28",
+  "label": "24",
+  "caption": "Figure24Starting anchor frame a11_giant_ape_transformation_start for Tianti shot 11.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 84
+ },
+ {
+  "figure_id": "fig_29",
+  "label": "12",
+  "caption": "shot12_yangjian_fatian (18 s). Story goal: Respond to Sun Wukong's giant-ape transformation by showing Yang Jian invoking fatian (cosmic-body magnification) at a matching divine scale to keep the duel balanced.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 210
+ },
+ {
+  "figure_id": "fig_30",
+  "label": "25",
+  "caption": "Figure 25 Starting anchor frame a12_yangjian_fatian_start for Tianti shot 12.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 77
+ },
+ {
+  "figure_id": "fig_31",
+  "label": "26",
+  "caption": "Figure 26 Starting anchor frame a13_titan_clash_start for Tianti shot 13.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 73
+ },
+ {
+  "figure_id": "fig_32",
+  "label": "14",
+  "caption": "shot14_clone_siege (20 s). Story goal: Introduce Sun Wukong's clone technique so Yang Jian is besieged by an indistinguishable swarm of true and false bodies, shifting the strategic pressure.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 191
+ },
+ {
+  "figure_id": "fig_33",
+  "label": "27",
+  "caption": "Figure27Starting anchor frame a14_clone_siege_start for Tianti shot 14.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 71
+ },
+ {
+  "figure_id": "fig_34",
+  "label": "15",
+  "caption": "shot15_third_eye_scan (16 s). Story goal: Show Yang Jian's third eye breaking the true/false clones, turning Sun Wukong's supernatural advantage back against him.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 162
+ },
+ {
+  "figure_id": "fig_35",
+  "label": "28",
+  "caption": "Figure 28 Starting anchor frame a15_third_eye_scan_start for Tianti shot 15.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 76
+ },
+ {
+  "figure_id": "fig_36",
+  "label": "16",
+  "caption": "shot16_true_body_counter (7 s). Story goal: Let Yang Jian land a fast counter once the true body is locked, interrupting Sun Wukong's next sneak attack.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 152
+ },
+ {
+  "figure_id": "fig_37",
+  "label": "29",
+  "caption": "Figure29Starting anchor frame a16_true_body_counter_start for Tianti shot 16.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 77
+ },
+ {
+  "figure_id": "fig_38",
+  "label": "30",
+  "caption": "Figure30Starting anchor frame a17_aftermath_standoff_start for Tianti shot 17.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 78
+ },
+ {
+  "figure_id": "fig_39",
+  "label": "31",
+  "caption": "Figure31Starting anchor frame a18_final_ready_start for Tianti shot 18.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 71
+ },
+ {
+  "figure_id": "fig_40",
+  "label": "33",
+  "caption": "Figure 33 Dumplings location reference.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 39
+ },
+ {
+  "figure_id": "fig_41",
+  "label": "34",
+  "caption": "Figure 34 Dumplings prop references.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 36
+ },
+ {
+  "figure_id": "fig_42",
+  "label": null,
+  "caption": "Shot 1: shot01_new_year_kitchen (28 s). Story goal: Establish the distance between long-separated father and adult daughter on Lunar New Year's Eve, with the old kitchen as the central container of family memory.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 212
+ },
+ {
+  "figure_id": "fig_43",
+  "label": "35",
+  "caption": "Figure 35 Starting anchor frame a01_new_year_kitchen_start for Dumplings shot 1.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 80
+ },
+ {
+  "figure_id": "fig_44",
+  "label": "2",
+  "caption": "shot02_wrapped_wrong (12 s). Story goal: Through the father's indirect remark about not overstuffing the filling, and the daughter's misshapen dumpling, render the unspoken care and resistance neither can voice.",
+  "ref_count": 4,
+  "has_graphic": false,
+  "caption_chars": 211
+ },
+ {
+  "figure_id": "fig_45",
+  "label": "36",
+  "caption": "Figure36Starting anchor frame a02_wrapped_wrong_start for Dumplings shot 2.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 75
+ },
+ {
+  "figure_id": "fig_46",
+  "label": "37",
+  "caption": "Figure 37 Starting anchor frame a03_time_traces_start for Dumplings shot 3.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 75
+ },
+ {
+  "figure_id": "fig_47",
+  "label": "4",
+  "caption": "shot04_cold_voice_crack (6 s). Story goal: Let the argument reach its coldest moment: the daughter says small repairs cannot fix the problem, and the father's retreat appears as a torn dumpling skin.",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 199
+ },
+ {
+  "figure_id": "fig_48",
+  "label": "38",
+  "caption": "Figure 38 Starting anchor frame a04_cold_voice_crack_start for Dumplings shot 4.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 80
+ },
+ {
+  "figure_id": "fig_49",
+  "label": "39",
+  "caption": "Figure39Starting anchor frame a05_mothers_folds_start for Dumplings shot 5.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 75
+ },
+ {
+  "figure_id": "fig_50",
+  "label": "40",
+  "caption": "Figure 40 Starting anchor frame a06_height_mark_touch_start for Dumplings shot 6.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 81
+ },
+ {
+  "figure_id": "fig_51",
+  "label": "41",
+  "caption": "Figure 41 Starting anchor frame a07_boiling_together_start for Dumplings shot 7.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 80
+ },
+ {
+  "figure_id": "fig_52",
+  "label": "42",
+  "caption": "Figure 42 Starting anchor frame a08_quiet_aftertaste_start for Dumplings shot 8.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 80
+ },
+ {
+  "figure_id": "fig_53",
+  "label": null,
+  "caption": "The hand is not rendered even though the action requires it.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 60
+ },
+ {
+  "figure_id": "fig_54",
+  "label": "43",
+  "caption": "Figure 43 Representative backbone-limited failure cases. These examples illustrate two observed categories: action-state corruption and morphology/motion artefacts. ReCA can retry the unit with adjusted language-side state, re-anchor the next call, or split the unit, but the local visual failure itself is bounded by the generator's per-call rendering quality.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 361
+ }
+]

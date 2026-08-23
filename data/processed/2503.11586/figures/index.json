@@ -1,0 +1,98 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Figure1: Overview of our approach, SCOPE, for conversation planning. During learning phase (left), we exploit dense semantic representation of conversations to learn a lightweight transition and reward model in semantic space (Notations and details covered in Sections 4.2 and 4.3). During runtime (right), SCOPE uses these learnt models to perform MCTS at a broader scope in semantic space without needing additional LLM queries for simulation (Algorithm 1), allowing us to select an optimal LLM response that maximizes the cumulative reward in a conversation.",
+  "ref_count": 3,
+  "has_graphic": true,
+  "caption_chars": 561
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "1",
+  "caption": "Semantic space Conversation Planning with improved Efficiency (SCOPE) 1: Input: Initial conversation context s init . Transition model T and reward model R from learning phase (Sections 4.2 and 4.3). Pre-trained semantic embedding model f . k ≜ 0. Initial Qfunction Q k (s , ã ). Planning budget K. Branching factor m. Search depth D. 2: Propose m candidate LLM responses: {a 1 , a 2 , . . . , a m } . 3: Projection to semantic space: sinit ≜ f (s init ), ãj = f (s init + a j ) -f (s init ), ∀j = 1, 2, . . . , m 4: while k &lt; K do 5: Select From root sinit , traverse search tree according to search policy π k (s) = arg max ã (Q k (s , ã) + U CT (s , ã)) until leaf state sleaf with unexplored action is reached. 6: At sleaf , pick a random unexplored action ãleaf . 7: Expand Conditioned on the selected action ãleaf , randomly sample a new state snew from learnt transition model T to simulate T (s leaf , ãleaf ) → snew . At new state snew , Use T to sample m state actions ãnew, 1 , . . . , ãnew, m and assign them to snew . (details in Appendix A.6) 8:",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1062
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "Figure 3: (a) and (b) show the average cumulative rewards (higher is better) gathered by SCOPE compared to other baselines over 100 different conversation starters for the harmfulness and human response length reward function over 5 conversation turns. The x-axis shows the effect of increased planning budget (time). (c) and (d) show visualization of a conversation generated from SCOPE and 1-step Greedy in the semantic space.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 428
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "4",
+  "caption": "Figure 4: Comparison of SCOPE with larger planning budget vanilla MCTS (higher is better).",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 90
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "Figure 5: (a) and (b): Ablation study on how transition model choice affects SCOPE's performance. SCOPE-DE uses deep ensembles (Lepikhin et al., 2021) while SCOPE-MDN uses MDNs (Bishop, 1994). (c) and (d): Ablation study on how search depth affect SCOPE's performance.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 268
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "6",
+  "caption": "Figure 6: Myopic approaches cannot discern whether LLM response A and B lead to safer conversations. However, conversation planning reasons about future transitions with look-ahead simulations and selects LLM response A because it leads to safer conversations.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 260
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "7",
+  "caption": "Figure 7: How instantaneous reward is derived from reward model F R (s , θ R ).",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 79
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "8",
+  "caption": "Figure 8: Visualization of SCOPE (Algorithm 1), which performs MCTS in semantic space with the help of semantic embedding function f , T and R (Sections 4.2 and 4.3).",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 166
+ },
+ {
+  "figure_id": "fig_8",
+  "label": null,
+  "caption": "Predictions of T to simulate future actions.(c) Predictions of T to simulate human responses.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 93
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "9",
+  "caption": "Figure 9: PCA visualizations of conversation transition sin the semantic space, and the predicted transitions by the transition model T",
+  "ref_count": 6,
+  "has_graphic": true,
+  "caption_chars": 135
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "10",
+  "caption": "Figure 10: Histogram plot of cosine similarity and ratio of the prediction norm for the trained semantic action (left) and transition (right) models, using MDN (Bishop, 1994) as transition model choice.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 202
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "11",
+  "caption": "Figure 11: Histogram plot of cosine similarity and ratio of the prediction norm for the trained semantic action (left) and transition (right) models, using ensemble of deterministic models as transition model choice.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 216
+ }
+]

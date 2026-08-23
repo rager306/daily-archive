@@ -1,0 +1,122 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Figure 1: Overall performance comparison of WebThinker with other models across two tasks: complex reasoning problem-solving (left) and scientific research report generation (right).",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 182
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "2",
+  "caption": "Figure 2: Comparison of RAG paradigms: (a) Standard RAG workflow, (b) Iterative RAG workflow, and (c) WebThinker, a reasoning agent that autonomously searches, deeply explores web pages, and drafts research reports, all within its continuous thinking process.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 259
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "(R t | R &lt;t , I, q, {O τ } τ &lt;t ) Reasoning with Tools • Ty t=1 P (y t | y &lt;t , R, I, q)",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 97
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "3",
+  "caption": "Figure 3: Overview of the WebThinker framework. It operates in two modes: (1) Problem-Solving Mode equips reasoning models with a search tool backed by a Deep Web Explorer, enabling thorough web exploration to retrieve relevant information for solving complex real-world problems. (2) Report Generation Mode extends the model's capabilities with writing, checking, and editing capabilities, allowing it to iteratively craft comprehensive research reports while thinking and searching.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 484
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "exp } j&lt;i(t) denotes the set of outputs from all Deep Web Explorer calls completed before reasoning step t.The Deep Web Explorer itself is driven by the LRM, operating under a specific instruction I e . It utilizes two elementary tools: a search engine T s to retrieve web pages based on a generated query q s , and a navigation tool T n to interact with elements (e.g., click links) on the currently viewed page(s) D. The explorer, triggered by an information need q s , generates its own internal reasoning chain R e to decide whether to search further or navigate deeper based on the evolving web content D t it encounters. Its goal is to produce a concise output O exp that addresses the knowledge gap in the main reasoning chain R. The exploration process within the tool is modeled as: P (R e , O exp | q s , D, I e ) = Te t=1 P (R e,t | R e,&lt;t , q s , D t , I e ) • P (O exp | R e , q s , D, I e ),",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 911
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "2",
+  "caption": "Retrieval-Augmented Reasoning: Methods using external knowledge from search engines: (i) Standard RAG (retrieves for the original query); (ii) RAG w/ Query Planning (decomposes query, retrieves for sub-queries, then generates); and (iii) Iterative RAG (retrieves information iteratively). (3) Autonomous Search within Reasoning: Systems integrating search actions into reasoning, including the open-source Search-o1 framework<ref type=\"bibr\" target=\"#b24\">[26]</ref>, and non-proprietary systems like OpenAI Deep Research<ref type=\"bibr\" target=\"#b33\">[35]</ref>, Grok3 DeeperSearch<ref type=\"bibr\" target=\"#b10\">[12]</ref>, and Gemini2.0 Deep Research<ref type=\"bibr\" target=\"#b9\">[10]</ref>.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 693
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "45",
+  "caption": "Figure 4: Main results on scientific report generation for general research tasks. Left: Overall performance comparison, reporting average scores evaluated by DeepSeek-R1 and GPT-4o. Right: t-SNE visualization of content embeddings from three randomly sampled topics.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 267
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "4",
+  "caption": "left) presents WebThinker's performance on the Glaive scientific report generation task against RAG and non-proprietary baselines, evaluated on Completeness (Comp.), Thoroughness (Thorough.), Factuality (Fact.), and Coherence. WebThinker achieves the top overall score (8.0), surpassing RAG baselines and advanced systems like Gemini-Deep Research (7.9). It excels in Completeness (8.4) and Thoroughness (8.2), matching top Factuality (7.7) and Coherence (7.8) scores. These results highlight the Autonomous Think-Search-and-Draft strategy's effectiveness in enabling LRMs to iteratively refine content through dynamic information gathering, yielding more comprehensive and coherent reports than predefined RAG workflows.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 721
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "21",
+  "caption": "Inference for Main Reasoning Process Problem-Solving Mode: In this mode, the LRM receives a user's question and aims to find a direct answer. It primarily utilizes the Search Tool. When the model generates the &lt;|end_search_query|&gt; token, the generation process pauses. The system extracts the most recent query enclosed within &lt;|begin_search_query|&gt; and &lt;|end_search_query|&gt; . Concurrently, an assistant LLM formulates a detailed search intent based on the query and the preceding reasoning chain. The system then uses a web crawler to fetch the content of the top-k (k=10 in our experiments) retrieved web documents. The original query, the generated search intent, and the fetched web content are passed to the Deep Web Explorer. The Explorer processes this information and returns a refined summary relevant to the query and intent, enclosed within &lt;|begin_search_result|&gt; and &lt;|end_search_result|&gt; . The main LRM then resumes its reasoning with this new information. This cycle continues until the model generates an End-of-Sequence (EOS) token or reaches the maximum token limit. The final answer is extracted based on a predefined answer pattern (e.g., \\boxed{ANSWER} or ANSWER: {ANSWER}).Report Generation Mode: This mode handles tasks requiring the generation of a comprehensive research report. It receives the user's question along with a research plan (potentially generated by an assistant LLM). The LRM utilizes the Search Tool (invoking the Deep Web Explorer as in Problem-Solving Mode) and the three Report Writing Tools (Section Writing, Report Checking, Report Editing). Similar to the problem-solving mode, generation pauses whenever the model outputs a closing tool token ( &lt;|end_search_query|&gt; , &lt;|end_write_section|&gt; , &lt;|end_edit_article|&gt; ) or the opening token for checking ( &lt;|begin_check_article|&gt; ).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1879
+ },
+ {
+  "figure_id": "fig_9",
+  "label": null,
+  "caption": "Do not propose methods or design experiments, your task is to comprehensively research with web searches. -Do not omit any key points in the article. -When you think the article is complete, directly output \"I have finished my work.\" and stop. Now begin your research and write the article about: {question} Instruction for Writing Section You are a research paper writing assistant. Please write a complete and comprehensive \"{section_name}\" section based on the following information. **Potential helpful documents:** {relevant_documents} **Original question:** {question} **Previous thoughts:** {previous_thoughts} **Outline of current written article:** {current_article} **Name of the next section to write:** ## {section_name} **Your task is to comprehensively write the next section based on the following goal:** {task} **Note:** -Write focused content that aligns with the above goal for this section. -No need to mention citations or references. -Each paragraph should be comprehensive and well-developed to thoroughly explore the topic. Avoid very brief paragraphs that lack sufficient detail and depth. -If possible, add markdown tables to present more complete and structured information to users. Please provide the comprehensive content of the section in markdown format. ## {section_name} Instruction for Editing Article You are a professional article editor. Please help me modify the article based on the following edit instruction: **Edit instruction:** {edit_instruction} **Current article:** {article} Please output the complete modified article incorporating all the requested changes. **Note:** -Keep all original content that doesn't need modification. (Do not just output the modified content, but output the entire modified article.) -Make all edits specified in the edit instructions. -Output format: Please provide the complete modified article in markdown format.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1892
+ },
+ {
+  "figure_id": "fig_10",
+  "label": null,
+  "caption": "Okay, so I need to compute the simplicial volume of Σ31 × Σ17, where Σg is an oriented closed surface of genus g. First, I should recall the simplicial volume of a single surface Σg. For g ≥ 2, the simplicial volume is ||Σg|| = 4(g -1). Let me quickly verify this. &lt;|begin_search_query|&gt; simplicial volume of a closed surface of genus g &lt;|end_search_query|&gt; &lt;|begin_search_result|&gt; The simplicial volume of a closed surface of genus g ≥ 2 is indeed 4(g -1). This result is derived from the relationship between simplicial volume and the Euler characteristic (χ) of the surface. Specifically, for a surface Σg of genus g, the Euler characteristic is χ(Σg) = 2 -2g. The simplicial volume is given by ∥Σg∥ = 2|χ(Σg)|, leading to: ∥Σg∥ = 2|2 -2g| = 4(g -1).[...] For the product of two closed surfaces of genus g, h ≥ 2, the simplicial volume ∥Σg × Σ h ∥ has known bounds related to the product of individual volumes, but the exact value requires specific theorems. [...] Sources confirm ∥Σg∥ = 4(g -1). [...] &lt;|end_search_result|&gt; Okay, the formula ||Σg|| = 4(g -1) for g ≥ 2 is confirmed. Now, the core problem is the simplicial volume of the product Σ31 × Σ17. The first search mentioned bounds but not an exact formula. I need the specific rule for products of surfaces. Let me search for that. &lt;|begin_search_query|&gt; simplicial volume of product of surfaces &lt;|end_search_query|&gt; &lt;|begin_search_result|&gt; The simplicial volume of the product of two oriented closed surfaces of genus g and h (each ≥ 2) is given by the formula:∥Σg × Σ h ∥ = 3 2 • ∥Σg∥ • ∥Σ h ∥.Substituting the known simplicial volumes of individual surfaces (∥Σg∥ = 4(g -1) and ∥Σ h ∥ = 4(h -1)), this becomes:∥Σg × Σ h ∥ = 3 2 • 4(g -1) • 4(h -1) = 24(g -1)(h -1).This result is derived from Michelle Bucher's work, leveraging the proportionality principle for manifolds covered by H 2 × H 2 . [...] &lt;|end_search_result|&gt; Ah, perfect. The formula is ||Σg × Σ h || = 3 2 • ||Σg|| • ||Σ h || = 24(g -1)(h -1). Now I can substitute g = 31 and h = 17: ||Σ31 × Σ17|| = 24 • (31 -1) • (17 -1) ||Σ31 × Σ17|| = 24 • 30 • 16 Calculating this: 24 × 30 = 720 720 × 16 = 11520 So the simplicial volume is 11520.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2214
+ },
+ {
+  "figure_id": "fig_11",
+  "label": null,
+  "caption": "&lt;|begin_search_query|&gt; ASH 66th annual meeting ancillary meetings proposal deadline &lt;|end_search_query|&gt; &lt;|begin_search_result|&gt; Search results included a PDF link (Web Page 1) indicating the ancillary meeting deadline is **November 22, 2024, 11:59 p.m. PST**. Another page (Web Page 4) stated the request form becomes available **July 24, 2024**. Other pages mentioned meeting dates or referred to the 2025 meeting. [...] &lt;|end_search_result|&gt; The new search results provide the ancillary meeting deadline (Nov 22, 2024) and the date the request form opens (July 24, 2024). Web Page 1 looks like the official guidelines PDF. Let me click that to confirm details. &lt;|begin_click_link|&gt; https://www.hematology.org/-/media/hematology/files/annualmeeting/2024_ash_ancillary_meeting_guidelines_final.pdf &lt;|end_click_link|&gt; &lt;|begin_click_result|&gt; The clicked PDF (Ancillary Meeting Guidelines for the 66th ASH Annual Meeting) confirmed: -Request Form Availability: **Wednesday, July 24, 2024, 11:00 a.m. EDT**. -Submission Deadline: **Friday, November 22, 2024, 11:59 p.m. PST**. -A non-refundable processing fee applies, tiered by event type (e.g., $200 for Member/Non-Profit, $250 for Advisory Board, $500 for Investor Meeting). -Space is limited, first-come, first-served, using designated hotels (no convention center space). -Eligibility: Organizer must be affiliated with ASH (exhibitor, sponsor, member, etc.). -Contact for questions: asheventrequests@spargoinc.com. [...] &lt;|end_click_result|&gt; Okay, I now have confirmed information for both late-breaking abstracts (from initial search) and ancillary meetings (from the additional search and click). I can now consolidate this information. ## Final Information After reviewing the official ASH resources and related search results, the critical deadlines for the **66th ASH Annual Meeting** are summarized below: ### **Late-Breaking Abstracts Deadlines** -**Open Date**: October 16, 2024 -**Close Date**: October 28, 2024, at **11:59 p.m. Pacific Time** -**Details**: -Requires justification for late submission. -Submission fee: **$125 USD** (non-refundable). -Max **six abstracts** accepted for presentation on **Dec 10, 2024**. ### **Ancillary Meetings Deadlines** -**Form Available**: July 24, 2024, at **11:00 a.m. EDT** -**Submission Due**: November 22, 2024, at **11:59 p.m. PST** -**Requirements**: -Organizer must be ASH-affiliated. -Tiered fees apply ($200/$250/$500 based on type). -Use approved hotels (no convention center space), first-come, first-served. -Must not conflict with official ASH programming.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2619
+ },
+ {
+  "figure_id": "fig_12",
+  "label": "1",
+  "caption": "Search for \"FDM 3D printing limitations\" to understand the constraints of the printing process.(2) Look up \"lattice structure optimization for 3D printing\" to find general strategies and software tools. [...] (7) Look into \"material properties for 3D printing lattice structures\" for best materials. (8) Find case studies on \"3D printed robotic components\" for real-world examples.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 381
+ },
+ {
+  "figure_id": "fig_13",
+  "label": null,
+  "caption": "in 3D Printed Robotic Nodes for Swarm Robotics: Balancing Strengthto-Weight Ratio and Minimizing Support Material Introduction Swarm robotics draws inspiration from social insects. The optimization of lattice structures in 3D printed robotic nodes is crucial for achieving high strength-to-weight ratios and minimizing support material, particularly in swarm robotics applications. Fused Deposition Modeling (FDM) printing presents unique challenges [...]",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 455
+ },
+ {
+  "figure_id": "fig_14",
+  "label": null,
+  "caption": "-Related Tools . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . A.2 Inference Process of WebThinker . . . . . . . . . . . . . . . . . . . . . . . . . . . A.2.1 Inference for Main Reasoning Process . . . . . . . . . . . . . . . . . . . . A.2.2 Inference for Deep Web Explorer . . . . . . . . . . . . . . . . . . . . . . B Datasets B.1 Complex Reasoning Tasks . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . B.2 Scientific Report Generation Tasks . . . . . . . . . . . . . . . . . . . . . . . . . . C Instruction Templates C.1 Instructions for WebThinker . . . . . . . . . . . . . . . . . . . . . . . . . . . . . C.2 Task Instructions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . C.2.1 Task Instruction for QwQ-based Models . . . . . . . . . . . . . . . . . . . C.2.2 Task Instruction for DeepSeek-R1-based Models . . . . . . . . . . . . . . C.3 Instructions for Evaluation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . C.3.1 Evaluation Instruction for Problem-Solving Tasks . . . . . . . . . . . . . . C.3.2 Evaluation Instruction for Report Quality . . . . . . . . . . . . . . . . . . C.4 Additional Notes . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . D Case Study D.1 Case Study for Complex Problem Solving . . . . . . . . . . . . . . . . . . . . . . D.2 Case Study for Deep Web Explorer . . . . . . . . . . . . . . . . . . . . . . . . . . D.3 Case Study for Scientific Report Generation . . . . . . . . . . . . . . . . . . . . .ClaimsQuestion: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope? Answer:[Yes]",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1665
+ }
+]

@@ -1,0 +1,114 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": null,
+  "caption": "Figure 1: LUMOS is an unified, modular and opensource agent training framework that enables effective cross-task generalization while being easy to be updated. It also has advantages against closed-source agents from affordability, transparency and reproducibility aspects.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 273
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": "Figure 2: Overall framework of LUMOS. LUMOS are trained with 56K high-quality training annotations. We propose two agent training and inference formulations, LUMOS-O ( §2.2) and LUMOS-I ( §2.3). LUMOS-O is an efficient formulation that enables one-pass inference; LUMOS-I is an adaptive formulation that help agents flexibly plan based on the execution feedback. We showcase two LUMOS-I running examples in A-OKVQA and Mind2Web.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 428
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "1",
+  "caption": "Query the living period of Lowell Sherman.reasonable subgoal-based plan to solve the given task. Task: Who lives longer, Lowell Sherman or Jonathan Kaplan? &lt;|assistant|&gt; Subgoal 1: Query the living period of Lowell Sherman. &lt;|user|&gt; The execution result of Subgoal 1 is 46 years. Should we stop planning? &lt;|assistant|&gt; No, I will keep planning. Subgoal 2: Query the living period of Jonathan Kaplan. &lt;|user|&gt; The execution result of Subgoal 2 is 75 years. Should we stop planning? … Organize subgoals &amp; execution results into conversation formatFinal planning module annotationWe find relevant facts: Lowell Sherman passed away at the age of 46. Jonathan Kaplan passed away at the age of 75. We need to answer these questions: … … 3) Is #2 greater than #1? … …LLM-based annotation conversionGround-truth reasoning steps in existing datasets (a) Final planning module annotation organized from the converted subgoals &amp; execution results.Subgoal 1: Query the living period of Lowell Sherman.Please ground the given subgoal to corresponding executable actions for solving the given task.[Action Interfaces]Task: Who lives longer, Lowell Sherman or Jonathan Kaplan? Subgoal to be grounded: Subgoal 1: Query the living period of Lowell Sherman.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1271
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "R1",
+  "caption": "KnowledgeQuery(Lowell Sherman); R2 = ParagraphRetrieval(R1, Query: …); R3 = QA([R2], Query: …) &lt;|user|&gt; Subgoal to be grounded: Subgoal 2: Query the living period of Jonathan Kaplan.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 188
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "R4",
+  "caption": "KnowledgeQuery(Jonathan Kaplan); … … Organize subgoals &amp; low-level actions into conversation format Final grounding module annotation (b) Final grounding module annotation organized from the converted subgoals &amp; actions.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 228
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "3",
+  "caption": "Figure3: Process of converting converted subgoals, actions, and executions into the final conversational training annotations for LUMOS-I formulation.",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 150
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": "(R1, Query: How many kids did Julius Caesar have?) = Paragraph(Julius Caesar-75). Action 1-3: R3 = QA([R2], Question: How many kids did Julius Caesar have?) = 3. Subgoal 2: Obtain the number of the kids that Genghis Khan had. Action 2-1: R4 = KnowledgeQuery(Genghis Khan) = WikipediaPage(Genghis Khan). Action 2-2: R5 = ParagraphRetrieve(R4, Query: How many kids did Genghis Khan have?) = Paragraph(Genghis Khan-17). Action 2-3: R6 = QA([R5], Question: How many kids did Genghis Khan have?) = 16. Subgoal 3: Determine if Genghis Khan had more kids. Action 3-1: R7 = Calculator(R6 &gt; R3) = True",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 595
+ },
+ {
+  "figure_id": "fig_7",
+  "label": null,
+  "caption": "the cameraman were driving what do they have to do from this position? There're some choices: A. turn left, B. drive straight, C. reverse course, D. turn right. Natural language plan: The would have to turn right because the lane has right turn arrows painted on it. The arrow on the street indicates that this lane can only go in one direction at the intersection. The sign on the road says to turn right. Overall, the final answer is 'turn right'. Subgoal-based plan: Subgoal 1: Describe the shape of the sign on the road lane the cameraman is in from the image. Action 1-1: R1 = VQA([IMG], Question: What's the sign on the road lane?) = There's a right turn arrow on the road. Subgoal 2: Answer which lane the cameraman is in. Action 2-1: R2 = QA([R1], Question: Which lane is the cameraman in?) = The cameraman is in right turn lane. Subgoal 3: Answer what the cameraman has to do from his position. Action 3-1: R3 = QA([R1, R2], Question: What does the cameraman have to do from his position?) = turn right. Subgoal 4: Select the choice from the answer choices. Action 4-1: R4 = VQA([IMG], Question: If the cameraman were driving what do they have to do from this position? We can also see that There's a right turn arrow on the road, The cameraman is in right turn lane, turn right. There're some choices: A. turn left, B. drive straight, C. reverse course, D. turn right. You must choose one from 'A', 'B', 'C' or 'D'. Output only one letter!) = D J In-Context Example for Adapting Modules to Unseen Task -WebShop",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1520
+ },
+ {
+  "figure_id": "fig_8",
+  "label": null,
+  "caption": "Please provide a reasonable subgoal-based plan to solve the given task. Task: Find me slim fit, loose fit women's tops, tees &amp; blouses with long sleeve, short sleeve with color: a01#black, and size: large, and price lower than 50.00 dollars &lt;|assistant|&gt; Subgoal 1: Search two relevant items and the product names according to the instruction. &lt;|user|&gt; The execution result for Subgoal 1 is b09s3bn15c -Mens Linen Shirt,Men's Striped Shirts Casual Short Sleeve Button Down Shirts Regular Fit Hawaiian Shirts Beach Tees Tops ** b094q7b3ss -Women Cold Shoulder Tops, Summer Butterfly Print Shirts Fashion Casual Short Sleeve Plus-Size Tunic Top Tee and Blouse. &lt;|assistant|&gt; Subgoal 2: Select the most relevant features of item b09s3bn15c. &lt;|user|&gt; The execution result for Subgoal 2 is short, casual, shoulder. &lt;|assistant|&gt; Subgoal 3: Select the most relevant features of item b094q7b3ss. &lt;|user|&gt; The execution result for Subgoal 3 is black, large, x-large. &lt;|assistant|&gt; Subgoal 4: Pick up the most related one from the two relevant items according to the product names and their features. &lt;|user|&gt; The execution result for Subgoal 4 is b094q7b3ss. &lt;|assistant|&gt; Subgoal 5: Buy this item by selecting its relevant features. &lt;|user|&gt; The execution result for Subgoal 5 is Done.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1342
+ },
+ {
+  "figure_id": "fig_9",
+  "label": null,
+  "caption": "&lt;|assistant|&gt; R1 = Search(Find me slim fit, loose fit women's tops, tees &amp; blouses with long sleeve, short sleeve with color: a01#black, and size: large, and price lower than 50.00 dollars) &lt;|user|&gt; Subgoal to be grounded: Subgoal 2: Select the most relevant features of item b09s3bn15c. &lt;|assistant|&gt; R2 = Click(b09s3bn15c); R3 = FeatureRetrieve(R2, Query: Find me slim fit, loose fit women's tops, tees &amp; blouses with long sleeve, short sleeve with color: a01#black, and size: large, and price lower than 50.00 dollars) &lt;|user|&gt; Subgoal to be grounded: Subgoal 3: Select the most relevant features of item b094q7b3ss. &lt;|assistant|&gt; R4 = Click(&lt; prev); R5 = Click(b094q7b3ss); R6 = FeatureRetrieve(R5, Query: Find me slim fit, loose fit women's tops, tees &amp; blouses with long sleeve, short sleeve with color: a01#black, and size: large, and price lower than 50.00 dollars) &lt;|user|&gt; Subgoal to be grounded: Subgoal 4: Pick up the most related one from the two relevant items according to the product names and their features. &lt;|assistant|&gt; R7 = Pick(Item_names: R1, Item_features: [R3, R6], Query: Find me slim fit, loose fit women's tops, tees &amp; blouses with long sleeve, short sleeve with color: a01#black, and size: large, and price lower than 50.00 dollars) &lt;|user|&gt; Subgoal to be grounded: Subgoal 5: Buy this item by selecting its relevant features. &lt;|assistant|&gt; R8 = Click(&lt; prev); R9 = Click(R7); R10 = Click(black); R11 = Click(large); R12 = Click(x-large); R13 = Click(buy now) K In-Context Example for Adapting Modules to Unseen Task -InterCode SQL Similar to §J, as InterCode SQL is another unseen task, we showcase one of the three in-context InterCode SQL -related examples used for the inference of planning and grounding modules, respectively. K.1 In-Context InterCode SQL -Related Example for Planning Module &lt;|user|&gt; Please provide a reasonable subgoal-based plan to solve the given task. Task: What are the names of poker players, ordered ascending by the number of final tables they have made? &lt;|assistant|&gt; Subgoal 1: Find all the related tables. &lt;|user|&gt; The execution result for Subgoal 1 is Results: Table players has Name (type: TEXT), People_ID (type: INT); Table poker_player has Final_Table_Made (type: INT), People_ID (type: INT).; Subgoal 2: Write the selection objects: the names of the people who are also poker players. &lt;|assistant|&gt; Subgoal 2: Write the selection objects: the names of the people who are also poker players. &lt;|user|&gt; The execution result for Subgoal 2 is T1.Name FROM people AS T1 JOIN poker_player AS T2 ON T1.People_ID = T2.People_ID. &lt;|assistant|&gt; Subgoal 3: Write the selection condition: sort all the poker players by the number of final tables they have made in ascending order. &lt;|user|&gt; The execution result for Subgoal 3 is ORDER BY T2.Final_Table_Made. &lt;|assistant|&gt; Subgoal 4: Finish the SQL query to the names of poker players, ordered ascending by the number of final tables they have made. &lt;|user|&gt; The execution result for Subgoal 4 is SELECT T1.Name FROM people AS T1 JOIN poker_player AS T2 ON T1.People_ID = T2.People_ID ORDER BY T2.Final_Table_Made.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 3249
+ },
+ {
+  "figure_id": "fig_10",
+  "label": null,
+  "caption": "grounded: Subgoal 2: Write the selection objects: the names of the people who are also poker players. &lt;|assistant|&gt; R2 = T1.Name FROM people AS T1 JOIN poker_player AS T2 ON T1.People_ID = T2.People_ID &lt;|user|&gt; Subgoal to be grounded: Subgoal 3: Write the selection condition: sort all the poker players by the number of final tables they have made in ascending order. &lt;|assistant|&gt; R3 = ORDER BY T2.Final_Table_Made &lt;|user|&gt; Subgoal to be grounded: Subgoal 4: Finish the SQL query to the names of poker players, ordered ascending by the number of final tables they have made. &lt;|assistant|&gt; R4 = SELECT T1.Name FROM people AS T1 JOIN poker_player AS T2 ON T1.People_ID = T2.People_ID ORDER BY T2.Final_Table_Made",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 742
+ },
+ {
+  "figure_id": "fig_11",
+  "label": null,
+  "caption": "The company producing the device in her hand is from what country? There're some choices: A. … … C. Japan, D. … The image shows the following contents: The image features a young woman sitting on a couch, … … playing a video game, possibly on a Nintendo Wii console. The couch she is sitting on is … … Lumos-I MM Planning and Grounding Results: Subgoal 1: Identify the brand of the device in her hand. Action: R1 = VQA([IMG], Question: What brand is the device in her hand?) = The device in her hand is a Nintendo Wii controller. Subgoal 2: Answer the country of origin for the Nintendo Wii controller. Action: R2 = QA([R1], Question: What is the country of origin for the Nintendo Wii controller?) = The country of origin for the Nintendo Wii controller is Japan. Subgoal 3: Select the choice from the four answer choices. Action: R3 = VQA([IMG], Question: The company producing the device in her hand is from what country? The image features … We can also see that The device in her hand is a Nintendo Wii controller, The country of origin for the Nintendo Wii controller is Japan. There're some choices: A. … … C. Japan, D. … You must choose one from 'A', 'B', 'C' or 'D'. Output only one letter!) = C.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1205
+ },
+ {
+  "figure_id": "fig_12",
+  "label": "4",
+  "caption": "LUMOS-I MM case study on A-OKVQA.Question: Which continent is highlighted? There're some choices: … … D. Asia. The image features a large, colorful map of the world, with various countries and continents depicted. The map is filled with green and blue colors, giving it a vibrant and lively appearance. … … Lumos-I MM Planning and Grounding Results: Subgoal 1: Identify the highlighted area on the map. Action: R1 = VQA([IMG], Question: Which area is highlighted on the map?) = The area highlighted on the map includes the Middle East, … . Subgoal 2: Answer which continent the highlighted area is in. Action: R2 = QA([R1], Question: Which continent is the Middle East in?) = The Middle East is located in the continent of Asia. Subgoal 3: Select the choice from the answer choices. Action: R3 = VQA([IMG], Question: Which continent is highlighted? The image features … We can also see that The area highlighted on the map includes the Middle East, …, The Middle East is located in the continent of Asia. There're some choices: … … D. Asia. You must choose one from 'A', 'B', 'C' or 'D'. Output only one letter!) = D.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1117
+ },
+ {
+  "figure_id": "fig_13",
+  "label": "5",
+  "caption": "LUMOS-I MM case study on ScienceQA.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 35
+ }
+]

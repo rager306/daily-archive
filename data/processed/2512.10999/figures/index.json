@@ -1,0 +1,90 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": null,
+  "caption": "expression1 = AND(expression2, expression1) expression2 = START('m.01fkfkhÕ) expression2 = JOIN('music.album_content_type.albums', expression2) Q:Music as a Weapon II and Chobits Character Song Collection share what content type between albums? KB To determine the shared content type between Music as a Weapon II and Chobits Character Song Collection, I will first find the content types associated with Chobits Character Song Collection. Find_relation [ m.01g1mj3 | music.album_content_type.albums ]",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 501
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": "Result：[ m.02jbfk (Compilation album), m.0l14gg (Soundtrack) ] expression1 = START('m.01g1mj3') expression1 = JOIN('music.album_content_type.albumsÕ, expression1) Information Action KB The content types associated with Chobits Character Song Collection are Compilation album and Soundtrack. Next, I will find the content types associated with Music as a Weapon II. Find_relation [ m.01fkfkh | music.album_content_type.albums ]",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 426
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "Result： [ m.02jbfk (Compilation album), m.0l14g2 (Live Album) ] Information Action KB The content types associated with Music as a Weapon II are Compilation album and Live Album. To find the shared content type, I will merge the results from both albums. Merge [ expression2 | expression1 ]",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 290
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "1",
+  "caption": "Figure 1. Overview of KBQA-R1. The agent iteratively executes a Think-Action-Information loop, selecting atomic actions and receiving KB feedback.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 146
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "2",
+  "caption": "Figure 2. Two-stage training pipeline. Stage 1: Referenced Rejection Sampling generates trajectories conditioned on gold action sequences, filtered by correctness for SFT. Stage 2: GRPO optimizes the policy via outcome-based rewards from multi-turn KB rollouts.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 261
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "3",
+  "caption": "Comprehensive performance comparison of KBQA-R1 with baseline methods using Llama-3.1-8B. paradigm, while GR-E2E first generates a preliminary logical form and then refines it with KB retrieval. (2) Step-bystep prompting methods: CoT-SbS and ToT-SbS are implemented by instantiating the CoT-based QueryAgent (Huang et al., 2024) and the ToT-based ToG framework (Sun et al., 2023) on Llama-3.1-8B, prompting the model to alternate between intermediate thoughts and KB queries.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 475
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "a",
+  "caption": "Relation similarity score evolution during training. (b) Distribution shift of similarity scores: first step vs. last step.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 123
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "4",
+  "caption": "Relation similarity analysis during RL.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 39
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "5",
+  "caption": "Figure 5. Training reward curve on GrailQA during GRPO.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 55
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "2",
+  "caption": "Think: I found that Reggie Pepper is a character in \"Doing Clarence a Bit of Good.\" Next, I need to find out which short stories this character appears in. ✓Adapts based on resultsAction: Find_relation[ m.0dzx0p | book.short_story.characters ] Info: result_mid_list: [ m.09gs5hv (Helping Freddie), m.09gs5j0 (Doing Clarence a Bit of Good), m.09gs5hy (Rallying Round Old George), m.09gs5hr (Absent Treatment), m.010r9gwy (Disentangling Old Duggie), m.010rlht0 (The Test Case), m.010rlh9d (Concealed Art) ] ✓ Real KB results -7 entities Step 3 Think: I have a list of short stories that feature Reggie Pepper, including \"Doing Clarence a Bit of Good.\" Now, I need to filter this list to only include stories that are of the type \"short story\" and not \"Doing Clarence a Bit of Good\" itself. ✓ Plans type constraint Action: Merge [ expression2 | book.short_story ] Info: result_mid_list: [ m.09gs5hv (Helping Freddie), m.09gs5j0 (Doing Clarence a Bit of Good), m.09gs5hy (Rallying Round Old George), m.09gs5hr (Absent Treatment), m.010r9gwy (Disentangling Old Duggie), m.010rlht0 (The Test Case), m.010rlh9d (Concealed Art) ] ✓ Type verified Step 4 (Final) Think: The merged results now confirm all short stories featuring Reggie Pepper. Since the question asks for stories that share a character with \"Doing Clarence a Bit of Good,\" I should exclude the story itself from the final answer and report the remaining six. ✓ Reasons about exclusion Answer: m.09gs5hv m.09gs5hy m.09gs5hr m.010r9gwy m.010rlht0 m.010rlh9d pred_answer: 6 MIDs (all correct) ✓ Correct (F1 = 1.0)",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1567
+ },
+ {
+  "figure_id": "fig_10",
+  "label": null,
+  "caption": "09gs5hv (Helping Freddie), m.09gs5j0 (Doing Clarence a Bit of Good), m.09gs5hy (Rallying Round Old George), m.09gs5hr (Absent Treatment), m.010r9gwy (Disentangling Old Duggie), m.010rlht0 (The Test Case), m.010rlh9d (Concealed Art) ] a list of short stories that feature Reggie Pepper, including \"Doing Clarence a Bit of Good.\" Now, I need to filter this list to only include stories that are of the type \"short story\" and not \"Doing Clarence a Bit of Good\" itself. &lt;/think&gt; &lt;action&gt; Merge [ expression2 | book.short_story ] &lt;/action&gt; ENVIRONMENT FEEDBACK &lt;information&gt; functions: ... (previous expressions omitted) expression3 = START('book.short_story') expression2 = AND(expression2, expression3) result_mid_list: [ m.09gs5hv (Helping Freddie), m.09gs5j0 (Doing Clarence a Bit of Good), m.09gs5hy (Rallying Round Old George), m.09gs5hr (Absent Treatment), m.010r9gwy (Disentangling Old Duggie), m.010rlht0 (The Test Case), m.010rlh9d (Concealed Art) ]The merged results now confirm all short stories featuring Reggie Pepper. Since the question asks for stories that share a character with \"Doing Clarence a Bit of Good,\" I should exclude the story itself from the final answer and report the remaining six. &lt;/think&gt; &lt;answer&gt; m.09gs5hv m.09gs5hy m.09gs5hr m.010r9gwy m.010rlht0 m.010rlh9d &lt;/answer&gt; Figure6. Sample KBQA-R1 interaction trace on a GrailQA question. The trace illustrates multi-turn reasoning with executable actions, environment feedback, error recovery, and final answer generation.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1542
+ }
+]

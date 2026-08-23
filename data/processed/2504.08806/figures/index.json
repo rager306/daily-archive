@@ -1,0 +1,106 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "51",
+  "caption": "Figure 1: Comparison of the reasoning processes between traditional GPT-based navigation agents and BrainNav in real-world environments. Traditional agents rely solely on local action spaces and are prone to spatial illusions due to a lack of global understanding of spatial structures. In contrast, BrainNav draws inspiration from biological mechanisms, introducing a dual-map system (coordinate and topological maps) and dual-orientation strategies (relative and absolute) to help the agent build spatial relational awareness, enabling precise reorientation and global path planning.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 585
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "22",
+  "caption": "Figure2, the system comprises the following modules: the hippocampal memory center for storing and recalling historical information; the visual cortex perception engine for extracting environmental data; the parietal spatial builder for construct-",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 247
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "time step t. A single time step may contain multiple consecutive actions, reflecting adjustments made by the agent within the same decision cycle based on environmental feedback. The system searches the topological map using graph algorithms to find backtracking paths, prioritizing those with the fewest steps. Once a valid path is found, the corresponding historical trajectory is loaded and executed to guide the agent efficiently back to the target, avoiding redundant exploration.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 485
+ },
+ {
+  "figure_id": "fig_3",
+  "label": null,
+  "caption": "such as \"move forward,\" \"turn left,\" and \"backtrack\" into executable control signals(Step 8). For example, the \"move forward\" command is translated into motor control signals that drive movement by moving forward, while the \"turn left\" command adjusts the robot's rotation angle by turning left. The standardized design of macro actions enhances execution efficiency, simplifies parsing, and ensures precise movement across various environments (Step 9).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 454
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "<ref type=\"bibr\" target=\"#b51\">[52]</ref> uses a skill-centric hierarchical framework and unified vision-language-action model to demonstrate strong generalization in open-world tasks, focusing on skill composition and task execution, but does not support efficient conversion of map topology into language prompts or multi-step planning. Overall, MapGPT is the only model that effectively converts map topology into language prompts, supports multi-step planning without extra modules, and best fits our baseline needs. However, MapGPT's experiments are limited to simulated environments and based on idealized assumptions, restricting its real-world application. In contrast, our method has two key advantages: (1) no need for simulator training; and (2) like MapGPT, no additional fine-tuning in real environments. These give BrainNav significant practical and generalization advantages.We evaluate our method using four standard VLN metrics<ref type=\"bibr\" target=\"#b52\">[53]</ref>. Trajectory Length (TL) measures the average steps to complete a task; Navigation Error (NE) is the average distance in meters between the robot's stopping point and the goal; Success Rate (SR) indicates the proportion of trials where the robot stops within 1 meter of the target, balancing precision and spatial scale; Success weighted by Path Length (SPL) measures navigation efficiency, defined as:",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1387
+ },
+ {
+  "figure_id": "fig_5",
+  "label": null,
+  "caption": "Hub for fast execution. Notably, BrainNav performs zero-shot navigation in unknown environments but stores experienced paths to support future reuse in the same scene and task. Since this is the first exploration of the lab, the system activates the Visual Cortex Perception Engine, which uses the agent's visual sensors to capture real-time images and extract object features (e.g., walls, red door, chairs, white backpack) and their relative distances to the agent. These features build semantic environmental information, providing foundational data for subse-Please move to the intersection in the center of the lab, then turn right and move to the row of chairs, and finally walk to the front door.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 703
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "3",
+  "caption": "Figure3: A successful case of complex instructions in real-world exploration. We provide both the robot's perspective and a third-person perspective, demonstrating its effective multi-task navigation capabilities.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 213
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "4",
+  "caption": "Figure .4 presents an example illustrating the dialogue and navigation module outputs. In Step 2, the robot receives the instruction: \"Avoid the obstacle and find a blue trash can.\" The Visual Cortex Perception Engine (VCPE) first processes the visual input, extracting image features, identifying objects, and estimating distances to establish the perceptual foundation for navigation. The Parietal Spatial Builder (PSB) maintains a topological map of the environment, indicating that the current location, Place 4, connects to Place 6 and Place 8, and it lists unvisited nodes along with multiple possible actions.The Hippocampal Memory Center (HMC) records the robot's previous trajectory and navigation history, helping to avoid redundant paths and spatial hallucinations. Based on inputs from perception and memory, the Prefrontal Decision Center (PDC) uses the language model to reason that \"image6\" matches the target description, plans to move to Place 6, and verifies the distance to the target. It then decides to execute Action A (move forward to Place 6). Finally, the Cerebellar Motion Execution Unit (CMEU) carries out the action and relocates the robot, completing the navigation step.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1200
+ },
+ {
+  "figure_id": "fig_8",
+  "label": null,
+  "caption": "Multi-target NavigationWalk down the hallway to the blue trash bin, then look for a pot of green plants, and finally stop by the staircase.6Multi-target Navigation First walk to the side of the window, then proceed to a chair. 7 Multi-step Navigation Proceed along the corridor, pass by a room, then turn right and enter the laboratory's main door. 8 Multi-step Navigation Follow these steps: move forward, move backward, turn left, turn right, and stop.9 Barrier Avoidance Navigation Turn left to avoid the obstacle in order to find the blue trash can.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 553
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "5",
+  "caption": "Cerebellar Motion Execution Unit (CMEU): Execution Result: Action A was successfully executed. The agent moved to Place 17 with coordinates [-1, 4], corresponding to image17. Hippocampal Memory Center (HMC) trajectory: Place 0 → 4 History: Step 0: Turn left to Place 4 (Image 4)... 🧠 Prefrontal Decision Center (PDC): LLM Thought and Planning Output: Thought: ...The description of 'image6' matches the criteria for reaching the destination..., New Planning: 1. Move forward to Place 6 where the blue trash can is visible... Action: A 0 🗺 Parietal Spatial Builder (PSB): Connectivity: From Place 0, can reach Place 3, Place 4... Unvisited Node: Place 3 : image 3.Place 8 : image 8... Action options: A.go forward to Place 5 which is corresponding to Image 5. B. turn right to Place 6 which is corresponding to Image 6...",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 820
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "4",
+  "caption": "Prompt Architecture. The central portion shows the BrainNav architecture, with corresponding prompts displayed on the left and right sides.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 139
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "2",
+  "caption": "Stop and confirm the final position as the target is within 2.5 meters. Action:A 🧬 Hippocampal Memory Center (HMC): Trajectory: Place 0 → 4 → 6 → 9 → 13 History: Step 0: Turn left to Place 4 (Image 4)；Step 1: Turn right to Place 6 (Image 6)；Step 2: Go forward to Place 9 (Image 9)； Step 3: Go forward to Place 13 (Image 13) ⚙ Cerebellar Motion Execution Unit (CMEU): Execution Result: Action A was successfully executed. The agent moved to Place 17 with coordinates [-1, 4], corresponding to image17..",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 501
+ },
+ {
+  "figure_id": "fig_12",
+  "label": "5",
+  "caption": "Prompt Architecture -Step 4.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 28
+ }
+]

@@ -1,0 +1,82 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "2",
+  "caption": "Figure 2: Reward distribution of R PIT on the synthetic data, which follows Equation 1.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 87
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": "[0.45, 0.55], where r 1 and r 2 denote the reward of two responses. We first sample responses y ref ∼ M RL P (x) (denoted as 'Original Responses') and then use self-improvement methods to improve y ref . Appendix H.1 shows several qualitative examples.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 252
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "3",
+  "caption": "Figure 3: The difference between win rate and lose rate (∆) among original responses, improved responses by Self-Refine, and improved responses by PIT under different temperatures. ∆ &gt; 0 denotes the former response is better, and higher |∆| denotes larger performance gap.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 275
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "4",
+  "caption": "Figure 4: Rewards w.r.t. training steps. Rewards are divided into three regions. The Better region denotes the model can improve original responses; The Similar region suggests the model can only generate responses that are on par with original responses; The Worse denotes the model cannot improve original responses and make original responses worse.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 352
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "REPRODUCIBILITYDatasets has been discussed in 4.1. Two of three datasets (Anthropic/HH-RLHF and OpenAI/Summary) are publicly available and can be easily found on the HuggingFace website. Appendix D describes the generation process of the remaining synthetic dataset. Evaluators are discussed in Section 4.3 and Appendix G. Moreover, Appendix E.2 offers the evaluation prompts. Experiment settings, baselines, and details are discussed in Section 4.2 and Appendix F. Appendix E.1 also offers prompts used for the baseline method. A THE WORKING FLOW Given a dataset D = {(x, y l , y w )}, we equally divide it into three folds D SFT , D RM and D RL . Starting from a pre-trained language model M pre (•|•), we first conduct normal SFT and RLHF on D to obtain RLHF-finetuned model M RL P (•|•). M RL P (•|•) takes a prompt x as the input (e.g., Please give me a three-day travel plan about Los Angeles.) and return a response y. The input format of M RL P (•|x) during training and inference is: Human:{x} Assistant: , where {x} denotes the concrete input x. Then we train PIT M RL PIT (•|•, •) that takes a prompt and a candidate response as inputs and returns an improved response. The input format of M RL PIT (•|x, y ref ) is Human:{x} Assistant:&lt;&lt;Candidate&gt;&gt;{y ref }&lt;&lt;Improved&gt;&gt; , where {} denotes concrete contents and &lt;&lt;&gt;&gt; denotes a special token. Similarly, the input format of R P (x, y) is Human:{x} Assistant:{y} , and the input format of R PIT (x, y 1 , y 2 ) is Human:{x} Assistant:&lt;&lt;Candidate&gt;&gt;{y 2 }&lt;&lt;Improved&gt;&gt;{y 1 } Algorithm 1: PIT Training Input: Dataset DSFT, DRM and DRL, a pre-trained model Mpre(•|•), and an RLHF-finetuned model M RL P (•|•) trained on DSFT, DRM, DRL and Mpre(•|•). Output: PIT Model M RL PIT (•|•, •) • M SFT PIT (•|•, •) ← Mpre(•|•) • for x, y l , yw in D SFT ▷ Supervised fine-tuning -Supervised fine-tuning Mpre(•|•) using lossL SFT PIT = -log M SFT PIT (yw|x, y l ) • RPIT(•, •, •) ← Mpre(•|•) • for x, y l , yw in DRM ▷ Reward model training -Compute reward gap RPIT(x, y1, y2), y1 ∈ {y l , yw}, y2 ∈ {y l , yw} -Optimize RPIT by Equation 2 • M RL PIT (•|•, •) ← M SFT PIT (•|•, •) • while not converge ▷ First RL-Sample x, yref from DRL, where y ∈ {y l , yw} -Generate y ∼ M RL PIT (•|x, yref) -Use reinforcement learning algorithm such as PPO to optimize Equation4• done• while not converge ▷ Second RL -Sample x from DRL, yref ∼ M RL P (•|x) -Generate y ∼ M RLPIT (•|x, yref) -Use reinforcement learning algorithm such as PPO to optimize Equation5• done• return M RL PIT When conducting self-improvement during inference, we need first to get y ref ∼ M RL P (•|x), and then apply M RL PIT or Self-Refine to get improved responses. The self-improvement process could be done iteratively during inference. The concrete inference procedure is shown in Algorithm 2.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2867
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "2",
+  "caption": "Self-Improvement During InferenceInput: Input x, an response yref sampled from RLHF-finetuned model M RL P",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 106
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": "We are the best at &lt;i&gt;designing and building the most thrilling roller coasters and rides&lt;/i&gt;.E PROMPTS E.1 PROMPTS FOR SELF-REFINESelf-Refine first enables LLMs to obtain feedback, and then asks LLMs to improve responses based on the feedback.E.1.1 ANTHROPIC/HH-RLHFReflection to get [Feedback]:Human: Consider the following context:",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 346
+ },
+ {
+  "figure_id": "fig_7",
+  "label": null,
+  "caption": "End of Assistant A's Answer----The Start of Assistant B's Answer--[OUTPUT B]--The End of Assistant B's Answer--",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 111
+ },
+ {
+  "figure_id": "fig_8",
+  "label": null,
+  "caption": "INPUT]: Human: Do other planets besides the Earth have wind?Assistant: Yes, of course! All planets have wind, though the speeds and strength of the wind vary from planet to planet. The Earth's wind is usually not very strong, but Mars has very strong winds. Jupiter has the strongest wind of any planet in our Solar System. Venus has very slow winds.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 350
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "5",
+  "caption": "Figure 5: The difference between win rate and lose rate (∆) among original responses, improved responses by Self-Refine, improved responses by PIT (SFT) and improved responses by PIT (SFT, CoT) under different temperatures on the synthetic dataset. ∆ &gt; 0 denotes the former response is better, and higher |∆| denotes higher performance gap. Evaluator: GPT-4 (on 128 examples).",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 379
+ }
+]

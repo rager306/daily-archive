@@ -1,0 +1,74 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Figure 1: A toy example of existing KG-augmented LLM paradigm.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 62
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": "Paths are the instances of a relation path z in the KG: p z = e 0 → r 1 e 1 → r 2 e 2 → ... → r l e l , where e i ∈ E denotes the i-th entity and r i denotes the i-th relation in the relation path z.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 199
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "2",
+  "caption": "Figure 2: The framework overview of PoG, which includes four key components: Task Decomposition, Path Exploration, Memory Updating, and Evaluation.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 147
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "3",
+  "caption": "Figure3shows a typical case from the testing results on CWQ dataset. We compare the results of PoG, ToG, and CoT in answering the question \"Who is in control of the place where the movie 'The Naked and the Dead' takes place?\". The underlying LLMs they used are all based on GPT-3.5. PoG initially identifies a flexible number of relations related to the topic entities. Specifically, for \"The Naked and the Dead\", PoG successfully discovers that the movie takes place in Panama, while for \"President of Panama\", the LLM thinks that only the relation \"government.government_office_or_title.jurisdiction\" is relevant. Upon retrieval, no information is found regarding the person in control of Panama. This triggers reflection as PoG realizes that it lacks sufficient information. With the memory, PoG refers to the sub-objective status and recognizes that it already knows the movie location (Panama) for sub-objective #1 but is unaware of the person in control of Panama for sub-objective #2. Based on the current reasoning paths, PoG makes a decision to execute self-correction and returns to exploring the relation not previously explored for \"President of Panama\". Due to the task decomposition, during the self-correction process, it becomes easier to identify the correct relation \"government.government_office_or_title.office_holders\" according to the sub-objectives. Through the guidance, memory, and reflection mechanisms, PoG successfully finds the correct answer, \"Juan Carlos Varela\". In contrast, ToG fails to identify the most relevant relation concerning \"President of Panama\" and continues exploring incorrect paths. This consumes a significant amount of time and ultimately leads to an erroneous answer due to the hallucination. CoT refuses to answer directly since the LLM realizes its lack of knowledge regarding the answer and requires additional information to be provided. From this analysis, it is evident that PoG outperforms ToG and CoT. PoG successfully",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 1977
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "Answer: [Through reflection to self-correct paths, the answer was found on the revised paths.] The movie \"The Naked and the Dead\" takes place in Panama. The President of Panama, Juan Carlos Varela, is in control of Panama based on the knowledge triplets. : 1. Identify the place where the movie \"The Naked and the Dead\" takes place; 2. Determine the authority or governing body in control of that place.Sub-Objective Status:1. The movie \"The Naked and the Dead\" takes place in Panama; 2. The President of Panama, Juan Carlos Varela is in control of Panama.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 556
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "4",
+  "caption": "Figure 4: The impact of exploration depth on the performance of PoG.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 68
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "5",
+  "caption": "Figure 5: The proportion of cases with reverse occurrences among all data.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 74
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "6",
+  "caption": "Figure 6: The proportion of correct answers obtained by PoG after self-correction.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 82
+ },
+ {
+  "figure_id": "fig_8",
+  "label": null,
+  "caption": "What genre of music favored by Claude Debussy appears in the movie Suzanne Farrell: Elusive Muse? CoT Answer: [The LLM hallucinates.] First, Claude Debussy favored the genre of music known as Impressionism. Second, the movie Suzanne Farrell: Elusive Muse features music from the Impressionist genre. ToG Paths: Claude Debussy → music.artist.genre → Incidental music → French opera → Art song → film.film.music → Under the Brooklyn Bridge → Suzanne Farrell: Elusive Muse → film.film.genre → Documentary film → film.director.film → Deborah Dickson → ••• PoG Paths: Claude Debussy → music.artist.genre Incidental music French opera Ballet Suzanne Farrell: Elusive Muse → film.film.genre The LLM hallucinates, inferring the answer with information of one condition.] Based on the given knowledge triplets, the genre of music favored by Claude Debussy that appears in the movie Suzanne Farrell: Elusive Muse is Incidental music. Answer: [Through adaptive breadth and sub-objectives, the answer was found.] The genre of music favored by Claude Debussy is Ballet, and the movie Suzanne Farrell: Elusive Muse falls under the genre Ballet. Sub-Objectives: 1. Identify the music favored by Claude Debussy; 2. Determine the genre of music featured in the movie Suzanne Farrell: Elusive Muse; 3. Select the music genres that meet the two criteria. Sub-Objective Status: 1. The genre of music favored by Claude Debussy is Ballet; 2. The movie Suzanne Farrell: Elusive Muse falls under the genre Ballet; 3. Ballet is the final answer.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1520
+ }
+]

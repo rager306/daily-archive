@@ -1,0 +1,90 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "2",
+  "caption": "Figure2: Log Probability Estimation in diffu-GRPO. After generating completion o from prompt q using full diffusion denoising (left), we compute token-level log probabilities with a single forward pass per masking pattern (mid) and use the log-probability of one-step unmasking as our estimation. During each policy gradient update, we apply a random masking pattern to the prompt, creating q ′ , while keeping the completion fully masked (right). The gradient of colors in the per-token log probabilities demonstrates that each distinct masking pattern yields a different estimate of the per-token log probabilities. This serves as a form of regularization for policy optimization, allowing more gradient updates per batch and thereby reducing the number of online generations needed for RL training.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 801
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "14",
+  "caption": "diffu-GRPO: Policy Gradient Optimization for Masked dLLMs Require: Reference model π ref , prompt distribution D, number of completions per prompt G, number of inner updates µ, prompt token masking probability p mask 1: Initialize π θ ← π ref 2: while not converged do 3:π θold ← π θ Sample a prompt q ∼ D 5: Sample G completions o i ∼ π θold (• | q), i ∈ [G]",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 359
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "6",
+  "caption": "For each o i , compute reward r i and advantage A k i (π θold ) using Equation (2)7:",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 84
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "1",
+  "caption": "Models, Tasks and Setups Models We employ LLaDA-8B-Instruct<ref type=\"bibr\" target=\"#b30\">[30]</ref>, a state-of-the-art open-sourced dLLM that has not undergone post-training, as our primary experimental testbed and baseline. We apply 3 post-training recipes to LLaDA-8B-Instruct: (a) SFT, (b) diffu-GRPO, (c) d1: applying diffu-GRPO on the checkpoint after SFT, where we refer to them as LLaDA+SFT, LLaDA+diffu-GRPO, and d1-LLaDA, respectively.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 446
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "34",
+  "caption": "Figure3: Comparison with state-of-the-art dLLMs and AR LLMs of similar size: d1-LLaDA achieves the highest GSM8K score and the second-highest MATH500 score. LLaDA results are from our evaluation using 0-shot. Scores for other models are from Dream<ref type=\"bibr\" target=\"#b48\">[48]</ref>, using 8-shot prompts for GSM8K and 4-shot for MATH. Note that here we report d1-LLaDA with task-specific RL training.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 407
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "56",
+  "caption": "Figure 5: Comparison of fixed vs. random masking across different policy optimization update values (µ). The first three figures show GSM8K correctness reward vs. the number of completions generated during RL training with different µ. Random masking consistently outperforms fixed masking. The rightmost panel compares all three µ values with random masking in terms of wall clock time, indicating higher efficiency from higher µ values.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 438
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "7",
+  "caption": "Figure7: Reward curves during RL training for the models in Table1, across four reasoning tasks. We compare LLaDA+diffu-GRPO and d1-LLaDA (+SFT + diffu-GRPO). d1-LLaDA consistently achieves higher or comparable reward trajectories.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 231
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "5522010",
+  "caption": "loaves are sold in the afternoon. &lt; /reasoning&gt;&lt;answer&gt; 5 &lt; /answer&gt; E.2 SFT on Reasoning Traces from S1K Model: LLaDA+SFT Generation Sequence Length: 512 Question: A 76-star flag has three rows of 8 stars two rows of 6 stars and the rest are 5-star rows. How many rows of 5 stars are there altogether on the flag? &lt;reasoning&gt; To determine the number of rows of 5 stars on the 76-star flag, we need to follow these steps: 1. Calculate the total number of stars in the three rows of 8 stars. 2. Calculate the total number of stars in the two rows of 6 stars. 3. Subtract the total number of stars in the first two rows from the total number of stars on the flag to find the number of stars in the remaining rows. 4. Divide the number of stars in the remaining rows by 5 to find the number of 5-star rows. Let's go through each step in detail: 1. Calculate the number of stars in the three rows of 8 stars: 3 × 8 = 24 So, there are 24 stars in the three rows of 8 stars. 2. Calculate the number of stars in the two rows of 6 stars: 2 × 6 = 12 So, there are 12 stars in the two rows of 6 stars. 3. Subtract the total number of stars in the first two rows from the total number of stars on the flag: 76 -24 -12 = 40 So, there are 40 stars in the remaining rows. 4. Divide the number of stars in the remaining rows by 5 to find the number of 5-star rows: are 8 rows of 5 stars. However, we need to check if the number of rows is 8, as if there are 8 rows of 5 stars, the total number of stars would be: 8 × 5 = 40 This matches the number of stars in the remaining rows, which is 40. Therefore, the number of rows of 5 stars is indeed 8. Thus, the number of rows of 5 stars is: 8 &lt; /reasoning&gt;&lt;answer&gt; 8 &lt; /answer&gt; Model: LLaDA+SFT Generation Sequence Length: 512 Question: A bakery produces 60 loaves of bread each day. Two-thirds of the loaves are sold in the morning and half of what is left is sold equally in the afternoon and evening. How many loaves of bread are sold in the afternoon? &lt;reasoning&gt;To determine the number of loaves of bread sold in the afternoon, we need to follow these steps: 1. Calculate the number of loaves sold in the morning. 2. Determine the number of loaves remaining after the morning sales. 3. Calculate the number of loaves sold in the afternoon and evening. 4. Identify the number of loaves sold in the afternoon. First. Calculate the number of loaves sold in the morning: Loaves sold in the morning = 2 3 × 60 = 40 Next. Determine the number of loaves remaining after the morning sales: Loaves remaining after morning sales = 60 -40 = 20Then. Calculate the number of loaves sold in the afternoon and evening:Loaves sold in the afternoon and evening = 1",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2731
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "2201040",
+  "caption": "/reasoning&gt; &lt;answer&gt; 10 &lt; /answer&gt; E.3 diffu-GRPO Model: LLaDA+diffu-GRPO Generation Sequence Length: 512 Question: A 76-star flag has three rows of 8 stars two rows of 6 stars and the rest are 5-star rows. How many rows of 5 stars are there altogether on the flag? &lt;reasoning&gt; To determine the number of rows of 5 stars on the flag, we first need to calculate the total number of stars in the rows with 8 stars and 6 stars. 1. There are number of rows with 8 stars: 3 × 8 = 24 stars. 2. There are number of rows with 6 stars: 2 × 6 = 12 stars. 3. The these rows rows together have 24 + 12 = 36 stars. Next, we need the total number of stars on the flag, which is 76. We subtract the number of stars in the rows with 8 stars and 6 stars from the total number of stars: 76 -36 = 40 So, there are 40 stars in the rows with 5 stars. To find the number of rows of 5 stars, we divide the number of stars in these rows by the number of stars per row: Therefore, there are 8 rows of 5 stars on the flag. &lt; /reasoning&gt;&lt;answer&gt; 8 &lt; /answer&gt; Model: LLaDA+diffu-GRPO Generation Sequence Length: 512 Question: A bakery produces 60 loaves of bread each day. Two-thirds of the loaves are sold in the morning and half of what is left is sold equally in the afternoon and evening. How many loaves of bread are sold in the afternoon?The bakery produces 60 loaves of bread each day. Two-thirds of the loaves are sold in the morning, so we calculate2  3 × 60 = 40 loaves sold in the morning. After the morning sales, there are 60 -40 = 20 loaves left. Half of these remaining loaves are sold equally in the afternoon and evening, so we calculate 1 2 × 20 = 10 loaves sold in the afternoon. Therefore&lt; /reasoning&gt;&lt;answer&gt; 10 &lt; /answer&gt; E.4 d1-LLaDA Model: d1-LLaDA Generation Sequence Length: 512 Question: A 76-star flag has three rows of 8 stars two rows of 6 stars and the rest are 5-star rows. How many rows of 5 stars are there altogether on the flag? &lt;reasoning&gt; To determine the number of rows of 5 stars on a 76-star flag, we need to follow these steps: 1. Calculate the total number of stars in the three rows of 8 stars. 2. Calculate the total number of stars in the two rows of 6 stars. 3. Subtract the total number of stars in the first two rows from the total number of stars on the flag to find the number of stars in the remaining rows. 4. Divide the number of stars in the remaining rows by the number of stars per row to find the number of rows of 5 stars. Let's go through each step in detail: 1. The total number of stars in the three rows of 8 stars is: 3 × 8 = 24 2. The total number of stars in the two rows of 6 stars is: 2 × 6 = 12 3. The total number of stars in the first two rows is: 24 + 12 = 36 4. Subtract the total number of stars in the first two rows from the total number of stars on the flag: 76 -36 = Divide the number of stars in the remaining rows by the number of stars per row to find the number of rows of 5 stars:",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2998
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "5",
+  "caption": "star rows. Hence, the number of 5-star rows is 40/5. &lt; /reasoning&gt; &lt;answer&gt; 8 &lt; /answer&gt; Model: LLaDA-8B-Instruct Generation Sequence Length: 512 Question: A 76-star flag has three rows of 8 stars two rows of 6 stars and the rest are 5-star rows. How many rows of 5 stars are there altogether on the flag? &lt;reasoning&gt; To determine the number of rows of 5 stars on the 76-star flag, we need to follow these steps: 1. Calculate the total number of stars in the three rows of 8 stars. 2. Calculate the total number of stars in the two rows of 6 stars. 3. Subtract the total number of stars in the first two rows from the total number of stars on the flag to find the number of stars in the 5-star rows. 4. Divide the number of stars in the 5-star rows by 5 to find the number of 5-star rows rows. Let's go through each step in detail: 1. The total number of stars in the three rows of 8 stars is: 3 × 8 = 24 2. The total number of stars in the two rows of 6 stars is: 2 × 6 = 12 3. The total number of stars in the first two rows is: 24 + 12 = 36 4. The total number of stars on the flag is 76. Therefore, the number of stars in the 5-star rows is: 76 -36 = 40 5. The number of 5-star rows is the number of stars in the 5-star rows divided by 5: number of rows of 5 stars on the flag is 8 &lt; /reasoning&gt; Model: LLaDA-8B-Instruct Generation Sequence Length: 512 Question: A bakery produces 60 loaves of bread each day. Two-thirds of the loaves are sold in the morning and half of what is left is sold equally in the afternoon and evening. How many loaves of bread are sold in the afternoon?",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1615
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "203",
+  "caption": "However, it seems there was a mistake in the calculation. Let's recheck the steps. 1. Total number of puppies = 8 + 12 = 20. 2. Total number of puppies with spots = 3 + 4 = 7.3. Percentage of puppies with spots =7 20 × 100. Let's calculate the percentage correctly: The calculation answer. &lt; /reasoning&gt;&lt;answer&gt; 35 &lt; /answer&gt; Model: d1-LLaDA Generation Sequence Length: 512 Question: A bakery produces 60 loaves of bread each day. Two-thirds of the loaves are sold in the morning and half of what is left is sold equally in the afternoon and evening. How many loaves of bread are sold in the afternoon? &lt;reasoning&gt; To determine the number of loaves of bread sold in the afternoon, we need to follow these steps: 1. Calculate the number of loaves sold in the morning. 2. Determine the number of loaves remaining after the morning sale. 3. Calculate the number of loaves sold in the afternoon and evening. 4. Identify the number of loaves sold in the afternoon. Let's start by calculating the number of loaves sold in the morning. The bakery sells two-thirds of the loaves in the morning. Loaves sold in the morning = 2 60 = 40",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1149
+ }
+]

@@ -1,0 +1,90 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Figure 1. Workflow of the M 3 HF method. Each generation k ∈ (0, .., K -1) begins with Multi-agent RL training. Agents generate rollout videos τ k for human evaluation. Human feedback u k is parsed by a Large Language Model (LLM) into agent-specific instructions. The LLM then selects appropriate reward function templates f ∈ F and parameterizes them based on the parsed feedback. New reward functions R i k (s, a) are added to each agent's reward function pool Pi, with weights wi,m adjusted using performance-based criteria. The updated reward functions Ri k+1 (s, a) guide the next generation of agents' training, creating a loop of agents learning from feedback.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 667
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "2",
+  "caption": "Figure 2. The Overcooked Environment. (a)-(c) The three different kitchen layouts with increasing difficulty: (a) Overcooked-A offers ample movable space; (b) Overcooked-B forces agents divided on both sides to cooperate due to the partitioned kitchen; (c) Overcooked-C has less movable space compared to A. (d)-(e) The two salad recipes: In both recipes, the corresponding chopped foods must be combined on a single plate and delivered. To facilitate training, we use macro-actions based on (Xiao et al., 2022), where the agents' actions are simplified. More details refer to Section 5.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 587
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "3",
+  "caption": "Figure 3. Performance comparison of M 3 HF against baseline methods across different Overcooked environments and recipes. The plots show the mean episode return over 1000 training iterations (approximately 25k episodes) for (a-c) Lettuce-Tomato salad recipe and (d-f) Lettuce-Onion-Tomato salad recipe in Overcooked layouts A, B, and C, respectively. M 3 HF consistently outperforms the baseline methods (Mac-based Baseline, IPPO, MAPPO) across all scenarios, with performance improvements becoming more pronounced in more complex environments and recipes. Vertical lines indicate the start of each generation where human feedback is incorporated. All experiments are run with three random seeds, and the shaded areas represent the standard deviation.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 751
+ },
+ {
+  "figure_id": "fig_3",
+  "label": null,
+  "caption": "r ori i k+1 is the performance of the policy trained using the new reward function Ri k+1 (s, a) (after processing human feedback in generation k) when evaluated on R i ori , and r ori i k is the performance of the policy trained using the previous reward function R i k (s, a) (before processing human feedback in generation k) when evaluated on R i",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 350
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "3. Important: Blue Agent mixesonion and tomato salad, but also needs to mix sliced ? ? lettuce.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 95
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "a",
+  "caption": "Example rollout in Generation 3 \" The agent s s ucces sf ul l y compl et e t he t as k of c r eat i ng t wo l et t uc e, oni on, and t omat o sal ads. Not hi ng t o i mpr ov e\"",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 176
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": "Overcooked-B : Lettuce-Onion-Tomato Salad",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 41
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "4",
+  "caption": "Figure 4. Impact of Mixed-Quality Feedback on Agent Performance. (a) An example is the rollout in Generation 3, where agents exhibit suboptimal behavior due to poor coordination and inefficient task execution. (b) Low-quality feedback provided to the agents, inaccurately stating that they successfully completed the task and offering no constructive guidance for improvement. (c) Performance comparison on Overcooked-B with the Lettuce-Onion-Tomato salad recipe under mixed quality feedback conditions.",
+  "ref_count": 5,
+  "has_graphic": true,
+  "caption_chars": 503
+ },
+ {
+  "figure_id": "fig_8",
+  "label": null,
+  "caption": "otherwise 27: Update final reward function (Eq. 12): Rk+1 i (s, a) = M m=1 w i,m • R i,m (s, a) 28:",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 99
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "5",
+  "caption": "Google Research Football Environment (5-vs-5 Full Game): We evaluate M3HF in the GRF 5-vs-5 HARD Built-in AI scenario, a complex multi-agent benchmark widely used in prior work<ref type=\"bibr\" target=\"#b18\">(Kurach et al., 2020</ref>",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 233
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "6",
+  "caption": ";<ref type=\"bibr\" target=\"#b39\">Song et al., 2024)</ref>. Each team controls 5 players (10 agents total); we always control the yellow-shirt (left) team, which initiates the kickoff. Each episode lasts 3000 steps, with the second half beginning at step 1501. The simulation is accelerated: 1 in-game minute equals 3 real-world seconds, so a full 90-minute match takes 4.5 minutes. For human feedback collection, we typically present the first attacking phase (60s rollout), corresponding to 20 in-game minutes. (a) shows a rollout snapshot during the opening phase. (b) depicts the initial player formation around the center circle. (c) presents the full environment configuration. Observations follow a dictionary structure with keys \"obs\" (state features) and \"controlled player index\" (agent IDs: 0-4 for yellow team, 5-9 for blue). The action space is [Discrete(19)], where each agent selects one of 19 discrete actions (e.g., pass, sprint, tackle) represented as a one-hot 19D vector.Performance Comparison of M 3 HF vs. Baselines in GRF 5-vs-5 Full Game. We evaluate M³HF in the GRF 5v5-HARD setting, a challenging multi-agent benchmark; Baselines include IPPO, MAPPO, and macro-action-based MACCS; Metrics include Win Rate, Goal Difference, Total Move (indicating spatial coordination), Good Shot (quality shot attempts), and Interception (defensive awareness); M³HF outperforms all baselines in most metrics, particularly in Win Rate and coordination-related metrics like Total Move",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1490
+ }
+]

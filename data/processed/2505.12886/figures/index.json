@@ -1,0 +1,106 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Figure 1: The illustration of the calculation processes for the Reasoning Score (Eq. 2), CV Score (Eq. 3), and Attention Score (Eq. 4).",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 135
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "3",
+  "caption": "Wait. … So, to find the amount Liam should pay now, we just calculate the new total cost. Step 44: … Suppose this year's price is $100 ... So, if this year's prices are P, last year's prices were 0.9P… So, to find how much Liam should pay now, it's P. Step 45: But the question is asking \"how much should Liam pay now, assuming that due to inflation, prices were 10% cheaper last year\". Step 73: But the question asks how much he should pay now, which is the new total cost. So, the final answer is $261.9.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 506
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "Pattern Matching) → Step 24Step 23: ... So, perhaps the question is asking for the amount he should pay now considering the inflation, which would be the last year's total multiplied by 1.10.Step 24: … So, last year's total is $261.90, and this year's is $291. So, if the question is asking how much should he pay now, it's $291.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 329
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "3",
+  "caption": "Figure 3: (a) Reasoning Score validation on GSM-NoOp. (b) Evaluation of Pattern #1 (early fluctuations), and (c) Pattern #2 (misguidedly attention) on ReTruthQA. Asterisks indicate statistical significance based on a t-test: * for p-value &lt; 0.05, and *** for p-value &lt; 0.001.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 281
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "4",
+  "caption": "Figure 4: Analysis of Pattern #1: (a) Consistency Analysis (Q1); (b) Accuracy Comparison in Rising-2 triples (Q2); (c) Reasoning score vs. perplexity and (d) Perplexity of Rising-2 vs. Stable (Q3). by:",
+  "ref_count": 4,
+  "has_graphic": false,
+  "caption_chars": 201
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "4",
+  "caption": "b) shows that while c 2 is often correct, c 3 introduces errors, confirming that excessively high reasoning scores reliably signal overthinking. Prompts of Q1 and Q2 are shown in Appendix F.To investigate Q3, we firstly analyze the correlation between reasoning depth and perplexity. As shown in Figure4(c), reasoning steps with higher R score generally exhibit lower perplexity, indicating more certainty outputs. However, Figure4(d) reveals that in Rising-2 triples, c 3 steps, despite higher reasoning scores, have higher perplexity than those in stable triples, suggesting that overthinking may produce internally unstable generations. We term this phenomenon spurious verification, where the model performs misguided validation driven by outcome-based reward optimization. This insight leads us to identify a new hallucination pattern: Pattern #3: Overthinking steps exhibit a positive correlation between R score and perplexity. More details are provided in Appendix E.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 975
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": "Hallucination DetectionBuilding upon the patterns uncovered in our empirical study, we propose the Reasoning Hallucination Detection algorithm (RHD). Our approach leverages the step-level Reasoning Score R score to quantify thinking depth throughout the reasoning trace, and incorporates three identified indicators of hallucination: (1) Pattern #1: large fluctuations in reasoning scores during early steps, (2) Pattern #2: incorrect backtracking to earlier shallow or overthinking steps in later stages, and (3) Pattern #3: overthinking behavior where R score and perplexity exhibit a positive correlation.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 608
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "5",
+  "caption": "Figure 5: Interface Display of the Data Annotation Platform.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 60
+ },
+ {
+  "figure_id": "fig_8",
+  "label": null,
+  "caption": "Please evaluate if the following reasoning step is being misled by the given No-Op phrase. Provide a score between 0 and 1, where: a. 0 means the step is not misled by the No-Op phrase at all b. 1 means the step is completely misled by the No-Op phrase c. Values in between indicate partial misleading Note: Simply mentioning the No-Op phrase does not count as being misled. If the step mentions the No-Op phrase but explicitly rejects or explains why it is irrelevant to solving the problem, this should be scored as 0. Reasoning step: {Reasoning Step} No-Op phrase: {NoOp Phrase} Please provide only a number between 0 and 1, with up to 2 decimal places, wrapped in \\boxed{}. For example: \\boxed{0.85} E Details of Understanding the Mechanisms Behind Reasoning Hallucination Patterns In this section, we focus on analyzing the underlying cause of Pattern #1, as Pattern #2 has already been explained through the attention behavior of LRMs in the previous section. Pattern #1 highlights that hallucinated reasoning traces tend to exhibit larger fluctuations in reasoning depth, particularly in the early steps. Inspired by our preliminary analysis in § 3.2.1, we hypothesize that this may stem from the model's built-in verification capability. However, several key questions remain: Q1: What triggers verification behavior in LRMs? Q2: Do excessively high reasoning scores genuinely indicate overthinking? Q3: If Q2 holds, what factors lead to the emergence of such overthinking steps? To answer these questions, we construct reasoning step triples (c 1 , c 2 , c 3 ) with different properties drawn from reasoning traces: Stable: The first type consists of triples from truthful traces where adjacent steps differ in R score by less than 0.1, representing stable reasoning. Rising-1: The second type contains hallucinated triples where R score (c 3 ) -R score (c 2 ) &gt; 1 and R score (c 3 ) &lt; 4, used to analyze verification triggered by shallow pattern-matching. Rising-2: The third type is similar to Rising-1 but with R score (c 3 ) &gt; 4, aimed at understanding overthinking induced by verification.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2112
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "6",
+  "caption": "Figure 6: Evaluation of Pattern #1 and Pattern #2 on ReTruthQA. Asterisks indicate statistical significance based on a t-test: * for p-value &lt; 0.05, and *** for p-value &lt; 0.001.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 183
+ },
+ {
+  "figure_id": "fig_10",
+  "label": null,
+  "caption": "α 1 = 0, α 2 = 0.4, α 3 = 0, and α 4 = 0.3 for the Multi-Trace Ranking setting, and α 1 = 0, α 2 = 0.9, α 3 = 0.8, and α 4 = 0.4 for the Binary Detection setting. In the Science domain, the best weights are α 1 = 0.1, α 2 = 1.0, α 3 = 0, and α 4 = 0 for Multi-Trace Ranking, and α 1 = 0, α 2 = 0.7, α 3 = 0.2, and α 4 = 0 for Binary Detection. In the MultiHopQA domain, the best weights are α 1 = 0.4, α 2 = 0.1, α 3 = 0.6, and α 4 = 0.4 for Multi-Trace Ranking, and α 1 = 0, α 2 = 0, α 3 = 0.3, and α 4 = 0 for Binary Detection. For R1-14B, the best weights in the Math domain are α 1 = 0.3, α 2 = 0.7, α 3 = 0.1, and α 4 = 0.1 for Multi-Trace Ranking, and α 1 = 0, α 2 = 0.3, α 3 = 1.0, and α 4 = 0.2 for Binary Detection. In the Science domain, we obtain α 1 = 0, α 2 = 0.5, α 3 = 0.5, and α 4 = 0.1 for Multi-Trace Ranking, and α 1 = 0, α 2 = 0, α 3 = 0.8, and α 4 = 0.1 for Binary Detection. In the MultiHopQA domain, the optimal weights are α 1 = 0.7, α 2 = 0.9, α 3 = 0.1, and α 4 = 0.0 for Multi-Trace Ranking, and α 1 = 1.0, α 2 = 0, α 3 = 0.1, and α 4 = 0.1 for Binary Detection.Candidate reasoning score layers J are selected from {14, 16, 18, 20, 22, 24, 26} for R1-7B and from {32, 36, 40, 42, 44, 46} for R1-14B, while attention score layers L are fixed across models as {1, 3, 5, 7, 9, 11, 13}.The models used in our experiments, DeepSeek-R1-Distill-Qwen-7B and DeepSeek-R1-Distill-Qwen-14B, are publicly available",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1429
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "7",
+  "caption": "We conduct a sensitivity analysis of each module in RHD, using R1-7B on the Math and MultiHopQA subsets of ReTruthQA. We vary the weights assigned to different components and observe the resulting performance on the MC3 metric.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 227
+ },
+ {
+  "figure_id": "fig_12",
+  "label": "8",
+  "caption": "The fine-tuned model, DeepSeek-R1-Distill-Qwen-1.5B, is publicly available at https://huggingface.co/ deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B.We conduct a sensitivity analysis on the weight of the reasoning score reward in GRPO-R, evaluating its impact on the accuracy metric. Experiments are carried out on both Qwen2.5-1.5B-Instruct and DeepSeek-R1-1.5B by varying the weight parameter α.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 392
+ }
+]

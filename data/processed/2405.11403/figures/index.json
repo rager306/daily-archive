@@ -1,0 +1,66 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Figure1: Overview of MapCoder (top). It starts with a retrieval agent that generates relevant examples itself, followed by planning, coding, and iterative debugging agents. Our dynamic traversal (bottom) considers the confidence of the generated plans as their reward scores and leverages them to guide the code generation accordingly.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 335
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": ", the int function truncates the floating point number, making it a lower integer. However, according to the problem, the number should be an upper integer. Direct def sum_squares(lst): return sum((int(x) + (x % 1 &gt; 0))**2 for x in lst) def sum_squares(lst): return sum(int(x + 0.5)**2 for x in lst) def sum_squares(lst): return sum(round(x)**2 for x in lst) Failed Case: assert sum_squares([1.4,4.2,0]) == 29 Explanation: This implementation rounds the given number but the problem requirement is ceiling. Reflexion failed to improve the code because it focused on self-generated test case assert sum_squares ([-2.4, 1, 1]) == 6 instead of considering all the sample I/O. For this particular test case, rounding also works fine thus ending up with a wrong implementation.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 775
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "lst: total += (int(num) ** 2) return total Testing with all the Sample I/O. But it failed in the following sample I/O: assert sum_squares([1.4,4.2,0]) == 29 Debugging Agent: (Fix code using the above-mentioned plan and test report) import math def sum_squares(lst): total = 0 for num in lst: total += (math.ceil(num) ** 2) return total All sample input-output pairs now passed. The code is evaluated against private test cases, and it passed all of them as well. MapCoder def sum_squares(lst): total = 0 for num in lst: total += (int(num) + (1 if num % 1 &gt; 0 else 0)) ** 2 return total Failed Case: assert sum_squares([-2.4,1,1]) == 6 Explanation: After applying the int function it adds 1 if the number is a floating point that will not work for negative floating-",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 768
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "4",
+  "caption": "Figure 4: Example problem and solution generation using Direct, CoT, Reflexion, and MapCoder prompts. MapCoder explores high-utility plans first and uniquely features a plan-derived debugging for enhanced bug fixing. HumanEval (Chen et al., 2021a), HumanEval-ET (Dong et al., 2023a), EvalPlus (Liu et al., 2023), MBPP) (Austin et al., 2021), and MBPP-ET (Dong et al., 2023a). HumanEval-ET, EvalPlus extend HumanEval and MBPP-ET comprehends MBPP by incorporating more test cases. The problem set size of HumanEval and MBPP (and their extensions) are 164 and 397, respectively. Due to the absence of sample I/O in MBPP and MBPP-ET, our approach for code moderation involves randomly removing one test-case from MBPP-ET for each problem and provide this test-case as a sample I/O for the problem. Importantly, this removed test-case is carefully selected to ensure mutual exclusivity from the hidden test sets in MBPP and MBPP-ET. Three competitive programming datasets are: Automated Programming Progress Standard (APPS), xCodeEval (Khan et al., 2023), and CodeContest, where we have used 150, 106, and 156 problems, respectively, in our experiments.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 1148
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "5",
+  "caption": "Figure 5: The number of correct answers wrt algorithm types (tags) and difficulty levels (xCodeEval dataset).",
+  "ref_count": 3,
+  "has_graphic": true,
+  "caption_chars": 109
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "6",
+  "caption": "Figure 6: Performance vs problem types (APPS).",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 46
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "7",
+  "caption": "Figure 7: The number of correct answers wrt different programming languages (xCodeEval dataset).",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 96
+ },
+ {
+  "figure_id": "fig_7",
+  "label": null,
+  "caption": "# Relevant Algorithm to solve the next problem: {Algorithm retrieved by Retrieval Agent} ## Planning: {Planning from previous step} ## Code: {Generated code from previous step} ## Modified Planning: ## Let's think step by step to modify {language} Code for solving this problem.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 278
+ }
+]

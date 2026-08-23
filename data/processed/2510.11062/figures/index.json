@@ -1,0 +1,106 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Figure 1: MAS+AT-GRPO vs. Single-agent+GRPO. The gray line denotes the prompt-only MAS baseline. challenges. First, training a MAS may require concurrently launching multiple models, orchestrating inter-agent environment interactions, and performing independent on-policy parameter updates. But most existing on-policy RL frameworks for LLM agents only support a single model (Volcano<ref type=\"bibr\" target=\"#b36\">Engine, 2025;</ref><ref type=\"bibr\" target=\"#b31\">Sheng et al., 2024;</ref><ref type=\"bibr\" target=\"#b11\">Fu et al., 2025)</ref>. Second, rollouts from MAS are difficult to group. The advantage must be conditioned on interaction history and role to ensure fair credit assignment. Group-based RL objectives designed for a single agent<ref type=\"bibr\" target=\"#b36\">(Volcano Engine, 2025;</ref><ref type=\"bibr\" target=\"#b27\">Qian et al., 2025;</ref><ref type=\"bibr\" target=\"#b10\">Feng et al., 2025)</ref> are not directly applicable to MAS.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 953
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "2",
+  "caption": "Figure 2: MAS workflow across different domains. (a) Role-based coordination: code generation via a coder-tester loop. (b) Different task-specific workflows for Game/Plan, Code, and Math; see Sec. 5.1 and Appendix C.2 for workflow details.",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 239
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "<ref type=\"bibr\" target=\"#b10\">Feng et al., 2025;</ref> Wang et al., 2025b;<ref type=\"bibr\" target=\"#b27\">Qian et al., 2025;</ref><ref type=\"bibr\" target=\"#b18\">Hu et al., 2025)</ref>. These approaches, however, predominantly operate within a single-agent framework. While a growing body of work attempts to extend RL to Multi-Agent Systems (MAS), most efforts remain confined to limited interaction settings or fixed role structures. For instance, CURE (Wanget al., 2025a) focuses on co-evolving a Coder and Unit-Tester using a role-sharing policy specifically for code generation. Similarly, SPIRAL (Liu et al., 2025) employs self-play in zero-sum games using a single LLM, while MHGPO (Chen et al., 2025a) targets retrieval-augmented generation. MAPoRL (Park et al., 2025a;b) and CoRY Ma et al. (2024) train LLMs within fixed, homogeneous-role debate workflows. More recent works also exhibit limitations: MARFT Liao et al. (2025) 1 restricts agents to singleturn sequential interactions, and MARTI Zhang et al. (2025) merely introduces basic single-agent RL algorithms (e.g., GRPO) to the MAS setting.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1105
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "3",
+  "caption": "Figure 3: Two sampling schemes. (a) In parallel sampling, trajectories are sampled but incomparable, leading to groups of size 1. (b) In tree sampling, branching at each turn forms a valid comparison group of size K.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 216
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "model batch B m , loss L(θ (m) ) on B m using Eq. 2 and update policy m. 20:",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 76
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "4",
+  "caption": "Figure 4: MAS training system. Each LLM m has a GPU-pinned model pool with a Rollout-Worker and an UpdateWorker. A CPU environment pool hosts envworkers that execute environment steps. Trajectories are routed to the corresponding UpdateWorker.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 243
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "5",
+  "caption": "Figure 5: (a) The system aggregates outputs from an ensemble of N Reasoners and M Tool-Users into a Judge. The total agent count scales as M + N + 1, allowing for flexible resource allocation. (b) Evaluation on AIME24 (using Qwen3-8B).",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 235
+ },
+ {
+  "figure_id": "fig_7",
+  "label": null,
+  "caption": "Evolution of Average Turns to Alignment.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 40
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "6",
+  "caption": "Figure 6: (a) Evolution of standardized rewards for the Tool and Plan agents in the role-specific MAS on Plan-Path with Qwen3 1.7B. Shaded bands show variability across runs. (b) Evolution of the average turns required to solve tasks.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 234
+ },
+ {
+  "figure_id": "fig_9",
+  "label": null,
+  "caption": "You will receive: * The original task description * The Tool Agent's code * The code execution output (a JSON grid or JSON steps) Your job is to reason carefully, decide the final Sudoku solution, and format your response EXACTLY as specified. Instructions: * Read the task, inspect the code, and verify the execution output against the Sudoku rules: rows, columns, and sub-grids must contain unique digits in 1..n. * If the tool's output is a complete, valid solution, adopt it. * If it is incomplete or violates constraints, correct it or provide your own. * Keep reasoning concise but explicit: explain why the final result is valid. FORMATTING IS MANDATORY. Give the final answer AFTER the line that begins with ####. You may return EITHER: -a completed grid as JSON, OR -a JSON list of fill steps (r,c,v), 1-based indices. Examples: #### [[5,3,4,6,7,8,9,1,2], ..., [3,4,5,2,8,6,1,7,9]] #### [[1,3,4],[2,1,6],[9,9,1]] Output: Final Sudoku answer (completed grid JSON or JSON steps). D PLAN-PATH MAS WORKFLOW PHASE 1: GENERATION",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1031
+ },
+ {
+  "figure_id": "fig_10",
+  "label": null,
+  "caption": "N/N max , which smoothly reduces to the single-wave case when N ≤ N max . G.2 TRAINING-TIME COMPLEXITY The computational bottleneck during training lies in the forward and backward passes for the collected candidate actions. For E environments, N agents, and T turns, with K samples each, the total rollout size is |D| MAS = E • N • T • K. The proposed agent-and turn-wise grouping introduces only a lightweight hashing overhead of O(|D| MAS ), which is negligible compared to the token-level model execution O(|D| MAS • L • C model ). Therefore, the complexity relationship between our multi-agent approach and the standard singleagent GRPO (|D| SA = E • T • K) is defined by the ratio of their rollout sizes:",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 710
+ },
+ {
+  "figure_id": "fig_11",
+  "label": null,
+  "caption": "wall, . free, A agent, B box, G goal Start: A(8,1), B(6,6), G(1,8) -1-indexed (row,col). Output: Initial grid state for the MAS. Preprint Tool Agent (Box Path via BFS)",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 167
+ },
+ {
+  "figure_id": "fig_12",
+  "label": null,
+  "caption": "2. Baselines. We evaluate five variants (all initialized from the same base model): (a) Single Agent (prompt-only): one frozen LLM solves the task end-to-end; (b) Single Agent + GRPO: as (a) but trained with GRPO (Shao et al., 2024); (c) MAS (prompt-only): role-specialized prompting over a frozen, role-sharing backbone; (d) MAS + RL (role-sharing policy): all roles share one policy and pooled trajectories update it jointly; (e) MAS + RL (role-specialized policies): samples are routed by role and each policy is optimized independently (no parameter sharing).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 563
+ }
+]

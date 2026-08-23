@@ -1,0 +1,130 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "2",
+  "caption": "Figure 2: Scideator is a human-LLM compound system for facet-based scientific ideation. 1) The user provides an ideation topic and input papers. 2) Scideator retrieves analogous papers and extracts facets from both input and analogous papers. The same faceted representation -purpose and mechanism -flows across all stages. The evaluation facets are omitted in the figure for clarity.3) The user selects facets or adds their own; if no selection is made, the system selects automatically. 4) Scideator generates ideas by recombining selected facets through analogy. 5) The user selects an idea to evaluate. 6) Scideator classifies the idea as \"novel\" or \"not novel\" with a rationale referencing specific papers. The user reviews the classification and can adjust it. If \"not novel,\" Scideator suggests alternatives by swapping one facet. The user can adopt a suggestion and return to step 3, creating an iterative loop.",
+  "ref_count": 4,
+  "has_graphic": true,
+  "caption_chars": 919
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "3",
+  "caption": "Figure 3: (a) Participants more often opted to select their own facets rather than let the LLM select for them. (b) Participants used input facets and facets nearer to the input more than facets farther from the input.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 218
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "4",
+  "caption": "Figure 4: Participants' average perceived idea novelty before (a) and after (b) utilizing their assigned tool for idea novelty evaluation.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 138
+ },
+ {
+  "figure_id": "fig_3",
+  "label": null,
+  "caption": "published NLP papers. The classifier prompt and in-context examples are held constant; only the retrieval pipeline varies. We use o3-mini for novelty classification and gpt-4o for re-ranking, comparing five configurations: (i) Complete System -keyword + snippet retrieval, embedding filtering, facet-based RankGPT; (ii) Relevance RankGPT -facet-based re-ranker replaced with general-relevance re-ranking [61]; (iii) Embedding Filtering -no LLM re-ranker; (iv) Snippet Retrieval -top-𝑘 from snippet search only; (v) Keyword Retrieval -top-𝑘 from keyword search only.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 565
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "5",
+  "caption": "Figure 5: (a) The difference between participants' unweighted CSI scores for Scideator versus the baseline tool. Participants experienced significantly more creativity support with Scideator. (b) For each CSI factor, the difference between participants' ratings for Scideator versus the baseline tool. (c) How many times each CSI factor wins against other factors in terms of what is most important to participants while generating ideas.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 438
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "6",
+  "caption": "Figure6: Expert-labeled novel example used as an in-context demonstration. The retrieved papers address related aspects of peer review (corpora, automation, sentiment) but none specifically tackle the proposed task of prioritizing comments by likelihood of leading to revisions -the gap the expert identifies.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 309
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "7",
+  "caption": "Figure 7: Expert-labeled not-novel example. Unlike Example 1, the top retrieved papers directly overlap with the proposed idea's core contribution -aligning LLM evaluation with human preferences through iterative feedback -making the overlap straightforward to identify.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 270
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "8",
+  "caption": "Figure8: Scideator's novelty assessment modal for one idea, which presents the idea (a) as well as its facets (b), related papers (c), adjustable novelty classification (d), and adjustable classification reason (e). When the idea is classified as \"not novel,\" the system provides a set of three suggestions for more novel ideas (f), each of which replace one of the idea's original facets. The ideation topic here is human-AI collaboration in art.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 447
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "9",
+  "caption": "Figure 9: Scideator's cold start. Above, the user selects or adds facets to generate ideas. They can also generate more facets to consider, and add custom instructions for the idea generation. Below, the user peruses their ideas and evaluates an idea for novelty by clicking the search icon to its left. The ideation topic here is human-AI collaboration in art.",
+  "ref_count": 3,
+  "has_graphic": true,
+  "caption_chars": 361
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "10",
+  "caption": "Figure 10: The cold start of the baseline UI for the user study's idea-generation task. The ideation topic here is human-AI collaboration in art.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 145
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "11",
+  "caption": "Figure11: The Analogous Facet Generation and Paper Retrieval module.For a set of input papers, Scideator uses Semantic Scholar's API to retrieve similar papers (very near). It uses the input and very-near papers to create a summary of relevant works. Next, the tool extracts key facets from the input papers and determines the input papers' overarching purpose and mechanism, which it uses to come up with three queries for papers with an analogous purpose and mechanism. The queries are for analogous papers with varying distances from the input paper: same topic (near), same subarea (far), and different subarea (very far). Those queries are fed to the Semantic Scholar API to retrieve analogous papers. Finally, the facets of all the analogous papers are extracted by the LLM.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 780
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "12",
+  "caption": "Figure 12: The Idea Novelty Checker module follows a retrieve-then-re-rank approach for novelty evaluation. In Step 1, it gathers a comprehensive set of papers relevant to an idea. This includes papers originally used to generate the idea, related papers, and additional papers retrieved through keyword and title searches extracted directly from the idea, as well as snippet searches using the entire idea as input. In Step 2, a two-stage re-ranking process is applied, where an embedding-based ranking strategy filters the large collection to top-𝑁 papers, followed by a facet-based LLM re-ranker to identify the top-𝑘 most relevant papers. In Step 3, these top-𝑘 papers are used to assess the idea's novelty, guided by in-context examples that evaluate novelty with grounded reasoning. In Step 4, if an idea is classified as \"not novel\" by the tool or user, the LLM generates three idea suggestions, each replacing a different facet in the original idea in order to make the idea more novel compared to the relevant papers.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 1026
+ },
+ {
+  "figure_id": "fig_12",
+  "label": null,
+  "caption": null,
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 0
+ },
+ {
+  "figure_id": "fig_13",
+  "label": "1",
+  "caption": "Grounding: Read the summary of prior work and paper details to understand what exists.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 86
+ },
+ {
+  "figure_id": "fig_14",
+  "label": "5",
+  "caption": "Elaborate with self-critique: For each selected analogy, produce: (a) an \"imaginative twist\" statement; (b) a relevance justification to the user's topic; (c) an initial idea (100-150 words); (d) self-identified issues with the initial idea; (e) a plan to address those issues; (f) a revised idea (100-150 words); (g) an expanded version (200-250 words).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 354
+ },
+ {
+  "figure_id": "fig_15",
+  "label": null,
+  "caption": "all key facets; (2) Matches domain + purpose but differs in mechanism; (3) Shares purpose or mechanism or evaluation across domains; (4) Partially matches domain or addresses related topics.Few-shot examples: 2 worked examples (10 passages about topic modeling/anomaly detection; 3 passages about political bias detection), showing the output format [2] &gt; [1] &gt; [5] &gt; ... Pipeline role: Top-ranked papers are passed to the novelty assessment prompt.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 458
+ }
+]

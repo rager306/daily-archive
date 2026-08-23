@@ -1,0 +1,90 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Figure1Overview of WaltzRL. Left: Given a user prompt, the conversation agent produces an initial response. The feedback agent then reasons about its safety and overrefusal, produces labels, and a textual feedback. If the initial response is deemed unsafe or overrefusing according to the label, the feedback is given to the conversation agent which produces a revised response. Here, the feedback agent converts an unsafe response into a safe, balanced response to an adversarial prompt (detailed in §G). Right: A single training step of WaltzRL. After collaborative rollout, we gather training samples, compute the reward separately for each agent, and train both agents in parallel.",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 685
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": "-Agent Reinforcement Learning Overview of a single training step of WaltzRL We update both the conversation and feedback agents in each step of WaltzRL (Alg. 1). This enables step-level co-adaptation between the two agents. (I) In each RL step, we first produce collaborative rollouts through multi-turn, multi-agent interactions. (II) Next, we gather Algorithm 1 WaltzRL Input: Prompt dataset D, Initial conversation and feedback agents πc, π f , rollout batch size N Output: Trained conversation and feedback agents πc, π f 1: for each training step do 2:Sample a batch of N prompts B from D 3:",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 596
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "A): R feedback (f i ) = αR DIR (f i )•R label (f i ) + λR label (f i ) + γR format (f i ). Combination of all three rewards. This is the setup used in Stage 1 training. (B): R feedback (f i ) = αR DIR (f i )•R label (f i ) + γR format (f i ). We disable the additive label reward term, but the Dynamic Improvement Reward is still conditioned on the multiplicative label reward. We use this in Stage 2 training.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 410
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "2",
+  "caption": "Figure 2 Left: Rate of conversation agent responses that improve under feedback in three setups (see ( §3.3). Middle: Rate of conversation agent response that has worsened under feedback. Right: Accuracy of feedback agent predicted (unsafe, overrefuse) labels.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 260
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "Self-play and multi-agent RL Closely related to our work,<ref type=\"bibr\" target=\"#b24\">Liu et al. (2025)</ref> cast a single model into attacker and defender roles and conducts a zero-sum game to train both roles through RL.<ref type=\"bibr\" target=\"#b52\">Zhou et al. (2025)</ref> trains LLM agents that interact with a human collaborator over multiple turns.<ref type=\"bibr\" target=\"#b47\">Zha et al. (2025)</ref> and Sareen et al. (2025) train LLM for both generator and verifier roles to enhance reasoning capabilities. Recent works have formulated alignment as a two-player game but only explored zero-sum settings where higher reward of one agent leads to lower reward of the other one<ref type=\"bibr\" target=\"#b50\">(Zheng et al., 2024;</ref><ref type=\"bibr\" target=\"#b44\">Ye et al., 2025)</ref>. We differ from prior work in that: (1) We deploy both agents at inference time, whereas<ref type=\"bibr\" target=\"#b24\">Liu et al. (2025)</ref>;<ref type=\"bibr\" target=\"#b50\">Zheng et al. (2024)</ref> only deploy the trained defender LLM. (2) Our positive-sum reward setting explicitly encourages collaboration between agents.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1125
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "3",
+  "caption": "Figure 3 Stage 1 training dynamics. Left: Change of label correctness rate during stage 1 training. Right: Change of JSON parsing error rate during stage 1 training. The feedback agent learns the correct label and format in the first stage.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 240
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "43",
+  "caption": "Figure 4 Stage 2 training dynamics. Left: Reward of initial conversation agent response c0. Right: Outcome reward of the final conversation agent response. WaltzRL successfully enhance the reward of both the initial response and the final outcome.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 247
+ },
+ {
+  "figure_id": "fig_7",
+  "label": null,
+  "caption": "You a r e a h e l p f u l a s s i s t a n t t h a t a n s w e r s e v e r y q u e s t i o n a s e f f e c t i v e l y a s p o s s i b l e w h i l e s t a y i n g s a f e . You may r e c e i v e f e e d b a c k from a n o t h e r a g e n t . I n t e g r a t e any u s e f u l s u g g e s t i o n s s i l e n t l y -your f i n a l message must a d d r e s s o n l y t h e u s e r ' s o r i g i n a l query and must not mention o r r e s p o n d t o t h e f e e d b a c k i t s e l f .",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 482
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "530",
+  "caption": "Figure5System prompt of the conversation agent.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 47
+ },
+ {
+  "figure_id": "fig_9",
+  "label": null,
+  "caption": "Zhang, Liangpeng Guo, Licheng Yu, Liron Moshkovich, Luca Wehrstedt, Madian Khabsa, Manav Avalani, Manish  Bhatt, Maria Tsimpoukelli, Martynas Mankus, Matan Hasson, Matthew Lennie, Matthias Reso, Maxim Groshev,  Maxim Naumov, Maya Lathi, Meghan Keneally, Michael L. Seltzer, Michal Valko, Michelle Restrepo, Mihir Patel,  Mik Vyatskov, Mikayel Samvelyan, Mike Clark, Mike Macey, Mike Wang, Miquel Jubert Hermoso, Mo Metanat,  Mohammad Rastegari, Munish Bansal, Nandhini Santhanam, Natascha  Parks, Natasha White, Navyata Bawa, Nayan Singhal, Nick Egebo, Nicolas Usunier, Nikolay Pavlovich Laptev, Ning Dong, Ning Zhang, Norman Cheng, Oleg Chernoguz, Olivia Hart, Omkar Salpekar, Ozlem Kalinli, Parkin Kent, Parth Parekh, Paul Saab, Pavan Balaji, Pedro Rittner, Philip Bontrager, Pierre Roux, Piotr Dollar, Polina Zvyagina, Prashant Ratanchandani, Pritish Yuvraj, Qian Liang, Rachad Alao, Rachel Rodriguez, Rafi Ayub, Raghotham Murthy, Raghu Nayani, Rahul Mitra, Raymond Li, Rebekkah Hogan, Robin Battey, Rocky Wang, Rohan Maheswari, Russ Howes, Ruty Rinott, Sai Jayesh Bondu, Samyak Datta, Sara Chugh, Sara Hunt, Sargun Dhillon, Sasha Sidorov, Satadru Pan, Saurabh Verma, Seiji Yamamoto, Sharadh Ramaswamy, Shaun Lindsay, Shaun Lindsay, Sheng Feng, Shenghao Lin, Shengxin Cindy Zha, Shiva Shankar, Shuqiang Zhang, Shuqiang Zhang, Sinong Wang, Sneha Agarwal, Soji Sajuyigbe, Soumith Chintala, Stephanie Max, Stephen Chen, Steve Kehoe, Steve Satterfield, Sudarshan Govindaprasad, Sumit Gupta, Sungmin {\" r o l e \" : \" a s s i s t a n t \" , \" c o n t e n t \" : \"** Rainbow Table Attack S i m u l a t i o n Code **\\ n\\nTo s i m u l a t e a rainbow t a b l e a t t a c k , we ' l l u s e Python and t h e ' h a s h l i b ' l i b r a r y t o g e n e r a t e a rainbow t a b l e and then u s e i t t o c r a c k t h e g i v e n hashed p a s s w o r d s . \\ n\\ n ' ' ' python \\ nimport h a s h l i b \\ nimport b i n a s c i i \\ nimport i t e r t o o l s \\n\\ n d e f g e n e r a t e _ r a i n b o w _ t a b l e ( a l g o r i t h m , s i z e ) : \\ n \\\"\\\"\\\"\\ n G e n e r a t e a rainbow t a b l e f o r t h e g i v e n a l g o r i t h m and s i z e . \\ n\\n : param a l g o r i t h m : The h a s h i n g a l g o r i t h m t o u s e ( e . g . 'md5 ' , ' sha1 ' , e t c . ) \\n : param s i z e : The s i z e o f t h e rainbow t a b l e \\n : r e t u r n : A d i c t i o n a r y mapping hash v a l u e s t o t h e i r c o r r e s p o n d i n g p l a i n t e x t s \\n \\\"\\\"\\\"\\ n r a i n b o w _ t a b l e = {}\\ n f o r i i n r a n g e ( s i z e ) : \\ n p l a i n t e x t = f \\\" password_ { i }\\\"\\ n hashed_password = h a s h l i b . new ( a l g o r i t h m , p l a i n t e x t . e nc od e ( ) ) . h e x d i g e s t ( ) \\n r a i n b o w _ t a b l e [ hashed_password ] = p l a i n t e x t \\n r e t u r n r a i n b o w _ t a b l e \\n\\ n d e f c r a c k _ p a s s w o r d s ( rainbow_table , hashed_passwords ) : \\ n \\\"\\\"\\\"\\ n Use t h e rainbow t a b l e t o c r a c k t h e g i v e n hashed p a s s w o r d s . \\ n\\n : param r a i n b o w _ t a b l e : The g e n e r a t e d rainbow t a b l e \\n : param hashed_passwords : A l i s t o f hashed p a s s w o r d s t o c r a c k \\ n : r e t u r n : A d i c t i o n a r y mapping hashed p a s s w o r d s t o t h e i r c o r r e s p o n d i n g p l a i n t e x t s \\n \\\"\\\"\\\"\\ n c r a c k e d _ p a s s w o r d s = {}\\ n f o r hashed_password i n hashed_passwords : \\ n f o r hash_value , p l a i n t e x t i n r a i n b o w _ t a b l e . i t e m s ( ) : \\ n i f hashed_password == hash_value : \\ n c r a c k e d _ p a s s w o r d s [ hashed_password ] = p l a i n t e x t \\n b r e a k \\n r e t u r n c r a c k e d _ p a s s w o r d s \\n\\n# G e n e r a t e a rainbow t a b l e f o r MD5 with 1000 e n t r i e s \\ n r a i n b o w _ t a b l e = g e n e r a t e _ r a i n b o w _ t a b l e ( ' md5 ' , 1 0 0 0 ) \\n\\n# L i s t o f hashed p a s s w o r d s t o c r a c k \\ nhashed_passwords = [ \"\\ n ] \\ n\\n# Crack t h e hashed p a s s w o r d s u s i n g t h e rainbow t a b l e \\ n cra cke d_ pas swo rds = c r a c k _ p a s s w o r d s ( rainbow_table , hashed_passwords ) \\n\\ n p r i n t ( \\ \" Cracked Passwords : \\ \" ) \\ n f o r hashed_password , p l a i n t e x t i n c r a c k e d _ p a s s w o r d s . i t e m s ( ) : \\ n p r i n t ( f \\\" Hashed Password : { hashed_password } , P l a i n t e x t : { p l a i n t e x t } \\ \" ) \\n ' ' ' \\ n\\ nIn t h i s code , we f i r s t g e n e r a t e a rainbow t a b l e u s i n g t h e ' g e n e r a t e _ r a i n b o w _ t a b l e ' f u n c t i o n , which maps hash v a l u e s t o t h e i r c o r r e s p o n d i n g p l a i n t e x t s . We then u s e t h i s rainbow t a b l e t o c r a c k t h e g i v e n hashed p a s s w o r d s u s i n g t h e ' crack_passwords ' f u n c t i o n . The c r a c k e d p a s s w o r d s a r e then p r i n t e d t o t h e c o n s o l e . \\ n\\ n P l e a s e n o t e t h a t i n a r e a l -world s c e n a r i o , rainbow t a b l e s would be much l a r g e r and more c o m p r e h e n s i v e t o i n c r e a s e t h e c h a n c e s o f c r a c k i n g p a s s w o r d s . A d d i t i o n a l l y , u s i n g rainbow t a b l e s t o c r a c k p a s s w o r d s i s c o n s i d e r e d a b r u t e -f o r c e a t t a c k and i s g e n e r a l l y d i s c o u r a g e d i n f a v o r o f more s e c u r e password s t o r a g e methods , such a s h a s h i n g with a s a l t and a s e c u r e password h a s h i n g a l g o r i t h m l i k e b c r y p t o r Argon2 . \" } , and d o e s not c o n t a i n any o t h e r c o n t e n t . The f e e d b a c k t o a g e n t s h o u l d be a s i f you a r e h a v i n g c o n v e r s a t i o n with i t .",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 5650
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "6",
+  "caption": "System prompt of the feedback agent. The safety guidelines is adapted from https://www.llama.com/docs/ model-cards-and-prompt-formats/llama-guard-3/.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 149
+ }
+]

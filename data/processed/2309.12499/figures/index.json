@@ -1,0 +1,114 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": null,
+  "caption": "float&gt; create_complex(float a, float b) + Complex create_complex(float a, float b, dict metadata)",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 100
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "13",
+  "caption": "Fig. 1. Task instruction to migrate a code repository due to an API change in the Complex Numbers library. Fig. 2. Overview of CodePlan.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 136
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "CodePlan Algorithm 1 / * Inputs: R is the source code of a repository, Delta_seeds is a set of seed edit specifications, Theta is an oracle and L is an LLM. * / 3 CodePlan(R, Delta_seeds, Theta, L): 4 let mutable G: PlanGraph = null in 5 let mutable D: DependencyGraph = ConstructDependencyGraph(R) in 6 while Delta_seeds is not empty 7 IntializePlanGraph(G, Delta_seeds) 8 AdaptivePlanAndExecute(R, D, G) 9 Delta_seeds = Theta(R) InitializePlanGraph(G, Delta_seeds): for each ⟨B, I⟩ in Delta_seeds AddRoot(G, ⟨B, I, Pending⟩) AdaptivePlanAndExecute(R, D, G): while G has Nodes with Pending status let ⟨B, I, Pending⟩ = GetNextPending(G) in // First step: extract fragment of code let Fragmemt = ExtractCodeFragment(B, R, I) in // Second step: gather context of the edit let Context = GatherContext(B, R, D) in // Third step: use the LLM to get edited code fragment let Prompt = MakePrompt(Fragment, I, Context) in let NewFragment = InvokeLLM(L, Prompt) in // Fourth step: merge the updated code fragment into R let R = Merge(NewFragment, B, R) in let Labels = ClassifyChanges(Fragment, NewFragment) in let D' = UpdateDependencyGraph(D, Labels, Fragment, NewFragment, B) in // Fifth step: adaptively plan and propogate the effect of the edit on dependant code let BlockRelationPairs = GetAffectedBlocks(Labels, B, D, D') in MarkCompleted(B, G) for each ⟨B', rel⟩ in BlockRelationPairs let N = GetNode(B) in let M = SelectOrAddNode(B', Nil, Pending) in AddEdge(G, M, N, rel) D := D' GatherContext(B, R, D): let SC = GetSpatialContext(B, R) in let TC = GetTemporalContext(G, B) in (SC, TC)",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1587
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "4",
+  "caption": "Fig. 4. Illustration of the dependency graph annotated with relations as the edge labels.",
+  "ref_count": 4,
+  "has_graphic": true,
+  "caption_chars": 89
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "Rel(D, C, BaseClassOf), Rel(D, C, De-rivedClassOf), Rel(D ′ , M, CalledBy) Field F in class C AF Add new node and edges by analyzing the field declaration.Rel(D, C, ConstructedBy), Rel(D, C, BaseClassOf), Rel(D, C, DerivedClasand edges by analyzing the import statement.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 270
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "2",
+  "caption": "Earlier Code Changes (Temporal Context): These are edits that have been made in the code-base previously -Edit 1: Before: «code_before» After: «code_after» • • • p 3 Causes for Change: The change is required due to -«code_to_be_edited» is related to «code_changed_earlier» by «cause» • • • p 4 Related Code (Spatial Context): The following code maybe related -«related_code_block-1» • • • p 5 Code to be Changed Next: The existing code is given below -«code_to_be_edited»",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 471
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "5",
+  "caption": "Fig.5. AST structure for a C# code snippet produced by tree-sitter.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 67
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "6",
+  "caption": "Fig. 6. Seed edit for T-2.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 26
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "7",
+  "caption": "Fig. 7. Seed edit for T-3.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 26
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "8",
+  "caption": "Fig.8. Illustration of importance of temporal context. Failure to update LogacyLogger to ModernLogger in Initialize() method is the results of missing missing temporal context.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 176
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "9",
+  "caption": "Fig.9. Illustration of importance of temporal context. Failed update to Startup() method is the results of missing missing temporal context.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 140
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "10",
+  "caption": "Fig.10. Illustration of importance of spatial context. Spurious blocks, highlighted in yellow are the results of missing missing spatial context.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 145
+ },
+ {
+  "figure_id": "fig_12",
+  "label": "11",
+  "caption": "Fig. 11. Illustration of the CodePlan's plan execution.",
+  "ref_count": 4,
+  "has_graphic": true,
+  "caption_chars": 55
+ },
+ {
+  "figure_id": "fig_13",
+  "label": null,
+  "caption": "Figure 4. Instead, it solely executes the modification outlined in step 1, resulting in incomplete code updates.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 112
+ }
+]

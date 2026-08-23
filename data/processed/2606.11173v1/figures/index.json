@@ -1,0 +1,170 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "2",
+  "caption": "Figure 2 Self-distillation matches or exceeds GRPO across training on OpenMathReasoning. RefSol conditions the teacher on the reference solution provided in the OpenMathReasoning dataset; StepAlignFB substitutes step-level feedback; GRPO is the reward-only baseline.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 266
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": "Connection to process vs. outcome supervision. Lightman et al. (2024) and Uesato etal. (2022)show that per-step scalar rewards outperform per-problem rewards for math reasoning. Our finding is a distributional generalization: step-aligned textual feedback provides richer-than-scalar process supervision, and the self-distillation mechanism converts it into per-token credit, all without training a reward model.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 412
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "3",
+  "caption": "Figure 3 Fully-correct rollout. Per-token advantages 𝐴 SD 𝑡 ( ŷ𝑡 ) (see Eq. 4) along a single student trajectory that reaches the correct boxed answer. StepAlignFB (top) produces positive advantages throughout the trace, reinforcing the student's correct reasoning trace. RefSol (bottom) produces diffuse negative advantages across the entire rollout: the teacher prefers the alternative derivation's surface form even though the student's answer is correct, mixing stylistic disagreement into the gradient.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 507
+ },
+ {
+  "figure_id": "fig_3",
+  "label": null,
+  "caption": "A natural first question is whether to expose the full original attempt in the feedback: \"Here is your previous attempt: &lt;previous_attempt&gt;. Step 𝑁 is incorrect; the correct step should be &lt;corrected_step&gt;.\" Consistent with Hübotter et al. (2026),",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 259
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "4",
+  "caption": "Figure 4 Incorrect step. Per-token advantages for a rollout containing an error at the step marked by the dashed line. StepAlignFB (top) produces a sharp negative shift at the tokens after the erroneous step, while reinforcing correct reasoning in the preceding steps. RefSol (bottom) produces broadly negative advantages across the entire trace, conflating the error with everywhere the student's path diverges from the canonical solution.",
+  "ref_count": 3,
+  "has_graphic": true,
+  "caption_chars": 440
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "5",
+  "caption": "Figure5Incomplete solution. Per-token advantages for a rollout that exhausted the token budget without producing a final answer. The student's reasoning trace is unpromising from the start and quickly devolves into guessing values for the variable before running out of budget. The critic responds by producing a complete alternative solution, yielding update signals similar to those of the reference solution.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 411
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "6",
+  "caption": "Figure6Full verbatim repetition with appended correction. The critic includes the student's incorrect step verbatim and follows it with a textual correction. Induction-head copying of the original (incorrect) tokens dominates the teacher's distribution; per-token advantages are overwhelmingly positive.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 303
+ },
+ {
+  "figure_id": "fig_7",
+  "label": null,
+  "caption": "for LLMs. Main references for self-distillation are Hübotter et al. (2026); Shenfeld et al. (2026); Song et al. (2026); Zhao et al. (2026). Hübotter et al. (2026) introduced SDPO and used code execution trace, reference solutions from datasets, and stronger models' solutions as feedback. OPSD Zhao et al. (2026) used ground-truth solutions as teacher context. RLTF (Song et al., 2026) formalized",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 396
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "7",
+  "caption": "Figure7Solution omitted from the teacher context. For a fully correct student solution, the critic acknowledges correctness without reproducing the trace. With no in-context anchor on the student's tokens, the teacher's distribution drifts toward alternative surface forms, producing negative advantages across the correct trajectory.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 334
+ },
+ {
+  "figure_id": "fig_9",
+  "label": null,
+  "caption": "step by step. Format each step as: ### Step N: &lt;topic&gt; &lt;reasoning for step N&gt; Please reason step by step, and put your final answer within \\boxed{}.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 160
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "8",
+  "caption": "Figure8Solver prompt. The solver sees only the problem statement, with the same step-formatted instruction used by the evaluation harness so that on-policy training and inference share a prompt template.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 203
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "10",
+  "caption": "Figure 10 Teacher prompt for StepAlignFB. The reference solution is replaced by a critic-generated critique 𝑓 produced by Qwen/QwQ-32B (Figure 11).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 147
+ },
+ {
+  "figure_id": "fig_12",
+  "label": "11",
+  "caption": "Figure11Critic prompt. A single user-turn message sent to a frozen Qwen/QwQ-32B. The grader is instructed to classify the student rollout into one of four cases (A: fully correct; B: correct answer with an unjustified non-routine step; C: ran out of tokens; D: incorrect answer) and emit feedback in a schema specific to that case. The returned reasoning trace (&lt;think&gt;...&lt;/think&gt;) is stripped before the structured grader output is spliced into the final feedback 𝑓 for the StepAlignFB teacher prompt (Figure10). Unicode characters in the deployed prompt have been transliterated here for printability.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 615
+ },
+ {
+  "figure_id": "fig_13",
+  "label": null,
+  "caption": ". **Initial Substitution and Simplification:** -Set \\( m = n \\). Then the equation becomes: \\[ f(4m) = f(m)^{4042} \\] -This indicates that \\( f \\) at even arguments can be expressed in terms of \\( f \\) at smaller arguments. 2. **General Form Analysis:** -For any positive integers \\( m \\) and \\( n \\), the argument \\( 2m + 2n = 2(m + n) \\). Thus, \\( f(2(m + n)) = f(m)^{2021} f(n)^{2021} \\). -Consider \\( m = 1 \\) and vary \\( n positive integer solution to this equation is \\( c = 1 \\). 4. **Verification:** -Verify that \\( f(k) = 1 \\) satisfies the original equation: \\[ f(2m + 2n) = 1 \\quad \\text{and} \\quad f(m)^{2021} f(n)^{2021} = 1^{2021} \\cdot 1^{2021} = 1 \\] -Both sides are equal, confirming that \\( f(k) = 1 \\) is a solution.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 735
+ },
+ {
+  "figure_id": "fig_14",
+  "label": null,
+  "caption": "implies $ c = c^{4042} $, which is only true if $ c = 1 $, since $ c \\in \\mathbb{Z}_{&gt;0} $.So $ f(n) = 1 $ is a possible solution.generally true for all $ m, n $. So $ f(n) = n^k $ is not a solution unless $ k = 0 $, which gives $ f(n) = 1 $.---### Step 2: Consider functional equations with exponentsWe notice that the equation has a multiplicative structure. Let's try to analyze the form of $ f $.#### Try: $ f(n) = c $, a constant.+ 2n) = 1, \\quad f(m)^{2021} f(n)^{2021} = 1^{2021} \\cdot 1^{2021} = 1 $$ So this satisfies the equation. #### Try: $ f(n) = n^k $ for some exponent $ k \\in \\mathbb{Z} $.generally true for all $ m, n $. So $ f(n) = n^k $ is not a solution unless $ k = 0 $, which gives $ f(n) = 1 $.---### Step 2: Consider functional equations with exponents",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 779
+ },
+ {
+  "figure_id": "fig_15",
+  "label": null,
+  "caption": "$ to be an integer, the expression $763 -3y$ must be even. ---### Step 2: Determine conditions on $yconsider the parity (even or odd nature) of the numbers involved: -$763$ is **odd** -$3y$ is **odd** if $y$ is **odd**, and **even** if $y$ is **even** So, odd minus odd = even odd minus even = odd Therefore, for $763 -3y$ to be **even**, $3y$ must be **odd**, which means $y$ must be **odd**. ---### Step 3: Let $y = 2k + 1$, where $k$ is an integer Substitute $y = 2k + 1$ into the equation: Step 4: Find all integer values of $k$ such that $x$ and $y$ are integers",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 567
+ },
+ {
+  "figure_id": "fig_16",
+  "label": null,
+  "caption": "Incorrect --failed to consider non-negative constraints on x and y. Step 5: Correct. # Your solution has an error at Step 4. Below is your correct work, the corrected step, and the remainder of the solution. # This is the correct part of your solution: ---We are given the equation: find the number of **integer solutions** $(x, y)$ that satisfy this equation. $ to be an integer, the expression $763 -3y$ must be even. consider the parity (even or odd nature) of the numbers involved: -$763$ is **odd** -$3y$ is **odd** if $y$ is **odd**, and **even** if $y$ is **even** So, odd minus odd = even odd minus even = odd Therefore, for $763 -3y$ to be **even**, $3y$ must be **odd**, which means $y$ must be *an error at Step 4. Here is the corrected step: ---### Step 4: Find all integer values of $k$ such that $x$ and $y$ are non-negative integers",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 847
+ },
+ {
+  "figure_id": "fig_17",
+  "label": null,
+  "caption": null,
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 0
+ },
+ {
+  "figure_id": "fig_18",
+  "label": null,
+  "caption": null,
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 0
+ },
+ {
+  "figure_id": "fig_20",
+  "label": null,
+  "caption": "another function $ f $ satisfying the condition. Suppose $ f(n) \\neq 1 $ for some $ n $.Let's try $ f(1) \\neq 1 $. Then we can define $ f(2m + 2n) = f(m)^{2021} f(n)^{2021} $, which is a multiplicative function in $ m, n $, but not necessarily additive.If we consider the form of the function, we can try to look for functions that are multiplicative or power functions. Suppose $ f(n) = c^{\\alpha(n)} $, with some function $ \\alpha(n) $.Then the equation becomes:$$ f(2m + 2n) = c^{\\alpha(2m + 2n)} = f(m)^{2021} f(n)^{2021} = (c^{\\alpha(m)})^{2021} (c^{\\alpha(n)})^{2021} = c^{2021\\alpha(m) + 2021\\alpha(n)} $$Therefore, the number of non-negative integer solutions to the equation \\(2x + 3y = 763\\) is \\(\\boxed{127}\\).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 721
+ },
+ {
+  "figure_id": "fig_21",
+  "label": "13",
+  "caption": "Per-token advantages under each teacher context for incorrect student solution.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 79
+ }
+]

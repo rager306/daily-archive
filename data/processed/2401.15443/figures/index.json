@@ -1,0 +1,58 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "2",
+  "caption": "Figure 2: Comparison of one-shot planning (top) and PRP (down) on Antmaze. The former directly generates plans with a temporal horizon of 129. The latter consists of three coarse to fine-grained levels with temporal horizons of 0-128, 0-32, and 0-8, and temporal jumps of 32, 8, and 1, respectively. The visualization in the figure illustrates the x-y coordinates of 100 plans. It shows that one-shot planning exhibits a significant amount of redundant information and a large search space. In contrast, PRP demonstrates better plan consistency and a smaller search space.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 572
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "3",
+  "caption": "Figure 3: Overview of DiffuserLite. Observing the current state ot, level 0 of DiffuserLite fixes ot as o0 and",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 110
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "4",
+  "caption": "Figure 4: Runtime and performance comparison in FrankaKitchen. The y-axis represents the number of completed tasks (maximum of 4), and the x-axis represents the required wall-clock time. Task success rates are presented in colored circles. All results are averaged over 250 rollouts. DiffuserLite demonstrates significant advantages in both wallclock time and success rate.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 373
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "5",
+  "caption": "Figure 5: Part of selected benchmarks. From left to right, they are HalfCheetah, Hopper, Walker2d, FrankaKitchen, Robomimic, and Antmaze.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 137
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "6",
+  "caption": "Figure 6: Visual comparison between one-shot generated plans (upper) and PRP (lower) in Hopper. The figure showcases 100 diffusion-generated plans starting from the same initial state. The one-shot generated plans directly generate all states from t = 0 to t = 96, while PRP utilizes three levels with temporal horizons of 97, 33, and 9, and temporal jumps of 32, 8, and 1, respectively. For ease of observation, only Hopper motion every 4 steps is displayed in the figure.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 473
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "7",
+  "caption": "Figure 7: Visual comparison of DiffuserLite using conditions with (upper) or without (lower) values. It displays 100 plans generated at the current state, where darker colors indicate closer proximity to the current state, and lighter colors indicate further.With the pure-rewards condition, we can observe that the planned states in lighter colors tend to cluster together at a certain point on the map, indicating the planner tries to stop at that non-endpoint. However, with the introduction of values, the planner can make correct long-term plans that lead to the endpoint.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 577
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "12",
+  "caption": "DiffuserLite TrainingInput: number of planning levels L, temporal horizon H l , temporal jump I l and noise estimators ϵ θ l for each level l ∈ {0, 1, • • • , L -1}, dataset D = {x}, where x is the sequence of state-action pairs, critic C, diffusion steps T , condition mask probability 1 -p; while not done do sample a batch of (x, C(x)) from dataset D for l = 0 to L -1 do extract x 0,H l ,1 and x 0,H l ,I l from x Ĉ(x 0,H l ,I l ) ← C(x 0,H l ,1 ) sample s l ∼ Uniform(T ), ϵ l ∼ N (0, I) first state of ϵ l ← first state of x 0,H l ,I l if l &gt; 0 then last state of ϵ l ← last state of x 0,H l ,I l end if x s 0:H l :I l ← α s x 0:H l :I l + σ s ϵ l update θ l by minimizing ||ϵ θ l (x s 0:H l :I l , s, C(x 0:H l :I l )) -ϵ|| 2 with probability p else ||ϵ θ l (x s 0:H l :I l , s)) -ϵ|| 2 end for end while DiffuserLite Inference Input: number of planning levels L, temporal horizon H l , temporal jump I l and noise estimators ϵ θ l for each level l ∈ {0, 1, • • • , L -1}, critic C, inverse dynamic h, diffusion steps T , current state o t ; for l = 0 to L -1 do sample ϵ l ∼ N (0, I). first state of ϵ l ← o t if l &gt; 0 then last state of ϵ l ← last state of x 0:H l-1 :I l-1 end if obtain x 0:H l :I l by solving diffusion ODE with DDIM solver end for extract o t , o t+1 from x 0:H L-1 :1 a t = h(o t , o t+1 )",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1325
+ }
+]

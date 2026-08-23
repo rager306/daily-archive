@@ -1,0 +1,114 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "2",
+  "caption": "Figure 2: A pie chart showing our physical common sense ontology. The ontology has three categories (Space, Time, and Fundamental Physics) and 16 fine-grained subcategories.",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 173
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": "Liu et al., 2023)) and the cross-attention-based architecture (e.g., Flamingo (Alayrac et al., 2022) and Llama 3-V (Grattafiori et al., 2024)). We utilize the decoder-only architecture similar to LLaVA (Liu et al., 2023) and NVLM-D (Dai et al., 2024) for its simplicity and unified handling of all modalities by aligning other modality tokens (image or video) into the text token embedding space. Specifically, the model begins with the vision encoder (Chen et al., 2024), followed by the projector containing a downsampling two-layer MLP, and then the decoder-only LLM backbone (Nvidia et al., 2024; Waleffe et al., 2024; DeepSeek-AI, 2025).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 642
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "3",
+  "caption": "Figure3: An illustration of our multimodal large language model architecture. Given an input video and an input text prompt, the video is projected into the LLM's token embedding space as video tokens by a vision encoder followed by a projector. The text tokens are concatenated with the video tokens and fed into the LLM backbone, a dense Transformer or a hybrid Mamba-MLP-Transformer architecture. Our model can output responses with long chain-of-thought reasoning processes.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 478
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "4",
+  "caption": "Figure 4: An illustration of our hybrid Mamba-MLP-Transformer backbone architecture used in Cosmos-Reason1-56B. A Transformer block consists of a self-attention layer and an MLP layer. We also show an example of an Alternating Mamba-MLP module on top of the figure.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 265
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "5",
+  "caption": "Figure5: The architecture of the proposed RL training framework. There are mainly three parts of the framework. (1) Dispatcher: schedule and distribute training data, manage the status of the framework. (2) Actor Rollout: generate responses from the prompt, compute rewards and advantages for the policy training.(3) Policy Training: conduct an RL algorithm on the actor and optimize the actor based on the rewards and other constraints. The policy training nodes support 5D-parallelism, i.e. data parallel (DP), pipeline parallel (PP), context parallel (CP), fully-sharded data parallel (FSDP), and tensor parallel (TP). The actor rollout nodes support DP, PP, and TP. We adopt a customized NCCL communicator to communicate between the dispatcher and the rollout/policy node.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 776
+ },
+ {
+  "figure_id": "fig_5",
+  "label": null,
+  "caption": "Prompt A.1 shows a sample question-construction prompt template used to produce reasoning questions. 4. Extracting Reasoning Traces. To obtain complete \"reasoning\" annotations, we prompt a DeepSeek-R1 (DeepSeek-AI, 2025) to answer the reasoning subset of questions by using the detailed caption as context. Then, we parse DeepSeek-R1's response into a thinking trace and an answer. We find it is",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 395
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": "What is the next plausible subtask?\" &lt;objects, actions&gt; SFT Sample &lt;clip, question, answer, thinking trace&gt; \"retrieve red apple from the shelf\" \"place the held red apple into the plastic bag\" \"retrieve the orange from the shelf\"Current Subtask Next Subtask Previous Subtask",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 285
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "8",
+  "caption": "Figure8: An illustration showing the categorical distribution of initial questions collected for physical common sense benchmark according to the ontology defined in Tab. 1. We select a subset of 604 questions as our evaluation benchmark.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 238
+ },
+ {
+  "figure_id": "fig_8",
+  "label": null,
+  "caption": "m bod i e d Re as on i ng Be nc h mar k Based on the ego vehicle's actions in the video, what is the most likely immediate action it will take next? A: turn right, B: turn left, C: change to right lane, D: change to left lane Re spon se Be f or e R L Okay, let's break this down. The video shows the ego vehicle is driving on a single-lane road with a 25 mph speed limit. The road has parked cars on the right, so the driver is maintaining a safe distance there. The left side is a two-way divider with oncoming traffic, which is coming from the left in the video. Since the road is single-lane, changing lanes (right or left) might not be possible. But the video shows a single-lane road, which usually means one lane in each direction, so there's no shoulder to the right for parking, but parked cars are already on the right. Maybe the road is a single lane each way, but parked cars are on the right side of that lane. So the driver is in the correct lane, just keeping a safe distance from the parked cars. The oncoming traffic is in the opposite lane, so the driver is staying in their lane. Changing to the left lane would be into oncoming traffic. So that's not possible.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1179
+ },
+ {
+  "figure_id": "fig_9",
+  "label": null,
+  "caption": "Option B: Turn left. Similar reasoning as A. Unless there's a left turn ahead, but the video doesn't indicate any upcoming intersections or turns. Option C: Change to right lane. The current lane is the right one since it's a two-way street.Changing to the right lane again doesn't make sense because there's already parked cars on both sides. So this option is probably not correct. Option D: Change to left lane. Wait, but in a two-way street with double yellow lines, there's no left lane to change into. The driver is in their respective lane (right for their direction), and the opposite lane is for oncoming traffic. So changing to the left lane would be into oncoming traffic, which is dangerous and not allowed. So this option doesn't fit either.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 754
+ },
+ {
+  "figure_id": "fig_10",
+  "label": null,
+  "caption": "al., 2022; Song et al., 2023; Huang et al., 2022; Ahn et al., 2022) extracts high-level action plans in natural language directly from pre-trained LLMs without additional fine-tuning, demonstrating the ability of LLMs to generalize across robotic tasks. Similarly, Code as Policies (Liang et al., 2022) extends the use of LLMs to generate structured code for robotic control. However, these pre-trained models, especially the VLMs, are not explicitly designed for physical interactions and, therefore, often lack the physical common sense understanding and result in suboptimal plans and execution. Another line of work focuses on directly training vision-language-action (VLA) models end-to-end for embodied agents (Brohan et al., 2023; Driess et al., 2023; Kim et al., 2024; Yang et al., 2025; Gemini Robotics Team,2025). They often start with a pre-trained vision-language model and fine-tune the model with robotics data to generate embodied actions. This approach has shown significant promise in improving generalization and robustness across robotic tasks. A notable subcategory of these methods introduces hierarchical policy representations that separate high-level language-driven planning from low-level action execution<ref type=\"bibr\" target=\"#b45\">(Shi et al., 2025;</ref> Li et al., 2025). These system often use a high-level VLM interpret natural language instructions and generate plans, while low-level VLA execute fine-grained motor control. These hierarchical architectures improve task and decomposition. I n t u i t i v e P h ys ic s : A r row of T i m e Detect whether the video plays forward or backward with confidence. A: forward, B: backward Re spon se Be f or e R L Okay, let's see. The user is asking whether the video plays forward or backward. The video shows a step-by-step process of mixing pink powder into a white liquid in a green bowl. The key points shown are the hand holding a blue container, pouring the pink powder into the bowl, and the camera being static.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2000
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "10",
+  "caption": "Figure10: While the model before RL struggles to understand and associate perception with reverse actions, RL enables the model to reason through time while avoiding distractions, such as stationary text.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 204
+ },
+ {
+  "figure_id": "fig_12",
+  "label": null,
+  "caption": "(Alayrac et al., 2022), LLaVA (Liu et al., 2023), InternVL (Chen et al., 2024), QwenVL (Bai et al., 2025), NVLM (Dai et al., 2024), Llama-3.2-Vision (Grattafiori et al., 2024). These vision language models typically adopt one of two common architectures: the decoder-only architecture, as seen in models like LLaVA (Liu et al., 2023) and InternVL (Chen et al., 2024), which integrates image tokens within the LLM's selfattention layers, and the cross-attention-based architecture, exemplified by Flamingo (Alayrac et al., 2022) and Llama-3.2-Vision (Grattafiori et al., 2024), where image tokens are processed through the LLM's cross-attention layers. Dai et al. (2024) compares both architectures in a state-of-the-art setting and finds that the decoderonly architecture exhibits stronger reasoning capabilities in college-level multidisciplinary knowledge and mathematical reasoning tasks within a visual context. Building on this, we adopt the decoder-only architecture to develop the reasoning model for Physical AI.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1020
+ },
+ {
+  "figure_id": "fig_14",
+  "label": "11",
+  "caption": "While the model before RL mistakenly associates spatial questions with temporal reasoning, RL enables the model to identify key features of the first frame and compare them with subsequent frames.Alisson Azzolini, Junjie Bai, Jiaxin Cao, Prithvijit Chattopadhyay, Huayu Chen, Yin Cui, Yifan Ding, Liang Feng, Siddharth Gururani, Imad El Hanafi, Zekun Hao, Jacob Huffman, Jingyi Jin, George Kurian, Nayeon Lee, Zhaoshuo Li, Xuan Li, Maosheng Liao, Tsung-Yi Lin, Ming-Yu Liu, Xiangyu Lu, Wei Ping, David W. Romero, Shuran Song, Lyne Tchapmi, Andrew Z. Wang, Boxin Wang, Haoxiang Wang, Fangyin Wei, Jiashu Xu, Dinghao Yang, Xiaodong Yang, Zhuolin Yang, Jingxu Zhang, Xiaohui Zeng, Zhe Zhang Contributions: YC, SS, MYL, TYL defined physical common sense and embodied reasoning ontologies. YC, PC, JX, AZW, TYL curated physical common sense data and benchmarks. XY, PC, FW, XL, AZW, SG, TYL curated embodied reasoning data and benchmark. ZL, JJ, TYL designed the captioning method. JX, ZH, LT, JJ, XL, ZL, SG, TYL curated self-supervised data and benchmark. YC, PC, SG post-processed extracted reasoning traces. BW, NL, ZY, WP trained the base VLM models. DWR, HW, XZ built the infrastructure for supervised fine-tuning. XZ, GK, AA, HW, SG, ZL, DWR, FW, TYL trained the Physical AI supervised fine-tuned models. ZL, NL, FW, YD evaluated the reasoning models. JH, IH, ZZ, HW, ZH, DWR, AA, JC, LF, ML, XLu, DY, JZ, JB built the reinforcement learning infrastructure. ZH, JH, HC, JX, LT trained Physical AI reinforcement learning models. YC, TYL organized paper writing. MYL, TYL designed the overall system.C.2. ContributorsHannah Brandon, Jinju Chu, Jenna Diamond, Francesco Ferroni, Rama Govindaraju, Jinwei Gu, Brendan Johnson, Rizwan Khan, Elena Lantz, Yen-Chen Lin, Alice Luo, Andrew Mathau, Yun Ni, Lindsey Pavao, Misha Smelyanskiy, Yao Xu Contributions: YX, LP, AM, RK, JC, BJ, EL, HB, JD helped collect human annotations. JG helped with the vision encoder. FF curated training data. YN, RG, MS supported scaling model training infrastructure. YCL provided insights on physical common sense ontology. AL helped with overall data curation.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2138
+ }
+]

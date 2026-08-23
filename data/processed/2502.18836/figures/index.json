@@ -1,0 +1,130 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Single-Agent Static Planning (Foundational) • P1: Campus Tour (CT-static) -Single-agent navigation with time windows and spatial constraints • J1: JSSP Basic (static) -Basic job-shop scheduling with fixed machine assignments Tier 2: Multi-Agent Static Coordination (Moderate) • P2: Multi-Group Campus Tours (MCT-static) -Multiple coordinated tours with shared resource constraints • P3: Urban Ride-Sharing (URS-static) -Vehicle-passenger matching with capacity and timing constraints • P5: Wedding Reunion Logistics (WR-static) -Group coordination with shared transportation Tier 3: Complex Static Dependencies (Challenging) • P6: Thanksgiving Dinner Planning (TD-static) -Multidomain coordination with travel and preparation dependencies • P7: Disaster Relief Logistics (DL-static) -Resource allocation under uncertainty with priority constraints • J3: JSSP Large-scale (static) -Advanced job-shop scheduling with complex machine-job mappings Tier 4: Dynamic Disruption Handling (Advanced) • P4: URS with Disruptions (URS-dynamic) -Real-time replanning with traffic delays and route changes • P8: Wedding Logistics with Disruptions (WR-dynamic) -Recovery from road closures and conflicts • P9: Thanksgiving with Disruptions (TD-dynamic) -Flight delays requiring coordinated recovery • J2, J4: JSSP with Disruptions (dynamic) -Machine breakdowns requiring real-time rescheduling Tier 5: Large-Scale Multi-Domain Integration (Expert)",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1432
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "1",
+  "caption": "Single Tour Campus Navigation Problem Metrics: -Total tour time: Minimize while meeting all constraints -Visit coverage: All locations must be visited Locations: Five campus buildings 𝐿 = {𝑆, 𝐿, 𝐵, 𝐴, 𝐷 } Travel Times: (mins) 𝑆-𝐿 : 10, 𝑆-𝐵 : 15, 𝑆-𝐴 : 20, 𝑆-𝐷 : 15 𝐿-𝐵 : 10, 𝐿-𝐴 : 25, 𝐿-𝐷 : 20 𝐵-𝐴 : 15, 𝐵-𝐷 : 25 𝐴-𝐷 : 20 Visit Requirements: -Start time given -Each location requires 30-minute visit -Tour starts/ends at Student Center (𝑆) -Group size: 20 people Time Constraints: -Lab Building: Only 9 AM -4 PM -Library: After 10 AM -Total tour must complete by 5 PM",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 567
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "Procurement &amp; Shipments • Total GPU Target: 100,000 units • Vendors: -NVIDIA: $15k/unit, 200k/quarter, 20% maintenance risk/year -AMD: $10k/unit, 150k/quarter, 50% maintenance risk/year • Order Timing: All orders on Day 1 • Shipment Schedule: Quarterly (e.g., 600k units = Q1, Q2, Q3) • Payment Terms: 50% at order, 50% at delivery Natural Disaster Impacts • Probabilities: 10% per quarter for Earthquake/Typhoon • Delays: 1-month cascading delay • Cost Impact: 30% price hike for affected shipment • Expedition: Expedite one shipment by 1 month (all shift) Cluster Construction &amp; Infrastructure • Definition: 50,000 GPUs/cluster; clusters built concurrently Networking Infrastructure (per cluster) • Duration: 1 month • Cost: $25M • Dependencies: Starts after GPU, power, cooling readiness Power &amp; Cooling (per cluster) • Need: 150 MW + 1M gallons/day cooling • Lead Time: Regular: 2 months at $30M; Expedited: 1 month at $75M Testing &amp; Certification (per cluster) • Normal: 2 months, $15M • Expedited: 1 month, $45M • Options: Expedite any module (150% cost, 50% time) Delay Cost Model • Penalty: $50M revenue + $10M operations per month Objective • Minimize total cost while meeting 15-month deadline • Includes procurement, infra, delay penalties, expedition costsTable 9",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1291
+ },
+ {
+  "figure_id": "fig_3",
+  "label": null,
+  "caption": ": Job Shop Scheduling Problem Simple Static (JSSPsimple-static) Jobs: J = {Job1, Job2, Job3} Machines: M = {MachineA, MachineB, MachineC} Operation Sequences and Durations: • Job1: (A, 3) → (B, 2) → (C, 2) • Job2: (A, 2) → (C, 1) → (B, 4) • Job3: (B, 4) → (A, 1) → (C, 3) Constraints: -Precedence: Operations must follow the listed order per job. -Resource: Each machine processes at most one operation at a time. Objective: Minimize makespan:",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 443
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "1",
+  "caption": "MachineA, 3 time units) → Step 2 (Ma-chineB, 2 time units) → Step 3 (MachineC, 2 time units) • Job2: Step 1 (MachineA, 2 time units) → Step 2 (Ma-chineC, 1 time unit) → Step 3 (MachineB, 4 time units) • Job3: Step 1 (MachineB, 4 time units) → Step 2 (Ma-chineA, 1 time unit) → Step 3 (MachineC, 3 time units) Rules: (1) Each job must perform its steps strictly in order (e.g., Job1's Step 2 can only begin after Step 1 finishes). (2) Each machine can only handle one operation at a time (e.g., while MachineA is running Job1-Op1 from time 0-3, it cannot process any other operation). Objective: Create a schedule listing each step's start time, end time, machine, and job, ensuring all jobs finish in minimum total time. Format: Time Interval | Task Name | Machine | Job Example: 0-3 | Job1-Op1 | MachineA | Job1 Reactive Event: At time 𝑡 = 4, MachineA breaks down and is unavailable from 𝑡 = 4 to 𝑡 = 6. Adjust the schedule accordingly, ensuring: (1) Step precedence is respected. (2) No two operations use the same machine at the same time. A.1.2 Experiment 2: Simple Precedence Shortest Time with Reactive Planning (Second-shot Prompting, pass@2) . First Prompt: You are tasked with scheduling 3 jobs (Job1, Job2, Job3) on 3 machines (MachineA, MachineB, MachineC). The objective is to complete all jobs in the shortest total time (minimize makespan). Jobs and Operations: • Job1: Step 1 (MachineA, 3 time units) → Step 2 (Ma-chineB, 2 time units) → Step 3 (MachineC, 2 time units) • Job2: Step 1 (MachineA, 2 time units) → Step 2 (Ma-chineC, 1 time unit) → Step 3 (MachineB, 4 time units) • Job3: Step 1 (MachineB, 4 time units) → Step 2 (Ma-chineA, 1 time unit) → Step 3 (MachineC, 3 time units) Rules: (1) Each job must perform its steps strictly in order (e.g., Job1's Step 2 can only begin after Step 1 finishes). (2) Each machine can only handle one operation at a time (e.g., while MachineA is running Job1-Op1 from time 0-3, it cannot process any other operation). (3) An operation cannot be separated. Objective: Create a schedule listing each step's start time, end time, machine, and job, ensuring all jobs finish in minimum total time. Format: Time Interval | Task Name | Machine | Job Example: 0-3 | Job1-Op1 | MachineA | Job1 Reactive Event: At time 𝑡 = 4, MachineA breaks down and is unavailable from 𝑡 = 4 to 𝑡 = 6. Adjust the schedule accordingly, ensuring: (1) Step precedence is respected. (2) No two operations use the same machine at the same time. Second Prompt: Reactive Event: At time 𝑡 = 4, MachineA breaks down and is unavailable from 𝑡 = 4 to 𝑡 = 6. Adjust the schedule accordingly, ensuring: (1) Step precedence is respected. (2) No two operations use the same machine at the same time. (3) An operation cannot be separated.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2755
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "5",
+  "caption": "Figure 5: Gantt charts of optimized schedules produced by ALAS for four representative JSSP benchmark instances with varying job and machine counts. These visualizations demonstrate ALAS's ability to efficiently allocate resources and minimize makespan across different problem scales. The larger instance TA72 (J=100, M=20) is available in the supplementary materials.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 369
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": "Results for rcmax_20_15_5 === Timestamp: 2025-05-09 12:21:57 | Job | Step | Machine | Time Slot | Precedence Constraints | |-",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 125
+ },
+ {
+  "figure_id": "fig_7",
+  "label": null,
+  "caption": "| | Job3 | 15 | Machine7 | 3169-3352 | After Job3 Step 14 | | Job17 | 13 | Machine1 | 3172-3270 | After Job17 Step 12 | | Job9 | 14 | Machine13 | 3172-3259 | After Job9 Step 13 | | Job8 | 15 | Machine14 | 3176-3240 | After Job8 Step 14 | | Job16 | 15 | Machine10 | 3180-3279 | After Job16 Step 14 | | Job18 | 15 | Machine9 | 3180-3309 | After Job18 Step 14 | | Job20 | 14 | Machine5 | 3198-3334 | After Job20 Step 13 | | Job13 | 14 | Machine0 | 3216-3250 | After Job13 Step 13 | | Job7 | 14 | Machine3 | 3216-3260 | After Job7 Step 13 | | Job15 | 14 | Machine0 | 3250-3284 | After Job15 Step 13 | | Job2 | 14 | Machine1 | 3270-3349 | After Job2 Step 13 | | Job17 | 14 | Machine4 | 3270-3383 | After Job17 Step 13 | | Job13 | 15 | Machine10 | 3279-3361 | After Job13 Step 14 | | Job19 | 14 | Machine0 | 3284-3477 | After Job19 Step 13 | | Job12 | 15 | Machine9 | 3309-3501 | After Job12 Step 14 | | Job20 | 15 | Machine14 | 3334-3361 | After Job20 Step 14 | | Job14 | 14 | Machine5 | 3334-3408 | After Job14 Step 13 | | Job2 | 15 | Machine3 | 3349-3509 | After Job2 Step 14 | | Job4 | 15 | Machine10 | 3361-3547 | After Job4 Step 14 | | Job15 | 15 | Machine14 | 3361-3479 | After Job15 Step 14 | | Job7 | 15 | Machine4 | 3383-3541 | After Job7 Step 14 | | Job14 | 15 | Machine12 | 3408-3523 | After Job14 Step 14 | | Job10 | 15 | Machine5 | 3408-3535 | After Job10 Step 14 | | Job9 | 15 | Machine3 | 3509-3623 | After Job9 Step 14 | | Job17 | 15 | Machine5 | 3535-3561 | After Job17 Step 14 | | Job19 | 15 | Machine10 | 3547-3639 | After Job19 Step 14 | Best static makespan for rcmax_20_15_5: 3639",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1597
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "2",
+  "caption": null,
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 0
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "6",
+  "caption": "Figure 6: Consider a network 𝐺 = (𝑉 , 𝐸) with urban travel times 𝜏 𝑖 𝑗 = 10 minutes and airport routes 𝜏 𝑖𝐺 = {19, . . . , 22} minutes. Schedule three vehicles 𝑘 𝑖 (capacity 𝑐 𝑘 = 2) to deliver four passengers 𝑟 𝑖 to airport during [8 : 45, 9 : 00].",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 249
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "7",
+  "caption": "Figure 7: This solution routes showing optimal vehicle assignments. Vehicle k1 (blue) starts at A and collects passengers r1 and r2, while k2 (orange) starts at C and serves r3 and r4. Both vehicles arrive at BOS at 8:30, meeting all passenger arrival deadlines. Total distance traveled = 87 km (Optimal).",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 305
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "8",
+  "caption": "Figure 8: GPT-4o-Task and DeepSeek R1 both schedule three routes. Vehicle k1 picks up r1 from A at 7:40, then r2 from B at 7:50. Vehicle k2 picks up r3 from C at 7:55. Vehicle k3 must first drive from E to D to pick up r4 at 8:00. All meet deadlines. Total travel distance = 123 km.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 282
+ },
+ {
+  "figure_id": "fig_12",
+  "label": null,
+  "caption": "San Francisco Airport (SFO) -\\textbf{Roads E with distances and travel times:} -E1: Downtown to Golden Gate Park, Distance: 5 miles, Travel Time: 20 minutes -E2: Golden Gate Park to Fisherman Wharf, Distance: 6 miles, Travel Time: 25 minutes -E3: Fisherman Wharf to Union Square, Distance: 2 miles, Travel Time: 10 minutes -E4: Union Square to SFO, Distance: 15 miles, Travel Time: 30 minutes -E5: Downtown to SFO, Distance: 13 miles, Travel Time: 35 minutes 2) \\textbf{Ride Requests: A set of requests R} provides an overview of the current traffic conditions, road closures, and estimated travel times for passenger transport in SF. ================================================== RUNNING AGENT: Route Planning Agent ================================================== Optimized vehicle assignments and travel routes: 1) \\textbf{Vehicle Assignments:} -Vehicle 1: -Assigned to Request 1 -Route: Downtown (V1) -&gt; Union Square (V4) -Estimated Travel Time: 20 minutes (E1 + E3) -Departure Time: 9:00 AM -Arrival Time: 9:20 AM -Vehicle 2: -Assigned to Request 2 -Route: Union Square (V4) -&gt; Golden Gate Park (V2) -&gt; SFO (V5) -Estimated Travel Time: 55 minutes (E3 + E2 + E4) -Departure Time: 10:00 AM -Arrival Time: 10:55 AM -Vehicle 3: -Assigned to Request 3 -Route: Fisherman Wharf (V3) -&gt; Downtown (V1) -Estimated Travel Time: 10 minutes (E3) -Departure Time: 1:00 PM -Arrival Time: 1:10 PM 2) \\textbf{Travel Routes:} -Request 1: -Vehicle 1 will pick up Passenger P001 at Downtown and drop off at Union Square. -Route: V1 -&gt; V4 -Request 2: -Vehicle 2 will pick up Passenger P002 at Golden Gate Park and drop off at SFO. -Route: V4 -&gt; V2 -&gt; V5 -Request 3: -Vehicle 3 will pick up Passenger P003 at Fisherman Wharf and drop off at Downtown. Downtown (V1) -&gt; Union Square (V4) -Estimated Travel Time: 20 minutes -Departure Time: ``9:00 AM'' -Arrival Time: ``9:20 AM'' -Vehicle 2: -Assigned to Request 2 -Passengers: P002 -Route: Union Square (V4) -&gt; Golden Gate Park (V2) -&gt; SFO (V5) -Estimated Travel Time: 55 minutes -Departure Time: ``10:00 AM'' -Arrival Time: ``10:55 AM'' -Vehicle 3: -Assigned to Request 3 -Passengers: P003 -Route: Fisherman Wharf (V3) -&gt; Downtown (V1) -Estimated Travel Time: 10 minutes -Departure Time: ``1:00 PM'' -Arrival Time: ``1:10 PM'' 2) \\textbf{Dispatch Schedule:} -9:00 AM: Vehicle 1 departs from Downtown with Passenger P001. -9:20 AM: Vehicle 1 arrives at Union Square. -10:00 AM: Vehicle 2 departs from Union Square with Passenger P002. -10:55 AM: Vehicle 2 arrives at SFO. -1:00 PM: Vehicle 3 departs from Fisherman Wharf with Passenger P003. -1:10 PM: Vehicle 3 arrives at Downtown. These assignments and schedules ensure efficient use of vehicles and timely arrival of all passengers.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2756
+ },
+ {
+  "figure_id": "fig_13",
+  "label": "1",
+  "caption": "Gantt Chart: GPT-4o (Incorrect)",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 31
+ },
+ {
+  "figure_id": "fig_14",
+  "label": "2",
+  "caption": "Gantt Chart: Claude 3.7 (Incorrect)",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 35
+ },
+ {
+  "figure_id": "fig_15",
+  "label": "34",
+  "caption": "Gantt Chart: DeepSeek R1 (Incorrect)Gantt Chart: Gemini 2.5 Pro (Correct)",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 73
+ }
+]

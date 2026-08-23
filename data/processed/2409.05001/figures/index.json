@@ -1,0 +1,82 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "2",
+  "caption": "Figure 2: Overview of our PairCoder, in which a Navigator agent and a Driver agent collaborate on code generation.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 114
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "189",
+  "caption": "PairCoderInput: problem description Q, public test cases T 𝑣 [Agents]: Navigator model M 𝑁 , Driver model M 𝐷 [Memories]: code history H 𝑐 , feedback history H 𝑓 [Hyperparameters]: the maximum number of iterations 𝑟 , the number of sampled plans 𝑛, the number of clusters 𝑘 Output: generated code 𝐶 1 𝑟𝑒 𝑓 𝑙𝑒𝑐𝑡𝑖𝑜𝑛 ← M 𝑁 (• | ReflectPrompt, Q); 2 {𝑃 𝑖 } 𝑛 𝑖=1 ← M 𝑁 (• | PlanPrompt, Q, 𝑟𝑒 𝑓 𝑙𝑒𝑐𝑡𝑖𝑜𝑛); 3 𝑆 ← ClusterPlans({𝑃 𝑖 } 𝑛 𝑖=1 , 𝑘); // 𝑆 ⊆ {𝑃 𝑖 } 𝑛 𝑖=1 ∧ ∥𝑆 ∥ = 𝑘 4 𝐶 ← 𝑁𝑈 𝐿𝐿; 𝐹 ← 𝑁𝑈 𝐿𝐿; 5 for 𝑗 := 1 to 𝑟 do 6 if ( 𝑗 = 1) ∨ (𝐶 ∈ H 𝑐 ) ∨ (𝐹 ∈ H 𝑓 ) then // select a new solution plan 7 𝑝𝑙𝑎𝑛 ← M 𝑁 (• | SelectPrompt, Q, 𝑟𝑒 𝑓 𝑙𝑒𝑐𝑡𝑖𝑜𝑛, 𝑆); 𝑐 ← ∅; H 𝑓 ← ∅; 10 𝐶 ← M 𝐷 (• | CodePrompt, Q, 𝑝𝑙𝑎𝑛);",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 695
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "1112",
+  "caption": "𝑐 ← H 𝑐 ∪ {𝐶}; H 𝑓 ← H 𝑓 ∪ {𝐹 }; 13 𝑠𝑡𝑟𝑎𝑡𝑒𝑔𝑦 ← M 𝑁 (• | AnalyzePrompt, Q, 𝐶, 𝐹 );",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 81
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "14",
+  "caption": "← M 𝐷 (• | RepairPrompt, Q, 𝐶, 𝑠𝑡𝑟𝑎𝑡𝑒𝑔𝑦);",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 41
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "15",
+  "caption": "ExecuteTests(𝐶, T 𝑣 ); 16 if 𝐹 = Pass then break ; 17 return 𝐶;",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 63
+ },
+ {
+  "figure_id": "fig_5",
+  "label": null,
+  "caption": "For input [1, 3, 4], 1 operation is needed. Insert 2 to get [1, 2, 3, 4].",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 73
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "4",
+  "caption": "Figure4: The prompt template for sampling multiple plans and an output example of solution plans.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 97
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "78",
+  "caption": "Figure 7: The prompt template used by the Driver to generate initial code guided by a new solution plan.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 104
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "9",
+  "caption": "Figure 9: Accuracy changes with the maximum number of iterations, which evaluates PairCoder, Self-debugging, and INTERVENOR using GPT-3.5-Turbo on (a) HumanEval and (b) CodeContest-test benchmarks. The colored demarcations denote the average iteration counts at which PairCoder transitions to its next plan.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 307
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "10",
+  "caption": "Figure 10: Accuracy changes with the number of clusters, which evaluates PairCoder by pass@1 score and the proportion of problems where all 𝑘 plans are attempted.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 162
+ }
+]

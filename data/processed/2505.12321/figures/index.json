@@ -1,0 +1,58 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "2",
+  "caption": "Figure 2: Overall structure of BeliefNest. The simulators form a nested hierarchy that corresponds to the nested structure of beliefs. Let Z be a finite sequence of agent identifiers that represents a path of belief nesting. In the simulator representing state s Z , agent i constructs a new simulator whose state s Z||i reflects its belief b Z i . Here, the operator || denotes sequence concatenation: Z||i is the sequence obtained by appending agent i to the end of Z. In the real world, agent 1 can see the red and green blocks, while agent 2 can see the blue and green blocks. Agent 1 is unaware of the blue block, and agent 2 is unaware of the red block. Therefore, agent 1 believes that agent 2 can see only the green block. These belief-dependent perceptions are explicitly represented within each simulator. All agents are assumed to have prior knowledge of the floor, the white outer walls, and the black inner wall.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 925
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "123579",
+  "caption": "Initialization: b i ∀i ∈ A if mode = \"control\" then 4: s ← get state() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . (C-1) else if mode = \"follow\" then 6: s ← await receive belief() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . (F-1) apply to simulator(s) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . (F-2) for all i ∈ A do 10:o i ← O i (s) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . (Common-1) 11: b i ← update belief(b i , o i ) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . (Common-2)12: send belief(i, b i ) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . (Common-3) 13: end for 14: end while 5 Agent Control Based on Belief Agents within any simulator can be controlled via JavaScript programs. Since the state of each belief simulator reflects the beliefs of the agents in the corresponding shallower-level simulator, it is possible to generate JavaScript programs using LLMs based on the simulator's state, enabling agents to take actions grounded in their beliefs. To support program generation by LLMs, BeliefNest provides functionality for prompt generation based on the state of each simulator. When a prompt template written in Jinja2 format (see Appendix A.1 for an example) is provided, BeliefNest automatically inserts a string representation of the simulator's state into the specified locations within the template to generate the final prompt. Users are free to employ any prompt template or LLM of their choice, making it possible to design and evaluate various methods for agent control utilizing LLMs.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2102
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "(a) Condition 1. (b) Condition 2. The observer can see Sally. (c) Condition 3. The observer cannot see Sally.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 109
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "3",
+  "caption": "Figure 3: Experimental setup for the Sally-Anne task. Sally's position in the figure represents her location after placing the diamond in the box.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 146
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "4",
+  "caption": "Figure 4: Experimental setup for the Ice Cream Van Task.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 56
+ },
+ {
+  "figure_id": "fig_5",
+  "label": null,
+  "caption": null,
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 0
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": "Code from the last round: $$LAST_CODE$$ Error from the last round: $$LAST_ERROR$$ &lt;Information&gt; Thought: {{ branch | thought }} Chat log: {{ branch | chat_log }} Position: {{ branch | position }} Chest: {{ branch | chests }} Inventory: {{ branch | inventory }} Other players: {{ branch | other_players }} Blocks seen so far: {{ branch | blocks([\"chest\"]) }} &lt;History of player visibilities and actions&gt; [My(sally's) perspective] {{ branch | events_and_visibilities }} Task: {{ task }}A.2 Example of a Generated PromptCode from the last round: No code was executed Error from the last round:",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 602
+ }
+]

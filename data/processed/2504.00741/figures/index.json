@@ -1,0 +1,226 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": null,
+  "caption": "(1) LLM-driven Planning stage, (2) LLM-driven Proposition stage, (3) generation of threedimensional crystal structures by the Structure Estimator, and (4) Evaluation of materials properties and the preparation of feedback by the Property Evaluator.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 248
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "1",
+  "caption": "Figure 1. The overview of the proposed materials design framework. The large language model (LLM) generates materials compositions through two sequential stages: Planning and Proposition. During the Planning stage, the LLM selects the appropriate tools (short-term memory, long-term memory, periodic table, and materials knowledge base), providing the natural-language justifications. In the Proposition stage, the LLM proposes revised compositions by reasoning based on insights obtained from these tools. The proposed compositions are then processed by the Structure Estimator (a diffusion model), which generates corresponding three-dimensional crystal structures. These structures are evaluated by the Property Evaluator, and feedback from the Property Evaluator is iteratively provided to the LLM for further refinement.",
+  "ref_count": 3,
+  "has_graphic": true,
+  "caption_chars": 825
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "the Proposition stage, relevant information is retrieved based on the tool selected during the Planning stage. Combining this retrieved information with the composition proposed in the previous iteration and the corresponding feedback, the LLM then generates a new composition proposal accompanied by explicit reasoning, providing interpretable insights into the underlying design choices. The complete prompt templates for this Proposition stage corresponding to each tool are shown in the supplementary material A.2.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 518
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "2",
+  "caption": "Figure 2. Workflow of composition proposal by the LLM. In the Planning stage, the LLM first analyzes the current context and selects an appropriate tool with explicit reasoning. During the subsequent Proposition stage, information retrieval is performed based on the selected tool. Leveraging this retrieved information, alongside the previously proposed composition and corresponding feedback, the LLM then proposes a new composition, again accompanied by explicit reasoning that ensures interpretability in the materials design process.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 538
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "3",
+  "caption": "Figure 3. Comparison of tool usage patterns during the Planning stage by the LLM. Heatmaps a and b illustrate the frequency with which each tool (Short-term memory, Long-term memory, Periodic table, and Knowledge base) was selected by the LLM during the Planning stage to guide subsequent material composition proposals. Panel a presents results obtained using GPT-4o, while panel b shows results using o3-mini. Panel c and d further illustrate how tool selection patterns evolved over iterations, categorized into Early (iterations 1-5), Mid (iteration 6-10), and Late stages (iterations 11-15). Panel c corresponds to results with GPT-4o, and panel d corresponds to the results with o3-mini.",
+  "ref_count": 4,
+  "has_graphic": true,
+  "caption_chars": 693
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "4",
+  "caption": "Figure 4. Success rate progression over iterations. Results are shown for the MatAgent with GPT-4o and o3-mini backbones with and without the use of tool-assisted Planning and Proposition, denoted as GPT-4o w/ tools, GPT-4o w/o tools, o3-mini w/ tools, and o3-mini w/o tools, respectively. Reference success rates obtained using MatterGen 25 fine-tuned on formation energy per atom in MP-20 dataset are also included.",
+  "ref_count": 5,
+  "has_graphic": true,
+  "caption_chars": 417
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "5",
+  "caption": "shows the comparison of each metric across different approaches, and Figure5b presents radar charts summarizing these compositional metrics for each LLM backbone. For reference, the SMACT validity of compositions in the MP-20 dataset is 0.89, suggesting that achieving a validity score close to 1.0 does not necessarily imply improved quality or practical usefulness. All metrics were evaluated based on the structures identified by the Property Evaluator as closest to the target property value within each independent run. In the evaluation of MatterGen, all compositions generated through CF-guided generation were included in the assessment.",
+  "ref_count": 3,
+  "has_graphic": false,
+  "caption_chars": 645
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "5",
+  "caption": "Figure 5. Calculated compositional metrics. a Comparison of compositional validity, uniqueness, novelty, and V.U.N. scores across five different approaches. b Radar charts summarizing these compositional metrics for each LLM backbone.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 234
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "6",
+  "caption": "Figure 6. Elemental distributions of proposed compositions. a Elemental distributions calculated from compositions proposed across 15 iterations in 20 independent runs targeting a formation energy of -3.8 eV/atom. The left panels show frequencies from all proposed compositions; the right panels show frequencies from compositions closest to the target. Rows one to four correspond to GPT-4o w/o tools, GPT-4o w/ tools, o3-mini w/o tools, and o3-mini w/ tools, respectively. b Pie charts showing elemental proportions of compositions closest to the target, sorted by frequency.",
+  "ref_count": 4,
+  "has_graphic": true,
+  "caption_chars": 577
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "7",
+  "caption": "Figure 7. Comparison of three initialization methods (Random, LLM, Retriever). Target formation energy was set to -3.8 eV/atom. a Average property values at each iteration across 20 independent runs. b Average of the property values closest to the target achieved up to each iteration, calculated across 20 independent runs. c Success rates calculated at each iteration, averaged over 20 independent runs. d Compositional metrics (validity, uniqueness, novelty, and V.U.N. score) for compositions identified as closest to the target.",
+  "ref_count": 3,
+  "has_graphic": true,
+  "caption_chars": 533
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "18",
+  "caption": "Figure 8. Comparison of elemental distributions explored by the framework under different additional prompts. a Elemental distribution without any additional constraints. b Elemental distribution under the constraint excluding Pb, Hg, Cd, and Cr. c Elemental distribution under the constraint excluding actinides elements. d Elemental distribution under the constraint restricting compositions to non-metallic elements only.",
+  "ref_count": 4,
+  "has_graphic": false,
+  "caption_chars": 424
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "12",
+  "caption": "Figure 12.Prompt template for the Proposition stage when the periodic table has been selected. The template contains the following variables: &lt;target&gt;, &lt;composition&gt;, &lt;property value&gt;, and &lt;elements&gt;. The &lt;elements&gt; contains information about elements belonging to the same group as those included in the previous proposal. For example, if a previous proposal contains Li and O, &lt;elements&gt; will include Li: H, Na, K, Rb, Cs and O: S, Se, Te.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 477
+ },
+ {
+  "figure_id": "fig_12",
+  "label": "13",
+  "caption": "Figure 13. Prompt template for the Proposition stage when the materials knowledge base has been selected. The template contains the following variables: &lt;target&gt;, &lt;composition&gt;, &lt;property value&gt;, and &lt;Information&gt;. The &lt;Information&gt; includes insights into how material properties change when compositions related to the previously proposed composition are modified, along with observations explaining why these changes occur.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 455
+ },
+ {
+  "figure_id": "fig_13",
+  "label": "14",
+  "caption": "Figure 14. Template for feedback generation. The &lt;property value&gt; is a variable.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 86
+ },
+ {
+  "figure_id": "fig_14",
+  "label": "15",
+  "caption": "Figure 15. Prompt template for material composition proposal by the LLM without tool-assisted Planning and Proposition. &lt;target&gt;, &lt;composition&gt;, and &lt;property value&gt; are variables.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 198
+ },
+ {
+  "figure_id": "fig_15",
+  "label": "16",
+  "caption": "Figure 16. Prompt template used to generate explanations of observations when transitioning from one composition to another during the construction of the knowledge base. The variables are follows: &lt;source composition&gt;, &lt;source formula units&gt;, &lt;source property value&gt;, &lt;target composition&gt;, &lt;target formula units&gt;, and &lt;target property value&gt;.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 379
+ },
+ {
+  "figure_id": "fig_16",
+  "label": "17",
+  "caption": "Figure 17. Distribution of formation energy per atom in MP-60 dataset.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 70
+ },
+ {
+  "figure_id": "fig_17",
+  "label": "18",
+  "caption": "Figure 18. t-SNE visualization of the embedding representations of reasoning texts generated by the LLM during the Planning stage for GPT-4o and o3-mini. Each point represents a reason associated with a selected tool, and the colors indicate clusters obtained via k-means clustering.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 283
+ },
+ {
+  "figure_id": "fig_18",
+  "label": "20",
+  "caption": "Figure20. Examples of reasoning texts generated by GPT-4o during the Planning stage. For each cluster shown in Figure18, three reasoning examples were randomly selected from the points belonging to that cluster.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 211
+ },
+ {
+  "figure_id": "fig_19",
+  "label": null,
+  "caption": null,
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 0
+ },
+ {
+  "figure_id": "fig_20",
+  "label": null,
+  "caption": null,
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 0
+ },
+ {
+  "figure_id": "fig_21",
+  "label": null,
+  "caption": null,
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 0
+ },
+ {
+  "figure_id": "fig_22",
+  "label": null,
+  "caption": null,
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 0
+ },
+ {
+  "figure_id": "fig_23",
+  "label": null,
+  "caption": null,
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 0
+ },
+ {
+  "figure_id": "fig_24",
+  "label": "9",
+  "caption": "Prompt template for Planning stage. &lt;target&gt; and &lt;current situation&gt; are the variables. Here, &lt;current situation&gt; includes historical information regarding previously selected tools and how the material properties changed as a result of those selections.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 272
+ },
+ {
+  "figure_id": "fig_25",
+  "label": "10",
+  "caption": "Prompt template for the Proposition stage when short-term memory has been selected. The template contains the following variables: &lt;target&gt;, &lt;composition&gt;, &lt;property value&gt;, and &lt;short-term memory&gt;. The &lt;short-term memory&gt; contains information regarding recent composition proposals, the reasoning behind those proposals, and the feedback received from the Property Evaluator.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 406
+ },
+ {
+  "figure_id": "fig_26",
+  "label": "11",
+  "caption": "Prompt template for the Proposition stage when long-term memory has been selected. The template contains the following variables: &lt;target&gt;, &lt;composition&gt;, &lt;property value&gt;, and &lt;long-term memory&gt;. The &lt;long-term memory&gt; includes information on previous cases in which material compositions leading to structures with properties close to the target were successfully proposed, detailing the reasoning behind those proposals and the corresponding feedback received from the Property Evaluator.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 521
+ },
+ {
+  "figure_id": "fig_27",
+  "label": "19",
+  "caption": "t-SNE visualization of the embedding representations of reasoning texts generated by the LLM during the Proposition stage for GPT-4o and o3-mini. Each point represents a reason associated with a selected tool, and the colors indicate clusters obtained via k-means clustering By examining the reasoning texts within each cluster in Figures",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 338
+ }
+]

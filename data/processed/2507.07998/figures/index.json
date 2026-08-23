@@ -1,0 +1,154 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "2",
+  "caption": "Figure2| PyVision, an interactive and multi-turn framework capable of dynamic tool generation, designed for multimodal reasoning. In an inference session, PyVision performs n+1 interaction turns with the Python interpreter. In the figure, code_block_i refers to the generated Python code by the MLLM in the i-th turn, and mm_clue_i the executed multi-modal outputs by the Python interpreter. This loop continues until the MLLM outputs a final answer.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 450
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": "import matplotlib.pyplot as plt # Coordinates determined by # visual estimation: # (left, upper, right, lower) # The board is in the middle right # by the wall, # so let's crop generously crop_box = (1700, 1700, 2100, 2050) board_crop = image_clue_0.crop(crop_box) plt.imshow(board_crop) plt.axis('off') plt.show()",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 314
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "Adjust crop box to focus on the board near the wall crop_box = (2600, 1200, 3050, 1600) board_crop = image_clue_0.crop(crop_box) plt.imshow(board_crop) plt.axis('off') plt.show()Second Turn -Reasoning, Coding &amp; ExecutionForth Turn -Reasoning (Answer)Now we have a clear image of the advertising board. From visual inspection, the board says:-\"Corepower YOGA\" -\"LIVE YOUR POWER\" -\"Find us UP STAIRS\" -\"1 FREE WEEK\" -\"corepoweryoga.com\"The repeated mention of \"YOGA\" and \"Corepower Yoga\" makes it clear that this is a yoga studio. Final Answer: \\boxed{'The shop is a yoga studio.crop is still incorrect-it captured the trellis and plants, not the advertising board. Let's carefully reassess the spatial layout:-The board is on the walkway, close to the wall, roughly at the vertical center, and slightly left of the right edge.-Let's try cropping from (1900, 1400) to (2200, 1700).Let's visualize this region to see if we get the advertising board. crop_box = (1900, 1400, 2200, 1700) board_crop = image_clue_0.crop(crop_box) plt.imshow(board_crop) plt.axis('off') plt.show() Third Turn -Reasoning, Coding &amp; Execution",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1123
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "Execution3",
+  "caption": "Figure 3 | Case Study: Visual Search requires language-based world knowledge, vision-based contextual understanding, and iterative refinement to precisely locate specific visual elements.In this case from V*<ref type=\"bibr\" target=\"#b50\">[52]</ref>, the agent must identify text on a small advertising board in a complex outdoor scene. The target occupies a minimal image area, requiring adaptive cropping. This showcases how dynamic tool generation enables flexible spatial reasoning.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 485
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": "import matplotlib.pyplot as plt import numpy as np # Show the original image plt.figure(figsize=(8, 8)) plt.imshow(image_clue_0) plt.title(\"Original Fundus Image\") plt.axis('off') plt.show() # Enhance contrast using histogram # equalization (on each channel) def enhance_contrast(img): arr = np.asarray(img) enhanced = np.zeros_like(arr) for i in range(3): # For R, G, B channels channel = arr[..., i] hist, bins = np.histogram( channel.flatten(), 256, [0,256]) cdf = hist.cumsum() cdf_normalized = (cdf * hist.max() / cdf.max()) cdf_m = np.ma.masked_equal(cdf, 0) cdf_m = ((cdf_m -cdf_m.min())*255/ (cdf_m.max()-cdf_m.min())) cdf = (np.ma.filled(cdf_m,0).astype('uint8')) enhanced[..., i] = cdf[channel] return enhanced enhanced_img = enhance_contrast(image_clue_0) plt.figure(figsize=(8, 8)) plt.imshow(enhanced_img) plt.title(\"Contrast Enhanced Fundus Image\") plt.axis('off') plt.show() Reflection:",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 901
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "1",
+  "caption": "Understand the Question and Image -We're given a fundus (retina) image of the eye. -The question asks for the specific type of abnormality shown in the image, with four options. Step 2: Plan the Approach -Analyze the image for any signs of abnormality: -Blockage in blood vessels (look for vessel occlusions, whitening, or dropout) -Infection (look for exudates, hemorrhages, or unusual patterns) -Blood clot (look for localized hemorrhages or vascular occlusion) -No abnormalities (normal optic disc, vessels, and macula) -Use matplotlib to enhance contrast and zoom into key areas (optic disc, macula, blood vessels). Step 3: Visualize the Image -Display the original image and enhance contrast to check for subtle abnormalities.Let's write code to visualize and enhance the image to better inspect for abnormalities.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 819
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": "Turn -Reasoning, Coding &amp; Execution# Analyze the intensity histogram # to look for abnormalities gray_img = np.mean( np.asarray(image_clue_0), axis=2) plt.figure(figsize=(6,4)) plt.hist(gray_img.flatten(), bins=50, color='gray') plt.title(\"Grayscale Intensity \" \"Histogram\") plt.xlabel(\"Intensity\") plt.ylabel(\"Pixel Count\") plt.show()",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 339
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "4",
+  "caption": "Figure4| Case Study: Medical Imaging Analysis often requires high visual sensitivity and domain-specific reasoning to solve subtle medical problems. This case from OmniMedVQA<ref type=\"bibr\" target=\"#b17\">[18]</ref> involves identifying a specific abnormality in a fundus image of the retina. PyVision is tasked with diagnosing the image without prior domain-specific modules.To begin, PyVision generates a visualization tool that applies histogram equalization to enhance contrast in key regions, a standard technique in medical imaging analysis. It then creates a second tool to plot the intensity histogram, confirming the absence of abnormal peaks. Within a few iterations, PyVision constructs a custom diagnostic pipeline from scratch, correctly concluding that no specific abnormalities are present. This highlights PyVision's ability to generate interpretable, domain-adapted tools for complex medical tasks.",
+  "ref_count": 3,
+  "has_graphic": true,
+  "caption_chars": 915
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "5",
+  "caption": "Figure5| Case Study: Symbolic Visual Puzzles require precise spatial reasoning and the recognition of overlapping or closely positioned geometric primitives, a task that is simple for humans, yet surprisingly difficult for powerful MLLMs when asked directly<ref type=\"bibr\" target=\"#b39\">[41]</ref>. In contrast, the regular structure of such puzzles makes them well-suited to code-based solutions.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 398
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "12345678127",
+  "caption": "Figure 7 | Case Study: Spot-the-Difference showcases structured visual comparison. Given a side-by-side image pair, PyVision is asked to identify all visual discrepancies.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 171
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "118",
+  "caption": "Figure 8 | Case Study: Video Understanding benefits from an agentic pipeline that integrates reasoning across frames and targeted frame selection. In this example from VSI-Bench [55], a 3-minute egocentric video of an indoor scene is presented, and PyVision is tasked with identifying the number of tables in the room.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 318
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "9",
+  "caption": "Figure 9 | Taxonomy Distribution Across Benchmarks and Domains. Tool usage varies significantly across different tasks and domains.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 131
+ },
+ {
+  "figure_id": "fig_12",
+  "label": "10",
+  "caption": "Figure 10 | Multi-Turn Interaction Patterns Across Tasks and Backend Models. The histograms show the distribution of the number of generated code blocks per query across six benchmarks. PyVision-GPT-4.1 (blue) and PyVision-Claude-4.0-Sonnet (red) exhibit distinct interaction patterns, with Claude consistently generating code more frequently and with more turns. The legend in each subplot indicates the percentage of samples that involved at least one code block.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 465
+ },
+ {
+  "figure_id": "fig_13",
+  "label": null,
+  "caption": "print()\" to check it. The output (wrapped in \"&lt;interpreter&gt;output_str&lt;/interpreter&gt;\") can be returned to aid your reasoning and help you arrive at the final answer. The Python code should be complete scripts, including necessary imports. Each code snippet is wrapped with: &lt;code&gt; python code snippet &lt;/code&gt; The last part of your response should be in the following format: &lt;answer&gt; \\boxed{\"The final answer goes here.\"} &lt;/answer&gt; *image resolution:* Image Width: {width}; Image Height: {height} *user question:* Answer the following Problem with an image provided and put the answer in the format of \\boxed{answer} {\"query\"} Remember to place the final answer in the last part using the format: &lt;answer&gt; \\boxed{\"The final answer goes here.\"} &lt;/answer&gt; plt . show () Listing 2 | A code snippet example of generated R O TAT E tool. In this example, PyVision was queried to answer what is written on an upside-down image. It generated R O T A T E tool to make the image rotate 180 degree.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1034
+ },
+ {
+  "figure_id": "fig_14",
+  "label": "3",
+  "caption": "A code snippet example of the generated E N H A N C E C O N T R A S T tool.In this example, PyVision was queried to identify retinal abnormalities in a fundus image.It generated the E N H A N C E C O N T R A S T tool to increase image contrast, making subtle pathological features more visible.B.4. Code Snippet of S E G M EN TAT I O N Tool import matplotlib . pyplot as plt import numpy as np from skimage . filters import threshold_otsu from scipy . ndimage import label , binary_opening , binary_closing # Convert to grayscale image = image_clue_0 gray = np . array ( image . convert ( 'L ') ) # Otsu 's thresholding on grayscale otsu_thresh = threshold_otsu ( gray ) binary_otsu = gray &gt; otsu_thresh # Let 's apply morphological operations and count the number of buildings . # Morphological operations to clean up the mask cleaned = binary_opening ( binary_otsu , structure = np . ones ((5 ,5) ) ) cleaned = binary_closing ( cleaned , structure = np . ones ((7 ,7) ) ) # Label connected components labeled , num_features = label ( cleaned ) print ( \" Number of detected buildings : \" , num_features ) # Calculate area of each region region_sizes = np . bincount ( labeled . flatten () ) min_ build ing_ar ea = 1000 # Adjust as needed for urban scale # Ignore the background ( label 0) num_buildings = np . sum ( region_sizes [1:] &gt; min_building_area ) print ( \" Number of buildings ( filtered by area ) : \" , num_buildings ) Listing 4 | A code snippet example of generated S E G M E N TAT I O N tool. In this example, PyVision was queried to count the number of buildings in a satelite remote sensing image. The entire python tool chain (merged into a single python code snippet for conciseness) generated by PyVisionachieved a similar functionality as segmentation models by thresholding, clustering and filtering step by step.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 1839
+ },
+ {
+  "figure_id": "fig_15",
+  "label": "5",
+  "caption": "A code snippet example of generated D E T E C T I O N tool. In this example, PyVision was queried to recognize a small cup of water in the image. It generated D E T E C T I O N tool to help cropping. B.6. Code Snippet of O C R Tool import easyocr import numpy as np # Convert rotated PIL image to numpy array for easyocr img_np = np . array ( rotated_img ) # Initialize EasyOCR reader reader = easyocr . Reader ([ ' en ' ]) # Perform OCR result = reader . readtext ( img_np , detail =0) # Print the recognized text print ( result ) Listing 6 | A code snippet example of generated O C R tool. In this example, PyVision was queried to answer what is the text on the image. It generated O C R tool , using EasyOCR to recognize the text on the image.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 746
+ },
+ {
+  "figure_id": "fig_16",
+  "label": "282",
+  "caption": "Left side , sitting person in red top plt . plot (110 , 195 , ' yo ' , markersize =15 , markeredgecolor = ' yellow ' , markeredgewidth =3) plt . text (110 , 175 , '2 ' , fontsize =16 , color = ' yellow ' , fontweight = ' bold ' , ha = ' center ')#Person 3: Center -right area , person in red shirt sitting plt . plot (380 , 200 , ' yo ' , markersize =15 , markeredgecolor = ' yellow ' , markeredgewidth =3) plt . text (380 , 180 , '3 ' , fontsize =16 , color = ' yellow ' , fontweight = ' bold ' , ha = ' center ') plt . axis ( ' off ') plt . show () Listing 7 | A code snippet example of generated R E N D E R M A R K S tool. In this example, PyVision was queried to count the people wearing solid red shirts. It generated a R E N D E R M A R K S tool, labeling the people wearing red shirts.Code Snippet of R E N D E R A U X I L IA R Y L I N E S Tool import matplotlib . pyplot as plt import matplotlib . patches as patches # Load image img = image_clue_0 # Set up plot fig , ax = plt . subplots ( figsize =(8 , 6) ) ax . imshow ( img ) # Green square location ( col , row ) : (2 , 4) in 0 -based grid ( counting from top left ) # Move left 1 step : (1 , 4) start_col , start_row = 2 , 4 end_col , end_row = start_col -1 , start_row # Convert to image coordinates # Each cell : width = 640/5 = 128 , height = 480/5 = 96 cell_w , cell_h = 128 , 96 # Center of starting cell start_x = start_col * cell_w + cell_w // 2 start_y = start_row * cell_h + cell_h // 2 # Center of ending cell end_x = end_col * cell_w + cell_w // 2 end_y = end_row * cell_h + cell_h // Draw arrow from green square to left ax . arrow ( start_x , start_y , end_x -start_x , end_y -start_y , head_width =20 , head_length =20 , fc = ' red ' , ec = ' red ' , l e n g t h _ i n c l u d e s_head = True ) # Add annotation at end point ax . text ( end_x , end_y , ' HERE ' , color = ' red ' , fontsize =16 , fontweight = ' bold ' , ha = ' center ' , va = ' center ') plt . axis ( ' off ') plt . show () Listing 8 | A code snippet example of generated R E N D E R A U X I L I A R Y L I N E S tool. In this example, PyVision was queried to answer what is the position after the next step. It generated R E N D E R A U X I L I A R Y L I N E S tool to help grounding the position via sketching. B.9. Code Snippet of V I S U L I Z E I M A G E H I S T O G R A M Tool # Plot the histogram of pixel values img_array = np . array ( image_clue_0 ) plt . figure ( figsize =(6 ,4) ) plt . hist ( img_array . ravel () , bins =256 , color = ' gray ') plt . title ( ' Pixel Value Histogram ') plt . xlabel ( ' Pixel Intensity ') plt . ylabel ( ' Frequency ') plt . show () Listing 9 | A code snippet example of generated V I S U L I Z E I M A G E H I S T O G R A M tool. In this example, PyVision was queried to if there is some specific pattern. It generated V I S U L I Z E I M A G E H I S T O G R A M tool to help detect the pattern. B.10. Code Snippet of N U M E R I C A L A N A LY S I S Tool import numpy as np # Convert the glass area to a numpy array glass_np = np . array ( glass_area ) # Calculate mean RGB values mean_rgb = glass_np . mean ( axis =(0 , 1) ) print ( \" Mean RGB values of the glass area : \" , mean_rgb ) Listing 10 | A code snippet example of generated N U M E R I C A L A N A LY S I S tool. In this example, PyVision was queried to answer the the color of the specific area in the image. It generated N U M E R I C A L A N A LY S I S tool to help analysis the color.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 3445
+ },
+ {
+  "figure_id": "fig_17",
+  "label": "222",
+  "caption": ". Additional Evaluation Details . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21 A.1. System Prompt Details . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21 A.2. Evaluation Parameters Details . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 B. Examples of Generated Tools . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . Evaluation Details Inference Parameters. In the evaluation stage, we set the temperature to 0.6. Here is the chain-of-thought prompt template used for evaluation. Chain-of-Thought Prompt Template You are a helpful assistant. And you are dealing with the VQA tasks. Solve the visual questions step by step and give the correct answer. Note: put your answer in the format of \"\\boxed{the right answer here}\" *user question*: {query} Illustration of GPT-4.1's result in Tab. 2.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1065
+ },
+ {
+  "figure_id": "fig_18",
+  "label": "12",
+  "caption": "Code Snippet of C R O P Tool # The board is towards the center -right . # Based on the apparent position , let 's crop the region centered at ( center -right ) , roughly : # x : 900 -1050 , y : 520 -700 ( after visually inspecting the source image proportions ) cropped = image_clue_0 . crop ((900 , 520 , 1050 , 700) ) plt . imshow ( cropped ) plt . title ( ' Zoom on Advertising Board ') plt . axis ( ' off ') plt . show () Listing 1 | A code snippet example of generated C R O P tool. In this example, PyVision was queried to answer the type of the shop based on the advertising board's information. It generated C R O P tool to focus on the board area. Code Snippet of R O TAT E Tool import matplotlib . pyplot as plt import pytesseract from PIL import Image # Step 1: Rotate the image 180 degrees to correct orientation rotated_image = image_clue_0 . rotate (180) # Display the rotated image to verify orientation plt . imshow ( rotated_image ) plt . axis ( ' off ')",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 971
+ }
+]

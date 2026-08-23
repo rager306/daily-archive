@@ -1,0 +1,106 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "22",
+  "caption": "Figure2: The FactoredScenes framework. FactoredScenes (i) learns a library of programs, (ii) generates a scene program with the learned library, (iii) executes the program to retrieve layouts, (iv) predicts object poses given the program, and (v) retrieves object instances for the full scene. This factorization enables our framework to use different sources of data to generate real-world scenes.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 398
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "1",
+  "caption": ", x 2 , . . . ) = P (x 1 , x 2 , • • • | pose, program) • P (pose | layout, program)• P (layout = f (program)) • P (program | library) • P (library).",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 149
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "ii) generating a scene program with LLMs regularized by the learned library to model P (program | library); (iii) executing the program to retrieve layouts to model P (layout = f (program)); (iv) predicting object poses with a program-conditioned model to model P (pose | layout, program); (v) retrieving object instances based on predicted poses and program structures to model P (x 1 , x 2 , • • • | pose, program).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 417
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "4",
+  "caption": "Figure 4: FactoredScenes hierarchically predicts poses for objects based on the underlying program.Our model first predicts primary objects' poses with an attention-based model (e.g., table), then predicts dependent objects' poses additionally conditioned on the orientation and program of their dependency target (e.g., the chairs' poses are dependent on that of table's).",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 373
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "6",
+  "caption": "Figure 6: We render diverse examples of FactoredScenes's generated 3D scenes with annotated ScanNet (top row) and ShapeNet (bottom row) objects. Note that ScanNet objects are often partial, hence we include a scaled and interpolated ScanNet background for visualization.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 270
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "7",
+  "caption": "Figure7: Visualizations of FactoredScenes's pose predictions on the unseen ScanNet test set. Orange and green boxes are the original primary and dependent objects respectively. Red and blue boxes are the predicted primary and dependent objects. Here, we highlight the natural variation in orientations of the primary objects, and the corresponding learned changes in the dependent objects. For example, in the top left scene, the bottom left table is rotated, and as are its dependent chairs correspondingly.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 508
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "16",
+  "caption": "Figure 16: Additional visualizations of FactoredScenes's pose predictions on the unseen ScanNet test set. Orange and green boxes are the original primary and dependent objects respectively. Red and blue boxes are the predicted primary and dependent objects.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 257
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "17",
+  "caption": "Figure 17: Additional examples of FactoredScenes's generated rooms.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 67
+ },
+ {
+  "figure_id": "fig_8",
+  "label": "8",
+  "caption": "The furniture function for primary objects.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 43
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "9",
+  "caption": "parallel functiondef parallel ( obj_anchor , distance_apart , direction , p a r a l l e l _ o b j e c t _ s i z e = None ) : \" \" \" Place a new furniture object parallel to an existing object based on the center point at a specified distance . Optionally , specify the size of the new object being placed .obj_anchor : reference object to base the new object 's position on dist ance_a part : distance between the two objects direction : 1 ( up ) , 2 ( down ) , 3 ( left ) , 4 ( right ) p a r a l l e l _ o b j e c t _ s i z e : optional tuple ( width , height ) to specify the size of the new object ; defaults to obj_anchor 's size Returns : a new furniture object positioned parallel to obj_anchor with the specified size \" \" \"The parallel function for dependent objects.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 773
+ },
+ {
+  "figure_id": "fig_10",
+  "label": "1213",
+  "caption": "The grid_with_offset function for dep. objects. symmetrical function def symmetrical ( center , distance_x , distance_y , s y m m e t r i c a l _ o b j e c t s _ s i z e ) : \" \" \" Place four objects symmetrically around a central point , based on the specified object size . The placement is based on the center of each symmetrical object . center : (x , y ) coordinates of the central point distance_x : horizontal distance from the center to the new objects distance_y : vertical distance from the center to the new objects s y m m e t r i c a l _ o b j e c t s _ s i z e : tuple ( width , height ) specifying the sizeof the symmetrical objects Returns : a list of four furniture objects symmetrically placed around the center \" \" \"The symmetrical function for dependent objects.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 781
+ },
+ {
+  "figure_id": "fig_11",
+  "label": "14",
+  "caption": "cluster_placement function def c l u s t e r _ p l a c e m e n t ( obj_center , offsets , c l u s t e r e d _ o b j e c t s _ s i z e = None ) : \" \" \" Place a cluster of furniture objects around a central object based on specified offsets . The offsets are with respect the the obj_center center coordinates . Optionally , specify the size of the clustered objects . obj_center : central furniture object used as the anchor point offsets : list of ( x_offset , y_offset ) tuples for placing surrounding objects c l u s t e r e d _ o b j e c t s _ s i z e : optional tuple ( width , height ) to specifythe size of the clustered objects ; defaults to the size of the central object Returns : a list of furniture objects placed around the central object \" \" \"The cluster_placement function for dep. objects.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 804
+ },
+ {
+  "figure_id": "fig_12",
+  "label": "15",
+  "caption": "(x_min=1102, y_min=1694, x_max=1676, y_max=1977) pillows = cluster_placement(couch_1, [(-70, -52)], (144, 141)) table_2 = furniture(x_min=795, y_min=1785, x_max=1138, y_max=1980) books = cluster_placement(table_2, [(-19, 60)], (317, 75)) table_3 = furniture(x_min=226, y_min=1790, x_max=407, y_max=1944) plants1 = cluster_placement(table_3, [(164.5, -13)], (198, 274)) armchair_1 = furniture(x_min=1691, y_min=1158, x_max=1963, y_max=1455) plants2 = cluster_placement(armchair_1, [(-35, -274)], (224, 223)) table_4 = furniture(x_min=1684, y_min=1494, x_max=1875, y_max=1743) offsets_table4_items = [ (149.5, -109.5), (33.5, -81), (-28.5, 0.5), (6, 65.5) ] sizes_table4_items = [ (92, 70), (64, 99), (60, 76), (103, 112) ] plant_3 = cluster_placement(table_4, [offsets_table4_items[0]], sizes_table4_items[0])[0] plant_4 = cluster_placement(table_4, [offsets_table4_items[1]], sizes_table4_items[1])[0] plant_5 = cluster_placement(table_4, [offsets_table4_items[2]], sizes_table4_items[2])[0] lamp_1 = cluster_placement(table_4, [offsets_table4_items[3]], sizes_table4_items[3])[0] lamp_2 = furniture(x_min=1739, y_min=1873, x_max=1799, y_max=1955) table_1 = furniture(x_min=450, y_min=811, x_max=789, y_max=1353) Underlying program chair_offsets = [ (-15.5, -277.5), (-138.5, 62.5), (44, 214.5), (-86.5, -56), (160, -98.5), (134.5, 40) ] chair_sizes = [ (182, 193), (46, 129), (117, 181), (166, 158), (65, 141), (130, 168) ] chair_1 = cluster_placement(table_1, [chair_offsets[0]], chair_sizes[0])[0] chair_2 = cluster_placement(table_1, [chair_offsets[1]], chair_sizes[1])[0] chair_3 = cluster_placement(table_1, [chair_offsets[2]], chair_sizes[2])[0] chair_4 = cluster_placement(table_1, [chair_offsets[3]], chair_sizes[3])[0] chair_5 = cluster_placement(table_1, [chair_offsets[4]], chair_sizes[4])[0] chair_6 = cluster_placement(table_1, [chair_offsets[5]], chair_sizes[5])[0] dresser_1 = furniture(x_min=441, y_min=253, x_max=854, y_max=439) cabinet_1 = furniture(x_min=87, y_min=916, x_max=334, y_max=1275) box_1 = furniture(x_min=1128, y_min=589, x_max=1223, y_max=779) backpack_1 = furniture(x_min=1181, y_min=850, x_max=1191, y_max=860) bag_1 = furniture(x_min=681, y_min=913, x_max=770, y_max=973) Reconstructed scene ScanNet scene Examples of programs underlying complex ScanNet scenes, parsed with LLMs using FactoredScenes's learned library.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 2354
+ }
+]

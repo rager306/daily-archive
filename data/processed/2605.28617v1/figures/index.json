@@ -1,0 +1,18 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": null,
+  "caption": "trait IO extends caps.SharedCapability &gt; def withIO[T](op: IO^=&gt; T): T = | op(new IO {}) &gt; def readFile( | io: IO, path: String): String = ... // direct use: the result is a plain String &gt; withIO[String] { io =&gt; | agent(\"read /etc/hosts using io\") | } // model produces: readFile(io, \"/etc/hosts\") val res0: String = ... // storing io for later leaks it past the block &gt; withIO[String =&gt; String] { io =&gt; | agent(\"return a file reader using io\") | } // model produces: // (p: String) =&gt; readFile(io, p) EvalCompileException: Type Mismatch Error: Capability io outlives its scope: it leaks into outer capture set s1 owned by value res2. The leakage occurred when trying to match the following types: Found: String -&gt;{io} String Required: String -&gt;s1 String",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 787
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": "case class Person( | name: String, born: Int, field: String) &gt; val turing: Person = | agent[Person](\"info about Alan Turing\"",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 127
+ }
+]

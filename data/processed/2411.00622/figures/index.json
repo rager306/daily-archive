@@ -1,0 +1,66 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Fig. 1. Overview of an iterative development-process training framework for automated software improvement.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 107
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "2",
+  "caption": "Fig. 2. Example of issue and corresponding pull-request data collection process.",
+  "ref_count": 2,
+  "has_graphic": true,
+  "caption_chars": 80
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "3",
+  "caption": "Fig. 3. The overview of three-stage data synthesis and inference workflow.",
+  "ref_count": 4,
+  "has_graphic": false,
+  "caption_chars": 74
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "178",
+  "caption": "Lingma SWE-GPT Training AlgorithmInput: Instruct LLM 𝑀, Dataset 𝐷 = { (issue, codebase, pull_request) }, Fault localization threshold 𝑚 1 , Patch similarity threshold 𝑚 2 , Number of iterations 𝑁 Output: Optimized model 𝑀 ′ 1 Sort 𝐷 by pull-request timestamps to prevent data leakage; 2 𝑀 ′ ← 𝑀 ; // Initialize the model to be optimized 3 for iteration ← 1 to 𝑁 do 4 𝐵 ← { } ; // Initialize batch for current iteration 5 foreach (issue, codebase, pull_request) ∈ 𝐷 do 6 submitted_patch ← extract_patch(pull_request); ← [];",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 522
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "9",
+  "caption": "stage ∈ {\"Repo_Understanding\", \"Fault_Localization\", \"Patch_Generation\"} do 10 stage_Obs_CoT_Actions ← [];",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 106
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "111718192026",
+  "caption": "← initial_observation(issue, codebase, stage, Obs_CoT_Action); 12 // Model performs autonomous analysis and reflection 13 while not stage_completed(stage, observation) do 14 cot_action ← generate_cot_action(𝑀 ′ , observation, stage); 15 Append (observation, cot_action) to stage_Obs_CoT_Actions; 16 next_observation ← execute_action(cot_action, codebase, stage); ← extract_predicted_location(Obs_CoT_Actions); 21 if similarity(predicted_fault_location, actual_fault_location) ≥ 𝑚 1 then 22 predicted_patch ← extract_predicted_patch(Obs_CoT_Actions); 23 if patch_similarity(predicted_patch, submitted_patch) ≥ 𝑚 2 then 24 𝐵 ← 𝐵 ∪ { (issue, Obs_CoT_Actions) }; 25 else ← remove_patch_related_steps(Obs_CoT_Actions); 27 𝐵 ← 𝐵 ∪ { (issue, Obs_CoT_Actions_without_patch) }; 28 // Optimize model using maximum likelihood estimation 29 𝜃 ′ ← arg max 𝜃 (issue,Obs_CoT_Actions) ∈𝐵 (𝑜𝑏𝑠 𝑖 ,𝑐𝑜𝑡 _𝑎𝑐𝑡𝑖𝑜𝑛 𝑖 ) ∈Obs_CoT_Actions log 𝑃 𝜃 (𝑐𝑜𝑡 _𝑎𝑐𝑡𝑖𝑜𝑛 𝑖 |issue, 𝑜𝑏𝑠 𝑖 ); 30 𝑀 ′ ← update_model_parameters(𝑀, 𝜃 ′ ); 31 return 𝑀 ′",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1009
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "4",
+  "caption": "Fig. 4. Comparison of issue resolution rates between Lingma SWE-GPT and other LLMs across different repositories in SWE-bench Verified.",
+  "ref_count": 0,
+  "has_graphic": true,
+  "caption_chars": 135
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "485",
+  "caption": "Fig. 5. Venn diagram of issue instances solved by Lingma SWE-GPT and other open-source models on SWE-bench Verified.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 116
+ }
+]

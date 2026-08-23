@@ -8,12 +8,13 @@
 # Ничто не дублирует эти правила в другом месте.
 # ═══════════════════════════════════════════════════════════════════
 
-schema_version: article-schema.v4   # v4: missingness_vocabulary += no_citation_elements (pilot wave of 10)
+schema_version: article-schema.v5   # v5: figures layer real (TEI), external_resources layer (ADR-053 Layer I)
 adr_ref: ADR-068
 changes:
   v2: "artifacts: present/missingness/not_reached/built_at/actor/inputs; citations_resolved vocabulary"
   v3: "invariants: машиночитаемые декларации паттернов — общий движок валидации, статья лишь первый объект"
   v4: "missingness_vocabulary += no_citation_elements; equations/citations слои уважают parsed missingness"
+  v5: "figures слой наполняется из TEI (8833 figure-элементов корпуса); НОВЫЙ слой external_resources (6189 ptr-URL); словарь external_resource_domains.yaml"
   v1: "initial definition (layers, lifecycle, invariants, forbidden edges)" 
 path: data/schemas/article_schema.yaml
 
@@ -86,12 +87,13 @@ layers:
 
   - id: figures
     authority: A2
-    title: Рисунки
+    title: Рисунки (TEI figure-элементы без type=table)
     files:
       - {name: index.json, type: "Vec<FigureCandidate>", required: true}
       - {name: "*.png", type: binary, required: false}
     derived_from: [parsed]
     lifecycle_ceiling: structured
+    fields: [figure_id, label, caption, ref_count, has_graphic]
 
   - id: tables
     authority: A2
@@ -135,6 +137,16 @@ layers:
       - {name: citations_resolved.json, type: "Vec<ResolvedCitation>", required: true}
     derived_from: [parsed, enriched]
     lifecycle_ceiling: enriched
+
+  - id: external_resources
+    authority: A3
+    title: Внешние ресурсы (ptr-URL из TEI)
+    files:
+      - {name: external_resources/index.json, type: "Vec<ExternalResource>", required: true}
+    derived_from: [parsed]
+    lifecycle_ceiling: extracted
+    fields: [url, domain, resource_type, family]
+    inputs: [data/ontology/external_resource_domains.yaml]
 
   - id: summaries
     authority: A5
@@ -199,6 +211,7 @@ manifest:
     no_figure_elements: "парсер не извлекает рисунки (нет coords/фигур в GROBID-профиле)"
     no_formula_elements: "парсер не нашёл формул"
     no_citation_elements: "парсер не нашёл цитат (поле citations пусто)"
+    no_external_resources: "TEI не содержит ptr-URL"
     parser_not_configured: "слой предусмотрен схемой, пайплайн не реализован"
 
   # Цитаты: словарь состояний разрешения (классификация, НЕ резолв)

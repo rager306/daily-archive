@@ -1,0 +1,66 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Figure 1: Workflow of ReWOO . Given a question, Planner composes a comprehensive blueprint of interlinked plans prior to tool response. The blueprint instructs Worker to use external tools and collect evidence. Finally, plans and evidence are paired and fed to Solver for the answer.",
+  "ref_count": 1,
+  "has_graphic": true,
+  "caption_chars": 283
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "2",
+  "caption": "Figure 2: In (a) observation-dependent reasoning, the task requested from a user is first wrapped with context prompt and exemplars, then fed into an LLM to initiate a reasoning process. The LLM generates a thought(T) and an action(A), then waits for the observation(O) from tools. The observation is stacked into the prompt history to start the next LLM call. In ReWOO (b), Planner produces at once a list of interdependent plans(P) and calls Worker to fetch evidence(E) from tools. The P and E are combined with the task, and then fed into Solver for the final answer. Note that in (a), the context and exemplars are repeatedly fed into the LLM, resulting in prompt redundancy.",
+  "ref_count": 4,
+  "has_graphic": false,
+  "caption_chars": 679
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "5",
+  "caption": "Figure 5: Performance degraded on HotpotQA when incrementally adding extraneous tools.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 86
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "6",
+  "caption": "Figure 6: Performance effect of changing the LLM in ReWOO . Planner 7B is tuned on HotpotQA and TriviaQA",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 104
+ },
+ {
+  "figure_id": "fig_4",
+  "label": null,
+  "caption": ", Toby, and Rebecca worked a total of 157 hours in one week. Thomas worked x hours. Toby worked 10 hours less than twice what Thomas worked, and Rebecca worked 8 hours less than Toby. How many hours did Rebecca work? Plan: Given Thomas worked x hours, translate the problem into algebraic expressions and solve with Wolfram Alpha. #E1 = WolframAlpha[Solve x + (2x -10) + ((2x -10) -8) = 157] Plan: Find out the number of hours Thomas worked. #E2 = LLM[What is x, given #E1] Plan: Calculate the number of hours Rebecca worked. #E3 = Calculator[(2 * #E2 -10) -8] Begin! Describe your plans with rich details. Each Plan should be followed by only one #E. &lt;Your task&gt; -SOLVER -Solve the following task or problem. To solve the problem, we have made step-by-step Plan and retrieved corresponding Evidence to each Plan. Use them with caution since long evidence might contain irrelevant information. &lt;Plans + Evidence&gt; Now solve the question or task according to provided Evidence above. Respond with the answer directly with no extra words. &lt;Your task&gt; C Trajectories In the following section, we show several reasoning trajectories of ReAct and ReWOO on the evaluated datasets. All the prompting and tools are set up as discussed in Section 3.1. C.1 HotpotQA ReAct Question: Who made the 1989 comic book, the film version of which Jon Raymond Polito appeared in? Thought : I need to search Jon Raymond Polito, find the film version he appeared in, then find who made the 1989 comic book. Action : Search[Jon Raymond Polito] Observation : Jon Raymond Polito (December 29, 1950 -September 1, 2016) was an American character actor. In a film and television career spanning 35 years, he amassed over 220 credits. Notable television roles included Detective Steve Crosetti in the first two seasons of Homicide: Life on the Street and as Phil Bartoli on the first season of Crime Story. He also appeared in several films including The Rocketeer, The Crow and Gangster Squad, as well as his work with the Coen brothers. He appeared in five of their films, including Miller's Crossing, Barton Fink and The Big Lebowski. Polito also portrayed legendary \"hungry i\" nightclub impresario Enrico Banducci in a large supporting role in Tim Burton's 2014 film Big Eyes starring Amy Adams and Christoph Waltz. Thought : Jon Raymond Polito appeared in The Rocketeer, The Crow, Gangster Squad, Miller's Crossing, Barton Fink, The Big Lebowski, and Big Eyes. I need to search The Rocketeer and find who made the 1989 comic book. Action : Search[The Rocketeer]",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 2554
+ },
+ {
+  "figure_id": "fig_5",
+  "label": null,
+  "caption": "for more information about Jon Raymond Polito. Evidence : Jon Raymond Polito (December 29, 1950 -September 1, 2016) was an American character actor. In a film and television career spanning<ref type=\"bibr\" target=\"#b34\">35</ref> years, he amassed over 220 credits. Notable television roles included Detective Steve Crosetti in the first two seasons of Homicide: Life on the Street and as Phil Bartoli on the first season of Crime Story. He also appeared in several films including The Rocketeer, The Crow and Gangster Squad, as well as his work with the Coen brothers. He appeared in five of their films, including Miller's Crossing, Barton Fink and The Big Lebowski. Polito also portrayed legendary \"hungry i\" nightclub impresario Enrico Banducci in a large supporting role in Tim Burton's 2014 film Big Eyes starring Amy Adams and Christoph Waltz. Plan : Search for more information about the 1989 comic book. Evidence : The Rocketeer. Plan : Search for more information about the film version of the comic book.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1014
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "3",
+  "caption": "GSM8KReActQuestion: John decides to buy some birds. He got 50 dollars from each of his 4 grandparents. If each bird costs $20, how many wings did all the birds have? Thought : I need to know how many birds John can buy with the money he got from his grandparents. Action : Calculator[(50 * 4) / 20] Observation : 10.0 Thought : Now I know how many birds John can buy. I need to know how many wings all the birds have. Action : Calculator[10.0 * 2] Observation : 20.0 Thought : I now know the final answer Action : Finish[ 20.0 wings ] ReWOO Question: John decides to buy some birds. He got 50 dollars from each of his 4 grandparents. If each bird costs $20, how many wings did all the birds have? Observation : Following is a transcript of President Biden's State of the Union address in 2023. Mr. Speaker. Madam Vice President. Our First Lady and Second Gentleman. Members of Congress and the Cabinet. Leaders of our military. Mr. Chief Justice, Associate Justices, and retired Justices of the Supreme Court. And you, my fellow Americans. I start tonight by congratulating the members of the 118th Congress and the new Speaker of the House, Kevin McCarthy. Mr. Speaker, I look forward to working together. I also want to congratulate the new leader of the House Democrats and the first Black House Minority Leader in history, Hakeem Jeffries. Congratulations to the longest serving Senate Leader in history, Mitch McConnell. And congratulations to Chuck Schumer for another term as Senate Majority Leader, this time with an even bigger majority. And I want to give special recognition to someone who I think will be considered the greatest Speaker in the history of this country, Nancy Pelosi. Thought : The search result did not provide the information I was looking for. I need to try a different approach. Action : LLM[What are the differences in the roles of Mitch McConnell and Chuck Schumer in the State of the Union Address 2023?] Observation : McConnell: Preside. Schumer: Deliver response. Thought :I now know the roles of McConnell and Chuck Schumer in the State of the Union Address 2023. Action : Finish[ McConnell presided over the address while Chuck Schumer delivered the response. ] ReWOO Question: Based on State of the Union Address 2023: What are the difference in the roles of McConnell and Chuck Schumer ? -PLANNER-Plan : Use SearchSOTU to find relevant sections of the State of the Union Address 2023 that mention the roles of McConnell and Chuck Schumer. #E1 = SearchSOTU[\"McConnell Chuck Schumer roles difference\"] Plan : Summarize the differences in the roles of McConnell and Chuck Schumer. #E2 = LLM[\"Summarize the differences in the roles of McConnell and Chuck Schumer based on #E1 .\"] -SOLVER-Plan : Use SearchSOTU to find relevant sections of the State of the Union Address 2023 that mention the roles of McConnell and Chuck Schumer. Evidence : Following is a transcript of President Biden's State of the Union address in 2023. Mr. Speaker. Madam Vice President. Our First Lady and Second Gentleman. Members of Congress and the Cabinet. Leaders of our military. Mr. Chief Justice, Associate Justices, and retired Justices of the Supreme Court. And you, my fellow Americans. I start tonight by congratulating the members of the 118th Congress and the new Speaker of the House, Kevin McCarthy. Mr. Speaker, I look forward to working together. I also want to congratulate the new leader of the House Democrats and the first Black House Minority Leader in history, Hakeem Jeffries. Congratulations to the longest serving Senate Leader in history, Mitch McConnell. And congratulations to Chuck Schumer for another term as Senate Majority Leader, this time with an even bigger majority. And I want to give special recognition to someone who I think will be considered the greatest Speaker in the history of this country, Nancy Pelosi. Plan : Summarize the differences in the roles of McConnell and Chuck Schumer. Evidence : McConnell is Senate Majority Leader, Schumer is Senate Minority Leader.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 4021
+ },
+ {
+  "figure_id": "fig_7",
+  "label": "7",
+  "caption": "Figure A.1 shows that, compared to ReWOO, ReAct consumes significantly more tokens in exemplars. We attribute this gap to the following reasons: (1) Exemplars are repetitively prompted for the number of reasoning steps (approximately 5 times in the HotpotQA experiment), whereas ReWOO has no such repetition; (2) Exemplars used in the ReAct paradigm inevitably include Observation at each reasoning step, which can occasionally be a lengthy result from a Wikipedia page. In contrast, exemplars used in ReWOO don't contain any explicit observations. Decomposition of token usage on HotpotQA.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 590
+ }
+]

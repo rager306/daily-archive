@@ -1,0 +1,122 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": "1",
+  "caption": "Figure 1: Tool learning examples: given user queries and APIs, models generate API calls for answers. The green trajectory shows correct API calls, the blue trajectory shows hallucinated API calls, and the red trajectory demonstrates failed self-reflection.",
+  "ref_count": 4,
+  "has_graphic": false,
+  "caption_chars": 257
+ },
+ {
+  "figure_id": "fig_1",
+  "label": "2",
+  "caption": "Figure 2: Overview of Multi-Agent Meta-Verification (MAMV) framework. MAMV creates a new high-quality tool instruction dataset ToolBench-V via (a) APIOptAgent for API verification and optimization, (b) QueryVerifyAgent for query assessment and filtering, and (c) APICallAgent for step-level accurate API call trajectory generation.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 331
+ },
+ {
+  "figure_id": "fig_2",
+  "label": null,
+  "caption": "What's the current temperature in New York and what's the weather forecast for Christmas Day?",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 93
+ },
+ {
+  "figure_id": "fig_3",
+  "label": null,
+  "caption": null,
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 0
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "3",
+  "caption": "Figure 3: Exploration-based Reflection Learning (EXPLORE): performs step-level exploration with sampling, enabling \"Error→Reflection→Correction\" learning paradigm.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 163
+ },
+ {
+  "figure_id": "fig_5",
+  "label": null,
+  "caption": "). In Step 1, it begins with a comprehensive analysis of the task, explicitly recognizing the need to obtain valid airplane IDs before querying specific details. Following this analysis, Tool-MVR executes an efficient three-step solution: first retrieving the language list (Step 1), then fetching the airplane list to identify suitable IDs (Step 2), and finally obtaining detailed information about the Boeing 737-800 using ID 1 (Step 3). Each step builds logically on previous results, with no redundant API calls, culminating in a complete solution that addresses both the language list and airplane details in its final response (Step 4).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 642
+ },
+ {
+  "figure_id": "fig_6",
+  "label": null,
+  "caption": "System 1's quick, intuitive thinking -after retrieving the language list (Step 1), it immediately attempts to query airplane details with an arbitrary ID 12345 (Step 2) without proper planning. When this fails, ToolLLM does successfully retrieve the airplane list (Step 3) containing valid IDs including the Boeing 737-800 (ID: 1). However, instead of utilizing this information, it demonstrates severely flawed tool invocation patterns: • Redundant API Calls: Unnecessarily retrieves the same language list three times (Steps 1, 4, and 6) • Repeated Errors: Attempts the same invalid airplane ID 12345 twice (Steps 2 and 5), despite previous failure • Ignored Information: Fails to use the valid airplane IDs obtained in Step 3 Most critically, ToolLLM's final response (Step 7) exhibits classic hallucination behavior -providing only the language list while completely omitting airplane information, despite having access to valid airplane data in Step 3. This mirrors the broader issue of hallucinated trajectories in ToolBench leading to incomplete solutions.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1063
+ },
+ {
+  "figure_id": "fig_7",
+  "label": null,
+  "caption": "Determination Rules: Pass: Answer sufficiently solves query; Execution chain shows successful API calls; Initial errors were corrected; Information verifiable through API responses Fail: API observations show execution errors; Answer contradicts evidence; Information incorrect/invalid; Solution misses core requirements Unsure: Cannot verify authenticity; Insufficient validation data; Need complete reasoning process; No useful information despite attempts Output Format: {\"content\": \"Evaluation reasoning\", \"answer_status\": \"Pass/Fail/Unsure\"} Required Input: Original query; Final answer; Complete execution chain with API responses",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 636
+ },
+ {
+  "figure_id": "fig_8",
+  "label": null,
+  "caption": "Criteria (100 points):1. Answer Quality (60 points): Completeness (20pts): Contains all required information, fully addresses query requirements; Accuracy (20pts): Information correctness, alignment with API responses; Clarity (10pts): Well-structured presentation, easy to understand; Error Handling (10pts): Clear explanation of failures, proper error documentation 2. Execution Efficiency (40 points): Tool Usage (15pts): Failed API calls (-2pts each), redundant calls (-1pt each), appropriate tool selection; Execution Path (15pts): Logical progression, minimal steps, efficient goal achievement; Strategy (10pts): Tool selection planning, response adaptation, resource optimization Output Format: {\"content\": \"Comparative analysis\", \"better_answer_index\": \"0 or 1\"} Required Input: Original query text; Answer_0 and Answer_1 with complete execution chains Tiebreaker Rule: In case of equal scores, prefer the answer with higher quality score",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 946
+ },
+ {
+  "figure_id": "fig_9",
+  "label": "5",
+  "caption": "Figure 5: Distribution of query quality scores across different groups (G1, G2, G3) in ToolBench. The yellow bars indicate high-quality queries (scores 8-10) that are retained in our filtered dataset.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 200
+ },
+ {
+  "figure_id": "fig_10",
+  "label": null,
+  "caption": "Rules: Error Recognition (Pass/Fail): Model must explicitly acknowledge API errors or invalid responses; Fail if model proceeds without recognizing the error; Only Pass when clear indication of error awareness is shown Error Correction (Pass/Fail): Model must successfully resolve the identified error; Subsequent API calls must yield valid results; Fail if error persists or workaround is unsuccessful Combined Status Rules: Both Pass: Must recognize AND successfully correct error; Both Fail: No error recognition leads to automatic correction failure; Mixed Case: Can Pass recognition but Fail correction if error identified but not resolved Output Format: { \"content\": \"Evaluation reasoning\", \"error_recognition\": \"Pass/Fail\", \"error_correction\": \"Pass/Fail\" } Required Input: -Initial messages (query and API context) -Wrong action messages (failed API calls/responses) -After messages (subsequent handling) Constraints: Only Pass/Fail values allowed; No other status values permitted Table 8: Case study 1: Tool-MVR's correct solution -demonstrating systematic tool planning and precise API invocation. Input Details Query: I'm organizing a language learning event and I need a list of languages to include in the program. Can you provide me with a comprehensive list of languages? Additionally, I would like to know the details of a specific airplane for a presentation on aviation history. Available APIs: search_roman_god_by_name_for_roman_gods_by_pizza_api(god: str) -Search god by name for details and Greek equivalents random_roman_god_for_roman_gods_by_pizza_api() -Get random Roman god info get_list_of_languages_for_businessmate() -Get supported languages with codes endpoint1_for_chattydata() -Get HTML formatted static response single_airplane_for_airplanesdb(is_id: int) -Get specific airplane details by ID all_airplanes_for_airplanesdb() -Get all airplanes data airplanes_ordered_by_ascending_for_airplanesdb(ordering: str) -Get airplanes ordered by field",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1975
+ },
+ {
+  "figure_id": "fig_11",
+  "label": null,
+  "caption": "Answer: Here is a comprehensive list of languages: AFRIKAANS... [Incomplete response -missing airplane details]",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 111
+ },
+ {
+  "figure_id": "fig_12",
+  "label": null,
+  "caption": "No need to import API package names, just call the API functions directly. If the API has no parameters, just call the API function directly.Example Format: print(\"Example 1:\") print(ticket_info_query(destination=\"Beijing\", travel_mode=\"Train\")) print(\"Example 2:\") print(ticket_info_query(departure=\"Shanghai\", destination=\"Beijing\", travel_mode=\"Plane\")) print(\"Example 3:\") print(ticket_info_query(departure=\"Guangzhou\", destination=\"Shenzhen\", travel_mode=\"Bus\"))Input: API name, API documentation",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 501
+ },
+ {
+  "figure_id": "fig_13",
+  "label": null,
+  "caption": "Semantic Clarity: Query clarity and grammar -Information Completeness: Necessary detail inclusion -Reasoning Difficulty: Complexity of required reasoning -Tool Compatibility: Alignment with tool capabilities Output Format: 1. Explanation of decision 2. JSON response with decision and quality score Example: Query: \"Can you fetch the flight data for the company AZU on June 15th, 2022?\" Tools: Flight data API with company and date parameters Output: {\"decision\": \"Solvable\", \"quality_score\": 7} Input Required: Query text, Available tools list",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 544
+ },
+ {
+  "figure_id": "fig_14",
+  "label": "2",
+  "caption": "&lt;thought&gt; I need to get the price of Hilton hotels in Shanghai. &lt;/thought&gt; -Call API with &lt;execute&gt; tag and Python code: &lt;execute&gt; print(query_hotel_list_by_demand(city=\"Shanghai\", demand=\"Hilton Hotel\")) &lt;/execute&gt; -Ensure logical flow between &lt;thought&gt; and &lt;execute&gt; -Call only subfunctions' names, not original tool names -Maximum 2 API calls per iteration Problem Resolution:",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 421
+ }
+]

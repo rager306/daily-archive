@@ -1,0 +1,58 @@
+[
+ {
+  "figure_id": "fig_0",
+  "label": null,
+  "caption": "Router evolve. Given R T and fixed prompts P T , Eevee initializes a temporary router pool B R and repeatedly samples a router mini-batch D RM . To make errors attributable to assignment rather than prompt incapability, D RM is sampled only from training examples that at least one current slot prompt can solve. Each update step samples reference routers from B R and mutates them into R mut , allowing the search to redesign routing rules rather than only refine an existing router. Eevee evaluates R mut on D RM . Since router quality is observed through downstream prompt correctness, Eevee analyzes cases where the routed slot fails but another slot succeeds, explaining why the better slot matches the task. Reflection uses these analyses and ground-truth correctness to produce R ref . Let s mb (•) denote mini-batch downstream score. Eevee keeps R ⋆ = arg max R∈{R mut ,R ref } s mb (R), evaluates R ⋆ on D val , and admits it into B R only if it improves over the phase baseline R T . When the router score plateaus, the phase outputs R T+1 while keeping P T fixed.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 1074
+ },
+ {
+  "figure_id": "fig_1",
+  "label": null,
+  "caption": "After router evolution, R T+1 routes the full data into slot-specific groups: D T+1 tr,k = {(x, y) ∈ D tr : R T+1 (x; P T ) = k}, D T+1 val,k = {(x, y) ∈ D val : R T+1 (x; P T ) = k}. Each non-empty slot is evolved independently and in parallel. For slot k, Eevee initializes a temporary prompt pool B P,k and samples D PM ⊂ D T+1 tr,k . Prompt evolution also uses mutation and reflection, but without the router-specific analysis step: it proposes p mut from reference prompts and mini-batch examples, then directly reflects from question, target answer, model answer, and correctness to obtain p ref . The better mini-batch prompt p ⋆ = arg max p∈{p mut ,p ref } s mb (p) is evaluated on the routed validation set with score s k val (•).",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 739
+ },
+ {
+  "figure_id": "fig_2",
+  "label": "3",
+  "caption": "Figure 3: Three-stage training design and initialization selection rule. Left: initialization builds prompt set, exploration alternates router and prompt evolution, and convergence fixes the router for larger-budget prompt learning. Right: the greedy coverage rule for top-K prompts selection.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 293
+ },
+ {
+  "figure_id": "fig_3",
+  "label": "4",
+  "caption": "Figure4: Single-benchmark results<ref type=\"bibr\" target=\"#b14\">[15,</ref><ref type=\"bibr\" target=\"#b21\">22]</ref>. Bars show final scores after learning on each benchmark independently. The no-router variant keeps a single retained prompt and therefore isolates prompt learning without router specialization.",
+  "ref_count": 2,
+  "has_graphic": false,
+  "caption_chars": 309
+ },
+ {
+  "figure_id": "fig_4",
+  "label": "5",
+  "caption": "Figure 5: Average token usage per test example after test-time prompt learning with Qwen3-4B-Instruct.Each method group contains four benchmark bars, and each bar is stacked into input and output tokens.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 203
+ },
+ {
+  "figure_id": "fig_5",
+  "label": "6",
+  "caption": "Figure 6: Representative case-study flips. The boxes summarize task behavior rather than reproducing raw inputs; representative learned prompt and output excerpts are provided in Appendix A.",
+  "ref_count": 1,
+  "has_graphic": false,
+  "caption_chars": 190
+ },
+ {
+  "figure_id": "fig_6",
+  "label": "settings",
+  "caption": "Each main run retains four bootstrap prompts. Bootstrap prompt evolution uses a budget of 10 candidate steps. The router-prompt co-evolution phase uses a total mini-step budget of 150, router and prompt windows of 3, and phase-switch threshold 0.005. The router score during evolution combines downstream score, routing consistency, and balance with weights 0.6/0.2/0.2; the final router selection uses downstream score only, with weights 1.0/0.0/0.0. Prompt evolution uses a final per-label budget of 60, minibatch size 5, and 4 parallel prompt slots.",
+  "ref_count": 0,
+  "has_graphic": false,
+  "caption_chars": 552
+ }
+]
