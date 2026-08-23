@@ -1,0 +1,45 @@
+schema_version: article-manifest.v1
+paper_id: '2404.13050'
+source:
+  code: arxiv
+  identity_ref: sources/arxiv/cs-cl/2404.13050/identity.json
+lifecycle: extracted
+lifecycle_events:
+- stage: parsed
+  recorded_at: '2026-08-23T05:49:31.402412+00:00'
+  actor: grobid
+  evidence_sha256: 720c27ed70414d25f3c2f15bba919a99e37beace57b6daa9e02e7b6dac208ab5
+- stage: structured
+  recorded_at: '2026-08-23T05:49:31.403498+00:00'
+  actor: document-context-projection
+  evidence_sha256: e994429eefc10cc7401584f884816391071e3110c11345ae0363c3c192abdb8d
+- stage: extracted
+  recorded_at: '2026-08-23T05:49:31.405509+00:00'
+  actor: rule-based-extractor
+  evidence_sha256: da667602dcd5595ec1c94da8fd7017a199642d420d0614c0db0744abfe3a3f55
+artifacts:
+  parsed:
+    file: parsed/article.json
+    derived_from:
+    - source
+    sha256: 720c27ed70414d25f3c2f15bba919a99e37beace57b6daa9e02e7b6dac208ab5
+    stats:
+      sections: 32
+  context:
+    file: context/projection.json
+    derived_from:
+    - parsed
+    sha256: e994429eefc10cc7401584f884816391071e3110c11345ae0363c3c192abdb8d
+    stats:
+      ast_nodes: 32
+  extracted:
+    file: extracted/entities.json
+    derived_from:
+    - parsed
+    sha256: da667602dcd5595ec1c94da8fd7017a199642d420d0614c0db0744abfe3a3f55
+    stats:
+      entities: 4
+      by_type:
+        Method: 1
+        Model: 1
+        Metric: 2
