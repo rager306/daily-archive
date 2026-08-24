@@ -3,24 +3,30 @@ paper_id: trench-real-analysis
 grammar_profile: page_outline
 source:
   code: textbook
-lifecycle: structured
+lifecycle: extracted
 lifecycle_events:
 - stage: raw
-  recorded_at: 2026-08-24 03:05:37+00:00
+  recorded_at: 2026-08-24T17:07:49Z
   actor: monograph-source
 - stage: parsed
-  recorded_at: 2026-08-24 03:05:37+00:00
+  recorded_at: 2026-08-24T17:07:49Z
   actor: rust-pdf-toc-stage
-  evidence_sha256: 1a912dd9326b65c21d3c94c9b19c14dacb7459daa4a366a6b9b8c56ec5a32ad5
+  evidence_sha256: 70e06df089781ad344a06950cd79623a018f33c78323a8cc1d03cf5c48e476eb
 - stage: structured
-  recorded_at: 2026-08-24 03:05:37+00:00
+  recorded_at: 2026-08-24T17:07:49Z
   actor: rust-navigation-stage
-  evidence_sha256: 5e9b5ab33bb08ae5204de507b7adc00591a21bc638ee760d7ba344ca70eb1cd5
+- stage: extracted
+  recorded_at: 2026-08-24T17:08:22Z
+  actor: rule-based-extractor
+  evidence_sha256: cb82aaad20471d34b55ab71dad07dc1fc96e496390abbbfb2fdc35f2d9f766bb
 artifacts:
   extracted:
-    present: false
-    missingness: extraction_not_run
+    file: extracted/entities.json
     derived_from: parsed
+    sha256: cb82aaad20471d34b55ab71dad07dc1fc96e496390abbbfb2fdc35f2d9f766bb
+    actor: rule-based-extractor
+    stats:
+      entities: 17
   citations_resolved:
     present: false
     missingness: no_citation_elements
@@ -50,17 +56,14 @@ artifacts:
   parsed:
     file: parsed/article.json
     derived_from: source
-    sha256: 1a912dd9326b65c21d3c94c9b19c14dacb7459daa4a366a6b9b8c56ec5a32ad5
+    sha256: 70e06df089781ad344a06950cd79623a018f33c78323a8cc1d03cf5c48e476eb
     actor: rust-pdf-toc-stage
     stats:
       sections: 50
       furniture: 4
   context:
-    file: context/projection.json
-    derived_from: parsed
     navigation:
       file: context/navigation.json
-      sha256: ff2c1085738d8d843365215699b9989a8592b85f5d52b5340a35557441267701
       actor: rust-navigation-stage
       stats:
         nodes: 50
@@ -69,4 +72,4 @@ artifacts:
         path_dupes: 12
         furniture: 0
         furniture_share: 0.0
-        tree_cost: 49589
+        tree_cost: 48931

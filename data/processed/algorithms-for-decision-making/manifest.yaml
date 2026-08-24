@@ -1,0 +1,75 @@
+schema_version: article-manifest.v1
+paper_id: algorithms-for-decision-making
+grammar_profile: page_outline
+source:
+  code: textbook
+lifecycle: extracted
+lifecycle_events:
+- stage: raw
+  recorded_at: 2026-08-24T17:05:49Z
+  actor: monograph-source
+- stage: parsed
+  recorded_at: 2026-08-24T17:05:49Z
+  actor: rust-pdf-toc-stage
+  evidence_sha256: b3f5e28af7733b71e613bf13b7eac369867cf839779788c0de5d3277dd2e5c3a
+- stage: structured
+  recorded_at: 2026-08-24T17:05:50Z
+  actor: rust-navigation-stage
+- stage: extracted
+  recorded_at: 2026-08-24T17:06:38Z
+  actor: rule-based-extractor
+  evidence_sha256: 6eb0ec7f90f03128958fe191d3f86c770eef9024aa19678d2680a6234db48873
+artifacts:
+  extracted:
+    file: extracted/entities.json
+    derived_from: parsed
+    sha256: 6eb0ec7f90f03128958fe191d3f86c770eef9024aa19678d2680a6234db48873
+    actor: rule-based-extractor
+    stats:
+      entities: 104
+  citations_resolved:
+    present: false
+    missingness: no_citation_elements
+    derived_from: parsed
+  equations:
+    present: false
+    missingness: no_formula_elements
+    derived_from: parsed
+  tables:
+    present: false
+    missingness: no_table_elements
+    derived_from: parsed
+  figures:
+    present: false
+    missingness: no_figure_elements
+    derived_from: parsed
+  external_resources:
+    present: false
+    missingness: no_external_resources
+    derived_from: parsed
+  enriched:
+    not_reached: true
+  summaries:
+    not_reached: true
+  quality_signals:
+    not_reached: true
+  parsed:
+    file: parsed/article.json
+    derived_from: source
+    sha256: b3f5e28af7733b71e613bf13b7eac369867cf839779788c0de5d3277dd2e5c3a
+    actor: rust-pdf-toc-stage
+    stats:
+      sections: 317
+      furniture: 0
+  context:
+    navigation:
+      file: context/navigation.json
+      actor: rust-navigation-stage
+      stats:
+        nodes: 317
+        roots: 317
+        max_depth: 1
+        path_dupes: 71
+        furniture: 0
+        furniture_share: 0.0
+        tree_cost: 45466

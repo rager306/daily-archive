@@ -3,24 +3,30 @@ paper_id: ads-discrete-structures
 grammar_profile: page_outline
 source:
   code: textbook
-lifecycle: structured
+lifecycle: extracted
 lifecycle_events:
 - stage: raw
-  recorded_at: 2026-08-24 03:05:37+00:00
+  recorded_at: 2026-08-24T17:07:01Z
   actor: monograph-source
 - stage: parsed
-  recorded_at: 2026-08-24 03:05:37+00:00
+  recorded_at: 2026-08-24T17:07:01Z
   actor: rust-pdf-toc-stage
-  evidence_sha256: e482997a3c6981b2157ee6f5e4a917fda1e510f166b7916ce18ae9f04505fa73
+  evidence_sha256: 172e4db678d5575b990e3a93d959f29f22840e28dafa8660575a5d3c98f4b5fd
 - stage: structured
-  recorded_at: 2026-08-24 03:05:38+00:00
+  recorded_at: 2026-08-24T17:07:02Z
   actor: rust-navigation-stage
-  evidence_sha256: 56323e63674006dee4da48a5065bcab68094cd81eb8abade70fe516cd059d4a8
+- stage: extracted
+  recorded_at: 2026-08-24T17:07:49Z
+  actor: rule-based-extractor
+  evidence_sha256: 95c1c7ba60de2d5afd0caaa4f952c148423d7dfa154b6f09e7244c352237d81a
 artifacts:
   extracted:
-    present: false
-    missingness: extraction_not_run
+    file: extracted/entities.json
     derived_from: parsed
+    sha256: 95c1c7ba60de2d5afd0caaa4f952c148423d7dfa154b6f09e7244c352237d81a
+    actor: rule-based-extractor
+    stats:
+      entities: 43
   citations_resolved:
     present: false
     missingness: no_citation_elements
@@ -50,17 +56,14 @@ artifacts:
   parsed:
     file: parsed/article.json
     derived_from: source
-    sha256: e482997a3c6981b2157ee6f5e4a917fda1e510f166b7916ce18ae9f04505fa73
+    sha256: 172e4db678d5575b990e3a93d959f29f22840e28dafa8660575a5d3c98f4b5fd
     actor: rust-pdf-toc-stage
     stats:
       sections: 121
       furniture: 0
   context:
-    file: context/projection.json
-    derived_from: parsed
     navigation:
       file: context/navigation.json
-      sha256: 3573bb5e0bc56a0dbf3dcfa938d2b19815f4ad70a2eaebabb879eed069932be9
       actor: rust-navigation-stage
       stats:
         nodes: 121
@@ -69,4 +72,4 @@ artifacts:
         path_dupes: 21
         furniture: 0
         furniture_share: 0.0
-        tree_cost: 218262
+        tree_cost: 208020
