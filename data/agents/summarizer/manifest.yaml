@@ -1,0 +1,39 @@
+# AGENT manifest — summarizer (первый агент, W1 обкатка)
+schema_version: agent-manifest.v1
+agent_id: summarizer
+agent_version: "1.0.0"
+schema_ref: data/schemas/agent.schema.yaml
+
+identity:
+  role: summarizer
+  description: "Выжимки статей (abstract-узлы) через models.yaml binding; Trajectory в CVF; детерминированные метрики как feedback-источник"
+  enabled: true
+
+model:
+  generate_binding: paper-summary-generate-default   # agnes-2.5 (M451 бенчмарк)
+  fallback_binding: paper-summary-generate-fallback
+  judge_binding: null
+
+prompt:
+  system_file: data/prompts/summarizer/system.v1.md
+  inputs: {source: parsed.sections, max_body_chars: 24000}
+
+tools:
+  read_tools: [browse_articles, get_article_structure, get_section_text]
+  write_tools: []   # пишет только пайплайн-стадия, не агент напрямую
+
+memory:
+  backend: cvf
+  namespace: summarizer
+  trajectory: true
+  feedback_sources: [navigation_efficiency, furniture_share]  # + summaries-метрики W3
+
+optimization:
+  optimizer_enabled: false
+  frozen_eval: governor/fixtures/prompt_eval/article-summary.eval.v1.json
+  candidate_slots: []
+
+guardrails:
+  injection_policy: data/ontology/prompt_injection_policy.yaml
+  max_output_tokens: 4000
+  rate_limit_per_min: 12

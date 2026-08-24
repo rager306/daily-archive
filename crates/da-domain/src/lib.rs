@@ -8,6 +8,7 @@
 //! ADR-040 §11: Schema enforcement lives here, not in DDL.
 
 pub mod acquisition_batch;
+pub mod agent_manifest;
 pub mod article_manifest;
 pub mod agent;
 pub mod article;

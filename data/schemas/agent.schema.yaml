@@ -1,0 +1,76 @@
+# ═══════════════════════════════════════════════════════════════════
+# AGENT SCHEMA — норма класса agent (ADR-068: агенты = DATA-объекты).
+# Ruflo-паттерн (agent yaml + manifest segments), усиленный нашими
+# замками: model-bindings refs, prompt-files+sha, CVF-память per-agent,
+# оптимизаторские локи, guardrails. Валидируется ТЕМ ЖЕ generic-движком
+# (schema_invariants) через schema_objects класс agent.
+# ═══════════════════════════════════════════════════════════════════
+schema_version: agent-schema.v1
+adr_ref: ADR-068, ADR-039 (SymFSM), ADR-059 (locks)
+changes:
+  v1: "первая норма: identity/model/prompt/tools/memory/optimization/guardrails"
+
+layers:
+  - id: identity
+    fields:
+      agent_id: str            # snake_case, уникален
+      version: str
+      role: vocab              # см role_vocabulary
+      description: str
+      enabled: bool
+
+  - id: model
+    description: "БИНДИНГИ из models.yaml — никогда имена моделей напрямую"
+    fields:
+      generate_binding: ref    # models.yaml bindings[].binding_id
+      fallback_binding: "ref|null"
+      judge_binding: "ref|null"
+
+  - id: prompt
+    meta_prompt: "файлы в data/prompts/<agent_id>/, sha256 в lineage каждого вызова"
+    fields:
+      system_file: path        # data/prompts/<agent_id>/system.v1.md
+      prompt_sha256_required: true
+      versioned: true          # candidate-версии рядом, прод-файл не трогают
+
+  - id: tools
+    fields:
+      read_tools: "list[ref]"  # ids из agent_read_tools.yaml
+      write_tools: "list[ref]" # пусто для read-only агентов
+
+  - id: memory
+    description: "CVF-контейнер (ruVector) per-agent namespace; персистентность snapshot+replay"
+    fields:
+      backend: vocab           # cvf | none
+      namespace: str           # = agent_id по умолчанию
+      trajectory: bool         # запись Trajectory на каждый LLM-вызов
+      feedback_sources: "list[ref]"  # quality_signals ids → SONA feedback (W3)
+
+  - id: optimization
+    description: "ADR-059/D136: всё candidate-only до frozen eval + user yes"
+    fields:
+      optimizer_enabled: false  # ЗАМОК: только false в манифесте
+      frozen_eval: "ref|null"   # governor/fixtures/prompt_eval/<...>.json
+      candidate_slots: "list"   # {id, prompt_file, sha} — пусто в проде
+
+  - id: guardrails
+    fields:
+      injection_policy: ref     # data/ontology/prompt_injection_policy.yaml
+      max_output_tokens: int
+      rate_limit_per_min: int
+
+lifecycle_agent:  # SymFSM-lite; полные состояния — ADR-039
+  - draft → enabled → running → paused → retired
+
+role_vocabulary:
+  summarizer:  "выжимки статей/секций"
+  router:      "выбор модели/маршрута (SONA W3+)"
+  critic:      "проверка выходов (judge)"
+  reader:      "agent read-plane (get_section_text walk)"
+  optimizer:   "candidate-промпты (ЗАМОК D136)"
+
+forbidden:
+  - "имя модели напрямую (только binding ref)"
+  - "промпт в коде (только файл + sha)"
+  - "optimizer_enabled: true без frozen eval и явного да"
+  - "запись в Samyama из агентского слоя (D127 отдельно)"
