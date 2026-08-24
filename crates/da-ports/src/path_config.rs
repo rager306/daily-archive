@@ -27,6 +27,7 @@ pub struct SchemaObjectBinding {
 pub struct PathConfig {
     paths: BTreeMap<String, PathBuf>,
     schema_objects: BTreeMap<String, SchemaObjectBinding>,
+    domain_routing: BTreeMap<String, String>,
 }
 
 impl PathConfig {
@@ -87,8 +88,7 @@ impl PathConfig {
                 }
             }
         }
-
-        Self { paths, schema_objects }
+        Self { paths, schema_objects, domain_routing: BTreeMap::new() }
     }
 
     /// Binding for one schema-manifest object class (e.g. "article").
@@ -99,6 +99,16 @@ impl PathConfig {
     /// All registered object classes.
     pub fn schema_object_classes(&self) -> Vec<&str> {
         self.schema_objects.keys().map(String::as_str).collect()
+    }
+
+    /// Domain for a coarse_topic_code from the routing table.
+    pub fn domain_for_topic(&self, code: &str) -> Option<String> {
+        self.domain_routing.get(code).cloned()
+    }
+
+    /// All registered domains.
+    pub fn domains(&self) -> Vec<&str> {
+        self.domain_routing.values().map(String::as_str).collect()
     }
 
     /// Get a path by key. Checks env override first (DA_PATH_<KEY>),

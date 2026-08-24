@@ -1283,6 +1283,35 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Resolve the domain for a paper from its identity.json coarse_topic_code
+/// via the domain_routing table in path_config.yaml.
+fn resolve_domain(paper_id: &str, cfg: &da_ports::path_config::PathConfig) -> String {
+    // find identity.json for this paper
+    let sources = std::path::Path::new("data/sources");
+    if let Ok(rd) = std::fs::read_dir(sources) {
+        for src_type in rd.flatten() {
+            if !src_type.path().is_dir() { continue; }
+            if let Ok(cats) = std::fs::read_dir(src_type.path()) {
+                for cat in cats.flatten() {
+                    let ident = cat.path().join(paper_id).join("identity.json");
+                    if ident.is_file() {
+                        if let Ok(text) = std::fs::read_to_string(&ident) {
+                            if let Ok(v) = serde_yaml::from_str::<serde_yaml::Value>(&text) {
+                                let code = v.get("coarse_topic_code")
+                                    .and_then(|c| c.as_str())
+                                    .unwrap_or("");
+                                return cfg.domain_for_topic(code)
+                                    .unwrap_or_else(|| "computer_science".to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    "computer_science".to_string()
+}
+
 fn load_fsm_state(paper_id: &str) -> anyhow::Result<ImportFsmState> {
     let mp = std::path::Path::new("data/processed").join(paper_id).join("manifest.yaml");
     if !mp.exists() {
