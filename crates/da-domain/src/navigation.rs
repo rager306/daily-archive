@@ -28,6 +28,31 @@ pub struct NavNode {
     pub char_count: u64,
     pub role: String,
     pub role_confidence: String,
+    /// First 200 chars of section text (content digest)
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub text_preview: String,
+    /// Semantic type from DATA detectors (introduction, methodology, ...)
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub structural_type: String,
+    /// Extracted entity labels in this section (from entities layer)
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub entity_labels: Vec<String>,
+    #[serde(default)]
+    pub entity_count: usize,
+    /// Figure IDs bound to this section
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub figure_refs: Vec<String>,
+    /// Table IDs bound to this section
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub table_refs: Vec<String>,
+    /// Equation IDs bound to this section
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub equation_refs: Vec<String>,
+    /// Citation anchors in this section
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub citation_anchor_count: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub citation_density: Option<f64>,
 }
 
 /// Input projection node (subset of DocumentContextProjection sections).
@@ -109,6 +134,43 @@ impl FurnitureDetectors {
     }
 }
 
+/// Structural type detection from section titles (DATA).
+#[derive(Debug, Clone)]
+pub struct StructuralTypeDetectors {
+    pub compiled: Vec<(String, Regex)>, // type_name, regex
+}
+
+impl StructuralTypeDetectors {
+    pub fn from_yaml_str(yaml: &str) -> Result<Self, NavigationError> {
+        let v: serde_yaml::Value = serde_yaml::from_str(yaml)
+            .map_err(|e| NavigationError::DetectorsParse(e.to_string()))?;
+        let mut compiled = Vec::new();
+        if let Some(types) = v.get("types").and_then(|t| t.as_mapping()) {
+            for (type_name, spec) in types {
+                let name = type_name.as_str().unwrap_or("").to_string();
+                if let Some(pats) = spec.get("patterns").and_then(|p| p.as_sequence()) {
+                    for pat in pats.iter().filter_map(|p| p.as_str()) {
+                        if let Ok(re) = Regex::new(pat) {
+                            compiled.push((name.clone(), re));
+                        }
+                    }
+                }
+            }
+        }
+        Ok(Self { compiled })
+    }
+
+    pub fn classify(&self, title: &str) -> &str {
+        let t = title.trim();
+        for (type_name, re) in &self.compiled {
+            if re.is_match(t) {
+                return type_name;
+            }
+        }
+        ""
+    }
+}
+
 /// parent_path grammar: '1.2.3'->'1.2'; '1'->None; '1.'->None (header node).
 pub fn parent_path(path_id: &str) -> Option<&str> {
     let p = path_id.trim();
@@ -134,6 +196,7 @@ pub fn grammar_depth(path_id: &str) -> usize {
 pub fn build_navigation(
     sections: &[ProjectionSection],
     detectors: &FurnitureDetectors,
+    type_detector: &StructuralTypeDetectors,
 ) -> Vec<NavNode> {
     let mut sorted: Vec<&ProjectionSection> = sections.iter().collect();
     sorted.sort_by_key(|s| s.order);
@@ -159,8 +222,17 @@ pub fn build_navigation(
                 next_section_id: None,
                 title: s.title.clone(),
                 char_count: s.char_count,
-                role,
-                role_confidence: conf,
+                role: role.clone(),
+                role_confidence: conf.clone(),
+                text_preview: String::new(),
+                structural_type: type_detector.classify(&s.title).to_string(),
+                entity_labels: Vec::new(),
+                entity_count: 0,
+                figure_refs: Vec::new(),
+                table_refs: Vec::new(),
+                equation_refs: Vec::new(),
+                citation_anchor_count: None,
+                citation_density: None,
             }
         })
         .collect();
@@ -336,7 +408,8 @@ mod tests {
             sec("b", "1.1", 1, "Setup", 200),
             sec("c", "2", 2, "Results", 300),
         ];
-        let nav = build_navigation(&secs, &d);
+        let empty_types = StructuralTypeDetectors { compiled: vec![] };
+        let nav = build_navigation(&secs, &d, &empty_types);
         assert_eq!(nav.len(), 3);
         let by: BTreeMap<&str, &NavNode> = nav.iter().map(|n| (n.section_id.as_str(), n)).collect();
         assert_eq!(by["b"].parent_section_id.as_deref(), Some("a"));
@@ -356,7 +429,8 @@ mod tests {
             sec("c1", "1.1", 1, "A", 400),
             sec("c2", "1.2", 2, "B", 400),
         ];
-        let nav = build_navigation(&secs, &d);
+        let empty_types = StructuralTypeDetectors { compiled: vec![] };
+        let nav = build_navigation(&secs, &d, &empty_types);
         let c = tree_cost(&nav, 250);
         // branches: residual (1*250+200)=450 vs children (2*250+400)=900
         assert_eq!(c, 900);
@@ -370,7 +444,8 @@ mod tests {
             sec("b", "1", 1, "Under review.", 10),
             sec("c", "2", 2, "Results", 300),
         ];
-        let nav = build_navigation(&secs, &d);
+        let empty_types = StructuralTypeDetectors { compiled: vec![] };
+        let nav = build_navigation(&secs, &d, &empty_types);
         let st = stats(&nav, 500);
         assert_eq!(st.nodes, 3);
         assert_eq!(st.furniture, 1);

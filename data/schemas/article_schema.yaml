@@ -8,7 +8,7 @@
 # Ничто не дублирует эти правила в другом месте.
 # ═══════════════════════════════════════════════════════════════════
 
-schema_version: article-schema.v13   # v13: page_outline (PDF toc anchors) + structural_elements (latex_env kinds)
+schema_version: article-schema.v14   # v14: rich navigation nodes — cross-layer aggregation (entities/figures/citations per section)
 adr_ref: ADR-068
 changes:
   v2: "artifacts: present/missingness/not_reached/built_at/actor/inputs; citations_resolved vocabulary"
@@ -23,6 +23,7 @@ changes:
   v11: "role+confidence на узлах (furniture_detectors.yaml), char_count в узлах, инварианты node_ref_integrity/list_symmetric_next_prev (движок), сигналы navigation_efficiency/furniture_share, prompt-injection hardening"
   v12: "grammar_profiles: html_headings (главы учебников — h1-h6 дерево) становятся article-объектами; missingness += extraction_not_run"
   v13: "page_outline: PDF-TOC как навигация (anchor=page_range); structural_elements.json: theorem/definition/exercise kinds поверх текста секций (latex_env)"
+  v14: "navigation.json: rich nodes — text_preview, structural_type, entity_labels, figure/table/equation refs, citation anchors, summary_ref; агрегация из ВСЕХ слоёв"
   v1: "initial definition (layers, lifecycle, invariants, forbidden edges)" 
 path: data/schemas/article_schema.yaml
 
@@ -116,17 +117,30 @@ layers:
       parent_rule: "parent('1.2.3')='1.2'; parent('1')=null; уровень = число сегментов без хвостовой точки"
       styles: "corpus: dot=567, flat=37 (в канонической проекции тильды нормализуются)"
     nav_node_fields:
+      # tree structure
       section_id: str
       path_id: str
       depth: int
-      parent_section_id: "str | null (корень)"
-      children_section_ids: [str]     # ordered by document order
-      prev_section_id: "str | null"   # документный порядок (walk semantics)
+      parent_section_id: "str | null"
+      children_section_ids: [str]
+      prev_section_id: "str | null"
       next_section_id: "str | null"
       title: str
-      char_count: int                 # размер узла (S для tree_cost)
-      role: "body|furniture|header_metadata (детекторы DATA)"
-      role_confidence: "deterministic|heuristic"
+      char_count: int
+      role: str
+      role_confidence: str
+      # content digest (R1: agent sees what section is about)
+      text_preview: str               # первые 200 символов
+      structural_type: str            # introduction|methods|results|discussion|references|appendix|conclusion|abstract
+      # cross-layer references (aggregate from other layers, no duplication)
+      entity_labels: [str]            # extracted entities in this section
+      entity_count: int
+      figure_refs: [str]              # figure_ids bound to this section
+      table_refs: [str]
+      equation_refs: [str]
+      citation_anchor_count: int      # сколько цитат заземлено в этой секции
+      citation_density: f64           # citation_anchor_count / char_count
+      summary_ref: "str|null"         # путь к per_section summary если built
     role_vocabulary:
       source: data/ontology/furniture_detectors.yaml
     nav_queries:                       # реализуются запросами над navigation.json
