@@ -1,51 +1,55 @@
-# Furniture detectors — role classification for navigation nodes (v11).
-# Docling idea: headers/footers/artifacts are NOT body. DATA not code:
-# adding a detector = a YAML entry. Confidence per detector feeds the
-# optimizer/agent surface (agents may filter furniture; optimizers may
-# use cleanliness as a signal).
 schema_version: furniture-detectors.v1
 adr_ref: ADR-068, doc/research/document-model-pageindex-synthesis-2026-08-23.md
-
 roles:
-  body:              "содержательный узел статьи/главы"
-  furniture:         "колонтитул/артефакт вёрстки — не контент"
-  header_metadata:   "метаданные секции (заголовочный узел 'N.')"
-
+  body: содержательный узел статьи/главы
+  furniture: колонтитул/артефакт вёрстки — не контент
+  header_metadata: метаданные секции (заголовочный узел 'N.')
 detectors:
-  - id: under_review_stamp
-    role: furniture
-    confidence: deterministic
-    title_pattern: '^Under review\.?$'
-  - id: figure_plate_caption
-    role: furniture
-    confidence: deterministic
-    title_pattern: '^(Fig(ure)?\.?\s*\d+\s*[:.]?.{0,40})$'
-  - id: table_plate_caption
-    role: furniture
-    confidence: deterministic
-    title_pattern: '^(Table\s*\d+\s*[:.]?.{0,40})$'
-  - id: page_number_only
-    role: furniture
-    confidence: deterministic
-    title_pattern: '^\\d{1,3}$'
-  - id: abstract_stamp
-    role: furniture
-    confidence: heuristic
-    title_pattern: '^(Abstract|A b s t r a c t)\\.?$'
-  - id: running_header_short
-    role: furniture
-    confidence: heuristic
-    params: {max_title_chars: 6, min_char_count: 0}
-    title_pattern: '^[A-Z][a-z]{1,5}\\.?$'
-  - id: trailing_dot_header
-    role: header_metadata
-    confidence: deterministic
-    path_suffix: '.'
-  - id: sentence_like_body
-    role: body
-    confidence: heuristic
-    params: {max_words: 14, lowercase_start: true}
-    description: "Vectify sentence_like: длинный заголовок со строчной первой буквой — тело, не заголовок (для path-узлов не применяется)"
-
+- id: under_review_stamp
+  role: furniture
+  confidence: deterministic
+  title_pattern: ^Under review\.?$
+- id: figure_plate_caption
+  role: furniture
+  confidence: deterministic
+  title_pattern: ^(Fig(ure)?\.?\s*\d+\s*[:.]?.{0,40})$
+- id: table_plate_caption
+  role: furniture
+  confidence: deterministic
+  title_pattern: ^(Table\s*\d+\s*[:.]?.{0,40})$
+- id: page_number_only
+  role: furniture
+  confidence: deterministic
+  title_pattern: ^\\d{1,3}$
+- id: abstract_stamp
+  role: furniture
+  confidence: heuristic
+  title_pattern: ^(Abstract|A b s t r a c t)\\.?$
+- id: running_header_short
+  role: furniture
+  confidence: heuristic
+  params:
+    max_title_chars: 6
+    min_char_count: 0
+  title_pattern: ^[A-Z][a-z]{1,5}\\.?$
+- id: trailing_dot_header
+  role: header_metadata
+  confidence: deterministic
+  path_suffix: .
+- id: sentence_like_body
+  role: body
+  confidence: heuristic
+  params:
+    max_words: 14
+    lowercase_start: true
+  description: 'Vectify sentence_like: длинный заголовок со строчной первой буквой
+    — тело, не заголовок (для path-узлов не применяется)'
 fallback_role: body
 fallback_confidence: heuristic
+monograph_toc_furniture:
+  description: титульный TOC-мусор закладок монографий (page_outline грамматика)
+  patterns:
+  - ^Trinity University$
+  - ^Digital Commons.*$
+  - ^Recommended Citation$
+  - ^Table of Contents$

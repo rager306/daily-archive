@@ -484,3 +484,87 @@ pub fn run_parse_html(paper_id: &str, html_path: Option<&str>) -> anyhow::Result
     println!("{paper_id}: html parsed — sections={}", out.sections);
     Ok(())
 }
+
+/// `da source parse-pdf-toc <object_id>` — page_outline grammar parsed
+/// stage over the toc observation cache (reference extractor).
+pub fn run_parse_pdf_toc(paper_id: &str) -> anyhow::Result<()> {
+    use da_application::pdf_toc_stage::build_pdf_toc_stage;
+
+    let obs_path = std::path::Path::new("artifacts/pipeline_cache/pdf_toc_observations")
+        .join(format!("{paper_id}.json"));
+    let obs_json = std::fs::read_to_string(&obs_path)
+        .map_err(|e| anyhow::anyhow!("observations {} (run scripts/m451_pdf_toc_observations.py): {e}", obs_path.display()))?;
+
+    let out = build_pdf_toc_stage(paper_id, &obs_json)?;
+
+    let dir = std::path::Path::new("data/processed").join(paper_id);
+    std::fs::create_dir_all(dir.join("parsed"))?;
+    std::fs::create_dir_all(dir.join("context"))?;
+    std::fs::write(dir.join("parsed/article.json"), &out.parsed_json)?;
+    std::fs::write(dir.join("context/projection.json"), &out.projection_json)?;
+
+    // manifest: parsed event (idempotent full draft, like parse-html)
+    let now = chrono_now();
+    let sha_p = sha256_hex(out.parsed_json.as_bytes());
+    let miss = |reason: &str| serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("present"), serde_yaml::Value::from(false)),
+        (serde_yaml::Value::from("missingness"), serde_yaml::Value::from(reason)),
+        (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
+    ]);
+    let nr = serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("not_reached"), serde_yaml::Value::from(true)),
+    ]);
+    let mut m = serde_yaml::Mapping::new();
+    m.insert("schema_version".into(), "article-manifest.v1".into());
+    m.insert("paper_id".into(), paper_id.into());
+    m.insert("grammar_profile".into(), "page_outline".into());
+    let mut src = serde_yaml::Mapping::new();
+    src.insert("code".into(), "textbook".into());
+    m.insert("source".into(), src.into());
+    m.insert("lifecycle".into(), "parsed".into());
+    let ev = serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("stage"), serde_yaml::Value::from("raw")),
+        (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(now.clone())),
+        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("monograph-source")),
+    ]);
+    let ev2 = serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("stage"), serde_yaml::Value::from("parsed")),
+        (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(now)),
+        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-pdf-toc-stage")),
+        (serde_yaml::Value::from("evidence_sha256"), serde_yaml::Value::String(sha_p.clone())),
+    ]);
+    m.insert("lifecycle_events".into(), serde_yaml::Value::Sequence(vec![
+        serde_yaml::Value::Mapping(ev), serde_yaml::Value::Mapping(ev2)]));
+    let mut arts = serde_yaml::Mapping::new();
+    for (k, v) in [
+        ("extracted", miss("extraction_not_run")),
+        ("citations_resolved", miss("no_citation_elements")),
+        ("equations", miss("no_formula_elements")),
+        ("tables", miss("no_table_elements")),
+        ("figures", miss("no_figure_elements")),
+        ("external_resources", miss("no_external_resources")),
+        ("enriched", nr.clone()),
+        ("summaries", nr.clone()),
+        ("quality_signals", nr),
+    ] {
+        arts.insert(k.into(), serde_yaml::Value::Mapping(v));
+    }
+    arts.insert("parsed".into(), serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("file"), serde_yaml::Value::from("parsed/article.json")),
+        (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("source")),
+        (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha_p)),
+        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-pdf-toc-stage")),
+        (serde_yaml::Value::from("stats"), serde_yaml::Value::Mapping(
+            serde_yaml::Mapping::from_iter([
+                (serde_yaml::Value::from("sections"), serde_yaml::Value::from(out.sections as u64)),
+                (serde_yaml::Value::from("furniture"), serde_yaml::Value::from(out.furniture as u64)),
+            ]))),
+    ]).into());
+    m.insert("artifacts".into(), arts.into());
+    std::fs::write(dir.join("manifest.yaml"), serde_yaml::to_string(&serde_yaml::Value::Mapping(m))?)?;
+
+    // structure via the rust navigation stage
+    run_build_navigation(paper_id)?;
+    println!("{paper_id}: pdf-toc parsed — sections={} furniture={}", out.sections, out.furniture);
+    Ok(())
+}

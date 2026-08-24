@@ -54,6 +54,7 @@ pub mod schema_invariants;
 pub mod figure_geometry;
 pub mod html_headings;
 pub mod navigation;
+pub mod pdf_toc;
 pub mod structural_elements;
 pub mod tei_figures;
 pub mod source_import_fsm;
