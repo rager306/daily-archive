@@ -1,0 +1,22 @@
+{
+  "contributions": [
+    "Introduced SWE-bench Science: a repository-level benchmark with 119 tasks from 98 unique GitHub repositories spanning 20 scientific domains, evaluating frontier coding agents on scientific software engineering tasks.",
+    "Analyzed unsuccessful repairs and identified four recurring failure mechanisms: deficits in scientific knowledge or abstraction, misguided exploration or surface-level repair, incomplete repair coverage or system integration, and failures to generalize scientific knowledge beyond observed cases.",
+    "Conducted a paired ablation removing explicit scientific guidance while preserving executable engineering context, showing scientific knowledge is not uniformly beneficial."
+  ],
+  "limitations": "Benchmark covers only 20 scientific domains and 119 tasks, limiting generalizability to broader scientific software engineering. Paired ablation isolates scientific knowledge effects but cannot fully disentangle repository complexity, task difficulty, and domain-specific factors. Five failure mechanisms identified may not capture all failure modes in scientific code repair. Results based on five frontier agents may not represent the full capability spectrum of coding agents.",
+  "methods": "Built a benchmark with 119 tasks from 98 GitHub repositories across 20 domains using a four-stage construction process: (1) Source Sampling and Screening — collected real issues/PRs/commits from open-source scientific-computing repos and removed overly simple fixes and contamination; (2) Snapshot Freezing and Reproduction — froze source-code snapshots before defects and verified reproducible anomalies in isolated containers; (3) Public-Material Abstraction — extracted scientific invariants and data-flow constraints into public evaluation packages while hiding patch locations; (4) Hidden Oracle and Counter-Calibration — constructed hidden validators testing semantic equivalence and boundary conditions. Tasks organized into three paradigms: Issue-driven (52 tasks, 43.7%), Expert-exploratory (49 tasks, 41.2%), Engineering-integration (18 tasks, 15.1%). Evaluated five frontier agents: Claude Code (Opus-5 max), Claude Code (Sonnet-4), Gemini CLI (Gemini 2.5 Pro max/lite), Codex (GPT-5.1 max). Paired ablation removed scientific auxiliary information (rationales, paper excerpts, expert guidance) while preserving repository context, tests, and observable symptoms.",
+  "paper_id": "2608.19799",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 0,
+    "latency_ms": 10406,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 1544
+  },
+  "results": "Best agent (Claude Code with Opus-5 max) achieved pass@1 below 50%, with Pass@1 scores ranging from 0.0% to 13.6% across configurations. Mean Pass@1 was 5.1%. Token usage varied widely: minimum 33,702 tokens, mean 80,600.12 tokens, maximum 2,029,051 tokens per task. Reference patches averaged 117.81 lines added and 44.53 lines deleted (range 1–1,035 lines added, 0–458 lines deleted). Chemistry was largest domain (n=24), followed by Materials Science (n=16), Biology (n=13), Biomedical Engineering (n=12), Physics (n=11). Well-grounded scientific information improved average performance and token efficiency but did not guarantee exact repair success; poorly aligned guidance induced anchoring.",
+  "schema_version": "summary-node.v1",
+  "tldr": "SWE-bench Science is a benchmark of 119 tasks across 20 scientific domains from 98 GitHub repos that reveals even the best coding agent (Claude Code with Opus-5 max) passes fewer than 50% of tasks, and identifies four key failure mechanisms in scientific software repair."
+}

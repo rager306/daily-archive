@@ -1,0 +1,23 @@
+{
+  "contributions": [
+    "Case-insensitive GPU phrase-boosting graph that avoids phrase-list expansion",
+    "Per-stream context-biasing graphs enabling independent phrase lists within a single GPU batch",
+    "Streaming Transducer beam-search support for real-time speech applications",
+    "Open-sourced as part of the NVIDIA NeMo toolkit"
+  ],
+  "limitations": "CTC-WS requires an auxiliary CTC inference path, a hybrid TDT-CTC model, and a post-recognition correction stage, making it practically complex. Streaming TDT-v2 suffers significant quality degradation relative to its offline mode. The compiled boosting models must be transferred to GPU when streams are created, though per-stream lists are typically small (below 1 MB). Cross-stream quality regressions from irrelevant phrases are avoided but require managing multiple compiled models.",
+  "methods": "TurboBias 2.0 builds a GPU phrase-boosting graph with suffix links for shallow-fusion context biasing in Transducer ASR. For case insensitivity, BPE tokens are decomposed into character-level chains with merged arcs, and cumulative score potentials are distributed over states using a concentration parameter τ. Per-stream boosting is enabled by concatenating multiple boosting trees into merged multi-model GPU storage with per-stream model IDs and offset pointers. Streaming beam search preserves hypothesis states across chunk boundaries using a flattened tree structure compatible with CUDA Graphs. Evaluation uses the Contextual Earnings-22 benchmark (2.63h) and an internal medical dataset (3.05h) with TDT-v2, Nemotron-streaming, and Unified 600M-parameter ASR models under greedy and beam-search decoding.",
+  "paper_id": "2608.21343",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 0,
+    "latency_ms": 8166,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 993
+  },
+  "results": "On Earnings22 offline, Unified + TurboBias 2.0 reached 87.5 F-score and 12.6% WER with beam search, close to the CTC-WS Argmax result of 88.2 F-score and 12.7% WER. TDT-v2 + CTC-WS reproduction achieved 82.0 F-score and 13.7% WER. On the internal medical set, TurboBias 2.0 also produced large F-score improvements and WER reductions. In streaming, the Unified model preserved strong accuracy with comparable relative gains, while streaming TDT-v2 suffered large quality degradation that context biasing could not fully compensate. With per-stream global boosting on Earnings22, TDT-v2 reached 83.0 F-score and 13.3% WER.",
+  "schema_version": "summary-node.v1",
+  "tldr": "TurboBias 2.0 extends the TurboBias framework with case-insensitive GPU phrase-boosting, per-stream context biasing in batched inference, and streaming beam-search support for efficient Transducer-based ASR."
+}

@@ -597,8 +597,29 @@ pub fn run_enrich_layer(paper_id: &str) -> anyhow::Result<()> {
                 (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
             ]).into());
         }
+        // typed event: enriched attempted, not found — FSM stage reached
+        let has_enriched = m
+            .get("lifecycle_events")
+            .and_then(|e| e.as_sequence())
+            .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("enriched")))
+            .unwrap_or(false);
+        if !has_enriched {
+            let events = m.get_mut("lifecycle_events").and_then(|v| v.as_sequence_mut());
+            if let Some(events) = events {
+                events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
+                    (serde_yaml::Value::from("stage"), serde_yaml::Value::from("enriched")),
+                    (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(chrono_now())),
+                    (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-enriched-layer")),
+                    (serde_yaml::Value::from("evidence_sha256"), serde_yaml::Value::String(
+                        sha256_hex(b"openalex_not_found"))),
+                ])));
+            }
+        }
+        if let Some(l) = m.get_mut("lifecycle") {
+            *l = serde_yaml::Value::from("enriched");
+        }
         std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
-        println!("{paper_id}: openalex_not_found (honest pending)");
+        println!("{paper_id}: enriched (honest pending: openalex_not_found)");
         return Ok(());
     }
 
@@ -709,9 +730,19 @@ pub fn run_build_summary(paper_id: &str) -> anyhow::Result<()> {
     std::fs::create_dir_all(dir.join("summaries"))?;
     std::fs::write(dir.join("summaries/abstract.json"), &out.summary_node_json)?;
 
-    // manifest: event summarized (append-only) + artifact
+    // FSM guard: enriched must be reached before summarized (lifecycle order)
     let mp = dir.join("manifest.yaml");
     let mut m: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&mp)?)?;
+    let reached_enriched = m
+        .get("lifecycle_events")
+        .and_then(|e| e.as_sequence())
+        .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("enriched")))
+        .unwrap_or(false);
+    if !reached_enriched {
+        anyhow::bail!(
+            "build-summary: enriched stage not reached for {paper_id} —              run 'da source enrich-layer {paper_id}' first (FSM lifecycle order)"
+        );
+    }
     let already = m
         .get("lifecycle_events")
         .and_then(|e| e.as_sequence())
@@ -1053,3 +1084,244 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
 }
 
 
+
+/// `da source run <paper_id>` — full FSM orchestration: reads the plan,
+/// executes every remaining stage via CLI-registered tools, stops on
+/// first failure with an honest report. The operator gives one command;
+/// the pipeline drives itself.
+pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
+    use da_domain::source_import_fsm::{ImportFsmState, Toolchain};
+
+    // load toolchain + FSM state
+    let tc_text = std::fs::read_to_string("data/ontology/source_import_tools.yaml")
+        .map_err(|e| anyhow::anyhow!("toolchain: {e}"))?;
+    let tc = Toolchain::from_yaml_str(&tc_text)
+        .map_err(|e| anyhow::anyhow!("toolchain: {e}"))?;
+    let state = load_fsm_state(paper_id)?;
+
+    println!("═══ FSM run: {paper_id} ═══");
+    println!("stage: {} | grammar: {} ({})", state.current_stage(), state.grammar_profile, state.object_class());
+    println!();
+
+    let plan = state.plan(&tc);
+    if plan.is_empty() {
+        println!("✓ pipeline complete — nothing to do");
+        return Ok(());
+    }
+    println!("plan: {} stages", plan.len());
+    for (stage, required) in &plan {
+        println!("  {} {stage}", if *required { "*" } else { " " });
+    }
+    println!();
+
+    // stage → CLI action mapping (Rust tools only; reference tools are
+    // reported honestly and the stage is marked blocked)
+    // stage -> CLI subcommands; validate-objects has a different form
+    let actions: std::collections::BTreeMap<&str, Vec<&str>> = [
+        ("parsed", vec!["parse-pdf"]),
+        ("structured", vec!["build-navigation", "build-figures-tei"]),
+        ("extracted", vec!["build-extracted"]),
+        ("enriched", vec!["enrich-layer"]),
+        ("summarized", vec!["build-summary"]),
+        ("validated", vec!["validate-objects"]),
+    ].into_iter().collect::<std::collections::BTreeMap<&str, Vec<&str>>>();
+
+    let mut completed = 0;
+    let mut skipped_reference = 0;
+    let mut failed: Option<String> = None;
+
+    for (stage, required) in &plan {
+        println!("── {stage} {}", if *required { "(required)" } else { "(optional)" });
+        let Some(action_list) = actions.get(*stage) else {
+            println!("   no rust tool for this stage; reference tools:");
+            if let Some(spec) = tc.stage(stage) {
+                for t in &spec.tools {
+                    if t.r#impl == "reference" {
+                        println!("     [ref] {} — {}", t.id, t.cli);
+                        skipped_reference += 1;
+                    }
+                }
+            }
+            if *required {
+                failed = Some(format!("stage {stage}: no rust tool available"));
+                break;
+            }
+            println!("   (optional, skipping)");
+            continue;
+        };
+
+        // special: parsed needs the PDF path
+        let pdf = if *stage == "parsed" {
+            let mut hits = Vec::new();
+            collect_pdfs("data/sources/arxiv", paper_id, &mut hits);
+            hits.first().cloned()
+        } else {
+            None
+        };
+
+        // pre-stage hook: enriched needs work cache (reference fetcher)
+        if *stage == "enriched" {
+            let cache = std::path::Path::new("artifacts/pipeline_cache/openalex_works")
+                .join(format!("{paper_id}.json"));
+            if !cache.exists() {
+                println!("   [pre] work cache missing — running reference fetcher…");
+                let st = std::process::Command::new("python3")
+                    .args(["scripts/m451_enrich_openalex.py", paper_id])
+                    .output();
+                match st {
+                    Ok(o) if o.status.success() => println!("   [pre] cache built"),
+                    Ok(o) => {
+                        failed = Some(format!("enriched: fetcher failed: {}", String::from_utf8_lossy(&o.stderr)));
+                        break;
+                    }
+                    Err(e) => {
+                        failed = Some(format!("enriched: fetcher spawn: {e}"));
+                        break;
+                    }
+                }
+            }
+        }
+
+        let mut stage_ok = true;
+        for action in action_list {
+            let mut cmd = std::process::Command::new(std::env::current_exe()?);
+            if *action == "validate-objects" {
+                cmd.args(["validate-objects", "--class", "article", paper_id]);
+            } else {
+                cmd.args(["source", action, paper_id]);
+            }
+            if let Some(pdf_path) = &pdf {
+                cmd.arg("--pdf").arg(pdf_path);
+            }
+            let result = cmd.output();
+            match result {
+                Ok(o) if o.status.success() => {
+                    let stdout = String::from_utf8_lossy(&o.stdout).to_string();
+                    let line = stdout
+                        .lines()
+                        .filter(|l| !l.contains("Logging") && !l.trim().is_empty())
+                        .last()
+                        .unwrap_or("ok");
+                    println!("   ✓ {action}: {line}");
+                    completed += 1;
+                    // validated stage: write the lifecycle event
+                    if *action == "validate-objects" {
+                        stamp_validated_event(paper_id)?;
+                    }
+                }
+                Ok(o) => {
+                    let stderr = String::from_utf8_lossy(&o.stderr).to_string();
+                    let err = stderr
+                        .lines()
+                        .filter(|l| !l.contains("Logging") && !l.contains("INFO"))
+                        .last()
+                        .unwrap_or("unknown");
+                    println!("   ✗ {action}: {err}");
+                    stage_ok = false;
+                    failed = Some(format!("{stage}/{action}: {err}"));
+                    break;
+                }
+                Err(e) => {
+                    println!("   ✗ {action}: spawn {e}");
+                    stage_ok = false;
+                    failed = Some(format!("{stage}/{action}: {e}"));
+                    break;
+                }
+            }
+        }
+        if !stage_ok {
+            break;
+        }
+    }
+
+    println!();
+    if let Some(f) = &failed {
+        println!("■ STOPPED: {f}");
+        println!("  completed={completed} reference-skipped={skipped_reference}");
+        std::process::exit(1);
+    }
+    println!("✓ run complete — completed={completed} reference-skipped={skipped_reference}");
+
+    // final status
+    let state2 = load_fsm_state(paper_id)?;
+    println!();
+    println!("final: stage={}", state2.current_stage());
+    if let Some((next, required)) = state2.next_stage(&tc) {
+        println!("next:  {next} ({})", if required { "REQUIRED" } else { "optional" });
+    } else {
+        println!("next:  pipeline complete");
+    }
+    Ok(())
+}
+
+fn load_fsm_state(paper_id: &str) -> anyhow::Result<ImportFsmState> {
+    let mp = std::path::Path::new("data/processed").join(paper_id).join("manifest.yaml");
+    let m: serde_yaml::Value = serde_yaml::from_str(
+        &std::fs::read_to_string(&mp).map_err(|e| anyhow::anyhow!("{}: {e}", mp.display()))?,
+    )?;
+    let profile = m
+        .get("grammar_profile")
+        .and_then(|v| v.as_str())
+        .unwrap_or("arxiv_pdf_dot")
+        .to_string();
+    let mut events = Vec::new();
+    if let Some(seq) = m.get("lifecycle_events").and_then(|v| v.as_sequence()) {
+        for e in seq {
+            if let Some(stage) = e.get("stage").and_then(|s| s.as_str()) {
+                events.push(stage.to_string());
+            }
+        }
+    }
+    Ok(ImportFsmState::from_events(&profile, &events))
+}
+
+fn collect_pdfs(root: &str, paper_id: &str, out: &mut Vec<String>) {
+    use std::fs;
+    let Ok(rd) = fs::read_dir(root) else { return };
+    for e in rd.flatten() {
+        let p = e.path();
+        if p.is_dir() {
+            if p.file_name().map(|n| n == paper_id).unwrap_or(false) {
+                if let Ok(inner) = fs::read_dir(&p) {
+                    for f in inner.flatten() {
+                        if f.path().extension().map(|x| x == "pdf").unwrap_or(false) {
+                            out.push(f.path().to_string_lossy().to_string());
+                        }
+                    }
+                }
+            } else {
+                collect_pdfs(&p.to_string_lossy(), paper_id, out);
+            }
+        }
+    }
+}
+
+
+fn stamp_validated_event(paper_id: &str) -> anyhow::Result<()> {
+    use std::path::Path;
+    let mp = Path::new("data/processed").join(paper_id).join("manifest.yaml");
+    let mut m: serde_yaml::Value = serde_yaml::from_str(
+        &std::fs::read_to_string(&mp)
+            .map_err(|e| anyhow::anyhow!("{}: {e}", mp.display()))?,
+    )?;
+    let already = m
+        .get("lifecycle_events")
+        .and_then(|e| e.as_sequence())
+        .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("validated")))
+        .unwrap_or(false);
+    if already {
+        return Ok(());
+    }
+    if let Some(events) = m.get_mut("lifecycle_events").and_then(|v| v.as_sequence_mut()) {
+        events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
+            (serde_yaml::Value::from("stage"), serde_yaml::Value::from("validated")),
+            (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(chrono_now())),
+            (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-source-run")),
+        ])));
+    }
+    if let Some(l) = m.get_mut("lifecycle") {
+        *l = serde_yaml::Value::from("validated");
+    }
+    std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
+    Ok(())
+}

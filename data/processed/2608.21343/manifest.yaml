@@ -1,0 +1,94 @@
+schema_version: article-manifest.v1
+paper_id: '2608.21343'
+grammar_profile: arxiv_pdf_dot
+lifecycle: validated
+lifecycle_events:
+- stage: raw
+  recorded_at: 2026-08-24 07:31:54+00:00
+  actor: source-acquire
+- stage: parsed
+  recorded_at: 2026-08-24 07:31:54+00:00
+  actor: grobid-structural
+  evidence_sha256: 8da189fb6a1ea1e05f5c36d3a91f14f6a42e4cfc71e405f990f36aab36e24e83
+- stage: structured
+  recorded_at: 2026-08-24 07:31:54+00:00
+  actor: rust-navigation-stage
+  evidence_sha256: 73afc71f9f69d6bc12929cb9dcbebe6ba3492e5471a91a4615ee9b9c13c28217
+- stage: extracted
+  recorded_at: 2026-08-24 07:31:54+00:00
+  actor: rule-based-extractor
+  evidence_sha256: b356437762868ba60833207a74558ee16695ba930dc053e39493a14494596137
+- stage: summarized
+  recorded_at: 2026-08-24 07:32:10+00:00
+  actor: agent:summarizer
+  evidence_sha256: c5d2e148c7cac8c119ad7b2a8cdb19987fd721a338f1b74e7309afd4200d86dc
+- stage: enriched
+  recorded_at: 2026-08-24T07:40:59Z
+  actor: rust-enriched-layer
+  evidence_sha256: 26d6a3bd496c9d466373215a8a7b3237e762e241224084ba513ce279394a8415
+- stage: validated
+  recorded_at: 2026-08-24T07:41:16Z
+  actor: rust-source-run
+artifacts:
+  extracted:
+    file: extracted/entities.json
+    derived_from: parsed
+    sha256: b356437762868ba60833207a74558ee16695ba930dc053e39493a14494596137
+    actor: rule-based-extractor
+    stats:
+      entities: 5
+  citations_resolved:
+    present: false
+    missingness: no_citation_elements
+    derived_from: parsed
+  enriched:
+    present: false
+    missingness: openalex_not_found
+    derived_from: parsed
+  summaries:
+    file: summaries/abstract.json
+    derived_from: parsed
+    sha256: c5d2e148c7cac8c119ad7b2a8cdb19987fd721a338f1b74e7309afd4200d86dc
+    actor: agent:summarizer
+    stats:
+      prompt_sha256: fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe
+      injection_scrubbed: 0
+      latency_ms: 8166
+      memory_epoch: 7
+  quality_signals:
+    not_reached: true
+  parsed:
+    file: parsed/article.json
+    derived_from: source
+    sha256: 8da189fb6a1ea1e05f5c36d3a91f14f6a42e4cfc71e405f990f36aab36e24e83
+    actor: grobid-structural
+    stats:
+      sections: 11
+      citations: 30
+      tables: 0
+      formulas: 4
+  context:
+    file: context/projection.json
+    derived_from: parsed
+    navigation:
+      file: context/navigation.json
+      sha256: 73afc71f9f69d6bc12929cb9dcbebe6ba3492e5471a91a4615ee9b9c13c28217
+      actor: rust-navigation-stage
+      stats:
+        nodes: 11
+        roots: 11
+        max_depth: 1
+        path_dupes: 0
+        furniture: 2
+        furniture_share: 0.18181818181818182
+        tree_cost: 8469
+  figures:
+    file: figures/index.json
+    sha256: 99ca0eba86d9c88937f6bfc00fc3470d5cc648cbcb950e1a7ddf63eb095220fb
+    actor: rust-tei-figures-stage
+    stats:
+      count: 2
+      with_caption: 2
+      with_graphic: 1
+      referenced_in_text: 2
+      total_in_text_refs: 4

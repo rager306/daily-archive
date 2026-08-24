@@ -468,6 +468,7 @@ fn main() {
         Commands::Source { action, paper_id, dry_run, html, pdf } => {
             use da_cli::source_cli;
             let r = match action.as_str() {
+                "run" => da_cli::source_cli::run_source_run(&paper_id),
                 "acquire" => {
                     da_cli::source_acquire::acquire(&paper_id, std::path::Path::new("."))
                 }
@@ -485,7 +486,7 @@ fn main() {
                                 "build-extracted" => source_cli::run_build_extracted(&paper_id),
                 "build-summary" => source_cli::run_build_summary(&paper_id),
                 "eval-frozen" => source_cli::run_eval_frozen(),
-                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei|parse-html|parse-pdf-toc|enrich-layer|build-extracted|build-summary|acquire)")),
+                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei|parse-html|parse-pdf-toc|enrich-layer|build-extracted|build-summary|run|acquire)")),
             };
             if let Err(e) = r {
                 eprintln!("da source: {e}");
