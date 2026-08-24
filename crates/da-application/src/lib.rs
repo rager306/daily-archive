@@ -66,6 +66,7 @@ pub use batch_ingest::{
 };
 pub mod entity_resolution;
 pub mod navigation_stage;
+pub mod structural_elements_stage;
 pub mod validate_schema_objects;
 pub mod extraction;
 pub mod extractive_summary;

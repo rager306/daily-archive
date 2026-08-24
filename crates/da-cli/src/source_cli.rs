@@ -269,3 +269,56 @@ fn sha256_hex(data: &[u8]) -> String {
     h.update(data);
     hex::encode(h.finalize())
 }
+
+/// `da source build-structural <paper_id>` — structural-elements transition.
+pub fn run_build_structural(paper_id: &str) -> anyhow::Result<()> {
+    use da_adapters::fs_schema_objects::FsSchemaObjectStore;
+    use da_application::structural_elements_stage::build_structural_elements;
+    use da_ports::path_config::PathConfig;
+
+    let detectors_yaml = std::fs::read_to_string("data/ontology/structural_elements_detectors.yaml")
+        .map_err(|e| anyhow::anyhow!("structural_elements_detectors.yaml: {e}"))?;
+    let cfg = PathConfig::load();
+    let store = FsSchemaObjectStore::from_path_config(&cfg, "article")?;
+    let out = build_structural_elements(&store, paper_id, &detectors_yaml)?;
+
+    let dir = std::path::Path::new("data/processed").join(paper_id);
+    std::fs::write(dir.join("context/structural_elements.json"), &out.elements_json)?;
+
+    // manifest: context.structural_elements entry (append-only: refresh stats only)
+    let mp = dir.join("manifest.yaml");
+    let mut m: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&mp)?)?;
+    let by_kind: serde_yaml::Mapping = out
+        .by_kind
+        .iter()
+        .map(|(k, v)| (serde_yaml::Value::from(k.as_str()), serde_yaml::Value::from(*v as u64)))
+        .collect();
+    let entry = serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("file"), serde_yaml::Value::from("context/structural_elements.json")),
+        (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha256_hex(out.elements_json.as_bytes()))),
+        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-structural-stage")),
+        (serde_yaml::Value::from("stats"), serde_yaml::Value::Mapping(
+            serde_yaml::Mapping::from_iter([
+                (serde_yaml::Value::from("count"), serde_yaml::Value::from(out.elements.len() as u64)),
+                (serde_yaml::Value::from("definition_sources"), serde_yaml::Value::from(out.definition_sources as u64)),
+                (serde_yaml::Value::from("by_kind"), serde_yaml::Value::Mapping(by_kind)),
+            ]),
+        )),
+    ]);
+    if let Some(ctx) = m
+        .get_mut("artifacts")
+        .and_then(|a| a.get_mut("context"))
+        .and_then(|c| c.as_mapping_mut())
+    {
+        ctx.insert("structural_elements".into(), serde_yaml::Value::Mapping(entry));
+    }
+    std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
+
+    println!(
+        "{paper_id}: structural elements — count={} definition_sources={} kinds={:?}",
+        out.elements.len(),
+        out.definition_sources,
+        out.by_kind
+    );
+    Ok(())
+}
