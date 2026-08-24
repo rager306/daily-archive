@@ -473,7 +473,8 @@ fn main() {
                 "build-figures-tei" => source_cli::run_build_figures_tei(&paper_id),
                 "parse-html" => source_cli::run_parse_html(&paper_id, html.as_deref()),
                 "parse-pdf-toc" => source_cli::run_parse_pdf_toc(&paper_id),
-                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei|parse-html|parse-pdf-toc)")),
+                "enrich-layer" => source_cli::run_enrich_layer(&paper_id),
+                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei|parse-html|parse-pdf-toc|enrich-layer)")),
             };
             if let Err(e) = r {
                 eprintln!("da source: {e}");

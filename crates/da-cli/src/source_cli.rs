@@ -568,3 +568,78 @@ pub fn run_parse_pdf_toc(paper_id: &str) -> anyhow::Result<()> {
     println!("{paper_id}: pdf-toc parsed — sections={} furniture={}", out.sections, out.furniture);
     Ok(())
 }
+
+/// `da source enrich-layer <paper_id>` — enriched layer (OpenAlex work
+/// anchor + positional author binding) over the reference fetch cache.
+pub fn run_enrich_layer(paper_id: &str) -> anyhow::Result<()> {
+    use da_adapters::fs_schema_objects::FsSchemaObjectStore;
+    use da_application::enriched_layer_stage::build_enriched_layer;
+    use da_ports::path_config::PathConfig;
+
+    let obs_path = std::path::Path::new("artifacts/pipeline_cache/openalex_works")
+        .join(format!("{paper_id}.json"));
+    let obs = std::fs::read_to_string(&obs_path)
+        .map_err(|e| anyhow::anyhow!("work cache {} (run scripts/m451_enrich_openalex.py): {e}", obs_path.display()))?;
+
+    let cfg = PathConfig::load();
+    let store = FsSchemaObjectStore::from_path_config(&cfg, "article")?;
+    let out = build_enriched_layer(&store, paper_id, &obs)?;
+
+    let dir = std::path::Path::new("data/processed").join(paper_id);
+    let mp = dir.join("manifest.yaml");
+    let mut m: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&mp)?)?;
+
+    if out.not_found {
+        if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
+            arts.insert("enriched".into(), serde_yaml::Mapping::from_iter([
+                (serde_yaml::Value::from("present"), serde_yaml::Value::from(false)),
+                (serde_yaml::Value::from("missingness"), serde_yaml::Value::from("openalex_not_found")),
+                (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
+            ]).into());
+        }
+        std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
+        println!("{paper_id}: openalex_not_found (honest pending)");
+        return Ok(());
+    }
+
+    std::fs::create_dir_all(dir.join("enriched"))?;
+    std::fs::write(dir.join("enriched/authors.json"), &out.authors_json)?;
+    std::fs::write(dir.join("enriched/venue.json"), &out.venue_json)?;
+    std::fs::write(dir.join("enriched/topics.json"), &out.topics_json)?;
+    std::fs::write(dir.join("enriched/provenance.json"), &out.provenance_json)?;
+
+    // append-only event + artifact stats (skip if already enriched)
+    let already = m
+        .get("lifecycle_events")
+        .and_then(|e| e.as_sequence())
+        .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("enriched")))
+        .unwrap_or(false);
+    if !already {
+        if let Some(events) = m.get_mut("lifecycle_events").and_then(|v| v.as_sequence_mut()) {
+            events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
+                (serde_yaml::Value::from("stage"), serde_yaml::Value::from("enriched")),
+                (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(chrono_now())),
+                (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-enriched-layer")),
+                (serde_yaml::Value::from("evidence_sha256"),
+                 serde_yaml::Value::String(sha256_hex(out.provenance_json.as_bytes()))),
+            ])));
+        }
+        if let Some(l) = m.get_mut("lifecycle") {
+            *l = serde_yaml::Value::from("enriched");
+        }
+    }
+    let stats: serde_yaml::Value = serde_yaml::from_str(&serde_json::to_string(&out.stats).unwrap())?;
+    if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
+        arts.insert("enriched".into(), serde_yaml::Mapping::from_iter([
+            (serde_yaml::Value::from("file"), serde_yaml::Value::from("enriched/authors.json")),
+            (serde_yaml::Value::from("files"), serde_yaml::Value::from("enriched/{authors,venue,topics,provenance}.json")),
+            (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
+            (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha256_hex(out.provenance_json.as_bytes()))),
+            (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-enriched-layer")),
+            (serde_yaml::Value::from("stats"), stats),
+        ]).into());
+    }
+    std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
+    println!("{paper_id}: enriched — {}", serde_json::to_string(&out.stats)?);
+    Ok(())
+}

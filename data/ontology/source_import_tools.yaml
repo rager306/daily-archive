@@ -78,9 +78,11 @@ stages:
     cli: da enrich/batch-enrich
     note: порт есть; article-слой якорь — reference
   - id: article_enriched_layer
-    impl: reference
-    cli: scripts/m451_enrich_openalex.py
-    note: позиционная привязка авторов, кэш+provenance
+    impl: rust
+    cli: 'da source enrich-layer <id> (work-кэш: scripts/m451_enrich_openalex.py)'
+    note: 'фаза-2 порт: позиционная привязка TEI<->OpenAlex с surname-check; tei_only-строки
+      канонизированы (rust честнее reference — эталон выровнен); ADR-055 lineage в
+      provenance; кросс-валидировано 2408.06292: 7/7 IDENTICAL'
 - stage: summarized
   title: выжимки (модель из models.yaml binding)
   lazy: true

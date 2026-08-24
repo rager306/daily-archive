@@ -163,6 +163,16 @@ def enrich(pid: str, root: Path) -> str:
         else:
             entry["binding"] = "openalex_only"
         authors.append(entry)
+    # rust-canonical: TEI authors beyond OpenAlex rows are honest tei_only
+    for j, t in enumerate(tei_aus[len(w["authorships"]):],
+                          start=len(w["authorships"])):
+        authors.append({
+            "position": j,
+            "openalex_a_id": None, "display_name": None, "orcid": None,
+            "institutions": [],
+            "author_key": t["author_key"], "tei_full_name": t["full"],
+            "binding": "tei_only",
+        })
     (article / "enriched").mkdir(exist_ok=True)
     (article / "enriched" / "authors.json").write_text(json.dumps(authors, ensure_ascii=False, indent=1))
 

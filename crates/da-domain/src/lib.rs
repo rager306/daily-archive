@@ -52,6 +52,7 @@ pub mod scheduler;
 pub mod schema;
 pub mod schema_invariants;
 pub mod figure_geometry;
+pub mod enriched_authors;
 pub mod html_headings;
 pub mod navigation;
 pub mod pdf_toc;
