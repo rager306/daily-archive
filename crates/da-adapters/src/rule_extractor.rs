@@ -58,6 +58,8 @@ pub struct StructuralConfig {
     pub acronym_definitions: AcronymDefinitionConfig,
     #[serde(default)]
     pub proposal_noun_phrases: ProposalNounPhraseConfig,
+    #[serde(default)]
+    pub prose_benchmark_numbers: ProseBenchmarkConfig,
 }
 
 
@@ -96,6 +98,52 @@ fn default_acronym_min() -> usize { 2 }
 fn default_acronym_max() -> usize { 6 }
 fn default_min_words() -> usize { 2 }
 fn default_max_words() -> usize { 5 }
+
+/// Prose benchmark numbers (ADR-069 §2.5): vision papers carry results in
+/// narrative paragraphs without Results sections. Harvest percentages,
+/// p-values, fold changes and sample sizes as Metric observations.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct ProseBenchmarkConfig {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    #[serde(default = "default_acronym_entity")]
+    pub entity_type: String,
+    #[serde(default)]
+    pub patterns: std::collections::BTreeMap<String, ProseNumberPattern>,
+    #[serde(default = "default_prose_max_per_section")]
+    pub max_per_section: usize,
+}
+
+impl Default for ProseBenchmarkConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            entity_type: default_acronym_entity(),
+            patterns: std::collections::BTreeMap::new(),
+            max_per_section: default_prose_max_per_section(),
+        }
+    }
+}
+
+fn default_prose_max_per_section() -> usize { 8 }
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct ProseNumberPattern {
+    pub regex: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label_prefix: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label_suffix: Option<String>,
+    /// drop integer captures divisible by this (sweep-grid noise: 0/10/70/75/80)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub drop_int_multiples_of: Option<f64>,
+    /// drop captures below this value (zero/leading-comma noise)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_value: Option<f64>,
+    /// "2,048" → "048": strip leading zeros from the captured digits
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub strip_leading_zeros: bool,
+}
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ProposalNounPhraseConfig {
@@ -537,6 +585,66 @@ impl RuleBasedExtractor {
         results
     }
 
+    /// Prose benchmark numbers (ADR-069 §2.5): harvest percentages / p-values /
+    /// fold-changes / sample sizes from narrative text as Metric candidates.
+    /// Vision papers carry results in prose — no Results section exists.
+    fn extract_prose_benchmark_numbers(&self, text: &str, entity_type: &EntityType) -> Vec<(usize, usize, String)> {
+        let cfg = &self.config.structural.prose_benchmark_numbers;
+        if !cfg.enabled || !matches!(entity_type, EntityType::Metric) {
+            return Vec::new();
+        }
+        let mut results = Vec::new();
+        for (name, pat) in &cfg.patterns {
+            let Ok(re) = regex::Regex::new(&pat.regex) else {
+                continue;
+            };
+            for caps in re.captures_iter(text) {
+                if results.len() >= cfg.max_per_section {
+                    break;
+                }
+                let Some(m) = caps.get(0) else { continue };
+                let Some(val) = caps.get(1).map(|v| v.as_str()) else { continue };
+                // DATA-driven noise filters (sweep grids, zero/leading-comma)
+                let mut digits: String = val.chars().filter(|c| c.is_ascii_digit() || *c == '.').collect();
+                if pat.strip_leading_zeros {
+                    digits = digits.trim_start_matches('0').to_string();
+                }
+                if digits.is_empty() || digits == "." {
+                    continue; // '2,048' comma-split left nothing
+                }
+                let numeric: Option<f64> = digits.parse().ok();
+                if let Some(min) = pat.min_value
+                    && let Some(v) = numeric
+                    && v < min
+                {
+                    continue;
+                }
+                if let Some(step) = pat.drop_int_multiples_of
+                    && let Some(v) = numeric
+                    && v.fract() == 0.0
+                    && (v / step).fract() == 0.0
+                {
+                    continue;
+                }
+                // label: prefix + captured number (+ suffix)
+                let mut label = String::new();
+                if let Some(p) = &pat.label_prefix {
+                    label.push_str(p);
+                }
+                label.push_str(&digits);
+                if let Some(s) = &pat.label_suffix {
+                    label.push('_');
+                    label.push_str(s);
+                }
+                let _ = name;
+                results.push((m.start(), m.end(), label));
+            }
+        }
+        results.sort_by_key(|(s, _, _)| *s);
+        results.truncate(cfg.max_per_section);
+        results
+    }
+
     /// Looks for capitalized phrases, quoted terms, and "we propose X" patterns.
     fn extract_candidates(
         &self,
@@ -646,8 +754,9 @@ impl RuleBasedExtractor {
                 }
             }
             EntityType::Metric => {
-                // Metric extraction is handled by the global pass in extract().
-                // No section-specific extraction needed here.
+                // Prose benchmark numbers (ADR-069 §2.5) + the global metric
+                // whitelist pass in extract().
+                results.extend(self.extract_prose_benchmark_numbers(text, entity_type));
             }
             EntityType::Model => {
                 // Model extraction is handled by the global model pass in extract().
@@ -1034,6 +1143,27 @@ impl Extractor for RuleBasedExtractor {
                 hits.extend(self.extract_proposal_noun_phrases(&scan_text, &EntityType::Method));
                 hits
             };
+            // Prose benchmark numbers are Metric-typed (ADR-069 §2.5):
+            // vision papers report results in narrative prose — harvest
+            // globally, not only in Metric-classified sections.
+            let prose_metrics = self.extract_prose_benchmark_numbers(&scan_text, &EntityType::Metric);
+            for (char_start, char_end, label) in prose_metrics {
+                let key = (label.to_lowercase(), "metric".to_string());
+                if !seen.contains(&key) {
+                    seen.insert(key);
+                    entities.push(ExtractedEntity {
+                        label,
+                        entity_type: EntityType::Metric,
+                        section_title: title.clone(),
+                        section_ordinal: Some(section_ordinal),
+                        char_start,
+                        char_end,
+                        surface: scan_text
+                            [char_start.min(scan_text.len())..char_end.min(scan_text.len())]
+                            .to_string(),
+                    });
+                }
+            }
             for (char_start, char_end, label) in structural_hits {
                 let key = (label.to_lowercase(), "method".to_string());
                 if !seen.contains(&key) {
@@ -1217,6 +1347,29 @@ mod tests {
     // ── structural patterns: acronym definitions (2608.20845 gap) ──
     // New-paper regression: "ingest-time semantic compilation (ISC)" —
     // method absent from whitelists, lowercase phrase, acronym in parens.
+
+    // ── ADR-069 §2.5: prose benchmark numbers (vision papers have no Results) ──
+    #[test]
+    fn test_prose_percentage_extracted_as_metric() {
+        let extractor = RuleBasedExtractor::new();
+        let text = "At a 2,048-token budget facts answered 85.2% correctly from roughly 2.2k reader tokens, while the best chunk configuration reached 72.5%.";
+        let cands = extractor.extract_candidates(text, &EntityType::Metric);
+        assert!(
+            cands.iter().any(|(_, _, l)| l.contains("85.2")),
+            "85.2% must be harvested from prose, got: {cands:?}"
+        );
+    }
+
+    #[test]
+    fn test_prose_sample_size_extracted() {
+        let extractor = RuleBasedExtractor::new();
+        let text = "Results are reported on a held-out sample of 500 transcripts and 499 questions.";
+        let cands = extractor.extract_candidates(text, &EntityType::Metric);
+        assert!(
+            cands.iter().any(|(_, _, l)| l.starts_with("n_")),
+            "sample size must become n_* metric, got: {cands:?}"
+        );
+    }
 
     #[test]
     fn test_acronym_definition_catches_new_method() {

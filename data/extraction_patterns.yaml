@@ -131,3 +131,25 @@ structural:
     note: 'Extract the noun phrase (not just first word) after proposal verbs: "we
       propose a compiled semantic substrate" -> Method[compiled semantic substrate].
       Lowercase allowed.'
+  prose_benchmark_numbers:
+    enabled: true
+    entity_type: Metric
+    patterns:
+      percentage:
+        regex: (\d{1,3}(?:\.\d+)?)\s*%
+        label_suffix: pct
+        drop_int_multiples_of: 5
+      p_value:
+        regex: p\s*[≤<=]\s*(\d+(?:\.\d+)?\s*[×x]\s*10\s*[-−]\s*\d+)
+        label_prefix: p_value
+      fold_change:
+        regex: (\d+(?:\.\d+)?)\s*[×x](?=\s|[,;.)])
+        label_suffix: fold
+      sample_size:
+        regex: \b(\d{2,6})\s+(?:transcripts|questions|documents|papers|samples|participants|examples|cells)\b
+        label_prefix: n_
+        min_value: 10
+        strip_leading_zeros: true
+    max_per_section: 8
+    note: 'ADR-069 §2.5: benchmark-числа в прозе (vision-жанр не имеет Results-секций).
+      Source specimen: 85.2% vs 72.5%, p<=4.9e-6, 33.7x, 500 transcripts.'

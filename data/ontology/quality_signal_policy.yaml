@@ -67,3 +67,42 @@ signals:
   thresholds:
     warn_below: 0.3
     alarm_below: 0.1
+- id: merged_headings
+  description: 'заголовки, содержащие склеенный подраздел: "<title> N. <subtitle>"
+    (GROBID-дефект). Source specimen: 2608.20845 sec4 "Two Existence Proofs 3.1 Maintenance
+    scales..." (ADR-069 §2.5)'
+  source: navigation.nodes[].title
+  params:
+    pattern: \d+\.\d*\s+\S
+  scale:
+  - count
+  - 0..n
+  thresholds:
+    warn_above: 0
+    alarm_above: 2
+- id: citation_index_overflow
+  description: 'body-ссылки [N] за пределами parsed citations (GROBID теряет библиографию).
+    Source specimen: 2608.20845 body [16] при 15 записях'
+  source: parsed.sections[].text vs parsed.citations[]
+  params:
+    ref_pattern: \[(\d{1,3})\]
+  scale:
+  - count
+  - 0..n
+  thresholds:
+    warn_above: 0
+    alarm_above: 2
+  effect: citation-resolution trust снижается для всех ссылок этой статьи
+- id: genre_vision_paper
+  description: 'position/vision жанр: большинство секций unclassified + жанровые маркеры
+    (research_agenda/existence_proof/vision). Экстракция опирается на глобальные структурные
+    проходы, а не секционные (ADR-069 §2.4)'
+  source: navigation.nodes[].structural_type
+  params:
+    unclassified_warn_above: 0.7
+  scale:
+  - flag
+  - bool
+  thresholds:
+    warn_above: 0.7
+    alarm_above: 0.9

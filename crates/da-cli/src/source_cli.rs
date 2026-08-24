@@ -1008,6 +1008,41 @@ pub fn run_parse_pdf(paper_id: &str, pdf_path: Option<&str>) -> anyhow::Result<(
     Ok(())
 }
 
+/// Exact-quote gate (ADR-069 §2.1): the entity span must resolve inside the
+/// canonical text — the surface equals the slice at [char_start..char_end],
+/// or at minimum the label occurs in the canonical text. Verified entities
+/// pass the mechanical gate; unverified keep reduced trust for the critic.
+fn verify_evidence_span(
+    e: &da_ports::extractor::ExtractedEntity,
+    canonical: &str,
+) -> (&'static str, String) {
+    if canonical.is_empty() {
+        return ("unverified_no_canonical", String::new());
+    }
+    let start = e.char_start.min(canonical.len());
+    let end = e.char_end.min(canonical.len());
+    if start <= end && canonical.is_char_boundary(start) && canonical.is_char_boundary(end) {
+        let slice = &canonical[start..end];
+        if slice == e.surface {
+            return ("verified", e.surface.clone());
+        }
+    }
+    // fallback: label occurrence anywhere in canonical text
+    if !e.label.is_empty()
+        && canonical.to_lowercase().contains(&e.label.to_lowercase())
+    {
+        return (
+            "verified_label_occurrence",
+            canonical
+                .get(..e.label.len())
+                .filter(|s| s.eq_ignore_ascii_case(&e.label))
+                .unwrap_or("")
+                .to_string(),
+        );
+    }
+    ("unverified_span_mismatch", e.surface.clone())
+}
+
 /// `da source build-extracted <paper_id>` — run rule-based extraction
 /// and persist extracted/entities.json (article layer; graph writes stay
 /// with `da extract`).
@@ -1048,6 +1083,7 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
         .join(paper_id)
         .join("summaries/abstract.json");
     let mut merged: Vec<da_ports::extractor::ExtractedEntity> = entities;
+    let mut summary_canonical: Option<String> = None;
     if let Ok(sraw) = std::fs::read_to_string(&summary_path)
         && let Ok(summary) = serde_json::from_str::<serde_json::Value>(&sraw)
     {
@@ -1070,6 +1106,7 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
             }
         }
         if !summary_text.is_empty() {
+            summary_canonical = Some(format!("Summary {summary_text}"));
             let summary_pairs = vec![("Summary".to_string(), summary_text)];
             let summary_entities = rt.block_on(async {
                 use da_ports::Extractor as _;
@@ -1087,13 +1124,50 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
         }
     }
 
+    // Exact-quote evidence gate (ADR-069 §2.1) + lineage (§2.2):
+    // every entity carries verbatim_quote + span, verified by string
+    // comparison against the canonical section text BEFORE any LLM critic.
+    // content_hash makes recompilation idempotent; pipeline_run_id stamps
+    // extractor lineage (ExtractionCacheIdentity fingerprints).
+    let extractor = da_adapters::RuleBasedExtractor::new();
+    let cache_id = extractor.cache_identity();
+    let run_id = format!(
+        "{}:{}:{}",
+        cache_id.implementation_fingerprint, cache_id.configuration_fingerprint,
+        cache_id.output_schema_fingerprint
+    );
+
     let mut records: Vec<serde_json::Value> = Vec::new();
     for e in &merged {
-        // section ordinal from the source span's section (extractor keeps it)
+        // canonical text for span verification: global passes scan
+        // title+space+text, section passes scan text only; the summary
+        // layer scans the concatenated summary text.
+        let (canonical, origin) = if e.section_title == "Summary" {
+            (summary_canonical.clone().unwrap_or_default(), "summary")
+        } else {
+            (
+                e.section_ordinal
+                    .and_then(|i| pairs.get(i).map(|(t, x)| format!("{t} {x}")))
+                    .unwrap_or_default(),
+                "parsed",
+            )
+        };
+        let (evidence_state, verbatim) = verify_evidence_span(e, &canonical);
+        let etype = format!("{:?}", e.entity_type);
+        let content_hash = sha256_hex(format!("{paper_id}:{}:{}", e.label, etype).as_bytes());
         records.push(serde_json::json!({
             "label": e.label,
             "entity_type": format!("{:?}", e.entity_type),
             "section_ordinal": e.section_ordinal,
+            "evidence": {
+                "verbatim_quote": verbatim,
+                "char_start": e.char_start,
+                "char_end": e.char_end,
+                "origin": origin,
+                "evidence_state": evidence_state,
+            },
+            "content_hash": content_hash,
+            "pipeline_run_id": run_id,
         }));
     }
     let json = serde_json::to_string_pretty(&records)?;
@@ -1639,6 +1713,61 @@ mod tests {
     // article_catalog layout puts the PDF at <id>/source/<id>.pdf, one
     // level below the paper dir. collect_pdfs only scanned direct
     // children → "no source PDF found" despite the PDF existing.
+    // ADR-069 §2.1 exact-quote gate: spans must verify against canonical
+    // text; unverifiable entities keep reduced trust (never silently dropped).
+    #[test]
+    fn evidence_gate_verifies_exact_span() {
+        use da_ports::extractor::ExtractedEntity;
+        use da_domain::EntityType;
+        let e = ExtractedEntity {
+            label: "ISC".into(),
+            entity_type: EntityType::Method,
+            section_title: "Summary".into(),
+            section_ordinal: Some(0),
+            char_start: 42,
+            char_end: 45,
+            surface: "ISC".into(),
+        };
+        let canonical = "Summary Ingest-time semantic compilation (ISC) compiles";
+        let (state, quote) = verify_evidence_span(&e, canonical);
+        assert_eq!(state, "verified");
+        assert_eq!(quote, "ISC");
+    }
+
+    #[test]
+    fn evidence_gate_flags_mismatch_as_unverified() {
+        use da_ports::extractor::ExtractedEntity;
+        use da_domain::EntityType;
+        let e = ExtractedEntity {
+            label: "GhostMethod".into(),
+            entity_type: EntityType::Method,
+            section_title: "S".into(),
+            section_ordinal: Some(0),
+            char_start: 0,
+            char_end: 11,
+            surface: "GhostMethod".into(),
+        };
+        let (state, _) = verify_evidence_span(&e, "totally different text here");
+        assert_eq!(state, "unverified_span_mismatch");
+    }
+
+    #[test]
+    fn evidence_gate_empty_canonical_is_unverified() {
+        use da_ports::extractor::ExtractedEntity;
+        use da_domain::EntityType;
+        let e = ExtractedEntity {
+            label: "X".into(),
+            entity_type: EntityType::Task,
+            section_title: "t".into(),
+            section_ordinal: None,
+            char_start: 0,
+            char_end: 1,
+            surface: "X".into(),
+        };
+        let (state, _) = verify_evidence_span(&e, "");
+        assert_eq!(state, "unverified_no_canonical");
+    }
+
     #[test]
     fn collect_pdfs_finds_pdf_in_source_subdir() {
         let _guard = CWD_LOCK.lock().unwrap();

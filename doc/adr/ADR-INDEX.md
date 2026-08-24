@@ -38,6 +38,8 @@ listed here — see `legacy/doc/adr/`.
 | [066](ADR-066-pipeline-orchestrator-stays-product-side.md) | PipelineOrchestrator stays product-side — engine migration deferred-by-design (durable vs in-process retry are complementary) | Accepted (D280) | 2026-08-21 |
 | [067](ADR-067-normalized-data-layout.md) | Normalized data layout — flattened article catalog, one home per data class, legacy to archive/, Governor enforces | Accepted (M447) | 2026-08-22 |
 | [068](ADR-068-schema-manifest-hierarchy.md) | Schema/Manifest hierarchy — every directory carries SCHEMA (what is possible) + MANIFEST (what exists); meta-prompt principle; all repo dirs, not just data/ | Proposed (M451) | 2026-08-23 |
+| [069](ADR-069-isc-pattern-application.md) | ISC Pattern Application — exact-quote evidence gate, compilation depth (R*), genre detection (position/vision papers), parse-integrity signals | Accepted (M451) | 2026-08-24 |
+| [070](ADR-070-domain-knowledge-profiles.md) | Domain knowledge profiles — per-domain SCHEMA.yaml (entity types, structural types, thresholds), multi-domain routing, genre-aware extraction | Accepted (M451) | 2026-08-24 |
 
 ## Phase completion status (ADR-050, 2026-08-02)
 
