@@ -41,9 +41,13 @@ pub fn build_navigation_stage(
     store: &dyn SchemaObjectStore,
     paper_id: &str,
     detectors_yaml: &str,
+    type_detectors_yaml: &str,
     policy_yaml: &str,
+    cross_layer: &da_domain::navigation::CrossLayerInputs,
 ) -> Result<NavigationStageOutput, NavigationStageError> {
     let detectors = FurnitureDetectors::from_yaml_str(detectors_yaml)
+        .map_err(|e| NavigationStageError::Registry(e.to_string()))?;
+    let type_detectors = da_domain::navigation::StructuralTypeDetectors::from_yaml_str(type_detectors_yaml)
         .map_err(|e| NavigationStageError::Registry(e.to_string()))?;
     let policy: serde_yaml::Value = serde_yaml::from_str(policy_yaml)
         .map_err(|e| NavigationStageError::Policy(e.to_string()))?;
@@ -64,7 +68,7 @@ pub fn build_navigation_stage(
     )
     .map_err(|e| NavigationStageError::NoProjection(format!("{paper_id}: sections: {e}")))?;
 
-    let nodes = build_navigation(&sections, &detectors);
+    let nodes = build_navigation(&sections, &detectors, &type_detectors, cross_layer);
     let cost = tree_cost(&nodes, routing);
     let st = stats(&nodes, cost);
 
@@ -176,7 +180,8 @@ mod tests {
                     .to_string(),
             )]),
         };
-        let out = build_navigation_stage(&store, "p1", DETECTORS, POLICY).unwrap();
+let types_yaml = "types: {}\n";
+        let out = build_navigation_stage(&store, "p1", DETECTORS, types_yaml, POLICY, &Default::default()).unwrap();
         assert_eq!(out.nodes.len(), 3);
         assert_eq!(out.stats.furniture, 1);
         assert_eq!(out.stats.nodes, 3);
@@ -193,7 +198,7 @@ mod tests {
     #[test]
     fn missing_projection_is_honest() {
         let store = FakeStore { files: BTreeMap::new() };
-        let r = build_navigation_stage(&store, "ghost", DETECTORS, POLICY);
+        let r = build_navigation_stage(&store, "ghost", DETECTORS, "types: {}", POLICY, &Default::default());
         assert!(matches!(r, Err(NavigationStageError::NoProjection(_))));
     }
 }

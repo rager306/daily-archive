@@ -146,7 +146,53 @@ pub fn run_build_navigation(paper_id: &str) -> anyhow::Result<()> {
 
     let cfg = PathConfig::load();
     let store = FsSchemaObjectStore::from_path_config(&cfg, "article")?;
-    let out = build_navigation_stage(&store, paper_id, &detectors_yaml, &policy_yaml)?;
+    let dir = std::path::Path::new("data/processed").join(paper_id);
+    let type_detectors_yaml = std::fs::read_to_string("data/ontology/structural_type_detectors.yaml")
+        .map_err(|e| anyhow::anyhow!("structural_type_detectors.yaml: {e}"))?;
+    // CrossLayerInputs: aggregate from existing layer files
+    let mut cross_layer = da_domain::navigation::CrossLayerInputs::default();
+    if let Ok(raw) = std::fs::read_to_string(dir.join("extracted/entities.json")) {
+        if let Ok(ents) = serde_json::from_str::<serde_json::Value>(&raw) {
+            if let Some(arr) = ents.as_array() {
+                for (ordinal, e) in arr.iter().enumerate() {
+                    let label = e.get("label").and_then(|l| l.as_str()).unwrap_or("").to_string();
+                    cross_layer.entities_by_ordinal.entry(ordinal).or_default().push(label);
+                }
+            }
+        }
+    }
+    if let Ok(raw) = std::fs::read_to_string(dir.join("parsed/article.json")) {
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&raw) {
+            for t in parsed.get("tables").and_then(|t| t.as_array()).map(|a| a.as_slice()).unwrap_or(&[]) {
+                let path_id = t.get("section_path_id").and_then(|p| p.as_str()).unwrap_or("").to_string();
+                let id = t.get("table_id").and_then(|i| i.as_str()).unwrap_or("").to_string();
+                cross_layer.tables_by_path.entry(path_id).or_default().push(id);
+            }
+            for f in parsed.get("formulas").and_then(|f| f.as_array()).map(|a| a.as_slice()).unwrap_or(&[]) {
+                let path_id = f.get("section_path_id").and_then(|p| p.as_str()).unwrap_or("").to_string();
+                let id = f.get("formula_id").and_then(|i| i.as_str()).unwrap_or("").to_string();
+                cross_layer.equations_by_path.entry(path_id).or_default().push(id);
+            }
+            for c in parsed.get("citations").and_then(|c| c.as_array()).map(|a| a.as_slice()).unwrap_or(&[]) {
+                for a in c.get("anchors").and_then(|a| a.as_array()).map(|a| a.as_slice()).unwrap_or(&[]) {
+                    let path_id = a.get("section_path_id").and_then(|p| p.as_str()).unwrap_or("").to_string();
+                    *cross_layer.citation_anchors_by_path.entry(path_id).or_insert(0) += 1;
+                }
+            }
+        }
+    }
+    let figures_file = dir.join("figures/index.json");
+    if let Ok(figs_raw) = std::fs::read_to_string(&figures_file) {
+        if let Ok(figs) = serde_json::from_str::<serde_json::Value>(&figs_raw) {
+            for f in figs.as_array().map(|a| a.as_slice()).unwrap_or(&[]) {
+                let page = f.get("page").and_then(|p| p.as_u64()).unwrap_or(0);
+                let fig_id = f.get("figure_id").and_then(|i| i.as_str()).unwrap_or("").to_string();
+                cross_layer.figures_by_path.entry(format!("{page}")).or_default().push(fig_id);
+            }
+        }
+    }
+
+    let out = build_navigation_stage(&store, paper_id, &detectors_yaml, &type_detectors_yaml, &policy_yaml, &cross_layer)?;
 
     let dir = std::path::Path::new("data/processed").join(paper_id);
     // 1. navigation.json
