@@ -45,7 +45,10 @@ fn load_state(paper_id: &str) -> anyhow::Result<ImportFsmState> {
 }
 
 fn print_status(paper_id: &str, tc: &Toolchain, state: &ImportFsmState) {
+    let cfg = da_ports::path_config::PathConfig::load();
+    let domains = resolve_domain(paper_id, &cfg);
     println!("object:   {paper_id}");
+    println!("domains:  {domains:?}");
     println!("grammar:  {} (class: {})", state.grammar_profile, state.object_class());
     println!("stage:    {}", state.current_stage());
     println!("reached:  {:?}", state.reached);
@@ -1103,8 +1106,11 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
         .map_err(|e| anyhow::anyhow!("toolchain: {e}"))?;
     let state = load_fsm_state(paper_id)?;
 
+    // Domain routing: resolve which domain profile to use
+    let cfg = da_ports::path_config::PathConfig::load();
+    let domains = resolve_domain(paper_id, &cfg);
     println!("═══ FSM run: {paper_id} ═══");
-    println!("stage: {} | grammar: {} ({})", state.current_stage(), state.grammar_profile, state.object_class());
+    println!("domain: {:?} | stage: {} | grammar: {} ({})", domains, state.current_stage(), state.grammar_profile, state.object_class());
     println!();
 
     let plan = state.plan(&tc);
@@ -1228,8 +1234,7 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
                     let stdout = String::from_utf8_lossy(&o.stdout).to_string();
                     let line = stdout
                         .lines()
-                        .filter(|l| !l.contains("Logging") && !l.trim().is_empty())
-                        .next_back()
+                        .rfind(|l| !l.contains("Logging") && !l.trim().is_empty())
                         .unwrap_or("ok");
                     println!("   ✓ {action}: {line}");
                     completed += 1;
@@ -1242,8 +1247,7 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
                     let stderr = String::from_utf8_lossy(&o.stderr).to_string();
                     let err = stderr
                         .lines()
-                        .filter(|l| !l.contains("Logging") && !l.contains("INFO"))
-                        .next_back()
+                        .rfind(|l| !l.contains("Logging") && !l.contains("INFO"))
                         .unwrap_or("unknown");
                     println!("   ✗ {action}: {err}");
                     stage_ok = false;
@@ -1285,31 +1289,65 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
 
 /// Resolve the domain for a paper from its identity.json coarse_topic_code
 /// via the domain_routing table in path_config.yaml.
-fn resolve_domain(paper_id: &str, cfg: &da_ports::path_config::PathConfig) -> String {
-    // find identity.json for this paper
+fn resolve_domain(paper_id: &str, cfg: &da_ports::path_config::PathConfig) -> Vec<String> {
     let sources = std::path::Path::new("data/sources");
-    if let Ok(rd) = std::fs::read_dir(sources) {
-        for src_type in rd.flatten() {
-            if !src_type.path().is_dir() { continue; }
-            if let Ok(cats) = std::fs::read_dir(src_type.path()) {
-                for cat in cats.flatten() {
-                    let ident = cat.path().join(paper_id).join("identity.json");
-                    if ident.is_file() {
+    let mut found: Option<Vec<String>> = None;
+    // walk sources recursively to find identity.json for this paper_id
+    fn walk(dir: &std::path::Path, paper_id: &str, cfg: &da_ports::path_config::PathConfig, out: &mut Option<Vec<String>>) {
+        if out.is_some() { return; }
+        if let Ok(rd) = std::fs::read_dir(dir) {
+            for e in rd.flatten() {
+                if out.is_some() { return; }
+                let p = e.path();
+                if p.is_dir() {
+                    if p.file_name().map(|n| n == paper_id).unwrap_or(false) {
+                        let ident = p.join("identity.json")
+                            .exists()
+                            .then(|| p.join("identity.json"))
+                            .unwrap_or_else(|| p.join("article.json"));
                         if let Ok(text) = std::fs::read_to_string(&ident) {
                             if let Ok(v) = serde_yaml::from_str::<serde_yaml::Value>(&text) {
-                                let code = v.get("coarse_topic_code")
-                                    .and_then(|c| c.as_str())
-                                    .unwrap_or("");
-                                return cfg.domain_for_topic(code)
-                                    .unwrap_or_else(|| "computer_science".to_string());
+                                let code = v.get("coarse_topic_code").and_then(|c| c.as_str()).unwrap_or("");
+                                if let Some(domains) = cfg.domains_for_topic(code) {
+                                    *out = Some(domains);
+                                    return;
+                                }
                             }
                         }
                     }
+                    walk(&p, paper_id, cfg, out);
                 }
             }
         }
     }
-    "computer_science".to_string()
+    walk(sources, paper_id, cfg, &mut found);
+    found.unwrap_or_else(|| vec!["computer_science".to_string()])
+}
+
+/// Detect domain from paper content when routing table has no match.
+/// Primary signal: structural type distribution (math paper → theorem/proof).
+fn detect_domain_from_text(paper_id: &str, cfg: &da_ports::path_config::PathConfig) -> Vec<String> {
+    let nav_path = std::path::Path::new("data/processed")
+        .join(paper_id)
+        .join("context/navigation.json");
+    if let Ok(raw) = std::fs::read_to_string(&nav_path) {
+        if let Ok(nav) = serde_json::from_str::<serde_json::Value>(&raw) {
+            if let Some(arr) = nav.as_array() {
+                let math_count = arr.iter()
+                    .filter(|n| {
+                        let t = n.get("title").and_then(|t| t.as_str()).unwrap_or("");
+                        t.starts_with("Theorem") || t.starts_with("Definition") ||
+                        t.starts_with("Lemma") || t.starts_with("Proof") ||
+                        t.starts_with("Exercise")
+                    })
+                    .count();
+                if math_count > arr.len() / 10 {
+                    return vec!["mathematics".into(), "computer_science".into()];
+                }
+            }
+        }
+    }
+    vec!["computer_science".to_string()]
 }
 
 fn load_fsm_state(paper_id: &str) -> anyhow::Result<ImportFsmState> {

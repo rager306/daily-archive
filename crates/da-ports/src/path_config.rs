@@ -27,7 +27,7 @@ pub struct SchemaObjectBinding {
 pub struct PathConfig {
     paths: BTreeMap<String, PathBuf>,
     schema_objects: BTreeMap<String, SchemaObjectBinding>,
-    domain_routing: BTreeMap<String, String>,
+    domain_routing: BTreeMap<String, Vec<String>>,
 }
 
 impl PathConfig {
@@ -88,7 +88,29 @@ impl PathConfig {
                 }
             }
         }
-        Self { paths, schema_objects, domain_routing: BTreeMap::new() }
+        // domain_routing: coarse_topic_code → Vec<domain> (multi-domain)
+        let mut domain_routing: BTreeMap<String, Vec<String>> = BTreeMap::new();
+        if let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(text)
+            && let Some(dr) = value.get("paths").and_then(|p| p.get("domain_routing")).and_then(|d| d.as_mapping())
+        {
+            for (code, domain) in dr {
+                if let Some(k) = code.as_str() {
+                    let domains: Vec<String> = match domain {
+                        serde_yaml::Value::String(s) => vec![s.clone()],
+                        serde_yaml::Value::Sequence(seq) => seq
+                            .iter()
+                            .filter_map(|v| v.as_str().map(str::to_string))
+                            .collect(),
+                        _ => vec![],
+                    };
+                    if !domains.is_empty() {
+                        domain_routing.insert(k.to_string(), domains);
+                    }
+                }
+            }
+        }
+
+        Self { paths, schema_objects, domain_routing }
     }
 
     /// Binding for one schema-manifest object class (e.g. "article").
@@ -101,14 +123,23 @@ impl PathConfig {
         self.schema_objects.keys().map(String::as_str).collect()
     }
 
-    /// Domain for a coarse_topic_code from the routing table.
-    pub fn domain_for_topic(&self, code: &str) -> Option<String> {
+    /// Domains for a coarse_topic_code (multi-domain: stat-ml → [CS, math]).
+    /// First = PRIMARY (quality thresholds), rest = SECONDARY (entity types).
+    pub fn domains_for_topic(&self, code: &str) -> Option<Vec<String>> {
         self.domain_routing.get(code).cloned()
     }
 
-    /// All registered domains.
-    pub fn domains(&self) -> Vec<&str> {
-        self.domain_routing.values().map(String::as_str).collect()
+    /// All registered domains (unique).
+    pub fn domains(&self) -> Vec<String> {
+        let mut seen: Vec<String> = Vec::new();
+        for domains in self.domain_routing.values() {
+            for d in domains {
+                if !seen.contains(d) {
+                    seen.push(d.clone());
+                }
+            }
+        }
+        seen
     }
 
     /// Get a path by key. Checks env override first (DA_PATH_<KEY>),
