@@ -467,7 +467,8 @@ fn main() {
                 "build-navigation" => source_cli::run_build_navigation(&paper_id),
                 "build-structural" => source_cli::run_build_structural(&paper_id),
                 "build-figures" => source_cli::run_build_figures(&paper_id),
-                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures)")),
+                "build-figures-tei" => source_cli::run_build_figures_tei(&paper_id),
+                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei)")),
             };
             if let Err(e) = r {
                 eprintln!("da source: {e}");

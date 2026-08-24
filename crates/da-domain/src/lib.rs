@@ -54,6 +54,7 @@ pub mod schema_invariants;
 pub mod figure_geometry;
 pub mod navigation;
 pub mod structural_elements;
+pub mod tei_figures;
 pub mod source_import_fsm;
 pub mod scholarly_evidence;
 pub mod section_summary_policy;

@@ -68,6 +68,7 @@ pub mod entity_resolution;
 pub mod figures_stage;
 pub mod navigation_stage;
 pub mod structural_elements_stage;
+pub mod tei_figures_stage;
 pub mod validate_schema_objects;
 pub mod extraction;
 pub mod extractive_summary;

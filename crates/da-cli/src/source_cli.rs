@@ -363,3 +363,38 @@ pub fn run_build_figures(paper_id: &str) -> anyhow::Result<()> {
     );
     Ok(())
 }
+
+/// `da source build-figures-tei <paper_id>` — TEI figures transition
+/// (arxiv_pdf_dot grammar: untyped <figure> from parsed tei_xml).
+pub fn run_build_figures_tei(paper_id: &str) -> anyhow::Result<()> {
+    use da_adapters::fs_schema_objects::FsSchemaObjectStore;
+    use da_application::tei_figures_stage::build_tei_figures_stage;
+    use da_ports::path_config::PathConfig;
+
+    let cfg = PathConfig::load();
+    let store = FsSchemaObjectStore::from_path_config(&cfg, "article")?;
+    let out = build_tei_figures_stage(&store, paper_id)?;
+
+    let dir = std::path::Path::new("data/processed").join(paper_id);
+    std::fs::create_dir_all(dir.join("figures"))?;
+    std::fs::write(dir.join("figures/index.json"), &out.index_json)?;
+
+    let mp = dir.join("manifest.yaml");
+    let mut m: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&mp)?)?;
+    let stats_yaml = serde_yaml::to_value(&out.stats)?;
+    let entry = serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("file"), serde_yaml::Value::from("figures/index.json")),
+        (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha256_hex(out.index_json.as_bytes()))),
+        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-tei-figures-stage")),
+        (serde_yaml::Value::from("stats"), stats_yaml),
+    ]);
+    if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
+        arts.insert("figures".into(), serde_yaml::Value::Mapping(entry));
+    }
+    std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
+    println!(
+        "{paper_id}: tei figures — count={} with_caption={} with_graphic={} refs={}",
+        out.stats.count, out.stats.with_caption, out.stats.with_graphic, out.stats.total_in_text_refs
+    );
+    Ok(())
+}
