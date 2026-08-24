@@ -12,6 +12,8 @@
     "char_count": 4453,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Reinforcement learning from human feedback (RLHF) has become a cornerstone technique for aligning large language models (LLMs) with human values and enhancing their ability to follow human instruction",
+    "structural_type": "introduction",
     "entity_labels": [
       "GRPO"
     ],
@@ -33,6 +35,8 @@
     "char_count": 3760,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Reinforcement learning from human feedback (RLHF) is a standard framework for aligning large language models (LLMs) with human preferences [17]. RLHF typically involves: (1) supervised fine-tuning on ",
+    "structural_type": "related_work",
     "entity_labels": [
       "PPO"
     ],
@@ -52,6 +56,8 @@
     "char_count": 280,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this section, we outline the automatic rule extraction process of AUTORULE, demonstrate how these rules can be used to form a reward score, and how the reward is used in the GRPO formulation. Figur",
+    "structural_type": "methodology",
     "entity_labels": [
       "DPO"
     ],
@@ -71,6 +77,7 @@
     "char_count": 604,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We denote the language model (LM) as π θ , where a prompt x serves as the state and the next token t as the action, i.e., t ∼ π θ (• | x). Unrolling this process over N tokens, the probability of gene",
     "entity_labels": [
       "reinforcement learning"
     ],
@@ -89,6 +96,7 @@
     "char_count": 785,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To guide the reasoning model toward producing a coherent, step-by-step reasoning chain suitable for rule extraction, we prompt it to justify why a selected response is preferable. Given a preference d",
     "entity_labels": [
       "generalization"
     ],
@@ -107,6 +115,7 @@
     "char_count": 692,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Next, we extract explicit rules from each individual reasoning chain. For every reasoning chain r (i) ∈ RC, we prompt the reasoning model with x = prompt(r (i) ) to elicit the underlying rules that ju",
     "entity_labels": [
       "ablation study"
     ],
@@ -128,6 +137,7 @@
     "char_count": 830,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Given the substantial number of rules extracted from the training set, it is essential to merge rules to ensure computational efficiency during training. To address redundancy and overlap, we prompt t",
     "entity_labels": [
       "GPT-4"
     ],
@@ -147,6 +157,7 @@
     "char_count": 1106,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To construct rule-based rewards for use in the RL objective, we employ LLM-as-a-judge verifiers, denoted as V θ . Given a prompt x, a response y, and each extracted rule rule i ∈ M R, the verifier pro",
     "entity_labels": [
       "LLaMA"
     ],
@@ -168,6 +179,7 @@
     "char_count": 1364,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "AUTORULE uses the GRPO algorithm [21] for the RL stage of the preference alignment, using r total as the reward signal. GRPO is a policy optimization algorithm that uses the relative rewards from a gr",
     "entity_labels": [
       "Claude"
     ],
@@ -187,6 +199,8 @@
     "char_count": 1769,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Dataset. We use the UltraFeedback-Binarized dataset (referred to as UltraFeedback), a binarized version of UltraFeedback [5], which contains nearly 64K pairwise preference annotations across diverse m",
+    "structural_type": "experiments",
     "entity_labels": [
       "Gemini"
     ],
@@ -205,6 +219,7 @@
     "char_count": 306,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "For AUTORULE, we use a scaled rule-based reward r RA : r RA ′ = αr RA + β with α = 10 and β = -7.5, aligning the rule-based reward magnitude with the learned reward model for stable training. The veri",
     "entity_labels": [
       "DeepSeek"
     ],
@@ -230,6 +245,7 @@
     "char_count": 628,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "All models are initialized from the same SFT and reward model checkpoints for comparability. The SFT checkpoint is obtained by fine-tuning Llama-3-8B on preferred responses from filtered UltraFeedback",
     "entity_labels": [
       "GPT-4o"
     ],
@@ -249,6 +265,8 @@
     "char_count": 208,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this section, we evaluate AUTORULE on measures of rule quality, model performance, and reward hacking mitigation. We then analyze a few ablations of AUTORULE as well as a case study of the rules ex",
+    "structural_type": "experiments",
     "entity_labels": [
       "accuracy"
     ],
@@ -268,6 +286,7 @@
     "char_count": 2008,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "All extracted rules are displayed in Appendix C. We assess rule agreement on 1,024 UltraFeedback test examples and the full MT-Bench human judgment split. For individual rules, agreement is measured a",
     "entity_labels": [
       "F1"
     ],
@@ -287,6 +306,8 @@
     "char_count": 1607,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Table 1 presents a comprehensive comparison of baseline and AUTORULE models across multiple evaluation metrics, including UltraFeedback win rate, AlpacaEval 2.0 length-controlled win rate (LC WR)/regu",
+    "structural_type": "methodology",
     "entity_labels": [
       "precision"
     ],
@@ -306,6 +327,7 @@
     "char_count": 1698,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To systematically evaluate reward hacking, we monitor model performance throughout training to detect any degradation indicative of overfitting to the reward signal. We conduct four experimental runs:",
     "entity_labels": [
       "preference optimization"
     ],
@@ -325,6 +347,8 @@
     "char_count": 1189,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To better understand the contributions of individual components within our framework, we conduct a ablation study focusing on two critical aspects: reward scaling and conciseness constraints. Specific",
+    "structural_type": "discussion",
     "entity_labels": [
       "RLHF"
     ],
@@ -346,6 +370,7 @@
     "char_count": 2485,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Reasoning VS. Justification Rules. We next investigate the impact of the extraction medium on rule quality and downstream performance. Specifically, we compare rules extracted directly from model just",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -362,6 +387,8 @@
     "char_count": 999,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this paper, we introduce AUTORULE, an reasoning chain-based automatic rule extraction mechanism for the utilization of rule-based rewards in language model alignment. We show that the rules extract",
+    "structural_type": "conclusion",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -392,6 +419,7 @@
     "char_count": 424,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "While our approach shows promising generalization from UltraFeedback to AlpacaEval 2.0, further work will be done to evaluate AUTORULE's ability to transfer across a broader range of tasks and domains",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -407,6 +435,7 @@
     "char_count": 458,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "This work has the potential to advance the development of conversational agents that are both more helpful and less prone to harmful behaviors, by mitigating overoptimization and idiosyncrasies common",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -422,6 +451,7 @@
     "char_count": 106,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Settings used for the SFT, reward model, and RL training are available in Tables 5, 6, and 7 respectively.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -437,6 +467,7 @@
     "char_count": 46,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Inference parameters are displayed in Table 8.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -452,6 +483,7 @@
     "char_count": 239,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We utilize two versions of KL approximation as implemented in OpenRLHF [12]. The first is used for PPO, and the second is used for GRPO.log π ϕ (y | x) π SF T (y | x) (1) e -log π ϕ (y|x) π SF T (y|x)",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -467,6 +499,7 @@
     "char_count": 136,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To implement the length penalty, we subtract the following from the reward:1 2 response_length L -1 2where L = 300 is the target length.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -482,6 +515,7 @@
     "char_count": 192,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To improve numerical stability, as implemented in OpenRLHF, we utilize a modified version of the advantage estimation formula displayed in Section 3.3 as follows:Âi = r imean(r) std(r) + 10 -9",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -497,6 +531,7 @@
     "char_count": 307,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Following the filtering process and using the code by [8], to select data for training, we filter and only include the examples where the chosen and rejected responses are both less than 512 tokens, t",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -514,6 +549,7 @@
     "char_count": 485,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Rules extracted from UltraFeedback (reasoning chain), MT-Bench (reasoning chain), and UltraFeedback (justification) are displayed in Tables 9, 10, 11 respectively. 71.5 23 Use empathetic tone, constru",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -530,6 +566,7 @@
     "char_count": 252,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Ensure translations preserve meaning, context, and grammatical correctness. 84.8 28 Link concepts to real-world impacts, case studies, and stakeholder outcomes. 74.5 29 Adopt solution-oriented tone wi",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -545,6 +582,7 @@
     "char_count": 216,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We showcase full rule agreement matrices between UltraFeedback and MT-Bench extracted rules on both UltraFeedback and MT-Bench data in Tables 5 and 6. Figure 6: Rule agreement matrix on MT-Bench Human",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -560,6 +598,7 @@
     "char_count": 768,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To further analyze the importance of utilizing reasoning chains for rule extraction, we showcase a case study of a prompt asking about the role of zoos in animal conversation in Figure 7. In the two m",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -575,6 +614,7 @@
     "char_count": 640,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "What role do zoos and aquariums play in educating the general public about conservation efforts?Assistant A (Rejected) Did you know that zoos and aquariums provide critical opportunities for conservat",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -590,6 +630,7 @@
     "char_count": 538,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Zoos and aquariums play a crucial role in educating the general public about conservation efforts.They not only offer a visual representation of the animals and their natural habitats but also provide",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -605,6 +646,7 @@
     "char_count": 2785,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The user wants to know why Assistant B's conversation was preferred over Assistant A's. I need to compare both responses based on clarity, coherence, helpfulness, tone, and overall quality. Starting w",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -620,6 +662,7 @@
     "char_count": 3824,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We list the prompts used for the extraction process in Figures 8 , 9, and 10 respectively. Additionally, we include the prompts for rule verification in Figures 11 and 12, and the prompt used to deter",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -635,6 +678,7 @@
     "char_count": 43,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "1Figure 1: Overview of the AUTORULE method.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -650,6 +694,7 @@
     "char_count": 197,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "2Figure 2: Distributions of individual rule agreement in Figures2a and 2b, rule score delta distributions for UltraFeedback-extracted and MT-Bench-extracted rules in Figures2c and 2d, respectively.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -665,6 +710,7 @@
     "char_count": 186,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "3Figure3: Average individual rule scores of AUTORULE for two episodes, split into two figures (3a and 3b), evaluation of AUTORULE and GRPO baselines for two episodes in Figures3c and 3d.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -680,6 +726,7 @@
     "char_count": 57,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "4Figure 4: Justification per-rule agreement distribution.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -695,6 +742,7 @@
     "char_count": 55,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "56Figure 5: Rule agreement matrix on UltraFeedback data",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -710,6 +758,7 @@
     "char_count": 63,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "9Figure 9: Rule extraction (AUTORULE Extractor stage 2) prompt.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -725,6 +774,7 @@
     "char_count": 62,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "10Figure 10: Rule merging (AUTORULE Extractor stage 3) prompt.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -740,6 +790,7 @@
     "char_count": 34,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "11Figure 11: Rule verifier prompt.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -755,6 +806,7 @@
     "char_count": 53,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "13Figure 13: UltraFeedback win-rate judgement prompt.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -770,6 +822,7 @@
     "char_count": 534,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "1Main evaluation results on UltraFeedback win-rate, AlpacaEval 2.0, and MT-Bench, all methods are conducted on the LLAMA 3 8B base model.UF WRAlpacaEval2.0 LC WR (WR)MT-BenchSFT--10.8 (7.2)6.40 (6.98/",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -785,6 +838,7 @@
     "char_count": 334,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "2Ablation results on UltraFeedback win-rate and AlpacaEval 2.0 using AUTORULE, sll methods are conducted on the Llama-3-8B base model.Original (UF-trained)77.277.0 (83.3)21.6 (18.6)w/o Scaling, Concis",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -800,6 +854,7 @@
     "char_count": 320,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "3Comparison of extraction mediums on UltraFeedback winrate and AlpacaEval 2.0, methods are conducted on the Llama-3-8B base model.Best Baseline76.172.7 (82.2)16.8 (16.8)Reasoning Chain77.277.0 (83.3)2",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -815,6 +870,7 @@
     "char_count": 1656,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "4Top 6 unique and similar rules from the UltraFeedback and MT-Bench rule sets, ranked by maximum agreement (%) as the similarity metric; \"unique\" rules exhibit low agreement with all rules from the ot",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -830,6 +886,7 @@
     "char_count": 277,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "5Supervised fine-tuning settings.SettingValueBase modelLlama-3-8BDataset / splitUltraFeedback SFT training splitEpochs2Train / micro batch 256 / 2Learning rate5 × 10 -6LR schedulerConstant with warmup",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -845,6 +902,7 @@
     "char_count": 285,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "6Reward model training settings.SettingValueBase checkpointLlama-3-8B SFT checkpointLossPairwise sigmoidEpochs1Train / micro batch 256 / 2Learning rate5 × 10 -6LR schedulerConstant with warmupLR warmu",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -860,6 +918,7 @@
     "char_count": 77,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "9UltraFeedback rules extracted via the AUTORULE extraction process.Index Rule",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -875,6 +934,7 @@
     "char_count": 73,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "10MT-Bench rules extracted via the AUTORULE extraction process.Index Rule",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -889,6 +949,7 @@
     "char_count": 113,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "11UltraFeedback rules extracted on justifications instead of reasoning CoTs.Index Rule\n\t\t\tPreprint. Under review.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0

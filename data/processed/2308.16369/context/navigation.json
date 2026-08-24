@@ -20,6 +20,8 @@
     "char_count": 6284,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The scaling up of language models [25,26,35,38] has led to an emergence in their abilities [45] in a variety of complex tasks -natural language processing, question answering, code generation, etc. Th",
+    "structural_type": "introduction",
     "entity_labels": [
       "DROP"
     ],
@@ -39,6 +41,8 @@
     "char_count": 151,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We first give an overview of the transformer architecture, followed by a brief discussion of the two phases of LLM inference, and pipeline parallelism.",
+    "structural_type": "introduction",
     "entity_labels": [
       "MATH"
     ],
@@ -58,6 +62,7 @@
     "char_count": 404,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Figure 2 shows the architecture of a transformer decoder block. Each decoder block consists of two primary modules: self-attention and feed-forward network (FFN). These modules can be divided into the",
     "entity_labels": [
       "LLaMA"
     ],
@@ -77,6 +82,7 @@
     "char_count": 2163,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Transformer inference begins with the prefill phase that processes all the input tokens of a given batch in parallel. In this phase, the input to a transformer block is a tensor X of shape [B, L, H] w",
     "entity_labels": [
       "recall"
     ],
@@ -98,6 +104,7 @@
     "char_count": 2481,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "As the model sizes of LLMs increase, it becomes necessary to scale them to multi-GPU as well as multi-node deployments [19,39]. Furthermore, LLM inference throughput,Operation Shapes of tensors Input(",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -114,6 +121,8 @@
     "char_count": 280,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this section, we show that LLM inference is inefficient for two main reasons: (1) the decoding phase is memory-bound, and (2) the use of pipeline parallelism leads to significant pipeline bubbles f",
+    "structural_type": "introduction",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -130,6 +139,7 @@
     "char_count": 3204,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Figure 3 shows the per-token cost of each of the six transformer operations ( §2.1) for prefill and decode at various batch sizes for a fixed sequence length (prefill+decode) of 1024. First, we observ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -146,6 +156,7 @@
     "char_count": 2506,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Pipeline Parallelism (PP) is a popular strategy for cross-node deployment of large models, owing to its lower communication overheads compared to Tensor Parallelism (TP). PP splits a model layer-wise,",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -164,6 +175,7 @@
     "char_count": 1313,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Our experiments show that the prefill and decode stages have very different compute utilization patterns -prefill can satu-rate GPU compute even with a single request, while decodes require a large ba",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -180,6 +192,7 @@
     "char_count": 190,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this section, we describe the design and implementation of SARATHI, which employs two techniques -chunked-prefills and decode-maximal batching to improve the performance of LLM inference.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -196,6 +209,7 @@
     "char_count": 2090,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Conventional inference engines like FasterTransformer [6] perform request-level inference scheduling. They process batches at request granularity; i.e., the they pick the next batch of requests to exe",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -212,6 +226,7 @@
     "char_count": 3284,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Chunked-prefills is a prefill splitting mechanism hinged on two key insights. First, for a given model and GPU, increasing the number of prefill tokens shows diminishing returns in throughput beyond a",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -230,6 +245,7 @@
     "char_count": 707,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Harnessing the benefits of chunked-prefills requires us to carefully construct a hybrid batch consisting of a mix of prefill and decode tokens, so as to maximize compute utilization and ensure uniform",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -246,6 +262,7 @@
     "char_count": 1707,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To piggyback decodes with a prefill, we need to take care of two things. First, we need to identify the maximum possible batch size of decodes that can be piggybacked and also identify the number of p",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -270,6 +287,7 @@
     "char_count": 1552,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Recall that the prefill and decode phases follow the same computation path, i.e., the linear operations use the same weight tensors in both the prefill and decode phases. However, compared to prefill,",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -286,6 +304,7 @@
     "char_count": 3823,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "An important design consideration in SARATHI is how to pick the most suitable chunk size. A straightforward choice is to pick the smallest chunk size that saturates a model's prefill throughput. Howev",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -304,6 +323,7 @@
     "char_count": 1336,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We implement SARATHI on the nanoGPT codebase [12] with support for both chunked-prefills and decode-maximal batching. To compare against Orcas's iteration-level scheduling, we use our mixed batching m",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -320,6 +340,8 @@
     "char_count": 708,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We evaluate SARATHI on a variety of models and GPUs using physical deployments for single GPU experiments and profiledriven simulations for large-scale experiments as shown in Table 3. Our evaluation ",
+    "structural_type": "experiments",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -341,6 +363,8 @@
     "char_count": 418,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this section, we measure the decode speedup and the endto-end throughput of SARATHI, on a single GPU, against that of the baseline which executes the prefill and decode stages separately via prefil",
+    "structural_type": "experiments",
     "entity_count": 0,
     "citation_anchor_count": 7,
     "citation_density": 0.0167
@@ -357,6 +381,7 @@
     "char_count": 2410,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We first show the impact of our techniques on decode phase throughput that we calculate based on the average time spent on decoding one token. For the baseline system, we compute the average decode ti",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -373,6 +398,7 @@
     "char_count": 1382,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Table 4 shows the peak throughput gain that SARATHI achieves over the baseline. To demonstrate the generality of our techniques, we evaluate SARATHI on two model-GPU combinations: (1) LLaMA-13B on an ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -389,6 +415,7 @@
     "char_count": 3600,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this subsection, using various sequence lengths and chunk sizes, we investigate the effect of varying P : D ratios on the end-to-end inference throughput to cover a wide range of application scenar",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -405,6 +432,7 @@
     "char_count": 1896,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this section, we dive deeper to investigate the performance of SARATHI by varying the batch sizes and chunk sizes for each sequence length. In all these experiments, we focus on execution scenarios",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -421,6 +449,7 @@
     "char_count": 4346,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In our evaluation thus far, we have considered a baseline system that processes prefill-only or decode-only batches at a time. This is how popular frameworks like FasterTransformer deploy transformer ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -437,6 +466,7 @@
     "char_count": 3023,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Next, we evaluate how SARATHI reduces pipeline bubbles in a multi-GPU pipeline-parallel setup and subsequently impacts the overall runtime of inference jobs. For this experiment, we report evaluations",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -455,6 +485,8 @@
     "char_count": 2512,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this subsection, we evaluate how splitting a full prefill computation into multiple smaller prefill chunks affects the efficiency of the prefill stage in SARATHI. To quantify this, we   measure the",
+    "structural_type": "discussion",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -473,6 +505,8 @@
     "char_count": 1693,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this paper, we have comprehensively demonstrated how SARATHI improves the performance of LLM inference across several models and hardware configurations. However, there are multiple challenges that",
+    "structural_type": "discussion",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -489,6 +523,8 @@
     "char_count": 126,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this section, we provide a brief summary of related work along two dimensions: systems optimizations and model innovations.",
+    "structural_type": "related_work",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -505,6 +541,7 @@
     "char_count": 2684,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Memory management: In auto-regressive decoding, the number of tokens that need to be generated for a given request is not known apriori. Therefore, conventional systems pre-allocate memory for the KV ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -523,6 +560,8 @@
     "char_count": 898,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "A significant body of work around model innovations has attempted to address the shortcomings of transformer-based language models or to take the next leap forward in model architectures, beyond trans",
+    "structural_type": "methodology",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -539,6 +578,8 @@
     "char_count": 918,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this paper, we identify two primary reasons for LLM inference inefficiency: 1) suboptimal GPU utilization due to lack of parallelism and memory-bound nature of decode phase, and 2) significant pipe",
+    "structural_type": "conclusion",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -554,6 +595,7 @@
     "char_count": 376,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "1Figure 1: Example two-stage pipeline parallel schedule. (a) In prior solutions like Orca [48], pipeline bubbles are common due to varying prompt and decode compute times. Further, decodes are highly ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -569,6 +611,7 @@
     "char_count": 54,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "2Figure 2: High-level architecture of a decoder block.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -584,6 +627,7 @@
     "char_count": 613,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "3Figure 3: Per-token prefill and decode time with different batch sizes (sequence length = 1024) for LLaMa-13B on A6000 GPU. Prefill saturates GPU compute even at batch size of 1 and results in almost",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -599,6 +643,7 @@
     "char_count": 130,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "4Figure 4: Impact of the arithmetic intensity (bottom) on the throughput (top) of prefills and decodes for LLaMA-13B on A6000 GPU.",
     "entity_count": 0,
     "citation_anchor_count": 1,
     "citation_density": 0.0077
@@ -614,6 +659,7 @@
     "char_count": 195,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "5Figure 5: Pipeline bubbles in LLM inference A 2-way PP iteration-level schedule [48] across 4 requests (A,B,C,D) shows the existence of pipeline bubbles due to non-uniform batch execution times.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -629,6 +675,7 @@
     "char_count": 138,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "7Figure7: The effect of tile quantization on the runtime of one iteration of LLaMA-13B on A6000 GPU.\nSequence length = 3K, batch size = 6.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -644,6 +691,7 @@
     "char_count": 376,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "910Figure9: Normalized throughput (tokens/ms) for LLaMa 13B on A6000 GPU with different sequence lengths, P:D ratios, and chunk sizes.\nVarying sequence lengths (chunk size=256 for SARATHI). We choose ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -659,6 +707,7 @@
     "char_count": 301,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "11Figure 11: Comparison with iteration-level scheduler Orca for LLaMa 13B on A6000 GPU.\nFigure 12: Impact of SARATHI on pipeline bubbles (top) and request completion times (bottom) for GPT-3 deployed ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -674,6 +723,7 @@
     "char_count": 126,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "13Figure13: Ablation study: Effect of varying the chunk size on different components of the system for LLaMa 13B on A6000 GPU.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -689,6 +739,7 @@
     "char_count": 406,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "2Per-token prefill and decode time (in ms) For LLaMA-13B on A6000 GPU, the rows show operation times for 1) prefill-only requests of prompt size 1024 of batch size 4, 2) decode-only batch size of 4 wi",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -703,6 +754,7 @@
     "char_count": 154,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "3Models, GPUs, and mode of evaluation.ModelGPU Num Per-GPUModeGPUs Mem(GB)LLaMA-13B A6000 148DeploymentLLaMA-33B A100180DeploymentGPT-3A100 6480Simulation",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0

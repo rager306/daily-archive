@@ -9,6 +9,8 @@
     "char_count": 7959,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Recent advances in Large Language Models (LLMs) have showcased remarkable capabilities in complex reasoning tasks (Kumar et al., 2025). Among the techniques that have significantly contributed to this",
+    "structural_type": "introduction",
     "entity_labels": [
       "GRPO"
     ],
@@ -32,6 +34,7 @@
     "char_count": 2504,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Previous work has primarily relied on supervised fine-tuning (SFT) with carefully curated datasets to enhance LLM performance in tool use (Schick et al., 2023;Qin et al., 2024c). Recently, reinforceme",
     "entity_labels": [
       "PPO"
     ],
@@ -51,6 +54,7 @@
     "char_count": 2147,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Tool-Integrated Reasoning (TIR) is the process of incorporating external tools into the reasoning trajectory of an LLM to solve a user task. A typical TIR trajectory involves multiple tool invocations",
     "entity_labels": [
       "DPO"
     ],
@@ -70,6 +74,7 @@
     "char_count": 1236,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To enable the model to autonomously generate reasoning traces and tool calls, we utilize a system prompt as shown in Figure 4 during rollout. The Tool List placeholder denotes the tool set T , which c",
     "entity_labels": [
       "generalization"
     ],
@@ -89,6 +94,7 @@
     "char_count": 4961,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Rule-based reward mechanisms have demonstrated strong empirical performance and are commonly employed. In our training, we similarly adopt a reward formulation that combines structural and correctness",
     "entity_labels": [
       "MATH"
     ],
@@ -108,6 +114,7 @@
     "char_count": 292,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To tune the model with structured rewards, we employ GRPO, a variant of PPO that introduces advantage normalization within grouped samples. This normalization helps stabilize training by reducing vari",
     "entity_labels": [
       "DROP"
     ],
@@ -126,6 +133,7 @@
     "char_count": 686,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "For each query Q, its responses derived from the rollout form a group G Q consisting of multiple responses and their corresponding reward values:G Q = {A, (s 1 , r 1 ), (s 2 , r 2 ), . . . , (s n , r ",
     "entity_labels": [
       "LLaMA"
     ],
@@ -148,6 +156,7 @@
     "char_count": 878,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The policy π θ is optimized using the standard clipped PPO objective, adapted with our group-wise normalized advantages:JGRPO(θ) = EQ∼DEs i ∼π θ min π θ (si|Q) πold(si|Q) Ai(si|Q), clip π θ (si|Q) πol",
     "entity_labels": [
       "Qwen"
     ],
@@ -167,6 +176,8 @@
     "char_count": 1251,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To support robust tool learning through RL, we construct a mixed dataset spanning diverse tool use scenarios:• ToolACE (Liu et al., 2024): A general tool use dataset where the model learns when to inv",
+    "structural_type": "experiments",
     "entity_labels": [
       "accuracy"
     ],
@@ -186,6 +197,8 @@
     "char_count": 2708,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Training. We conduct all RL experiments using the veRL framework (Sheng et al., 2024), adopting the GRPO algorithm detailed in the previous section. For each training step, we sample a batch of 512, a",
+    "structural_type": "experiments",
     "entity_labels": [
       "recall"
     ],
@@ -205,6 +218,8 @@
     "char_count": 481,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Main Results. We report BFCL and API-Bank results in Table 1 and Table 2, respectively. Our GRPO method, trained from scratch on the Qwen2.5-Instruct series, generally outperforms other baselines, ach",
+    "structural_type": "results",
     "entity_labels": [
       "preference optimization"
     ],
@@ -223,6 +238,7 @@
     "char_count": 1990,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Interestingly, GRPO also improves models initialized with limited SFT, often outperforming full-scale SFT 0 20 40 60 80 Step 0.2 0.0 0.2 0.4 0.6 0.8 1.0 1.2 Mean Format Reward PPO GRPO (a) Format Rewa",
     "entity_labels": [
       "RLHF"
     ],
@@ -244,6 +260,7 @@
     "char_count": 4130,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We evaluate the generalization ability of our trained model in two challenging settings: unfamiliar scenarios and novel task goals (both from BFCL benchmark subset). Specifically, we test the model's ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -260,6 +277,8 @@
     "char_count": 212,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this section, we conduct a series of ablation studies to identify the most effective reward design for tool calling. We explore various factors including reward type, scale, granularity, and tempor",
+    "structural_type": "discussion",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -276,6 +295,7 @@
     "char_count": 2331,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We first examine the role of a length-based reward.Prior work has demonstrated that the R1-like models can promote deeper reasoning, often reflected in longer thinking traces. To encourage this behavi",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -293,6 +313,7 @@
     "char_count": 1007,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Since fixed-length rewards showed minimal impact and converged quickly, we explored a dynamic length reward that adapts over training steps. Specifically, we define:R dynamic = min L think L target • ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -309,6 +330,7 @@
     "char_count": 1324,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Next, we investigate the effect of reward scaling, specifically the relative weighting between correctness and format rewards. Prior work in R1-style RL commonly assigns a higher weight to correctness",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -326,6 +348,7 @@
     "char_count": 4090,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Building on the insight that correctness reward plays a more criticalModel Overall Acc Non-Live AST Acc Non-Live Exec Acc Live Acc Multi Turn Acc Relevance Detection Irrelevance Detection Qwen2.5-1.5B",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -344,6 +367,7 @@
     "char_count": 2491,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We now perform a detailed analysis of the effect of reward granularity, focusing specifically on the correctness reward. Tool calling, by nature, poses challenges for reward assignment, as it involves",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -360,6 +384,8 @@
     "char_count": 2741,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this paper, we present a reward design tailored for GRPO training on tool use tasks. Empirically, our model trained from scratch using GRPO consistently outperforms both SFT-based and SFTinitialize",
+    "structural_type": "conclusion",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -375,6 +401,7 @@
     "char_count": 108,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "1Figure 1: SFT on distilled deep-thinking trajectories suffers from overthinking and limited generalization.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -390,6 +417,7 @@
     "char_count": 283,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "2Figure 2: Main results (left) and reward trends over training steps for GRPO Cold Start across four models (right). GRPO Cold Start, equipped with our proposed reward design, consistently achieves th",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -405,6 +433,7 @@
     "char_count": 88,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "3Figure 3: Illustration of TIR rollout and calculation of format and correctness reward.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -420,6 +449,7 @@
     "char_count": 52,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "4Figure 4: The system prompt used for TIR's rollout.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -435,6 +465,7 @@
     "char_count": 157,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "56Figure 5: Format (left) and correctness (right) reward trends across training steps for Qwen2.5-3B-Instruct with different model initialization strategies.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -450,6 +481,7 @@
     "char_count": 194,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "7Figure7: Qwen2.5-3B-Instruct's performance across unfamiliar programming language scenarios (left) and novel relevance detection task goals (right), evaluated under different training settings.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -465,6 +497,7 @@
     "char_count": 107,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "8Figure 8: Response length (left) and its reward (right) trends across training steps for different models.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -480,6 +513,7 @@
     "char_count": 136,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "9Figure 9: Response length (left) and its reward (right) trends across training steps within the dynamic length reward training setting.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -495,6 +529,7 @@
     "char_count": 210,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "10Figure 10: Format (left) and correctness (right) reward trends across training steps for Qwen2.5-3B-Instruct with different reward scale dynamics.\nScale format = [-2 + p, 2 -p], Scale correct = [-2 ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -510,6 +545,7 @@
     "char_count": 119,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "11Figure 11: Correctness reward trends across training steps for Qwen2.5-3B-Instruct with different reward granularity.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -525,6 +561,7 @@
     "char_count": 2271,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "1BFCL V3 Benchmark Results (Main Result)ModelOverall Acc Non-Live AST Acc Non-Live Exec Acc Live Acc Multi Turn Acc Relevance Detection Irrelevance DetectionQwen2.5-1.5B-Instruct (Raw)19.41%16.00%13.1",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -539,6 +576,7 @@
     "char_count": 1316,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "2API-Bank Test Results (Main Result)    ModelAccuracy Avg Num Tool CallQwen2.5-1.5B-Instruct (Raw)20.8%0.61Qwen2.5-1.5B-Instruct (SFT400)24.8%0.78Qwen2.5-1.5B-Instruct (SFT4k)23.2%1.25Qwen2.5-1.5B-Ins",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0

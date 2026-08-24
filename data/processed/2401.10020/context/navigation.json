@@ -13,6 +13,8 @@
     "char_count": 3925,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Aligning Large Language Models (LLMs) using human preference data can vastly improve the instruction following performance of pretrained models [Ouyang et al., 2022, Bai et al., 2022a]. The standard a",
+    "structural_type": "introduction",
     "entity_labels": [
       "DROP"
     ],
@@ -32,6 +34,7 @@
     "char_count": 333,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Our approach first assumes access to a base pretrained language model, and a small amount of human-annotated seed data. We then build a model that aims to possess two skills simultaneously:1. Instruct",
     "entity_labels": [
       "ARC"
     ],
@@ -51,6 +54,7 @@
     "char_count": 1342,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "following examples to add to its own training set.These skills are used so that the model can perform self-alignment, i.e., they are the components used to iteratively train itself using AI Feedback (",
     "entity_labels": [
       "HellaSwag"
     ],
@@ -70,6 +74,7 @@
     "char_count": 335,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Seed instruction following data We are given a seed set of human-authored (instruction prompt, response) general instruction following examples that we use for training in a supervised fine-tuning (SF",
     "entity_labels": [
       "PIQA"
     ],
@@ -91,6 +96,7 @@
     "char_count": 1007,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We also assume we are provided a seed set of (evaluation instruction prompt, evaluation result response) examples which can also be used for training. While this is not strictly necessary, as the mode",
     "entity_labels": [
       "PPO"
     ],
@@ -110,6 +116,7 @@
     "char_count": 771,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Using the model we have trained, we can make it self-modify its own training set. Specifically, we generate additional training data for the next iteration of training.This consists of the following s",
     "entity_labels": [
       "DPO"
     ],
@@ -129,6 +136,7 @@
     "char_count": 170,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "As previously described, training is initially performed with the seed IFT and EFT data (Section 2.1). This is then augmented with additional data via AI (Self-)Feedback.",
     "entity_labels": [
       "reinforcement learning"
     ],
@@ -149,6 +157,7 @@
     "char_count": 2724,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "After performing the self-instruction creation procedure, we can augment the seed data with additional examples for training, which we refer to as AI Feedback Training (AIFT) data.To do this, we const",
     "entity_labels": [
       "chain-of-thought reasoning"
     ],
@@ -168,6 +177,7 @@
     "char_count": 259,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Iterative Training Our overall procedure trains a series of models M 1 , . . . , M T where each successive model t uses augmented training data created by the t -1 th model. We thus define AIFT(M t ) ",
     "entity_labels": [
       "MATH"
     ],
@@ -189,6 +199,8 @@
     "char_count": 561,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We define the models, and the training data they use as follows: M 0 : Base pretrained LLM with no fine-tuning. M 1 : Initialized with M 0 , then fine-tuned on the IFT+EFT seed data using SFT. M 2 : I",
+    "structural_type": "methodology",
     "entity_labels": [
       "GSM8K"
     ],
@@ -208,6 +220,7 @@
     "char_count": 0,
     "role": "body",
     "role_confidence": "heuristic",
+    "structural_type": "experiments",
     "entity_labels": [
       "MMLU"
     ],
@@ -229,6 +242,8 @@
     "char_count": 101,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Base Model In our experiments we use Llama 2 70B [Touvron et al., 2023] as our base pretrained model.",
+    "structural_type": "experiments",
     "entity_labels": [
       "LLaMA"
     ],
@@ -248,6 +263,7 @@
     "char_count": 507,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "IFT Seed Data We use the human-authored examples provided in the Open Assistant dataset [Köpf et al., 2023] for instruction fine-tuning. Following Li et al. [2024] we use 3200 examples, by sampling on",
     "entity_labels": [
       "BERT"
     ],
@@ -268,6 +284,7 @@
     "char_count": 989,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The Open Assistant data also provides multiple ranked human responses per prompt from which we can construct evaluation fine-tuning data. We split this into train and evaluation sets, and use it to cr",
     "entity_labels": [
       "GPT-4"
     ],
@@ -287,6 +304,8 @@
     "char_count": 176,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We evaluate the performance of our self-rewarding models in two axes: their ability to follow instructions, and their ability as a reward model (ability to evaluate responses).",
+    "structural_type": "experiments",
     "entity_labels": [
       "Claude"
     ],
@@ -305,6 +324,7 @@
     "char_count": 1227,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We evaluate head-to-head performance between various models using GPT-4 [Achiam et al., 2023] as an evaluator over 256 test prompts (which we refer to as IFT test data) derived from various sources fo",
     "entity_labels": [
       "Gemini"
     ],
@@ -325,6 +345,7 @@
     "char_count": 692,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We evaluate the correlation with human rankings on the evaluation set we derived from the Open Assistant dataset, as described in Section 3.1.1. Each instruction has on average 2.85 responses with giv",
     "entity_labels": [
       "accuracy"
     ],
@@ -344,6 +365,7 @@
     "char_count": 726,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Instruction following training The training hyperparameters we use are as follows. For SFT we use learning rate 5.5e-6 which decays (cosine) to 1.1e-6 at the end of training, batch size 16 and dropout",
     "entity_labels": [
       "ROUGE"
     ],
@@ -364,6 +386,7 @@
     "char_count": 1105,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To generate new prompts we use a fixed model, Llama 2-Chat 70B with 8-shot prompting following Self-Instruct [Wang et al., 2023], where we sample six demonstrations from the IFT data and two from the ",
     "entity_labels": [
       "preference optimization"
     ],
@@ -385,6 +408,7 @@
     "char_count": 0,
     "role": "body",
     "role_confidence": "heuristic",
+    "structural_type": "results",
     "entity_labels": [
       "RLHF"
     ],
@@ -404,6 +428,7 @@
     "char_count": 58,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Head to head performance results are provided in Figure 3.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -419,6 +444,7 @@
     "char_count": 1454,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We find that adding the Evaluation Fine-Tuning (EFT) task to training does not impact instruction following performance compared to using Instruction Fine-Tuning (IFT) data alone with an almost equal ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -434,6 +460,7 @@
     "char_count": 3324,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We evaluate our models on the AlpacaEval 2.0 leaderboard format, with results given in Table 1. We observe the same findings as in the head-to-head evaluations, that training iterations yield improved",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -449,6 +476,7 @@
     "char_count": 586,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We perform a t-SNE [Van der Maaten and Hinton, 2008] visualization of the IFT, EFT and AIFT(M 1 ) data, shown in Appendix A.1. We find good overlap between the IFT and AIFT(M 1 ) examples, which is de",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -464,6 +492,7 @@
     "char_count": 931,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To examine whether human judgments align with automatic evaluation results, we conduct human evaluations that compare SFT baseline generations with the generations from each iteration of Self-Rewardin",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -479,6 +508,7 @@
     "char_count": 705,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We report performance on MT-Bench in Table 2 for the SFT baseline and iterations of the Self-Rewarding model. We again see improvements across the iterations of training from M 1 to M 3 , from 6.78 (o",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -496,6 +526,7 @@
     "char_count": 948,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "As shown in Table 3, the performance of most NLP benchmark tasks evaluated are roughly similar to the baselines, with further detailed results on more datasets given in Appendix Table 9 that follow th",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -512,6 +543,7 @@
     "char_count": 717,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Reward modeling evaluation results are provided in Table 4.EFT augmentation improves over SFT baseline Firstly, we find that adding Evaluation Fine-Tuning (EFT) data into training, which gives example",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -527,6 +559,7 @@
     "char_count": 915,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We find that performing a round of self-reward training improves the ability of the model at providing self-rewards for the next iteration, in addition to its improved instruction following ability. M",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -544,6 +577,7 @@
     "char_count": 680,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In these experiments we used the LLMas-a-Judge prompt format shown in Figure 2. In preliminary experiments we also tried various other prompts to decide the most effective one to use. For example, we ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -560,6 +594,8 @@
     "char_count": 1386,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Automatically improving or self-correcting large language models is becoming a major focus of research. A recent survey from Pan et al. [2023] attempts to summarize the topic. However, this is a rapid",
+    "structural_type": "related_work",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -577,6 +613,7 @@
     "char_count": 3394,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Reinforcement Learning from AI Feedback (RLAIF) Constitutional AI [Bai et al., 2022b] uses an LLM to give feedback and refine responses, and uses this data to train a reward model. This fixed, separat",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -595,6 +632,8 @@
     "char_count": 1028,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We have introduced Self-Rewarding Language Models, models capable of self-alignment via judging and training on their own generations. The method learns in an iterative manner, where in each iteration",
+    "structural_type": "conclusion",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -611,6 +650,8 @@
     "char_count": 4140,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "While we have obtained promising experimental results, we currently consider them preliminary because there are many avenues yet to explore, among them the topics of further evaluation, including safe",
+    "structural_type": "limitations",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -626,6 +667,7 @@
     "char_count": 1376,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Please first briefly describe your reasoning (in less than 100 words), and then write \"Score: &lt;rating&gt;\" in the last line. Answer in the style of an AI Assistant, with knowledge from web search i",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -641,6 +683,7 @@
     "char_count": 735,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "M 3 vs. SFT Baseline Self-Rewarding M 2 vs. SFT Baseline 50.4 46.5 32.8 34.8 16.8 18.8 Self-Rewarding Wins Tie SFT Baseline Wins Self-Rewarding M 3 vs. M 3 Self-Rewarding M 2 vs. M 2 38.7 34.8 44.5 36",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -656,6 +699,7 @@
     "char_count": 341,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Given the above list of possible instructions, define a maximum of 20 categories that would cover the types of intructions, for example recipes, reasoning tasks, general knowledge etc. Try to cover as",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -671,6 +715,7 @@
     "char_count": 778,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Instruction: &lt;INSTRUCTION&gt; Given the above, categorize it into one of the following 20 categories: &lt;LIST ALL CATEGORIES&gt; Secondly, score the instruction in terms of complexity: how complex",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -686,6 +731,7 @@
     "char_count": 585,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We provide the detailed model performance on a number of NLP benchmarks in Table 9 and on MT-Bench in Table 10. In particular, some NLP benchmarks including ARC-Challenge, HellaSwag, SIQA, PIQA, and O",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -701,6 +747,7 @@
     "char_count": 809,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "3Figure3: Instruction following ability improves with Self-Training: We evaluate our models using head-to-head win rates on diverse prompts using GPT-4. The SFT Baseline is on par with Self-Rewarding ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -716,6 +763,7 @@
     "char_count": 115,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "10Figure10: Prompt for categorizing instructions based on their topics, complexities and expected response lengths.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -731,6 +779,7 @@
     "char_count": 207,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "11Figure 11: AlpacaEval win rate breakdown for instruction complexities (left) and expected response lengths (right). Self-Rewarding models give gains across most complexities and all response length ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -746,6 +795,7 @@
     "char_count": 271,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "1AlpacaEval 2.0 results (win rate over GPT-4 Turbo evaluated by GPT-4). Self-Rewarding iterations yield improving win rates. Iteration 3 (M 3 ) outperforms many existing models that use proprietary tr",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -761,6 +811,7 @@
     "char_count": 851,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "2MT-Bench Results (on a scale of 10). Self-Rewarding iterations yield improving scores across various categories. Math, code &amp; reasoning performance and iteration gains are smaller than for other ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -776,6 +827,7 @@
     "char_count": 471,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "4We evaluate the LLMas-a-Judge via various metrics which measure alignment with held-out human preference data. Self-Rewarding Iteration 2 (Model M 2 ), which is trained using the self-reward model de",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -791,6 +843,7 @@
     "char_count": 870,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "6Breakdown of AlpacaEval test set instructions by instruction category.CategoryNumber PercentageScience / Technology / Engineering13416.65%Professional / Business / Marketing779.57%Social Interaction ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -806,6 +859,7 @@
     "char_count": 519,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "7Breakdown of AlpacaEval test set instructions by instruction complexity.The instructions increase in complexity from 1 to 9, where 10 is a complex question that requires first reasoning or breaking t",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -821,6 +875,7 @@
     "char_count": 593,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "9NLP Benchmarks. Self-Rewarding models mostly tend to maintain performance compared to the Llama 2 base model and the SFT Baseline, despite being fine-tuned on very different instruction-following pro",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -835,6 +890,7 @@
     "char_count": 873,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "10MT-Bench Fine-grained Results.We list our models' performance on each problem category. Self-reward is especially effective in improving the model's ability in writing, role-playing, extraction, and",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0

@@ -13,6 +13,8 @@
     "char_count": 6416,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The ability to plan ahead and reason about long-term consequences of actions is a hallmark of rationality and human intelligence. Its replication in artificial systems has been a central goal of AI re",
+    "structural_type": "introduction",
     "entity_labels": [
       "ARC"
     ],
@@ -32,6 +34,8 @@
     "char_count": 191,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We now describe the dataset creation, the neural predictors and how to construct policies from them, and our evaluation methodology (see Figure 1 for an overview; full details in Appendix A).",
+    "structural_type": "methodology",
     "entity_labels": [
       "generalization"
     ],
@@ -51,6 +55,7 @@
     "char_count": 2313,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To construct a training dataset for supervised learning we downloaded 10 million games from Lichess (lichess.org) from February 2023 1 . We extract all board states s from these games and estimate the",
     "entity_labels": [
       "reinforcement learning"
     ],
@@ -70,6 +75,7 @@
     "char_count": 1789,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Value binning The predictors we train are discrete discriminators (i.e., classifiers). Therefore we convert the win percentages (i.e., the ground truth state-or action-values) into discrete \"classes\" ",
     "entity_labels": [
       "GPT-3.5"
     ],
@@ -88,6 +94,7 @@
     "char_count": 766,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "For all our predictors we use a modern decoder-only transformer backbone [13][14][15] to parameterize a categorical distribution by normalizing the transformer's outputs with a log softmax layer. The ",
     "entity_labels": [
       "GPT-4"
     ],
@@ -108,6 +115,7 @@
     "char_count": 858,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We train our predictors by minimizing the cross-entropy loss via mini-batch stochastic gradient descent using Adam [17]. The target labels are either bin-indices for state-or action-value prediction o",
     "entity_labels": [
       "MSE"
     ],
@@ -127,6 +135,7 @@
     "char_count": 299,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Our predictors are categorical distributions parameterized by neural networks P θ (z|x) that take a tokenized input x and output a predictive distribution over discrete labels {z 1 , . . . , z K }. De",
     "entity_labels": [
       "accuracy"
     ],
@@ -145,6 +154,7 @@
     "char_count": 767,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The target label is the bin z i into which the ground-truth action-value estimate Q SF (s, a) falls. The input to the predictor is the concatenation of tokenized state and action. The loss for a singl",
     "entity_count": 0,
     "citation_anchor_count": 1,
     "citation_density": 0.0013
@@ -162,6 +172,7 @@
     "char_count": 1127,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The target label is the bin z i that the ground-truth state-value V SF (s) falls into. The input to the predictor is the tokenized state. The loss for a single data point is:- z∈{z1...z K } q i (z) lo",
     "entity_count": 0,
     "citation_anchor_count": 27,
     "citation_density": 0.024
@@ -178,6 +189,8 @@
     "char_count": 85,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We use the following metrics to evaluate our models and/or measure training progress.",
+    "structural_type": "experiments",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -193,6 +206,7 @@
     "char_count": 586,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The test set percentage where the policy picks the best action: â(s) = a SF (s).Action ranking (Kendall's τ ) The average test set rank correlation [20] of the predicted action distribution with the g",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -208,6 +222,7 @@
     "char_count": 476,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We evaluate our policies on their capability of solving puzzles from a collection of Lichess puzzles that are rated by Elo difficulty from 399 to 2867 based on how often each puzzle has been solved co",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -225,6 +240,7 @@
     "char_count": 863,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We evaluate the playing strength (measured as an Elo rating) of the policies in two ways: (i) we run an internal tournament between all the agents from Table 1 except for GPT-3.5-turbo-instruct, and (",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -241,6 +257,7 @@
     "char_count": 71,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We compare the performance of our models against the following engines:",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -256,6 +273,7 @@
     "char_count": 271,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We consider two variants: (i) a 50ms time limit per legal move (i.e., the dataset oracle), and (ii) a 1.5s limit per board, which is roughly the amount of time the first variant (i) takes on average p",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -271,6 +289,7 @@
     "char_count": 2803,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We consider three variants of AlphaZero [7]: (i) with 400 MCTS simulations, (ii) only the policy network, and (iii) only the value network (where (ii) and (iii) perform no additional search). AlphaZer",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -292,6 +311,7 @@
     "char_count": 1220,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We follow Carlini [9] and encode the entire game with the Portable Game Notation (PGN) [11] to reduce hallucinations. Since Carlini [9] found that (at that time) GPT-4 struggled to play full games wit",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -308,6 +328,7 @@
     "char_count": 305,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We use two settings for our experiments: (i) a large-scale setting for our main results (Sections 3.1 and 3.2; details in Appendix A.2), and (ii) a setting geared towards getting representative result",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -324,6 +345,8 @@
     "char_count": 1762,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Table 1 shows the playing strength (internal tournament Elo, external Lichess Elo, and puzzle accuracy) of our large-scale transformers trained on the full (10M games) training set. We compare models ",
+    "structural_type": "results",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -340,6 +363,7 @@
     "char_count": 878,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In Figure 2 we compare the puzzle performance of our 270M parameter model against Stockfish 16 (50ms limit per move), GPT-3.5-turbo-instruct, AlphaZero, and Leela Chess Zero. We use our large puzzle s",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -356,6 +380,7 @@
     "char_count": 708,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Figure 3 shows a scaling analysis over the dataset and model size. We visualize the puzzle accuracy (train and test losses in Figure A3), which correlates well with the other metrics and the overall p",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -372,6 +397,7 @@
     "char_count": 1258,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We perform extensive ablations using the 9M-parameter model and show the results in Tables 2 and A2. We use the results and conclusions drawn to inform and justify our design choices and determine the",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -387,6 +413,7 @@
     "char_count": 680,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We treat learning Stockfish action-values as a classification problem and train by minimizing the HL-Gauss loss [18]. Here we compare this to the cross-entropy loss (log-loss), which is as close as po",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -405,6 +432,7 @@
     "char_count": 840,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Table 2 shows the influence of increasing the transformer's depth (i.e., the number of layers) for a fixed number of parameters (we vary the embedding dimension and the widening factor such that all m",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -421,6 +449,8 @@
     "char_count": 3274,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "When using our state-based policies to play against humans and bots, two minor technical issues appear that can only be solved by having (some) access to the game's history. In this section, we discus",
+    "structural_type": "discussion",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -439,6 +469,8 @@
     "char_count": 1934,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Our primary goal was to investigate whether a complex search algorithm such as Stockfish 16 can be approximated with a feedforward neural network on our dataset via supervised learning. While our larg",
+    "structural_type": "limitations",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -457,6 +489,8 @@
     "char_count": 2365,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Unsurprisingly given its long history in AI, there is a vast literature on applying algorithmic techniques to chess. Earlier works predominantly focused on methods which would increase the strength of",
+    "structural_type": "related_work",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -475,6 +509,8 @@
     "char_count": 1092,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Our paper introduces ChessBench, a large-scale, open source benchmark dataset for chess, and shows the feasibility of distilling an approximation of Stockfish 16, a complex planning algorithm, into a ",
+    "structural_type": "conclusion",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -491,6 +527,7 @@
     "char_count": 1996,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "While the results of training transformer-based architectures at scale in a (self-)supervised way will have significant societal consequences in the near future, these concerns do not apply to closed ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -506,6 +543,7 @@
     "char_count": 1143,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We use Stockfish 16 (the version from December 2023) throughout the paper. When we play, we use the oracle we used for training, which is an unconventional way to play with this engine: We evaluate ea",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -521,6 +559,7 @@
     "char_count": 723,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We use the AlphaZero [7] version from 2020, with a network trained at that time [23]. We investigate three different versions: (i) policy network only, (ii) value network only and (iii) standard versi",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -536,6 +575,7 @@
     "char_count": 774,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We use the latest release version (v31.0) of Leela Chess Zero [5] with the largest network officially supported at the time of submission (i.e., the 'Large' T82 network from https://lczero.org/  play/",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -551,6 +591,7 @@
     "char_count": 329,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Our codebase is based on JAX [51] and the DeepMind JAX Ecosystem [52,53]. We used 4 Tensor Processing Units (V5) per model for the ablation experiments. We used 128 Tensor Processing Units (V5) per mo",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -581,6 +622,7 @@
     "char_count": 696,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We perform additional ablations using the 9M parameter model. As in Section 3.4, the results and conclusions drawn are used to justify our design choices and determine default configuration for model,",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -596,6 +638,7 @@
     "char_count": 667,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We create training sets from 1 million games annotated by Stockfish with varying time limits to manipulate the playing strength of our oracle. We report scores on the puzzle set (same for all models) ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -611,6 +654,7 @@
     "char_count": 2414,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We remove duplicate board states during the generation of the training and test sets. This increases data diversity but introduces distributional shift compared to the \"natural\" game distribution of b",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -626,6 +670,8 @@
     "char_count": 991,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "To investigate the performance of architectures other than transformers on our benchmark, we perform a preliminary investigation with an AlphaZero-like convolutional neural network. We therefore train",
+    "structural_type": "methodology",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -641,6 +687,7 @@
     "char_count": 474,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Table A3a shows the inference times in milliseconds on 1000 random boards from the Encyclopedia of Chess Openings [22] using a single TPU (V5). Unsurprisingly, the \"searchless\" agents (i.e., our model",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -656,6 +703,7 @@
     "char_count": 2022,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "A natural question that arises when training models to play chess is whether they have actually learned the rules of the game. However, the problem of generating legal moves is tangential to our paper",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -671,6 +719,7 @@
     "char_count": 2367,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In Figure A2 we show the train and test loss curves (and the evolution of the puzzle accuracy) for the large models from Section 3.1. We observe that none of the models overfit and that larger models ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -686,6 +735,7 @@
     "char_count": 2747,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Tournament Elo Prediction Target Same # of Games in Dataset Same # of Data Points Action-Value +492 (±31) +252 (±22) State-Value +257 (±23) +264 (±22) Behavioral Cloning 0 (±28) 0 (±24) B.5 Predictor-",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -701,6 +751,7 @@
     "char_count": 926,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "As a measure of out-of-distribution generalization, we evaluate the performance of our 9M transformer on Fischer random chessfoot_2 (Chess960) via Lichess (using the same setup as for Table 1). Fische",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -716,6 +767,7 @@
     "char_count": 233,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In Figure A6, we analyze the tactics learned by our 270M transformer used against a human with a blitz Elo of 2145. We observe that our model has learned to sacrifice material when it is advantageous ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -731,6 +783,7 @@
     "char_count": 3357,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We recruited chess players of National Master level and above to analyze our agent's games against bots and humans on the Lichess platform. They made the following qualitative assessments of its playi",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -746,6 +799,7 @@
     "char_count": 253,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "23Figure2: Puzzle solving comparison for our 270M transformer, Stockfish 16 (50ms per move), Leela Chess Zero, AlphaZero, and GPT-3.5-turbo-instruct on 10K Lichess puzzles (curated following[9]).\n(a) ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -761,6 +815,7 @@
     "char_count": 312,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "A1FigureA1: Win percentage and move distributions for our action-value dataset generated from 1000 games (cf. TableA1). We use 50 buckets to generate the histograms. The win percentage distribution is",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -776,6 +831,7 @@
     "char_count": 203,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "A2A3FigureA2: Train and test loss curves and puzzle accuracy over time for the models from Section 3.1. We observe no overfitting, which justifies always using the fully trained model in our evaluatio",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -791,6 +847,7 @@
     "char_count": 518,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "A5FigureA5: Comparison of the three different prediction targets (action-value, state-value, and behavioral cloning) trained on exactly the same number of data points (40M). The superiority of action-",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -805,6 +862,7 @@
     "char_count": 721,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "2Ablating the predictor target, loss function, network depth, and number of value bins (see Section 3.4). The best configurations are: action-value prediction (see Appendix B.5 for a detailed discussi",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0

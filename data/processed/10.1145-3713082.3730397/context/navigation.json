@@ -9,6 +9,8 @@
     "char_count": 2490,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Pubsub systems [5,12,13,24] have become increasingly popular in datacenter environments in recent years [19,20,25,32,38]. They are positioned as a solution to many fundamental problems in distributed ",
+    "structural_type": "introduction",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -24,6 +26,7 @@
     "char_count": 2148,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In the pubsub abstraction (Figure 1), producers publish messages to topics, and consumers subscribe to topics of interest. The pubsub system is responsible for distributing published messages to subsc",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -39,6 +42,7 @@
     "char_count": 179,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Pubsub can be used to queue and balance messages representing tasks across workers. Tasks are published as messages and processed and acknowledged by a worker in a consumer group.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -54,6 +58,8 @@
     "char_count": 376,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Decoupling producers and consumers seems like a sound strategy, aligned with the principle of loose coupling. However, in practice, pubsub systems succeed at this goal only most of the time, creating ",
+    "structural_type": "limitations",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -69,6 +75,7 @@
     "char_count": 2962,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Pubsub's first limitation is a Kafka-esque interpretation of \"decoupling\". Pubsub systems allow consumers to accumulate large backlogs and may garbage-collect unprocessed messages if the backlog lasts",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -84,6 +91,7 @@
     "char_count": 223,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Pubsub systems provide guarantees at their layer -ordering, atleast-once delivery, transactions -that do not result in meaningful end-to-end guarantees. We will illustrate these limitations by conside",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -99,6 +107,7 @@
     "char_count": 2501,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In pubsub-based replication, a change data capture (CDC) system publishes change events from producer storage, and consumers apply them to a target store. Ideally, the target store should achieve poin",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -114,6 +123,7 @@
     "char_count": 1692,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "When the target of the change feed is a cache rather than another storage system, the same concerns about out-of-order delivery remain, but there is an additional complication. There is no centralized",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -129,6 +139,7 @@
     "char_count": 387,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this use case (see Section 2), receivers are expected to get all events from the publisher promptly to enable downstream analysis, such as fraud detection or sensor-based alerting. However, as disc",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -144,6 +155,7 @@
     "char_count": 675,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "This scenario shares the same challenges as the ingestion case but introduces an additional inefficiency: lack of support for affinitized load balancing across dynamically sharded workers. Affinitizat",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -159,6 +171,7 @@
     "char_count": 1033,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "As previously noted, pubsub systems include a storage layer, and have gradually introduced features such as schemas, versions, and transactions. Each pubsub system has organically developed its own se",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -174,6 +187,7 @@
     "char_count": 578,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We propose an alternative model that resolves the issues of pubsub, unbundling notification and storage, explicitly exposing the storage abstraction, and defining a watch API that enables end-to-end c",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -189,6 +203,7 @@
     "char_count": 1994,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "Figure 3 illustrates design choices for unbundling storage and notification. The storage system, represented on the X-axis, can either be producer storage or ingestion storage (as defined in Section 2",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -204,6 +219,7 @@
     "char_count": 605,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Our approach might seem to expose the internal storage format of producer storage. However, this is not the case. The producer can present a filtered view that exposes a limited subset of derived valu",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -219,6 +235,7 @@
     "char_count": 554,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We now present a watch API that reliably notifies the consumer of changes to the producer storage. The system supporting this API, illustrated in Figure 4, distributes change events, organized by key ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -234,6 +251,7 @@
     "char_count": 1451,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The consumer, which we refer to as a watcher, requests state for a range of keys starting from a particular transaction version via a watch call:\n\nWatchable { Cancellable watch ( Key low , Key high , ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -249,6 +267,7 @@
     "char_count": 1045,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The store may directly implement the watch contract, but rangescoped progress events also allow the store to convey progress in a partitioned log to a separate watch system via an Ingester interface. ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -264,6 +283,7 @@
     "char_count": 148,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this section, we describe how to apply this model to the major pubsub use cases, and in the next section we detail why this approach is superior.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -279,6 +299,7 @@
     "char_count": 3739,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Improving on the pubsub model, the watch model allows caches or storage replicas with modest capabilities to serve snapshot-consistent queries, even when dynamically sharded. They can use progress eve",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -294,6 +315,7 @@
     "char_count": 1121,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We now recap the advantages of this unbundled architecture.\n\nBetter treatment of backlogs: Unlike pubsub, watch does not require unbounded backlogs for correctness. The watch system can send a resync ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -309,6 +331,7 @@
     "char_count": 680,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The watch design avoids the need for an additional hard state message log and relies instead on the existing hard state provider store or an ingestion store. Unlike consumer groups, rangebased watches",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -323,6 +346,7 @@
     "char_count": 1649,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The storage-plus-watch model opens up several research opportunities to build scalable components and end-to-end correct applications:\n\nStandalone watch system: A scalable, standalone watch system tha",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0

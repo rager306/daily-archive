@@ -9,6 +9,8 @@
     "char_count": 1898,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Supervised fine-tuning (SFT) is a central stage in the post-training of large language models (LLMs) [1,2,3]. By imitating expert behaviors, SFT enables the pretrained model to acquire new knowledge a",
+    "structural_type": "introduction",
     "entity_labels": [
       "CoT"
     ],
@@ -29,6 +31,7 @@
     "char_count": 2859,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "Overview. An SFT loss drives the model to match an implicitly defined target distribution. This view motivates TARGET-SFT that designs the SFT target directly. It also offers a unifying lens, where ma",
     "entity_labels": [
       "generalization"
     ],
@@ -48,6 +51,8 @@
     "char_count": 1245,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Existing works improve SFT along three main directions. We organize them under the Q-target lens, which characterizes SFT variants by how they specify the effective token-level target distribution. We",
+    "structural_type": "related_work",
     "entity_labels": [
       "MATH"
     ],
@@ -66,6 +71,7 @@
     "char_count": 809,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Another line of work introduces soft distributional signals beyond the one-hot label. Reference-constrained methods such as ASFT [21], RL's Razor [15], and Proximal SFT [22] regularize updates to prev",
     "entity_labels": [
       "MMLU"
     ],
@@ -93,6 +99,7 @@
     "char_count": 947,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "A complementary direction improves SFT by changing the training trajectories. Prior work has proposed augmenting demonstrations with multiple valid trajectories [9,24], filtering examples by quality [",
     "entity_labels": [
       "Qwen"
     ],
@@ -112,6 +119,7 @@
     "char_count": 724,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Supervised Fine-Tuning. Let D be a supervised dataset of pairs (x, y) ∼ D, where x is the input prompt and y = (y 1 , . . . , y T ) is the demonstrated response sequence. Given the prefix x t = (x, y ",
     "entity_labels": [
       "LLaMA"
     ],
@@ -135,6 +143,7 @@
     "char_count": 362,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The one-hot target δ y in SFT implicitly assumes that y t is the single optimal continuation for the prefix x t . However, an observed token can be non-unique, noisy, or distributionally mismatched wi",
     "entity_labels": [
       "T5"
     ],
@@ -156,6 +165,8 @@
     "char_count": 1217,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We introduce a latent binary variable to represent whether the observed token should be strictly imitated. Let Z t ∈ {0, 1} be where Z t = 1 indicates y t is strictly trusted as the target, and Z t = ",
+    "structural_type": "methodology",
     "entity_labels": [
       "accuracy"
     ],
@@ -179,6 +190,7 @@
     "char_count": 787,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We replace the SFT one-hot target with Q t , and train with the cross-entropy loss:L Q (θ) = E (x,y)∼D T t=1 CE(Q t , π θ (• | x t )) .Proposition 1 (Token-level decomposition of Q-target training). G",
     "entity_count": 0,
     "equation_refs": [
       "formula_5",
@@ -199,6 +211,7 @@
     "char_count": 1854,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The Q-target formulation separates token-level supervision into two design choices: (1) γ t ∈ [0, 1] controls the target probability mass on y t , while (2) πt ∈ ∆ |V| specifies how the residual proba",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -216,6 +229,7 @@
     "char_count": 1961,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Another class of SFT variants incorporates distributional signals beyond the observed token [5,17,21,22,31]. With various intended goals (e.g., to regularize model drift, calibrate confidence, preserv",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -234,6 +248,7 @@
     "char_count": 1141,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "An SFT loss defines a surrogate for shaping the model's next-token distribution. At each prefix x t , the model outputs a distribution p t = π θ (• | x t ), and the loss produces gradients that determ",
     "entity_count": 0,
     "equation_refs": [
       "formula_7",
@@ -255,6 +270,7 @@
     "char_count": 3139,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "The Q-formulation turns SFT supervision from a static log-likelihood objective into a problem of target distribution design: (1) how much to rely on the observed token y t , and (2) how to allocate th",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -272,6 +288,7 @@
     "char_count": 2204,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Combining the probability-proxy for trust estimate γ t = p y and the teacher-guided residual distribution π = πguided gives the following target:Q TARGET t = p y δ yt + (1 -p y )π guided t . (7)The co",
     "entity_count": 0,
     "equation_refs": [
       "formula_15",
@@ -294,6 +311,8 @@
     "char_count": 2030,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Across all evaluations, TARGET-SFT achieves the highest Average@16 accuracy. Figure 2 summarizes the results across tasks. While the baselines each show complementary strengths and weaknesses in diffe",
+    "structural_type": "results",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -311,6 +330,7 @@
     "char_count": 1373,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Table 2 shows a different pattern on medical reasoning. The gap between standard SFT and p-loss is smaller than in math, and in some cases standard SFT is clearly stronger. For example, on Qwen2.5-1.5",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -329,6 +349,8 @@
     "char_count": 1317,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We ablate the two key design choices in TARGET-SFT. We include results on varying (1) the intensity of teacher supervision in the residual distribution, controlled by η. This tests the effect of the t",
+    "structural_type": "discussion",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -345,6 +367,8 @@
     "char_count": 679,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this work, we show that supervised fine-tuning is fundamentally a target distribution design. We formalize this view through the Q-target framework Q t = γ t δ yt + (1 -γ t )π t , which exposes two",
+    "structural_type": "conclusion",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -375,6 +399,7 @@
     "char_count": 645,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "For a target distribution Q t , the token-level cross-entropy loss isCE (Q t , π θ (• | x t )) = - k∈V Q t (k) log π θ (k | x t ).By definition, the Q-target isQ t = γ t δ yt + (1 -γ t )π t .Substitut",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -390,6 +415,7 @@
     "char_count": 886,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Given the token-weighted loss with detached importance weighting w t L w t = -w t log π θ (y t | x t ), we consider the choice of (γ t , πt )(γ t = w t , πt = sg[π θ (• | x t )]) =⇒ Q t = w t δ yt + (",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -405,6 +431,7 @@
     "char_count": 1954,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Given the distributional objectiveL t = -a t log π θ (y t | x t ) + b t CE(q t , π θ ), a t , b t ≥ 0,rewrite the label imitation term as cross-entropy and obtain:L t = a t CE(δ yt , π θ ) + b t CE(q ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -420,6 +447,7 @@
     "char_count": 350,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "In this section, we provide concrete connections between SFT variants discussed in Section 2 and our Q-target perspective. Table 4 shows the loss formulation and core motivation for each variant. Foll",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -435,6 +463,7 @@
     "char_count": 259,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "Each method is presented as a token-level objective ℓ t , given the prefix x t and observed token y t . We denote p t = π θ (y t | x t ), p θ (v) = π θ (v | x t ), sg[•] as stop-gradient, π T , π S as",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -450,6 +479,7 @@
     "char_count": 6420,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Token-level Objective Motivation Standard SFT ℓ SFT t = -log pt Maximize likelihood of every observed token Token-Level Variants DFT [13] ℓ DFT t = -sg[pt] log pt Use weighting to connect SFT with an ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -465,6 +495,7 @@
     "char_count": 2134,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "We ablate on the two key design choices in TARGET-SFT: (1) intensity of teacher supervision in the residual distribution, controlled by η, and (2) adaptive weighting of the residual branch, controlled",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -480,6 +511,7 @@
     "char_count": 3043,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "This section analyzes the alignment the model π θ and teacher distribution π T to better understand the effects of teacher guidance.  A large portion of tokens lies near the diagonal, where both model",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -495,6 +527,7 @@
     "char_count": 412,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "Rescue token y t is assigned a low probability under π θ but high probability under π T , hence strengthens the supervision that is otherwise weak. Filter token y t has low probability under both π θ ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -510,6 +543,7 @@
     "char_count": 92,
     "role": "body",
     "role_confidence": "heuristic",
+    "text_preview": "so, thus, hence)DatasetTokens may be non-unique x^2 -1 = (x -1)(x + 1), therefore the roots…",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -525,6 +559,7 @@
     "char_count": 293,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "2Figure 2: Performance Summary. Average@16 accuracy across all 10 dataset-model settings used.\n[35], a high-quality medical reasoning dataset. Our experiments cover across seven diverse models: Qwen2.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -540,6 +575,7 @@
     "char_count": 225,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "4visualizes the conditional distribution P (p T | p θ ) of the teacher probability p T = π T (• | x t ) given the policy model probability p θ = π θ (• | x t ), both evaluated on the observed ground-t",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -555,6 +591,7 @@
     "char_count": 370,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "4Figure 4: Conditional Distribution of Probabilities. This visualizes P (p T | p θ ), the teacher probability p T given the student probability p θ on the observed token y t . Each column represents a",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -570,6 +607,7 @@
     "char_count": 33,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "5Figure 5: Example Trajectory #1.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -585,6 +623,7 @@
     "char_count": 33,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "6Figure 6: Example Trajectory #2.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -600,6 +639,7 @@
     "char_count": 33,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "7Figure 7: Example Trajectory #3.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -615,6 +655,7 @@
     "char_count": 1376,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "1Mathematical Reasoning. Average@16 accuracy on five standard benchmarks, using models trained on NuminaMath-CoT (top) and OpenR1 (bottom).Minerva MathOlympiad BenchAIME24AMC23Math500Avg.Dataset: Numi",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -630,6 +671,7 @@
     "char_count": 1389,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "2Medical Reasoning. Average@16 accuracy on medical reasoning benchmarks.MedMC MedQA PubMed MMLU-P GPQA Lancet MedB (4) MedB (5) MedX NEJMAvg.LLaMA-3.2-3BBase21.1321.7622.012.1825.6424.5127.9221.4311.1",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -645,6 +687,7 @@
     "char_count": 629,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "5SFT variants under the Q-target view. Each method can be interpreted through choices of label trust γ t and residual distribution πt in Q t = γ t δ yt + (1 -γ t )π t . This table provides illustrativ",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
@@ -659,6 +702,7 @@
     "char_count": 795,
     "role": "furniture",
     "role_confidence": "deterministic",
+    "text_preview": "6Ablation Study. Average@16 accuracy using Qwen2.5-Math-1.5B trained on NuminaMath (top) and OpenR1 (bottom) to ablate on two key designs of the method.Minerva MathOlympiad BenchAIME24AMC23Math500Avg.",
     "entity_count": 0,
     "citation_anchor_count": 0,
     "citation_density": 0.0
