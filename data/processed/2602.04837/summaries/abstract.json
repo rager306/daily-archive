@@ -1,24 +1,22 @@
 {
- "schema_version": "summary-node.v1",
- "paper_id": "2602.04837",
- "tldr": "GEA introduces a group-centric evolutionary paradigm for open-ended self-improvement, enabling explicit experience sharing among agents to consolidate exploratory diversity into sustained progress, significantly outperforming existing tree-structured self-evolving methods on coding benchmarks.",
- "contributions": [
-  "Proposes Group-Evolving Agents (GEA), a new paradigm treating a group of agents as the fundamental evolutionary unit with explicit intra-group experience sharing and reuse.",
-  "Overcomes the inefficient utilization of exploratory diversity caused by isolated branches in existing tree-structured evolution.",
-  "Demonstrates that GEA matches or exceeds state-of-the-art human-designed frameworks without human intervention.",
-  "Shows consistent transferability across different coding models (GPT and Claude-series) and greater robustness to framework-level perturbations."
- ],
- "methods": "GEA maintains an archive of all discovered agents. At each iteration, it selects a parent group of K agents using a Performance-Novelty criterion balancing task performance with evolutionary diversity measured via cosine distance on task-success vectors. The parent group then jointly produces an offspring group through open-ended group evolution, where each agent collects its own evolutionary traces (applied patches, predicted task patches, execution logs, outcome logs), aggregates them into a shared pool across the group, and uses a reflection module to generate evolution directives followed by an evolution module producing framework-level patches. Agents that compile successfully and exhibit basic coding functionality are added to the archive.",
- "results": "On SWE-bench Verified, GEA achieved 71.0% compared to 56.7% for the DGM baseline (under matched evolved agent counts), and 71.0% vs. 71.8% for the top human-designed framework (OpenHands + GPT-5). On Polyglot, GEA achieved 88.3% vs. 68.3% for DGM and 88.3% vs. 52.0% for Aider + GPT-5. GEA fixes framework-level bugs in 1.4 iterations on average versus 5 for self-evolving methods. GEA reached 88.3% on Polyglot in just 4 iterations with 8,677 lines of code added, and 71.0% on SWE-bench Verified in 8 iterations with 9,663 lines added.",
- "limitations": [
-  "Staged evaluation strategy was adopted due to substantial cost of evaluating every evolved agent on full benchmarks, which may not capture full performance.",
-  "Different evolutionary patterns were observed between benchmarks (Polyglot requiring single-file edits vs. SWE-bench requiring multi-file coordination), suggesting task complexity affects patch characteristics and convergence speed.",
-  "Computational budget constraints required using different model configurations across iterations (Claude Haiku 4.5 for first iterations, Claude Sonnet 4.5 for final iterations)."
- ],
- "provenance": {
-  "model": "agnes-ai/agnes-2.5-flash",
-  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
-  "fetched_at": "2026-08-23T12:01:41Z",
-  "binding": "paper-summary-generate-default"
- }
+  "contributions": [
+    "Introduces GEA, a paradigm treating a group of agents as the fundamental evolutionary unit with explicit experience sharing and reuse",
+    "Overcomes the limitation of inefficient utilization of exploratory diversity caused by isolated evolutionary branches in tree-structured evolution",
+    "Demonstrates consistent transferability across different coding models and stronger robustness to framework-level perturbations"
+  ],
+  "limitations": "The paper does not explicitly state limitations. Computational budget constraints are noted as a practical consideration driving the staged evaluation strategy and the use of different model sizes across iterations.",
+  "methods": "GEA selects a parent group using a Performance-Novelty criterion balancing task performance and evolutionary diversity based on cosine distance over task-success vectors. Each selected agent contributes evolutionary traces (code patches, predicted task patches, execution logs, and outcome logs) to a shared pool. A reflection module analyzes shared experience to produce evolution directives, an evolution module generates framework-level patches, and an acting module evaluates updated agents on downstream programming tasks. Agents that compile and exhibit basic coding functionality are retained in the archive.",
+  "paper_id": "2602.04837",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 0,
+    "latency_ms": 7445,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 824
+  },
+  "results": "GEA achieves 71.0% on SWE-bench Verified (vs. 56.7% for the DGM self-evolving baseline) and 88.3% on Polyglot (vs. 68.3% for the baseline). It matches or exceeds top human-designed frameworks: 71.0% vs. 71.8% on SWE-bench Verified and 88.3% vs. 52.0% on Polyglot. GEA fixes framework-level bugs in 1.4 iterations on average, versus 5 for self-evolving methods. On Polyglot, GEA reaches 88.3% in 4 iterations with 8,677 lines of code added; on SWE-bench Verified it reaches 71.0% in 8 iterations with 9,663 lines added.",
+  "schema_version": "summary-node.v1",
+  "tldr": "Group-Evolving Agents (GEA) introduces a group-centric open-ended self-improvement paradigm that enables explicit experience sharing and reuse across agents, significantly outperforming tree-structured self-evolving methods on coding benchmarks."
 }

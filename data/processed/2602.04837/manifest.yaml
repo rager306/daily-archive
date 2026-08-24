@@ -1,185 +1,104 @@
 schema_version: article-manifest.v1
 paper_id: '2602.04837'
-source:
-  code: arxiv
-  identity_ref: null
-lifecycle: summarized
+grammar_profile: arxiv_pdf_dot
+lifecycle: validated
 lifecycle_events:
+- stage: raw
+  recorded_at: 2026-08-24T07:55:47Z
+  actor: source-acquire
 - stage: parsed
-  recorded_at: '2026-08-23T05:49:40.673505+00:00'
-  actor: grobid
-  evidence_sha256: 8ff912127ef286d4cb049f7faaf1d2ae0750588b6dcc1ceb072567f0ba016ba5
+  recorded_at: 2026-08-24T07:55:47Z
+  actor: grobid-structural
+  evidence_sha256: 1949028bb77daa6268157889edb9b1097e92fad58bb582231fbffa810e544bb7
 - stage: structured
-  recorded_at: '2026-08-23T05:49:40.674820+00:00'
-  actor: document-context-projection
-  evidence_sha256: a17b3a331f683905e7063f8ec51793b7401674e18dbc5109d74ade40bc6af4ed
+  recorded_at: 2026-08-24T07:55:48Z
+  actor: rust-navigation-stage
+  evidence_sha256: 9ab238ef635b4eb46673b0deac5a2891c1aa3ad15bb2ef4ffcac46242f8cd9cd
 - stage: extracted
-  recorded_at: '2026-08-23T05:49:40.676402+00:00'
+  recorded_at: 2026-08-24T07:55:48Z
   actor: rule-based-extractor
-  evidence_sha256: ee10f19a82e3c66f25aebfe239a12d26ff416a8b69cc442984d31492779f59aa
+  evidence_sha256: 69991f12be667d68b3566daac2e93b72ee9c631547959eef395b7b9ecc2b484b
 - stage: enriched
-  recorded_at: '2026-08-23T11:00:38Z'
-  actor: openalex-enricher
-  evidence_sha256: ab2ac06733635d2ee723dcf44f4827c79b262efc42a80a1ea2a3e980e47af6b5
+  recorded_at: 2026-08-24T07:55:48Z
+  actor: rust-enriched-layer
+  evidence_sha256: 147405c65316d5c4a59d0913fecfd0e4c8222062da268ac7c23ba4c869d15350
 - stage: summarized
-  recorded_at: '2026-08-23T12:01:41Z'
-  actor: agnes-ai/agnes-2.5-flash
-  evidence_sha256: 0b4efa1a416266a0fbd805d91f4fd811990bf2371b87b4b7351b027d0c885a1e
+  recorded_at: 2026-08-24T07:55:55Z
+  actor: agent:summarizer
+  evidence_sha256: 9fd54041b372317afe3406487b8a73aaa8718d03a796db59644af4814cddcfcf
+- stage: validated
+  recorded_at: 2026-08-24T07:55:55Z
+  actor: rust-source-run
 artifacts:
-  parsed:
-    file: parsed/article.json
-    derived_from:
-    - source
-    sha256: 8ff912127ef286d4cb049f7faaf1d2ae0750588b6dcc1ceb072567f0ba016ba5
-    stats:
-      sections: 29
-  context:
-    file: context/projection.json
-    derived_from:
-    - parsed
-    sha256: a17b3a331f683905e7063f8ec51793b7401674e18dbc5109d74ade40bc6af4ed
-    stats:
-      ast_nodes: 29
-    navigation:
-      file: context/navigation.json
-      sha256: 7c4be5b1711e837f95dd99b25400c81f6965d45a07c740dfcf852f60ba5d0bcd
-      actor: m451-navigation-builder
-      stats:
-        nodes: 29
-        roots: 15
-        max_depth: 2
-        path_dupes: 1
-        furniture: 6
-        furniture_share: 0.207
-        tree_cost: 3665
-      inputs:
-      - data/ontology/furniture_detectors.yaml
-      - data/ontology/navigation_quality_policy.yaml
   extracted:
     file: extracted/entities.json
-    derived_from:
-    - parsed
-    sha256: ee10f19a82e3c66f25aebfe239a12d26ff416a8b69cc442984d31492779f59aa
+    derived_from: parsed
+    sha256: 69991f12be667d68b3566daac2e93b72ee9c631547959eef395b7b9ecc2b484b
+    actor: rule-based-extractor
     stats:
       entities: 7
-      by_type:
-        Method: 4
-        Model: 2
-        Metric: 1
-  equations:
-    file: equations/index.json
-    derived_from:
-    - parsed
-    sha256: a238712466b17dfe3902b93c925d3eb8ce31c9655fc1632545f6a9438d09ec7c
-    built_at: '2026-08-23T10:32:03Z'
-    actor: m451-reference-builder
-    stats:
-      count: 6
-      grounded: 6
-      ungrounded: 0
   citations_resolved:
-    file: citations_resolved.json
-    derived_from:
-    - parsed
-    sha256: 842e83e8f3e8c7beb39590c47546016daec452996f040042707f60535d04d265
-    built_at: '2026-08-23T10:32:03Z'
-    actor: m451-reference-builder
+    present: false
+    missingness: no_citation_elements
+    derived_from: parsed
+  enriched:
+    file: enriched/authors.json
+    files: enriched/{authors,venue,topics,provenance}.json
+    derived_from: parsed
+    sha256: 147405c65316d5c4a59d0913fecfd0e4c8222062da268ac7c23ba4c869d15350
+    actor: rust-enriched-layer
     stats:
-      total: 53
-      raw_only: 10
-      resolved_arxiv: 17
-      candidate_title: 19
-      resolved_corpus_arxiv: 3
-      corpus_title_fallback: 4
-      authors_matched: 0
-      authors_seen: 2
-    inputs:
-    - data/ontology/citation_styles.yaml
-    - data/ontology/venue_registry.yaml
-  tables:
-    file: tables/index.json
-    derived_from:
-    - parsed
-    sha256: e39592ef811ec6ad31ecc67ebd001c66763f5f24ab5e8ec47c9c42987f740c52
-    built_at: '2026-08-23T10:32:03Z'
-    actor: m451-reference-builder
+      authors: 7
+      binding_mismatch: 0
+      cited_by_count: 0
+      surname_confirmed: 6
+      topics: 3
+      with_a_id: 6
+      with_orcid: 0
+  summaries:
+    file: summaries/abstract.json
+    derived_from: parsed
+    sha256: 9fd54041b372317afe3406487b8a73aaa8718d03a796db59644af4814cddcfcf
+    actor: agent:summarizer
     stats:
-      count: 1
-      cells: 34
+      prompt_sha256: fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe
+      injection_scrubbed: 0
+      latency_ms: 7445
+      memory_epoch: 9
+  quality_signals:
+    not_reached: true
+  parsed:
+    file: parsed/article.json
+    derived_from: source
+    sha256: 1949028bb77daa6268157889edb9b1097e92fad58bb582231fbffa810e544bb7
+    actor: grobid-structural
+    stats:
+      sections: 29
+      citations: 53
+      tables: 1
+      formulas: 6
+  context:
+    file: context/projection.json
+    derived_from: parsed
+    navigation:
+      file: context/navigation.json
+      sha256: 9ab238ef635b4eb46673b0deac5a2891c1aa3ad15bb2ef4ffcac46242f8cd9cd
+      actor: rust-navigation-stage
+      stats:
+        nodes: 29
+        roots: 29
+        max_depth: 2
+        path_dupes: 0
+        furniture: 6
+        furniture_share: 0.20689655172413793
+        tree_cost: 4357
   figures:
     file: figures/index.json
-    derived_from:
-    - parsed
-    sha256: 3b74d5ae5c6cf6b97115885611b321d699d581cf13f4c11735c3b8061a4eacc9
-    built_at: '2026-08-23T10:32:03Z'
-    actor: m451-reference-builder
+    sha256: 85b1f8c4830169494118a8fc925ee82c563c03cb5974211c920ff3609984c424
+    actor: rust-tei-figures-stage
     stats:
       count: 6
       with_caption: 6
       with_graphic: 0
       referenced_in_text: 4
       total_in_text_refs: 8
-  enriched:
-    file: enriched/authors.json
-    files:
-    - enriched/authors.json
-    - enriched/venue.json
-    - enriched/topics.json
-    - enriched/provenance.json
-    derived_from:
-    - parsed
-    sha256: ab2ac06733635d2ee723dcf44f4827c79b262efc42a80a1ea2a3e980e47af6b5
-    built_at: '2026-08-23T11:00:38Z'
-    actor: openalex-enricher
-    stats:
-      authors: 6
-      with_orcid: 0
-      with_a_id: 6
-      surname_confirmed: 6
-      binding_mismatch: 0
-      topics: 3
-      cited_by_count: 0
-    inputs:
-    - api.openalex.org (polite pool)
-  summaries:
-    file: summaries/abstract.json
-    derived_from:
-    - parsed
-    - enriched
-    sha256: 0b4efa1a416266a0fbd805d91f4fd811990bf2371b87b4b7351b027d0c885a1e
-    built_at: '2026-08-23T12:01:41Z'
-    actor: agnes-ai/agnes-2.5-flash
-    stats:
-      tldr_chars: 294
-      contributions: 4
-  quality_signals:
-    file: quality_signals.json
-    derived_from:
-    - parsed
-    - extracted
-    - figures
-    - citations_resolved
-    - external_resources
-    sha256: d25929bf43228e97b8686129e41476ad07d280aaf3efceb84382471269b2d55c
-    built_at: '2026-08-23T10:32:03Z'
-    actor: m451-reference-builder
-    stats:
-      count: 7
-      ok_signals: 6
-    inputs:
-    - data/ontology/quality_signal_policy.yaml
-  external_resources:
-    file: external_resources/index.json
-    derived_from:
-    - parsed
-    sha256: 6daa883efce484ee4d241680d14e2b13927a7adbd79100d9d0ea4ca7578273da
-    built_at: '2026-08-23T10:32:03Z'
-    actor: m451-reference-builder
-    stats:
-      unique_urls: 6
-      by_type:
-        org_page: 3
-        code: 2
-        other: 1
-    inputs:
-    - data/ontology/external_resource_domains.yaml

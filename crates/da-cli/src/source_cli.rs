@@ -1108,6 +1108,26 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
         println!("✓ pipeline complete — nothing to do");
         return Ok(());
     }
+    // ensure manifest exists for stages that write to it
+    let mp = std::path::Path::new("data/processed").join(paper_id).join("manifest.yaml");
+    if !mp.exists() {
+        std::fs::create_dir_all(mp.parent().unwrap())?;
+        let mut draft = serde_yaml::Mapping::new();
+        draft.insert("schema_version".into(), "article-manifest.v1".into());
+        draft.insert("paper_id".into(), serde_yaml::Value::from(paper_id));
+        draft.insert("grammar_profile".into(), "arxiv_pdf_dot".into());
+        draft.insert("lifecycle".into(), "raw".into());
+        let raw_event = serde_yaml::Mapping::from_iter([
+            (serde_yaml::Value::from("stage"), serde_yaml::Value::from("raw")),
+            (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(chrono_now())),
+            (serde_yaml::Value::from("actor"), serde_yaml::Value::from("source-acquire")),
+        ]);
+        draft.insert("lifecycle_events".into(), vec![serde_yaml::Value::Mapping(raw_event)].into());
+        draft.insert("artifacts".into(), serde_yaml::Mapping::new().into());
+        std::fs::write(&mp, serde_yaml::to_string(&draft)?)?;
+        println!("manifest: created (fresh)");
+    }
+
     println!("plan: {} stages", plan.len());
     for (stage, required) in &plan {
         println!("  {} {stage}", if *required { "*" } else { " " });
@@ -1150,14 +1170,19 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
             continue;
         };
 
-        // special: parsed needs the PDF path
+        // special: parsed needs the PDF path — auto-find from catalog
         let pdf = if *stage == "parsed" {
             let mut hits = Vec::new();
-            collect_pdfs("data/sources/arxiv", paper_id, &mut hits);
+            collect_pdfs("data/sources", paper_id, &mut hits);
             hits.first().cloned()
         } else {
             None
         };
+        if *stage == "parsed" && pdf.is_none() {
+            println!("   ✗ parse-pdf: no source PDF found for {paper_id}");
+            failed = Some(format!("parsed: no PDF under data/sources for {paper_id}"));
+            break;
+        }
 
         // pre-stage hook: enriched needs work cache (reference fetcher)
         if *stage == "enriched" {
@@ -1256,8 +1281,12 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
 
 fn load_fsm_state(paper_id: &str) -> anyhow::Result<ImportFsmState> {
     let mp = std::path::Path::new("data/processed").join(paper_id).join("manifest.yaml");
+    if !mp.exists() {
+        // no manifest = fresh acquisition, FSM starts at raw
+        return Ok(ImportFsmState::from_events("arxiv_pdf_dot", &["raw".to_string()]));
+    }
     let m: serde_yaml::Value = serde_yaml::from_str(
-        &std::fs::read_to_string(&mp).map_err(|e| anyhow::anyhow!("{}: {e}", mp.display()))?,
+        &std::fs::read_to_string(&mp)?,
     )?;
     let profile = m
         .get("grammar_profile")
