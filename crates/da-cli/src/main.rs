@@ -131,6 +131,9 @@ enum Commands {
         /// parse-html: path to the source HTML file
         #[arg(long)]
         html: Option<String>,
+        /// parse-pdf: path to the source PDF file
+        #[arg(long)]
+        pdf: Option<String>,
     },
 
     /// Validate schema-manifest objects against their DATA norm
@@ -462,9 +465,12 @@ fn main() {
     });
 
     match cli.command {
-        Commands::Source { action, paper_id, dry_run, html } => {
+        Commands::Source { action, paper_id, dry_run, html, pdf } => {
             use da_cli::source_cli;
             let r = match action.as_str() {
+                "acquire" => {
+                    da_cli::source_acquire::acquire(&paper_id, std::path::Path::new("."))
+                }
                 "status" => source_cli::run_status(&paper_id),
                 "plan" => source_cli::run_plan(&paper_id),
                 "import" => source_cli::run_import(&paper_id, dry_run),
@@ -472,12 +478,14 @@ fn main() {
                 "build-structural" => source_cli::run_build_structural(&paper_id),
                 "build-figures" => source_cli::run_build_figures(&paper_id),
                 "build-figures-tei" => source_cli::run_build_figures_tei(&paper_id),
-                "parse-html" => source_cli::run_parse_html(&paper_id, html.as_deref()),
+                                "parse-html" => source_cli::run_parse_html(&paper_id, html.as_deref()),
+                "parse-pdf" => source_cli::run_parse_pdf(&paper_id, pdf.as_deref()),
                 "parse-pdf-toc" => source_cli::run_parse_pdf_toc(&paper_id),
                 "enrich-layer" => source_cli::run_enrich_layer(&paper_id),
+                                "build-extracted" => source_cli::run_build_extracted(&paper_id),
                 "build-summary" => source_cli::run_build_summary(&paper_id),
                 "eval-frozen" => source_cli::run_eval_frozen(),
-                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei|parse-html|parse-pdf-toc|enrich-layer|build-summary)")),
+                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei|parse-html|parse-pdf-toc|enrich-layer|build-extracted|build-summary|acquire)")),
             };
             if let Err(e) = r {
                 eprintln!("da source: {e}");

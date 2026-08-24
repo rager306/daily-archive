@@ -23,6 +23,10 @@ pub struct TrajectoryRecord {
     /// decision CONDITION depends on, not just the outcome
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub article_features: Option<ArticleFeatures>,
+    /// failure pattern ref (agent_failure_patterns.yaml id) — SONA
+    /// learns on TYPES of failures, not just numeric grounding
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failure_pattern: Option<String>,
 }
 
 /// Compact article signature for memory-driven routing.

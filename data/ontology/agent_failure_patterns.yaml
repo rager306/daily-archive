@@ -1,0 +1,117 @@
+# Agent failure patterns — таксономия из AutoResearchEval (arXiv:2608.14905)
+# 45 паттернов × 2 оси: стадия (A-F) + корневая причина (R1-R4, X).
+# Использование: SONA-траектории маркируются паттернами → routing-петля
+# учится на ТИПАХ отказов, не только на grounding-числе. Critic
+# repairing-вердикты ссылаются сюда. DATA — новый паттерн = запись.
+schema_version: agent-failure-patterns.v1
+source_paper: "arXiv:2608.14905 (AutoResearchEval)"
+adr_ref: ADR-068, ADR-055 (ACAP)
+adopted_at: "2026-08-24"
+
+root_causes:
+  R1:
+    title: Grounding & Faithfulness
+    share: 31.0
+    mechanism: claims disconnect from code/data/logs; report says work that was not done
+    our_analog: "summary ↔ parsed cross-layer consistency; citations ↔ anchors"
+  R2:
+    title: Cognitive Depth & Adaptability
+    share: 27.6
+    mechanism: shallow reasoning; finds flaw but does not act (F.4 = 82.5%)
+    our_analog: "critic reject-verdict must trigger repair, not just annotate"
+  R3:
+    title: Scientific Integrity & Alignment
+    share: 33.5
+    mechanism: metric hacking, shortcut reliance, concealed negative results
+    our_analog: "grader-fitting analog: benchmark overfit; our frozen-eval guards"
+  R4:
+    title: Engineering Robustness
+    share: 7.9
+    mechanism: numerical instability, unhandled errors
+    our_analog: "typed missingness + honest failures"
+
+stages:
+  A: {title: Ideation & Planning, patterns: [A.1, A.2, A.3, A.4, A.5, A.6]}
+  B: {title: Retrieval & Synthesis, patterns: [B.1, B.2, B.3, B.4, B.5, B.6]}
+  C: {title: Execution & Implementation, patterns: [C.1, C.2, C.3, C.4, C.5, C.6, C.7, C.8]}
+  D: {title: Analysis & Validation, patterns: [D.1, D.2, D.3, D.4, D.5, D.6, D.7]}
+  E: {title: Writing & Documentation, patterns: [E.1, E.2, E.3, E.4]}
+  F: {title: Review & Self-Correction, patterns: [F.1, F.2, F.3, F.4, F.5, F.6]}
+  X: {title: Cross-stage (propagation/drift), patterns: [X.1..X.8]}
+
+patterns:
+  # A — Ideation
+  - {id: A.1, title: Frame-Lock & Tunnel Vision, cause: R2, rate: "—"}
+  - {id: A.2, title: Unfalsifiable Hypothesis, cause: R3, rate: "44.6%"}
+  - {id: A.3, title: Redundant Discovery, cause: R2, rate: "—"}
+  - {id: A.4, title: Feasibility Misjudgement, cause: R4, rate: "—"}
+  - {id: A.5, title: Metric Misalignment, cause: R3, rate: "68.1%"}
+  - {id: A.6, title: Hypothesis-Experiment Mismatch, cause: R1, rate: "52.5%"}
+
+  # B — Retrieval
+  - {id: B.1, title: Hallucinated Evidence, cause: R1, rate: "varies 13-61"}
+  - {id: B.2, title: Retrieval Never Reaches Design, cause: R1, rate: "33.9%"}
+  - {id: B.3, title: Engineering fault in retrieval, cause: R4, rate: "—"}
+  - {id: B.4, title: Thin Search Coverage, cause: R2, rate: "54.9%"}
+  - {id: B.5, title: Citation Does Not Support Claim, cause: R1, rate: "19.0%"}
+  - {id: B.6, title: Missed Key Literature, cause: R2, rate: "—"}
+
+  # C — Execution
+  - {id: C.1, title: Circular Validation / Shortcut, cause: R3, rate: "69.0%"}
+  - {id: C.2, title: Grader-Fitting, cause: R3, rate: "—"}
+  - {id: C.3, title: Implementation Discrepancy, cause: R1, rate: "72.1%"}
+  - {id: C.4, title: Execution Faults / Numerical Instability, cause: R4, rate: "—"}
+  - {id: C.5, title: Broken CLI/OS Interaction, cause: R4, rate: "—"}
+  - {id: C.6, title: Local Optimization, cause: R2, rate: "—"}
+  - {id: C.7, title: Stopping Early, cause: R2, rate: "—"}
+  - {id: C.8, title: Engineering robustness in execution, cause: R4, rate: "—"}
+
+  # D — Analysis
+  - {id: D.1, title: Side Effect Reported as Finding, cause: R1, rate: "52.4%"}
+  - {id: D.2, title: Analysis Misalignment, cause: R3, rate: "—"}
+  - {id: D.3, title: Confirmation Bias in Analysis, cause: R3, rate: "—"}
+  - {id: D.4, title: Method-Conclusion Disconnect, cause: R1, rate: "77.5%"}
+  - {id: D.5, title: Missing Baselines, cause: R2, rate: "—"}
+  - {id: D.6, title: Result Hallucination, cause: R1, rate: "3-36 varies"}
+  - {id: D.7, title: Unremediated Adversarial Evidence, cause: R3, rate: "60.8%"}
+
+  # E — Writing
+  - {id: E.1, title: Report-Code Traceability Gap, cause: R1, rate: "60.5%"}
+  - {id: E.2, title: Overclaiming / Concealed Negative Results, cause: R3, rate: "78.1%"}
+  - {id: E.3, title: Omitted Critical Limitations, cause: R3, rate: "62.2%"}
+  - {id: E.4, title: Fabricated Numbers in Report, cause: R1, rate: "—"}
+
+  # F — Self-review
+  - {id: F.1, title: Superficial Self-Review, cause: R2, rate: "—"}
+  - {id: F.2, title: Failure to Gate Critical Flaws, cause: R2, rate: "502 hits"}
+  - {id: F.3, title: Inadequate Self-Verification, cause: R2, rate: "—"}
+  - {id: F.4, title: Uncorrected Self-Awareness, cause: R2, rate: "82.5%"}
+  - {id: F.5, title: Review Score Hacking, cause: R3, rate: "1 hit"}
+  - {id: F.6, title: Hallucinated Reviewing, cause: R3, rate: "3 hits"}
+
+  # X — Cross-stage
+  - {id: X.1, title: Error Propagation, cause: X, rate: "—"}
+  - {id: X.2, title: Goal Drift, cause: X, rate: "—"}
+  - {id: X.3, title: Absent Skepticism, cause: R2, rate: "39.4%"}
+  - {id: X.4, title: Compound Error Cascade, cause: X, rate: "—"}
+  - {id: X.5, title: Reasoning Backward from Conclusion, cause: R3, rate: "39.2%"}
+  - {id: X.6, title: Right for Wrong Reason, cause: R1, rate: "43.8%"}
+  - {id: X.7, title: Anchoring to Failed Approach, cause: R2, rate: "—"}
+  - {id: X.8, title: Resource Exhaustion, cause: R4, rate: "—"}
+
+our_adaptations:
+  repair_obligation:
+    description: |
+      Главный перенос (F.4, 82.5%): critic reject-вердикт ОБЯЗАН триггерить
+      repair, не только аннотацию. Метакогнитивный луп: нашёл → подействовал.
+    implementation: "critic reject → перезапуск стадии → повторная оценка"
+  cross_layer_consistency:
+    description: |
+      Insight 1: улики в run directory. У нас слои = артефакты. Сигналы
+      должны сравнивать summary↔parsed, extracted↔equations, citations↔anchors.
+    implementation: "summary_parsed_grounding сигнал (R1-детекция)"
+  trajectory_pattern_annotation:
+    description: |
+      SONA-траектории маркируются паттернами (не только grounding).
+      Router учится на ТИПАХ отказов.
+    implementation: "TrajectoryRecord += failure_pattern: Option<String> (ref на patterns[].id)"

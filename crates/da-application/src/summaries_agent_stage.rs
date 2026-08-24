@@ -179,6 +179,7 @@ pub async fn run_summaries_agent(
         latency_ms,
         completion_tokens: resp.tokens_out,
         grounding_hint: Some(grounding),
+        failure_pattern: None, // filled by critic/repair loop later
         article_features: Some(ArticleFeatures {
             grammar,
             body_chars,

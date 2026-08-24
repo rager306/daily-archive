@@ -869,3 +869,187 @@ pub fn run_eval_frozen() -> anyhow::Result<()> {
 fn compile_injection(yaml_text: String) -> String {
     yaml_text
 }
+
+/// `da source parse-pdf <paper_id> --pdf <path>` — GROBID structural ->
+/// parsed/article.json + context/projection.json + manifest draft
+/// (idempotent; the article FSM then continues via build-* commands).
+pub fn run_parse_pdf(paper_id: &str, pdf_path: Option<&str>) -> anyhow::Result<()> {
+    use da_adapters::GrobidParser;
+    use da_ports::parser::ParserPort;
+
+    let Some(pdf) = pdf_path else {
+        anyhow::bail!("parse-pdf requires --pdf <path>");
+    };
+    let rt = tokio::runtime::Runtime::new()?;
+    let parsed = rt.block_on(async {
+        let parser = GrobidParser::from_env();
+        parser.parse_pdf(pdf, paper_id).await.map_err(|e| anyhow::anyhow!("grobid: {e}"))
+    })?;
+
+    let dir = std::path::Path::new("data/processed").join(paper_id);
+    std::fs::create_dir_all(dir.join("parsed"))?;
+    std::fs::create_dir_all(dir.join("context"))?;
+
+    let parsed_json = serde_json::to_string_pretty(&parsed)?;
+    std::fs::write(dir.join("parsed/article.json"), &parsed_json)?;
+
+    // projection from sections
+    let proj = serde_json::json!({
+        "paper_id": paper_id,
+        "sections": parsed.sections.iter().enumerate().map(|(i, s)| {
+            serde_json::json!({
+                "section_id": format!("{paper_id}:{i}"),
+                "path_id": s.path_id,
+                "order": i,
+                "level": s.level,
+                "title": s.title,
+                "char_count": s.text.chars().count(),
+            })
+        }).collect::<Vec<_>>(),
+    });
+    std::fs::write(dir.join("context/projection.json"), serde_json::to_string_pretty(&proj)?)?;
+
+    // manifest draft (raw+parsed events), idempotent rebuild
+    let now = chrono_now();
+    let miss = |reason: &str| serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("present"), serde_yaml::Value::from(false)),
+        (serde_yaml::Value::from("missingness"), serde_yaml::Value::from(reason)),
+        (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
+    ]);
+    let nr = serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("not_reached"), serde_yaml::Value::from(true)),
+    ]);
+    let mut m = serde_yaml::Mapping::new();
+    m.insert("schema_version".into(), "article-manifest.v1".into());
+    m.insert("paper_id".into(), paper_id.into());
+    m.insert("grammar_profile".into(), "arxiv_pdf_dot".into());
+    m.insert("lifecycle".into(), "parsed".into());
+    let ev_raw = serde_yaml::Mapping::from_iter([
+        ("stage".into(), "raw".into()),
+        ("recorded_at".into(), now.clone().into()),
+        ("actor".into(), "source-acquire".into()),
+    ]);
+    let ev_parsed = serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("stage"), serde_yaml::Value::from("parsed")),
+        (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(now.clone())),
+        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("grobid-structural")),
+        (serde_yaml::Value::from("evidence_sha256"),
+         serde_yaml::Value::String(sha256_hex(parsed_json.as_bytes()))),
+    ]);
+    m.insert("lifecycle_events".into(), vec![
+        serde_yaml::Value::Mapping(ev_raw), serde_yaml::Value::Mapping(ev_parsed),
+    ].into());
+    let mut arts = serde_yaml::Mapping::new();
+    for (k, v) in [
+        ("extracted", miss("extraction_not_run")),
+        ("citations_resolved", miss("no_citation_elements")),
+        ("enriched", nr.clone()),
+        ("summaries", nr.clone()),
+        ("quality_signals", nr.clone()),
+    ] {
+        arts.insert(k.into(), serde_yaml::Value::Mapping(v));
+    }
+    arts.insert("parsed".into(), serde_yaml::Mapping::from_iter([
+        ("file".into(), "parsed/article.json".into()),
+        ("derived_from".into(), "source".into()),
+        ("sha256".into(), sha256_hex(parsed_json.as_bytes()).into()),
+        ("actor".into(), "grobid-structural".into()),
+        ("stats".into(), serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
+            ("sections".into(), parsed.sections.len().into()),
+            ("citations".into(), parsed.citations.len().into()),
+            ("tables".into(), parsed.tables.len().into()),
+            ("formulas".into(), parsed.formulas.len().into()),
+        ]))),
+    ]).into());
+    m.insert("artifacts".into(), arts.into());
+    std::fs::write(dir.join("manifest.yaml"), serde_yaml::to_string(&m)?)?;
+    println!(
+        "{paper_id}: parsed — sections={} citations={} tables={} formulas={}",
+        parsed.sections.len(), parsed.citations.len(), parsed.tables.len(), parsed.formulas.len()
+    );
+    Ok(())
+}
+
+/// `da source build-extracted <paper_id>` — run rule-based extraction
+/// and persist extracted/entities.json (article layer; graph writes stay
+/// with `da extract`).
+pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
+    // parsed/article.json is the input; rule-based extractor over section texts
+    let parsed_path = std::path::Path::new("data/processed")
+        .join(paper_id)
+        .join("parsed/article.json");
+    let raw = std::fs::read_to_string(&parsed_path)
+        .map_err(|e| anyhow::anyhow!("parsed unreadable {}: {e}", parsed_path.display()))?;
+    let parsed: serde_json::Value = serde_json::from_str(&raw)
+        .map_err(|e| anyhow::anyhow!("parsed parse: {e}"))?;
+
+    let mut pairs: Vec<(String, String)> = Vec::new();
+    if let Some(sections) = parsed.get("sections").and_then(|s| s.as_array()) {
+        for sec in sections {
+            pairs.push((
+                sec.get("title").and_then(|t| t.as_str()).unwrap_or("").to_string(),
+                sec.get("text").and_then(|t| t.as_str()).unwrap_or("").to_string(),
+            ));
+        }
+    }
+
+    let rt = tokio::runtime::Runtime::new()?;
+    let entities = rt.block_on(async {
+        use da_ports::Extractor as _;
+        let ex = da_adapters::RuleBasedExtractor::new();
+        ex.extract(&pairs).await
+            .map_err(|e| anyhow::anyhow!("extraction: {e}"))
+    })?;
+
+    let mut records: Vec<serde_json::Value> = Vec::new();
+    for e in &entities {
+        // section ordinal from the source span's section (extractor keeps it)
+        records.push(serde_json::json!({
+            "label": e.label,
+            "entity_type": format!("{:?}", e.entity_type),
+            "section_ordinal": e.section_ordinal,
+        }));
+    }
+    let json = serde_json::to_string_pretty(&records)?;
+
+    let dir = std::path::Path::new("data/processed").join(paper_id);
+    std::fs::create_dir_all(dir.join("extracted"))?;
+    std::fs::write(dir.join("extracted/entities.json"), &json)?;
+
+    let mp = dir.join("manifest.yaml");
+    let mut m: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&mp)?)?;
+    let sha = sha256_hex(json.as_bytes());
+    if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
+        arts.insert("extracted".into(), serde_yaml::Mapping::from_iter([
+            (serde_yaml::Value::from("file"), serde_yaml::Value::from("extracted/entities.json")),
+            (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
+            (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha.clone())),
+            (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rule-based-extractor")),
+            (serde_yaml::Value::from("stats"), serde_yaml::Value::Mapping(
+                serde_yaml::Mapping::from_iter([
+                    (serde_yaml::Value::from("entities"), serde_yaml::Value::from(records.len() as u64)),
+                ]))),
+        ]).into());
+        let already = m.get("lifecycle_events").and_then(|e| e.as_sequence())
+            .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("extracted")))
+            .unwrap_or(false);
+        if !already
+            && let Some(events) = m.get_mut("lifecycle_events").and_then(|v| v.as_sequence_mut())
+        {
+            events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
+                (serde_yaml::Value::from("stage"), serde_yaml::Value::from("extracted")),
+                (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(chrono_now())),
+                (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rule-based-extractor")),
+                (serde_yaml::Value::from("evidence_sha256"), serde_yaml::Value::String(sha)),
+            ])));
+        }
+        if let Some(l) = m.get_mut("lifecycle") {
+            *l = serde_yaml::Value::from("extracted");
+        }
+    }
+    std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
+    println!("{paper_id}: extracted — entities={}", records.len());
+    Ok(())
+}
+
+

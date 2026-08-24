@@ -15,6 +15,7 @@ pub mod health_report;
 pub mod load;
 pub mod load_journey;
 pub mod logging;
+pub mod source_acquire;
 pub mod source_cli;
 pub mod materialization_progress;
 pub mod production;

@@ -62,3 +62,33 @@ reliability_tiers:
   name: Extracted (GROBID, HTML parser)
 - tier: 3
   name: User-provided
+acquisition_routing:
+  schema_version: routing.v1
+  note: CLI da source acquire <raw> — определение источника из сырой ссылки. Порядок
+    правил = приоритет.
+  rules:
+  - pattern: arxiv\.org/(abs|pdf)/(\S+)
+    kind: arxiv
+    id_group: 2
+    id_normalize: strip_version
+    handler: arxiv_catalog
+  - pattern: ^(\\d{4}\\.\\d{4,5})(v\\d+)?$
+    kind: arxiv
+    id_group: 1
+    id_normalize: none
+    handler: arxiv_catalog
+  - pattern: ^10\.
+    kind: doi
+    id_group: 0
+    id_normalize: none
+    handler: doi_mirror
+  - pattern: \.pdf($|\?)
+    kind: direct_pdf
+    id_group: 0
+    id_normalize: none
+    handler: direct_pdf
+  - pattern: https?://
+    kind: web_page
+    id_group: 0
+    id_normalize: none
+    handler: html_page

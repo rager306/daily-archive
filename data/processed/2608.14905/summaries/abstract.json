@@ -1,0 +1,27 @@
+{
+  "contributions": [
+    "AutoResearchEval: a benchmark of 100 real-world frontier research tasks spanning seven scientific domains and the full research lifecycle (ideation, retrieval, execution, analysis, writing, review), yielding 800 trajectories across eight harness-model combinations",
+    "ARFT (AutoResearch Failure Taxonomy): 45 empirically-grounded failure patterns organized along stage and root-cause axes",
+    "An artifact-aware agent-as-a-judge annotation pipeline calibrated against human experts, reaching κ = 0.75 (pattern) and κ = 0.83 (taxonomy), outperforming a single-call LLM-as-a-judge"
+  ],
+  "limitations": [
+    "The study does not test whether orchestration-level interventions can close the metacognitive deficit",
+    "Open-ended and target-anchored tasks are not matched on domain or novelty-move type and are reported separately rather than compared",
+    "Patterns in the Cognitive Depth & Adaptability pillar carry lower confidence due to lower inter-annotator agreement on harder-to-adjudicate metacognitive failures",
+    "Fabrication-related patterns like review score hacking (F.5, one hit) and hallucinated reviewing (F.6, three hits) are near-absent, limiting generalizability of those inclusions"
+  ],
+  "methods": "Papers were mined from high-impact venues across nine domains (5,878 candidates), parsed into seven fields (Premise, Tension, Motivation, Method, Experiment, KeyClaims, Conclusion), and filtered by availability of experiment/data and multi-stage investigability to produce 100 tasks from seven domains. Tasks were split into open-ended discovery (n=70) and target-anchored optimization (n=30). Each task was run autonomously through six stages without human intervention across eight harness-model combinations (Claude Code, Codex, Gemini CLI paired with models including opus-4.8, gpt-5-mini, gemini-3.5-flash), producing 800 trajectories with 73k tool calls at an average of 92.3 steps per episode. A human-calibrated agent-as-a-judge analyzed complete artifact sets (code, logs, reports, data files) using a fixed rubric and self-healing quality checker; inter-annotator agreement among three experts reached κ = 0.85 over five rounds.",
+  "paper_id": "2608.14905",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 0,
+    "latency_ms": 12247,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 1374
+  },
+  "results": "Auditing yielded 12,712 failure hits across 800 analyses. Three cognitive root-cause pillars—Grounding & Faithfulness (R1, 31.0%), Cognitive Depth & Adaptability (R2, 27.6%), and Scientific Integrity & Alignment (R3, 33.5%)—accounted for 92.1% of all hits; Engineering Robustness (R4) contributed only 7.9%. The single most frequent pattern was uncorrected self-awareness (F.4), appearing in 660 of 800 analyses (82.5%); together with failure to gate critical flaws (F.2, 502 hits) and unremediated adversarial evidence (D.7, 486 hits), these three accounted for 13.0% of all hits. Method-conclusion disconnect (D.4) occurred in 77.5% of analyses and implementation discrepancy (C.3) in 72.1%. Failure profiles differed across combinations mainly in fabrication-related patterns (e.g., hallucinated evidence ranged from 13 to 61 hits; result hallucination from 3 to 36 hits), while the top-10 most frequent patterns overlapped heavily across all eight systems.",
+  "schema_version": "summary-node.v1",
+  "tldr": "Current AutoResearch agents fail systematically because they lack a metacognitive loop—the ability to check outputs against evidence, revise mismatches, and question whether their research path was sound. This single deficit produces 45 empirically-grounded failure patterns spanning all stages of the research lifecycle."
+}

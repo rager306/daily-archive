@@ -1,52 +1,69 @@
-# Quality signal policy — which deterministic signals the
-# quality_signals layer computes per article, with thresholds (DATA).
-# No LLM: every signal derives from already-built layers.
-# Pain coverage: ADR-053 Tier-2 #11 (scope/coverage), Tier-1 #16
-# (reproducibility), audit pain "graph section stubs 364 chars".
 schema_version: quality-signal-policy.v1
 adr_ref: ADR-053, ADR-068
-
 signals:
-  - id: sections_text_completeness
-    description: доля секций с текстом >= min_chars
-    source: parsed.sections[].text
-    params: {min_chars: 200}
-    scale: [ratio, "0..1"]
-    thresholds: {warn_below: 0.85, alarm_below: 0.6}
-
-  - id: median_section_chars
-    description: медианная длина текста секции
-    source: parsed.sections[].text
-    scale: chars
-    thresholds: {warn_below: 300, alarm_below: 150}
-
-  - id: citation_anchor_coverage
-    description: доля цитат с in-text anchors (citation context, pain #4/#17)
-    source: citations_resolved
-    scale: ratio
-    thresholds: {warn_below: 0.7, alarm_below: 0.4}
-
-  - id: zero_mention_extraction
-    description: извлечение не нашло сущностей при достаточном тексте
-    source: extracted.entities + parsed.sections
-    params: {min_sections: 5}
-    scale: flag
-    thresholds: {alarm_at: 1}
-
-  - id: figure_caption_coverage
-    description: доля фигур с caption (pain #13)
-    source: figures
-    scale: ratio
-    thresholds: {warn_below: 0.9, alarm_below: 0.5}
-
-  - id: code_available
-    description: статья ссылается на публичный код (pain #16 reproducibility)
-    source: external_resources[resource_type=code]
-    scale: count
-    thresholds: {}   # descriptive, no verdict
-
-  - id: citation_resolution_rate
-    description: доля цитат resolved (arxiv/doi) из классификации
-    source: citations_resolved.stats
-    scale: ratio
-    thresholds: {warn_below: 0.25, alarm_below: 0.1}
+- id: sections_text_completeness
+  description: доля секций с текстом >= min_chars
+  source: parsed.sections[].text
+  params:
+    min_chars: 200
+  scale:
+  - ratio
+  - 0..1
+  thresholds:
+    warn_below: 0.85
+    alarm_below: 0.6
+- id: median_section_chars
+  description: медианная длина текста секции
+  source: parsed.sections[].text
+  scale: chars
+  thresholds:
+    warn_below: 300
+    alarm_below: 150
+- id: citation_anchor_coverage
+  description: доля цитат с in-text anchors (citation context, pain
+  source: citations_resolved
+  scale: ratio
+  thresholds:
+    warn_below: 0.7
+    alarm_below: 0.4
+- id: zero_mention_extraction
+  description: извлечение не нашло сущностей при достаточном тексте
+  source: extracted.entities + parsed.sections
+  params:
+    min_sections: 5
+  scale: flag
+  thresholds:
+    alarm_at: 1
+- id: figure_caption_coverage
+  description: доля фигур с caption (pain
+  source: figures
+  scale: ratio
+  thresholds:
+    warn_below: 0.9
+    alarm_below: 0.5
+- id: code_available
+  description: статья ссылается на публичный код (pain
+  source: external_resources[resource_type=code]
+  scale: count
+  thresholds: {}
+- id: citation_resolution_rate
+  description: доля цитат resolved (arxiv/doi) из классификации
+  source: citations_resolved.stats
+  scale: ratio
+  thresholds:
+    warn_below: 0.25
+    alarm_below: 0.1
+- id: summary_parsed_grounding
+  description: 'доля утверждений summary, заземлённых в parsed-тексте (R1: отчёт↔артефакты)'
+  source: summaries/abstract.json + parsed body_text
+  scale: ratio
+  thresholds:
+    warn_below: 0.7
+    alarm_below: 0.4
+- id: extracted_equations_consistency
+  description: 'доля extracted-сущностей, упомянутых в equations (R1: cross-layer)'
+  source: extracted + equations
+  scale: ratio
+  thresholds:
+    warn_below: 0.3
+    alarm_below: 0.1
