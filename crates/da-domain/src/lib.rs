@@ -58,6 +58,7 @@ pub mod html_headings;
 pub mod navigation;
 pub mod pdf_toc;
 pub mod structural_elements;
+pub mod summaries_llm;
 pub mod tei_figures;
 pub mod source_import_fsm;
 pub mod scholarly_evidence;

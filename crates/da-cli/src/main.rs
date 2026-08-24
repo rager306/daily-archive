@@ -474,7 +474,8 @@ fn main() {
                 "parse-html" => source_cli::run_parse_html(&paper_id, html.as_deref()),
                 "parse-pdf-toc" => source_cli::run_parse_pdf_toc(&paper_id),
                 "enrich-layer" => source_cli::run_enrich_layer(&paper_id),
-                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei|parse-html|parse-pdf-toc|enrich-layer)")),
+                "build-summary" => source_cli::run_build_summary(&paper_id),
+                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei|parse-html|parse-pdf-toc|enrich-layer|build-summary)")),
             };
             if let Err(e) = r {
                 eprintln!("da source: {e}");

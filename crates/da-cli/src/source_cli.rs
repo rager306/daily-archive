@@ -643,3 +643,112 @@ pub fn run_enrich_layer(paper_id: &str) -> anyhow::Result<()> {
     println!("{paper_id}: enriched — {}", serde_json::to_string(&out.stats)?);
     Ok(())
 }
+
+/// `da source build-summary <paper_id>` — run the summarizer AGENT
+/// (manifest-driven: binding from models.yaml, prompt file, CVF memory)
+/// and persist summaries/abstract.json + lifecycle event.
+pub fn run_build_summary(paper_id: &str) -> anyhow::Result<()> {
+    use da_adapters::agent_memory::CvfAgentMemory;
+    use da_adapters::fs_schema_objects::FsSchemaObjectStore;
+    use da_adapters::model_registry::load_model_registry;
+    use da_adapters::openai_compatible_llm::OpenAiCompatibleLlmClient;
+    use da_application::summaries_agent_stage::run_summaries_agent;
+    use da_domain::agent_manifest::AgentManifest;
+    use da_ports::path_config::PathConfig;
+
+    // agent manifest (DATA) — summarizer for now; agent-id arg later
+    let agent_yaml = std::fs::read_to_string("data/agents/summarizer/manifest.yaml")
+        .map_err(|e| anyhow::anyhow!("agent manifest: {e}"))?;
+    let manifest = AgentManifest::from_yaml_str(&agent_yaml)
+        .map_err(|e| anyhow::anyhow!("agent manifest: {e}"))?;
+    manifest.check_locks().map_err(|e| anyhow::anyhow!("agent locks: {e}"))?;
+
+    let system_prompt = std::fs::read_to_string(&manifest.prompt.system_file)
+        .map_err(|e| anyhow::anyhow!("system prompt {}: {e}", manifest.prompt.system_file))?;
+    let injection_yaml = std::fs::read_to_string("data/ontology/prompt_injection_policy.yaml")?;
+
+    // resolve binding -> model/endpoint (registry DATA)
+    let registry = load_model_registry(std::path::Path::new("models.yaml"))
+        .map_err(|e| anyhow::anyhow!("models.yaml: {e:?}"))?;
+    let binding = registry
+        .resolve(&manifest.model.generate_binding, None)
+        .map_err(|e| anyhow::anyhow!("binding {}: {e}", manifest.model.generate_binding))?;
+    let key = std::env::var("NINE_ROUTER_API_KEY").ok().filter(|k| !k.trim().is_empty());
+    let llm = OpenAiCompatibleLlmClient::new(binding.clone(), key, 240)
+        .map_err(|e| anyhow::anyhow!("llm client: {e}"))?;
+
+    let cfg = PathConfig::load();
+    let store = FsSchemaObjectStore::from_path_config(&cfg, "article")?;
+
+    // CVF memory: per-agent namespace, persist after the run
+    let ns = manifest.memory.namespace.clone().unwrap_or_else(|| manifest.agent_id.clone());
+    let mem_dir = std::path::Path::new("data/agent_memory").join(&ns);
+    let mut memory = CvfAgentMemory::open(mem_dir)
+        .map_err(|e| anyhow::anyhow!("cvf memory: {e}"))?;
+
+    let rt = tokio::runtime::Runtime::new()?;
+    let out = rt.block_on(run_summaries_agent(
+        &store,
+        &mut memory,
+        &llm,
+        &manifest,
+        &binding.model_name,
+        &system_prompt,
+        &injection_yaml,
+        paper_id,
+    ))?;
+    use da_ports::agent_memory::AgentMemory as _;
+    memory.persist().ok();
+
+    if !out.ok {
+        anyhow::bail!("agent produced unparseable output for {paper_id}");
+    }
+    let dir = std::path::Path::new("data/processed").join(paper_id);
+    std::fs::create_dir_all(dir.join("summaries"))?;
+    std::fs::write(dir.join("summaries/abstract.json"), &out.summary_node_json)?;
+
+    // manifest: event summarized (append-only) + artifact
+    let mp = dir.join("manifest.yaml");
+    let mut m: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&mp)?)?;
+    let already = m
+        .get("lifecycle_events")
+        .and_then(|e| e.as_sequence())
+        .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("summarized")))
+        .unwrap_or(false);
+    if !already {
+        if let Some(events) = m.get_mut("lifecycle_events").and_then(|v| v.as_sequence_mut()) {
+            events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
+                (serde_yaml::Value::from("stage"), serde_yaml::Value::from("summarized")),
+                (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(chrono_now())),
+                (serde_yaml::Value::from("actor"), serde_yaml::Value::from(format!("agent:{}", manifest.agent_id))),
+                (serde_yaml::Value::from("evidence_sha256"),
+                 serde_yaml::Value::String(sha256_hex(out.summary_node_json.as_bytes()))),
+            ])));
+        }
+        if let Some(l) = m.get_mut("lifecycle") {
+            *l = serde_yaml::Value::from("summarized");
+        }
+    }
+    if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
+        let mut sm = serde_yaml::Mapping::from_iter([
+            (serde_yaml::Value::from("file"), serde_yaml::Value::from("summaries/abstract.json")),
+            (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
+            (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha256_hex(out.summary_node_json.as_bytes()))),
+            (serde_yaml::Value::from("actor"), serde_yaml::Value::from(format!("agent:{}", manifest.agent_id))),
+        ]);
+        sm.insert("stats".into(), serde_yaml::Mapping::from_iter([
+            (serde_yaml::Value::from("prompt_sha256"), serde_yaml::Value::String(out.prompt_sha256.clone())),
+            (serde_yaml::Value::from("injection_scrubbed"), serde_yaml::Value::from(out.scrubbed as u64)),
+            (serde_yaml::Value::from("latency_ms"), serde_yaml::Value::from(out.latency_ms)),
+            (serde_yaml::Value::from("memory_epoch"), serde_yaml::Value::from(out.epoch.unwrap_or(0))),
+        ]).into());
+        arts.insert("summaries".into(), sm.into());
+    }
+    std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
+
+    println!(
+        "{paper_id}: summarized by agent {} — epoch={:?} latency={}ms scrubbed={}",
+        manifest.agent_id, out.epoch, out.latency_ms, out.scrubbed
+    );
+    Ok(())
+}

@@ -1,0 +1,22 @@
+{
+  "contributions": [
+    "Analysis of fundamental limitations in pubsub systems across decoupling, end-to-end correctness, and scalability",
+    "Proposal of an explicit storage + watch API abstraction as an alternative to bundled pubsub",
+    "Demonstration that the watch model addresses replication, cache invalidation, event ingestion, and work queueing use cases with improved correctness and scalability"
+  ],
+  "limitations": "The proposed model assumes the source of truth has monotonic transaction versions (e.g., TrueTime, TSO, gtid), though the paper notes more sophisticated schemes exist. The Snappy external watch subsystem is not yet published. Pubsub systems that retain messages indefinitely still suffer from limited APIs that prevent efficient state querying by applications.",
+  "methods": "The paper analyzes four major pubsub use cases: event ingestion/fanout, replication across stores, cache invalidation/freshness, and work queueing/balancing. It examines how pubsub's bundled durable message log fails in each case—through garbage collection–induced data loss, inability to support dynamically sharded consumers, and lack of end-to-end guarantees relative to authoritative sources. It then proposes an alternative model that unbundles storage and notification: producers write to an explicit store (producer or ingestion storage) and consumers use a watch API with onEvent, onProgress, and onResync callbacks to receive changes organized by key and transaction version.",
+  "paper_id": "10.1145-3713082.3730397",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 0,
+    "latency_ms": 920,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 566
+  },
+  "results": "The watch model enables snapshot-consistent queries for caches and replicas even with dynamic sharding, using knowledge regions defined by key ranges and version windows. Progress events allow watchers to track complete knowledge regions. Resync events let lagging consumers recover when known versions are no longer retained, eliminating silent data loss from garbage collection. The model supports both built-in watch systems (e.g., Spanner Change Data Streams, Kubernetes/etcd) and external watch layers (e.g., Snappy on MySQL/TiDB). Unlike pubsub, the watch approach respects the end-to-end argument by giving consumers guarantees relative to the store rather than an intermediate pubsub layer.",
+  "schema_version": "summary-node.v1",
+  "tldr": "Pubsub systems bundle messaging with hard-state storage, violating the end-to-end principle and undermining correctness, scalability, and decoupling. The paper proposes unbundling pubsub into an explicit storage layer and a watch notification system."
+}
