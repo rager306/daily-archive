@@ -18,6 +18,7 @@ pub mod catalog;
 pub mod cluster;
 pub mod context_conservation;
 pub mod xy_cut;
+pub mod cv_structure;
 pub mod corpus_checkpoint;
 pub mod domain;
 pub mod edge_contract;
