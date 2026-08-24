@@ -69,6 +69,7 @@ pub fn build_navigation_stage(
     .map_err(|e| NavigationStageError::NoProjection(format!("{paper_id}: sections: {e}")))?;
 
     let nodes = build_navigation(&sections, &detectors, &type_detectors, cross_layer);
+    
     let cost = tree_cost(&nodes, routing);
     let st = stats(&nodes, cost);
 

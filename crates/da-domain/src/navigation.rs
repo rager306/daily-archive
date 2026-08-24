@@ -181,6 +181,8 @@ pub struct CrossLayerInputs {
     pub tables_by_path: BTreeMap<String, Vec<String>>,
     pub equations_by_path: BTreeMap<String, Vec<String>>,
     pub citation_anchors_by_path: BTreeMap<String, u64>,
+    /// Section texts keyed by ordinal — for text_preview
+    pub section_texts: BTreeMap<usize, String>,
 }
 
 /// parent_path grammar: '1.2.3'->'1.2'; '1'->None; '1.'->None (header node).
@@ -235,10 +237,8 @@ pub fn build_navigation(
             let cite_count = cross_layer.citation_anchors_by_path.get(&s.path_id).copied().unwrap_or(0);
             let density = if s.char_count > 0 { cite_count as f64 / s.char_count as f64 } else { 0.0 };
             let preview: String = {
-                // text_preview from section text if available, else empty
-                // (text comes from ProjectionSection.text field added in v14)
-                let _ = &s;
-                String::new()  // filled by caller via post-processing
+                let full = cross_layer.section_texts.get(&ordinal).map(String::as_str).unwrap_or("");
+                full.chars().take(200).collect()
             };
 
             NavNode {

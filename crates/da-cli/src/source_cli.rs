@@ -181,6 +181,18 @@ pub fn run_build_navigation(paper_id: &str) -> anyhow::Result<()> {
             }
         }
     }
+    // Section texts for text_preview (from parsed/article.json)
+    if let Ok(raw) = std::fs::read_to_string(dir.join("parsed/article.json")) {
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&raw) {
+            if let Some(secs) = parsed.get("sections").and_then(|s| s.as_array()) {
+                for (i, s) in secs.iter().enumerate() {
+                    let text = s.get("text").and_then(|t| t.as_str()).unwrap_or("").to_string();
+                    cross_layer.section_texts.insert(i, text);
+                }
+            }
+        }
+    }
+
     let figures_file = dir.join("figures/index.json");
     if let Ok(figs_raw) = std::fs::read_to_string(&figures_file) {
         if let Ok(figs) = serde_json::from_str::<serde_json::Value>(&figs_raw) {
