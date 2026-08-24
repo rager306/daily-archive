@@ -51,6 +51,44 @@ pub struct PdfTocSection {
 /// page_end = next entry page - 1 (last: total_pages); text = joined
 /// page texts of the range (injected); parent = nearest smaller level
 /// above (stack); section_id = <object>:tocN.
+/// Byte offset of a section heading inside page text, whitespace-normalized
+/// (headings span lines: "3.5" + "Sum-Product Variable Elimination"). A
+/// preceding pure-number line ("3.5", "7.4.1") is swallowed into the anchor.
+/// Returns None when the heading is absent (page kept whole — fail-open).
+fn find_heading_anchor(page_text: &str, title: &str) -> Option<usize> {
+    let norm = |s: &str| s.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
+    let title_n = norm(title);
+    let title_words = title_n.split_whitespace().count();
+    if title_words == 0 {
+        return None;
+    }
+    let lines: Vec<&str> = page_text.lines().collect();
+    // окна от 1 строки (заголовок целиком на одной) до title_words+1
+    // (разбит переносами после дегифенизации)
+    for w in 1..=(title_words + 1).min(lines.len()) {
+        for start in 0..lines.len().saturating_sub(w - 1) {
+            let joined = lines[start..start + w].join(" ");
+            if norm(&joined) == title_n {
+                // проглотить строку-номер перед заголовком ("3.5")
+                let mut s = start;
+                if s > 0 {
+                    let prev = lines[s - 1].trim();
+                    let numeric = !prev.is_empty()
+                        && prev
+                            .chars()
+                            .all(|c| c.is_ascii_digit() || c == '.');
+                    if numeric {
+                        s -= 1;
+                    }
+                }
+                let offset: usize = lines[..s].iter().map(|l| l.len() + 1).sum();
+                return Some(offset.min(page_text.len()));
+            }
+        }
+    }
+    None
+}
+
 pub fn build_pdf_toc_sections(
     toc: &[TocEntry],
     pages_text: &BTreeMap<u32, String>,
@@ -70,10 +108,33 @@ pub fn build_pdf_toc_sections(
         let mut text = String::new();
         for p in e.page..=page_end {
             if let Some(t) = pages_text.get(&p) {
+                // anchor-splitting: секция начинается СВОИМ заголовком на
+                // первой странице — хвост предыдущей секции, фигуры и код
+                // до заголовка не входят (algorithms-for-decision-making:
+                // Value Iteration начиналась осями графика + хвостом policy
+                // iteration; Policy Iteration — Julia-кодом прошлой секции)
+                let page_slice: &str = if p == e.page {
+                    match find_heading_anchor(t, &e.title) {
+                        Some(off) => &t[off..],
+                        None => t.as_str(),
+                    }
+                } else {
+                    t.as_str()
+                };
+                // последняя страница: обрезать на заголовке следующей секции
+                // (её текст заберёт свой first-page anchor)
+                let page_slice: String = if p == page_end && p >= next_page {
+                    match toc.get(i + 1).and_then(|n| find_heading_anchor(t, &n.title)) {
+                        Some(off) => page_slice[..off.min(page_slice.len())].to_string(),
+                        None => page_slice.to_string(),
+                    }
+                } else {
+                    page_slice.to_string()
+                };
                 if !text.is_empty() {
                     text.push('\n');
                 }
-                text.push_str(t);
+                text.push_str(&page_slice);
             }
         }
         out.push(PdfTocSection {
@@ -105,6 +166,38 @@ mod tests {
 
     fn pages(from: u32, to: u32) -> BTreeMap<u32, String> {
         (from..=to).map(|p| (p, format!("page-{p} body text"))).collect()
+    }
+
+    #[test]
+    fn anchor_splitting_removes_previous_section_tail() {
+        // algorithms-for-decision-making регрессия: Value Iteration начиналась
+        // хвостом policy iteration + осями фигуры; Policy Iteration — Julia-кодом
+        let pages = BTreeMap::from([(
+            5u32,
+            "iteration 1\niteration 2\nPolicy iteration tends to be expensive\n\n7.4\nPolicy Iteration\nPolicy iteration (algorithm 7.6) is one way to iterate.\nBody of policy iteration.".to_string(),
+        )]);
+        let toc = vec![
+            TocEntry { level: 2, title: "Modified Policy Iteration".into(), page: 4 },
+            TocEntry { level: 2, title: "Policy Iteration".into(), page: 5 },
+            TocEntry { level: 2, title: "Value Iteration".into(), page: 9 },
+        ];
+        let f = TocFurniture::from_patterns(&[]);
+        let sections = build_pdf_toc_sections(&toc, &pages, 10, "bk", &f);
+        let pi = sections.iter().find(|s| s.title == "Policy Iteration").unwrap();
+        assert!(
+            !pi.text.contains("tends to be expensive"),
+            "хвост предыдущей секции не должен входить: {}",
+            &pi.text[..80.min(pi.text.len())]
+        );
+        assert!(
+            !pi.text.contains("iteration 1"),
+            "оси фигуры не должны входить"
+        );
+        assert!(
+            pi.text.contains("algorithm 7.6"),
+            "тело секции должно сохраниться"
+        );
+        // хвост ДОСТУПЕН предыдущей секции (её last page обрезается на якоре)
     }
 
     #[test]
