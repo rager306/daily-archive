@@ -68,6 +68,8 @@ pub struct ProjectionSection {
     pub title: String,
     #[serde(default)]
     pub char_count: u64,
+    #[serde(default)]
+    pub text: String,
 }
 
 /// One furniture detector from the DATA registry.
@@ -171,6 +173,16 @@ impl StructuralTypeDetectors {
     }
 }
 
+/// Cross-layer observations injected by the caller (CLI reads the files).
+#[derive(Debug, Clone, Default)]
+pub struct CrossLayerInputs {
+    pub entities_by_ordinal: BTreeMap<usize, Vec<String>>,
+    pub figures_by_path: BTreeMap<String, Vec<String>>,
+    pub tables_by_path: BTreeMap<String, Vec<String>>,
+    pub equations_by_path: BTreeMap<String, Vec<String>>,
+    pub citation_anchors_by_path: BTreeMap<String, u64>,
+}
+
 /// parent_path grammar: '1.2.3'->'1.2'; '1'->None; '1.'->None (header node).
 pub fn parent_path(path_id: &str) -> Option<&str> {
     let p = path_id.trim();
@@ -196,7 +208,8 @@ pub fn grammar_depth(path_id: &str) -> usize {
 pub fn build_navigation(
     sections: &[ProjectionSection],
     detectors: &FurnitureDetectors,
-    type_detector: &StructuralTypeDetectors,
+    type_detectors: &StructuralTypeDetectors,
+    cross_layer: &CrossLayerInputs,
 ) -> Vec<NavNode> {
     let mut sorted: Vec<&ProjectionSection> = sections.iter().collect();
     sorted.sort_by_key(|s| s.order);
@@ -208,10 +221,26 @@ pub fn build_navigation(
 
     let mut nodes: Vec<NavNode> = sorted
         .iter()
-        .map(|s| {
+        .enumerate()
+        .map(|(i, s)| {
             let (role, conf) = detectors.classify(&s.title, &s.path_id);
             let parent = parent_path(&s.path_id)
                 .and_then(|pp| by_path.get(pp).copied());
+            let ordinal = i;
+            let entity_labels = cross_layer.entities_by_ordinal.get(&ordinal).cloned().unwrap_or_default();
+            let entity_labels_len = entity_labels.len();
+            let fig_refs = cross_layer.figures_by_path.get(&s.path_id).cloned().unwrap_or_default();
+            let tab_refs = cross_layer.tables_by_path.get(&s.path_id).cloned().unwrap_or_default();
+            let eq_refs = cross_layer.equations_by_path.get(&s.path_id).cloned().unwrap_or_default();
+            let cite_count = cross_layer.citation_anchors_by_path.get(&s.path_id).copied().unwrap_or(0);
+            let density = if s.char_count > 0 { cite_count as f64 / s.char_count as f64 } else { 0.0 };
+            let preview: String = {
+                // text_preview from section text if available, else empty
+                // (text comes from ProjectionSection.text field added in v14)
+                let _ = &s;
+                String::new()  // filled by caller via post-processing
+            };
+
             NavNode {
                 section_id: s.section_id.clone(),
                 path_id: s.path_id.clone(),
@@ -224,15 +253,15 @@ pub fn build_navigation(
                 char_count: s.char_count,
                 role: role.clone(),
                 role_confidence: conf.clone(),
-                text_preview: String::new(),
-                structural_type: type_detector.classify(&s.title).to_string(),
-                entity_labels: Vec::new(),
-                entity_count: 0,
-                figure_refs: Vec::new(),
-                table_refs: Vec::new(),
-                equation_refs: Vec::new(),
-                citation_anchor_count: None,
-                citation_density: None,
+                text_preview: preview,
+                structural_type: type_detectors.classify(&s.title).to_string(),
+                entity_labels,
+                entity_count: entity_labels_len,
+                figure_refs: fig_refs,
+                table_refs: tab_refs,
+                equation_refs: eq_refs,
+                citation_anchor_count: Some(cite_count),
+                citation_density: Some((density * 10000.0).round() / 10000.0),
             }
         })
         .collect();
@@ -373,6 +402,7 @@ mod tests {
             level: 1,
             title: title.into(),
             char_count: chars,
+            text: String::new(),
         }
     }
 
@@ -409,7 +439,9 @@ mod tests {
             sec("c", "2", 2, "Results", 300),
         ];
         let empty_types = StructuralTypeDetectors { compiled: vec![] };
-        let nav = build_navigation(&secs, &d, &empty_types);
+        let empty_cross = CrossLayerInputs::default();
+        let empty_cross = CrossLayerInputs::default();
+        let nav = build_navigation(&secs, &d, &empty_types, &empty_cross);
         assert_eq!(nav.len(), 3);
         let by: BTreeMap<&str, &NavNode> = nav.iter().map(|n| (n.section_id.as_str(), n)).collect();
         assert_eq!(by["b"].parent_section_id.as_deref(), Some("a"));
@@ -430,7 +462,8 @@ mod tests {
             sec("c2", "1.2", 2, "B", 400),
         ];
         let empty_types = StructuralTypeDetectors { compiled: vec![] };
-        let nav = build_navigation(&secs, &d, &empty_types);
+        let empty_cross = CrossLayerInputs::default();
+        let nav = build_navigation(&secs, &d, &empty_types, &empty_cross);
         let c = tree_cost(&nav, 250);
         // branches: residual (1*250+200)=450 vs children (2*250+400)=900
         assert_eq!(c, 900);
@@ -445,7 +478,8 @@ mod tests {
             sec("c", "2", 2, "Results", 300),
         ];
         let empty_types = StructuralTypeDetectors { compiled: vec![] };
-        let nav = build_navigation(&secs, &d, &empty_types);
+        let empty_cross = CrossLayerInputs::default();
+        let nav = build_navigation(&secs, &d, &empty_types, &empty_cross);
         let st = stats(&nav, 500);
         assert_eq!(st.nodes, 3);
         assert_eq!(st.furniture, 1);
