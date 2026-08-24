@@ -138,153 +138,99 @@ pub fn run_build_navigation(paper_id: &str) -> anyhow::Result<()> {
     use da_adapters::fs_schema_objects::FsSchemaObjectStore;
     use da_application::navigation_stage::build_navigation_stage;
     use da_ports::path_config::PathConfig;
-use da_domain::source_import_fsm::ImportFsmState;
 
     let detectors_yaml = std::fs::read_to_string("data/ontology/furniture_detectors.yaml")
-        .map_err(|e| anyhow::anyhow!("furniture_detectors.yaml: {e}"))?;
+        .map_err(|e| anyhow::anyhow!("furniture_detectors: {e}"))?;
+    let type_detectors_yaml = std::fs::read_to_string("data/ontology/structural_type_detectors.yaml")
+        .map_err(|e| anyhow::anyhow!("structural_type_detectors: {e}"))?;
     let policy_yaml = std::fs::read_to_string("data/ontology/navigation_quality_policy.yaml")
-        .map_err(|e| anyhow::anyhow!("navigation_quality_policy.yaml: {e}"))?;
+        .map_err(|e| anyhow::anyhow!("navigation_quality_policy: {e}"))?;
 
     let cfg = PathConfig::load();
     let store = FsSchemaObjectStore::from_path_config(&cfg, "article")?;
     let dir = std::path::Path::new("data/processed").join(paper_id);
-    let type_detectors_yaml = std::fs::read_to_string("data/ontology/structural_type_detectors.yaml")
-        .map_err(|e| anyhow::anyhow!("structural_type_detectors.yaml: {e}"))?;
-    // CrossLayerInputs: aggregate from existing layer files
     let mut cross_layer = da_domain::navigation::CrossLayerInputs::default();
-    if let Ok(raw) = std::fs::read_to_string(dir.join("extracted/entities.json"))
-        && let Ok(ents) = serde_json::from_str::<serde_json::Value>(&raw)
-        && let Some(arr) = ents.as_array()
+
+    if let Ok(raw) = std::fs::read_to_string(dir.join("parsed/article.json"))
+        && let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&raw)
+        && let Some(secs) = parsed.get("sections").and_then(|s| s.as_array())
     {
-        for (ordinal, e) in arr.iter().enumerate() {
-            let label = e.get("label").and_then(|l| l.as_str()).unwrap_or("").to_string();
-            cross_layer.entities_by_ordinal.entry(ordinal).or_default().push(label);
+        for (i, s) in secs.iter().enumerate() {
+            let text = s.get("text").and_then(|t| t.as_str()).unwrap_or("").to_string();
+            cross_layer.section_texts.insert(i, text);
         }
-    }
-    if let Ok(raw) = std::fs::read_to_string(dir.join("parsed/article.json")) {
-        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&raw) {
-            for t in parsed.get("tables").and_then(|t| t.as_array()).map(|a| a.as_slice()).unwrap_or(&[]) {
-                let path_id = t.get("section_path_id").and_then(|p| p.as_str()).unwrap_or("").to_string();
-                let id = t.get("table_id").and_then(|i| i.as_str()).unwrap_or("").to_string();
-                cross_layer.tables_by_path.entry(path_id).or_default().push(id);
-            }
-            for f in parsed.get("formulas").and_then(|f| f.as_array()).map(|a| a.as_slice()).unwrap_or(&[]) {
-                let path_id = f.get("section_path_id").and_then(|p| p.as_str()).unwrap_or("").to_string();
-                let id = f.get("formula_id").and_then(|i| i.as_str()).unwrap_or("").to_string();
-                cross_layer.equations_by_path.entry(path_id).or_default().push(id);
-            }
-            for c in parsed.get("citations").and_then(|c| c.as_array()).map(|a| a.as_slice()).unwrap_or(&[]) {
-                for a in c.get("anchors").and_then(|a| a.as_array()).map(|a| a.as_slice()).unwrap_or(&[]) {
-                    let path_id = a.get("section_path_id").and_then(|p| p.as_str()).unwrap_or("").to_string();
-                    *cross_layer.citation_anchors_by_path.entry(path_id).or_insert(0) += 1;
-                }
-            }
+        for t in parsed.get("tables").and_then(|t| t.as_array()).into_iter().flatten() {
+            let pid = t.get("section_path_id").and_then(|x| x.as_str()).unwrap_or("").to_string();
+            let id = t.get("table_id").and_then(|x| x.as_str()).unwrap_or("").to_string();
+            cross_layer.tables_by_path.entry(pid).or_default().push(id);
         }
-    }
-    // Section texts for text_preview (from parsed/article.json)
-    if let Ok(raw) = std::fs::read_to_string(dir.join("parsed/article.json")) {
-        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&raw) {
-            if let Some(secs) = parsed.get("sections").and_then(|s| s.as_array()) {
-                for (i, s) in secs.iter().enumerate() {
-                    let text = s.get("text").and_then(|t| t.as_str()).unwrap_or("").to_string();
-                    cross_layer.section_texts.insert(i, text);
-                }
+        for f in parsed.get("formulas").and_then(|f| f.as_array()).into_iter().flatten() {
+            let pid = f.get("section_path_id").and_then(|x| x.as_str()).unwrap_or("").to_string();
+            let id = f.get("formula_id").and_then(|x| x.as_str()).unwrap_or("").to_string();
+            cross_layer.equations_by_path.entry(pid).or_default().push(id);
+        }
+        for c in parsed.get("citations").and_then(|c| c.as_array()).into_iter().flatten() {
+            for anc in c.get("anchors").and_then(|a| a.as_array()).into_iter().flatten() {
+                let spid = anc.get("section_path_id").and_then(|x| x.as_str()).unwrap_or("").to_string();
+                *cross_layer.citation_anchors_by_path.entry(spid).or_insert(0) += 1;
             }
         }
     }
 
-    let figures_file = dir.join("figures/index.json");
-    if let Ok(figs_raw) = std::fs::read_to_string(&figures_file) {
-        if let Ok(figs) = serde_json::from_str::<serde_json::Value>(&figs_raw) {
-            for f in figs.as_array().map(|a| a.as_slice()).unwrap_or(&[]) {
-                let page = f.get("page").and_then(|p| p.as_u64()).unwrap_or(0);
-                let fig_id = f.get("figure_id").and_then(|i| i.as_str()).unwrap_or("").to_string();
-                cross_layer.figures_by_path.entry(format!("{page}")).or_default().push(fig_id);
-            }
+    if let Ok(figs_raw) = std::fs::read_to_string(dir.join("figures/index.json"))
+        && let Ok(figs) = serde_json::from_str::<serde_json::Value>(&figs_raw)
+    {
+        for f in figs.as_array().map(|a| a.as_slice()).unwrap_or(&[]) {
+            let page = f.get("page").and_then(|x| x.as_u64()).unwrap_or(0).to_string();
+            let fid = f.get("figure_id").and_then(|x| x.as_str()).unwrap_or("").to_string();
+            cross_layer.figures_by_path.entry(page).or_default().push(fid);
         }
     }
 
-    let out = build_navigation_stage(&store, paper_id, &detectors_yaml, &type_detectors_yaml, &policy_yaml, &cross_layer)?;
-
-    let dir = std::path::Path::new("data/processed").join(paper_id);
-    // 1. navigation.json
+    let out = build_navigation_stage(
+        &store, paper_id, &detectors_yaml, &type_detectors_yaml,
+        &policy_yaml, &cross_layer,
+    )?;
     std::fs::write(dir.join("context/navigation.json"), &out.navigation_json)?;
 
-    // 2. manifest: append event (if structured not reached) + artifact stats
+    // Manifest patch
     let mp = dir.join("manifest.yaml");
-    let mut m: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&mp)?)?;
-    let reached_structured = m
+    let mut m: serde_yaml::Value =
+        serde_yaml::from_str(&std::fs::read_to_string(&mp).map_err(|e| anyhow::anyhow!("{}: {e}", mp.display()))?)?;
+    let reached = m
         .get("lifecycle_events")
         .and_then(|e| e.as_sequence())
-        .map(|seq| seq.iter().any(|e| e.get("stage").and_then(|s| s.as_str()) == Some("structured")))
+        .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("structured")))
         .unwrap_or(false);
-    if !reached_structured {
+    if !reached {
         if let Some(events) = m.get_mut("lifecycle_events").and_then(|v| v.as_sequence_mut()) {
-            let mut ev = serde_yaml::Mapping::new();
-            ev.insert("stage".into(), "structured".into());
-            ev.insert(
-                "recorded_at".into(),
-                chrono_now().into(),
-            );
-            ev.insert("actor".into(), "rust-navigation-stage".into());
-            ev.insert(
-                "evidence_sha256".into(),
-                sha256_hex(out.navigation_json.as_bytes()).into(),
-            );
-            events.push(serde_yaml::Value::Mapping(ev));
+            events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
+                (serde_yaml::Value::from("stage"), serde_yaml::Value::from("structured")),
+                (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(chrono_now())),
+                (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-navigation-stage")),
+            ])));
         }
         if let Some(l) = m.get_mut("lifecycle") {
             *l = serde_yaml::Value::from("structured");
         }
     }
-    // context artifact entry (create or refresh)
-    let stats_yaml = serde_yaml::to_value(&out.stats)?;
-    let nav_entry = serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("file"), serde_yaml::Value::from("context/navigation.json")),
-        (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha256_hex(out.navigation_json.as_bytes()))),
-        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-navigation-stage")),
-        (serde_yaml::Value::from("stats"), stats_yaml),
-    ]);
-    if m.get("artifacts").and_then(|a| a.get("context")).is_none() {
-        let ctx = serde_yaml::Mapping::from_iter([
-            (serde_yaml::Value::from("file"), serde_yaml::Value::from("context/projection.json")),
-            (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
-            (serde_yaml::Value::from("navigation"), serde_yaml::Value::Mapping(nav_entry)),
+
+    if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
+        let nav_entry = serde_yaml::Mapping::from_iter([
+            (serde_yaml::Value::from("file"), serde_yaml::Value::from("context/navigation.json")),
+            ("actor".into(), serde_yaml::Value::from("rust-navigation-stage")),
+            ("stats".into(), serde_yaml::to_value(&out.stats).unwrap_or_default()),
         ]);
-        if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
-            arts.insert("context".into(), serde_yaml::Value::Mapping(ctx));
+        if let Some(ctx) = arts.get_mut("context").and_then(|c| c.as_mapping_mut()) {
+            ctx.insert(serde_yaml::Value::from("navigation"), serde_yaml::Value::Mapping(nav_entry));
+        } else {
+            arts.insert(serde_yaml::Value::from("context"), serde_yaml::Value::Mapping(
+                serde_yaml::Mapping::from_iter([
+                    ("navigation".into(), serde_yaml::Value::Mapping(nav_entry)),
+                ])));
         }
-    } else if let Some(nav) = m
-        .get_mut("artifacts")
-        .and_then(|a| a.get_mut("context"))
-        .and_then(|c| c.as_mapping_mut())
-    {
-        nav.insert("navigation".into(), serde_yaml::Value::Mapping(nav_entry));
     }
     std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
-
-    // 3. quality_signals merge (navigation_efficiency + furniture_share)
-    let qs_path = dir.join("quality_signals.json");
-    let mut qs: Vec<serde_json::Value> = std::fs::read_to_string(&qs_path)
-        .ok()
-        .and_then(|t| serde_json::from_str(&t).ok())
-        .unwrap_or_default();
-    qs.retain(|s| {
-        s.get("signal_id").and_then(|v| v.as_str())
-            != Some("navigation_efficiency")
-            && s.get("signal_id").and_then(|v| v.as_str()) != Some("furniture_share")
-    });
-    qs.push(serde_json::json!({
-        "signal_id": "navigation_efficiency", "value": out.stats.tree_cost,
-        "scale": "chars", "verdict": out.tree_cost_verdict
-    }));
-    qs.push(serde_json::json!({
-        "signal_id": "furniture_share",
-        "value": (out.stats.furniture_share * 1000.0).round() / 1000.0,
-        "scale": "ratio", "verdict": out.furniture_share_verdict
-    }));
-    std::fs::write(&qs_path, serde_json::to_string_pretty(&qs)?)?;
-
     println!(
         "{paper_id}: navigation built — nodes={}, furniture={}, tree_cost={} ({}) share={} ({})",
         out.stats.nodes, out.stats.furniture, out.stats.tree_cost,
@@ -882,7 +828,7 @@ pub fn run_eval_frozen() -> anyhow::Result<()> {
         .map_err(|e| anyhow::anyhow!("summary_eval_policy: {e}"))?;
     let pol: serde_yaml::Value = serde_yaml::from_str(&policy)?;
     let mut models: Vec<String> = Vec::new();
-    for m in pol.get("models").and_then(|m| m.as_sequence()).map(|s| s.as_slice()).unwrap_or(&[]) {
+    for m in pol.get("models").and_then(|m| m.as_sequence()).into_iter().flatten() {
         match m {
             serde_yaml::Value::String(s) => models.push(s.clone()),
             serde_yaml::Value::Mapping(mm) => {
@@ -1148,7 +1094,7 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
 /// first failure with an honest report. The operator gives one command;
 /// the pipeline drives itself.
 pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
-    use da_domain::source_import_fsm::{ImportFsmState, Toolchain};
+// removed dup import
 
     // load toolchain + FSM state
     let tc_text = std::fs::read_to_string("data/ontology/source_import_tools.yaml")
@@ -1283,7 +1229,7 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
                     let line = stdout
                         .lines()
                         .filter(|l| !l.contains("Logging") && !l.trim().is_empty())
-                        .last()
+                        .next_back()
                         .unwrap_or("ok");
                     println!("   ✓ {action}: {line}");
                     completed += 1;
@@ -1297,7 +1243,7 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
                     let err = stderr
                         .lines()
                         .filter(|l| !l.contains("Logging") && !l.contains("INFO"))
-                        .last()
+                        .next_back()
                         .unwrap_or("unknown");
                     println!("   ✗ {action}: {err}");
                     stage_ok = false;
