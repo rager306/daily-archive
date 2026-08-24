@@ -44,6 +44,10 @@ pub trait SchemaObjectStore: Send + Sync {
     /// Does a file (relative to the object directory) exist?
     fn file_exists(&self, id: &str, rel_path: &str) -> Result<bool, SchemaObjectStoreError>;
 
+    /// Raw file content (text) — for stages that consume layer files
+    /// verbatim (projection, structural elements, …).
+    fn read_raw(&self, id: &str, rel_path: &str) -> Result<Option<String>, SchemaObjectStoreError>;
+
     /// Bridge to the engine's file-backed pattern context. Adapters
     /// return their disk-backed implementation; the use case passes it
     /// to `validate_file_backed` (keeps the engine pure and the onion

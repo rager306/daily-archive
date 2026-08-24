@@ -65,6 +65,7 @@ pub use batch_ingest::{
     BatchIngestResult, BatchPdfTriageSummary, batch_ingest_pdfs, batch_ingest_pdfs_with_context,
 };
 pub mod entity_resolution;
+pub mod navigation_stage;
 pub mod validate_schema_objects;
 pub mod extraction;
 pub mod extractive_summary;

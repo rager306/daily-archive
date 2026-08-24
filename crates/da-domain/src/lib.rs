@@ -51,6 +51,7 @@ pub mod revision_schema;
 pub mod scheduler;
 pub mod schema;
 pub mod schema_invariants;
+pub mod navigation;
 pub mod source_import_fsm;
 pub mod scholarly_evidence;
 pub mod section_summary_policy;

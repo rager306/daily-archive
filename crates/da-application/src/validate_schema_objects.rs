@@ -116,6 +116,9 @@ mod tests {
         fn file_exists(&self, _id: &str, _rel: &str) -> Result<bool, SchemaObjectStoreError> {
             Ok(true)
         }
+        fn read_raw(&self, _id: &str, _rel: &str) -> Result<Option<String>, SchemaObjectStoreError> {
+            Ok(None)
+        }
         fn file_backed_checks(&self) -> Box<dyn FileBackedChecks + '_> {
             Box::new(NoopChecks)
         }

@@ -1,54 +1,103 @@
-# Source import toolchain — FSM stage -> tool mapping (DATA).
-# The Rust orchestrator (da source import) reads this registry: which
-# tool executes a transition, its implementation status, and the cache
-# fingerprint recipe. Adding a stage/tool = a YAML entry, not new FSM code.
 schema_version: source-import-tools.v1
 adr_ref: ADR-068, doc/research/document-model-pageindex-synthesis-2026-08-23.md
-
 stages:
-  - stage: raw
-    title: "источник получен и идентифицирован (registered identity)"
-    tools:
-      - {id: arxiv_catalog, impl: rust, cli: "da acquire-arxiv", note: "каталог-hit/script-ensure"}
-      - {id: doi_mirror_fetch, impl: reference, cli: "scripts/m451_doi_import.py", note: "W-D rehearsal; Rust SourceAcquisitionPort — будущая W-D1"}
-      - {id: textbook_placement, impl: reference, cli: "scripts/m451_textbook_import.py|monograph", note: "identity+manifest по паттерну M450"}
-  - stage: parsed
-    title: "полный текст + структура по грамматике"
-    tools:
-      - {id: grobid_structural, impl: rust, cli: "da ingest/batch-ingest", note: "D204 structural профиль; TEI"}
-      - {id: html_headings_parser, impl: reference, cli: "scripts/m451_textbook_import.py", note: "h1-h6 дерево"}
-      - {id: pdf_toc_parser, impl: reference, cli: "scripts/m451_monograph_import.py", note: "embedded TOC, page-range якоря"}
-  - stage: structured
-    title: "навигация + роли + структурные элементы + фигуры"
-    tools:
-      - {id: navigation_build, impl: reference, cli: "scripts/m451_navigation_build.py", note: "path_id грамматики, furniture, tree_cost"}
-      - {id: structural_elements, impl: reference, cli: "scripts/m451_monograph_import.py", note: "theorem/definition детекторы DATA"}
-      - {id: figures_geometry, impl: reference, cli: "scripts/m451_monograph_import.py", note: "caption<->image матчинг; pdffigures2 (rust) — ADR-060 кандидат"}
-      - {id: figures_tei, impl: reference, cli: "scripts/m451_reference_layers.py", note: "TEI figure-элементы статей"}
-  - stage: extracted
-    title: "сущности по DATA-словарям"
-    optional_for: [chapter, monograph]
-    tools:
-      - {id: rule_based_extractor, impl: rust, cli: "da extract", note: "живые словари M446 (rules_sha256)"}
-  - stage: enriched
-    title: "внешние якоря (OpenAlex A-ID/ORCID)"
-    tools:
-      - {id: openalex_work, impl: rust, cli: "da enrich/batch-enrich", note: "порт есть; article-слой якорь — reference"}
-      - {id: article_enriched_layer, impl: reference, cli: "scripts/m451_enrich_openalex.py", note: "позиционная привязка авторов, кэш+provenance"}
-  - stage: summarized
-    title: "выжимки (модель из models.yaml binding)"
-    lazy: true
-    tools:
-      - {id: summaries_build, impl: reference, cli: "scripts/m451_summaries_build.py", note: "agnes-2.5, injection-scrub, lineage"}
-      - {id: per_section_lazy, impl: reference, cli: "scripts/m451_background_runner.py", note: "фоновые задачи по реестру"}
-  - stage: validated
-    title: "инварианты по норме (generic engine)"
-    tools:
-      - {id: schema_validator, impl: rust, cli: "da validate-objects", note: "generic движок паттернов, file-backed"}
-
+- stage: raw
+  title: источник получен и идентифицирован (registered identity)
+  tools:
+  - id: arxiv_catalog
+    impl: rust
+    cli: da acquire-arxiv
+    note: каталог-hit/script-ensure
+  - id: doi_mirror_fetch
+    impl: reference
+    cli: scripts/m451_doi_import.py
+    note: W-D rehearsal; Rust SourceAcquisitionPort — будущая W-D1
+  - id: textbook_placement
+    impl: reference
+    cli: scripts/m451_textbook_import.py|monograph
+    note: identity+manifest по паттерну M450
+- stage: parsed
+  title: полный текст + структура по грамматике
+  tools:
+  - id: grobid_structural
+    impl: rust
+    cli: da ingest/batch-ingest
+    note: D204 structural профиль; TEI
+  - id: html_headings_parser
+    impl: reference
+    cli: scripts/m451_textbook_import.py
+    note: h1-h6 дерево
+  - id: pdf_toc_parser
+    impl: reference
+    cli: scripts/m451_monograph_import.py
+    note: embedded TOC, page-range якоря
+- stage: structured
+  title: навигация + роли + структурные элементы + фигуры
+  tools:
+  - id: navigation_build
+    impl: rust
+    cli: da source build-navigation
+    note: 'фаза-2 порт: грамматика path_id, furniture-детекторы DATA, tree_cost; кросс-валидирован
+      с reference (tree_cost совпадает)'
+  - id: structural_elements
+    impl: reference
+    cli: scripts/m451_monograph_import.py
+    note: theorem/definition детекторы DATA
+  - id: figures_geometry
+    impl: reference
+    cli: scripts/m451_monograph_import.py
+    note: caption<->image матчинг; pdffigures2 (rust) — ADR-060 кандидат
+  - id: figures_tei
+    impl: reference
+    cli: scripts/m451_reference_layers.py
+    note: TEI figure-элементы статей
+- stage: extracted
+  title: сущности по DATA-словарям
+  optional_for:
+  - chapter
+  - monograph
+  tools:
+  - id: rule_based_extractor
+    impl: rust
+    cli: da extract
+    note: живые словари M446 (rules_sha256)
+- stage: enriched
+  title: внешние якоря (OpenAlex A-ID/ORCID)
+  tools:
+  - id: openalex_work
+    impl: rust
+    cli: da enrich/batch-enrich
+    note: порт есть; article-слой якорь — reference
+  - id: article_enriched_layer
+    impl: reference
+    cli: scripts/m451_enrich_openalex.py
+    note: позиционная привязка авторов, кэш+provenance
+- stage: summarized
+  title: выжимки (модель из models.yaml binding)
+  lazy: true
+  tools:
+  - id: summaries_build
+    impl: reference
+    cli: scripts/m451_summaries_build.py
+    note: agnes-2.5, injection-scrub, lineage
+  - id: per_section_lazy
+    impl: reference
+    cli: scripts/m451_background_runner.py
+    note: фоновые задачи по реестру
+- stage: validated
+  title: инварианты по норме (generic engine)
+  tools:
+  - id: schema_validator
+    impl: rust
+    cli: da validate-objects
+    note: generic движок паттернов, file-backed
 guards:
   grammar_optional_stages:
-    chapter: [extracted]
-    monograph: [extracted]
-  lazy_stages: [summarized]
-  event_semantics: "каждый переход = append-only lifecycle_event (recorded_at, actor, evidence_sha256)"
+    chapter:
+    - extracted
+    monograph:
+    - extracted
+  lazy_stages:
+  - summarized
+  event_semantics: каждый переход = append-only lifecycle_event (recorded_at, actor,
+    evidence_sha256)

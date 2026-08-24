@@ -117,6 +117,16 @@ impl SchemaObjectStore for FsSchemaObjectStore {
         Ok(self.object_dir(id).join(rel_path).is_file())
     }
 
+    fn read_raw(&self, id: &str, rel_path: &str) -> Result<Option<String>, SchemaObjectStoreError> {
+        let path = self.object_dir(id).join(rel_path);
+        if !path.is_file() {
+            return Ok(None);
+        }
+        std::fs::read_to_string(&path)
+            .map(Some)
+            .map_err(|e| SchemaObjectStoreError::Io(format!("{}: {e}", path.display())))
+    }
+
     fn file_backed_checks(&self) -> Box<dyn FileBackedChecks + '_> {
         Box::new(StoreBackedChecks::new(self))
     }
