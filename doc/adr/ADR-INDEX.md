@@ -40,6 +40,7 @@ listed here — see `legacy/doc/adr/`.
 | [068](ADR-068-schema-manifest-hierarchy.md) | Schema/Manifest hierarchy — every directory carries SCHEMA (what is possible) + MANIFEST (what exists); meta-prompt principle; all repo dirs, not just data/ | Proposed (M451) | 2026-08-23 |
 | [069](ADR-069-isc-pattern-application.md) | ISC Pattern Application — exact-quote evidence gate, compilation depth (R*), genre detection (position/vision papers), parse-integrity signals | Accepted (M451) | 2026-08-24 |
 | [070](ADR-070-domain-knowledge-profiles.md) | Domain knowledge profiles — per-domain SCHEMA.yaml (entity types, structural types, thresholds), multi-domain routing, genre-aware extraction | Accepted (M451) | 2026-08-24 |
+| [071](ADR-071-survey-spine-and-hypergraph-knowledge-ranking.md) | Survey spine extraction (numbered environments M1..M39), table-cells as extraction surface, taxonomy nodes, EVALUATED_ON edges, Artifact type, hyperedge claim modeling, centrality ranking frame (degree/walk/contextual) | Accepted (M451) | 2026-08-24 |
 
 ## Phase completion status (ADR-050, 2026-08-02)
 

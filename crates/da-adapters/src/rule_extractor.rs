@@ -64,6 +64,8 @@ pub struct StructuralConfig {
     pub recurring_terms: RecurringTermsConfig,
     #[serde(default)]
     pub label_junk_filters: LabelJunkFilters,
+    #[serde(default)]
+    pub numbered_environments: NumberedEnvironmentsConfig,
 }
 
 
@@ -200,6 +202,42 @@ impl Default for RecurringTermsConfig {
 
 fn default_recurring_min_occurrences() -> usize { 15 }
 fn default_recurring_min_word_len() -> usize { 4 }
+
+/// Numbered environments (survey spine, ADR-071): "M3. Isolating
+/// centrality." — a closed index of the survey's objects. Fires on section
+/// titles and on the intro slice of section text ("M21." + first sentence).
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct NumberedEnvironmentsConfig {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    #[serde(default = "default_acronym_entity")]
+    pub entity_type: String,
+    #[serde(default = "default_env_prefixes")]
+    pub environment_prefixes: Vec<String>,
+    #[serde(default = "default_env_max_name_len")]
+    pub max_name_len: usize,
+    #[serde(default = "default_true")]
+    pub scan_title: bool,
+    #[serde(default = "default_env_intro_chars")]
+    pub scan_text_intro_chars: usize,
+}
+
+impl Default for NumberedEnvironmentsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            entity_type: default_acronym_entity(),
+            environment_prefixes: default_env_prefixes(),
+            max_name_len: default_env_max_name_len(),
+            scan_title: true,
+            scan_text_intro_chars: default_env_intro_chars(),
+        }
+    }
+}
+
+fn default_env_prefixes() -> Vec<String> { vec!["M".into()] }
+fn default_env_max_name_len() -> usize { 60 }
+fn default_env_intro_chars() -> usize { 500 }
 
 /// Junk label filters: GROBID page furniture leaking into labels.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -346,10 +384,15 @@ fn before_tail_words(text: &str, max_words: usize) -> Option<&str> {
 /// Lowercase significance: skip pure stop-words in the phrase.
 fn initials_match(phrase: &str, acronym: &str) -> bool {
     let skip = ["of", "the", "and", "for", "a", "an", "to", "in", "on"];
+    // hyphenated tokens contribute EACH part's initial: "senate-bills" → S,B
+    // (specimen Table 2); "Ingest-time" alone contributes I (not I,T) —
+    // subsequence matching tolerates extras either way.
     let initials: Vec<char> = phrase
         .split_whitespace()
         .filter(|w| !skip.contains(&w.to_lowercase().as_str()))
-        .filter_map(|w| w.chars().next())
+        .flat_map(|w| w.split(['-', '/']))
+        .filter(|p| !p.is_empty())
+        .filter_map(|p| p.chars().next())
         .map(|c| c.to_ascii_uppercase())
         .collect();
     let acr: Vec<char> = acronym.chars().map(|c| c.to_ascii_uppercase()).collect();
@@ -537,7 +580,14 @@ impl RuleBasedExtractor {
     /// Hyphenated words contribute their first letter ("Ingest-time" → I).
     fn extract_acronym_definitions(&self, text: &str, entity_type: &EntityType) -> Vec<(usize, usize, String)> {
         let cfg = &self.config.structural.acronym_definitions;
-        if !cfg.enabled || !matches!(entity_type, EntityType::Method | EntityType::Task) {
+        // Dataset включён для табличных псевдо-секций "Datasets" (ADR-071:
+        // Table 2 specimen — "senate-bills (SB)" живёт только в ячейках)
+        if !cfg.enabled
+            || !matches!(
+                entity_type,
+                EntityType::Method | EntityType::Task | EntityType::Dataset
+            )
+        {
             return Vec::new();
         }
         let mut results = Vec::new();
@@ -561,7 +611,14 @@ impl RuleBasedExtractor {
                 // phrase: words immediately before '('
                 let before = text[..open_abs].trim_end();
                 if let Some(phrase) = before_tail_words(before, cfg.max_words_in_phrase) {
-                    let word_count = phrase.split_whitespace().count();
+                    // hyphenated compounds count per part: "senate-bills" = 2
+                    // words (Table 2 specimen datasets are single hyphenated
+                    // tokens; min_words_in_phrase=2 must not reject them)
+                    let word_count = phrase
+                        .split_whitespace()
+                        .flat_map(|w| w.split(['-', '/']))
+                        .filter(|p| !p.is_empty())
+                        .count();
                     if word_count >= cfg.min_words_in_phrase && initials_match(phrase, acronym) {
                         // span: phrase + " (ABBR)"
                         let start = open_abs - phrase.len();
@@ -714,6 +771,87 @@ impl RuleBasedExtractor {
         results.sort_by_key(|(s, _, _)| *s);
         results.truncate(cfg.max_per_section);
         results
+    }
+
+    /// Numbered environments (survey spine, ADR-071): title form
+    /// "M3. Isolating centrality." and inline form "M21." + name in the
+    /// first sentence. Returns (env_id, label, name) triples.
+    fn extract_numbered_environments(
+        &self,
+        sections: &[(String, String)],
+    ) -> Vec<(usize, String, String)> {
+        let cfg = &self.config.structural.numbered_environments;
+        if !cfg.enabled || cfg.environment_prefixes.is_empty() {
+            return Vec::new();
+        }
+        let alt = format!(
+            "^({})[0-9]{{1,3}}\\.\\s*(.+)$",
+            cfg.environment_prefixes.join("|")
+        );
+        let inline = format!(
+            "\\b({})[0-9]{{1,3}}\\.\\s*([A-Z][^.{{}}]{{2,{}}}?)\\.",
+            cfg.environment_prefixes.join("|"),
+            cfg.max_name_len
+        );
+        let (Ok(title_re), Ok(inline_re)) = (regex::Regex::new(&alt), regex::Regex::new(&inline))
+        else {
+            return Vec::new();
+        };
+        let mut out: Vec<(usize, String, String)> = Vec::new();
+        let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for (ordinal, (title, text)) in sections.iter().enumerate() {
+            if cfg.scan_title {
+                if let Some(caps) = title_re.captures(title.trim())
+                    && let (Some(env), Some(name)) = (caps.get(1), caps.get(2))
+                {
+                    let name = name.as_str().trim().trim_end_matches('.').to_string();
+                    if !name.is_empty() && seen.insert(name.to_lowercase()) {
+                        out.push((ordinal, env.as_str().to_string(), name));
+                    }
+                } else {
+                    // bare environment title (specimen M21.): the name is the
+                    // FIRST SENTENCE of the section text
+                    let bare = format!(
+                        "^({})[0-9]{{1,3}}\\.\\s*$",
+                        cfg.environment_prefixes.join("|")
+                    );
+                    if let Ok(bare_re) = regex::Regex::new(&bare)
+                        && bare_re.is_match(title.trim())
+                    {
+                        // 0 = full scan: не обрезать (take(0) дал бы пустоту —
+                        // регрессия bare-title при scan_text_intro_chars=0)
+                        let intro: String = if cfg.scan_text_intro_chars == 0 {
+                            text.clone()
+                        } else {
+                            text.chars().take(cfg.scan_text_intro_chars).collect()
+                        };
+                        if let Some(dot) = intro.find('.') {
+                            let name = intro[..dot].trim();
+                            if name.len() >= 4
+                                && name.chars().next().is_some_and(|c| c.is_uppercase())
+                                && seen.insert(name.to_lowercase())
+                            {
+                                out.push((ordinal, title.trim().to_string(), name.to_string()));
+                            }
+                        }
+                    }
+                }
+            }
+            let scan: String = if cfg.scan_text_intro_chars == 0 {
+                text.clone()
+            } else {
+                text.chars().take(cfg.scan_text_intro_chars).collect()
+            };
+            for caps in inline_re.captures_iter(&scan) {
+                if let (Some(env), Some(name)) = (caps.get(1), caps.get(2)) {
+                    let name = name.as_str().trim().to_string();
+                    if !name.is_empty() && seen.insert(name.to_lowercase()) {
+                        out.push((ordinal, env.as_str().to_string(), name));
+                    }
+                }
+            }
+        }
+        out
     }
 
     /// Is this label junk? GROBID page furniture leaking into labels
@@ -891,6 +1029,9 @@ impl RuleBasedExtractor {
         // Pattern 2: Section-type-specific keywords
         match entity_type {
             EntityType::Dataset => {
+                // Table pseudo-sections (ADR-071): "senate-bills (SB)" lives
+                // only in table cells — acronym definitions fire here too.
+                results.extend(self.extract_acronym_definitions(text, entity_type));
                 // Pattern: well-known dataset names (direct match only).
                 // The previous "capitalized word before dataset/benchmark" heuristic
                 // produced high false positive rates (long phrase labels like
@@ -1352,6 +1493,37 @@ impl Extractor for RuleBasedExtractor {
             }
         }
 
+        // Numbered environments (survey spine, ADR-071): closed index of
+        // survey objects — "M3. Isolating centrality." in titles and intro
+        // slices. 39/39 recall on the specimen vs ~20/39 by frequency.
+        for (ordinal, env_id, name) in self.extract_numbered_environments(sections) {
+            if self.label_is_junk(&name) {
+                continue;
+            }
+            let key = (name.to_lowercase(), "method".to_string());
+            if !seen.contains(&key)
+                && let Some((title, text)) = sections.get(ordinal)
+            {
+                let scan_text = format!("{} {}", title, text);
+                let lower = scan_text.to_lowercase();
+                if let Some(pos) = lower.find(&name.to_lowercase()) {
+                    seen.insert(key);
+                    entities.push(ExtractedEntity {
+                        label: name.clone(),
+                        entity_type: EntityType::Method,
+                        section_title: title.clone(),
+                        section_ordinal: Some(ordinal),
+                        char_start: pos,
+                        char_end: pos + name.len(),
+                        surface: scan_text
+                            [pos.min(scan_text.len())..(pos + name.len()).min(scan_text.len())]
+                            .to_string(),
+                    });
+                }
+                let _ = env_id;
+            }
+        }
+
         // Recurring dominant terms (survey pattern): core objects repeated
         // across the whole document (centrality in a centrality survey).
         for term in self.extract_recurring_terms(sections) {
@@ -1575,6 +1747,50 @@ mod tests {
         let terms3 =
             extractor.extract_recurring_terms(&vec![("Introduction".to_string(), format!("code {}", "task ".repeat(40)))]);
         assert!(terms3.is_empty(), "no survey markers → pass must not fire: {terms3:?}");
+    }
+
+    // ── numbered environments (survey spine, specimen 2512.00107) ──
+    #[test]
+    fn test_numbered_environments_title_and_inline() {
+        let extractor = RuleBasedExtractor::new();
+        let sections = vec![
+            // title form
+            ("M3. Isolating centrality.".to_string(), "some text".into()),
+            // inline form: env id + name as first sentence
+            ("On measures".to_string(), "M21. Core-periphery score. Both works proposed...".into()),
+        ];
+        let envs = extractor.extract_numbered_environments(&sections);
+        let names: Vec<&str> = envs.iter().map(|(_, _, n)| n.as_str()).collect();
+        assert!(names.contains(&"Isolating centrality"), "title form: {names:?}");
+        assert!(names.contains(&"Core-periphery score"), "inline form: {names:?}");
+    }
+
+    // ── table acronym → Dataset (specimen Table 2) ──
+    #[test]
+    fn test_numbered_environments_bare_title() {
+        let extractor = RuleBasedExtractor::new();
+        let sections = vec![
+            ("Previous discussion".to_string(), "as noted in M20. Something else here".into()),
+            // bare env title + name as first sentence (specimen M21)
+            ("M21.".to_string(), "Core-periphery score. Both Tudisco and Higham proposed methods.".into()),
+        ];
+        let envs = extractor.extract_numbered_environments(&sections);
+        let names: Vec<&str> = envs.iter().map(|(_, _, n)| n.as_str()).collect();
+        assert!(
+            names.contains(&"Core-periphery score"),
+            "bare-title M21 must pair with first sentence: {names:?}"
+        );
+    }
+
+    #[test]
+    fn test_table_dataset_acronym_typed_as_dataset() {
+        let extractor = RuleBasedExtractor::new();
+        let text = "senate-bills (SB) . 294 . 29,157 . email-eu (EEU) . 986";
+        let cands = extractor.extract_candidates(text, &EntityType::Dataset);
+        assert!(
+            cands.iter().any(|(_, _, l)| l == "SB" || l.contains("senate")),
+            "table dataset acronyms must surface in Dataset arm: {cands:?}"
+        );
     }
 
     #[test]

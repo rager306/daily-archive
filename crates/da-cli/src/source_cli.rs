@@ -1071,6 +1071,37 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
             ));
         }
     }
+    // Table-cells as extraction surface (ADR-071): dataset/method names often
+    // live ONLY in table cells (specimen 2512.00107 Table 2: senate-bills (SB),
+    // email-eu (EEU) — 11 hypergraph datasets absent from body whitelist).
+    // Header row containing "Dataset" promotes the pseudo-section so the
+    // Dataset section arm + acronym gate type entities correctly.
+    if let Some(tables) = parsed.get("tables").and_then(|t| t.as_array()) {
+        for (ti, tab) in tables.iter().enumerate() {
+            let Some(cells) = tab.get("cells").and_then(|c| c.as_array()) else { continue };
+            let header: Vec<String> = cells
+                .iter()
+                .filter(|c| c.get("row").and_then(|r| r.as_u64()) == Some(0))
+                .map(|c| c.get("text").and_then(|t| t.as_str()).unwrap_or("").to_string())
+                .collect();
+            let is_dataset_table = header
+                .iter()
+                .any(|h| h.to_lowercase().contains("dataset"));
+            let title = if is_dataset_table {
+                format!("Datasets (Table {})", ti + 1)
+            } else {
+                format!("Table {}", ti + 1)
+            };
+            let body: Vec<String> = cells
+                .iter()
+                .map(|c| c.get("text").and_then(|t| t.as_str()).unwrap_or("").to_string())
+                .filter(|t| !t.trim().is_empty())
+                .collect();
+            if !body.is_empty() {
+                pairs.push((title, body.join(" . ")));
+            }
+        }
+    }
 
     let rt = tokio::runtime::Runtime::new()?;
     let entities = rt.block_on(async {
