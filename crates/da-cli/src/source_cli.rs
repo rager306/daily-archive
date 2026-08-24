@@ -151,14 +151,13 @@ pub fn run_build_navigation(paper_id: &str) -> anyhow::Result<()> {
         .map_err(|e| anyhow::anyhow!("structural_type_detectors.yaml: {e}"))?;
     // CrossLayerInputs: aggregate from existing layer files
     let mut cross_layer = da_domain::navigation::CrossLayerInputs::default();
-    if let Ok(raw) = std::fs::read_to_string(dir.join("extracted/entities.json")) {
-        if let Ok(ents) = serde_json::from_str::<serde_json::Value>(&raw) {
-            if let Some(arr) = ents.as_array() {
-                for (ordinal, e) in arr.iter().enumerate() {
-                    let label = e.get("label").and_then(|l| l.as_str()).unwrap_or("").to_string();
-                    cross_layer.entities_by_ordinal.entry(ordinal).or_default().push(label);
-                }
-            }
+    if let Ok(raw) = std::fs::read_to_string(dir.join("extracted/entities.json"))
+        && let Ok(ents) = serde_json::from_str::<serde_json::Value>(&raw)
+        && let Some(arr) = ents.as_array()
+    {
+        for (ordinal, e) in arr.iter().enumerate() {
+            let label = e.get("label").and_then(|l| l.as_str()).unwrap_or("").to_string();
+            cross_layer.entities_by_ordinal.entry(ordinal).or_default().push(label);
         }
     }
     if let Ok(raw) = std::fs::read_to_string(dir.join("parsed/article.json")) {
