@@ -1,0 +1,51 @@
+# Mathematics domain — norm for math-heavy papers and textbooks.
+# Entity types are MATH-specific; quality thresholds are LOWER than shared
+# because math text has different entity density.
+schema_version: domain-math-schema.v1
+extends: data/domains/_shared/SCHEMA.yaml
+
+routing:
+  coarse_topic_codes: [math-ho, math-co, math-oc, math-discrete]
+  keywords: [theorem, proof, lemma, corollary, axiom]
+
+entity_types:
+  - id: MathConcept
+    description: "определение математического понятия"
+    detector: "^(Definition|Определение) \\d+(?:\\.\\d+)*[.:]"
+    extraction_hint: "текст после заголовка Definition до пустой строки или следующего окружения"
+  - id: MathTheorem
+    description: "теорема с формулировкой и доказательством"
+    detector: "^(Theorem|Лемма|Теорема) \\d+(?:\\.\\d+)*[.:]"
+  - id: MathLemma
+    description: "лемма — вспомогательное утверждение"
+    detector: "^(Lemma|Лемма) \\d+(?:\\.\\d+)*[.:]"
+  - id: MathCorollary
+    description: "следствие из теоремы"
+    detector: "^(Corollary|Следствие) \\d+(?:\\.\\d+)*[.:]"
+  - id: MathProof
+    description: "доказательство"
+    detector: "^(Proof|Доказательство)\\.?$"
+  - id: MathAxiom
+    description: "аксиома"
+    detector: "^(Axiom|Аксиома) \\d+"
+
+structural_types:
+  theorem: {patterns: ["(?i)^(theorem|lemma|corollary|proposition)\\s"]}
+  definition: {patterns: ["(?i)^(definition|определение)\\s"]}
+  proof: {patterns: ["(?i)^(proof|доказательство)\\.?$"]}
+  exercise: {patterns: ["(?i)^(exercise|упражнение|задача)\\s"]}
+  axiom: {patterns: ["(?i)^(axiom|аксиома)\\s"]}
+
+quality_thresholds:
+  grounding_warn_below: 0.6       # ниже чем shared (математика сложнее)
+  grounding_alarm_below: 0.35
+  min_entities_per_section: 0.1   # МНОГО ниже (формулы ≠ сущности)
+  furniture_share_warn_above: 0.3 # выше (учебники имеют больше мусора)
+
+extraction_rules:
+  - pattern: "(Definition|Определение)\\s+(\\d+(?:\\.\\d+)*)[.:]\\s*(.+)"
+    captures: {number: 2, statement: 3}
+    feeds: layer_j_terminology
+  - pattern: "(Theorem|Лемма|Теорема)\\s+(\\d+(?:\\.\\d+)*)[.:]\\s*(.+)"
+    captures: {number: 2, statement: 3}
+    feeds: structural_elements
