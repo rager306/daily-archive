@@ -466,7 +466,8 @@ fn main() {
                 "import" => source_cli::run_import(&paper_id, dry_run),
                 "build-navigation" => source_cli::run_build_navigation(&paper_id),
                 "build-structural" => source_cli::run_build_structural(&paper_id),
-                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural)")),
+                "build-figures" => source_cli::run_build_figures(&paper_id),
+                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures)")),
             };
             if let Err(e) = r {
                 eprintln!("da source: {e}");

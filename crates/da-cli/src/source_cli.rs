@@ -322,3 +322,44 @@ pub fn run_build_structural(paper_id: &str) -> anyhow::Result<()> {
     );
     Ok(())
 }
+
+/// `da source build-figures <paper_id>` — figures transition: Rust
+/// analytic core over the observation cache (reference exporter).
+pub fn run_build_figures(paper_id: &str) -> anyhow::Result<()> {
+    use da_adapters::fs_schema_objects::FsSchemaObjectStore;
+    use da_application::figures_stage::build_figures_stage;
+    use da_ports::path_config::PathConfig;
+
+    let obs_path = std::path::Path::new("artifacts/pipeline_cache/pdf_observations")
+        .join(format!("{paper_id}.json"));
+    let obs_json = std::fs::read_to_string(&obs_path)
+        .map_err(|e| anyhow::anyhow!("observations {} (run scripts/m451_pdf_observations.py): {e}", obs_path.display()))?;
+
+    let cfg = PathConfig::load();
+    let store = FsSchemaObjectStore::from_path_config(&cfg, "article")?;
+    let out = build_figures_stage(&store, paper_id, &obs_json)?;
+
+    let dir = std::path::Path::new("data/processed").join(paper_id);
+    std::fs::write(dir.join("figures/index.json"), &out.index_json)?;
+
+    let mp = dir.join("manifest.yaml");
+    let mut m: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&mp)?)?;
+    let stats_yaml = serde_yaml::to_value(&out.stats)?;
+    let entry = serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("file"), serde_yaml::Value::from("figures/index.json")),
+        (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha256_hex(out.index_json.as_bytes()))),
+        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-figures-stage")),
+        (serde_yaml::Value::from("stats"), stats_yaml),
+    ]);
+    if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
+        arts.insert("figures".into(), serde_yaml::Value::Mapping(entry));
+    }
+    std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
+
+    println!(
+        "{paper_id}: figures — indexed={} with_files={} captions={} unassigned_images={}",
+        out.stats.figures_indexed, out.stats.with_image_file,
+        out.stats.captions_in_text, out.stats.unassigned_images
+    );
+    Ok(())
+}

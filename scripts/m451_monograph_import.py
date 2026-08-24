@@ -33,7 +33,7 @@ def load_detectors() -> dict:
     cfg = yaml.safe_load((REPO / "data/ontology/structural_elements_detectors.yaml").read_text())
     return cfg.get("kinds", {})
 
-FIG_CAP_RE = re.compile(r"Figure (\d+(?:\.\d+)*)[:.]?\s*([^\n]{0,100})")
+FIG_CAP_RE = re.compile(r"Figure (\d+(?:\.\d+)*)[:.]?")
 
 
 def extract_figures(doc, entries, d: Path, object_id: str) -> dict:
@@ -59,6 +59,8 @@ def extract_figures(doc, entries, d: Path, object_id: str) -> dict:
         cap_y = rects[0].y1 if rects else 0.0
         best, best_dist = None, None
         for info in imgs:
+            if info.get("xref", 0) and info.get("xref", 0) in used_xrefs:
+                continue  # rust-canonical: an image serves at most one caption
             bbox = info["bbox"]
             dist = abs((bbox[1] + bbox[3]) / 2 - cap_y)
             if best_dist is None or dist < best_dist:
