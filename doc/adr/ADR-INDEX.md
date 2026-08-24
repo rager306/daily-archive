@@ -41,6 +41,7 @@ listed here — see `legacy/doc/adr/`.
 | [069](ADR-069-isc-pattern-application.md) | ISC Pattern Application — exact-quote evidence gate, compilation depth (R*), genre detection (position/vision papers), parse-integrity signals | Accepted (M451) | 2026-08-24 |
 | [070](ADR-070-domain-knowledge-profiles.md) | Domain knowledge profiles — per-domain SCHEMA.yaml (entity types, structural types, thresholds), multi-domain routing, genre-aware extraction | Accepted (M451) | 2026-08-24 |
 | [071](ADR-071-survey-spine-and-hypergraph-knowledge-ranking.md) | Survey spine extraction (numbered environments M1..M39), table-cells as extraction surface, taxonomy nodes, EVALUATED_ON edges, Artifact type, hyperedge claim modeling, centrality ranking frame (degree/walk/contextual) | Accepted (M451) | 2026-08-24 |
+| [072](ADR-072-xy-cut-reading-order.md) | XY-Cut reading-order reconstruction over neutral line boxes — ported from opendataloader XYCutPlusPlusSorter + dedoc block-boundary discipline; fallback grammar for TOC-less PDFs; figure-zone pre-mask | Accepted (M451) | 2026-08-24 |
 
 ## Phase completion status (ADR-050, 2026-08-02)
 
