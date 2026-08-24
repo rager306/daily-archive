@@ -96,6 +96,39 @@ knowledge graph:
   cover the three retrieval question classes; other measures wait for a
   concrete query need.
 
+### 2.6 YAKE as the statistical recall layer (shipped, studied 2026-08-24)
+
+YAKE (Campos et al., Information Sciences 509, 2020; MIT `yake-rust` 1.0.3,
+1-1 score alignment with the reference implementation, x8-10 optimized)
+becomes the untyped candidate GENERATOR under the evidence gate:
+
+- **Five statistical features** replace hand heuristics: Casing (TCase —
+  capitalized/acronym terms), Position (TPosition — definitions live in
+  abstract/intro, exactly the 2608.20845 finding), normalized TF, TRel
+  (co-occurrence diversity — the PRINCIPLED stopword detector: our hand
+  stoplists for recurring_terms leaked through three growth iterations;
+  "from/defined/capture/researchers" escaped every list; TRel penalizes
+  terms with many different neighbours automatically), DifSentence.
+- **Value = multi-word phrases**; single words are noise (cost/corpus/
+  read ranked high in 2608.20845 because they ARE central vocabulary,
+  but they are not entities): `require_multiword: true`.
+- **Discipline gates learned live**: `min_doc_chars=1000` (statistical
+  features unstable on short texts — unit tests surfaced PRO-methodology
+  junk); substring dedup inside the batch (YAKE keeps truncated variants
+  "Ingest-time semantic" next to the full phrase); summary pseudo-section
+  prefix ("Summary …") junk-filtered.
+- Live results: 2608.20845 +7 real phrases ("repeated query-time
+  interpretation", "standard RAG", "cost model", "compiles corpus
+  meaning"); table-derived fragments on IMRaD (2608.19799) remain for
+  the critic layer — recall layer, not precision layer.
+- Config fully DATA (extraction_patterns.yaml → structural.yake_keyphrases);
+  stopword merge: yake predefined en + scientific extra_stopwords.
+
+Layering rule (binding): **typed passes (whitelist/acronym/numbered-env/
+table) own precision; YAKE owns phrase recall; the evidence gate owns
+verifiability; the critic LLM owns judgment.** No layer duplicates
+another's role.
+
 ## 3. Consequences
 
 - Survey genre (ADR-070 genre detectors) + numbered spine + recurring

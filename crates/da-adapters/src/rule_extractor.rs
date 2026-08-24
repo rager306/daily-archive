@@ -66,6 +66,8 @@ pub struct StructuralConfig {
     pub label_junk_filters: LabelJunkFilters,
     #[serde(default)]
     pub numbered_environments: NumberedEnvironmentsConfig,
+    #[serde(default)]
+    pub yake_keyphrases: YakeKeyphrasesConfig,
 }
 
 
@@ -238,6 +240,49 @@ impl Default for NumberedEnvironmentsConfig {
 fn default_env_prefixes() -> Vec<String> { vec!["M".into()] }
 fn default_env_max_name_len() -> usize { 60 }
 fn default_env_intro_chars() -> usize { 500 }
+
+/// YAKE keyphrases (recall layer, ADR-071 companion): statistical
+/// single-document extractor — five features (casing, position, normalized
+/// TF, co-occurrence diversity TRel, dif-sentence). Untyped candidates
+/// under the evidence gate; typed passes keep precision.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct YakeKeyphrasesConfig {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    #[serde(default = "default_yake_top_n")]
+    pub top_n: usize,
+    #[serde(default = "default_yake_ngrams")]
+    pub ngrams: usize,
+    /// статистическим признакам нужен объём: на коротких текстах
+    /// (unit-тесты, аннотации) TRel/TFNorm нестабильны
+    #[serde(default = "default_yake_min_doc_chars")]
+    pub min_doc_chars: usize,
+    /// фразы — ценность YAKE; одиночные слова покрыты recurring/whitelist
+    #[serde(default = "default_true")]
+    pub require_multiword: bool,
+    #[serde(default = "default_acronym_entity")]
+    pub entity_type: String,
+    #[serde(default)]
+    pub extra_stopwords: Vec<String>,
+}
+
+impl Default for YakeKeyphrasesConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            top_n: default_yake_top_n(),
+            ngrams: default_yake_ngrams(),
+            min_doc_chars: default_yake_min_doc_chars(),
+            require_multiword: true,
+            entity_type: default_acronym_entity(),
+            extra_stopwords: Vec::new(),
+        }
+    }
+}
+
+fn default_yake_top_n() -> usize { 15 }
+fn default_yake_ngrams() -> usize { 3 }
+fn default_yake_min_doc_chars() -> usize { 1000 }
 
 /// Junk label filters: GROBID page furniture leaking into labels.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -852,6 +897,68 @@ impl RuleBasedExtractor {
             }
         }
         out
+    }
+
+    /// YAKE keyphrases (recall layer): whole-document statistical ranking.
+    /// Returns (raw_first_occurrence, keyword_lower, score) — raw is used
+    /// for evidence-span location, score for ranking (lower = better).
+    fn extract_yake_keyphrases(
+        &self,
+        sections: &[(String, String)],
+    ) -> Vec<(String, String, f64)> {
+        let cfg = &self.config.structural.yake_keyphrases;
+        if !cfg.enabled || sections.is_empty() {
+            return Vec::new();
+        }
+        let doc_len: usize = sections
+            .iter()
+            .map(|(t, x)| t.chars().count() + x.chars().count())
+            .sum();
+        if doc_len < cfg.min_doc_chars {
+            return Vec::new();
+        }
+        let mut stop: std::collections::HashSet<String> = yake_rust::StopWords::predefined("en")
+            .map(|s| s.iter().cloned().collect())
+            .unwrap_or_default();
+        for w in &cfg.extra_stopwords {
+            stop.insert(w.to_lowercase());
+        }
+        let text = sections
+            .iter()
+            .map(|(t, x)| format!("{t} {x}"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let yc = yake_rust::Config {
+            ngrams: cfg.ngrams,
+            ..yake_rust::Config::default()
+        };
+        let mut items: Vec<(String, String, f64)> = yake_rust::get_n_best(
+            cfg.top_n,
+            &text,
+            &yake_rust::StopWords::custom(stop),
+            &yc,
+        )
+        .into_iter()
+        .map(|item| (item.raw, item.keyword, item.score))
+        .collect();
+        if cfg.require_multiword {
+            items.retain(|(raw, _, _)| raw.split_whitespace().count() >= 2);
+        }
+        // substring dedup: обрезки полного фразы («Ingest-time semantic» при
+        // живом «Ingest-time semantic compilation») — держим более длинную
+        items.sort_by_key(|(raw, _, _)| std::cmp::Reverse(raw.split_whitespace().count()));
+        let mut kept: Vec<(String, String, f64)> = Vec::new();
+        for item in items {
+            let is_fragment = kept.iter().any(|(kraw, _, _)| {
+                let a = kraw.to_lowercase();
+                let b = item.0.to_lowercase();
+                a != b && (a.contains(&b) || b.contains(&a))
+            });
+            if !is_fragment {
+                kept.push(item);
+            }
+        }
+        kept
     }
 
     /// Is this label junk? GROBID page furniture leaking into labels
@@ -1521,6 +1628,47 @@ impl Extractor for RuleBasedExtractor {
                     });
                 }
                 let _ = env_id;
+            }
+        }
+
+        // YAKE keyphrases (recall layer, statistical): untyped candidates
+        // ranked by five local features; evidence-gated like everything
+        // else. Complements typed passes — catches multi-word terms the
+        // noun-phrase pass misses (proposal verbs) and ranks by position/
+        // casing/frequency principled (no hand stoplists).
+        for (raw, keyword, _score) in self.extract_yake_keyphrases(sections) {
+            if self.label_is_junk(&raw) {
+                continue;
+            }
+            let key = (keyword.to_lowercase(), "method".to_string());
+            if seen.contains(&key) {
+                continue;
+            }
+            // evidence span: locate the raw first occurrence in sections
+            let mut placed = false;
+            for (section_ordinal, (title, text)) in sections.iter().enumerate() {
+                let scan_text = format!("{} {}", title, text);
+                let lower = scan_text.to_lowercase();
+                if let Some(pos) = lower.find(&keyword) {
+                    let end = (pos + raw.chars().count()).min(scan_text.len());
+                    if scan_text.is_char_boundary(end) {
+                        seen.insert(key.clone());
+                        entities.push(ExtractedEntity {
+                            label: raw.clone(),
+                            entity_type: EntityType::Method,
+                            section_title: title.clone(),
+                            section_ordinal: Some(section_ordinal),
+                            char_start: pos,
+                            char_end: end,
+                            surface: scan_text[pos..end].to_string(),
+                        });
+                        placed = true;
+                        break;
+                    }
+                }
+            }
+            if !placed {
+                continue;
             }
         }
 
