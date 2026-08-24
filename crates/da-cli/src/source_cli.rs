@@ -754,3 +754,118 @@ pub fn run_build_summary(paper_id: &str) -> anyhow::Result<()> {
     );
     Ok(())
 }
+
+
+/// `da source eval-frozen` — run the frozen 6-article benchmark for
+/// EVERY model in the frozen eval manifest, writing ALL trajectories to
+/// CVF (comparative decision base; prod binding untouched).
+pub fn run_eval_frozen() -> anyhow::Result<()> {
+    use da_adapters::agent_memory::CvfAgentMemory;
+    use da_adapters::fs_schema_objects::FsSchemaObjectStore;
+    use da_adapters::model_registry::load_model_registry;
+    use da_adapters::openai_compatible_llm::OpenAiCompatibleLlmClient;
+    use da_application::summaries_agent_stage::{run_summaries_agent, AgentRunContext};
+    use da_domain::agent_manifest::AgentManifest;
+    use da_ports::path_config::PathConfig;
+
+    let fixture_path = std::path::Path::new(
+        "governor/fixtures/prompt_eval/article-summary.eval.v1.json");
+    let fx: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(fixture_path)?)?;
+    let articles: Vec<String> = fx["frozen_articles"]
+        .as_array()
+        .expect("frozen_articles")
+        .iter()
+        .map(|v| v.as_str().unwrap().to_string())
+        .collect();
+    let baseline_model = fx["baseline"]["model"].as_str().unwrap_or("unknown");
+
+    let agent_yaml = std::fs::read_to_string("data/agents/summarizer/manifest.yaml")?;
+    let manifest = AgentManifest::from_yaml_str(&agent_yaml)
+        .map_err(|e| anyhow::anyhow!("agent manifest: {e}"))?;
+    let system_prompt =
+        std::fs::read_to_string("data/prompts/summarizer/system.v1.md")?;
+    let injection_yaml =
+        std::fs::read_to_string("data/ontology/prompt_injection_policy.yaml")?;
+
+    // candidate models from the benchmark policy (DATA), baseline included;
+    // each gets its own CVF namespace -> comparative but non-mixing
+    let policy = std::fs::read_to_string("data/ontology/summary_eval_policy.yaml")
+        .map_err(|e| anyhow::anyhow!("summary_eval_policy: {e}"))?;
+    let pol: serde_yaml::Value = serde_yaml::from_str(&policy)?;
+    let mut models: Vec<String> = Vec::new();
+    for m in pol.get("models").and_then(|m| m.as_sequence()).map(|s| s.as_slice()).unwrap_or(&[]) {
+        match m {
+            serde_yaml::Value::String(s) => models.push(s.clone()),
+            serde_yaml::Value::Mapping(mm) => {
+                if let Some(serde_yaml::Value::String(n)) = mm.get("name") {
+                    models.push(n.clone());
+                }
+            }
+            _ => {}
+        }
+    }
+    models.sort();
+    models.dedup();
+
+    let cfg = PathConfig::load();
+    use da_ports::agent_memory::AgentMemory as _;
+    let key: Option<String> = std::env::var("NINE_ROUTER_API_KEY").ok();
+    let registry = load_model_registry(std::path::Path::new("models.yaml"))
+        .map_err(|e| anyhow::anyhow!("models.yaml: {}", e))?;
+    let store = FsSchemaObjectStore::from_path_config(&cfg, "article")?;
+    let rt = tokio::runtime::Runtime::new()?;
+    let injection_policy = compile_injection(injection_yaml);
+
+    println!(
+        "frozen eval: {} articles × {} models (baseline {baseline_model})",
+        articles.len(),
+        models.len()
+    );
+    for model in &models {
+        // namespace per MODEL: comparative trajectories, no mixing
+        let mem_dir = std::path::Path::new("data/agent_memory/eval").join(model.replace('/', "-"));
+        let mut memory = CvfAgentMemory::open(mem_dir)
+            .map_err(|e| anyhow::anyhow!("cvf memory: {e}"))?;
+        // resolve by model name (the agent contract rejects model !=
+        // binding — so the client itself must match the candidate)
+        let resolved =
+            da_adapters::model_registry::resolve_model_record(&registry, model)
+                .map_err(|e| anyhow::anyhow!("{e}"))?;
+        let llm = OpenAiCompatibleLlmClient::new(resolved.clone(), key.clone(), 240)
+            .map_err(|e| anyhow::anyhow!("llm client: {e}"))?;
+
+        for pid in &articles {
+            let ctx = AgentRunContext {
+                store: &store,
+                memory: &mut memory,
+                llm: &llm,
+                manifest: &manifest,
+                model_name: model,
+                system_prompt: &system_prompt,
+                injection_policy_yaml: &injection_policy,
+                paper_id: pid,
+            };
+            let result = rt.block_on(run_summaries_agent(ctx));
+            match result {
+                Ok(out) => {
+                    memory.persist().ok();
+                    println!(
+                        "  {model} × {pid}: ok={} grounding={:.3} lat={}ms",
+                        out.ok, out.grounding, out.latency_ms
+                    );
+                }
+                Err(e) => println!("  {model} × {pid}: FAIL {e}"),
+            }
+            std::thread::sleep(std::time::Duration::from_millis(300));
+        }
+    }
+    println!(
+        "\ntrajectories written to data/agent_memory/eval/<model>/ — \
+         comparative base for routing decisions (SONA W3 reads these)"
+    );
+    Ok(())
+}
+
+fn compile_injection(yaml_text: String) -> String {
+    yaml_text
+}

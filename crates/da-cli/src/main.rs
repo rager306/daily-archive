@@ -120,9 +120,10 @@ struct Cli {
 enum Commands {
     /// Source-import FSM surface: status/plan/import per article object
     Source {
-        /// Subcommand: status | plan | import | build-* | parse-html
+        /// Subcommand: status | plan | import | build-* | parse-html | eval-frozen
         action: String,
-        /// Object id (paper/chapter/monograph)
+        /// Object id (paper/chapter/monograph) — not needed by eval-frozen
+        #[arg(default_value = "")]
         paper_id: String,
         /// import: report only, do not execute
         #[arg(long, default_value = "true")]
@@ -475,6 +476,7 @@ fn main() {
                 "parse-pdf-toc" => source_cli::run_parse_pdf_toc(&paper_id),
                 "enrich-layer" => source_cli::run_enrich_layer(&paper_id),
                 "build-summary" => source_cli::run_build_summary(&paper_id),
+                "eval-frozen" => source_cli::run_eval_frozen(),
                 other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei|parse-html|parse-pdf-toc|enrich-layer|build-summary)")),
             };
             if let Err(e) = r {

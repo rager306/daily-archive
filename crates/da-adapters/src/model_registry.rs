@@ -127,6 +127,27 @@ impl ModelRegistry {
             .map_err(|e| e.to_string())
     }
 }
+/// Resolve by MODEL NAME (not binding id) — for benchmark/eval surfaces
+/// that iterate candidate models. Uses the first binding pointing at the
+/// model record to inherit endpoint defaults; ninerouter models resolve
+/// through the standard path.
+pub fn resolve_model_record(
+    registry: &ModelRegistry,
+    model_name: &str,
+) -> Result<ResolvedModelBinding, String> {
+    let record = registry
+        .models
+        .iter()
+        .find(|m| m.model_name == model_name)
+        .ok_or_else(|| format!("model {model_name:?} not found in models.yaml"))?;
+    let binding = registry
+        .bindings
+        .iter()
+        .find(|b| b.model_id == record.id)
+        .ok_or_else(|| format!("no binding references model id {}", record.id))?;
+    registry.resolve(&binding.binding_id, None)
+}
+
 pub fn validate_prompt_model_bindings(
     models: &ModelRegistry,
     prompts: &crate::prompt_task_registry::PromptTaskRegistry,
