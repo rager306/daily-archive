@@ -74,14 +74,14 @@ fn print_status(paper_id: &str, tc: &Toolchain, state: &ImportFsmState) {
 
 pub fn run_status(paper_id: &str) -> anyhow::Result<()> {
     let tc = load_toolchain()?;
-    let state = load_state(paper_id)?;
+    let state = load_fsm_state(paper_id)?;
     print_status(paper_id, &tc, &state);
     Ok(())
 }
 
 pub fn run_plan(paper_id: &str) -> anyhow::Result<()> {
     let tc = load_toolchain()?;
-    let state = load_state(paper_id)?;
+    let state = load_fsm_state(paper_id)?;
     println!("plan for {paper_id} ({} → validated):", state.current_stage());
     for (stage, required) in state.plan(&tc) {
         let tools: Vec<String> = tc
@@ -1430,4 +1430,63 @@ fn stamp_validated_event(paper_id: &str) -> anyhow::Result<()> {
     }
     std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Mutex;
+
+    /// load_fsm_state reads relative paths (data/processed) — serialize
+    /// cwd-dependent tests so parallel tests don't observe our temp cwd.
+    static CWD_LOCK: Mutex<()> = Mutex::new(());
+
+    // Regression (caught live 2026-08-24 on 2608.20845): run_status used
+    // the old load_state which propagated ENOENT for fresh acquisitions
+    // (no manifest.yaml yet) → "da source: No such file or directory".
+    // Fresh acquisition must yield FSM at raw stage, not an error.
+    #[test]
+    fn fresh_acquisition_without_manifest_starts_at_raw() {
+        let _guard = CWD_LOCK.lock().unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        let _restore = CwdGuard::new(&tmp);
+        let state = load_fsm_state("9999.99999").expect("fresh paper must not error");
+        assert_eq!(state.current_stage(), "raw");
+        assert_eq!(state.object_class(), "article");
+    }
+
+    #[test]
+    fn manifest_lifecycle_events_replayed() {
+        let _guard = CWD_LOCK.lock().unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("data/processed/1234.56789");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("manifest.yaml"),
+            "grammar_profile: arxiv_pdf_dot\nlifecycle_events:\n  - stage: raw\n  - stage: parsed\n  - stage: structured\n",
+        )
+        .unwrap();
+        let _restore = CwdGuard::new(&tmp);
+        let state = load_fsm_state("1234.56789").unwrap();
+        assert_eq!(state.current_stage(), "structured");
+    }
+
+    /// Restores original cwd on drop.
+    struct CwdGuard {
+        original: std::path::PathBuf,
+    }
+
+    impl CwdGuard {
+        fn new(tmp: &tempfile::TempDir) -> Self {
+            let original = std::env::current_dir().unwrap();
+            std::env::set_current_dir(&tmp).unwrap();
+            Self { original }
+        }
+    }
+
+    impl Drop for CwdGuard {
+        fn drop(&mut self) {
+            std::env::set_current_dir(&self.original).unwrap();
+        }
+    }
 }

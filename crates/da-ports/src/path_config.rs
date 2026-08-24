@@ -240,4 +240,49 @@ mod tests {
         let config = PathConfig::parse("");
         assert_eq!(config.get("anything"), None);
     }
+
+    // ── domain routing regression tests ──────────────────────────────
+    // Regressions caught live (2026-08-24): (1) domain_routing parsing
+    // was lost in a scope mistake — table stayed empty; (2) multi-domain
+    // lists (stat-ml → [CS, math]) replaced single strings.
+
+    #[test]
+    fn domain_routing_single_and_multi_domain() {
+        let config = PathConfig::parse(
+            "paths:\n  domain_routing:\n    math-ho: mathematics\n    stat-ml:\n      - computer_science\n      - mathematics\n    cs-cl: computer_science\n",
+        );
+        // single string value
+        assert_eq!(
+            config.domains_for_topic("math-ho"),
+            Some(vec!["mathematics".to_string()])
+        );
+        // list value = multi-domain (cross-domain paper)
+        assert_eq!(
+            config.domains_for_topic("stat-ml"),
+            Some(vec![
+                "computer_science".to_string(),
+                "mathematics".to_string()
+            ])
+        );
+        // unknown code
+        assert_eq!(config.domains_for_topic("no-such-code"), None);
+    }
+
+    #[test]
+    fn domain_routing_empty_when_absent() {
+        let config = PathConfig::parse("paths:\n  catalog_root: data/x\n");
+        assert_eq!(config.domains_for_topic("cs-cl"), None);
+        assert!(config.domains().is_empty());
+    }
+
+    #[test]
+    fn domains_unique_across_codes() {
+        let config = PathConfig::parse(
+            "paths:\n  domain_routing:\n    cs-cl: computer_science\n    cs-ai: computer_science\n    math-ho: mathematics\n",
+        );
+        let domains = config.domains();
+        assert_eq!(domains.len(), 2, "computer_science counted once: {domains:?}");
+        assert!(domains.contains(&"computer_science".to_string()));
+        assert!(domains.contains(&"mathematics".to_string()));
+    }
 }
