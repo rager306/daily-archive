@@ -169,6 +169,29 @@ pub async fn run_summaries_agent(
         .and_then(|m| m.get("grammar_profile").and_then(|v| v.as_str()).map(str::to_string))
         .unwrap_or_else(|| "arxiv_pdf_dot".to_string());
 
+    // PageIndex navigation features (structural profile for routing)
+    let nav_features = store
+        .read_raw(paper_id, "context/navigation.json")
+        .ok()
+        .flatten()
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
+        .and_then(|nav| {
+            let arr = nav.as_array()?;
+            let max_depth = arr.iter().filter_map(|n| n.get("depth")?.as_u64()).max()? as usize;
+            let body_nodes = arr.iter().filter(|n| n.get("role").and_then(|r| r.as_str()) == Some("body")).count();
+            let branching = arr.iter().filter(|n| {
+                n.get("children_section_ids").and_then(|c| c.as_array()).map(|a| !a.is_empty()).unwrap_or(false)
+            }).count();
+            let titles: Vec<String> = arr.iter()
+                .filter(|n| n.get("role").and_then(|r| r.as_str()) == Some("body"))
+                .filter_map(|n| n.get("title").and_then(|t| t.as_str()))
+                .map(str::to_string)
+                .collect();
+            Some((Some(max_depth), Some(body_nodes), Some(branching), titles))
+        });
+    let (nav_depth, nav_body, nav_branch, nav_titles) = nav_features
+        .unwrap_or((None, None, None, vec![]));
+
     // trajectory into the CVF memory (record-only, W1)
     let rec = TrajectoryRecord {
         task_id: manifest.agent_id.clone(),
@@ -185,6 +208,10 @@ pub async fn run_summaries_agent(
             body_chars,
             furniture_share,
             formulas_per_section: formulas as f64 / sections.len().max(1) as f64,
+            nav_max_depth: nav_depth,
+            nav_body_nodes: nav_body,
+            nav_branching_nodes: nav_branch,
+            nav_body_titles: nav_titles,
         }),
     };
     let epoch = if manifest.memory.trajectory && manifest.memory.backend == "cvf" {

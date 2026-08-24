@@ -30,12 +30,25 @@ pub struct TrajectoryRecord {
 }
 
 /// Compact article signature for memory-driven routing.
+/// Includes PageIndex-derived structural features (navigation layer).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ArticleFeatures {
-    pub grammar: String,           // arxiv_pdf_dot | html_headings | page_outline | …
+    pub grammar: String,
     pub body_chars: usize,
     pub furniture_share: f64,
     pub formulas_per_section: f64,
+    /// PageIndex: max tree depth (0=flat, 1=one level, …)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nav_max_depth: Option<usize>,
+    /// PageIndex: count of body nodes vs total
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nav_body_nodes: Option<usize>,
+    /// PageIndex: sections with children (branching factor)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nav_branching_nodes: Option<usize>,
+    /// PageIndex: body section titles — pattern matching for routing
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub nav_body_titles: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
