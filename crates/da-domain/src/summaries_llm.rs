@@ -179,7 +179,7 @@ pub fn grounding_score(summary_text: &str, article_text: &str) -> f64 {
         return 0.0;
     }
     let sentences: Vec<&str> = summary_text
-        .split(|c: char| c == '.' || c == '!' || c == '?')
+        .split(['.', '!', '?'])
         .map(str::trim)
         .filter(|s| s.chars().count() > 30)
         .collect();

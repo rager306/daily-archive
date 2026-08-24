@@ -1,49 +1,70 @@
-# AGENT manifest — critic (микро-агент #2, верификация low-confidence)
 schema_version: agent-manifest.v1
 agent_id: critic
-agent_version: "1.0.0"
+agent_version: 1.0.0
 schema_ref: data/schemas/agent.schema.yaml
-
 identity:
   role: critic
-  description: "Верификация low-confidence привязок (enriched surname_mismatch, citations corpus_title_fallback) — diagnostic-слой ACAP (ADR-055): отдельно от hard invariants; abstain валиден"
+  description: Верификация low-confidence привязок + ОБЯЗАТЕЛЬНЫЙ repair (метакогнитивный
+    луп); diagnostic-слой ACAP
   enabled: true
-
 model:
-  generate_binding: paper-summary-judge-primary   # glm-5.2 — judge-класс, НЕ участник summaries-сравнения (нет self-confirm)
+  generate_binding: paper-summary-judge-primary
   fallback_binding: paper-summary-judge-secondary
-  judge_binding: null                              # сам критик и есть judge
-
+  judge_binding: null
 prompt:
   system_file: data/prompts/critic/system.v1.md
   inputs:
-    source: "low-confidence pairs (детерминированные пометки пайплайна)"
+    source: low-confidence pairs (детерминированные пометки пайплайна)
     max_pairs_per_request: 16
-    evidence_fields: [name_parts, titles, ids, years]
-
+    evidence_fields:
+    - name_parts
+    - titles
+    - ids
+    - years
 tools:
-  read_tools: [browse_articles, get_article_structure]   # read-only
-  write_tools: []                                        # вердикты пишет СТАДИЯ, не агент
-
+  read_tools:
+  - browse_articles
+  - get_article_structure
+  write_tools: []
 memory:
   backend: cvf
   namespace: critic
   trajectory: true
-  feedback_sources: [furniture_share, navigation_efficiency]  # контекст качества источника
-
+  feedback_sources:
+  - furniture_share
+  - navigation_efficiency
 optimization:
   optimizer_enabled: false
-  frozen_eval: null            # critic-frozen-eval заведём после первых прогонов (W3)
+  frozen_eval: null
   candidate_slots: []
-
 guardrails:
   injection_policy: data/ontology/prompt_injection_policy.yaml
   max_output_tokens: 4000
   rate_limit_per_min: 12
+acap_note: 'Diagnostic-слой (ADR-055): вердикты критика НЕ hard invariants —
 
-acap_note: |
-  Diagnostic-слой (ADR-055): вердикты критика НЕ hard invariants —
   они annotate/подтверждают identity-claims; блокировки и валидация
+
   остаются за generic-движком инвариантов. Диапазон входов сегодня:
+
   - enriched: position_surname_mismatch (~608 привязок корпуса)
+
   - citations: corpus_title_fallback (1405, помечен пониженным доверием)
+
+  '
+repair:
+  obligation: reject → перезапуск стадии (метакогнитивный луп F.4)
+  mechanism:
+    reject_triggers:
+    - stage: enriched
+      action: rebuild_binding
+      note: surname_mismatch → позиционная перепривязка или tei_only
+    - stage: citations_resolved
+      action: downgrade_fallback
+      note: corpus_title_fallback reject → candidate_title с пометкой
+    - stage: summaries
+      action: regenerate
+      note: grounding < alarm → повторная генерация с critic-вердиктом как контекстом
+    max_repair_attempts: 2
+    on_exhausted: типизированная пометка repair_exhausted (не молчание)
+  source: 'AutoResearchEval F.4: 82.5% uncorrected self-awareness'
