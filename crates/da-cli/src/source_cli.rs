@@ -920,7 +920,13 @@ pub fn run_parse_pdf(paper_id: &str, pdf_path: Option<&str>) -> anyhow::Result<(
     };
     let rt = tokio::runtime::Runtime::new()?;
     let parsed = rt.block_on(async {
-        let parser = GrobidParser::from_env();
+        // D204: structural profile for corpus parsing — consolidation flags
+        // off, coordinates on. Rich mode requires GROBID outbound to Crossref
+        // which is not guaranteed in the corpus environment (2512.00107
+        // regression: rich profile hung 120s until client timeout when the
+        // container had no crossref route). Bibliography enrichment runs via
+        // the separately cached OpenAlex/Crossref enrich stage from the host.
+        let parser = GrobidParser::from_env().with_profile(da_adapters::GrobidProfile::structural());
         parser.parse_pdf(pdf, paper_id).await.map_err(|e| anyhow::anyhow!("grobid: {e}"))
     })?;
 

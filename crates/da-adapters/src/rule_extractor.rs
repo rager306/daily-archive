@@ -60,6 +60,10 @@ pub struct StructuralConfig {
     pub proposal_noun_phrases: ProposalNounPhraseConfig,
     #[serde(default)]
     pub prose_benchmark_numbers: ProseBenchmarkConfig,
+    #[serde(default)]
+    pub recurring_terms: RecurringTermsConfig,
+    #[serde(default)]
+    pub label_junk_filters: LabelJunkFilters,
 }
 
 
@@ -112,6 +116,8 @@ pub struct ProseBenchmarkConfig {
     pub patterns: std::collections::BTreeMap<String, ProseNumberPattern>,
     #[serde(default = "default_prose_max_per_section")]
     pub max_per_section: usize,
+    #[serde(default = "default_prose_global_cap")]
+    pub global_cap_per_paper: usize,
 }
 
 impl Default for ProseBenchmarkConfig {
@@ -121,11 +127,13 @@ impl Default for ProseBenchmarkConfig {
             entity_type: default_acronym_entity(),
             patterns: std::collections::BTreeMap::new(),
             max_per_section: default_prose_max_per_section(),
+            global_cap_per_paper: default_prose_global_cap(),
         }
     }
 }
 
 fn default_prose_max_per_section() -> usize { 8 }
+fn default_prose_global_cap() -> usize { 12 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ProseNumberPattern {
@@ -143,6 +151,69 @@ pub struct ProseNumberPattern {
     /// "2,048" → "048": strip leading zeros from the captured digits
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub strip_leading_zeros: bool,
+}
+
+/// Recurring dominant terms (survey pattern): a term repeated across the
+/// paper ≥ min_occurrences is a core object of the work (centrality in a
+/// centrality survey). Generic vocabulary is stoplisted via DATA.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct RecurringTermsConfig {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    #[serde(default = "default_acronym_entity")]
+    pub entity_type: String,
+    #[serde(default = "default_recurring_min_occurrences")]
+    pub min_occurrences: usize,
+    #[serde(default = "default_max_words")]
+    pub max_words: usize,
+    #[serde(default = "default_recurring_min_word_len")]
+    pub min_word_len: usize,
+    #[serde(default)]
+    pub generic_stoplist: Vec<String>,
+    #[serde(default)]
+    pub english_stopwords: Vec<String>,
+    #[serde(default = "default_true")]
+    pub require_ascii_letters: bool,
+    #[serde(default = "default_true")]
+    pub drop_plural_when_singular_qualifies: bool,
+    /// genre gate: pass fires only when section titles match survey markers
+    #[serde(default)]
+    pub survey_heading_markers: Vec<String>,
+}
+
+impl Default for RecurringTermsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            entity_type: default_acronym_entity(),
+            min_occurrences: default_recurring_min_occurrences(),
+            max_words: default_max_words(),
+            min_word_len: default_recurring_min_word_len(),
+            generic_stoplist: Vec::new(),
+            english_stopwords: Vec::new(),
+            require_ascii_letters: true,
+            drop_plural_when_singular_qualifies: true,
+            survey_heading_markers: Vec::new(),
+        }
+    }
+}
+
+fn default_recurring_min_occurrences() -> usize { 15 }
+fn default_recurring_min_word_len() -> usize { 4 }
+
+/// Junk label filters: GROBID page furniture leaking into labels.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct LabelJunkFilters {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    #[serde(default)]
+    pub junk_patterns: Vec<String>,
+}
+
+impl Default for LabelJunkFilters {
+    fn default() -> Self {
+        Self { enabled: true, junk_patterns: Vec::new() }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -645,6 +716,93 @@ impl RuleBasedExtractor {
         results
     }
 
+    /// Is this label junk? GROBID page furniture leaking into labels
+    /// ("resultsManuscript submitted"). DATA-driven junk_patterns.
+    fn label_is_junk(&self, label: &str) -> bool {
+        let cfg = &self.config.structural.label_junk_filters;
+        if !cfg.enabled {
+            return false;
+        }
+        cfg.junk_patterns.iter().any(|pat| {
+            regex::Regex::new(pat)
+                .map(|re| re.is_match(label))
+                .unwrap_or(false)
+        })
+    }
+
+    /// Recurring dominant terms (survey pattern, ADR-069 §2.4 companion):
+    /// words/bigrams repeated ≥ min_occurrences across the whole document are
+    /// core objects of the work. Counted over all section texts (title+text),
+    /// lowercase-folded, generic vocabulary stoplisted via DATA.
+    fn extract_recurring_terms(&self, sections: &[(String, String)]) -> Vec<String> {
+        let cfg = &self.config.structural.recurring_terms;
+        if !cfg.enabled {
+            return Vec::new();
+        }
+        // genre gate: survey markers in section titles (Related Surveys,
+        // Paper Outline, Scope and Contributions, taxonomy) — regular papers
+        // skip the pass entirely (noise regression on 2608.19799)
+        if !cfg.survey_heading_markers.is_empty() {
+            let marker_res: Vec<regex::Regex> = cfg
+                .survey_heading_markers
+                .iter()
+                .filter_map(|m| regex::Regex::new(m).ok())
+                .collect();
+            let is_survey = sections
+                .iter()
+                .any(|(title, _)| marker_res.iter().any(|re| re.is_match(title)));
+            if !is_survey {
+                return Vec::new();
+            }
+        }
+        let mut stop: std::collections::HashSet<String> =
+            cfg.generic_stoplist.iter().map(|s| s.to_lowercase()).collect();
+        stop.extend(cfg.english_stopwords.iter().map(|s| s.to_lowercase()));
+        let mut counts: std::collections::HashMap<String, usize> =
+            std::collections::HashMap::new();
+        for (title, text) in sections {
+            let scan = format!("{title} {text}").to_lowercase();
+            for word in scan.split(|c: char| !c.is_alphanumeric()) {
+                // char-count (не bytes): math italic 𝑒 = 4 BYTES, 1 char
+                if word.chars().count() < cfg.min_word_len || stop.contains(word) {
+                    continue;
+                }
+                // математические курсивные глифы — не термины
+                if cfg.require_ascii_letters && !word.chars().any(|c| c.is_ascii_alphabetic()) {
+                    continue;
+                }
+                *counts.entry(word.to_string()).or_insert(0) += 1;
+            }
+        }
+        let qualified: std::collections::HashSet<String> = counts
+            .iter()
+            .filter(|(_, n)| **n >= cfg.min_occurrences)
+            .map(|(w, _)| w.clone())
+            .collect();
+        let mut terms: Vec<String> = qualified
+            .iter()
+            .filter(|w| {
+                // plural дубли: 'hypergraphs'→'hypergraph', 'centralities'→'centrality'
+                if cfg.drop_plural_when_singular_qualifies && w.ends_with('s') && w.len() > 4 {
+                    let mut stems: Vec<String> = vec![w[..w.len() - 1].to_string()];
+                    if let Some(stripped) = w.strip_suffix("ies") {
+                        stems.push(format!("{stripped}y"));
+                    }
+                    if let Some(stripped) = w.strip_suffix("es") {
+                        stems.push(stripped.to_string());
+                    }
+                    if stems.iter().any(|s| qualified.contains(s)) {
+                        return false;
+                    }
+                }
+                true
+            })
+            .cloned()
+            .collect();
+        terms.sort();
+        terms
+    }
+
     /// Looks for capitalized phrases, quoted terms, and "we propose X" patterns.
     fn extract_candidates(
         &self,
@@ -877,6 +1035,9 @@ impl Extractor for RuleBasedExtractor {
             if let Some(entity_type) = Self::classify_section(title) {
                 let candidates = self.extract_candidates(text, &entity_type);
                 for (char_start, char_end, label) in candidates {
+                    if self.label_is_junk(&label) {
+                        continue;
+                    }
                     entities.push(ExtractedEntity {
                         label,
                         entity_type: entity_type.clone(),
@@ -1136,6 +1297,7 @@ impl Extractor for RuleBasedExtractor {
         // ("we propose X") usually appear in Abstract/Introduction, which
         // classify_section leaves unclassified. Whitelist-based global passes
         // cannot see terms absent from extraction_patterns.yaml.
+        let mut prose_total: usize = 0;
         for (section_ordinal, (title, text)) in sections.iter().enumerate() {
             let scan_text = format!("{} {}", title, text);
             let structural_hits: Vec<_> = {
@@ -1149,7 +1311,11 @@ impl Extractor for RuleBasedExtractor {
             let prose_metrics = self.extract_prose_benchmark_numbers(&scan_text, &EntityType::Metric);
             for (char_start, char_end, label) in prose_metrics {
                 let key = (label.to_lowercase(), "metric".to_string());
+                if prose_total >= self.config.structural.prose_benchmark_numbers.global_cap_per_paper {
+                    break;
+                }
                 if !seen.contains(&key) {
+                    prose_total += 1;
                     seen.insert(key);
                     entities.push(ExtractedEntity {
                         label,
@@ -1165,6 +1331,9 @@ impl Extractor for RuleBasedExtractor {
                 }
             }
             for (char_start, char_end, label) in structural_hits {
+                if self.label_is_junk(&label) {
+                    continue;
+                }
                 let key = (label.to_lowercase(), "method".to_string());
                 if !seen.contains(&key) {
                     seen.insert(key);
@@ -1179,6 +1348,43 @@ impl Extractor for RuleBasedExtractor {
                             [char_start.min(scan_text.len())..char_end.min(scan_text.len())]
                             .to_string(),
                     });
+                }
+            }
+        }
+
+        // Recurring dominant terms (survey pattern): core objects repeated
+        // across the whole document (centrality in a centrality survey).
+        for term in self.extract_recurring_terms(sections) {
+            if self.label_is_junk(&term) {
+                continue;
+            }
+            let key = (term.to_lowercase(), "method".to_string());
+            if !seen.contains(&key)
+                && !seen.contains(&(term.to_lowercase(), "task".to_string()))
+            {
+                seen.insert(key);
+                // first occurrence span for evidence
+                let mut placed = false;
+                for (section_ordinal, (title, text)) in sections.iter().enumerate() {
+                    let scan_text = format!("{} {}", title, text);
+                    if let Some(pos) = scan_text.to_lowercase().find(&term) {
+                        entities.push(ExtractedEntity {
+                            label: term.clone(),
+                            entity_type: EntityType::Method,
+                            section_title: title.clone(),
+                            section_ordinal: Some(section_ordinal),
+                            char_start: pos,
+                            char_end: pos + term.len(),
+                            surface: scan_text
+                                [pos.min(scan_text.len())..(pos + term.len()).min(scan_text.len())]
+                                .to_string(),
+                        });
+                        placed = true;
+                        break;
+                    }
+                }
+                if !placed {
+                    continue;
                 }
             }
         }
@@ -1347,6 +1553,37 @@ mod tests {
     // ── structural patterns: acronym definitions (2608.20845 gap) ──
     // New-paper regression: "ingest-time semantic compilation (ISC)" —
     // method absent from whitelists, lowercase phrase, acronym in parens.
+
+    // ── survey patterns (specimen 2512.00107: 39 centrality measures) ──
+    #[test]
+    fn test_recurring_terms_core_objects_of_survey() {
+        let extractor = RuleBasedExtractor::new();
+        let text = "centrality ".repeat(20);
+        // survey genre markers in headings gate the pass (2512.00107 pattern)
+        let sections = vec![
+            ("Related Surveys".to_string(), String::new()),
+            ("Introduction".to_string(), format!("Hypergraph {text}")),
+        ];
+        let terms = extractor.extract_recurring_terms(&sections);
+        assert!(terms.contains(&"centrality".to_string()), "dominant term must surface: {terms:?}");
+        // stoplist: structural is vocabulary, not a method
+        let text2 = format!("{}{}", "structural ".repeat(30), "centrality ".repeat(20));
+        let terms2 =
+            extractor.extract_recurring_terms(&vec![("Scope and Contributions".to_string(), text2)]);
+        assert!(!terms2.contains(&"structural".to_string()), "stoplisted: {terms2:?}");
+        // genre gate: regular IMRaD paper without survey markers skips the pass
+        let terms3 =
+            extractor.extract_recurring_terms(&vec![("Introduction".to_string(), format!("code {}", "task ".repeat(40)))]);
+        assert!(terms3.is_empty(), "no survey markers → pass must not fire: {terms3:?}");
+    }
+
+    #[test]
+    fn test_junk_label_filtered() {
+        let extractor = RuleBasedExtractor::new();
+        assert!(extractor.label_is_junk("resultsManuscript submitted"));
+        assert!(extractor.label_is_junk("Preprint Server 2025"));
+        assert!(!extractor.label_is_junk("ingest-time semantic compilation"));
+    }
 
     // ── ADR-069 §2.5: prose benchmark numbers (vision papers have no Results) ──
     #[test]
