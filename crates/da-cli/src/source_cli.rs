@@ -1039,8 +1039,56 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
             .map_err(|e| anyhow::anyhow!("extraction: {e}"))
     })?;
 
+    // Cross-layer (2608.20845 lesson): GROBID text may lose acronym
+    // definitions ("(ISC)" absent from parsed sections), while the grounded
+    // agent summary keeps them ("Proposes ingest-time semantic compilation
+    // (ISC) as a paradigm"). Extract structural entities from the summary
+    // layer when present and merge (dedup by lowercase label).
+    let summary_path = std::path::Path::new("data/processed")
+        .join(paper_id)
+        .join("summaries/abstract.json");
+    let mut merged: Vec<da_ports::extractor::ExtractedEntity> = entities;
+    if let Ok(sraw) = std::fs::read_to_string(&summary_path)
+        && let Ok(summary) = serde_json::from_str::<serde_json::Value>(&sraw)
+    {
+        let mut summary_text = String::new();
+        for key in ["tldr", "contributions", "methods", "results"] {
+            match summary.get(key) {
+                Some(serde_json::Value::String(s)) => {
+                    summary_text.push_str(s);
+                    summary_text.push(' ');
+                }
+                Some(serde_json::Value::Array(items)) => {
+                    for it in items {
+                        if let Some(s) = it.as_str() {
+                            summary_text.push_str(s);
+                            summary_text.push(' ');
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        if !summary_text.is_empty() {
+            let summary_pairs = vec![("Summary".to_string(), summary_text)];
+            let summary_entities = rt.block_on(async {
+                use da_ports::Extractor as _;
+                let ex = da_adapters::RuleBasedExtractor::new();
+                ex.extract(&summary_pairs).await
+                    .map_err(|e| anyhow::anyhow!("summary extraction: {e}"))
+            })?;
+            let mut seen: std::collections::HashSet<String> =
+                merged.iter().map(|e| e.label.to_lowercase()).collect();
+            for e in summary_entities {
+                if seen.insert(e.label.to_lowercase()) {
+                    merged.push(e);
+                }
+            }
+        }
+    }
+
     let mut records: Vec<serde_json::Value> = Vec::new();
-    for e in &entities {
+    for e in &merged {
         // section ordinal from the source span's section (extractor keeps it)
         records.push(serde_json::json!({
             "label": e.label,
@@ -1049,6 +1097,13 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
         }));
     }
     let json = serde_json::to_string_pretty(&records)?;
+
+    // ADR-069: refresh domain MANIFEST.yaml (derived cache) for every
+    // domain this paper belongs to — coverage stats + gaps after each
+    // processed article.
+    let cfg = da_ports::path_config::PathConfig::load();
+    let domains = resolve_domain(paper_id, &cfg);
+    update_domain_manifests(paper_id, &domains);
 
     let dir = std::path::Path::new("data/processed").join(paper_id);
     std::fs::create_dir_all(dir.join("extracted"))?;
@@ -1081,8 +1136,19 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
                 (serde_yaml::Value::from("evidence_sha256"), serde_yaml::Value::String(sha)),
             ])));
         }
+        // lifecycle = LAST event stage, never a hardcoded stage: a standalone
+        // re-run of build-extracted on an already-validated paper must not
+        // regress the derived state (derivedstatemismatch regression,
+        // caught by validate-objects on 2608.20845/2608.19799).
+        let last_stage = m
+            .get("lifecycle_events")
+            .and_then(|v| v.as_sequence())
+            .and_then(|s| s.last())
+            .and_then(|e| e.get("stage"))
+            .cloned()
+            .unwrap_or(serde_yaml::Value::from("extracted"));
         if let Some(l) = m.get_mut("lifecycle") {
-            *l = serde_yaml::Value::from("extracted");
+            *l = last_stage;
         }
     }
     std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
@@ -1287,6 +1353,92 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Recompute `data/domains/<domain>/MANIFEST.yaml` (ADR-069 derived cache):
+/// papers_processed = processed papers routing to this domain that have
+/// an extracted/entities.json; entity_coverage = per-type entity counts;
+/// gaps = SCHEMA entity_types with zero coverage.
+fn update_domain_manifests(paper_id: &str, domains: &[String]) {
+    let processed = std::path::Path::new("data/processed");
+    let Ok(rd) = std::fs::read_dir(processed) else { return };
+
+    // map paper_id → domain routing for all processed papers with entities
+    let cfg = da_ports::path_config::PathConfig::load();
+    let mut papers: Vec<(String, String)> = Vec::new(); // (paper, primary domain)
+    let mut ent_counts: std::collections::HashMap<String, Vec<serde_json::Value>> =
+        std::collections::HashMap::new();
+    for e in rd.flatten() {
+        let id = e.file_name().to_string_lossy().to_string();
+        if !e.path().join("extracted/entities.json").is_file() {
+            continue;
+        }
+        let primary = resolve_domain(&id, &cfg).first().cloned().unwrap_or_default();
+        if primary.is_empty() {
+            continue;
+        }
+        papers.push((id.clone(), primary.clone()));
+        if let Ok(raw) = std::fs::read_to_string(e.path().join("extracted/entities.json"))
+            && let Ok(arr) = serde_json::from_str::<Vec<serde_json::Value>>(&raw)
+        {
+            ent_counts.insert(id, arr);
+        }
+    }
+
+    for domain in domains {
+        let dom_dir = std::path::Path::new("data/domains").join(domain);
+        if !dom_dir.is_dir() {
+            continue;
+        }
+        let mut processed_count = 0usize;
+        let mut coverage: std::collections::BTreeMap<String, u64> =
+            std::collections::BTreeMap::new();
+        for (id, primary) in &papers {
+            if primary != domain {
+                continue;
+            }
+            processed_count += 1;
+            if let Some(arr) = ent_counts.get(id) {
+                for e in arr {
+                    if let Some(t) = e.get("entity_type").and_then(|t| t.as_str()) {
+                        *coverage.entry(t.to_string()).or_insert(0) += 1;
+                    }
+                }
+            }
+        }
+
+        // SCHEMA entity_types with zero coverage → gaps
+        let mut gaps: Vec<String> = Vec::new();
+        if let Ok(schema_raw) = std::fs::read_to_string(dom_dir.join("SCHEMA.yaml"))
+            && let Ok(schema) = serde_yaml::from_str::<serde_yaml::Value>(&schema_raw)
+            && let Some(types) = schema.get("entity_types").and_then(|t| t.as_sequence())
+        {
+            for t in types {
+                if let Some(tid) = t.get("id").and_then(|i| i.as_str())
+                    && !coverage.contains_key(tid)
+                {
+                    gaps.push(format!(
+                        "entity_type '{tid}' has 0 coverage across {processed_count} processed papers"
+                    ));
+                }
+            }
+        }
+
+        let manifest = serde_yaml::Mapping::from_iter([
+            ("schema_version".into(), "domain-manifest.v1".into()),
+            ("domain".into(), domain.as_str().into()),
+            ("generated_at".into(), chrono_now().into()),
+            ("last_paper".into(), paper_id.into()),
+            ("papers_processed".into(), (processed_count as u64).into()),
+            ("entity_coverage".into(), serde_yaml::to_value(&coverage).unwrap_or_default()),
+            ("gaps".into(), serde_yaml::to_value(&gaps).unwrap_or_default()),
+            ("note".into(), "derived cache — recomputed on every build-extracted".into()),
+        ]);
+        let _ = std::fs::write(
+            dom_dir.join("MANIFEST.yaml"),
+            serde_yaml::to_string(&serde_yaml::Value::Mapping(manifest)).unwrap_or_default(),
+        );
+    }
+}
+
 /// Resolve the domain for a paper from its identity.json coarse_topic_code
 /// via the domain_routing table in path_config.yaml.
 fn resolve_domain(paper_id: &str, cfg: &da_ports::path_config::PathConfig) -> Vec<String> {
@@ -1388,16 +1540,28 @@ fn collect_pdfs(root: &str, paper_id: &str, out: &mut Vec<String>) {
         let p = e.path();
         if p.is_dir() {
             if p.file_name().map(|n| n == paper_id).unwrap_or(false) {
-                if let Ok(inner) = fs::read_dir(&p) {
-                    for f in inner.flatten() {
-                        if f.path().extension().map(|x| x == "pdf").unwrap_or(false) {
-                            out.push(f.path().to_string_lossy().to_string());
-                        }
-                    }
-                }
+                // PDF may sit at <id>/*.pdf or the canonical <id>/source/<id>.pdf
+                // (article_catalog layout). Walk the paper dir recursively.
+                collect_pdfs_recursive(&p, out);
             } else {
                 collect_pdfs(&p.to_string_lossy(), paper_id, out);
             }
+        }
+    }
+}
+
+/// Collect all *.pdf under `dir` (depth-first, deterministic order).
+fn collect_pdfs_recursive(dir: &std::path::Path, out: &mut Vec<String>) {
+    use std::fs;
+    let Ok(rd) = fs::read_dir(dir) else { return };
+    let mut entries: Vec<_> = rd.flatten().collect();
+    entries.sort_by_key(|e| e.file_name());
+    for e in entries {
+        let p = e.path();
+        if p.is_dir() {
+            collect_pdfs_recursive(&p, out);
+        } else if p.extension().is_some_and(|x| x == "pdf") {
+            out.push(p.to_string_lossy().to_string());
         }
     }
 }
@@ -1469,6 +1633,37 @@ mod tests {
         let _restore = CwdGuard::new(&tmp);
         let state = load_fsm_state("1234.56789").unwrap();
         assert_eq!(state.current_stage(), "structured");
+    }
+
+    // Regression (caught live 2026-08-24 on 2608.20845): canonical
+    // article_catalog layout puts the PDF at <id>/source/<id>.pdf, one
+    // level below the paper dir. collect_pdfs only scanned direct
+    // children → "no source PDF found" despite the PDF existing.
+    #[test]
+    fn collect_pdfs_finds_pdf_in_source_subdir() {
+        let _guard = CWD_LOCK.lock().unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        let paper_dir = tmp.path().join("data/sources/arxiv/cs-ai/2608.99999");
+        std::fs::create_dir_all(paper_dir.join("source")).unwrap();
+        std::fs::write(paper_dir.join("source/2608.99999.pdf"), b"%PDF-fake").unwrap();
+        let _restore = CwdGuard::new(&tmp);
+        let mut out = Vec::new();
+        collect_pdfs("data/sources", "2608.99999", &mut out);
+        assert_eq!(out.len(), 1, "must find nested source/ pdf: {out:?}");
+        assert!(out[0].ends_with("source/2608.99999.pdf"));
+    }
+
+    #[test]
+    fn collect_pdfs_finds_toplevel_pdf() {
+        let _guard = CWD_LOCK.lock().unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        let paper_dir = tmp.path().join("data/sources/arxiv/cs-ai/2608.88888");
+        std::fs::create_dir_all(&paper_dir).unwrap();
+        std::fs::write(paper_dir.join("2608.88888.pdf"), b"%PDF-fake").unwrap();
+        let _restore = CwdGuard::new(&tmp);
+        let mut out = Vec::new();
+        collect_pdfs("data/sources", "2608.88888", &mut out);
+        assert_eq!(out.len(), 1, "legacy top-level pdf must still be found: {out:?}");
     }
 
     /// Restores original cwd on drop.

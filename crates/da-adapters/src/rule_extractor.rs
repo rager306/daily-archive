@@ -25,13 +25,15 @@ use da_ports::extractor::{ExtractResult, ExtractedEntity, Extractor};
 // ============================================================================
 
 /// Declarative extraction config (Wave 3: JSON-driven whitelists).
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ExtractionConfig {
     pub methods: MethodConfig,
     pub models: Vec<String>,
     pub datasets: Vec<String>,
     pub metrics: Vec<String>,
     pub tasks: TaskConfig,
+    #[serde(default)]
+    pub structural: StructuralConfig,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -45,6 +47,95 @@ pub struct TaskConfig {
     pub phrases: Vec<String>,
     pub acronyms: Vec<String>,
 }
+
+/// DATA-driven structural patterns for NEW-term discovery (papers whose
+/// methods/datasets are absent from whitelists — 2608.20845 lesson: 4
+/// entities from 17 sections because "ingest-time semantic compilation
+/// (ISC)" matches no list entry).
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
+pub struct StructuralConfig {
+    #[serde(default)]
+    pub acronym_definitions: AcronymDefinitionConfig,
+    #[serde(default)]
+    pub proposal_noun_phrases: ProposalNounPhraseConfig,
+}
+
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct AcronymDefinitionConfig {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    #[serde(default = "default_acronym_entity")]
+    pub entity_type: String,
+    #[serde(default = "default_acronym_min")]
+    pub acronym_min_len: usize,
+    #[serde(default = "default_acronym_max")]
+    pub acronym_max_len: usize,
+    #[serde(default = "default_min_words")]
+    pub min_words_in_phrase: usize,
+    #[serde(default = "default_max_words")]
+    pub max_words_in_phrase: usize,
+}
+
+impl Default for AcronymDefinitionConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            entity_type: default_acronym_entity(),
+            acronym_min_len: default_acronym_min(),
+            acronym_max_len: default_acronym_max(),
+            min_words_in_phrase: default_min_words(),
+            max_words_in_phrase: default_max_words(),
+        }
+    }
+}
+
+fn default_true() -> bool { true }
+fn default_acronym_entity() -> String { "Method".into() }
+fn default_acronym_min() -> usize { 2 }
+fn default_acronym_max() -> usize { 6 }
+fn default_min_words() -> usize { 2 }
+fn default_max_words() -> usize { 5 }
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct ProposalNounPhraseConfig {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    #[serde(default = "default_acronym_entity")]
+    pub entity_type: String,
+    #[serde(default = "default_proposal_triggers")]
+    pub triggers: Vec<String>,
+    #[serde(default = "default_third_person_triggers")]
+    pub third_person_triggers: Vec<String>,
+    #[serde(default = "default_max_phrase_chars")]
+    pub max_phrase_chars: usize,
+}
+
+impl Default for ProposalNounPhraseConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            entity_type: default_acronym_entity(),
+            triggers: default_proposal_triggers(),
+            third_person_triggers: default_third_person_triggers(),
+            max_phrase_chars: default_max_phrase_chars(),
+        }
+    }
+}
+
+fn default_proposal_triggers() -> Vec<String> {
+    ["we propose", "we introduce", "we present", "we develop", "we describe", "we build"]
+        .into_iter()
+        .map(String::from)
+        .collect()
+}
+fn default_third_person_triggers() -> Vec<String> {
+    ["propose", "proposes", "introduces", "presents"]
+        .into_iter()
+        .map(String::from)
+        .collect()
+}
+fn default_max_phrase_chars() -> usize { 40 }
 
 impl ExtractionConfig {
     /// Load from YAML file.
@@ -99,6 +190,60 @@ pub struct ExtractionCacheIdentity {
     pub implementation_fingerprint: String,
     pub configuration_fingerprint: String,
     pub output_schema_fingerprint: String,
+}
+
+
+/// Last `max_words` words of `text` (for acronym-definition phrase check).
+/// Char-boundary-safe: reverse scan counting word starts; never slices on a
+/// computed byte index (multibyte regression: 'µRL framework').
+fn before_tail_words(text: &str, max_words: usize) -> Option<&str> {
+    let trimmed = text.trim_end().trim_end_matches([',', ';', ':']);
+    if trimmed.is_empty() {
+        return None;
+    }
+    let mut words_found = 0usize;
+    let mut in_word = false;
+    let mut start_of_nth = None;
+    for (i, c) in trimmed.char_indices().rev() {
+        if c.is_whitespace() {
+            in_word = false;
+        } else if !in_word {
+            in_word = true;
+            words_found += 1;
+            if words_found == max_words {
+                start_of_nth = Some(i);
+                break;
+            }
+        }
+    }
+    match start_of_nth {
+        Some(i) => Some(&trimmed[i..]),
+        None => Some(trimmed), // fewer words than max_words → whole tail
+    }
+}
+
+/// True when the acronym's letters match the initials of the phrase words.
+/// "Ingest-time Semantic Compilation" vs "ISC" → I,S,C ✓.
+/// Lowercase significance: skip pure stop-words in the phrase.
+fn initials_match(phrase: &str, acronym: &str) -> bool {
+    let skip = ["of", "the", "and", "for", "a", "an", "to", "in", "on"];
+    let initials: Vec<char> = phrase
+        .split_whitespace()
+        .filter(|w| !skip.contains(&w.to_lowercase().as_str()))
+        .filter_map(|w| w.chars().next())
+        .map(|c| c.to_ascii_uppercase())
+        .collect();
+    let acr: Vec<char> = acronym.chars().map(|c| c.to_ascii_uppercase()).collect();
+    // exact initials sequence, or a subsequence (some words may not count)
+    if initials == acr {
+        return true;
+    }
+    // subsequence check: acronym letters appear in order among initials
+    if initials.len() <= acr.len() {
+        return false;
+    }
+    let mut ai = initials.iter();
+    acr.iter().all(|a| ai.any(|i| i == a))
 }
 
 pub struct RuleBasedExtractor {
@@ -267,6 +412,131 @@ impl RuleBasedExtractor {
     }
 
     /// Extract candidate entity labels from section text using heuristics.
+    /// Structural pattern: `<phrase> (ABBR)` where ABBR initials match the
+    /// phrase's significant words. Catches NEW methods absent from
+    /// whitelists: "ingest-time semantic compilation (ISC)" → Method[ISC].
+    /// Hyphenated words contribute their first letter ("Ingest-time" → I).
+    fn extract_acronym_definitions(&self, text: &str, entity_type: &EntityType) -> Vec<(usize, usize, String)> {
+        let cfg = &self.config.structural.acronym_definitions;
+        if !cfg.enabled || !matches!(entity_type, EntityType::Method | EntityType::Task) {
+            return Vec::new();
+        }
+        let mut results = Vec::new();
+        let bytes = text.as_bytes();
+        let mut i = 0;
+        while let Some(open) = text[i..].find('(') {
+            let open_abs = i + open;
+            // acronym: uppercase letters then ')'
+            let inner_start = open_abs + 1;
+            let mut j = inner_start;
+            while j < bytes.len() && bytes[j].is_ascii_uppercase() {
+                j += 1;
+            }
+            if j > inner_start
+                && j < bytes.len()
+                && bytes[j] == b')'
+                && (j - inner_start) >= cfg.acronym_min_len
+                && (j - inner_start) <= cfg.acronym_max_len
+            {
+                let acronym = &text[inner_start..j];
+                // phrase: words immediately before '('
+                let before = text[..open_abs].trim_end();
+                if let Some(phrase) = before_tail_words(before, cfg.max_words_in_phrase) {
+                    let word_count = phrase.split_whitespace().count();
+                    if word_count >= cfg.min_words_in_phrase && initials_match(phrase, acronym) {
+                        // span: phrase + " (ABBR)"
+                        let start = open_abs - phrase.len();
+                        results.push((start, j + 1, acronym.to_string()));
+                    }
+                }
+            }
+            i = open_abs + 1;
+        }
+        results
+    }
+
+    /// Structural pattern: noun phrase after proposal verbs, lowercase
+    /// allowed. "we propose a compiled semantic substrate" → Method.
+    /// Articles (a/an/the) are skipped; phrase runs to a stop word.
+    fn extract_proposal_noun_phrases(&self, text: &str, entity_type: &EntityType) -> Vec<(usize, usize, String)> {
+        let cfg = &self.config.structural.proposal_noun_phrases;
+        if !cfg.enabled || !matches!(entity_type, EntityType::Method | EntityType::Task) {
+            return Vec::new();
+        }
+        let lower = text.to_lowercase();
+        const STOP_WORDS: &[&str] = &[
+            "with", "that", "to", "of", "for", "on", "in", "by", "which", "and",
+            "where", "while", "using", "as", "at", "into", "from", "such", "so",
+            // articles survive the article-skip when a space precedes them
+            // ("we present the substrate" → skip failed on leading space)
+            "the", "a", "an", "our", "its",
+        ];
+        let mut results = Vec::new();
+        // full triggers ("we propose") + bare verbs ("propose") both anchor here
+        let mut triggers: Vec<&str> = cfg.triggers.iter().map(String::as_str).collect();
+        triggers.extend(cfg.third_person_triggers.iter().map(String::as_str));
+        for trigger in triggers {
+            let mut start = 0;
+            while let Some(pos) = lower[start..].find(trigger) {
+                let after = start + pos + trigger.len();
+                // word-boundary guard: "propose" inside "proposes" must not
+                // fire (leaked "s ingest-time semantic compilation" label)
+                if text[after..].chars().next().is_some_and(|c| c.is_alphanumeric()) {
+                    start = after;
+                    continue;
+                }
+                // skip whitespace, then a leading article
+                let mut cursor = after;
+                let ws = text[cursor..].len() - text[cursor..].trim_start().len();
+                cursor += ws;
+                let rest = &text[cursor..];
+                for article in ["a ", "an ", "the ", "our ", "its "] {
+                    // get(..n) is None when n is not a char boundary
+                    // (multibyte regression: ' µRL framework' rest[..2])
+                    if rest.get(..article.len()).is_some_and(|s| s.eq_ignore_ascii_case(article)) {
+                        cursor += article.len();
+                        break;
+                    }
+                }
+                let remainder = &text[cursor..];
+                // take words until stop word / sentence end / max chars
+                let mut phrase_end = 0;
+                for word in remainder.split_inclusive(char::is_whitespace) {
+                    // split_inclusive yields separator-only chunks (" ") for
+                    // leading whitespace — skip them before the first word.
+                    let w = word.trim();
+                    if w.is_empty() {
+                        if phrase_end > 0 {
+                            break; // trailing whitespace — phrase complete
+                        }
+                        continue; // leading whitespace
+                    }
+                    if w.ends_with(['.', ';', ':', ',']) {
+                        break;
+                    }
+                    if STOP_WORDS.contains(&w.to_lowercase().as_str()) {
+                        break;
+                    }
+                    if phrase_end + word.len() > cfg.max_phrase_chars {
+                        break;
+                    }
+                    if w.chars().any(|c| c.is_ascii_digit()) {
+                        break; // numbers signal measurements, not names
+                    }
+                    phrase_end += word.len();
+                }
+                let candidate = remainder[..phrase_end].trim();
+                let words = candidate.split_whitespace().count();
+                if (2..=6).contains(&words) && candidate.chars().any(|c| c.is_alphabetic()) {
+                    let abs_start = cursor;
+                    results.push((abs_start, cursor + phrase_end, candidate.to_string()));
+                }
+                start = cursor;
+            }
+        }
+        results
+    }
+
     /// Looks for capitalized phrases, quoted terms, and "we propose X" patterns.
     fn extract_candidates(
         &self,
@@ -285,6 +555,12 @@ impl RuleBasedExtractor {
         // must NOT add GRPO as a Dataset — the global Method pass will add it
         // with its canonical Method type).
         if matches!(entity_type, EntityType::Method | EntityType::Task) {
+            // Structural patterns (DATA-driven, new-term discovery):
+            // acronym definitions "phrase (ABBR)" + proposal noun phrases.
+            // Deduped downstream by label; cheap relative to whitelist scans.
+            results.extend(self.extract_acronym_definitions(text, entity_type));
+            results.extend(self.extract_proposal_noun_phrases(text, entity_type));
+
             for pattern in &["we propose ", "we present ", "we introduce ", "we use "] {
                 let lower_text = text.to_lowercase();
                 let mut start = 0;
@@ -746,6 +1022,37 @@ impl Extractor for RuleBasedExtractor {
             seen_final.insert(key)
         });
 
+        // Global structural pass (2608.20845 lesson): NEW-term discovery must
+        // scan ALL sections — definitions ("phrase (ABBR)") and proposals
+        // ("we propose X") usually appear in Abstract/Introduction, which
+        // classify_section leaves unclassified. Whitelist-based global passes
+        // cannot see terms absent from extraction_patterns.yaml.
+        for (section_ordinal, (title, text)) in sections.iter().enumerate() {
+            let scan_text = format!("{} {}", title, text);
+            let structural_hits: Vec<_> = {
+                let mut hits = self.extract_acronym_definitions(&scan_text, &EntityType::Method);
+                hits.extend(self.extract_proposal_noun_phrases(&scan_text, &EntityType::Method));
+                hits
+            };
+            for (char_start, char_end, label) in structural_hits {
+                let key = (label.to_lowercase(), "method".to_string());
+                if !seen.contains(&key) {
+                    seen.insert(key);
+                    entities.push(ExtractedEntity {
+                        label,
+                        entity_type: EntityType::Method,
+                        section_title: title.clone(),
+                        section_ordinal: Some(section_ordinal),
+                        char_start,
+                        char_end,
+                        surface: scan_text
+                            [char_start.min(scan_text.len())..char_end.min(scan_text.len())]
+                            .to_string(),
+                    });
+                }
+            }
+        }
+
         Ok(entities)
     }
 
@@ -904,6 +1211,44 @@ mod tests {
                 .iter()
                 .any(|(_, _, l)| l.contains("GEPA")),
             "GEPA should still be a Method candidate, got: {method_candidates2:?}"
+        );
+    }
+
+    // ── structural patterns: acronym definitions (2608.20845 gap) ──
+    // New-paper regression: "ingest-time semantic compilation (ISC)" —
+    // method absent from whitelists, lowercase phrase, acronym in parens.
+
+    #[test]
+    fn test_acronym_definition_catches_new_method() {
+        let extractor = RuleBasedExtractor::new();
+        let text = "Ingest-time semantic compilation (ISC) compiles corpus meaning into validated claims.";
+        let cands = extractor.extract_candidates(text, &EntityType::Method);
+        assert!(
+            cands.iter().any(|(_, _, l)| l == "ISC" || l.contains("semantic compilation")),
+            "ISC must be discovered via acronym-definition pattern, got: {cands:?}"
+        );
+    }
+
+    #[test]
+    fn test_acronym_definition_initials_must_match() {
+        let extractor = RuleBasedExtractor::new();
+        // "(RAG)" preceded by unrelated phrase — initials must NOT match
+        let text = "The query pipeline reads every document (RAG) at answer time.";
+        let cands = extractor.extract_candidates(text, &EntityType::Method);
+        assert!(
+            !cands.iter().any(|(_, _, l)| l == "RAG" && l.len() == 3),
+            "acronym without matching initials must not be discovered: {cands:?}"
+        );
+    }
+
+    #[test]
+    fn test_proposal_noun_phrase_lowercase_allowed() {
+        let extractor = RuleBasedExtractor::new();
+        let text = "We propose a compiled semantic substrate with maintenance contracts.";
+        let cands = extractor.extract_candidates(text, &EntityType::Method);
+        assert!(
+            cands.iter().any(|(_, _, l)| l.to_lowercase().contains("semantic substrate")),
+            "lowercase noun phrase after 'we propose a' must be caught, got: {cands:?}"
         );
     }
 

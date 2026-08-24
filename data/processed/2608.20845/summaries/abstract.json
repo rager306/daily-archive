@@ -1,0 +1,22 @@
+{
+  "contributions": [
+    "Proposes ingest-time semantic compilation (ISC) as a paradigm, introducing a semantic substrate with two coupled layers: incrementally maintained embeddings (geometric) and atomic claims with mechanically validated provenance (symbolic).",
+    "Treats the compiled substrate as a first-class database object with DDL, maintenance contract, migration contract, and a cost model (break-even read count R*).",
+    "Demonstrates that incremental maintenance scales with corpus change rather than size, and that compiled claim payloads dominate chunking baselines across 32 budget-by-model cells on broadcast interview transcripts."
+  ],
+  "limitations": "The maintenance scaling proof uses a controlled synthetic pilot, not real corpora under production embedding APIs. Extraction and answer grading both use Kimi K2.6, so human calibration and cross-model re-judgment are still in progress. Compilation is not universally optimal—small, highly volatile, or rarely queried corpora may never reach the break-even read count. The compiled-payload advantage did not automatically survive an agentic mediation layer. Production-scale questions around streaming maintenance, crash recovery (redo log), and multi-tenant isolation remain open.",
+  "methods": "The authors implement a reference ISC system using PostgreSQL, where each compiled claim is a row validated against a verbatim source span via a foreign-key-style gate that rejects unsupported candidates. They conduct two existence proofs: (1) a synthetic pilot where a corpus grows from 3,000 to 9,000 documents over 50 update events, comparing incremental low-rank embedding updates against full re-decomposition; and (2) a dialogue QA study on 500 held-out broadcast-interview transcripts, comparing provenance-validated fact payloads against fixed-width, turn-aware, and semantic chunking policies under matched read-token budgets, including a strongest-contextualized-chunk stack with hybrid retrieval and reranking.",
+  "paper_id": "2608.20845",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 0,
+    "latency_ms": 10016,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 1082
+  },
+  "results": "Incremental embedding updates cost 8.4 ms per update versus 283 ms for full re-decomposition (33.7× cheaper), tracking to floating-point precision (angle drift below 10^-11 degrees, recall@10 = 1.0). A Procrustes alignment migration recovered 0.95 mean cosine similarity while re-embedding only ~10% of the corpus. On 500 transcripts, compiled claims won all 32 budget-by-model cells. At a 2,048-token budget, facts scored 85.2% correct from ~2.2k reader tokens versus 72.5% from ~16.3k tokens for the best chunk configuration. The contextualized-chunk stack (hybrid retrieval + reranking) reached 88.0% but required ~47.7k tokens (~21× the reader tokens), and the difference was statistically indistinguishable (McNemar p = 0.202 at 2,048 tokens). The validation gate admitted 69,746 claims and rejected 1.1% (29 of 2,724) in replay, 28 for unlocated quotes. Compilation cost extrapolated to ~$32 for the full 500-document corpus, amortizing within ~580–600 queries.",
+  "schema_version": "summary-node.v1",
+  "tldr": "Ingest-time semantic compilation (ISC) compiles corpus meaning into validated claims and embeddings at write time, avoiding the repeated query-time interpretation cost of standard RAG. Controlled studies show compiled claims achieve higher accuracy at a fraction of reader tokens compared to chunking baselines."
+}

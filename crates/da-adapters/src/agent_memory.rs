@@ -128,6 +128,9 @@ mod tests {
             latency_ms: 120,
             completion_tokens: Some(300),
             grounding_hint: Some(0.86),
+            article_features: None,
+            failure_pattern: None,
+            construction_trace: None,
         };
         let epoch = m.record_trajectory(&rec).unwrap();
         assert!(epoch >= 1);
