@@ -688,14 +688,16 @@ pub fn run_build_summary(paper_id: &str) -> anyhow::Result<()> {
 
     let rt = tokio::runtime::Runtime::new()?;
     let out = rt.block_on(run_summaries_agent(
-        &store,
-        &mut memory,
-        &llm,
-        &manifest,
-        &binding.model_name,
-        &system_prompt,
-        &injection_yaml,
-        paper_id,
+        da_application::summaries_agent_stage::AgentRunContext {
+            store: &store,
+            memory: &mut memory,
+            llm: &llm,
+            manifest: &manifest,
+            model_name: &binding.model_name,
+            system_prompt: &system_prompt,
+            injection_policy_yaml: &injection_yaml,
+            paper_id,
+        },
     ))?;
     use da_ports::agent_memory::AgentMemory as _;
     memory.persist().ok();

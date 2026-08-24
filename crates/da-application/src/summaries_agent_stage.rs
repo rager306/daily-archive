@@ -38,16 +38,23 @@ pub struct SummariesAgentOutput {
     pub ok: bool,
 }
 
+/// Bundled runtime context for one agent invocation (keeps the
+/// signature under clippy limits; all DATA-driven).
+pub struct AgentRunContext<'a> {
+    pub store: &'a dyn SchemaObjectStore,
+    pub memory: &'a mut dyn AgentMemory,
+    pub llm: &'a dyn LLMClient,
+    pub manifest: &'a AgentManifest,
+    pub model_name: &'a str,
+    pub system_prompt: &'a str,
+    pub injection_policy_yaml: &'a str,
+    pub paper_id: &'a str,
+}
+
 pub async fn run_summaries_agent(
-    store: &dyn SchemaObjectStore,
-    memory: &mut dyn AgentMemory,
-    llm: &dyn LLMClient,
-    manifest: &AgentManifest,
-    model_name: &str,
-    system_prompt: &str,
-    injection_policy_yaml: &str,
-    paper_id: &str,
+    ctx: AgentRunContext<'_>,
 ) -> Result<SummariesAgentOutput, SummariesAgentError> {
+    let AgentRunContext { store, memory, llm, manifest, model_name, system_prompt, injection_policy_yaml, paper_id } = ctx;
     manifest.check_locks().map_err(SummariesAgentError::Agent)?;
     if !manifest.identity.enabled {
         return Err(SummariesAgentError::Agent(format!(
@@ -220,10 +227,13 @@ mod tests {
         let mut mem = FakeMemory;
         let llm = FakeLlm;
         let m = AgentManifest::from_yaml_str(MANIFEST).unwrap();
-        let out = run_summaries_agent(
-            &store, &mut mem, &llm, &m, "agnes-ai/agnes-2.5-flash",
-            "system prompt v1", "scrub_patterns: []\n", "p",
-        )
+        let out = run_summaries_agent(AgentRunContext {
+            store: &store, memory: &mut mem, llm: &llm, manifest: &m,
+            model_name: "agnes-ai/agnes-2.5-flash",
+            system_prompt: "system prompt v1",
+            injection_policy_yaml: "scrub_patterns: []\n",
+            paper_id: "p",
+        })
         .await
         .unwrap();
         assert!(out.ok);

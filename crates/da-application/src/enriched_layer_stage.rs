@@ -54,7 +54,7 @@ pub fn build_enriched_layer(
     let tei = parsed.get("tei_xml").and_then(|v| v.as_str()).unwrap_or("");
     let tei_authors = parse_tei_authors(tei);
 
-    let endpoint = format!("api.openalex.org/works/doi:10.48550/arXiv.{{pid}}");
+    let endpoint = "api.openalex.org/works/doi:10.48550/arXiv.{pid}".to_string();
     let prov = serde_json::json!({
         "endpoint": endpoint.replace("{pid}", paper_id),
         "fetched_at": obs.fetched_at,
