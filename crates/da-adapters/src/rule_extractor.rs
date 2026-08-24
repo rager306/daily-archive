@@ -68,6 +68,8 @@ pub struct StructuralConfig {
     pub numbered_environments: NumberedEnvironmentsConfig,
     #[serde(default)]
     pub yake_keyphrases: YakeKeyphrasesConfig,
+    #[serde(default)]
+    pub section_titles: SectionTitlesConfig,
 }
 
 
@@ -264,6 +266,12 @@ pub struct YakeKeyphrasesConfig {
     pub entity_type: String,
     #[serde(default)]
     pub extra_stopwords: Vec<String>,
+    /// масштабировать top_n длиной документа (монографии 1M+ символов:
+    /// статичный top 15 терял bellman/frontier-search на specimen)
+    #[serde(default)]
+    pub top_n_per_25k_chars: bool,
+    #[serde(default = "default_yake_top_n_cap")]
+    pub top_n_cap: usize,
 }
 
 impl Default for YakeKeyphrasesConfig {
@@ -276,6 +284,8 @@ impl Default for YakeKeyphrasesConfig {
             require_multiword: true,
             entity_type: default_acronym_entity(),
             extra_stopwords: Vec::new(),
+            top_n_per_25k_chars: false,
+            top_n_cap: default_yake_top_n_cap(),
         }
     }
 }
@@ -283,6 +293,39 @@ impl Default for YakeKeyphrasesConfig {
 fn default_yake_top_n() -> usize { 15 }
 fn default_yake_ngrams() -> usize { 3 }
 fn default_yake_min_doc_chars() -> usize { 1000 }
+fn default_yake_top_n_cap() -> usize { 150 }
+
+/// Section titles as entities (monograph spine): TOC headings level 2+
+/// are authored topic names — the textbook analogue of numbered survey
+/// environments. Titlecase multi-word titles become Method candidates.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct SectionTitlesConfig {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    #[serde(default = "default_acronym_entity")]
+    pub entity_type: String,
+    #[serde(default = "default_min_words")]
+    pub min_words: usize,
+    #[serde(default = "default_max_words")]
+    pub max_words: usize,
+    #[serde(default = "default_true")]
+    pub require_capitalized: bool,
+    #[serde(default)]
+    pub generic_headings: Vec<String>,
+}
+
+impl Default for SectionTitlesConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            entity_type: default_acronym_entity(),
+            min_words: default_min_words(),
+            max_words: default_max_words(),
+            require_capitalized: true,
+            generic_headings: Vec::new(),
+        }
+    }
+}
 
 /// Junk label filters: GROBID page furniture leaking into labels.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -917,6 +960,13 @@ impl RuleBasedExtractor {
         if doc_len < cfg.min_doc_chars {
             return Vec::new();
         }
+        let top_n = if cfg.top_n_per_25k_chars {
+            // монография 1M символов: базовый top 15 калиброван под статью
+            let scaled = cfg.top_n.saturating_mul(doc_len / 25_000);
+            scaled.clamp(cfg.top_n, cfg.top_n_cap)
+        } else {
+            cfg.top_n
+        };
         let mut stop: std::collections::HashSet<String> = yake_rust::StopWords::predefined("en")
             .map(|s| s.iter().cloned().collect())
             .unwrap_or_default();
@@ -933,7 +983,7 @@ impl RuleBasedExtractor {
             ..yake_rust::Config::default()
         };
         let mut items: Vec<(String, String, f64)> = yake_rust::get_n_best(
-            cfg.top_n,
+            top_n,
             &text,
             &yake_rust::StopWords::custom(stop),
             &yc,
@@ -959,6 +1009,69 @@ impl RuleBasedExtractor {
             }
         }
         kept
+    }
+
+    /// Section titles as entities (monograph spine, ADR-071 companion):
+    /// titlecase multi-word headings are authored topic names. Generic
+    /// headings (Introduction/Exercises/Summary) excluded via DATA.
+    fn extract_section_titles(&self, sections: &[(String, String)]) -> Vec<(usize, String)> {
+        let cfg = &self.config.structural.section_titles;
+        if !cfg.enabled {
+            return Vec::new();
+        }
+        let generic: std::collections::HashSet<String> =
+            cfg.generic_headings.iter().map(|g| g.to_lowercase()).collect();
+        let mut out = Vec::new();
+        let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for (ordinal, (title, _)) in sections.iter().enumerate() {
+            let t = title.trim().trim_end_matches(['.', ':']);
+            let words: Vec<&str> = t.split_whitespace().collect();
+            if words.len() < cfg.min_words || words.len() > cfg.max_words {
+                continue;
+            }
+            // числовые и буквенные префиксы заголовков:
+            // "2.3.1 Alpha Vectors" → Alpha Vectors; "G Datasets",
+            // "E.1 Benchmarks" (appendix lettering) → отбрасываются
+            let strip_prefix = |w: &&str| -> bool {
+                let bare = w.trim_end_matches(['.', ':']);
+                if bare.chars().next().is_some_and(|c| c.is_ascii_digit()) {
+                    return true; // 2.3.1 / 2.
+                }
+                // одиночная буква приложения: G / E. / A.2
+                let letters: Vec<char> = bare.chars().filter(|c| c.is_ascii_alphabetic()).collect();
+                letters.len() == 1
+                    && bare.chars().next().is_some_and(|c| c.is_uppercase())
+                    && w.len() <= 4
+            };
+            let content: Vec<&str> = words
+                .iter()
+                .skip_while(|w| strip_prefix(w))
+                .copied()
+                .collect();
+            if content.len() < cfg.min_words {
+                continue;
+            }
+            if cfg.require_capitalized {
+                let caps = content
+                    .iter()
+                    .filter(|w| w.chars().next().is_some_and(|c| c.is_uppercase()))
+                    .count();
+                if caps < content.len().min(2) {
+                    continue;
+                }
+            }
+            let label = content.join(" ");
+            // generic-заголовок — после срезки префиксов: 'e.1 benchmarks'
+            // → 'benchmarks' → generic (регрессия фикстуры G Datasets)
+            let ll = label.to_lowercase();
+            if generic.contains(&ll) || generic.iter().any(|g| ll.starts_with(&format!("{g} "))) {
+                continue;
+            }
+            if seen.insert(label.to_lowercase()) {
+                out.push((ordinal, label));
+            }
+        }
+        out
     }
 
     /// Is this label junk? GROBID page furniture leaking into labels
@@ -1669,6 +1782,36 @@ impl Extractor for RuleBasedExtractor {
             }
             if !placed {
                 continue;
+            }
+        }
+
+        // Section titles as entities (monograph spine): TOC headings are
+        // authored topic inventory — actor-critic/bandit/alpha-vector lived
+        // ONLY in headings on the algorithms-for-decision-making specimen.
+        for (ordinal, label) in self.extract_section_titles(sections) {
+            if self.label_is_junk(&label) {
+                continue;
+            }
+            let key = (label.to_lowercase(), "method".to_string());
+            if !seen.contains(&key)
+                && let Some((title, text)) = sections.get(ordinal)
+            {
+                let scan_text = format!("{} {}", title, text);
+                let lower = scan_text.to_lowercase();
+                if let Some(pos) = lower.find(&label.to_lowercase()) {
+                    seen.insert(key);
+                    entities.push(ExtractedEntity {
+                        label: label.clone(),
+                        entity_type: EntityType::Method,
+                        section_title: title.clone(),
+                        section_ordinal: Some(ordinal),
+                        char_start: pos,
+                        char_end: pos + label.len(),
+                        surface: scan_text
+                            [pos.min(scan_text.len())..(pos + label.len()).min(scan_text.len())]
+                            .to_string(),
+                    });
+                }
             }
         }
 
