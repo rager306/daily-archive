@@ -66,6 +66,7 @@ pub use batch_ingest::{
 };
 pub mod entity_resolution;
 pub mod figures_stage;
+pub mod html_parsed_stage;
 pub mod navigation_stage;
 pub mod structural_elements_stage;
 pub mod tei_figures_stage;

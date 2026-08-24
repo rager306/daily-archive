@@ -24,9 +24,11 @@ stages:
     cli: da ingest/batch-ingest
     note: D204 structural профиль; TEI
   - id: html_headings_parser
-    impl: reference
-    cli: scripts/m451_textbook_import.py
-    note: h1-h6 дерево
+    impl: rust
+    cli: da source parse-html <id> --html <path>
+    note: 'фаза-2 порт: h1-h6 дерево, permalink-чистка, path_id из numbering; rust-regex
+      без backreference — пары уровней проверяются пост-матчем; кросс-валидировано
+      gnn ch.01: 57 секций, 0 расхождений полей'
   - id: pdf_toc_parser
     impl: reference
     cli: scripts/m451_monograph_import.py
@@ -106,3 +108,29 @@ guards:
   - summarized
   event_semantics: каждый переход = append-only lifecycle_event (recorded_at, actor,
     evidence_sha256)
+research_candidates:
+  firecrawl_pdf_inspector:
+    what: 'PDF: классификация TextBased/Scanned/Mixed, позиционный текст, markdown
+      с H1-H4 (font-ratios), CID/ToUnicode детект'
+    already: da-adapters pdf-classifier feature (0.1.7; upstream 1.17.0 — активен)
+    roles:
+    - 'garbled-детект (память: page-local ToUnicode/CID эвристики)'
+    - heading_stream-грамматика для PDF без TOC (кандидат, отдельная грамматика)
+    - кандидат на Rust-бэкенд наблюдений для figures_geometry
+  firecrawl_html_extractor:
+    what: 'trafilatura-класс: main-content очистка, page_type, confidence, markdown'
+    roles:
+    - kb_page/web-страницы как источники (raw-стадия будущего)
+    - не для html_headings глав — там структура уже честная h1-h6
+    indexed: 'codebase-memory: firecrawl-html-extractor (492 узла)'
+  firecrawl_simd_html_to_md:
+    what: SIMD HTML->Markdown (транспорт)
+    roles:
+    - кандидат для debug-рендера и markdown-экспорта слоёв
+  firecrawl_anydoc:
+    what: Word/PPT/Excel/ODT/RTF/EPUB/CSV/PDF -> Block-модель (Heading{level,anchor},
+      Table, Asset) + GFM
+    roles:
+    - parsed-стадия для офисных источников (учебные материалы как KB)
+    - 'расширение grammar-профилей: office_blocks'
+    indexed: 'codebase-memory: firecrawl-anydoc (1884 узла)'

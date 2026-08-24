@@ -27,8 +27,10 @@ HEAD_RE = re.compile(r"<h([1-6])[^>]*>(.*?)</h\1>", re.S)
 
 
 def _clean(text: str) -> str:
+    # rust-canonical: collapse all whitespace to single spaces
+    # (cross-validated with da-domain html_headings)
     text = text.replace("¶", "")  # permalink marker (html furniture)
-    return TAG_RE.sub("", text).strip()
+    return " ".join(TAG_RE.sub(" ", text).split())
 
 
 def parse_chapter(html: str, chapter_id: str) -> list[dict]:

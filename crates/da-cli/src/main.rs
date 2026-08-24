@@ -120,13 +120,16 @@ struct Cli {
 enum Commands {
     /// Source-import FSM surface: status/plan/import per article object
     Source {
-        /// Subcommand: status | plan | import
+        /// Subcommand: status | plan | import | build-* | parse-html
         action: String,
         /// Object id (paper/chapter/monograph)
         paper_id: String,
         /// import: report only, do not execute
         #[arg(long, default_value = "true")]
         dry_run: bool,
+        /// parse-html: path to the source HTML file
+        #[arg(long)]
+        html: Option<String>,
     },
 
     /// Validate schema-manifest objects against their DATA norm
@@ -458,7 +461,7 @@ fn main() {
     });
 
     match cli.command {
-        Commands::Source { action, paper_id, dry_run } => {
+        Commands::Source { action, paper_id, dry_run, html } => {
             use da_cli::source_cli;
             let r = match action.as_str() {
                 "status" => source_cli::run_status(&paper_id),
@@ -468,7 +471,8 @@ fn main() {
                 "build-structural" => source_cli::run_build_structural(&paper_id),
                 "build-figures" => source_cli::run_build_figures(&paper_id),
                 "build-figures-tei" => source_cli::run_build_figures_tei(&paper_id),
-                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei)")),
+                "parse-html" => source_cli::run_parse_html(&paper_id, html.as_deref()),
+                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei|parse-html)")),
             };
             if let Err(e) = r {
                 eprintln!("da source: {e}");

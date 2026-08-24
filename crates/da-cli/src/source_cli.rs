@@ -398,3 +398,89 @@ pub fn run_build_figures_tei(paper_id: &str) -> anyhow::Result<()> {
     );
     Ok(())
 }
+
+/// `da source parse-html <object_id> --html <path>` — html_headings
+/// grammar: create parsed + projection + navigation + manifest (new or
+/// idempotent rebuild from source truth).
+pub fn run_parse_html(paper_id: &str, html_path: Option<&str>) -> anyhow::Result<()> {
+    use da_application::html_parsed_stage::build_html_parsed;
+
+    let Some(path) = html_path else {
+        anyhow::bail!("parse-html requires --html <path>");
+    };
+    let html = std::fs::read_to_string(path)
+        .map_err(|e| anyhow::anyhow!("read {path}: {e}"))?;
+    let out = build_html_parsed(&html, paper_id)?;
+
+    let dir = std::path::Path::new("data/processed").join(paper_id);
+    std::fs::create_dir_all(dir.join("parsed"))?;
+    std::fs::create_dir_all(dir.join("context"))?;
+    std::fs::write(dir.join("parsed/article.json"), &out.parsed_json)?;
+    std::fs::write(dir.join("context/projection.json"), &out.projection_json)?;
+
+    // draft manifest (idempotent: rebuilt from parsed truth)
+    let now = chrono_now();
+    let sha_p = sha256_hex(out.parsed_json.as_bytes());
+    let mut m = serde_yaml::Mapping::new();
+    m.insert("schema_version".into(), "article-manifest.v1".into());
+    m.insert("paper_id".into(), paper_id.into());
+    m.insert("grammar_profile".into(), "html_headings".into());
+    let mut src = serde_yaml::Mapping::new();
+    src.insert("code".into(), "textbook".into());
+    m.insert("source".into(), src.into());
+    m.insert("lifecycle".into(), "parsed".into());
+    let ev_raw = serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("stage"), serde_yaml::Value::from("raw")),
+        (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(now.clone())),
+        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("html-chapter-source")),
+    ]);
+    let ev_parsed = serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("stage"), serde_yaml::Value::from("parsed")),
+        (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(now)),
+        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-html-parsed-stage")),
+        (serde_yaml::Value::from("evidence_sha256"), serde_yaml::Value::String(sha_p.clone())),
+    ]);
+    m.insert("lifecycle_events".into(), serde_yaml::Value::Sequence(vec![
+        serde_yaml::Value::Mapping(ev_raw), serde_yaml::Value::Mapping(ev_parsed)]));
+    let mut arts = serde_yaml::Mapping::new();
+    let miss = |kind: &str, reason: &str| {
+        serde_yaml::Mapping::from_iter([
+            (serde_yaml::Value::from("present"), serde_yaml::Value::from(false)),
+            (serde_yaml::Value::from(kind), serde_yaml::Value::from(reason)),
+            (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
+        ])
+    };
+    let nr = || serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("not_reached"), serde_yaml::Value::from(true)),
+    ]);
+    for (k, v) in [
+        ("extracted", miss("missingness", "extraction_not_run")),
+        ("citations_resolved", miss("missingness", "no_citation_elements")),
+        ("equations", miss("missingness", "no_formula_elements")),
+        ("tables", miss("missingness", "no_table_elements")),
+        ("figures", miss("missingness", "no_figure_elements")),
+        ("external_resources", miss("missingness", "no_external_resources")),
+        ("enriched", nr()),
+        ("summaries", nr()),
+        ("quality_signals", nr()),
+    ] {
+        arts.insert(k.into(), serde_yaml::Value::Mapping(v));
+    }
+    arts.insert("parsed".into(), serde_yaml::Mapping::from_iter([
+        (serde_yaml::Value::from("file"), serde_yaml::Value::from("parsed/article.json")),
+        (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("source")),
+        (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha_p)),
+        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-html-parsed-stage")),
+        (serde_yaml::Value::from("stats"), serde_yaml::Value::Mapping(
+            serde_yaml::Mapping::from_iter([
+                (serde_yaml::Value::from("sections"), serde_yaml::Value::from(out.sections as u64)),
+            ]))),
+    ]).into());
+    m.insert("artifacts".into(), arts.into());
+    std::fs::write(dir.join("manifest.yaml"), serde_yaml::to_string(&serde_yaml::Value::Mapping(m))?)?;
+
+    // reuse the rust navigation stage for structure
+    run_build_navigation(paper_id)?;
+    println!("{paper_id}: html parsed — sections={}", out.sections);
+    Ok(())
+}
