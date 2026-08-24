@@ -56,7 +56,16 @@ pub struct PdfTocSection {
 /// preceding pure-number line ("3.5", "7.4.1") is swallowed into the anchor.
 /// Returns None when the heading is absent (page kept whole — fail-open).
 fn find_heading_anchor(page_text: &str, title: &str) -> Option<usize> {
-    let norm = |s: &str| s.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
+    let norm = |s: &str| {
+        // типографские апострофы/кавычки → прямые (TOC хранит ASCII,
+        // PDF-текст — U+2018/2019/201C/201D: Prisoner's Dilemma)
+        s.replace(['\u{2018}', '\u{2019}', '\u{201B}', '\u{2032}'], "'")
+            .replace(['\u{201C}', '\u{201D}', '\u{201F}', '\u{2033}'], "\"".into())
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .to_lowercase()
+    };
     let title_n = norm(title);
     let title_words = title_n.split_whitespace().count();
     if title_words == 0 {
