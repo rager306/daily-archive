@@ -167,3 +167,84 @@ mod tests {
         assert!(extract_json("no json here").is_none());
     }
 }
+
+/// Deterministic grounding score (python g_mean port): mean content-word
+/// overlap of summary sentences against the article text. Diagnostic
+/// signal for the agent memory (ACAP ADR-055: diagnostic, not a hard
+/// invariant). Pure; content words = alphabetic tokens minus stop list.
+pub fn grounding_score(summary_text: &str, article_text: &str) -> f64 {
+    use std::collections::HashSet;
+    let article: HashSet<String> = content_words(article_text).into_iter().collect();
+    if article.is_empty() {
+        return 0.0;
+    }
+    let sentences: Vec<&str> = summary_text
+        .split(|c: char| c == '.' || c == '!' || c == '?')
+        .map(str::trim)
+        .filter(|s| s.chars().count() > 30)
+        .collect();
+    if sentences.is_empty() {
+        return 0.0;
+    }
+    let overlaps: Vec<f64> = sentences
+        .iter()
+        .map(|s| {
+            let words = content_words(s);
+            if words.is_empty() {
+                0.0
+            } else {
+                let hit = words.iter().filter(|w| article.contains(*w)).count();
+                hit as f64 / words.len() as f64
+            }
+        })
+        .collect();
+    overlaps.iter().sum::<f64>() / overlaps.len() as f64
+}
+
+const STOP: &[&str] = &[
+    "a", "an", "the", "of", "to", "in", "on", "for", "with", "and", "or", "is",
+    "are", "was", "were", "be", "been", "this", "that", "these", "those", "we",
+    "our", "it", "its", "as", "by", "at", "from", "not", "no", "than", "then",
+    "so", "such", "can", "could", "may", "might", "will", "would", "shall",
+    "should", "have", "has", "had", "do", "does", "did", "but", "if", "when",
+    "where", "which", "who", "whom", "whose", "what", "how", "why", "all",
+    "any", "both", "each", "few", "more", "most", "other", "some", "only",
+    "own", "same", "too", "very", "just", "also", "into", "over", "under",
+    "between", "during", "through", "above", "below", "out", "off", "again",
+    "further", "once", "here", "there",
+];
+
+fn content_words(text: &str) -> Vec<String> {
+    text.to_lowercase()
+        .split(|c: char| !c.is_ascii_alphabetic())
+        .filter(|w| w.len() >= 3 && !STOP.contains(w))
+        .map(str::to_string)
+        .collect()
+}
+
+#[cfg(test)]
+mod grounding_tests {
+    use super::*;
+
+    #[test]
+    fn grounded_summary_scores_high() {
+        let article = "The teacher-student framework models primitive learning with exact ODEs in the high-dimensional limit and shows compositional generalization is fast after pre-training.";
+        let summary = "The paper derives exact ODEs for teacher-student primitive learning in the high-dimensional limit. Compositional generalization is fast after pre-training primitives.";
+        let g = grounding_score(summary, article);
+        assert!(g > 0.6, "grounding {g}");
+    }
+
+    #[test]
+    fn hallucinated_summary_scores_low() {
+        let article = "We study graph neural networks propagation operators on regular lattices with spectral filters.";
+        let summary = "Quantum cryptography key distribution enables provably secure banking transfers through entangled photon pairs across fiber networks. This revolutionizes financial settlement infrastructure completely.";
+        let g = grounding_score(summary, article);
+        assert!(g < 0.3, "hallucination {g}");
+    }
+
+    #[test]
+    fn empty_inputs_are_zero() {
+        assert_eq!(grounding_score("", "text"), 0.0);
+        assert_eq!(grounding_score("some summary", ""), 0.0);
+    }
+}

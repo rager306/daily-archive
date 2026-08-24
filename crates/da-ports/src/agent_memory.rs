@@ -19,6 +19,19 @@ pub struct TrajectoryRecord {
     /// deterministic quality hint (e.g. grounding score) — feedback later
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub grounding_hint: Option<f64>,
+    /// article features for routing decisions (SONA W3): what the
+    /// decision CONDITION depends on, not just the outcome
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub article_features: Option<ArticleFeatures>,
+}
+
+/// Compact article signature for memory-driven routing.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ArticleFeatures {
+    pub grammar: String,           // arxiv_pdf_dot | html_headings | page_outline | …
+    pub body_chars: usize,
+    pub furniture_share: f64,
+    pub formulas_per_section: f64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

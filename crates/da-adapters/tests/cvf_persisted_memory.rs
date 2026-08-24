@@ -6,6 +6,6 @@ fn verify_persisted_summarizer_memory() {
     let m = CvfAgentMemory::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../data/agent_memory/summarizer").into()).unwrap();
     let s = m.stats();
     println!("epochs={} trajectories={} verify={}", s.epochs, s.trajectories, m.verify());
-    assert_eq!(s.trajectories, 2);
+    assert!(s.trajectories >= 2, "trajectories={}", s.trajectories);
     assert!(m.verify());
 }

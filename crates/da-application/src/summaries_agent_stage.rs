@@ -5,10 +5,10 @@
 
 use da_domain::agent_manifest::AgentManifest;
 use da_domain::summaries_llm::{
-    build_user_message, compile_injection_policy, extract_json, scrub_injection,
+    build_user_message, compile_injection_policy, extract_json, grounding_score, scrub_injection,
     SummarySectionInput,
 };
-use da_ports::agent_memory::{AgentMemory, TrajectoryRecord};
+use da_ports::agent_memory::{AgentMemory, ArticleFeatures, TrajectoryRecord};
 use da_ports::llm_client::{ChatMessage, ChatOptions, LLMClient};
 use da_ports::schema_objects::{SchemaObjectStore, SchemaObjectStoreError};
 use serde_json::json;
@@ -36,6 +36,7 @@ pub struct SummariesAgentOutput {
     pub latency_ms: u64,
     pub epoch: Option<u64>,
     pub ok: bool,
+    pub grounding: f64,
 }
 
 /// Bundled runtime context for one agent invocation (keeps the
@@ -133,6 +134,41 @@ pub async fn run_summaries_agent(
     let node_json = serde_json::to_string_pretty(&node)
         .map_err(|e| SummariesAgentError::Agent(e.to_string()))?;
 
+    // deterministic grounding (diagnostic, ACAP: separate from hard
+    // invariants) + article features for routing decisions
+    let summary_text = [
+        obj.get("tldr").and_then(|v| v.as_str()).unwrap_or(""),
+        obj.get("methods").and_then(|v| v.as_str()).unwrap_or(""),
+        obj.get("results").and_then(|v| v.as_str()).unwrap_or(""),
+        obj.get("limitations").and_then(|v| v.as_str()).unwrap_or(""),
+        &obj.get("contributions")
+            .and_then(|v| v.as_array())
+            .map(|a| a.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join(" "))
+            .unwrap_or_default(),
+    ].join(" ");
+    let grounding = (grounding_score(&summary_text, &user) * 1000.0).round() / 1000.0;
+
+    let body_chars: usize = sections.iter().map(|s| s.text.len()).sum();
+    let formulas = parsed.get("formulas").and_then(|v| v.as_array()).map(|a| a.len()).unwrap_or(0);
+    let furniture_share = store
+        .read_raw(paper_id, "quality_signals.json")
+        .ok()
+        .flatten()
+        .and_then(|q| serde_json::from_str::<serde_json::Value>(&q).ok())
+        .and_then(|q| q.as_array().and_then(|arr| {
+            arr.iter()
+                .find(|s| s.get("signal_id").and_then(|v| v.as_str()) == Some("furniture_share"))
+                .and_then(|s| s.get("value"))
+                .and_then(|v| v.as_f64())
+        }))
+        .unwrap_or(0.0);
+    let grammar = store
+        .read_object(paper_id)
+        .ok()
+        .flatten()
+        .and_then(|m| m.get("grammar_profile").and_then(|v| v.as_str()).map(str::to_string))
+        .unwrap_or_else(|| "arxiv_pdf_dot".to_string());
+
     // trajectory into the CVF memory (record-only, W1)
     let rec = TrajectoryRecord {
         task_id: manifest.agent_id.clone(),
@@ -142,7 +178,13 @@ pub async fn run_summaries_agent(
         ok,
         latency_ms,
         completion_tokens: resp.tokens_out,
-        grounding_hint: None, // W3: deterministic metrics feed this
+        grounding_hint: Some(grounding),
+        article_features: Some(ArticleFeatures {
+            grammar,
+            body_chars,
+            furniture_share,
+            formulas_per_section: formulas as f64 / sections.len().max(1) as f64,
+        }),
     };
     let epoch = if manifest.memory.trajectory && manifest.memory.backend == "cvf" {
         memory
@@ -161,6 +203,7 @@ pub async fn run_summaries_agent(
         latency_ms,
         epoch,
         ok,
+        grounding,
     })
 }
 
@@ -208,9 +251,12 @@ mod tests {
         }
     }
 
-    struct FakeMemory;
+    struct FakeMemory(Option<TrajectoryRecord>);
     impl AgentMemory for FakeMemory {
-        fn record_trajectory(&mut self, _r: &TrajectoryRecord) -> Result<u64, AgentMemoryError> { Ok(1) }
+        fn record_trajectory(&mut self, r: &TrajectoryRecord) -> Result<u64, AgentMemoryError> {
+            self.0 = Some(r.clone());
+            Ok(1)
+        }
         fn verify(&self) -> bool { true }
         fn persist(&self) -> Result<(), AgentMemoryError> { Ok(()) }
         fn stats(&self) -> MemoryStats { MemoryStats { epochs: 1, trajectories: 1, last_epoch_in_ms: Some(1) } }
@@ -224,7 +270,7 @@ mod tests {
             ("p".into(), "parsed/article.json".into()),
             r#"{"title":"T","abstract_text":"A","sections":[{"title":"S","text":"body"}]}"#.to_string(),
         )]));
-        let mut mem = FakeMemory;
+        let mut mem = FakeMemory(None);
         let llm = FakeLlm;
         let m = AgentManifest::from_yaml_str(MANIFEST).unwrap();
         let out = run_summaries_agent(AgentRunContext {
@@ -238,6 +284,11 @@ mod tests {
         .unwrap();
         assert!(out.ok);
         assert_eq!(out.epoch, Some(1));
+        let rec = mem.0.as_ref().expect("trajectory recorded");
+        assert!(rec.grounding_hint.is_some(), "grounding in trajectory");
+        let f = rec.article_features.as_ref().expect("features in trajectory");
+        assert_eq!(f.grammar, "arxiv_pdf_dot");
+        assert!(out.grounding >= 0.0);
         let node: serde_json::Value = serde_json::from_str(&out.summary_node_json).unwrap();
         assert_eq!(node["provenance"]["agent"], "summarizer");
         assert_eq!(node["provenance"]["binding"], "paper-summary-generate-default");
