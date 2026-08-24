@@ -138,6 +138,7 @@ pub fn run_build_navigation(paper_id: &str) -> anyhow::Result<()> {
     use da_adapters::fs_schema_objects::FsSchemaObjectStore;
     use da_application::navigation_stage::build_navigation_stage;
     use da_ports::path_config::PathConfig;
+use da_domain::source_import_fsm::ImportFsmState;
 
     let detectors_yaml = std::fs::read_to_string("data/ontology/furniture_detectors.yaml")
         .map_err(|e| anyhow::anyhow!("furniture_detectors.yaml: {e}"))?;
