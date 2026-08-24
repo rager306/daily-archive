@@ -1290,61 +1290,67 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
 /// Resolve the domain for a paper from its identity.json coarse_topic_code
 /// via the domain_routing table in path_config.yaml.
 fn resolve_domain(paper_id: &str, cfg: &da_ports::path_config::PathConfig) -> Vec<String> {
-    let sources = std::path::Path::new("data/sources");
-    let mut found: Option<Vec<String>> = None;
-    // walk sources recursively to find identity.json for this paper_id
-    fn walk(dir: &std::path::Path, paper_id: &str, cfg: &da_ports::path_config::PathConfig, out: &mut Option<Vec<String>>) {
-        if out.is_some() { return; }
-        if let Ok(rd) = std::fs::read_dir(dir) {
-            for e in rd.flatten() {
-                if out.is_some() { return; }
-                let p = e.path();
-                if p.is_dir() {
-                    if p.file_name().map(|n| n == paper_id).unwrap_or(false) {
-                        let ident = p.join("identity.json")
-                            .exists()
-                            .then(|| p.join("identity.json"))
-                            .unwrap_or_else(|| p.join("article.json"));
-                        if let Ok(text) = std::fs::read_to_string(&ident) {
-                            if let Ok(v) = serde_yaml::from_str::<serde_yaml::Value>(&text) {
-                                let code = v.get("coarse_topic_code").and_then(|c| c.as_str()).unwrap_or("");
-                                if let Some(domains) = cfg.domains_for_topic(code) {
-                                    *out = Some(domains);
-                                    return;
-                                }
-                            }
-                        }
-                    }
-                    walk(&p, paper_id, cfg, out);
+    /// Walk sources recursively; on the paper's dir read identity.json or
+    /// article.json for coarse_topic_code and route via the config table.
+    fn find_topic_code(dir: &std::path::Path, paper_id: &str) -> Option<String> {
+        let Ok(rd) = std::fs::read_dir(dir) else { return None };
+        for e in rd.flatten() {
+            let p = e.path();
+            if !p.is_dir() {
+                continue;
+            }
+            if p.file_name().is_some_and(|n| n == paper_id) {
+                let ident = if p.join("identity.json").exists() {
+                    p.join("identity.json")
+                } else {
+                    p.join("article.json")
+                };
+                if let Ok(text) = std::fs::read_to_string(&ident)
+                    && let Ok(v) = serde_yaml::from_str::<serde_yaml::Value>(&text)
+                    && let Some(code) = v.get("coarse_topic_code").and_then(|c| c.as_str())
+                {
+                    return Some(code.to_string());
                 }
             }
+            if let Some(code) = find_topic_code(&p, paper_id) {
+                return Some(code);
+            }
         }
+        None
     }
-    walk(sources, paper_id, cfg, &mut found);
-    found.unwrap_or_else(|| vec!["computer_science".to_string()])
+
+    match find_topic_code(std::path::Path::new("data/sources"), paper_id) {
+        Some(code) => cfg.domains_for_topic(&code).unwrap_or_else(|| {
+            // unrecognized code: full-text domain detection
+            detect_domain_from_text(paper_id)
+        }),
+        None => detect_domain_from_text(paper_id),
+    }
 }
 
 /// Detect domain from paper content when routing table has no match.
 /// Primary signal: structural type distribution (math paper → theorem/proof).
-fn detect_domain_from_text(paper_id: &str, cfg: &da_ports::path_config::PathConfig) -> Vec<String> {
+fn detect_domain_from_text(paper_id: &str) -> Vec<String> {
     let nav_path = std::path::Path::new("data/processed")
         .join(paper_id)
         .join("context/navigation.json");
-    if let Ok(raw) = std::fs::read_to_string(&nav_path) {
-        if let Ok(nav) = serde_json::from_str::<serde_json::Value>(&raw) {
-            if let Some(arr) = nav.as_array() {
-                let math_count = arr.iter()
-                    .filter(|n| {
-                        let t = n.get("title").and_then(|t| t.as_str()).unwrap_or("");
-                        t.starts_with("Theorem") || t.starts_with("Definition") ||
-                        t.starts_with("Lemma") || t.starts_with("Proof") ||
-                        t.starts_with("Exercise")
-                    })
-                    .count();
-                if math_count > arr.len() / 10 {
-                    return vec!["mathematics".into(), "computer_science".into()];
-                }
-            }
+    if let Ok(raw) = std::fs::read_to_string(&nav_path)
+        && let Ok(nav) = serde_json::from_str::<serde_json::Value>(&raw)
+        && let Some(arr) = nav.as_array()
+    {
+        let math_count = arr
+            .iter()
+            .filter(|n| {
+                let t = n.get("title").and_then(|t| t.as_str()).unwrap_or("");
+                t.starts_with("Theorem")
+                    || t.starts_with("Definition")
+                    || t.starts_with("Lemma")
+                    || t.starts_with("Proof")
+                    || t.starts_with("Exercise")
+            })
+            .count();
+        if math_count > arr.len() / 10 {
+            return vec!["mathematics".into(), "computer_science".into()];
         }
     }
     vec!["computer_science".to_string()]
