@@ -3,6 +3,7 @@
 //! Application depends on this trait; adapters own the container.
 
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 /// One LLM-call trajectory record (the SONA Trajectory shape, stage 1:
 /// record-only, no learning).
@@ -27,6 +28,24 @@ pub struct TrajectoryRecord {
     /// learns on TYPES of failures, not just numeric grounding
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub failure_pattern: Option<String>,
+    /// construction trace: input context, output JSON, per-field metrics —
+    /// the training data for prompt optimization (AgentMercury insight:
+    /// construction traces as supervision, authoring success 3.3→83.3%)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub construction_trace: Option<ConstructionTrace>,
+}
+
+/// Full call context for future prompt optimization / SONA training.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ConstructionTrace {
+    /// section titles fed to the LLM (input structure)
+    pub input_sections: Vec<String>,
+    /// output field names + char counts (output structure)
+    pub output_fields: BTreeMap<String, usize>,
+    /// injection scrub count (guardrail effectiveness)
+    pub injection_scrubbed: usize,
+    /// grounding score computed from output vs parsed text
+    pub grounding_score: f64,
 }
 
 /// Compact article signature for memory-driven routing.

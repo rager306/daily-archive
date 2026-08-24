@@ -8,7 +8,7 @@ use da_domain::summaries_llm::{
     build_user_message, compile_injection_policy, extract_json, grounding_score, scrub_injection,
     SummarySectionInput,
 };
-use da_ports::agent_memory::{AgentMemory, ArticleFeatures, TrajectoryRecord};
+use da_ports::agent_memory::{AgentMemory, ArticleFeatures, ConstructionTrace, TrajectoryRecord};
 use da_ports::llm_client::{ChatMessage, ChatOptions, LLMClient};
 use da_ports::schema_objects::{SchemaObjectStore, SchemaObjectStoreError};
 use serde_json::json;
@@ -193,6 +193,15 @@ pub async fn run_summaries_agent(
         .unwrap_or((None, None, None, vec![]));
 
     // trajectory into the CVF memory (record-only, W1)
+        let output_fields: std::collections::BTreeMap<String, usize> = obj
+        .as_object()
+        .map(|map| {
+            map.iter()
+                .map(|(k, v)| (k.clone(), v.to_string().chars().count()))
+                .collect()
+        })
+        .unwrap_or_default();
+
     let rec = TrajectoryRecord {
         task_id: manifest.agent_id.clone(),
         paper_id: paper_id.to_string(),
@@ -212,6 +221,12 @@ pub async fn run_summaries_agent(
             nav_body_nodes: nav_body,
             nav_branching_nodes: nav_branch,
             nav_body_titles: nav_titles,
+        }),
+        construction_trace: Some(ConstructionTrace {
+            input_sections: sections.iter().map(|s| s.title.clone()).collect(),
+            output_fields,
+            injection_scrubbed: scrubbed,
+            grounding_score: grounding,
         }),
     };
     let epoch = if manifest.memory.trajectory && manifest.memory.backend == "cvf" {
