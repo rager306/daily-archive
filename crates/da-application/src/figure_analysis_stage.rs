@@ -293,6 +293,20 @@ fn map_error(error: FigureAnalysisUseCaseError, retry_after: &str) -> StageExecu
             message: error.to_string(),
             retry_after: retry_after.into(),
         },
+        // ADR-073 wave 2 (D3): LLM output errors are REPAIRABLE —
+        // schema violation (truncated quote), JSON parse (simplified
+        // prompt), checksum mismatch (rebuilt context). The critic
+        // repair contract covers figure_analysis; terminal failure was
+        // over-aggressive for errors that a retry can fix.
+        FigureAnalysisUseCaseError::StructuredOutput { .. }
+        | FigureAnalysisUseCaseError::Json(_)
+        | FigureAnalysisUseCaseError::ImageContextMismatch { .. } => {
+            StageExecutionError::Retryable {
+                error_class: "figure_analysis_retryable".into(),
+                message: error.to_string(),
+                retry_after: retry_after.into(),
+            }
+        }
         other => StageExecutionError::Terminal {
             error_class: "figure_analysis_contract".into(),
             message: other.to_string(),
@@ -310,6 +324,46 @@ fn protocol_name(protocol: ModelWireProtocol) -> &'static str {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    // ── ADR-073 wave 2: figure repair loop (D3) ──
+    // Schema violation / JSON parse / checksum mismatch → Retryable,
+    // не Terminal: critic repair contract расширен (figure_analysis).
+    #[test]
+    fn figure_llm_output_errors_are_retryable_not_terminal() {
+        // StructuredOutput (schema violation: quote > limit) → Retryable
+        let err = FigureAnalysisUseCaseError::StructuredOutput {
+            message: "quote exceeds max length 160".into(),
+            top_level_keys: vec!["citations".into()],
+        };
+        let mapped = map_error(err, "60s");
+        assert!(
+            matches!(mapped, StageExecutionError::Retryable { .. }),
+            "schema violation must be retryable for repair loop: {mapped:?}"
+        );
+
+        // Json parse error → Retryable
+        let err: FigureAnalysisUseCaseError =
+            serde_json::from_str::<serde_json::Value>("{bad").unwrap_err().into();
+        let mapped = map_error(err, "60s");
+        assert!(
+            matches!(mapped, StageExecutionError::Retryable { .. }),
+            "JSON parse error must be retryable: {mapped:?}"
+        );
+
+        // ImageContextMismatch (checksum) → Retryable
+        let err = FigureAnalysisUseCaseError::ImageContextMismatch {
+            image: "d013f3".into(),
+            context: "42c8f7".into(),
+        };
+        let mapped = map_error(err, "60s");
+        assert!(
+            matches!(mapped, StageExecutionError::Retryable { .. }),
+            "checksum mismatch must be retryable: {mapped:?}"
+        );
+    }
+
+
     use super::*;
     use async_trait::async_trait;
     use da_domain::{

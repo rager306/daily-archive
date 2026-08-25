@@ -438,3 +438,25 @@ Technical debt wave 1 (audit items D1+D2+D6):
 
 Green: domain 713, adapters 249, cli 176, pytest 142,
 validate 645x0, clippy clean.
+
+## 2026-08-25 — Wave 2: figure-repair loop (D3)
+
+D3 from audit: 4 articles had terminal figure_analysis failures
+(schema violations, JSON parse, checksum mismatch). The critic
+repair contract covered enriched/citations/summaries but NOT
+figures — asymmetric gap.
+
+Fix: map_error now classifies LLM output errors as Retryable
+(not Terminal): StructuredOutput (schema violation → truncated
+quote retry), Json (parse → simplified prompt retry),
+ImageContextMismatch (checksum → rebuilt context retry).
+Critic manifest reject_triggers gains figure_analysis →
+reanalyze_with_diagnostics.
+
+TDD: test written first (red), then map_error extended (green).
+The pipeline's existing retry infrastructure (StageExecutionError::
+Retryable → RetrySuppressed on cache) handles the rest — no new
+pipeline code needed, just honest error classification.
+
+Next graph wave: the 4 failed articles will retry automatically
+when their cache entries expire.
