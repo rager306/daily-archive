@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-25 — M461-6665iq: URL locator is network intent for load FSM
+
+Pasting an arXiv URL is now a first-class path. locator_implies_network is
+true only for http(s); bare ids stay fail-closed (ADR-056). da load on a
+URL allows network unless DA_LOAD_ALLOW_NETWORK is 0/false and defaults
+stages to ingest+extract. da source run canonicalizes the URL to the
+arXiv id, ensures the catalog, then walks the existing FSM. Parser
+try_parse_arxiv_locator is unchanged (GitNexus CRITICAL). D127 false. D289.
+
+Green: locator_implies 1; resolve_network 1; url_locator_defaults 1;
+normalize_source_target 1; clippy da-domain/cli --lib; cargo build -p da-cli.
+
 ## 2026-08-25 — M460-7tqron: operator graph-query honours exhausted negatives
 
 M459 gated agent-run; da graph-query and da query still hit the store without

@@ -1,9 +1,9 @@
 # continue — session state
 
-## Active direction (M460-7tqron): operator graph-query honours exhausted negatives
+## Active direction (M461-6665iq): URL locator is network intent for load FSM
 
-S01+S02: admit_operator_read before Cypher; da query by-arxiv/by-vid uses
-the same helper. graph-stats ungated. Close via skip-delivered.
+S01+S02: locator_implies_network; da load URL → fetch+extract; da source run
+canonicalizes URL. Close via skip-delivered.
 
 ## Previous: M451 schema/manifest skeleton BEFORE code
 

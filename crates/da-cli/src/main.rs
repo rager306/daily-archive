@@ -446,7 +446,7 @@ enum Commands {
     GraphPing(graph_ping::GraphPingArgs),
 
     /// Universal article load plane (ADR-056): locator → ensure catalog assets → LoadReport.
-    /// Default stages=ensure (offline catalog_hit). Network fetch not productized until later wave.
+    /// Bare id is catalog-first (offline). An HTTP locator is fetch intent (M461).
     Load(load::LoadArgs),
 }
 

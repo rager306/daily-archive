@@ -1195,7 +1195,32 @@ fn resolve_stages(args: &LoadArgs, batch: bool) -> Result<LoadStageSet, String> 
     match &args.stages {
         Some(s) => parse_stages(s),
         None if batch => Ok(LoadStageSet::Ensure),
-        None => Ok(LoadStageSet::EnsureIngest), // single-locator product default
+        None if args
+            .locator
+            .as_deref()
+            .is_some_and(da_domain::locator_implies_network) =>
+        {
+            Ok(LoadStageSet::EnsureIngestExtract)
+        }
+        None => Ok(LoadStageSet::EnsureIngest), // bare id: catalog-first ingest
+    }
+}
+
+/// Explicit `--allow-network` always wins. An HTTP locator is fetch intent
+/// unless DA_LOAD_ALLOW_NETWORK is 0/false/no/off. Bare ids stay fail-closed.
+fn resolve_network_policy(explicit: bool, locator: &str) -> bool {
+    if explicit {
+        return true;
+    }
+    if !da_domain::locator_implies_network(locator) {
+        return false;
+    }
+    match std::env::var("DA_LOAD_ALLOW_NETWORK") {
+        Ok(value) => !matches!(
+            value.trim().to_ascii_lowercase().as_str(),
+            "0" | "false" | "no" | "off"
+        ),
+        Err(_) => true,
     }
 }
 
@@ -1336,7 +1361,7 @@ async fn run_batch_toc(args: &LoadArgs, toc: &Path) -> Result<(), String> {
 async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
     let stages = resolve_stages(args, false)?;
     let policy = AcquisitionPolicy {
-        allow_network: args.allow_network,
+        allow_network: resolve_network_policy(args.allow_network, locator),
         include_html: true,
         include_tex_source: args.include_tex_source,
         dry_run: args.dry_run,
@@ -1733,6 +1758,59 @@ mod tests {
         assert_eq!(
             parse_stages("ingest+extract").unwrap(),
             LoadStageSet::EnsureIngestExtract
+        );
+    }
+
+    #[test]
+    fn resolve_network_policy_url_intent_and_kill_switch() {
+        let prior = std::env::var("DA_LOAD_ALLOW_NETWORK").ok();
+        unsafe { std::env::remove_var("DA_LOAD_ALLOW_NETWORK") };
+        let url = "https://arxiv.org/abs/2608.22118";
+        assert!(resolve_network_policy(false, url));
+        assert!(!resolve_network_policy(false, "2608.22118"));
+        assert!(resolve_network_policy(true, "2608.22118"));
+        unsafe { std::env::set_var("DA_LOAD_ALLOW_NETWORK", "0") };
+        assert!(!resolve_network_policy(false, url));
+        assert!(resolve_network_policy(true, url));
+        unsafe {
+            match prior {
+                Some(v) => std::env::set_var("DA_LOAD_ALLOW_NETWORK", v),
+                None => std::env::remove_var("DA_LOAD_ALLOW_NETWORK"),
+            }
+        }
+    }
+
+    #[test]
+    fn url_locator_defaults_to_ingest_extract() {
+        let mut args = LoadArgs {
+            locator: Some("https://arxiv.org/abs/2608.22118".into()),
+            provider: "auto".into(),
+            catalog_root: PathBuf::from("data/sources/arxiv"),
+            allow_network: false,
+            include_tex_source: false,
+            stages: None,
+            dry_run: false,
+            enable_import: false,
+            report: None,
+            output: None,
+            batch_toc: None,
+            batch_report_dir: PathBuf::from("artifacts/loads/batch"),
+            cache_root: PathBuf::from("artifacts/pipeline_cache"),
+            no_cache: false,
+            materialization_time: None,
+            journey: true,
+            equations: false,
+            tables: false,
+            figures: false,
+        };
+        assert_eq!(
+            resolve_stages(&args, false).unwrap(),
+            LoadStageSet::EnsureIngestExtract
+        );
+        args.locator = Some("2608.22118".into());
+        assert_eq!(
+            resolve_stages(&args, false).unwrap(),
+            LoadStageSet::EnsureIngest
         );
     }
 

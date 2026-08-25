@@ -1552,12 +1552,62 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
 
 
 
-/// `da source run <paper_id>` — full FSM orchestration: reads the plan,
-/// executes every remaining stage via CLI-registered tools, stops on
-/// first failure with an honest report. The operator gives one command;
-/// the pipeline drives itself.
+/// Canonical FSM target from a raw operator string (M461).
+/// An HTTP locator is URL-intent; the paper id is the versionless arXiv key.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceTarget {
+    pub paper_id: String,
+    pub url_intent: bool,
+    pub locator_raw: String,
+}
+
+pub fn normalize_source_target(raw: &str) -> SourceTarget {
+    let trimmed = raw.trim();
+    let url_intent = da_domain::locator_implies_network(trimmed);
+    match da_domain::ArticleLocator::parse(trimmed) {
+        Ok(da_domain::ArticleLocator::Arxiv { id, .. }) => SourceTarget {
+            paper_id: id,
+            url_intent,
+            locator_raw: trimmed.to_string(),
+        },
+        _ => SourceTarget {
+            paper_id: trimmed.to_string(),
+            url_intent,
+            locator_raw: trimmed.to_string(),
+        },
+    }
+}
+
+fn ensure_catalog_for_url(locator_raw: &str) -> anyhow::Result<()> {
+    let acq =
+        da_adapters::ArxivSourceAcquisition::new("data/sources/arxiv").with_repo_root(".");
+    let uc = da_application::ArticleLoadUseCase::new(&acq)
+        .with_catalog_root("data/sources/arxiv");
+    let policy = da_domain::AcquisitionPolicy {
+        allow_network: true,
+        include_html: true,
+        include_tex_source: false,
+        dry_run: false,
+        enable_import: false,
+        stages: da_domain::LoadStageSet::Ensure,
+        run_mode: da_domain::LoadRunMode::Inline,
+    };
+    let report = uc.run(locator_raw, &policy);
+    if !report.ok {
+        anyhow::bail!("ensure from URL failed: {}", report.errors.join("; "));
+    }
+    Ok(())
+}
+
+/// `da source run <paper_id|url>` — full FSM orchestration. An HTTP locator
+/// is fetch intent (M461): ensure catalog, then walk the pipeline on the id.
 pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
-    let outcome = run_pipeline_for(paper_id)?;
+    let target = normalize_source_target(paper_id);
+    if target.url_intent {
+        println!("locator: {} -> {}", target.locator_raw, target.paper_id);
+        ensure_catalog_for_url(&target.locator_raw)?;
+    }
+    let outcome = run_pipeline_for(&target.paper_id)?;
     if !outcome.success {
         std::process::exit(1);
     }
@@ -2295,6 +2345,19 @@ mod tests {
     // the old load_state which propagated ENOENT for fresh acquisitions
     // (no manifest.yaml yet) → "da source: No such file or directory".
     // Fresh acquisition must yield FSM at raw stage, not an error.
+    #[test]
+    fn normalize_source_target_maps_abs_url_to_canonical_id() {
+        let t = normalize_source_target("https://arxiv.org/abs/2608.22118");
+        assert_eq!(t.paper_id, "2608.22118");
+        assert!(t.url_intent);
+        let bare = normalize_source_target("2608.22118");
+        assert_eq!(bare.paper_id, "2608.22118");
+        assert!(!bare.url_intent);
+        let vhtml = normalize_source_target("https://arxiv.org/html/2506.07853v1");
+        assert_eq!(vhtml.paper_id, "2506.07853");
+        assert!(vhtml.url_intent);
+    }
+
     #[test]
     fn fresh_acquisition_without_manifest_starts_at_raw() {
         let _guard = CWD_LOCK.lock().unwrap();

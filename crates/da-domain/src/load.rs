@@ -137,6 +137,13 @@ fn looks_like_url(s: &str) -> bool {
     strip_prefix_ci(s, "https://").is_some() || strip_prefix_ci(s, "http://").is_some()
 }
 
+/// Operator typed an HTTP locator: that is fetch intent (M461).
+/// Bare ids, catalog pins and local paths stay fail-closed (ADR-056).
+/// Does not parse or rewrite the locator — `try_parse_arxiv_locator` is unchanged.
+pub fn locator_implies_network(raw: &str) -> bool {
+    looks_like_url(raw.trim())
+}
+
 fn looks_like_local_path(s: &str) -> bool {
     s.starts_with('/')
         || s.starts_with("./")
@@ -633,6 +640,17 @@ mod tests {
         assert_eq!(try_normalize_arxiv_id("hep-th/9901001"), Some("hep-th/9901001".into()));
         // мусор без id внутри — по-прежнему None
         assert_eq!(try_normalize_arxiv_id("[cs.LG]"), None);
+    }
+
+    #[test]
+    fn locator_implies_network_only_for_http() {
+        assert!(locator_implies_network("https://arxiv.org/abs/2608.22118"));
+        assert!(locator_implies_network("http://arxiv.org/pdf/2608.22118.pdf"));
+        assert!(!locator_implies_network("2608.22118"));
+        assert!(!locator_implies_network("arxiv:2608.22118"));
+        assert!(!locator_implies_network("catalog:arxiv/cs-cl/2608.22118"));
+        assert!(!locator_implies_network("./paper.pdf"));
+        assert!(!locator_implies_network(""));
     }
 
     #[test]
