@@ -1,9 +1,9 @@
 # continue — session state
 
-## Active direction (M458-qxcimz): ContextBundle freezes as_of policy_hash MSC
+## Active direction (M459-sfjk31): agent retrieval honours exhausted negatives
 
-S01+S02: ContextFreeze on ContextBundle; freeze_id ignores compiled_at.
-AgentRunUseCase stamps request.freeze. CLI reads DA_CONTEXT_*. Close via
+S01+S02: admit_retrieval paper-scoped; NegativeBlocked; AgentRunUseCase
+consults before identity/query. CLI DA_RETRIEVAL_PAPER_ID. Close via
 skip-delivered.
 
 ## Previous: M451 schema/manifest skeleton BEFORE code

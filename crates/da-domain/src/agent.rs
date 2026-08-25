@@ -174,6 +174,10 @@ pub enum AgentFailureCode {
     /// unavailable, or a response-limit error (run-fatal, S03). Constructed
     /// by the run orchestrator, never by a transition admission.
     ReadPlaneUnavailable,
+    /// Retrieval is blocked by exhausted negative semantic knowledge for
+    /// this paper (Vasiliev / M459). Typed so a blocked read is never a
+    /// silent empty result (R087).
+    NegativeBlocked,
 }
 
 impl AgentFailureCode {
@@ -188,6 +192,7 @@ impl AgentFailureCode {
             Self::IdentityMismatch => "identity_mismatch",
             Self::InvalidPlan => "invalid_plan",
             Self::ReadPlaneUnavailable => "read_plane_unavailable",
+            Self::NegativeBlocked => "negative_blocked",
         }
     }
 }
@@ -1051,6 +1056,10 @@ mod tests {
             AgentFailureCode::ReadPlaneUnavailable.as_str(),
             "read_plane_unavailable"
         );
+        assert_eq!(
+            AgentFailureCode::NegativeBlocked.as_str(),
+            "negative_blocked"
+        );
     }
 
     #[test]
@@ -1727,7 +1736,7 @@ mod proptest_tests {
         AgentState::FailedVisible,
     ];
 
-    const ALL_FAILURE_CODES: [AgentFailureCode; 8] = [
+    const ALL_FAILURE_CODES: [AgentFailureCode; 9] = [
         AgentFailureCode::IllegalTransition,
         AgentFailureCode::MissingEntryState,
         AgentFailureCode::TerminalSink,
@@ -1736,6 +1745,7 @@ mod proptest_tests {
         AgentFailureCode::IdentityMismatch,
         AgentFailureCode::InvalidPlan,
         AgentFailureCode::ReadPlaneUnavailable,
+        AgentFailureCode::NegativeBlocked,
     ];
 
     fn arb_failure_code() -> impl Strategy<Value = AgentFailureCode> {

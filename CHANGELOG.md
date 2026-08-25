@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-25 — M459-sfjk31: agent retrieval honours exhausted negatives
+
+Vasiliev gap after M456-M458: LLM stages and Layer H freeze existed, but
+AgentReadPlane.query could still return evidence for a paper whose critic
+repair exhausted. admit_retrieval is paper-scoped: any exhausted negative
+for that paper blocks. Empty paper_id fail-opens. Blocked is typed
+AgentFailureCode::NegativeBlocked (FailedVisible), never rows=0.
+
+AgentRunUseCase::with_negatives consults after plan validation and before
+identity/query. CLI reads DA_RETRIEVAL_PAPER_ID and opens
+JsonlNegativeMemory from DA_NEGATIVE_MEMORY_DIR (inline env; dual bin/lib).
+Not Samyama. D127 false. D287.
+
+Green: admit_retrieval 4; all_failure_codes; agent_run 26 including Spy
+plane query_calls=0; da-cli agent_run 22; clippy -D warnings
+da-domain/application/cli --lib.
+
 ## 2026-08-25 — M458-qxcimz: ContextBundle freezes as_of policy_hash and MSC
 
 ADR-053 Layer H was identity + evidence + claims only. ContextBundle now

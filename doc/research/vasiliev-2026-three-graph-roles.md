@@ -23,8 +23,8 @@ M454 critic Reject as typed negative knowledge, CVF as source event record.
 ## Gaps the article names (product, not corpus wave)
 
 1. Memory write-boundary must quarantine unreviewed claims.
-2. Retrieval must honour rejection (Negative Semantic Knowledge).
-3. Context snapshots must freeze source versions + contract versions, not
-   mutable node id lists.
+2. Retrieval must honour rejection (Negative Semantic Knowledge) — closed
+   M459 (`admit_retrieval` paper-scoped; `agent_failure:negative_blocked`).
+3. Context freeze of source + contract versions — closed M458 (`freeze_id`).
 
 Full HTML is the captured source. This note is a mapping, not a substitute.

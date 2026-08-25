@@ -82,6 +82,37 @@ pub fn admit_claim(key: AdmitKey<'_>, records: &[NegativeMemoryRecord]) -> Admit
     }
 }
 
+/// Paper-scoped retrieval gate (Vasiliev / M459).
+///
+/// Any exhausted negative for this paper — regardless of stage — blocks
+/// retrieval. Empty / whitespace `paper_id` fail-opens (legacy unbound runs).
+/// Non-exhausted records are experience, not bans.
+pub fn admit_retrieval(paper_id: &str, records: &[NegativeMemoryRecord]) -> AdmitDecision {
+    if paper_id.trim().is_empty() {
+        return AdmitDecision::Allowed {
+            reason: "empty paper_id: retrieval admit fail-opens".into(),
+        };
+    }
+    for rec in records {
+        if !rec.exhausted {
+            continue;
+        }
+        if rec.paper_id != paper_id {
+            continue;
+        }
+        return AdmitDecision::BlockedExhausted {
+            record_id: rec.id.clone(),
+            reason: format!(
+                "blocked_exhausted: retrieval paper={} stage={} record={}",
+                rec.paper_id, rec.stage, rec.id
+            ),
+        };
+    }
+    AdmitDecision::Allowed {
+        reason: "no exhausted negative for this paper".into(),
+    }
+}
+
 /// Build a blocking record from an exhausted repair (caller stamps id/time).
 pub fn record_from_exhausted(
     id: String,
@@ -210,6 +241,46 @@ mod tests {
         let json = serde_json::to_string(&r).unwrap();
         let back: NegativeMemoryRecord = serde_json::from_str(&json).unwrap();
         assert_eq!(r, back);
+    }
+
+    #[test]
+    fn admit_retrieval_blocks_any_exhausted_negative_for_paper() {
+        let records = [rec(
+            "n1",
+            "2507.19457",
+            "figure_analysis",
+            Some("schema violation"),
+            true,
+        )];
+        let d = admit_retrieval("2507.19457", &records);
+        assert!(!d.is_allowed());
+        match d {
+            AdmitDecision::BlockedExhausted { record_id, reason } => {
+                assert_eq!(record_id, "n1");
+                assert!(reason.contains("retrieval"), "{reason}");
+            }
+            other => panic!("{other:?}"),
+        }
+    }
+
+    #[test]
+    fn admit_retrieval_allows_empty_paper_id() {
+        let records = [rec("n1", "2507.19457", "summaries", None, true)];
+        assert!(admit_retrieval("", &records).is_allowed());
+        assert!(admit_retrieval("   ", &records).is_allowed());
+    }
+
+    #[test]
+    fn admit_retrieval_allows_when_none_exhausted() {
+        let records = [rec("n1", "2507.19457", "summaries", None, false)];
+        assert!(admit_retrieval("2507.19457", &records).is_allowed());
+        assert!(admit_retrieval("2507.19457", &[]).is_allowed());
+    }
+
+    #[test]
+    fn admit_retrieval_ignores_other_papers() {
+        let records = [rec("n1", "2507.19457", "summaries", None, true)];
+        assert!(admit_retrieval("2608.14905", &records).is_allowed());
     }
 
     #[test]

@@ -201,6 +201,7 @@ fn sample_request() -> AgentRunRequest {
         budget: AgentBudget::new(2, 4, 1000),
         max_rows_per_query: 50,
         freeze: da_domain::ContextFreeze::default(),
+        paper_id: String::new(),
     }
 }
 

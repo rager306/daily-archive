@@ -57,8 +57,10 @@ use std::sync::Arc;
 use da_domain::{
     AgentAdmissionDecision, AgentAdmissionError, AgentBudget, AgentClaim, AgentFailureCode,
     AgentState, ContentDigest, ContextBundle, ContextFreeze, GraphIdentity, agent_verify_identity,
+    negative_memory::{admit_retrieval, AdmitDecision},
 };
 use da_ports::{AgentReadPlane, AgentSynthesizer};
+use da_ports::negative_memory::NegativeMemoryPort;
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 
@@ -102,6 +104,10 @@ pub struct AgentRunRequest {
     /// Empty strings mean the view is not frozen yet (legacy envelopes).
     #[serde(default)]
     pub freeze: ContextFreeze,
+    /// Paper whose exhausted negatives block retrieval (M459). Empty =
+    /// fail-open (legacy unbound runs).
+    #[serde(default)]
+    pub paper_id: String,
 }
 
 /// Durable agent run report (R095/R087, S03 T03).
@@ -141,11 +147,21 @@ pub struct AgentRunReport {
 pub struct AgentRunUseCase {
     plane: Arc<dyn AgentReadPlane>,
     synthesizer: Arc<dyn AgentSynthesizer>,
+    negatives: Option<Arc<dyn NegativeMemoryPort>>,
 }
 
 impl AgentRunUseCase {
     pub fn new(plane: Arc<dyn AgentReadPlane>, synthesizer: Arc<dyn AgentSynthesizer>) -> Self {
-        Self { plane, synthesizer }
+        Self {
+            plane,
+            synthesizer,
+            negatives: None,
+        }
+    }
+
+    pub fn with_negatives(mut self, store: Arc<dyn NegativeMemoryPort>) -> Self {
+        self.negatives = Some(store);
+        self
     }
 
     /// Execute one verified read-only agent run (ADR-052 instrumented).
@@ -225,6 +241,56 @@ impl AgentRunUseCase {
                 state,
                 error,
             );
+        }
+
+        // 2b) Retrieval admit (within Planning, BEFORE identity/query).
+        //     Empty paper_id or no store fail-opens. Blocked is typed
+        //     FailedVisible, never a silent empty result (R087).
+        if let Some(store) = &self.negatives {
+            match store.list_for_paper(&request.paper_id) {
+                Ok(recs) => {
+                    if let AdmitDecision::BlockedExhausted { record_id, reason } =
+                        admit_retrieval(&request.paper_id, &recs)
+                    {
+                        let error = AgentAdmissionError::new(
+                            AgentFailureCode::NegativeBlocked,
+                            format!("record={record_id} {reason}"),
+                            format!("neg:{record_id}"),
+                            AgentState::Planning,
+                            AgentState::Searching,
+                        );
+                        decisions.push(AgentAdmissionDecision::blocked(error.clone()));
+                        return failed_report(
+                            decisions,
+                            bundle,
+                            budget,
+                            &request.expected_identity,
+                            actual_identity,
+                            state,
+                            error,
+                        );
+                    }
+                }
+                Err(io_error) => {
+                    let error = AgentAdmissionError::new(
+                        AgentFailureCode::ReadPlaneUnavailable,
+                        format!("negative memory io: {io_error}"),
+                        "neg:io",
+                        AgentState::Planning,
+                        AgentState::Searching,
+                    );
+                    decisions.push(AgentAdmissionDecision::blocked(error.clone()));
+                    return failed_report(
+                        decisions,
+                        bundle,
+                        budget,
+                        &request.expected_identity,
+                        actual_identity,
+                        state,
+                        error,
+                    );
+                }
+            }
         }
 
         // 3) Planning -> Searching (evidence: plan digest).
@@ -880,6 +946,7 @@ mod tests {
     use super::*;
     use async_trait::async_trait;
     use da_domain::AgentQueryEvidence;
+    use da_ports::negative_memory::NegativeMemoryError;
     use da_ports::{AgentReadPlane, AgentReadPlaneError, AgentReadPlaneResult};
     use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -1042,6 +1109,7 @@ mod tests {
             budget: AgentBudget::new(2, 4, 1000),
             max_rows_per_query: 50,
             freeze: ContextFreeze::default(),
+            paper_id: String::new(),
         }
     }
 
@@ -1686,5 +1754,87 @@ mod tests {
                 .with_freeze(freeze)
                 .freeze_id()
         );
+    }
+
+    struct FakeNeg(Vec<da_domain::negative_memory::NegativeMemoryRecord>);
+    impl NegativeMemoryPort for FakeNeg {
+        fn append(
+            &mut self,
+            rec: &da_domain::negative_memory::NegativeMemoryRecord,
+        ) -> Result<(), NegativeMemoryError> {
+            self.0.push(rec.clone());
+            Ok(())
+        }
+        fn list_for_paper(
+            &self,
+            paper_id: &str,
+        ) -> Result<
+            Vec<da_domain::negative_memory::NegativeMemoryRecord>,
+            NegativeMemoryError,
+        > {
+            Ok(self
+                .0
+                .iter()
+                .filter(|r| r.paper_id == paper_id)
+                .cloned()
+                .collect())
+        }
+    }
+
+    #[tokio::test]
+    async fn blocked_retrieval_skips_read_plane_queries() {
+        let rec = da_domain::negative_memory::record_from_exhausted(
+            "n1".into(),
+            "2507.19457".into(),
+            "figure_analysis".into(),
+            Some("schema violation".into()),
+            Some("fig-1".into()),
+            "t".into(),
+        );
+        let plane = Arc::new(FakeAgentReadPlane::happy(test_identity(), happy_results()));
+        let mut request = sample_request();
+        request.paper_id = "2507.19457".into();
+        let report = AgentRunUseCase::new(plane.clone(), Arc::new(DeterministicSynthesizer))
+            .with_negatives(Arc::new(FakeNeg(vec![rec])))
+            .run(&request)
+            .await;
+        assert_eq!(report.terminal_state, AgentState::FailedVisible);
+        assert_eq!(
+            report.error.as_ref().map(|e| e.code),
+            Some(AgentFailureCode::NegativeBlocked)
+        );
+        assert_eq!(
+            report.error.as_ref().unwrap().error_class(),
+            "agent_failure:negative_blocked"
+        );
+        assert_eq!(
+            plane.query_calls(),
+            0,
+            "blocked retrieval must not query the read plane"
+        );
+        assert_eq!(
+            plane.identity_calls.load(Ordering::Relaxed),
+            0,
+            "blocked retrieval must not handshake identity"
+        );
+    }
+
+    #[tokio::test]
+    async fn empty_paper_id_fail_opens_retrieval() {
+        let rec = da_domain::negative_memory::record_from_exhausted(
+            "n1".into(),
+            "2507.19457".into(),
+            "summaries".into(),
+            None,
+            None,
+            "t".into(),
+        );
+        let plane = Arc::new(FakeAgentReadPlane::happy(test_identity(), happy_results()));
+        let report = AgentRunUseCase::new(plane.clone(), Arc::new(DeterministicSynthesizer))
+            .with_negatives(Arc::new(FakeNeg(vec![rec])))
+            .run(&sample_request())
+            .await;
+        assert_eq!(report.terminal_state, AgentState::Verified);
+        assert!(plane.query_calls() > 0);
     }
 }

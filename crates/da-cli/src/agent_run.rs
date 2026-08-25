@@ -273,7 +273,13 @@ pub async fn run(args: AgentRunArgs) -> Result<(), AgentRunCliError> {
 
     let plane = RemoteAgentReadPlane::new(store.clone());
     let plane_arc: Arc<dyn AgentReadPlane> = Arc::new(plane);
-    let use_case = AgentRunUseCase::new(plane_arc, Arc::new(DeterministicSynthesizer));
+    let mut use_case = AgentRunUseCase::new(plane_arc, Arc::new(DeterministicSynthesizer));
+    let neg_dir = std::env::var("DA_NEGATIVE_MEMORY_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|_| std::path::PathBuf::from("data/agent_memory/negatives"));
+    if let Ok(neg) = da_adapters::negative_memory::JsonlNegativeMemory::open(neg_dir) {
+        use_case = use_case.with_negatives(Arc::new(neg));
+    }
 
     let max_queries = args.max_queries.unwrap_or(plan.len() as u64);
     let max_evidence_entries = args.max_evidence_entries.unwrap_or(plan.len() as u64);
@@ -290,6 +296,7 @@ pub async fn run(args: AgentRunArgs) -> Result<(), AgentRunCliError> {
         budget: AgentBudget::new(max_queries, max_evidence_entries, args.max_synthesis_chars),
         max_rows_per_query: args.max_rows_per_query,
         freeze: context_freeze_from_env(),
+        paper_id: std::env::var("DA_RETRIEVAL_PAPER_ID").unwrap_or_default(),
     };
 
     let report = use_case.run(&request).await;
