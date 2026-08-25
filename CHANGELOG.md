@@ -390,3 +390,22 @@ loss classes:
 Tests: boundary_tail_reassigned_to_previous_section (eq 17.10 fixture),
 margin_notes_attached_structured_not_merged. Clippy 1.98 new lints
 fixed en route (Option::zip in ingest.rs).
+
+## 2026-08-25 — ADR-074 WASM MicroLoRA policy modules + roadmap update
+
+ADR-074 proposed: WASM MicroLoRA as swappable FSM policy modules.
+Three-layer architecture: FSM core (Rust) → decision points (trait
+objects) → policy artifacts (.wasm, sha256-versioned). Five decision
+points: grammar_route, batch_admission, concurrency_tune,
+retry_policy, summary_depth. Staged W1→W4 behind D136.
+
+Requirements registered: R097-R104 (evidence gate, multi-domain
+routing, survey spine, boundary-tail recovery, margin notes,
+negative-cache purge, circuit breaker, WASM policy modules).
+
+ROADMAP: M451 (current) + M452-M457 future milestones added:
+M452 SONA ReasoningBank extraction, M453 WASM hot-swap infra,
+M454 figure-repair loop, M455 temporal query filters,
+M456 RRF reranker composition, M457 content_ref vector layer.
+
+continue.md updated with full session state and pending backlog.
