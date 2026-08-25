@@ -405,7 +405,9 @@ working-memory object that Wave 4 agent brain (D137) consumes.
 A bundle is read-only (agent cannot mutate graph through it), bounded
 (deterministic size budget), and reproducible (same scope + as_of re-derives
 the same view). This is the Semantica AgentContext pattern adapted to
-daily-archive's bi-temporal Samyama store.
+daily-archive's bi-temporal Samyama store. Same role as Vasiliev's
+**context graph** (task/actor/purpose/time projection, not a second source
+of truth; source `vasiliev2026knowledge-graph-memory-graph`).
 
 ### 4. Provenance — W3C PROV-O export (extends Layer B evidence_from)
 

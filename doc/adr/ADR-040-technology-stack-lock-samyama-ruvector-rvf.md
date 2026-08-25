@@ -13,6 +13,8 @@
 ## 0. One-line Decision
 
 > **Samyama Graph** (Rust-native, Apache 2.0) is the sole knowledge graph + vector + persistence engine. **RuVector** narrows to agent brain only (SONA, GNN-rerank, BM25, agent memory). **RVF** is the agent experience container (signed, portable, COW-branched). No NebulaGraph, no redb, no JVM, no second graph store.
+>
+> Role mapping (captured source `vasiliev2026knowledge-graph-memory-graph`): Samyama = knowledge graph (governed meaning); RVF/CVF/SONA = memory graph (retained experience); ContextBundle = context graph (task-time projection). Three roles, not three platforms.
 
 ---
 

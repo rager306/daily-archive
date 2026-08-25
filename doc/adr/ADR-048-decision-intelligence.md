@@ -3,7 +3,7 @@
 **Status:** Proposed
 **Date:** 2026-07-24
 **Deciders:** collaborative
-**Related:** ADR-043 (process plane), ADR-044 (healing decisions), ADR-045 (validator), ADR-046 (bi-temporal), ADR-047 (conflicts), [Semantica context module](https://github.com/semantica-agi/semantica/blob/main/semantica/context/)
+**Related:** ADR-043 (process plane), ADR-044 (healing decisions), ADR-045 (validator), ADR-046 (bi-temporal), ADR-047 (conflicts), [Semantica context module](https://github.com/semantica-agi/semantica/blob/main/semantica/context/), captured source `vasiliev2026knowledge-graph-memory-graph` (Decision records = memory-graph experience around governed entities; not KG truth)
 
 ## Context
 

@@ -168,6 +168,12 @@ a specific `.wasm` hash, not against "the current code".
 
 ## 6. References
 
+- Sergey Vasiliev, *Knowledge Graph, Memory Graph and Context Graph*
+  (2026-08-17). Captured source:
+  `data/sources/blog/vasiliev2026knowledge-graph-memory-graph/`.
+  Mapping: WASM/SONA policies are memory-graph artifacts (experience),
+  not governed KG truth. Context consult at parse-pdf is a context-graph
+  projection (task-time), fail-open, hashed.
 - SONA engine: begin_trajectory / end_trajectory / submit_trajectory /
   apply_micro_lora / find_patterns / force_learn (crates/sona/src/engine.rs)
 - Three-tier loops: InstantLoop / BackgroundLoop / LoopCoordinator

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-25 — source capture: Vasiliev 2026 three graph roles
+
+Added Substack article as a blog source (not graph truth, D127):
+`data/sources/blog/vasiliev2026knowledge-graph-memory-graph/`.
+HTML captured locally (gitignored `data/**/*.html`, sha256 in identity.json);
+tracked: identity.json, citation.bib, article.md sidecar, NOTES.md, loader.
+Cited from ADR-040 (tier = roles), ADR-048, ADR-053 Layer H, ADR-074.
+Research note: `doc/research/vasiliev-2026-three-graph-roles.md`.
+
 ## 2026-08-25 — M454-c3yx94: critic repair process + Governor current-milestone
 
 Two process gaps closed:
