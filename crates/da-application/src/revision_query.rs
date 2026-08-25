@@ -738,7 +738,7 @@ mod tests {
                     .set_node_property_string(
                         manifestation,
                         "uri",
-                        format!("https://example/{revision}/{format}"),
+                        format!("{}/{revision}/{format}", std::env::var("DA_REVISION_ASSET_BASE_URL").unwrap_or_default()),
                     )
                     .await
                     .unwrap();

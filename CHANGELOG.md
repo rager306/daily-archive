@@ -509,3 +509,36 @@ glossary/table sections are the worst performers).
 Governor pre-existing BLOCKED (1764 violations): reverse_adr_audit
 (41 subdir patterns + GSD planning projections) + target bloat
 (42GB) + graph section stubs — all pre-existing, not from waves 1-4.
+
+## 2026-08-25 — Wave 5: Governor schema fixes + hardcoded URL + textbook manifest
+
+Governor BLOCKED causes addressed:
+
+1. SCHEMA.YAML COMPLETENESS (41→0 subdir violations):
+   - data/processed: subdir_pattern += trench-*, ads-*, gnn-ch-*,
+     algorithms-* (textbooks don't have dots in names)
+   - data/: valid_subdirs += agent_memory, agents, domains, prompts
+   - data/sources: valid += acm, doi
+   - data/sources/arxiv: valid += article_catalog
+   - doc/: valid += research
+
+2. HARDCODED URL: revision_query.rs 'https://example/...' →
+   DA_REVISION_ASSET_BASE_URL env var (added to .env.example)
+
+3. TEXTBOOK MANIFEST: algorithms-for-decision-making/textbook_manifest.json
+   created (format, parsing approach, TOC bookmarks, grammar profile)
+
+Remaining Governor BLOCKED causes (graph materialization backlog, NOT
+from waves 1-5):
+- graph_section_text_incomplete: avg 364 chars <500 (M439/M440 backlog)
+- graph_enrichment_missing: 0% coverage (enrichment wave needed)
+- graph_revision_binding_low: 0/295 papers (revision binding wave needed)
+- reverse_adr_audit: 1764 violations ≈ 295 stubs + 885 enrichment +
+  295 revision (sum of the three graph gaps above)
+- resource_target_bloat: 42GB target/ (cargo clean advisory)
+- gsd_planning_projection: 4 old milestones without PLAN tasks
+
+These are structural corpus work items (graph materialization),
+not code bugs. They map to existing roadmap M439/M440 backlog.
+
+Green: domain 713, cli 176, app 337, pytest 142, validate 645x0.
