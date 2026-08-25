@@ -586,7 +586,7 @@ pub fn run_enrich_layer(paper_id: &str) -> anyhow::Result<()> {
     let obs_path = std::path::Path::new("artifacts/pipeline_cache/openalex_works")
         .join(format!("{paper_id}.json"));
     let obs = std::fs::read_to_string(&obs_path)
-        .map_err(|e| anyhow::anyhow!("work cache {} (run scripts/m451_enrich_openalex.py): {e}", obs_path.display()))?;
+        .map_err(|e| anyhow::anyhow!("work cache {} (run `da source fetch-openalex {paper_id}`): {e}", obs_path.display()))?;
 
     let cfg = PathConfig::load();
     let store = FsSchemaObjectStore::from_path_config(&cfg, "article")?;
