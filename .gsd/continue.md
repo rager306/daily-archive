@@ -1,6 +1,13 @@
 # continue — session state
 
-## Active direction (M451): schema/manifest skeleton BEFORE code
+## Active direction (M452-mhx138): SONA + WASM policy modules
+
+S01 skipped-delivered (d1d0a6c / 50539ce): SONA ReasoningBank bridge +
+`da source sona-analyze` (55 traj → 7 patterns).
+S02 implemented this session: FsmPolicyPort + wasmi host + DATA registry
++ CLI `da source sona-policy`. D136 still locks LoRA weights.
+
+## Previous: M451 schema/manifest skeleton BEFORE code
 
 ADR-068 accepted (revised after elegance review): four roles —
 SCHEMA = norm (machine-readable), FS = truth, Governor = direct
@@ -23,15 +30,12 @@ Shipped (commit HEAD):
 - Tests: 140 passed. Real repo: 0 schema_hierarchy flags.
 
 ## Next actions
-1. W4: per-article lowercase manifest.yaml with lifecycle_events —
-   migrate 604 processed articles from manifest.json (M450 format).
-   Design first (fields per article_schema.yaml manifest section),
-   then generator script, then Governor content-invariants
-   (ast_covers_sections etc.) as W3 extension.
-2. Governor dimension status: reverse_adr_audit still 269 violations
-   + graph gaps (section_text_incomplete, enrichment_missing,
-   revision_binding_low) — honest, clear when pipeline fixed.
-3. HTML debug view (debug/ layer, derived_from: [manifest]) — after W4.
+1. Close M452-mhx138 via AGENTS.md manual protocol (S01+S02 skip-delivered
+   → runtime UAT → validate). No running Attempt in this session.
+2. Optional: wire grammar_route consult into parse-pdf (fail-open).
+3. D136 still locks LoRA training; do not put .safetensors in data/policies.
+4. Governor graph_* flags are corpus-state (not this milestone). Do not
+   treat them as a 295-paper graph materialization wave.
 
 ## Operators
 PYTHONPATH=scripts python3 -m governor doctor      # full: trajectory+arch+docs
@@ -95,7 +99,8 @@ PYTHONPATH=scripts python3 -c "from pathlib import Path; from governor.adapters.
   retry/pre_hooks; rust_actions map added; retry_for() accessor
 - Agents: summarizer+critic manifests DATA-driven; critic repair contract
   covers enriched/citations_resolved/summaries; figure-repair gap noted
-- WASM: ADR-074 proposed but NOT implemented (W1=record only; W2/W3 need
-  ~1000 trajectories and D136 approval); sona crate available as dependency
+- WASM: ADR-074 W3 infra SHIPPED (wasmi host, hot-swap, native fallback).
+  W2 pattern extraction SHIPPED (sona-analyze). LoRA training still D136.
+  Next: wire grammar_route consult into parse-pdf (optional, fail-open).
 - Tests: domain 707(+boundary_agent 6), adapters 249, cli 176,
   pytest 142, validate 645×0, clippy clean on all touched crates

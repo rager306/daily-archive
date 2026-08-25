@@ -15,6 +15,7 @@ pub mod embedder;
 pub mod evidence_store;
 pub mod extractor;
 pub mod figure_detection;
+pub mod fsm_policy;
 pub mod graph_store;
 pub mod llm_client;
 pub mod multimodal_llm;

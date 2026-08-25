@@ -65,6 +65,7 @@ pub mod structural_elements;
 pub mod summaries_llm;
 pub mod tei_figures;
 pub mod source_import_fsm;
+pub mod fsm_policy;
 pub mod scholarly_evidence;
 pub mod section_summary_policy;
 pub mod source;

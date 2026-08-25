@@ -633,6 +633,7 @@ mod tests {
 }
 
 // ── ADR-073 citracer trio tests ────────────────────────────────────────
+#[cfg(test)]
 mod circuit_breaker_tests {
     use super::*;
 
@@ -660,6 +661,7 @@ mod circuit_breaker_tests {
     }
 }
 
+#[cfg(test)]
 mod batch_filter_tests {
     use super::*;
 

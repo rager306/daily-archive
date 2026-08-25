@@ -390,3 +390,51 @@ pub fn run_sona_analyze(pid: &str) -> anyhow::Result<()> {
     println!("{}", da_application::sona_bridge::summarize_patterns(&patterns));
     Ok(())
 }
+
+/// ADR-074: consult an FSM policy decision point.
+/// Paths come from data/policies/registry.yaml (DATA). WASM if wat/wasm
+/// exists; otherwise native fallback. D136: no LoRA load.
+pub fn run_sona_policy(
+    point_name: &str,
+    pages: Option<u32>,
+    bookmarks: Option<u32>,
+    quality: Option<f32>,
+    domain: Option<&str>,
+) -> anyhow::Result<()> {
+    use da_application::fsm_policy_consult::consult_with_fallback;
+    use da_domain::fsm_policy::{ArticleFeatures, DecisionPoint, PolicyRegistry};
+    use da_ports::fsm_policy::FsmPolicyPort;
+
+    let yaml = std::fs::read_to_string("data/policies/registry.yaml")
+        .map_err(|e| anyhow::anyhow!("policy registry: {e}"))?;
+    let point = DecisionPoint::parse(point_name)
+        .ok_or_else(|| anyhow::anyhow!("unknown decision point {point_name:?}"))?;
+    let registry = PolicyRegistry::from_yaml_str(&yaml)?;
+
+    let features = ArticleFeatures {
+        page_count: pages.unwrap_or(18),
+        toc_bookmarks: bookmarks.unwrap_or(0),
+        text_layer_quality: quality.unwrap_or(0.85),
+        domain: domain.unwrap_or("").to_string(),
+    };
+
+    let host = registry.spec(point).and_then(|spec| {
+        let path = spec
+            .wat
+            .as_deref()
+            .or(spec.wasm.as_deref())
+            .filter(|p| std::path::Path::new(p).exists())?;
+        da_adapters::wasm_policy::SharedWasmPolicyHost::from_path(path, point).ok()
+    });
+    let host_ref: Option<&dyn FsmPolicyPort> = host.as_ref().map(|h| h as _);
+    let d = consult_with_fallback(host_ref, &yaml, point, &features)?;
+    println!(
+        "== sona-policy: {} ==\nroute={:?} admission={:?} source={} hash={}",
+        point.as_str(),
+        d.route.map(|r| r.as_str()),
+        d.admission.map(|a| a.as_str()),
+        d.id.source.hash_stamp(),
+        host.as_ref().map(|h| h.policy_hash()).unwrap_or_else(|| "native".into()),
+    );
+    Ok(())
+}

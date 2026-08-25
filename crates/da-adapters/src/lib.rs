@@ -37,6 +37,7 @@ pub mod rule_extractor;
 pub mod samyama_graph;
 pub mod section_summary_policy;
 pub mod tex_archive;
+pub mod wasm_policy;
 
 #[cfg(feature = "pdf-classifier")]
 pub use pdf_inspector;

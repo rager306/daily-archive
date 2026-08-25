@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-25 — M452-mhx138 S02: WASM FSM policy host (ADR-074 W3 infra)
+
+Hot-swappable policy modules at FSM decision points. No LoRA (D136).
+
+- Domain: `ArticleFeatures`, `GrammarRoute`, `Admission`, `PolicyRegistry`
+  (YAML-driven native thresholds). 10 tests.
+- Port: `FsmPolicyPort` in da-ports. Native fallback in da-application
+  (fail-open on Load/Instantiate/Io). 4 tests.
+- Adapter: `SharedWasmPolicyHost` (wasmi 0.51) in da-adapters only.
+  WAT fixtures under `data/policies/`. Hot-swap test: hash + decision
+  change without process restart. 3 tests.
+- DATA: `data/policies/SCHEMA.yaml` + `registry.yaml`; `policies` added
+  to `data/SCHEMA.yaml` and governor structural_directories.
+- CLI: `da source sona-policy <point> [--pages --bookmarks --quality]`
+  Live: grammar_route typical → xy_cut (wasm sha256 stamped);
+  monograph 700p+TOC → page_outline; scan → grobid_structural;
+  batch_admission pages=0 → skip (native).
+- D285: wasmi not wasmtime; onion boundary held.
+
+Green: domain fsm_policy 10, application 4, adapters wasm_policy 3,
+clippy -D warnings on da-domain/ports/application/adapters/cli --lib.
+
 ### M446 W-A1: словари сделали живыми — кэш инвалидируется, rebuild 6 минут
 
 - **Найдены и закрыты два системных разрыва** (DATA-first нарушался):
