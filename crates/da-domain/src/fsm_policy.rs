@@ -240,6 +240,12 @@ pub struct DecisionPointSpec {
     pub wat: Option<String>,
     #[serde(default)]
     pub native: serde_json::Value,
+    /// GrammarRoute.as_str() -> FSM grammar_profile (DATA; parse-pdf consult).
+    #[serde(default)]
+    pub profile_map: std::collections::BTreeMap<String, String>,
+    /// Fail-open FSM grammar_profile when route is missing from the map.
+    #[serde(default)]
+    pub default_profile: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -279,6 +285,21 @@ impl PolicyRegistry {
 
     pub fn spec(&self, point: DecisionPoint) -> Option<&DecisionPointSpec> {
         self.decision_points.get(point.as_str())
+    }
+
+    /// Map a GrammarRoute to an FSM grammar_profile via DATA profile_map.
+    /// Missing keys fall open to default_profile, then empty (caller decides).
+    pub fn profile_for(&self, route: GrammarRoute) -> Option<&str> {
+        let spec = self.spec(DecisionPoint::GrammarRoute)?;
+        spec.profile_map
+            .get(route.as_str())
+            .map(String::as_str)
+            .or(spec.default_profile.as_deref())
+    }
+
+    pub fn default_grammar_profile(&self) -> Option<&str> {
+        self.spec(DecisionPoint::GrammarRoute)
+            .and_then(|s| s.default_profile.as_deref())
     }
 }
 
@@ -379,6 +400,23 @@ decision_points:
         assert_eq!(r, GrammarRoute::XyCut, "70 pages < 80 threshold");
         let r2 = grammar_route_native(&feat(80, 2, 0.9), &g);
         assert_eq!(r2, GrammarRoute::PageOutline);
+    }
+
+    #[test]
+    fn profile_map_from_yaml_maps_routes() {
+        let yaml = r#"
+decision_points:
+  grammar_route:
+    default_profile: arxiv_pdf_dot
+    profile_map:
+      page_outline: page_outline
+      xy_cut: arxiv_pdf_dot
+      grobid_structural: arxiv_pdf_dot
+"#;
+        let reg = PolicyRegistry::from_yaml_str(yaml).unwrap();
+        assert_eq!(reg.profile_for(GrammarRoute::PageOutline), Some("page_outline"));
+        assert_eq!(reg.profile_for(GrammarRoute::XyCut), Some("arxiv_pdf_dot"));
+        assert_eq!(reg.default_grammar_profile(), Some("arxiv_pdf_dot"));
     }
 
     #[test]

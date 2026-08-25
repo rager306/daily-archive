@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-25 — M453-aym18d: parse-pdf consults grammar_route
+
+Process gap from M452: WASM/native policy host existed, parse-pdf still
+hardcoded grammar_profile=arxiv_pdf_dot.
+
+- DATA: grammar_route.profile_map + default_profile in
+  data/policies/registry.yaml. xy_cut stamps intent, keeps arxiv_pdf_dot
+  parse path (no XY-Cut CLI yet).
+- Application: resolve_parse_grammar() — consult + map + fail-open (8 tests).
+- CLI: run_parse_pdf stamps grammar_profile, grammar_route, policy_hash.
+  FSM parsed-stage: page_outline + TOC cache → parse-pdf-toc, else parse-pdf.
+  Features from clap / DA_PARSE_* env / TOC observation cache.
+- ADR-074 accepted (W1–W3 infra; LoRA still D136).
+
+Green: domain fsm_policy 11, application parse_grammar 8, cli stamp+choose 2,
+clippy -D warnings da-domain/application/cli --lib.
+
 ## 2026-08-25 — M452-mhx138 S02: WASM FSM policy host (ADR-074 W3 infra)
 
 Hot-swappable policy modules at FSM decision points. No LoRA (D136).

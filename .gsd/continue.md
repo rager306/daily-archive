@@ -1,11 +1,10 @@
 # continue — session state
 
-## Active direction (M452-mhx138): SONA + WASM policy modules
+## Active direction (M453-aym18d): parse-pdf consults grammar_route
 
-S01 skipped-delivered (d1d0a6c / 50539ce): SONA ReasoningBank bridge +
-`da source sona-analyze` (55 traj → 7 patterns).
-S02 implemented this session: FsmPolicyPort + wasmi host + DATA registry
-+ CLI `da source sona-policy`. D136 still locks LoRA weights.
+S01+S02 implemented: DATA profile_map, resolve_parse_grammar, parse-pdf
+stamp, FSM parsed-stage dispatch (page_outline+TOC → parse-pdf-toc).
+Close via skip-delivered + runtime UAT (no running Attempt).
 
 ## Previous: M451 schema/manifest skeleton BEFORE code
 

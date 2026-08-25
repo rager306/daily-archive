@@ -15,6 +15,104 @@ fn registry_path() -> PathBuf {
     std::path::Path::new("data/ontology/source_import_tools.yaml").to_path_buf()
 }
 
+fn policy_registry_path() -> PathBuf {
+    std::env::var("DA_POLICY_REGISTRY")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("data/policies/registry.yaml"))
+}
+
+fn toc_observations_path(paper_id: &str) -> PathBuf {
+    Path::new("artifacts/pipeline_cache/pdf_toc_observations").join(format!("{paper_id}.json"))
+}
+
+/// Choose the parsed-stage CLI action from a consult result.
+/// page_outline uses parse-pdf-toc only when the observation cache exists;
+/// otherwise fail-open to parse-pdf. XY-Cut has no CLI — keep parse-pdf.
+pub(crate) fn choose_parsed_action(grammar_profile: &str, toc_exists: bool) -> &'static str {
+    if grammar_profile == "page_outline" && toc_exists {
+        "parse-pdf-toc"
+    } else {
+        "parse-pdf"
+    }
+}
+
+pub(crate) fn stamp_parse_grammar(
+    m: &mut serde_yaml::Mapping,
+    profile: &str,
+    route: &str,
+    hash: &str,
+) {
+    m.insert("grammar_profile".into(), profile.into());
+    m.insert("grammar_route".into(), route.into());
+    m.insert("policy_hash".into(), hash.into());
+}
+
+fn features_from_env_and_cache(
+    paper_id: &str,
+    pages: Option<u32>,
+    bookmarks: Option<u32>,
+    quality: Option<f32>,
+) -> da_domain::fsm_policy::ArticleFeatures {
+    let env_u32 = |k: &str| std::env::var(k).ok().and_then(|v| v.parse().ok());
+    let env_f32 = |k: &str| std::env::var(k).ok().and_then(|v| v.parse().ok());
+    let mut page_count = pages.or_else(|| env_u32("DA_PARSE_PAGES")).unwrap_or(0);
+    let mut toc_bookmarks = bookmarks
+        .or_else(|| env_u32("DA_PARSE_BOOKMARKS"))
+        .unwrap_or(0);
+    let text_layer_quality = quality
+        .or_else(|| env_f32("DA_PARSE_TEXT_QUALITY"))
+        .unwrap_or(0.85);
+    if (page_count == 0 || toc_bookmarks == 0)
+        && let Some(v) = std::fs::read_to_string(toc_observations_path(paper_id))
+            .ok()
+            .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
+    {
+        if page_count == 0 {
+            page_count = v.get("total_pages").and_then(|p| p.as_u64()).unwrap_or(0) as u32;
+        }
+        if toc_bookmarks == 0 {
+            toc_bookmarks = v
+                .get("toc")
+                .and_then(|t| t.as_array())
+                .map(|a| a.len() as u32)
+                .unwrap_or(0);
+        }
+    }
+    da_domain::fsm_policy::ArticleFeatures {
+        page_count,
+        toc_bookmarks,
+        text_layer_quality,
+        domain: std::env::var("DA_PARSE_DOMAIN").unwrap_or_default(),
+    }
+}
+
+fn consult_parse_grammar_cli(
+    paper_id: &str,
+    pages: Option<u32>,
+    bookmarks: Option<u32>,
+    quality: Option<f32>,
+) -> anyhow::Result<da_application::parse_grammar::ParseGrammarDecision> {
+    use da_application::parse_grammar::resolve_parse_grammar;
+    use da_domain::fsm_policy::{DecisionPoint, PolicyRegistry};
+    use da_ports::fsm_policy::FsmPolicyPort;
+
+    let yaml = std::fs::read_to_string(policy_registry_path())
+        .map_err(|e| anyhow::anyhow!("policy registry: {e}"))?;
+    let registry = PolicyRegistry::from_yaml_str(&yaml)?;
+    let features = features_from_env_and_cache(paper_id, pages, bookmarks, quality);
+    let host = registry.spec(DecisionPoint::GrammarRoute).and_then(|spec| {
+        let path = spec
+            .wat
+            .as_deref()
+            .or(spec.wasm.as_deref())
+            .filter(|p| Path::new(p).exists())?;
+        da_adapters::wasm_policy::SharedWasmPolicyHost::from_path(path, DecisionPoint::GrammarRoute)
+            .ok()
+    });
+    let host_ref: Option<&dyn FsmPolicyPort> = host.as_ref().map(|h| h as _);
+    resolve_parse_grammar(&yaml, host_ref, &features).map_err(|e| anyhow::anyhow!("{e}"))
+}
+
 fn load_toolchain() -> anyhow::Result<Toolchain> {
     let text = std::fs::read_to_string(registry_path())?;
     Toolchain::from_yaml_str(&text)
@@ -1069,9 +1167,25 @@ pub fn run_audit_fidelity(paper_id: &str) -> anyhow::Result<()> {
 /// `da source parse-pdf <paper_id> --pdf <path>` — GROBID structural ->
 /// parsed/article.json + context/projection.json + manifest draft
 /// (idempotent; the article FSM then continues via build-* commands).
-pub fn run_parse_pdf(paper_id: &str, pdf_path: Option<&str>) -> anyhow::Result<()> {
+pub fn run_parse_pdf(
+    paper_id: &str,
+    pdf_path: Option<&str>,
+    pages: Option<u32>,
+    bookmarks: Option<u32>,
+    quality: Option<f32>,
+) -> anyhow::Result<()> {
     use da_adapters::GrobidParser;
     use da_ports::parser::ParserPort;
+
+    let grammar = consult_parse_grammar_cli(paper_id, pages, bookmarks, quality).ok();
+    if let Some(g) = &grammar {
+        println!(
+            "grammar_route: {} → profile={} hash={}",
+            g.route.as_str(),
+            g.grammar_profile,
+            g.policy_hash
+        );
+    }
 
     let Some(pdf) = pdf_path else {
         anyhow::bail!("parse-pdf requires --pdf <path>");
@@ -1124,7 +1238,10 @@ pub fn run_parse_pdf(paper_id: &str, pdf_path: Option<&str>) -> anyhow::Result<(
     let mut m = serde_yaml::Mapping::new();
     m.insert("schema_version".into(), "article-manifest.v1".into());
     m.insert("paper_id".into(), paper_id.into());
-    m.insert("grammar_profile".into(), "arxiv_pdf_dot".into());
+    match &grammar {
+        Some(g) => stamp_parse_grammar(&mut m, &g.grammar_profile, g.route.as_str(), &g.policy_hash),
+        None => stamp_parse_grammar(&mut m, "arxiv_pdf_dot", "unavailable", "native"),
+    }
     m.insert("lifecycle".into(), "parsed".into());
     let ev_raw = serde_yaml::Mapping::from_iter([
         ("stage".into(), "raw".into()),
@@ -1683,7 +1800,15 @@ fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
         let mut draft = serde_yaml::Mapping::new();
         draft.insert("schema_version".into(), "article-manifest.v1".into());
         draft.insert("paper_id".into(), serde_yaml::Value::from(paper_id));
-        draft.insert("grammar_profile".into(), "arxiv_pdf_dot".into());
+        match consult_parse_grammar_cli(paper_id, None, None, None) {
+            Ok(g) => stamp_parse_grammar(
+                &mut draft,
+                &g.grammar_profile,
+                g.route.as_str(),
+                &g.policy_hash,
+            ),
+            Err(_) => stamp_parse_grammar(&mut draft, "arxiv_pdf_dot", "unavailable", "native"),
+        }
         draft.insert("lifecycle".into(), "raw".into());
         let raw_event = serde_yaml::Mapping::from_iter([
             (serde_yaml::Value::from("stage"), serde_yaml::Value::from("raw")),
@@ -1734,15 +1859,35 @@ fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
         };
 
         let _ = action_first;
-        // special: parsed needs the PDF path — auto-find from catalog
-        let pdf = if *stage == "parsed" {
+        // parsed-stage: consult grammar_route (fail-open) and pick CLI.
+        // page_outline + TOC cache → parse-pdf-toc; else parse-pdf (XY-Cut has no CLI).
+        let mut parsed_actions: Vec<String> = action_list_owned.iter().map(|s| (*s).to_string()).collect();
+        if *stage == "parsed"
+            && let Ok(g) = consult_parse_grammar_cli(paper_id, None, None, None)
+        {
+            let toc_exists = toc_observations_path(paper_id).exists();
+            let chosen = choose_parsed_action(&g.grammar_profile, toc_exists);
+            println!(
+                "   grammar_route: {} → {} (profile={} hash={})",
+                g.route.as_str(),
+                chosen,
+                g.grammar_profile,
+                g.policy_hash
+            );
+            parsed_actions = vec![chosen.to_string()];
+        }
+        let action_list_owned: Vec<&str> = parsed_actions.iter().map(String::as_str).collect();
+        // special: parse-pdf needs the PDF path — auto-find from catalog.
+        // parse-pdf-toc reads observation cache, so PDF is optional there.
+        let needs_pdf = action_list_owned.contains(&"parse-pdf");
+        let pdf = if needs_pdf {
             let mut hits = Vec::new();
             collect_pdfs("data/sources", paper_id, &mut hits);
             hits.first().cloned()
         } else {
             None
         };
-        if *stage == "parsed" && pdf.is_none() {
+        if needs_pdf && pdf.is_none() {
             println!("   ✗ parse-pdf: no source PDF found for {paper_id}");
             failed = Some(format!("parsed: no PDF under data/sources for {paper_id}"));
             break;
@@ -2271,5 +2416,22 @@ mod tests {
         fn drop(&mut self) {
             std::env::set_current_dir(&self.original).unwrap();
         }
+    }
+
+    #[test]
+    fn stamp_parse_grammar_writes_profile_route_hash() {
+        let mut m = serde_yaml::Mapping::new();
+        stamp_parse_grammar(&mut m, "page_outline", "page_outline", "abc123");
+        assert_eq!(m.get("grammar_profile").and_then(|v| v.as_str()), Some("page_outline"));
+        assert_eq!(m.get("grammar_route").and_then(|v| v.as_str()), Some("page_outline"));
+        assert_eq!(m.get("policy_hash").and_then(|v| v.as_str()), Some("abc123"));
+    }
+
+    #[test]
+    fn choose_parsed_action_page_outline_needs_toc_cache() {
+        assert_eq!(choose_parsed_action("page_outline", true), "parse-pdf-toc");
+        assert_eq!(choose_parsed_action("page_outline", false), "parse-pdf");
+        assert_eq!(choose_parsed_action("arxiv_pdf_dot", true), "parse-pdf");
+        assert_eq!(choose_parsed_action("arxiv_pdf_dot", false), "parse-pdf");
     }
 }

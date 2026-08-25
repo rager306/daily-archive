@@ -1,7 +1,8 @@
 # ADR-074: WASM MicroLoRA as Swappable FSM Policy Modules
 
-- Status: Proposed (M451)
+- Status: Accepted (W1 record + W2 patterns + W3 host shipped; LoRA still D136)
 - Date: 2026-08-25
+- Updated: 2026-08-25 (M453: parse-pdf consults grammar_route)
 - Deciders: repo owner + agent
 - Tags: wasm, microlora, sona, fsm, self-learning, policy-modules, sandbox, hot-swap
 - Sources: ruvector/crates/sona (1638 nodes), ruvector rvf-* family,
@@ -107,6 +108,12 @@ trajectories. Small adapters (rank-2, ~few KB) → fast inference (<3μs).
 Phase W1 (now): record trajectories only. Every `run_summaries_agent`,
 every `parse_pdf`, every `enrich_layer` writes a `TrajectoryRecord`
 (already exists in da-ports). These accumulate in CVF memory.
+
+M453: `da source parse-pdf` and FSM parsed-stage consult `grammar_route`
+(fail-open). `GrammarRoute` maps to FSM `grammar_profile` via DATA
+`profile_map` in `data/policies/registry.yaml`. Manifest stamps
+`grammar_route` + `policy_hash`. `page_outline` + TOC observation cache
+→ `parse-pdf-toc`; XY-Cut has no CLI yet and keeps `parse-pdf`.
 
 Phase W2 (after ~1000 trajectories): ReasoningBank pattern extraction
 (K-means++ clustering by article_features embedding). Patterns with

@@ -507,7 +507,7 @@ fn main() {
                 "build-figures" => source_cli::run_build_figures(&paper_id),
                 "build-figures-tei" => source_cli::run_build_figures_tei(&paper_id),
                                 "parse-html" => source_cli::run_parse_html(&paper_id, html.as_deref()),
-                "parse-pdf" => source_cli::run_parse_pdf(&paper_id, pdf.as_deref()),
+                "parse-pdf" => source_cli::run_parse_pdf(&paper_id, pdf.as_deref(), pages, bookmarks, quality),
                 "parse-pdf-toc" => source_cli::run_parse_pdf_toc(&paper_id),
                 "enrich-layer" => source_cli::run_enrich_layer(&paper_id),
                 "audit-fidelity" => source_cli::run_audit_fidelity(&paper_id),
