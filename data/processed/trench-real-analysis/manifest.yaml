@@ -3,41 +3,23 @@ paper_id: trench-real-analysis
 grammar_profile: page_outline
 source:
   code: textbook
-lifecycle: validated
+lifecycle: structured
 lifecycle_events:
 - stage: raw
-  recorded_at: 2026-08-24 17:59:59+00:00
+  recorded_at: 2026-08-25T04:01:05Z
   actor: monograph-source
 - stage: parsed
-  recorded_at: 2026-08-24 17:59:59+00:00
+  recorded_at: 2026-08-25T04:01:05Z
   actor: rust-pdf-toc-stage
-  evidence_sha256: 429555a6b89704a23c0fa07a35d394b5e6e59d93e81cb4245328f6b71a5919a4
+  evidence_sha256: f8f200c7239b5fc780ec6f64948ad51e58868ed0a35ff8165ad4668cc88c3a32
 - stage: structured
-  recorded_at: 2026-08-24 17:59:59+00:00
+  recorded_at: 2026-08-25T04:01:05Z
   actor: rust-navigation-stage
-- stage: extracted
-  recorded_at: 2026-08-24 18:00:34+00:00
-  actor: rule-based-extractor
-  evidence_sha256: 6db47bf4352b2045c9acb8d39e5978fb7a160a2cd2385d955b85bd21d21fddf1
-- stage: enriched
-  recorded_at: 2026-08-25T01:56:41Z
-  actor: rust-enriched-layer
-  evidence_sha256: 26d6a3bd496c9d466373215a8a7b3237e762e241224084ba513ce279394a8415
-- stage: summarized
-  recorded_at: 2026-08-25T01:56:45Z
-  actor: agent:summarizer
-  evidence_sha256: b31cac63f777d183173c0638d7964ffba2985fc4aae0774bccc0a51ff8aff2fb
-- stage: validated
-  recorded_at: 2026-08-25T01:56:45Z
-  actor: rust-source-run
 artifacts:
   extracted:
-    file: extracted/entities.json
+    present: false
+    missingness: extraction_not_run
     derived_from: parsed
-    sha256: 6db47bf4352b2045c9acb8d39e5978fb7a160a2cd2385d955b85bd21d21fddf1
-    actor: rule-based-extractor
-    stats:
-      entities: 62
   citations_resolved:
     present: false
     missingness: no_citation_elements
@@ -59,28 +41,15 @@ artifacts:
     missingness: no_external_resources
     derived_from: parsed
   enriched:
-    present: false
-    missingness: openalex_not_found
-    derived_from: parsed
+    not_reached: true
   summaries:
-    file: summaries/abstract.json
-    derived_from: parsed
-    sha256: b31cac63f777d183173c0638d7964ffba2985fc4aae0774bccc0a51ff8aff2fb
-    actor: agent:summarizer
-    stats:
-      prompt_sha256: fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe
-      injection_scrubbed: 15
-      latency_ms: 3455
-      memory_epoch: 45
-    per_section:
-      status: failed
-      reason: llm_batch_failed
+    not_reached: true
   quality_signals:
     not_reached: true
   parsed:
     file: parsed/article.json
     derived_from: source
-    sha256: 429555a6b89704a23c0fa07a35d394b5e6e59d93e81cb4245328f6b71a5919a4
+    sha256: f8f200c7239b5fc780ec6f64948ad51e58868ed0a35ff8165ad4668cc88c3a32
     actor: rust-pdf-toc-stage
     stats:
       sections: 50

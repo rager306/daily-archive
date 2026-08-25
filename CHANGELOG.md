@@ -362,3 +362,31 @@ KEPT (sanctioned patterns):
   m451_summary_eval.py — one-time migration/pilot/eval session tools
 
 Registry honest: doi_mirror_fetch impl=rust, per_section_lazy impl=rust.
+
+## 2026-08-25 — book boundary-tail recovery + margin captions (manual audit)
+
+Manual page-by-page comparison of extracted algorithm sections vs the
+original PDF (user: «срафнить с оригиналом — что теряем») surfaced two
+loss classes:
+
+1. BOUNDARY TAILS (103/267 section boundaries, CRITICAL): content on the
+   next section's first page ABOVE its heading (continuation paragraphs,
+   equations — e.g. the core Q-learning update eq 17.10 with ←) was
+   dropped by both ranges: anchor-splitting removed it from the next
+   section, and page_end=next_page-1 excluded it from the previous one.
+   The earlier anchor fix had silently converted misattribution into
+   DELETION. Fix: build_pdf_toc_sections reassigns the shared-page
+   prefix (up to the next heading anchor, fail-open) to the previous
+   section. Live: lost boundaries 103 → 22 (residual = anchors not
+   found on imprecise TOC pages); Q-Learning 1449→2454 chars with eq
+   17.10 + ← recovered.
+
+2. MARGIN CAPTIONS (173 Algorithm N.N blocks): Tufte-layout algorithm
+   captions/footnotes live in the margin zone and never reached parsed
+   sections. Now attached as a structured `margin_notes` field per
+   section (pages range joined) — 146 sections carry Algorithm captions;
+   body reading order stays clean (never merged).
+
+Tests: boundary_tail_reassigned_to_previous_section (eq 17.10 fixture),
+margin_notes_attached_structured_not_merged. Clippy 1.98 new lints
+fixed en route (Option::zip in ingest.rs).

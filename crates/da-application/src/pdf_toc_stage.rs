@@ -21,6 +21,8 @@ pub struct TocObservations {
     pub toc: Vec<TocEntry>,
     #[serde(default)]
     pub pages_text: BTreeMap<u32, String>,
+    #[serde(default)]
+    pub pages_margin_notes: BTreeMap<u32, String>,
     pub total_pages: u32,
     #[serde(default)]
     pub title: Option<String>,
@@ -52,6 +54,7 @@ pub fn build_pdf_toc_stage(
     let sections = build_pdf_toc_sections(
         &obs.toc,
         &obs.pages_text,
+        Some(&obs.pages_margin_notes),
         obs.total_pages,
         object_id,
         &furniture,

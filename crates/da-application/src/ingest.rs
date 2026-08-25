@@ -1461,7 +1461,7 @@ pub fn compute_section_navigation_edges(
         .filter_map(|s| {
             s.path_id
                 .as_deref()
-                .and_then(|p| s.section_id.as_deref().map(|sid| (p, sid)))
+                .zip(s.section_id.as_deref())
                 .and_then(|(p, sid)| section_id_map.get(sid).map(|&n| (p, n)))
         })
         .collect();

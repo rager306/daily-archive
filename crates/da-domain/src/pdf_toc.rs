@@ -46,6 +46,11 @@ pub struct PdfTocSection {
     pub char_count: usize,
     #[serde(default)]
     pub text: String,
+    /// Margin sidenotes of the section's pages (Tufte layouts: algorithm
+    /// captions N.N, footnotes, cross-refs — preserved for downstream,
+    /// never merged into body reading order)
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub margin_notes: String,
 }
 
 /// page_end = next entry page - 1 (last: total_pages); text = joined
@@ -101,6 +106,7 @@ fn find_heading_anchor(page_text: &str, title: &str) -> Option<usize> {
 pub fn build_pdf_toc_sections(
     toc: &[TocEntry],
     pages_text: &BTreeMap<u32, String>,
+    pages_margin_notes: Option<&BTreeMap<u32, String>>,
     total_pages: u32,
     object_id: &str,
     furniture: &TocFurniture,
@@ -146,6 +152,37 @@ pub fn build_pdf_toc_sections(
                 text.push_str(&page_slice);
             }
         }
+        // Boundary tail (103/267 lost, live audit 2026-08-25): content on the
+        // NEXT section's first page ABOVE its heading belongs to THIS section —
+        // anchor-splitting removed it from the next section, so reassign here.
+        // Only when the anchor is actually found (fail-open keeps nothing).
+        if let Some(next) = toc.get(i + 1)
+            && next.page == page_end + 1
+            && let Some(shared) = pages_text.get(&next.page)
+            && let Some(off) = find_heading_anchor(shared, &next.title)
+            && off > 0
+        {
+            let tail = shared[..off].trim();
+            if !tail.is_empty() {
+                if !text.is_empty() {
+                    text.push('\n');
+                }
+                text.push_str(tail);
+            }
+        }
+
+        // Margin sidenotes of this section's page range (algorithm captions,
+        // footnotes) — attached as a structured field, never into body order
+        let margin_notes = pages_margin_notes
+            .map(|m| {
+                (e.page..=page_end)
+                    .filter_map(|p| m.get(&p))
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            })
+            .unwrap_or_default();
+
         out.push(PdfTocSection {
             section_id: format!("{object_id}:toc{i}"),
             title: e.title.trim().to_string(),
@@ -156,6 +193,7 @@ pub fn build_pdf_toc_sections(
             is_furniture: furniture.is_furniture(&e.title),
             char_count: text.chars().count(),
             text,
+            margin_notes,
         });
         stack.push((e.level, format!("{object_id}:toc{i}")));
     }
@@ -178,6 +216,47 @@ mod tests {
     }
 
     #[test]
+    fn boundary_tail_reassigned_to_previous_section() {
+        // Q-Learning regression: eq (17.10) жил на первой странице Sarsa НАД
+        // её заголовком — anchor-фикс удалял его вовсе (103/267 границ)
+        let pages = BTreeMap::from([
+            (1u32, "intro text of Q-Learning section".to_string()),
+            (2u32, "tail paragraph with eq (17.10)\n\n17.3\nSarsa\nSarsa body begins.".to_string()),
+        ]);
+        let toc = vec![
+            TocEntry { level: 3, title: "Q-Learning".into(), page: 1 },
+            TocEntry { level: 3, title: "Sarsa".into(), page: 2 },
+        ];
+        let f = TocFurniture::from_patterns(&[]);
+        let s = build_pdf_toc_sections(&toc, &pages, None, 3, "bk", &f);
+        let ql = s.iter().find(|x| x.title == "Q-Learning").unwrap();
+        assert!(
+            ql.text.contains("eq (17.10)"),
+            "boundary tail must return to the previous section: {}",
+            &ql.text[..80.min(ql.text.len())]
+        );
+        let sarsa = s.iter().find(|x| x.title == "Sarsa").unwrap();
+        assert!(
+            sarsa.text.starts_with("17.3"),
+            "next section starts at its own heading (number line is hers): {:?}",
+            &sarsa.text[..40.min(sarsa.text.len())]
+        );
+        assert!(!sarsa.text.contains("17.10"));
+    }
+
+    #[test]
+    fn margin_notes_attached_structured_not_merged() {
+        let pages = BTreeMap::from([(1u32, "body text only".to_string())]);
+        let margins = BTreeMap::from([(1u32, "Algorithm 7.6. Policy iteration caption".to_string())]);
+        let toc = vec![TocEntry { level: 3, title: "Policy Iteration".into(), page: 1 }];
+        let f = TocFurniture::from_patterns(&[]);
+        let s = build_pdf_toc_sections(&toc, &pages, Some(&margins), 2, "bk", &f);
+        assert_eq!(s[0].margin_notes, "Algorithm 7.6. Policy iteration caption");
+        assert_eq!(s[0].text, "body text only", "caption stays OUT of body order");
+        assert!(s[0].text.is_empty() || !s[0].text.contains("Algorithm"));
+    }
+
+    #[test]
     fn anchor_splitting_removes_previous_section_tail() {
         // algorithms-for-decision-making регрессия: Value Iteration начиналась
         // хвостом policy iteration + осями фигуры; Policy Iteration — Julia-кодом
@@ -191,7 +270,7 @@ mod tests {
             TocEntry { level: 2, title: "Value Iteration".into(), page: 9 },
         ];
         let f = TocFurniture::from_patterns(&[]);
-        let sections = build_pdf_toc_sections(&toc, &pages, 10, "bk", &f);
+        let sections = build_pdf_toc_sections(&toc, &pages, None, 10, "bk", &f);
         let pi = sections.iter().find(|s| s.title == "Policy Iteration").unwrap();
         assert!(
             !pi.text.contains("tends to be expensive"),
@@ -217,7 +296,7 @@ mod tests {
             TocEntry { level: 2, title: "Section 1.1 System".into(), page: 10 },
             TocEntry { level: 2, title: "Section 1.2 Induction".into(), page: 19 },
         ];
-        let secs = build_pdf_toc_sections(&toc, &pages(1, 30), 30, "m", &furniture());
+        let secs = build_pdf_toc_sections(&toc, &pages(1, 30), None, 30, "m", &furniture());
         assert_eq!(secs.len(), 4);
         assert!(secs[0].is_furniture);
         assert!(!secs[1].is_furniture);
@@ -233,7 +312,7 @@ mod tests {
     #[test]
     fn last_entry_runs_to_total() {
         let toc = vec![TocEntry { level: 1, title: "Tail".into(), page: 25 }];
-        let secs = build_pdf_toc_sections(&toc, &pages(1, 30), 30, "m", &furniture());
+        let secs = build_pdf_toc_sections(&toc, &pages(1, 30), None, 30, "m", &furniture());
         assert_eq!(secs[0].page_end, 30);
     }
 }
