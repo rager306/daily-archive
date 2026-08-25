@@ -9,9 +9,9 @@ stages:
     cli: da acquire-arxiv
     note: каталог-hit/script-ensure
   - id: doi_mirror_fetch
-    impl: reference
-    cli: scripts/m451_doi_import.py
-    note: W-D rehearsal; Rust SourceAcquisitionPort — будущая W-D1
+    impl: rust
+    cli: da source acquire <doi>
+    note: 'ADR-073 wave: OpenAlex oa_location → PDF (Rust; заменяет m451_doi_import.py)'
   - id: textbook_placement
     impl: reference
     cli: scripts/m451_textbook_import.py|monograph
@@ -105,9 +105,10 @@ stages:
       snapshot+replay, witness verify); живой прогон DOI-статьи: agnes-2.5, 920ms,
       prompt_sha fed3ccc6 == lineage 604 узлов'
   - id: per_section_lazy
-    impl: reference
-    cli: scripts/m451_background_runner.py
-    note: фоновые задачи по реестру
+    impl: rust
+    cli: da source background-run per_section_summaries
+    note: 'Rust runner: scrub/batch/fingerprint/rate-limit из background_tasks.yaml
+      (замена m451_background_runner.py)'
 - stage: validated
   title: инварианты по норме (generic engine)
   tools:

@@ -330,3 +330,35 @@ Implemented for OpenAlex — all in Rust per product direction:
 Live: 560×200 (+1 recovered), 85 honest 404 (textbook chapters with
 arXiv-shaped DOIs + not-yet-indexed young papers — purge retries them
 on every run). Clippy 1.98 new lint fixed in load.rs (as_chunks).
+
+## 2026-08-25 — python-crutch purge wave (runtime path is Rust-only)
+
+Audit of ALL python-in-runtime-path crutches (m451_enrich_openalex.py class).
+Classification + action:
+
+REPLACED BY RUST:
+- m451_doi_import.py (hand-tuned one-paper DOI mirror) → `da source acquire
+  <doi>` handler (route doi_mirror → OpenAlex oa_location → PDF download →
+  identity.json). Live: routes + finds PDF; ACM returns honest 403 paywall.
+- m451_background_runner.py (per-section LLM summaries) → `da source
+  background-run [task|pid]` (da-cli/background_tasks.rs): registry-driven
+  policy (background_tasks.yaml), injection scrub (da-domain), models.yaml
+  binding, batches ≤16, fingerprint cache, rate limit + daily budget,
+  honest failed markers, idempotent rerun ({"cache":1} on retry). LLM
+  output parser handles the three 9router shapes: array, json_object
+  wrapper, concatenated per-section object stream.
+
+DEAD PORTS REMOVED (functionality already in Rust):
+- m451_navigation_build.py (ported: da-domain/navigation.rs)
+- m451_summaries_build.py (ported: build-summary action)
+- scripts/tests/test_navigation.py (covered by Rust tests)
+
+KEPT (sanctioned patterns):
+- m451_pdf_observations.py / m451_pdf_toc_observations.py — reference
+  extractors (PyMuPDF observations; Rust stages consume; ADR phase-2)
+- m451_textbook_import.py / m451_monograph_import.py — one-time manual
+  acquisition tools (4 books imported; Rust textbook-acquire is backlog)
+- m451_migrate_article_manifests.py / m451_reference_layers.py /
+  m451_summary_eval.py — one-time migration/pilot/eval session tools
+
+Registry honest: doi_mirror_fetch impl=rust, per_section_lazy impl=rust.

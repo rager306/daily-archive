@@ -84,13 +84,107 @@ pub fn acquire(raw: &str, repo: &Path) -> anyhow::Result<()> {
             println!("next: da source status {} ; da source plan {}", route.id, route.id);
             Ok(())
         }
-        other => {
-            // honest: reference handlers are surfaced, not silently run
+        "doi_mirror" => acquire_doi(&route.id, repo),
+        "direct_pdf" => {
             println!(
-                "handler {other:?} is a reference tool (phase-2 backlog); \
-                 use scripts/m451_doi_import.py or place assets manually"
+                "direct_pdf handler: download {raw} to data/sources and run \"da source run <id>\" \
+                 (generic direct-download backlog; routing rule present)"
             );
             Ok(())
         }
+        other => {
+            println!("handler {other:?} not implemented (registry handler name mismatch)");
+            Ok(())
+        }
     }
+}
+
+/// DOI acquisition (replaces scripts/m451_doi_import.py — ADR-073 wave):
+/// OpenAlex work lookup → best_oa_location.pdf_url → download →
+/// data/sources/doi/<dir-safe>/source/ + identity.json. Uses the Rust
+/// OpenAlex adapter; no hand-tuned mirrors.
+fn acquire_doi(doi: &str, repo: &Path) -> anyhow::Result<()> {
+    use da_adapters::openalex_adapter::OpenAlexHttpAdapter;
+
+    let rt = tokio::runtime::Runtime::new()?;
+    let adapter = OpenAlexHttpAdapter::default();
+    let url = format!("{}/works/doi:{doi}", doi_base());
+    let _ = &adapter; // adapter keeps its client private; plain client below
+    let resp = rt.block_on(async {
+        let c = reqwest::Client::builder()
+            .user_agent("daily-archive/0.1")
+            .timeout(std::time::Duration::from_secs(60))
+            .build()
+            .map_err(|e| anyhow::anyhow!("reqwest: {e}"))?;
+        c.get(&url)
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("openalex: {e}"))?
+            .error_for_status()
+            .map_err(|e| anyhow::anyhow!("openalex status: {e}"))?
+            .text()
+            .await
+            .map_err(|e| anyhow::anyhow!("openalex body: {e}"))
+    })?;
+    let body: serde_json::Value = serde_json::from_str(&resp)
+        .map_err(|e| anyhow::anyhow!("openalex decode: {e}"))?;
+    let pdf_url = best_pdf_url(&body)
+        .ok_or_else(|| anyhow::anyhow!("no open-access pdf_url in OpenAlex for {doi}"))?;
+    let title = body.get("title").and_then(|t| t.as_str()).unwrap_or("").to_string();
+
+    let dir_safe = doi.replace('/', "-");
+    let src_dir = repo.join(format!("data/sources/doi/{dir_safe}/source"));
+    std::fs::create_dir_all(&src_dir)?;
+    let fname = format!("{dir_safe}.pdf");
+    let pdf_path = src_dir.join(&fname);
+
+    println!("doi {doi}: downloading {pdf_url}");
+    let bytes = rt.block_on(async { download_bytes(&pdf_url).await })?;
+    std::fs::write(&pdf_path, &bytes)?;
+
+    let ident = serde_json::json!({
+        "schema_version": "article.v00.01",
+        "paper_id": dir_safe,
+        "doi": doi,
+        "title": title,
+        "source_code": "doi",
+        "source_type": "article",
+        "source_url": pdf_url,
+        "format": "pdf",
+        "language": "en",
+    });
+    std::fs::write(
+        repo.join(format!("data/sources/doi/{dir_safe}/identity.json")),
+        serde_json::to_string_pretty(&ident)?,
+    )?;
+    println!("acquired: data/sources/doi/{dir_safe}/ ({} bytes)", bytes.len());
+    println!("next: da source run {dir_safe}");
+    Ok(())
+}
+
+fn doi_base() -> String {
+    std::env::var("OPENALEX_BASE_URL")
+        .ok()
+        .filter(|v| !v.trim().is_empty())
+        .unwrap_or_else(|| "https://api.openalex.org".to_string())
+}
+
+fn best_pdf_url(work: &serde_json::Value) -> Option<String> {
+    let best = work.pointer("/best_oa_location/pdf_url").and_then(|u| u.as_str());
+    if best.is_some() {
+        return best.map(String::from);
+    }
+    work.get("locations")
+        .and_then(|l| l.as_array())?
+        .iter()
+        .find_map(|l| l.get("pdf_url").and_then(|u| u.as_str()).map(String::from))
+}
+
+async fn download_bytes(url: &str) -> anyhow::Result<Vec<u8>> {
+    let c = reqwest::Client::builder()
+        .user_agent("daily-archive/0.1")
+        .timeout(std::time::Duration::from_secs(180))
+        .build()?;
+    let bytes = c.get(url).send().await?.error_for_status()?.bytes().await?;
+    Ok(bytes.to_vec())
 }

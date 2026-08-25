@@ -498,6 +498,17 @@ fn main() {
                 "parse-pdf" => source_cli::run_parse_pdf(&paper_id, pdf.as_deref()),
                 "parse-pdf-toc" => source_cli::run_parse_pdf_toc(&paper_id),
                 "enrich-layer" => source_cli::run_enrich_layer(&paper_id),
+                "background-run" => {
+                    // da source background-run [task|pid] — task по умолчанию
+                    // per_section_summaries; аргумент, похожий на pid (не id задачи),
+                    // запускает одну статью
+                    let known_tasks = ["per_section_summaries", "debug_html_rebuild"];
+                    if known_tasks.contains(&paper_id.as_str()) {
+                        da_cli::background_tasks::run_background(&paper_id, "pending")
+                    } else {
+                        da_cli::background_tasks::run_background("per_section_summaries", &paper_id)
+                    }
+                }
                 "fetch-openalex" => {
                     let mut args: Vec<String> = vec![paper_id.clone()];
                     args.extend(std::env::args().skip(4).collect::<Vec<_>>().into_iter().filter(|a| a.starts_with("--")));
