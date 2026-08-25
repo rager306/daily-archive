@@ -56,7 +56,7 @@ use std::sync::Arc;
 
 use da_domain::{
     AgentAdmissionDecision, AgentAdmissionError, AgentBudget, AgentClaim, AgentFailureCode,
-    AgentState, ContentDigest, ContextBundle, GraphIdentity, agent_verify_identity,
+    AgentState, ContentDigest, ContextBundle, ContextFreeze, GraphIdentity, agent_verify_identity,
 };
 use da_ports::{AgentReadPlane, AgentSynthesizer};
 use serde::{Deserialize, Serialize};
@@ -98,6 +98,10 @@ pub struct AgentRunRequest {
     pub budget: AgentBudget,
     /// Adapter-side row cut per query; zero fails closed (invalid_plan).
     pub max_rows_per_query: u64,
+    /// Layer H freeze metadata stamped onto the bundle at construction.
+    /// Empty strings mean the view is not frozen yet (legacy envelopes).
+    #[serde(default)]
+    pub freeze: ContextFreeze,
 }
 
 /// Durable agent run report (R095/R087, S03 T03).
@@ -179,7 +183,8 @@ impl AgentRunUseCase {
         let mut decisions: Vec<AgentAdmissionDecision> = Vec::new();
         let mut state = AgentState::Created;
         let mut budget = request.budget.clone();
-        let mut bundle = ContextBundle::new(request.expected_identity.clone());
+        let mut bundle = ContextBundle::new(request.expected_identity.clone())
+            .with_freeze(request.freeze.clone());
         let mut actual_identity: Option<GraphIdentity> = None;
 
         // 1) Created -> Planning (run entry, durable entry evidence).
@@ -1036,6 +1041,7 @@ mod tests {
             ],
             budget: AgentBudget::new(2, 4, 1000),
             max_rows_per_query: 50,
+            freeze: ContextFreeze::default(),
         }
     }
 
@@ -1653,5 +1659,32 @@ mod tests {
             Some(AgentFailureCode::InvalidPlan)
         );
         expect_chain_ok(&request.plan, &report);
+    }
+
+    #[tokio::test]
+    async fn run_stamps_request_freeze_onto_the_bundle() {
+        let freeze = ContextFreeze {
+            as_of: "2026-08-25T00:00:00Z".into(),
+            policy_hash: "deadbeef".into(),
+            scope: "MATCH (p:Paper) RETURN p".into(),
+            task_kind: "critical_reading".into(),
+            compiled_at: "2026-08-25T12:00:00Z".into(),
+        };
+        let mut request = sample_request();
+        request.freeze = freeze.clone();
+        let report = use_case(FakeAgentReadPlane::happy(test_identity(), happy_results()))
+            .run(&request)
+            .await;
+        assert_eq!(report.bundle.as_of, freeze.as_of);
+        assert_eq!(report.bundle.policy_hash, freeze.policy_hash);
+        assert_eq!(report.bundle.scope, freeze.scope);
+        assert_eq!(report.bundle.task_kind, freeze.task_kind);
+        assert_eq!(report.bundle.compiled_at, freeze.compiled_at);
+        assert_eq!(
+            report.bundle.freeze_id(),
+            ContextBundle::new(test_identity())
+                .with_freeze(freeze)
+                .freeze_id()
+        );
     }
 }

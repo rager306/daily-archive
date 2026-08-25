@@ -688,6 +688,31 @@ impl AgentGroundingError {
 /// the caller (S03) passes the actual read-plane identity (from a
 /// `DA.IDENTITY` handshake) to [`ContextBundle::verify_verification`], which
 /// admits only when the identity matches **and** every claim is grounded.
+/// Frozen contract for a ContextBundle (ADR-053 Layer H / Vasiliev context role).
+///
+/// `as_of` + `policy_hash` + `scope` + `task_kind` are the identity of the
+/// view. `compiled_at` is observational wall time supplied by the caller
+/// (domain stays clock-free) and is **not** part of [`ContextBundle::freeze_id`].
+/// Empty strings mean "not frozen yet" so legacy JSON still deserializes.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct ContextFreeze {
+    /// Point-in-time the view is valid for (RFC3339 or empty).
+    #[serde(default)]
+    pub as_of: String,
+    /// Contract / WASM policy hash the view was compiled under.
+    #[serde(default)]
+    pub policy_hash: String,
+    /// Minimum sufficient context: the Cypher (or equivalent) that produced the view.
+    #[serde(default)]
+    pub scope: String,
+    /// Why the view exists (critical_reading / reproducibility_check / …).
+    #[serde(default)]
+    pub task_kind: String,
+    /// When the caller froze the view. Observational; excluded from freeze_id.
+    #[serde(default)]
+    pub compiled_at: String,
+}
+
 /// Pure domain value, fail-closed.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContextBundle {
@@ -697,6 +722,21 @@ pub struct ContextBundle {
     pub evidence: Vec<AgentQueryEvidence>,
     /// Synthesis claims produced so far.
     pub claims: Vec<AgentClaim>,
+    /// Point-in-time the view is valid for (Layer H `as_of`). Empty = unset.
+    #[serde(default)]
+    pub as_of: String,
+    /// Contract / WASM policy hash the view was compiled under.
+    #[serde(default)]
+    pub policy_hash: String,
+    /// Minimum sufficient context: Cypher (or equivalent) that produced the view.
+    #[serde(default)]
+    pub scope: String,
+    /// Why the view exists (critical_reading / reproducibility_check / …).
+    #[serde(default)]
+    pub task_kind: String,
+    /// When the caller froze the view. Observational; excluded from freeze_id.
+    #[serde(default)]
+    pub compiled_at: String,
 }
 
 impl ContextBundle {
@@ -705,7 +745,40 @@ impl ContextBundle {
             expected_identity,
             evidence: Vec::new(),
             claims: Vec::new(),
+            as_of: String::new(),
+            policy_hash: String::new(),
+            scope: String::new(),
+            task_kind: String::new(),
+            compiled_at: String::new(),
         }
+    }
+
+    /// Stamp Layer H freeze metadata. Does not recompute evidence or claims.
+    pub fn with_freeze(mut self, freeze: ContextFreeze) -> Self {
+        self.as_of = freeze.as_of;
+        self.policy_hash = freeze.policy_hash;
+        self.scope = freeze.scope;
+        self.task_kind = freeze.task_kind;
+        self.compiled_at = freeze.compiled_at;
+        self
+    }
+
+    /// Deterministic identity of the frozen view: graph identity + as_of +
+    /// policy_hash + scope + task_kind. `compiled_at` is excluded so a later
+    /// wall-clock stamp of the same contract does not mint a new freeze.
+    pub fn freeze_id(&self) -> ContentDigest {
+        let material = format!(
+            "digest={}\ntenant={}\nnodes={}\nedges={}\nas_of={}\npolicy_hash={}\nscope={}\ntask_kind={}\n",
+            self.expected_identity.semantic_digest.as_str(),
+            self.expected_identity.tenant,
+            self.expected_identity.nodes,
+            self.expected_identity.edges,
+            self.as_of,
+            self.policy_hash,
+            self.scope,
+            self.task_kind,
+        );
+        ContentDigest::of_text(&material)
     }
 
     pub fn add_evidence(&mut self, evidence: AgentQueryEvidence) {
@@ -1571,6 +1644,63 @@ mod tests {
             claim_index: 1,
             evidence_ref: "sha256:nope".into(),
         });
+    }
+
+    #[test]
+    fn legacy_bundle_json_without_freeze_fields_deserializes() {
+        let identity = test_identity("g1", "tenant-a", 10, 4);
+        let json = serde_json::json!({
+            "expected_identity": identity,
+            "evidence": [],
+            "claims": []
+        });
+        let bundle: ContextBundle = serde_json::from_value(json).expect("legacy JSON");
+        assert!(bundle.as_of.is_empty());
+        assert!(bundle.policy_hash.is_empty());
+        assert!(bundle.scope.is_empty());
+        assert!(bundle.task_kind.is_empty());
+        assert!(bundle.compiled_at.is_empty());
+        crate::roundtrip_json(&bundle);
+    }
+
+    #[test]
+    fn freeze_id_is_stable_and_ignores_compiled_at() {
+        let identity = test_identity("g1", "tenant-a", 10, 4);
+        let freeze = ContextFreeze {
+            as_of: "2026-08-25T00:00:00Z".into(),
+            policy_hash: "deadbeef".into(),
+            scope: "MATCH (p:Paper) RETURN p".into(),
+            task_kind: "critical_reading".into(),
+            compiled_at: "2026-08-25T12:00:00Z".into(),
+        };
+        let a = ContextBundle::new(identity.clone()).with_freeze(freeze.clone());
+        let mut later = freeze.clone();
+        later.compiled_at = "2026-08-25T13:00:00Z".into();
+        let b = ContextBundle::new(identity.clone()).with_freeze(later);
+        assert_eq!(a.freeze_id(), b.freeze_id());
+        crate::roundtrip_json(&a);
+    }
+
+    #[test]
+    fn freeze_id_changes_when_policy_hash_or_as_of_changes() {
+        let identity = test_identity("g1", "tenant-a", 10, 4);
+        let base = ContextFreeze {
+            as_of: "2026-08-25T00:00:00Z".into(),
+            policy_hash: "deadbeef".into(),
+            scope: "MATCH (p:Paper) RETURN p".into(),
+            task_kind: "critical_reading".into(),
+            compiled_at: "t0".into(),
+        };
+        let orig = ContextBundle::new(identity.clone()).with_freeze(base.clone());
+        let mut flipped_policy = base.clone();
+        flipped_policy.policy_hash = "cafebabe".into();
+        let policy = ContextBundle::new(identity.clone()).with_freeze(flipped_policy);
+        let mut flipped_as_of = base;
+        flipped_as_of.as_of = "2026-01-01T00:00:00Z".into();
+        let as_of = ContextBundle::new(identity).with_freeze(flipped_as_of);
+        assert_ne!(orig.freeze_id(), policy.freeze_id());
+        assert_ne!(orig.freeze_id(), as_of.freeze_id());
+        assert_ne!(policy.freeze_id(), as_of.freeze_id());
     }
 }
 

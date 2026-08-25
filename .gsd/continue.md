@@ -1,9 +1,10 @@
 # continue — session state
 
-## Active direction (M456-g1nv83): summaries_agent_stage admits before LLM
+## Active direction (M458-qxcimz): ContextBundle freezes as_of policy_hash MSC
 
-S01+S02: admit_claim in run_summaries_agent; CLI build-summary wires
-JsonlNegativeMemory. Close via skip-delivered.
+S01+S02: ContextFreeze on ContextBundle; freeze_id ignores compiled_at.
+AgentRunUseCase stamps request.freeze. CLI reads DA_CONTEXT_*. Close via
+skip-delivered.
 
 ## Previous: M451 schema/manifest skeleton BEFORE code
 

@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-08-25 — M458-qxcimz: ContextBundle freezes as_of policy_hash and MSC
+
+ADR-053 Layer H was identity + evidence + claims only. ContextBundle now
+carries optional as_of, policy_hash, scope, task_kind, compiled_at
+(serde default empty so legacy JSON still loads). freeze_id hashes
+identity + as_of + policy_hash + scope + task_kind; compiled_at is
+observational and excluded. AgentRunRequest.freeze is stamped onto the
+bundle at construction. CLI da agent-run reads DA_CONTEXT_AS_OF,
+DA_CONTEXT_POLICY_HASH, DA_CONTEXT_SCOPE, DA_CONTEXT_TASK_KIND; compiled_at
+from SystemClock. Domain stays clock-free. Not Samyama. D127 false.
+
+Green: freeze_id 2 + legacy JSON 1 + context_bundle 2; agent_run 24
+including run_stamps_request_freeze; da-cli agent_run 22 including env
+freeze; clippy -D warnings da-domain/application/cli --lib.
+
+## 2026-08-25 — M457-jj82w7: figure_analysis_stage admits before multimodal LLM
+
+Same Vasiliev/M455 gap as summaries: figure_analysis_stage called the
+vision model without consulting negative memory. execute() now admits
+canonical_id+figure_analysis (pattern=None) before analyze(). Missing
+canonical_id fail-opens (legacy unbound contexts). Blocked maps to
+Terminal error_class=negative_blocked; SpyModel is never called.
+
+CLI production.rs and load_journey.rs open JsonlNegativeMemory from
+DA_NEGATIVE_MEMORY_DIR (inline env; bin/lib dual compile). Open failure
+fail-opens the stage without a store.
+
+Green: figure_analysis_stage 11 (blocked skips LLM + missing id
+fail-open), clippy -D warnings da-application/cli --lib.
+
 ## 2026-08-25 — M456-g1nv83: summaries_agent_stage admits before LLM
 
 M455 CLI gate was bypassed by the pipeline. Now run_summaries_agent

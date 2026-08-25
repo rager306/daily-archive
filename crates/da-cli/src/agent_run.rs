@@ -62,8 +62,8 @@ use da_application::{
     AgentPlanQuery, AgentRunReport, AgentRunRequest, AgentRunUseCase, DeterministicSynthesizer,
     verify_run_evidence_chain,
 };
-use da_domain::{AgentBudget, AgentState, GraphIdentity};
-use da_ports::{AgentReadPlane, GraphStore};
+use da_domain::{AgentBudget, AgentState, ContextFreeze, GraphIdentity};
+use da_ports::{AgentReadPlane, Clock, GraphStore, SystemClock};
 use kg_storage::snapshot_identity::{SnapshotIdentity, fingerprint_snapshot};
 use kg_storage::{QueryResult, RemoteGraphConfig, RemoteGraphStore};
 use serde::{Deserialize, Serialize};
@@ -289,6 +289,7 @@ pub async fn run(args: AgentRunArgs) -> Result<(), AgentRunCliError> {
         plan: plan.clone(),
         budget: AgentBudget::new(max_queries, max_evidence_entries, args.max_synthesis_chars),
         max_rows_per_query: args.max_rows_per_query,
+        freeze: context_freeze_from_env(),
     };
 
     let report = use_case.run(&request).await;
@@ -483,6 +484,26 @@ fn resolve_endpoint(args: &AgentRunArgs) -> Result<String, AgentRunCliError> {
         })
 }
 
+fn env_or_empty(key: &str) -> String {
+    std::env::var(key).unwrap_or_default()
+}
+
+/// Layer H freeze from DA_CONTEXT_* env. compiled_at comes from the clock
+/// (CLI owns wall time; domain stays clock-free). Empty env = unset freeze.
+fn context_freeze_from_env() -> ContextFreeze {
+    context_freeze_from_env_with_clock(&SystemClock)
+}
+
+fn context_freeze_from_env_with_clock(clock: &dyn Clock) -> ContextFreeze {
+    ContextFreeze {
+        as_of: env_or_empty("DA_CONTEXT_AS_OF"),
+        policy_hash: env_or_empty("DA_CONTEXT_POLICY_HASH"),
+        scope: env_or_empty("DA_CONTEXT_SCOPE"),
+        task_kind: env_or_empty("DA_CONTEXT_TASK_KIND"),
+        compiled_at: clock.now().to_rfc3339(),
+    }
+}
+
 /// Post-run raw capture: re-read every plan query that produced evidence
 /// through the same read-only store, embed the raw rows, and **fail closed**
 /// if any recomputed `sha256:result:<hex>` disagrees with the recorded
@@ -582,6 +603,7 @@ mod tests {
     use super::*;
     use da_application::{claims_digest, evidence_digest, plan_digest, verification_digest};
     use da_domain::{AgentQueryEvidence, ContentDigest};
+    use da_ports::FixedClock;
     use serde_json::json;
 
     fn write_temp(name: &str, contents: &str) -> PathBuf {
@@ -816,6 +838,41 @@ mod tests {
         }
         if let Some(value) = prior {
             unsafe { std::env::set_var(RemoteGraphConfig::ENV_ENDPOINT, value) };
+        }
+    }
+
+    #[test]
+    fn context_freeze_from_env_reads_da_context_keys() {
+        let keys = [
+            "DA_CONTEXT_AS_OF",
+            "DA_CONTEXT_POLICY_HASH",
+            "DA_CONTEXT_SCOPE",
+            "DA_CONTEXT_TASK_KIND",
+        ];
+        let prior: Vec<(String, Option<String>)> = keys
+            .iter()
+            .map(|k| ((*k).to_string(), std::env::var(k).ok()))
+            .collect();
+        unsafe {
+            std::env::set_var("DA_CONTEXT_AS_OF", "2026-08-25T00:00:00Z");
+            std::env::set_var("DA_CONTEXT_POLICY_HASH", "deadbeef");
+            std::env::set_var("DA_CONTEXT_SCOPE", "MATCH (p:Paper) RETURN p");
+            std::env::set_var("DA_CONTEXT_TASK_KIND", "critical_reading");
+        }
+        let clock = FixedClock::from_timestamp(1_777_000_000);
+        let freeze = context_freeze_from_env_with_clock(&clock);
+        assert_eq!(freeze.as_of, "2026-08-25T00:00:00Z");
+        assert_eq!(freeze.policy_hash, "deadbeef");
+        assert_eq!(freeze.scope, "MATCH (p:Paper) RETURN p");
+        assert_eq!(freeze.task_kind, "critical_reading");
+        assert_eq!(freeze.compiled_at, clock.now().to_rfc3339());
+        for (key, value) in prior {
+            unsafe {
+                match value {
+                    Some(v) => std::env::set_var(&key, v),
+                    None => std::env::remove_var(&key),
+                }
+            }
         }
     }
 

@@ -399,12 +399,19 @@ working-memory object that Wave 4 agent brain (D137) consumes.
 | ContextBundle node (bi-temporal) | Frozen view of N nodes + M edges relevant to a task |
 | scope field | Cypher snippet that produced the bundle (reproducible) |
 | as_of field | Point-in-time reference (aligns with Semantica time-travel) |
+| policy_hash field | WASM / FSM contract the view was compiled under (M458) |
 | task_kind field | critical_reading / reproducibility_check / compare_methods / ... |
-| compiled_at field | When the bundle was frozen |
+| compiled_at field | When the bundle was frozen (observational; not in freeze_id) |
+| freeze_id | ContentDigest of identity + as_of + policy_hash + scope + task_kind |
 
 A bundle is read-only (agent cannot mutate graph through it), bounded
-(deterministic size budget), and reproducible (same scope + as_of re-derives
-the same view). This is the Semantica AgentContext pattern adapted to
+(deterministic size budget), and reproducible (same scope + as_of +
+policy_hash re-derives the same freeze_id). `compiled_at` is wall time
+from the CLI clock and is excluded from freeze_id so a later stamp of
+the same contract does not mint a new freeze. Runtime: `ContextFreeze`
+on `ContextBundle` / `AgentRunRequest`; CLI reads `DA_CONTEXT_AS_OF`,
+`DA_CONTEXT_POLICY_HASH`, `DA_CONTEXT_SCOPE`, `DA_CONTEXT_TASK_KIND`
+(M458-qxcimz). This is the Semantica AgentContext pattern adapted to
 daily-archive's bi-temporal Samyama store. Same role as Vasiliev's
 **context graph** (task/actor/purpose/time projection, not a second source
 of truth; source `vasiliev2026knowledge-graph-memory-graph`).
