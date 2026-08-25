@@ -8,8 +8,10 @@ use da_domain::summaries_llm::{
     build_user_message, compile_injection_policy, extract_json, grounding_score, scrub_injection,
     SummarySectionInput,
 };
+use da_domain::negative_memory::{admit_claim, AdmitKey};
 use da_ports::agent_memory::{AgentMemory, ArticleFeatures, ConstructionTrace, TrajectoryRecord};
 use da_ports::llm_client::{ChatMessage, ChatOptions, LLMClient};
+use da_ports::negative_memory::NegativeMemoryPort;
 use da_ports::schema_objects::{SchemaObjectStore, SchemaObjectStoreError};
 use serde_json::json;
 
@@ -25,6 +27,8 @@ pub enum SummariesAgentError {
     Llm(String),
     #[error("summaries agent: unparseable model output")]
     Unparseable,
+    #[error("summaries agent: {0}")]
+    NegativeBlocked(String),
 }
 
 #[derive(Debug, Clone)]
@@ -50,18 +54,40 @@ pub struct AgentRunContext<'a> {
     pub system_prompt: &'a str,
     pub injection_policy_yaml: &'a str,
     pub paper_id: &'a str,
+    /// Optional negative-memory gate (M456). None = no records = allow.
+    pub negatives: Option<&'a dyn NegativeMemoryPort>,
 }
 
 pub async fn run_summaries_agent(
     ctx: AgentRunContext<'_>,
 ) -> Result<SummariesAgentOutput, SummariesAgentError> {
-    let AgentRunContext { store, memory, llm, manifest, model_name, system_prompt, injection_policy_yaml, paper_id } = ctx;
+    let AgentRunContext { store, memory, llm, manifest, model_name, system_prompt, injection_policy_yaml, paper_id, negatives } = ctx;
     manifest.check_locks().map_err(SummariesAgentError::Agent)?;
     if !manifest.identity.enabled {
         return Err(SummariesAgentError::Agent(format!(
             "agent {} disabled",
             manifest.agent_id
         )));
+    }
+    if let Some(store) = negatives {
+        let recs = store
+            .list_for_paper(paper_id)
+            .map_err(|e| SummariesAgentError::Agent(e.to_string()))?;
+        let decision = admit_claim(
+            AdmitKey {
+                paper_id,
+                stage: "summaries",
+                pattern: None,
+            },
+            &recs,
+        );
+        if let da_domain::negative_memory::AdmitDecision::BlockedExhausted { record_id, reason } =
+            decision
+        {
+            return Err(SummariesAgentError::NegativeBlocked(format!(
+                "record={record_id} {reason}"
+            )));
+        }
     }
     let prompt_sha = sha256_hex(system_prompt.as_bytes());
     let prompt_sha_traj = prompt_sha.clone();
@@ -322,6 +348,7 @@ mod tests {
             system_prompt: "system prompt v1",
             injection_policy_yaml: "scrub_patterns: []\n",
             paper_id: "p",
+            negatives: None,
         })
         .await
         .unwrap();
@@ -336,5 +363,74 @@ mod tests {
         assert_eq!(node["provenance"]["agent"], "summarizer");
         assert_eq!(node["provenance"]["binding"], "paper-summary-generate-default");
         assert_eq!(node["tldr"], "core claim");
+    }
+
+    struct FakeNeg(Vec<da_domain::negative_memory::NegativeMemoryRecord>);
+    impl da_ports::negative_memory::NegativeMemoryPort for FakeNeg {
+        fn append(
+            &mut self,
+            rec: &da_domain::negative_memory::NegativeMemoryRecord,
+        ) -> Result<(), da_ports::negative_memory::NegativeMemoryError> {
+            self.0.push(rec.clone());
+            Ok(())
+        }
+        fn list_for_paper(
+            &self,
+            paper_id: &str,
+        ) -> Result<Vec<da_domain::negative_memory::NegativeMemoryRecord>, da_ports::negative_memory::NegativeMemoryError> {
+            Ok(self.0.iter().filter(|r| r.paper_id == paper_id).cloned().collect())
+        }
+    }
+
+    struct SpyLlm(std::sync::atomic::AtomicBool);
+    #[async_trait::async_trait]
+    impl LLMClient for SpyLlm {
+        fn provider_id(&self) -> &str { "spy" }
+        fn can_make_request(&self) -> bool { true }
+        async fn chat(&self, _m: &[ChatMessage], _o: &ChatOptions) -> LLMResult<da_ports::llm_client::ChatResponse> {
+            self.0.store(true, std::sync::atomic::Ordering::SeqCst);
+            Err(LLMError::LLM("must not be called".into()))
+        }
+        async fn extract_structured(&self, _t: &str, _v: &serde_json::Value) -> LLMResult<serde_json::Value> {
+            Err(LLMError::LLM("unused".into()))
+        }
+    }
+
+    #[tokio::test]
+    async fn blocked_negative_skips_llm() {
+        let store = FakeStore(BTreeMap::from([(
+            ("p".into(), "parsed/article.json".into()),
+            r#"{"title":"T","abstract_text":"A","sections":[{"title":"S","text":"body"}]}"#.to_string(),
+        )]));
+        let mut mem = FakeMemory(None);
+        let llm = SpyLlm(std::sync::atomic::AtomicBool::new(false));
+        let m = AgentManifest::from_yaml_str(MANIFEST).unwrap();
+        let rec = da_domain::negative_memory::record_from_exhausted(
+            "n1".into(),
+            "p".into(),
+            "summaries".into(),
+            Some("grounding < alarm".into()),
+            Some("evt".into()),
+            "t".into(),
+        );
+        let neg = FakeNeg(vec![rec]);
+        let err = run_summaries_agent(AgentRunContext {
+            store: &store, memory: &mut mem, llm: &llm, manifest: &m,
+            model_name: "agnes-ai/agnes-2.5-flash",
+            system_prompt: "system prompt v1",
+            injection_policy_yaml: "scrub_patterns: []\n",
+            paper_id: "p",
+            negatives: Some(&neg),
+        })
+        .await
+        .unwrap_err();
+        assert!(
+            matches!(err, SummariesAgentError::NegativeBlocked(_)),
+            "{err:?}"
+        );
+        assert!(
+            !llm.0.load(std::sync::atomic::Ordering::SeqCst),
+            "LLM must not be called when admit blocks"
+        );
     }
 }

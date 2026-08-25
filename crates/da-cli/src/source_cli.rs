@@ -811,6 +811,9 @@ pub fn run_build_summary(paper_id: &str) -> anyhow::Result<()> {
     let mem_dir = std::path::Path::new("data/agent_memory").join(&ns);
     let mut memory = CvfAgentMemory::open(mem_dir)
         .map_err(|e| anyhow::anyhow!("cvf memory: {e}"))?;
+    let neg_store = da_adapters::negative_memory::JsonlNegativeMemory::open(
+        crate::background_tasks::negative_memory_dir(),
+    )?;
 
     let rt = tokio::runtime::Runtime::new()?;
     let out = rt.block_on(run_summaries_agent(
@@ -823,6 +826,7 @@ pub fn run_build_summary(paper_id: &str) -> anyhow::Result<()> {
             system_prompt: &system_prompt,
             injection_policy_yaml: &injection_yaml,
             paper_id,
+            negatives: Some(&neg_store),
         },
     ))?;
     use da_ports::agent_memory::AgentMemory as _;
@@ -949,6 +953,9 @@ pub fn run_eval_frozen() -> anyhow::Result<()> {
     let registry = load_model_registry(std::path::Path::new("models.yaml"))
         .map_err(|e| anyhow::anyhow!("models.yaml: {}", e))?;
     let store = FsSchemaObjectStore::from_path_config(&cfg, "article")?;
+    let neg_store = da_adapters::negative_memory::JsonlNegativeMemory::open(
+        crate::background_tasks::negative_memory_dir(),
+    )?;
     let rt = tokio::runtime::Runtime::new()?;
     let injection_policy = compile_injection(injection_yaml);
 
@@ -980,6 +987,7 @@ pub fn run_eval_frozen() -> anyhow::Result<()> {
                 system_prompt: &system_prompt,
                 injection_policy_yaml: &injection_policy,
                 paper_id: pid,
+                negatives: Some(&neg_store),
             };
             let result = rt.block_on(run_summaries_agent(ctx));
             match result {

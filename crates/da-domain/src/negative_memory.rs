@@ -45,8 +45,11 @@ impl AdmitDecision {
 
 fn pattern_matches(record: &NegativeMemoryRecord, key: &AdmitKey<'_>) -> bool {
     match (record.pattern.as_deref(), key.pattern) {
+        // Record without pattern blocks the whole stage.
         (None, _) => true,
-        (Some(_), None) => false,
+        // Caller without a pattern is asking "may I reuse this stage?" — any
+        // exhausted pattern on that stage is a ban (pipeline admit).
+        (Some(_), None) => true,
         (Some(rp), Some(kp)) => rp == kp || kp.contains(rp) || rp.contains(kp),
     }
 }
@@ -179,6 +182,26 @@ mod tests {
             &records,
         );
         assert!(d.is_allowed());
+    }
+
+    #[test]
+    fn admit_without_pattern_blocks_any_exhausted_on_stage() {
+        let records = [rec(
+            "n1",
+            "2507.19457",
+            "summaries",
+            Some("grounding < alarm"),
+            true,
+        )];
+        let d = admit_claim(
+            AdmitKey {
+                paper_id: "2507.19457",
+                stage: "summaries",
+                pattern: None,
+            },
+            &records,
+        );
+        assert!(!d.is_allowed(), "pipeline admit must fail-closed on stage");
     }
 
     #[test]

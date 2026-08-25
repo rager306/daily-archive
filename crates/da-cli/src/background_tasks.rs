@@ -501,7 +501,7 @@ pub fn run_critic_repair_cli(pair_id: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn negative_memory_dir() -> std::path::PathBuf {
+pub(crate) fn negative_memory_dir() -> std::path::PathBuf {
     std::env::var("DA_NEGATIVE_MEMORY_DIR")
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|_| std::path::PathBuf::from("data/agent_memory/negatives"))

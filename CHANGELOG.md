@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-25 — M456-g1nv83: summaries_agent_stage admits before LLM
+
+M455 CLI gate was bypassed by the pipeline. Now run_summaries_agent
+consults NegativeMemoryPort (stage=summaries, pattern=None) before the
+LLM call. BlockedExhausted is a typed error; SpyLlm is never invoked.
+Admit without a pattern fail-closes on any exhausted record for that
+stage (pipeline reuse). CLI build-summary and eval-frozen open
+JsonlNegativeMemory from DA_NEGATIVE_MEMORY_DIR.
+
+Live: critic-repair exhausted on p-block/summaries → build-summary
+prints blocked_exhausted, no model call. Not Samyama. D127 false.
+
+Green: domain negative_memory 7, summaries_agent_stage 2, clippy
+-D warnings da-domain/application/cli --lib.
+
 ## 2026-08-25 — M455-5jxhte: negative semantic knowledge blocks reuse
 
 Vasiliev gap: critic Reject/repair_exhausted was logged but retrieval

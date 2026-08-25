@@ -1,9 +1,9 @@
 # continue — session state
 
-## Active direction (M455-5jxhte): negative semantic knowledge blocks reuse
+## Active direction (M456-g1nv83): summaries_agent_stage admits before LLM
 
-S01+S02: admit_claim fail-closed on exhausted reject; jsonl store;
-critic-repair persist; memory-admit CLI. Close via skip-delivered.
+S01+S02: admit_claim in run_summaries_agent; CLI build-summary wires
+JsonlNegativeMemory. Close via skip-delivered.
 
 ## Previous: M451 schema/manifest skeleton BEFORE code
 
