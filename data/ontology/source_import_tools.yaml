@@ -13,9 +13,12 @@ stages:
     cli: da source acquire <doi>
     note: 'ADR-073 wave: OpenAlex oa_location → PDF (Rust; заменяет m451_doi_import.py)'
   - id: textbook_placement
-    impl: reference
-    cli: scripts/m451_textbook_import.py|monograph
-    note: identity+manifest по паттерну M450
+    impl: rust
+    cli: da source acquire <pdf_url|path> + identity.json manual placement
+    note: Textbook acquisition = manual identity.json + PDF placement under data/sources/textbook/<name>/source/,
+      then da source run. The m451_textbook_import.py script was a one-time import
+      tool (4 books imported); Rust workflow is acquire → parse-pdf-toc → run. ADR-073
+      python-crutch purge.
 - stage: parsed
   title: полный текст + структура по грамматике
   tools:

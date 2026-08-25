@@ -1,0 +1,60 @@
+# Test fidelity drift check — M451 wave 4 / ADR-069–073.
+#
+# Ловит класс регрессий «код зелёный, но гейт врёт»: когда изменения в
+# pdf_toc/boundary_agent/audit_fidelity меняют поведение сплита секций
+# без обновления ожиданий аудита. Волны 1-3 показали: 42 false positives
+# от FSM RejectToPrev + ложное падение coverage 305→117 секций —
+# ни один юнит-тест это не поймал, потому что тестировал изолированные
+# компоненты, а не их композицию.
+#
+# Проверка: fixture-запуск audit-fidelity на маленькой книге с известными
+# метриками. Если метрики отклонились от baseline → drift_risk.
+
+schema_version: test-fidelity-drift.v1
+policy_id: test-fidelity-drift
+dimension: test_fidelity_drift
+severity: high
+anchor: "ADR-069..073, M451 waves 1-3"
+
+# Компоненты, изменение которых может вызвать drift
+watched_sources:
+  - crates/da-domain/src/pdf_toc.rs
+  - crates/da-domain/src/boundary_agent.rs
+  - crates/da-cli/src/source_cli.rs          # audit-fidelity функция
+  - crates/da-adapters/src/rule_extractor.rs  # если меняет entity extraction
+
+# Fixture: маленькая книга с таблицей и известным количеством секций
+# (если файла нет — проверка skip)
+fixture_requirements:
+  book: "data/processed/trench-real-analysis"
+  expected_sections_min: 48
+  expected_sections_max: 52
+  expected_tail_recovery: 1.0      # 100% tails recovered
+  expected_coverage_min: 0.85      # ≥85% word coverage
+  expected_margin_attached: true
+
+# Что проверяем
+checks:
+  - id: audit_fidelity_pass
+    description: "da source audit-fidelity на fixture — все метрики в норме"
+    command: "./target/debug/da source audit-fidelity trench-real-analysis"
+    expect_exit: 0    # 0 = PASS, 1 = NEEDS-ATTENTION
+    
+  - id: sections_count_stable
+    description: "количество секций не дрейфует (48-52 для trench)"
+    artifact: "data/processed/trench-real-analysis/parsed/article.json"
+    jq: ".sections | length"
+    min: 48
+    max: 52
+
+  - id: no_python_in_runtime
+    description: "ни один m451_*.py не вызывается из Rust кода"
+    scan: "crates/da-cli/src/*.rs"
+    forbidden_pattern: "m451_enrich_openalex|m451_doi_import|m451_background_runner|m451_navigation_build|m451_summaries_build"
+    
+  - id: domain_manifests_fresh
+    description: "все 5 доменных MANIFEST.yaml имеют papers_processed > 0"
+    scan: "data/domains/*/MANIFEST.yaml"
+    required_fields:
+      - papers_processed
+    min_value: 1

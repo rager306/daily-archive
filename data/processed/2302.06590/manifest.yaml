@@ -5,28 +5,32 @@ source:
   identity_ref: sources/arxiv/mixed-source/2302.06590/identity.json
 lifecycle: validated
 lifecycle_events:
+- stage: raw
+  recorded_at: &id001 2026-08-23 05:49:27.745159+00:00
+  actor: legacy-implication-backfill
+  note: parsed proves raw (FSM implication); event backfilled wave 4
 - stage: parsed
-  recorded_at: 2026-08-23T05:49:27.745159+00:00
+  recorded_at: *id001
   actor: grobid
   evidence_sha256: 177005058e7760bbd05d34cb9820adfc3d0489dfbf1a12cb2d9d258a568afeb1
 - stage: structured
-  recorded_at: 2026-08-23T05:49:27.745549+00:00
+  recorded_at: 2026-08-23 05:49:27.745549+00:00
   actor: document-context-projection
   evidence_sha256: 7bee937577e7463e7554f488b87a12c9ea0d74c50dad031634c886246ab814d1
 - stage: extracted
-  recorded_at: 2026-08-23T05:49:27.748229+00:00
+  recorded_at: 2026-08-23 05:49:27.748229+00:00
   actor: rule-based-extractor
   evidence_sha256: f324e96dceb6f943ca2407109f307b6d42f921c403551325c8aea2110c4406c0
 - stage: enriched
-  recorded_at: 2026-08-23T10:49:54Z
+  recorded_at: 2026-08-23 10:49:54+00:00
   actor: openalex-enricher
   evidence_sha256: 73ecb9a6821cd9d78ce7583324789b43ece724d8b9da52f8555b729f5c073e62
 - stage: summarized
-  recorded_at: 2026-08-23T11:54:04Z
+  recorded_at: 2026-08-23 11:54:04+00:00
   actor: agnes-ai/agnes-2.5-flash
   evidence_sha256: 86aa2e0fe2e66f9b212626559b9d703b67ccd69f3bee2254d400962cd9650869
 - stage: validated
-  recorded_at: 2026-08-25T01:55:06Z
+  recorded_at: 2026-08-25 01:55:06+00:00
   actor: rust-source-run
 artifacts:
   parsed:
@@ -69,7 +73,7 @@ artifacts:
     derived_from:
     - parsed
     sha256: 817d362163511c09380e415cc50e5752c88f38663208add404730b998d70a697
-    built_at: 2026-08-23T10:31:09Z
+    built_at: 2026-08-23 10:31:09+00:00
     actor: m451-reference-builder
     stats:
       count: 1
@@ -80,7 +84,7 @@ artifacts:
     derived_from:
     - parsed
     sha256: 4825b9f70dac542dbb88c1a8c3253881be439b97f5c00d04f8ae076c2c29bdd1
-    built_at: 2026-08-23T10:31:09Z
+    built_at: 2026-08-23 10:31:09+00:00
     actor: m451-reference-builder
     stats:
       total: 14
@@ -97,7 +101,7 @@ artifacts:
     derived_from:
     - parsed
     sha256: ac23401bb01699ddc6028ed1edf867f86a31ee9d6b0bc8f554ad2e7919f1ea08
-    built_at: 2026-08-23T10:31:09Z
+    built_at: 2026-08-23 10:31:09+00:00
     actor: m451-reference-builder
     stats:
       count: 1
@@ -107,7 +111,7 @@ artifacts:
     derived_from:
     - parsed
     sha256: 57f83697057f42e9f9530e8b7397549ce3a427f6bd9b900a61ebead45abf4982
-    built_at: 2026-08-23T10:31:09Z
+    built_at: 2026-08-23 10:31:09+00:00
     actor: m451-reference-builder
     stats:
       count: 9
@@ -125,7 +129,7 @@ artifacts:
     derived_from:
     - parsed
     sha256: 73ecb9a6821cd9d78ce7583324789b43ece724d8b9da52f8555b729f5c073e62
-    built_at: 2026-08-23T10:49:54Z
+    built_at: 2026-08-23 10:49:54+00:00
     actor: openalex-enricher
     stats:
       authors: 4
@@ -143,7 +147,7 @@ artifacts:
     - parsed
     - enriched
     sha256: 86aa2e0fe2e66f9b212626559b9d703b67ccd69f3bee2254d400962cd9650869
-    built_at: 2026-08-23T11:54:04Z
+    built_at: 2026-08-23 11:54:04+00:00
     actor: agnes-ai/agnes-2.5-flash
     stats:
       tldr_chars: 236
@@ -163,7 +167,7 @@ artifacts:
     - citations_resolved
     - external_resources
     sha256: 00253da7d47bbd7bbc4f5cf57d7a7395ae42dd8fae0c7f4fde9c0c235eb51eb3
-    built_at: 2026-08-23T10:31:09Z
+    built_at: 2026-08-23 10:31:09+00:00
     actor: m451-reference-builder
     stats:
       count: 7

@@ -196,3 +196,15 @@ dimensions:
   - Every top-level dir has SCHEMA + MANIFEST
   - Schema versioned, manifest timestamped
   - No forbidden directories
+- id: test_fidelity_drift
+  description: Pipeline behavioral regression detection (audit-fidelity gate + fixture metrics)
+  status_logic:
+    implemented: scripts/governor/checks/test_fidelity_drift.yaml exists AND crates/da-cli/src/source_cli.rs contains audit_fidelity
+    prototype_done: crates/da-cli/src/source_cli.rs contains audit_fidelity
+    missing: always (fallback)
+  evidence:
+  - audit-fidelity CLI gate (M451 wave 3: false-positive fix)
+  - FSM boundary-agent with AnchorVerdict (M451)
+  - 3 regression classes caught: citation loss, boundary deletion, figure terminal
+  - waves 1-3 lessons: code-green ≠ data-correct
+  artifact_ref: scripts/governor/checks/test_fidelity_drift.yaml

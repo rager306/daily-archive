@@ -487,3 +487,25 @@ Green: domain 713, cli 176, application 337, pytest 142,
 validate 645x0, clippy clean. Audit-fidelity: 231/231 tails,
 91.4% coverage (NEEDS-ATTENTION from <98% threshold — honest,
 glossary/table sections are the worst performers).
+
+## 2026-08-25 — Wave 4: Governor test_fidelity_drift + raw backfill + registry honesty
+
+1. GOVERNOR DIMENSION: test_fidelity_drift — ловит класс регрессий
+   «код зелёный, но гейт врёт» (wolves 1-3 lessons: 42 false positives,
+   coverage drop 305→117, boundary deletion — ни один юнит-тест не
+   поймал). YAML contract: watched_sources, fixture_requirements
+   (trench: 48-52 sections, 100% tails, ≥85% coverage), 4 checks
+   (audit-fidelity pass, sections stable, no-python-in-runtime,
+   domain manifests fresh).
+
+2. D4 LEGACY BACKFILL: 603 manifests gained synthetic raw events
+   (actor: legacy-implication-backfill, note: parsed proves raw).
+   FSM sequences now complete — no gaps in lifecycle_events.
+
+3. D5 TEXTBOOK PLACEMENT: registry impl → rust. Manual workflow
+   documented (identity.json + PDF → da source acquire → run).
+   Zero reference tools remain in the FSM runtime path.
+
+Governor pre-existing BLOCKED (1764 violations): reverse_adr_audit
+(41 subdir patterns + GSD planning projections) + target bloat
+(42GB) + graph section stubs — all pre-existing, not from waves 1-4.
