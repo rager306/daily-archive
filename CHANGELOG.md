@@ -460,3 +460,30 @@ pipeline code needed, just honest error classification.
 
 Next graph wave: the 4 failed articles will retry automatically
 when their cache entries expire.
+
+## 2026-08-25 — Wave 3: audit-fidelity false-positive fix + .env completeness
+
+1. AUDIT-FIDELITY GATE FIX: 42 boundary-tail "losses" were false
+   positives from the Rust gate. The FSM boundary-agent returns
+   Rejected verdict for ambiguous anchors (table cells like "Hex
+   world" inside Table F.1) — the split doesn't happen, so the tail
+   content stays in BOTH sections. The gate was checking only the
+   current section for the tail probe → 42 false "lost" tails.
+   Python probe (without FSM) confirmed 0 actual losses.
+
+   Fix: the gate now checks BOTH the current AND next section
+   (Rejected = content in both). Result: 231/231 recovered ✓.
+
+   Also fixed: accidental `continue` inside a nested `if let` was
+   skipping coverage and margin checks (305→117 sections).
+
+2. ENV COMPLETENESS: 9 env vars referenced in Rust code but missing
+   from .env.example: DA_DOI_PREFIX_MAP, DA_EXTRACTION_PATTERNS,
+   DA_FIGURE_MODEL_BINDING, DA_FIGURE_QUOTE_POLICY, DA_GRAPH_DATA_PATH,
+   DA_MULTIMODAL_CONTEXT_SCHEMA, DA_REGRESSION_TOLERANCE,
+   NINE_ROUTER_API_KEY, OPENALEX_BASE_URL. All added with defaults.
+
+Green: domain 713, cli 176, application 337, pytest 142,
+validate 645x0, clippy clean. Audit-fidelity: 231/231 tails,
+91.4% coverage (NEEDS-ATTENTION from <98% threshold — honest,
+glossary/table sections are the worst performers).

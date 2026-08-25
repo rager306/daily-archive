@@ -993,9 +993,18 @@ pub fn run_audit_fidelity(paper_id: &str) -> anyhow::Result<()> {
                 expected.push_str(&shared[..off]);
                 tail_total += 1;
                 let tail_probe: String = shared[..off].trim().chars().take(30).collect();
-                if let Some(sec) = sections.get(i) {
-                    let st = sec.get("text").and_then(|x| x.as_str()).unwrap_or("");
-                    if !tail_probe.is_empty() && !st.contains(&tail_probe) {
+                if !tail_probe.is_empty() {
+                    let in_cur = sections.get(i)
+                        .and_then(|s| s.get("text"))
+                        .and_then(|x| x.as_str())
+                        .map(|st| st.contains(&tail_probe))
+                        .unwrap_or(false);
+                    let in_next = sections.get(i + 1)
+                        .and_then(|s| s.get("text"))
+                        .and_then(|x| x.as_str())
+                        .map(|st| st.contains(&tail_probe))
+                        .unwrap_or(false);
+                    if !in_cur && !in_next {
                         tail_lost += 1;
                     }
                 }
