@@ -542,3 +542,21 @@ These are structural corpus work items (graph materialization),
 not code bugs. They map to existing roadmap M439/M440 backlog.
 
 Green: domain 713, cli 176, app 337, pytest 142, validate 645x0.
+
+## 2026-08-25 — Wave 5 continued: Governor planning projection fixed (6→4 flags)
+
+GSD planning projection flags eliminated:
+- STATE.md Active Milestone → M451 (was stale M446)
+- M446-M450 marked complete in ROADMAP/STATE/QUEUE
+- .gsd/phases/451/ created with S01-PLAN.md (12 tasks in Governor
+  _TASK_ROW format: - [x] **TNN**: description)
+- PLAN file placed at phase_dir root level (not nested S01/) —
+  Governor's glob("*-PLAN.md") is non-recursive
+
+Governor flags: 6→4. Remaining 4 = graph materialization backlog:
+- reverse_adr_audit_violations [high]: 1764 (sum of below)
+- graph_section_text_incomplete [high]: avg 364 chars <500 threshold
+- graph_enrichment_missing [high]: 0% Author/Venue/Topic coverage
+- graph_revision_binding_low [high]: 0/295 revision bindings
+
+These are structural corpus work items (M439/M440 backlog), not code bugs.
