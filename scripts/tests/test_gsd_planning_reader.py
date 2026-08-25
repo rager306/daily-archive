@@ -95,12 +95,13 @@ def test_duplicate_base_ids_do_not_merge_task_counts(tmp_path: Path) -> None:
 
     result = FilesystemGsdPlanningReader(tmp_path).read()
 
-    assert result.active_empty_milestone_ids == ("M371",)
+    assert result.current_milestone_id == "M371-pr59ty"
+    assert result.active_empty_milestone_ids == ()
     assert [(m.milestone_id, m.task_count) for m in result.milestones] == [
         ("M371", 0),
         ("M371-pr59ty", 1),
     ]
-    assert any("refusing suffixed phase merge" in item for item in result.diagnostics)
+    assert not any("refusing suffixed phase merge" in item for item in result.diagnostics)
 
 
 def test_state_active_pending_roadmap_row_is_projection_active(tmp_path: Path) -> None:
@@ -164,6 +165,45 @@ def test_missing_or_malformed_roadmap_is_unavailable(tmp_path: Path) -> None:
     assert malformed.diagnostics == (
         "planning projection contains no recognized milestone rows: .gsd/ROADMAP.md",
     )
+
+
+def test_stale_roadmap_active_empty_is_not_current_empty(tmp_path: Path) -> None:
+    _roadmap(
+        tmp_path,
+        "- 🔄 **M446-rw9a2p: Current with tasks** (`depends:[—]`)\n"
+        "- 🔄 **M447-ckhjhv: Stale empty** (`depends:[—]`)\n",
+    )
+    _plan(tmp_path, "446-rw9a2p-current", 446, ["T01"])
+    _write(
+        tmp_path / ".gsd" / "STATE.md",
+        "# State\n\n**Active Milestone:** M446-rw9a2p: Current with tasks\n",
+    )
+
+    result = FilesystemGsdPlanningReader(tmp_path).read()
+
+    assert result.current_milestone_id == "M446-rw9a2p"
+    assert result.active_empty_milestone_ids == ()
+    assert not any("M447-ckhjhv" in item for item in result.diagnostics)
+    assert not any("has no PLAN tasks" in item for item in result.diagnostics)
+
+
+def test_state_active_empty_still_flags(tmp_path: Path) -> None:
+    _roadmap(
+        tmp_path,
+        "- 🔄 **M446-rw9a2p: Empty current** (`depends:[—]`)\n"
+        "- 🔄 **M447-ckhjhv: Also empty** (`depends:[—]`)\n",
+    )
+    _write(
+        tmp_path / ".gsd" / "STATE.md",
+        "# State\n\n**Active Milestone:** M446-rw9a2p: Empty current\n",
+    )
+
+    result = FilesystemGsdPlanningReader(tmp_path).read()
+
+    assert result.current_milestone_id == "M446-rw9a2p"
+    assert result.active_empty_milestone_ids == ("M446-rw9a2p",)
+    assert any("M446-rw9a2p" in item for item in result.diagnostics)
+    assert not any("M447-ckhjhv" in item for item in result.diagnostics)
 
 
 def test_governor_runtime_does_not_access_engine_database() -> None:

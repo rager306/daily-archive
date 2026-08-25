@@ -438,3 +438,43 @@ pub fn run_sona_policy(
     );
     Ok(())
 }
+
+/// M454: critic repair process entry. DATA manifest + verdict → RepairOutcome.
+/// Env: DA_CRITIC_MANIFEST, DA_CRITIC_VERDICT, DA_CRITIC_PATTERN, DA_CRITIC_ATTEMPTS.
+pub fn run_critic_repair_cli(pair_id: &str) -> anyhow::Result<()> {
+    use da_application::critic_repair_stage::run_critic_repair;
+    use da_domain::critic_repair::{CriticVerdict, Verdict};
+
+    let path = std::env::var("DA_CRITIC_MANIFEST")
+        .unwrap_or_else(|_| "data/agents/critic/manifest.yaml".into());
+    let yaml = std::fs::read_to_string(&path)
+        .map_err(|e| anyhow::anyhow!("critic manifest {path}: {e}"))?;
+    let kind = std::env::var("DA_CRITIC_VERDICT").unwrap_or_else(|_| "reject".into());
+    let pattern = std::env::var("DA_CRITIC_PATTERN").ok();
+    let attempts: u32 = std::env::var("DA_CRITIC_ATTEMPTS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0);
+    let verdict = CriticVerdict {
+        id: pair_id.to_string(),
+        verdict: match kind.as_str() {
+            "confirm" => Verdict::Confirm,
+            "abstain" => Verdict::Abstain,
+            _ => Verdict::Reject,
+        },
+        reason: pattern.clone().unwrap_or_else(|| pair_id.to_string()),
+        failure_pattern: pattern.or_else(|| Some(pair_id.to_string())),
+    };
+    match run_critic_repair(&yaml, &verdict, attempts)? {
+        None => println!("critic-repair: no action (confirm/abstain or no matching trigger)"),
+        Some(out) => println!(
+            "== critic-repair ==\nstage={} action={} attempts={} resolved={} exhausted={:?}",
+            out.stage,
+            out.action,
+            out.attempts_used,
+            out.resolved,
+            out.exhausted_reason
+        ),
+    }
+    Ok(())
+}

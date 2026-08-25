@@ -26,13 +26,18 @@ class GsdPlanningProjection:
     available: bool
     milestones: tuple[MilestonePlanningProjection, ...] = ()
     diagnostics: tuple[str, ...] = ()
+    # STATE.md Active Milestone when present; else preferred ROADMAP-active.
+    current_milestone_id: str | None = None
 
     @property
     def active_empty_milestone_ids(self) -> tuple[str, ...]:
+        current = self.current_milestone_id
         return tuple(
             milestone.milestone_id
             for milestone in self.milestones
-            if milestone.status == "active" and milestone.task_count == 0
+            if milestone.status == "active"
+            and milestone.task_count == 0
+            and (current is None or milestone.milestone_id == current)
         )
 
 

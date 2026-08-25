@@ -19,6 +19,9 @@ pub struct AgentManifest {
     pub memory: Memory,
     pub optimization: Optimization,
     pub guardrails: Guardrails,
+    /// Optional critic-style repair contract (DATA). Summarizer omits it.
+    #[serde(default)]
+    pub repair: Option<RepairSpec>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -84,6 +87,27 @@ pub struct Guardrails {
     pub rate_limit_per_min: u32,
 }
 
+/// Critic repair contract (DATA). Nested as `repair:` on the manifest.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct RepairSpec {
+    #[serde(default)]
+    pub obligation: String,
+    #[serde(default)]
+    pub mechanism: RepairMechanism,
+    #[serde(default)]
+    pub source: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct RepairMechanism {
+    #[serde(default)]
+    pub reject_triggers: Vec<crate::critic_repair::RepairAction>,
+    #[serde(default)]
+    pub max_repair_attempts: u32,
+    #[serde(default)]
+    pub on_exhausted: String,
+}
+
 impl AgentManifest {
     pub fn from_yaml_str(yaml: &str) -> Result<Self, String> {
         serde_yaml::from_str(yaml).map_err(|e| e.to_string())
@@ -115,6 +139,29 @@ mod tests {
         assert_eq!(m.model.generate_binding, "paper-summary-generate-default");
         assert!(m.check_locks().is_ok());
         assert!(m.memory.trajectory);
+    }
+
+    #[test]
+    fn summarizer_yaml_still_parses_without_repair_section() {
+        let m = AgentManifest::from_yaml_str(M).unwrap();
+        assert!(m.repair.is_none());
+    }
+
+    #[test]
+    fn critic_manifest_parses_figure_analysis_trigger() {
+        let yaml = include_str!("../../../data/agents/critic/manifest.yaml");
+        let m = AgentManifest::from_yaml_str(yaml).expect("critic manifest must parse");
+        let repair = m.repair.expect("critic repair section must not be dropped");
+        assert_eq!(repair.mechanism.max_repair_attempts, 2);
+        let stages: Vec<&str> = repair
+            .mechanism
+            .reject_triggers
+            .iter()
+            .map(|t| t.stage.as_str())
+            .collect();
+        assert!(stages.contains(&"figure_analysis"), "{stages:?}");
+        assert!(stages.contains(&"enriched"));
+        assert!(stages.contains(&"summaries"));
     }
 
     #[test]

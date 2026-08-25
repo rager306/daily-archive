@@ -513,6 +513,7 @@ fn main() {
                 "audit-fidelity" => source_cli::run_audit_fidelity(&paper_id),
                 "sona-analyze" => da_cli::background_tasks::run_sona_analyze(&paper_id),
                 "sona-policy" => da_cli::background_tasks::run_sona_policy(&paper_id, pages, bookmarks, quality, domain.as_deref()),
+                "critic-repair" => da_cli::background_tasks::run_critic_repair_cli(&paper_id),
                 "background-run" => {
                     // da source background-run [task|pid] — task по умолчанию
                     // per_section_summaries; аргумент, похожий на pid (не id задачи),
@@ -532,7 +533,7 @@ fn main() {
                                 "build-extracted" => source_cli::run_build_extracted(&paper_id),
                 "build-summary" => source_cli::run_build_summary(&paper_id),
                 "eval-frozen" => source_cli::run_eval_frozen(),
-                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei|parse-html|parse-pdf-toc|enrich-layer|build-extracted|build-summary|run|acquire|sona-analyze|sona-policy)")),
+                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei|parse-html|parse-pdf-toc|enrich-layer|build-extracted|build-summary|run|acquire|sona-analyze|sona-policy|critic-repair)")),
             };
             if let Err(e) = r {
                 eprintln!("da source: {e}");

@@ -76,6 +76,7 @@ pub mod sona_bridge;
 pub mod fsm_policy_fallback;
 pub mod fsm_policy_consult;
 pub mod parse_grammar;
+pub mod critic_repair_stage;
 pub mod summaries_agent_stage;
 pub mod tei_figures_stage;
 pub mod validate_schema_objects;

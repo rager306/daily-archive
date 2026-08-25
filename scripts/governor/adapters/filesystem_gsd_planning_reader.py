@@ -75,6 +75,14 @@ class FilesystemGsdPlanningReader(GsdPlanningReader):
                 "do not hand-edit engine database files — re-render STATE via GSD tools / "
                 "complete or reopen milestones so Active Milestone matches ROADMAP"
             )
+        if state_active is not None and state_active in roadmap_active:
+            current = state_active
+        elif roadmap_active:
+            current = self._preferred_active_milestone(roadmap_active)
+        else:
+            current = None
+        if current == "none":
+            current = None
         projections: list[MilestonePlanningProjection] = []
         for milestone_id, title, status in rows:
             base = milestone_id.split("-", 1)[0]
@@ -82,23 +90,27 @@ class FilesystemGsdPlanningReader(GsdPlanningReader):
             source = ".gsd/ROADMAP.md"
             if status == "active":
                 phase_dir = self._phase_dir(milestone_id)
+                is_current = current is None or milestone_id == current
                 if phase_dir is None:
-                    diagnostics.append(
-                        self._missing_phase_diagnostic(milestone_id)
-                    )
+                    if is_current:
+                        diagnostics.append(
+                            self._missing_phase_diagnostic(milestone_id)
+                        )
                 elif "-" not in milestone_id and len(ids_by_base[base]) > 1:
-                    diagnostics.append(
-                        f"ambiguous base milestone {milestone_id}; refusing suffixed phase merge"
-                    )
+                    if is_current:
+                        diagnostics.append(
+                            f"ambiguous base milestone {milestone_id}; refusing suffixed phase merge"
+                        )
                 else:
                     task_ids = self._task_ids(phase_dir)
                     task_count = len(task_ids)
                     source = str(phase_dir.relative_to(self.root))
-                    for slice_id in self._unplanned_slices(phase_dir):
-                        diagnostics.append(
-                            f"active milestone {milestone_id} slice {slice_id} "
-                            "has no PLAN tasks — run gsd_plan_slice before execute"
-                        )
+                    if is_current:
+                        for slice_id in self._unplanned_slices(phase_dir):
+                            diagnostics.append(
+                                f"active milestone {milestone_id} slice {slice_id} "
+                                "has no PLAN tasks — run gsd_plan_slice before execute"
+                            )
             projections.append(
                 MilestonePlanningProjection(
                     milestone_id=milestone_id,
@@ -113,6 +125,7 @@ class FilesystemGsdPlanningReader(GsdPlanningReader):
             available=True,
             milestones=tuple(projections),
             diagnostics=tuple(diagnostics),
+            current_milestone_id=current,
         )
 
     def _state_active_milestone(self) -> str | None:

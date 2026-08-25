@@ -1,10 +1,9 @@
 # continue — session state
 
-## Active direction (M453-aym18d): parse-pdf consults grammar_route
+## Active direction (M454-c3yx94): critic repair orchestrator + Governor current-milestone
 
-S01+S02 implemented: DATA profile_map, resolve_parse_grammar, parse-pdf
-stamp, FSM parsed-stage dispatch (page_outline+TOC → parse-pdf-toc).
-Close via skip-delivered + runtime UAT (no running Attempt).
+S01: AgentManifest.repair parsed; run_critic_repair calls route_repair.
+S02: Governor empty-PLAN only for STATE-active. Close via skip-delivered.
 
 ## Previous: M451 schema/manifest skeleton BEFORE code
 

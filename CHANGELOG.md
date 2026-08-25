@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-08-25 — M454-c3yx94: critic repair process + Governor current-milestone
+
+Two process gaps closed:
+
+1. Critic repair was DATA + a domain library with zero application callers.
+   AgentManifest now parses optional `repair.mechanism.reject_triggers`.
+   `run_critic_repair()` calls `route_repair` and returns typed RepairOutcome.
+   CLI: `da source critic-repair` (DA_CRITIC_* env). Live: reject →
+   figure_analysis/reanalyze_with_diagnostics; confirm → no action;
+   attempts=2 → repair_exhausted.
+
+2. Governor flagged every ROADMAP 🔄 empty PLAN (M447/M449/M450 ghosts).
+   Empty-PLAN diagnostics now apply only to STATE-active (or preferred
+   ROADMAP-active if STATE missing). Live: only M446-rw9a2p/S02 remains.
+
+Green: domain agent_manifest 4, application critic_repair_stage 4,
+pytest test_gsd_planning_reader 15, clippy -D warnings da-domain/
+application/cli --lib.
+
 ## 2026-08-25 — M453-aym18d: parse-pdf consults grammar_route
 
 Process gap from M452: WASM/native policy host existed, parse-pdf still
