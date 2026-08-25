@@ -6,9 +6,11 @@ use crate::{FigureAnalysisUseCase, FigureAnalysisUseCaseError};
 use async_trait::async_trait;
 use da_domain::FigureSemanticContext;
 use da_domain::figure_analysis::FigureQuotePolicy;
+use da_domain::negative_memory::{admit_claim, AdmitKey};
 use da_ports::multimodal_llm::{
     ModelWireProtocol, MultimodalImage, MultimodalLlmError, MultimodalLlmPort,
 };
+use da_ports::negative_memory::NegativeMemoryPort;
 use da_ports::pipeline_stage::{
     PipelineStageExecutor, StageContract, StageExecutionError, StageExecutionOutput,
     StageExecutionRequest,
@@ -94,6 +96,8 @@ pub struct FigureAnalysisStage {
     selected_schema: Option<(String, String)>,
     /// Quote window policy (ADR-062): soft guideline plus measured observability.
     quote_policy: Option<FigureQuotePolicy>,
+    /// Optional negative-memory gate (M457). None = no records = allow.
+    negatives: Option<Arc<dyn NegativeMemoryPort>>,
 }
 
 impl FigureAnalysisStage {
@@ -127,6 +131,7 @@ impl FigureAnalysisStage {
             retry_after: retry_after.into(),
             selected_schema: None,
             quote_policy: None,
+            negatives: None,
             contract: StageContract {
                 stage_id: "figure_analysis".into(),
                 implementation_fingerprint:
@@ -164,6 +169,11 @@ impl FigureAnalysisStage {
     /// the policy identity advances the cache key so tuning is observable.
     pub fn with_quote_policy(mut self, policy: FigureQuotePolicy) -> Self {
         self.quote_policy = Some(policy);
+        self
+    }
+
+    pub fn with_negatives(mut self, store: Arc<dyn NegativeMemoryPort>) -> Self {
+        self.negatives = Some(store);
         self
     }
 
@@ -221,6 +231,34 @@ impl PipelineStageExecutor for FigureAnalysisStage {
                 error_class: "invalid_figure_context_payload".into(),
                 message: error.to_string(),
             })?;
+        if let Some(store) = &self.negatives
+            && let Some(paper_id) = context.canonical_id.as_deref()
+        {
+                let recs = store.list_for_paper(paper_id).map_err(|error| {
+                    StageExecutionError::Terminal {
+                        error_class: "negative_memory_io".into(),
+                        message: error.to_string(),
+                    }
+                })?;
+                let decision = admit_claim(
+                    AdmitKey {
+                        paper_id,
+                        stage: "figure_analysis",
+                        pattern: None,
+                    },
+                    &recs,
+                );
+                if let da_domain::negative_memory::AdmitDecision::BlockedExhausted {
+                    record_id,
+                    reason,
+                } = decision
+                {
+                    return Err(StageExecutionError::Terminal {
+                        error_class: "negative_blocked".into(),
+                        message: format!("record={record_id} {reason}"),
+                    });
+                }
+        }
         let analysis = FigureAnalysisUseCase::new(self.model.clone())
             .analyze(self.image.clone(), &context)
             .await
@@ -693,5 +731,101 @@ mod tests {
         // Full registry binding remains even when a selected schema is present.
         assert!(fp_plot.contains("schema_registry=figure-schemas.v1"));
         assert!(fp_plot.contains("table_structure:"));
+    }
+
+    struct FakeNeg(Vec<da_domain::negative_memory::NegativeMemoryRecord>);
+    impl da_ports::negative_memory::NegativeMemoryPort for FakeNeg {
+        fn append(
+            &mut self,
+            rec: &da_domain::negative_memory::NegativeMemoryRecord,
+        ) -> Result<(), da_ports::negative_memory::NegativeMemoryError> {
+            self.0.push(rec.clone());
+            Ok(())
+        }
+        fn list_for_paper(
+            &self,
+            paper_id: &str,
+        ) -> Result<
+            Vec<da_domain::negative_memory::NegativeMemoryRecord>,
+            da_ports::negative_memory::NegativeMemoryError,
+        > {
+            Ok(self
+                .0
+                .iter()
+                .filter(|r| r.paper_id == paper_id)
+                .cloned()
+                .collect())
+        }
+    }
+
+    struct SpyModel(std::sync::atomic::AtomicBool);
+    #[async_trait]
+    impl MultimodalLlmPort for SpyModel {
+        fn route(&self) -> ModelRouteDescriptor {
+            FakeModel { fail: false }.route()
+        }
+        async fn complete_structured(
+            &self,
+            _request: MultimodalLlmRequest,
+        ) -> MultimodalLlmResult<MultimodalLlmResponse> {
+            self.0.store(true, std::sync::atomic::Ordering::SeqCst);
+            Err(MultimodalLlmError::Unavailable("must not be called".into()))
+        }
+    }
+
+    #[tokio::test]
+    async fn blocked_negative_skips_multimodal_llm() {
+        let mut ctx = context();
+        ctx.canonical_id = Some("2507.19457".into());
+        let rec = da_domain::negative_memory::record_from_exhausted(
+            "n1".into(),
+            "2507.19457".into(),
+            "figure_analysis".into(),
+            Some("schema violation".into()),
+            Some("fig-1".into()),
+            "t".into(),
+        );
+        let spy = Arc::new(SpyModel(std::sync::atomic::AtomicBool::new(false)));
+        let stage = FigureAnalysisStage::new(spy.clone(), image(), "2026-08-08T01:00:00Z")
+            .with_negatives(Arc::new(FakeNeg(vec![rec])));
+        let req = StageExecutionRequest {
+            article_id: "2507.19457".into(),
+            dependency_payloads: BTreeMap::from([(
+                "context".into(),
+                serde_json::to_vec(&ctx).unwrap(),
+            )]),
+        };
+        let err = stage.execute(req).await.unwrap_err();
+        match err {
+            StageExecutionError::Terminal { error_class, message } => {
+                assert_eq!(error_class, "negative_blocked");
+                assert!(message.contains("blocked_exhausted"), "{message}");
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(
+            !spy.0.load(std::sync::atomic::Ordering::SeqCst),
+            "multimodal LLM must not be called when admit blocks"
+        );
+    }
+
+    #[tokio::test]
+    async fn missing_canonical_id_fail_opens() {
+        let rec = da_domain::negative_memory::record_from_exhausted(
+            "n1".into(),
+            "2507.19457".into(),
+            "figure_analysis".into(),
+            Some("schema violation".into()),
+            None,
+            "t".into(),
+        );
+        let stage = FigureAnalysisStage::new(
+            Arc::new(FakeModel { fail: false }),
+            image(),
+            "2026-08-08T01:00:00Z",
+        )
+        .with_negatives(Arc::new(FakeNeg(vec![rec])));
+        let output = stage.execute(request()).await.unwrap();
+        assert_eq!(output.metadata["visual_type"], "flowchart");
     }
 }

@@ -634,18 +634,29 @@ pub async fn run_journey_content(
                 canonical_id: paper_id.to_string(),
             })
             .with_output_schema_fingerprint(&branch.context_schema);
-            let analysis_stage = FigureAnalysisStage::new(
-                branch.model.clone(),
-                MultimodalImage {
-                    media_type,
-                    bytes: image_bytes.clone(),
-                    sha256: artifact.asset_sha256.clone(),
-                },
-                &retry_after,
-            )
-            .with_context_dependency("context")
-            .with_contract_versions(&branch.prompt_fingerprint, &branch.schema_fingerprint)
-            .with_quote_policy(quote_policy.clone());
+            let analysis_stage = {
+                let stage = FigureAnalysisStage::new(
+                    branch.model.clone(),
+                    MultimodalImage {
+                        media_type,
+                        bytes: image_bytes.clone(),
+                        sha256: artifact.asset_sha256.clone(),
+                    },
+                    &retry_after,
+                )
+                .with_context_dependency("context")
+                .with_contract_versions(&branch.prompt_fingerprint, &branch.schema_fingerprint)
+                .with_quote_policy(quote_policy.clone());
+                let neg_dir = std::env::var("DA_NEGATIVE_MEMORY_DIR")
+                    .map(std::path::PathBuf::from)
+                    .unwrap_or_else(|_| {
+                        std::path::PathBuf::from("data/agent_memory/negatives")
+                    });
+                match da_adapters::negative_memory::JsonlNegativeMemory::open(neg_dir) {
+                    Ok(store) => stage.with_negatives(std::sync::Arc::new(store)),
+                    Err(_) => stage,
+                }
+            };
             let context_contract = context_stage.contract();
             let analysis_contract = analysis_stage.contract();
 

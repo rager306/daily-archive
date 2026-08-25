@@ -479,12 +479,19 @@ pub fn figure_analysis_stage_for(
     settings: &MultimodalProductionSettings,
     image: da_ports::multimodal_llm::MultimodalImage,
 ) -> FigureAnalysisStage {
-    FigureAnalysisStage::new(settings.model.clone(), image, &settings.retry_after)
+    let stage = FigureAnalysisStage::new(settings.model.clone(), image, &settings.retry_after)
         .with_context_dependency("context")
         .with_contract_versions(
             &settings.analysis_prompt_fingerprint,
             &settings.analysis_schema_fingerprint,
-        )
+        );
+    let neg_dir = std::env::var("DA_NEGATIVE_MEMORY_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("data/agent_memory/negatives"));
+    match da_adapters::negative_memory::JsonlNegativeMemory::open(neg_dir) {
+        Ok(store) => stage.with_negatives(Arc::new(store)),
+        Err(_) => stage,
+    }
 }
 
 fn model_route_fingerprint(route: &ModelRouteDescriptor) -> String {
