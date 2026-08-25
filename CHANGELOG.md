@@ -289,3 +289,24 @@
   pins DA_FIGURE_QUOTE_POLICY absolutely. D127 locked.
 
 ### M431 Honest direct property write on the adapter
+## 2026-08-25 — toolchain 1.94.1 → 1.98.0 (Rust 2025–2026 wave study)
+
+Изучена сводка компиляторных изменений 2025–2026; применено:
+
+- **rustc 1.94.1 → 1.98.0** (rustup update stable): v0 symbol mangling
+  на stable (читаемые backtrace с generic-типами — проверено живым
+  тестом), 4 минорных релиза компиляторного перфа (~−5% wall по
+  nnethercote survey), LLVM-апгрейды.
+- **line-tables-only**: подтверждён уже установленным (profile.dev
+  debug = 1) — изменений не требуется.
+- **LLD**: rust-lld присутствует в sysroot 1.98; дефолт линковки
+  x86_64-linux проверен рабочей сборкой; отдельный override не внесён.
+- **НЕ принято** (nightly-only, продакшен-дисциплина): next-gen trait
+  solver (nightly с 2026-08-21), Polonius Alpha (2026-08-04),
+  -Z annotate-moves. Переоценить после стабилизации; trait-solver
+  интересен для TAIT в гексагональных трейтах.
+
+Верификация на 1.98: domain 705 ✓ adapters 246 ✓ cli 176 ✓,
+clippy -D warnings clean, RocksDB system-link работает, sccache
+перепрогрет (однократно). cargo check -p da-domain 40s → 22s после
+прогрева.
