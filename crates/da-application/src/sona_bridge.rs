@@ -9,7 +9,7 @@
 //! yet — that's D136 gated.
 
 use ruvector_sona::reasoning_bank::{PatternConfig, ReasoningBank};
-use ruvector_sona::types::{LearnedPattern, PatternType, QueryTrajectory};
+use ruvector_sona::types::{LearnedPattern, QueryTrajectory};
 
 /// Convert a CVF trajectory JSON record into a SONA embedding vector.
 ///
