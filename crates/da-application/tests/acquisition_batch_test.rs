@@ -49,7 +49,7 @@ fn network_denied_misses_are_explicit_failures() {
             .error
             .as_deref()
             .unwrap()
-            .contains("allow_network=false")
+            .contains("network denied")
     );
     assert!(!report.import_eligible);
 }

@@ -174,5 +174,5 @@ fn network_denied_fails_closed_without_network() {
     let result = acq.ensure_assets(&resolved, &policy);
     assert!(result.is_err(), "network denied must fail closed");
     let err = result.unwrap_err().to_string();
-    assert!(err.contains("allow-network"), "got: {err}");
+    assert!(err.contains("disallow-network"), "got: {err}");
 }

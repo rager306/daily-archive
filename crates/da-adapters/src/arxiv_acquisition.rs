@@ -346,7 +346,7 @@ impl SourceAcquisitionPort for ArxivSourceAcquisition {
 
         if !policy.allow_network {
             return Err(AcquisitionError::NetworkDenied(format!(
-                "PDF for exact source {} not under {}; pass --allow-network to fetch",
+                "PDF for exact source {} not under {}; catalog miss with network denied (--disallow-network)",
                 source_key,
                 self.catalog_root.display()
             )));
@@ -401,7 +401,7 @@ fn ensure_tex_source(
     if !tar_path.is_file() {
         if !allow_network {
             return Err(AcquisitionError::NetworkDenied(format!(
-                "TeX archive for {arxiv_id} missing; pass --allow-network"
+                "TeX archive for {arxiv_id} missing; catalog miss with network denied (--disallow-network)"
             )));
         }
         let abs_base = abs_base();

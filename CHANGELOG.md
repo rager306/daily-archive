@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-25 — M462-ieh2tt: load network is on by default
+
+--allow-network was an extra step. AcquisitionPolicy.allow_network now
+defaults true. da load / acquire-arxiv fetch missing catalog assets unless
+--disallow-network or DA_LOAD_DISALLOW_NETWORK=1. Hidden --allow-network
+is a no-op so old scripts keep parsing. ensure_only() stays offline for
+tests. Catalog hits still work with allow_network false (ADR-056).
+D127 false. D290.
+
+Green: policy_network; resolve_network; mock_miss; ensure_miss;
+acquisition_batch 2; arxiv_acquisition_contract 4; clippy
+da-domain/cli/ports/application --lib; cargo build -p da-cli.
+
 ## 2026-08-25 — M461-6665iq: URL locator is network intent for load FSM
 
 Pasting an arXiv URL is now a first-class path. locator_implies_network is

@@ -73,7 +73,6 @@ pub fn acquire(raw: &str, repo: &Path) -> anyhow::Result<()> {
                     "acquire-arxiv",
                     "--ids",
                     &route.id,
-                    "--allow-network",
                     "--report",
                     "/tmp/da_acquire_last.json",
                 ])

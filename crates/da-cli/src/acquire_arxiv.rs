@@ -21,8 +21,9 @@ pub struct AcquireArxivArgs {
     pub catalog_root: PathBuf,
     #[arg(long)]
     pub report: PathBuf,
+    /// Deny network fetch (CI/replay). Default is to fetch missing PDFs (M462).
     #[arg(long, default_value_t = false)]
-    pub allow_network: bool,
+    pub disallow_network: bool,
     #[arg(long, default_value_t = 4, value_parser = clap::value_parser!(u64).range(0..=300))]
     pub sleep_seconds: u64,
 }
@@ -33,7 +34,7 @@ pub fn run(args: &AcquireArxivArgs) -> Result<i32> {
     let use_case =
         BatchAcquisitionUseCase::new(Arc::new(ArxivSourceAcquisition::new(&args.catalog_root)));
     let report = use_case
-        .execute(&ids, args.allow_network, |item| {
+        .execute(&ids, !args.disallow_network, |item| {
             render(item, total);
             if item.ordinal < total && args.sleep_seconds > 0 {
                 std::thread::sleep(Duration::from_secs(args.sleep_seconds));

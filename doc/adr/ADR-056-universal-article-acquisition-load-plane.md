@@ -95,8 +95,9 @@ DOI-first providers without another one-off.
 7. **Versionless identity with versioned provenance:** modern arXiv ids are
    versionless keys; versioned local assets may exist as provenance when content
    differs; bare metadata is preferred for lookup (project memory).
-8. **Network is fail-closed:** no external fetch without explicit
-   `allow_network` (or equivalent policy object). Catalog hits must work offline.
+8. **Network is on by default (M462):** missing catalog assets are fetched.
+   `--disallow-network` / `DA_LOAD_DISALLOW_NETWORK=1` is the CI/replay opt-out.
+   Catalog hits must still work with `allow_network=false`.
 9. **Pipeline composability (ADR-049):** load stages must be invocable as pure
    application steps (and later as pipeline nodes), not only as CLI glue.
 
@@ -273,7 +274,7 @@ later implementation waves. Omitting them from the ADR is how rework happens.
 #### D. Network & policy
 
 15. **`AcquisitionPolicy` object** (not scattered CLI flags only):
-    - `allow_network: bool` (default false)
+    - `allow_network: bool` (default true; M462. false = CI/replay opt-out)
     - `include_tex_source: bool`
     - `include_html: bool` (default true for arXiv when network authorized)
     - `timeouts / retry / user_agent` (adapter config, not domain)
@@ -576,7 +577,7 @@ process-local parse)** only.
 ```text
 da load <LOCATOR>
   --provider auto|arxiv|local|catalog|textbook   # default auto via can_resolve
-  --allow-network
+  --disallow-network                    # CI/replay; network is on by default
   --include-html / --include-tex-source
   --stages full|ensure|ingest|ingest+extract
   --skip-extract                        # deprecated alias of stages
@@ -589,14 +590,14 @@ da load <LOCATOR>
 Examples:
 
 ```text
-da load 2602.04837 --allow-network --report artifacts/loads/2602.04837.json
-da load https://arxiv.org/html/2602.04837v1 --allow-network
+da load 2602.04837 --report artifacts/loads/2602.04837.json
+da load https://arxiv.org/html/2602.04837v1
 da load catalog:arxiv/cs-ai/2602.04837 --stages ingest+extract
 da load ./papers/x.pdf --provider local --output /tmp/x.sgsnap
 # non-article unit: ensure (+ optional HTML ingest) — not ontology edges
 da load catalog:gnn_textbook/html/gnn-ch-chapters__01-intro-to-graphs --stages ensure
 da load https://anvithpothula.github.io/graph-neural-networks-textbook/chapters/06-gnn-foundations/ \
-  --provider textbook --allow-network --stages ensure
+  --provider textbook --stages ensure
 ```
 
 **Forbidden:** new top-level `da load-arxiv` as the long-term API.  
@@ -755,8 +756,9 @@ W9–W12 prevent the next generation of hacks.
 
 1. Operator runs **one** command with a locator (not a hand-built absolute PDF
    path) for an arXiv id already in catalog → ingest snapshot + load report.
-2. Same command with `--allow-network` on a missing id → catalog materialize +
-   ingest (or typed failure, never hang without report).
+2. Same command on a missing id → catalog materialize + ingest
+   (or typed failure, never hang without report). `--disallow-network`
+   keeps the miss typed NetworkDenied for CI/replay.
 3. Second identical run → ensure `Unchanged` / catalog_hit; no checksum fight.
 4. Report always has `import_eligible=false` unless explicit unlock.
 5. No `da-application` dependency on arXiv URLs or download scripts.

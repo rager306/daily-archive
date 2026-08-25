@@ -53,8 +53,12 @@ pub struct LoadArgs {
     #[arg(long, default_value = "data/sources/arxiv")]
     pub catalog_root: PathBuf,
 
-    /// Authorize network fetch when assets missing
+    /// Deny network fetch (CI/replay). Default is to fetch missing assets (M462).
     #[arg(long, default_value_t = false)]
+    pub disallow_network: bool,
+
+    /// Hidden no-op: network is on by default. Kept so old scripts do not fail clap.
+    #[arg(long, default_value_t = false, hide = true)]
     pub allow_network: bool,
 
     /// Include TeX source archive when fetching arXiv
@@ -1206,22 +1210,30 @@ fn resolve_stages(args: &LoadArgs, batch: bool) -> Result<LoadStageSet, String> 
     }
 }
 
-/// Explicit `--allow-network` always wins. An HTTP locator is fetch intent
-/// unless DA_LOAD_ALLOW_NETWORK is 0/false/no/off. Bare ids stay fail-closed.
-fn resolve_network_policy(explicit: bool, locator: &str) -> bool {
-    if explicit {
-        return true;
-    }
-    if !da_domain::locator_implies_network(locator) {
+/// Network is on unless the operator opts out (M462).
+/// `--disallow-network` or DA_LOAD_DISALLOW_NETWORK=1/true/yes/on deny.
+/// Legacy DA_LOAD_ALLOW_NETWORK=0/false also denies. Locator shape is not
+/// a network gate anymore.
+fn resolve_network_policy(disallow: bool) -> bool {
+    if disallow {
         return false;
     }
-    match std::env::var("DA_LOAD_ALLOW_NETWORK") {
-        Ok(value) => !matches!(
-            value.trim().to_ascii_lowercase().as_str(),
-            "0" | "false" | "no" | "off"
-        ),
-        Err(_) => true,
+    for key in ["DA_LOAD_DISALLOW_NETWORK", "DA_LOAD_ALLOW_NETWORK"] {
+        if let Ok(value) = std::env::var(key) {
+            let v = value.trim().to_ascii_lowercase();
+            if key == "DA_LOAD_DISALLOW_NETWORK"
+                && matches!(v.as_str(), "1" | "true" | "yes" | "on")
+            {
+                return false;
+            }
+            if key == "DA_LOAD_ALLOW_NETWORK"
+                && matches!(v.as_str(), "0" | "false" | "no" | "off")
+            {
+                return false;
+            }
+        }
     }
+    true
 }
 
 async fn run_batch_toc(args: &LoadArgs, toc: &Path) -> Result<(), String> {
@@ -1231,7 +1243,7 @@ async fn run_batch_toc(args: &LoadArgs, toc: &Path) -> Result<(), String> {
     }
     let stages = resolve_stages(args, true)?;
     let policy = AcquisitionPolicy {
-        allow_network: args.allow_network,
+        allow_network: resolve_network_policy(args.disallow_network),
         include_html: true,
         include_tex_source: false,
         dry_run: args.dry_run,
@@ -1361,7 +1373,7 @@ async fn run_batch_toc(args: &LoadArgs, toc: &Path) -> Result<(), String> {
 async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
     let stages = resolve_stages(args, false)?;
     let policy = AcquisitionPolicy {
-        allow_network: resolve_network_policy(args.allow_network, locator),
+        allow_network: resolve_network_policy(args.disallow_network),
         include_html: true,
         include_tex_source: args.include_tex_source,
         dry_run: args.dry_run,
@@ -1762,18 +1774,28 @@ mod tests {
     }
 
     #[test]
-    fn resolve_network_policy_url_intent_and_kill_switch() {
-        let prior = std::env::var("DA_LOAD_ALLOW_NETWORK").ok();
-        unsafe { std::env::remove_var("DA_LOAD_ALLOW_NETWORK") };
-        let url = "https://arxiv.org/abs/2608.22118";
-        assert!(resolve_network_policy(false, url));
-        assert!(!resolve_network_policy(false, "2608.22118"));
-        assert!(resolve_network_policy(true, "2608.22118"));
-        unsafe { std::env::set_var("DA_LOAD_ALLOW_NETWORK", "0") };
-        assert!(!resolve_network_policy(false, url));
-        assert!(resolve_network_policy(true, url));
+    fn resolve_network_policy_defaults_on_disallow_opts_out() {
+        let prior_d = std::env::var("DA_LOAD_DISALLOW_NETWORK").ok();
+        let prior_a = std::env::var("DA_LOAD_ALLOW_NETWORK").ok();
         unsafe {
-            match prior {
+            std::env::remove_var("DA_LOAD_DISALLOW_NETWORK");
+            std::env::remove_var("DA_LOAD_ALLOW_NETWORK");
+        }
+        assert!(resolve_network_policy(false), "default on");
+        assert!(!resolve_network_policy(true), "flag opts out");
+        unsafe { std::env::set_var("DA_LOAD_DISALLOW_NETWORK", "1") };
+        assert!(!resolve_network_policy(false), "env opts out");
+        unsafe {
+            std::env::remove_var("DA_LOAD_DISALLOW_NETWORK");
+            std::env::set_var("DA_LOAD_ALLOW_NETWORK", "0");
+        }
+        assert!(!resolve_network_policy(false), "legacy env opts out");
+        unsafe {
+            match prior_d {
+                Some(v) => std::env::set_var("DA_LOAD_DISALLOW_NETWORK", v),
+                None => std::env::remove_var("DA_LOAD_DISALLOW_NETWORK"),
+            }
+            match prior_a {
                 Some(v) => std::env::set_var("DA_LOAD_ALLOW_NETWORK", v),
                 None => std::env::remove_var("DA_LOAD_ALLOW_NETWORK"),
             }
@@ -1786,6 +1808,7 @@ mod tests {
             locator: Some("https://arxiv.org/abs/2608.22118".into()),
             provider: "auto".into(),
             catalog_root: PathBuf::from("data/sources/arxiv"),
+            disallow_network: false,
             allow_network: false,
             include_tex_source: false,
             stages: None,
@@ -2431,6 +2454,7 @@ mod tests {
             locator: None,
             provider: "auto".into(),
             catalog_root: PathBuf::from("data/sources/arxiv"),
+            disallow_network: false,
             allow_network: false,
             include_tex_source: false,
             stages: None,

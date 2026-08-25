@@ -294,7 +294,9 @@ fn strip_suffix_ci<'a>(s: &'a str, suffix: &str) -> Option<&'a str> {
 /// Acquisition / load policy object (ADR-056 §2.4 D) — not scattered flags only.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AcquisitionPolicy {
-    /// Network is fail-closed by default.
+    /// Fetch missing catalog assets. Default true (M462); set false for
+    /// CI/replay (`--disallow-network` / `DA_LOAD_DISALLOW_NETWORK=1`).
+    /// Catalog hits still succeed with this false (ADR-056).
     pub allow_network: bool,
     pub include_html: bool,
     pub include_tex_source: bool,
@@ -308,7 +310,7 @@ pub struct AcquisitionPolicy {
 impl Default for AcquisitionPolicy {
     fn default() -> Self {
         Self {
-            allow_network: false,
+            allow_network: true,
             include_html: true,
             include_tex_source: false,
             dry_run: false,
@@ -320,9 +322,12 @@ impl Default for AcquisitionPolicy {
 }
 
 impl AcquisitionPolicy {
+    /// Offline catalog-hit constructor (CI/tests). Product default still
+    /// allows network via [`Default`].
     pub fn ensure_only() -> Self {
         Self {
             stages: LoadStageSet::Ensure,
+            allow_network: false,
             ..Self::default()
         }
     }
@@ -778,9 +783,9 @@ mod tests {
     }
 
     #[test]
-    fn policy_defaults_fail_closed() {
+    fn policy_network_defaults_on_import_stays_locked() {
         let p = AcquisitionPolicy::default();
-        assert!(!p.allow_network);
+        assert!(p.allow_network);
         assert!(!p.enable_import);
         assert!(!p.dry_run);
         assert!(!p.import_eligible_stamp());
@@ -789,6 +794,7 @@ mod tests {
         assert_eq!(p.run_mode, LoadRunMode::Inline);
 
         let e = AcquisitionPolicy::ensure_only();
+        assert!(!e.allow_network);
         assert!(!e.stages.includes_ingest());
         assert!(!e.stages.includes_extract());
     }

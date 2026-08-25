@@ -72,7 +72,7 @@ pub enum AcquisitionError {
     Domain(#[from] LoadDomainError),
     #[error("cannot resolve locator with provider {provider}: {detail}")]
     CannotResolve { provider: String, detail: String },
-    #[error("network not authorized (allow_network=false): {0}")]
+    #[error("network denied (--disallow-network): {0}")]
     NetworkDenied(String),
     #[error("asset missing: {0}")]
     MissingAsset(String),
@@ -219,7 +219,7 @@ impl SourceAcquisitionPort for MockSourceAcquisition {
         }
         if self.require_network_if_miss && !policy.allow_network {
             return Err(AcquisitionError::NetworkDenied(format!(
-                "missing primary for {} and allow_network=false",
+                "missing primary for {} and network denied",
                 resolved.unit_key
             )));
         }
@@ -264,7 +264,7 @@ mod tests {
         let mock = MockSourceAcquisition::miss_requires_network();
         let loc = ArticleLocator::parse("9999.99999").unwrap();
         let resolved = mock.resolve(&loc).unwrap();
-        let policy = AcquisitionPolicy::default();
+        let policy = AcquisitionPolicy::ensure_only();
         assert!(!policy.allow_network);
         let err = mock.ensure_assets(&resolved, &policy).unwrap_err();
         assert!(matches!(err, AcquisitionError::NetworkDenied(_)));

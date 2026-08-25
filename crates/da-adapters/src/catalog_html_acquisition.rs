@@ -269,7 +269,7 @@ impl SourceAcquisitionPort for CatalogHtmlAcquisition {
 
         if !policy.allow_network {
             return Err(AcquisitionError::NetworkDenied(format!(
-                "HTML for {} / {} not under catalog; pass --allow-network to fetch from TOC",
+                "HTML for {} / {} not under catalog; catalog miss with network denied (--disallow-network)",
                 self.source_code, resolved.unit_key
             )));
         }

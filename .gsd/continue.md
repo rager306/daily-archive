@@ -1,9 +1,9 @@
 # continue — session state
 
-## Active direction (M461-6665iq): URL locator is network intent for load FSM
+## Active direction (M462-ieh2tt): load network is on by default
 
-S01+S02: locator_implies_network; da load URL → fetch+extract; da source run
-canonicalizes URL. Close via skip-delivered.
+S01: allow_network default true; --disallow-network opt-out. Close via
+skip-delivered.
 
 ## Previous: M451 schema/manifest skeleton BEFORE code
 
