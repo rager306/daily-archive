@@ -355,3 +355,38 @@ fn chrono_now() -> String {
         })
         .unwrap_or_default()
 }
+
+
+/// SONA pattern extraction from CVF trajectories (M452 S01).
+/// Reads trajectory.jsonl for the given paper, builds ReasoningBank,
+/// prints extracted patterns with quality metrics.
+pub fn run_sona_analyze(pid: &str) -> anyhow::Result<()> {
+    let traj_path = std::path::Path::new("data/agent_memory")
+        .join(pid)
+        .join("trajectory.jsonl");
+    let text = std::fs::read_to_string(&traj_path)
+        .map_err(|e| anyhow::anyhow!("trajectory {}: {e}", traj_path.display()))?;
+
+    let records: Vec<serde_json::Value> = text
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .filter_map(|l| serde_json::from_str(l).ok())
+        .collect();
+
+    if records.is_empty() {
+        println!("sona-analyze: no trajectories found for {pid}");
+        return Ok(());
+    }
+
+    let dim = 8;
+    let k_clusters = (records.len() / 5).clamp(2, 10);
+    let patterns = da_application::sona_bridge::build_reasoning_bank(&records, dim, k_clusters);
+
+    println!(
+        "== sona-analyze: {pid} ==\n{} trajectories, {} patterns extracted",
+        records.len(),
+        patterns.len()
+    );
+    println!("{}", da_application::sona_bridge::summarize_patterns(&patterns));
+    Ok(())
+}

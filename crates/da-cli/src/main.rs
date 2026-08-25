@@ -499,6 +499,7 @@ fn main() {
                 "parse-pdf-toc" => source_cli::run_parse_pdf_toc(&paper_id),
                 "enrich-layer" => source_cli::run_enrich_layer(&paper_id),
                 "audit-fidelity" => source_cli::run_audit_fidelity(&paper_id),
+                "sona-analyze" => da_cli::background_tasks::run_sona_analyze(&paper_id),
                 "background-run" => {
                     // da source background-run [task|pid] — task по умолчанию
                     // per_section_summaries; аргумент, похожий на pid (не id задачи),

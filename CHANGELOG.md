@@ -577,3 +577,19 @@ These are structural corpus work items (M439/M440 backlog), not code bugs.
 
 Green: domain 713, cli 176, app 337, adapters 249, pytest 142,
 validate 645x0, clippy clean.
+
+## 2026-08-25 — M452-mhx138 S01: SONA bridge + sona-analyze CLI
+
+SONA ReasoningBank bridge implemented in Rust:
+- features_to_embedding(): CVF trajectory JSON → SONA embedding vector
+  [grounding, latency_norm, scrubbed, tokens_norm, inverse_quality]
+- build_reasoning_bank(): K-means++ clustering via ruvector-sona
+  PatternConfig {max_trajectories: 10000, quality_threshold: 0.3}
+- summarize_patterns(): human-readable output
+
+CLI: da source sona-analyze <agent_id>
+Live proof on summarizer agent: 55 trajectories → 7 patterns extracted
+(avg_quality range 0.50–0.90). Two unit tests pass.
+
+This is ADR-074 Phase W2 Step 1: pattern extraction without LoRA
+training. D136 gate still applies to actual weight adaptation.
