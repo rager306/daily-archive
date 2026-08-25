@@ -10,6 +10,7 @@
 pub mod acquisition_batch;
 pub mod agent_manifest;
 pub mod critic_repair;
+pub mod negative_memory;
 pub mod article_manifest;
 pub mod agent;
 pub mod article;

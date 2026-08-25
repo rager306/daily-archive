@@ -8,6 +8,8 @@ use da_domain::agent_manifest::AgentManifest;
 use da_domain::critic_repair::{
     can_repair, repair_outcome, route_repair, CriticVerdict, RepairOutcome, Verdict,
 };
+use da_domain::negative_memory::{record_from_exhausted, NegativeMemoryRecord};
+use da_ports::negative_memory::{NegativeMemoryError, NegativeMemoryPort};
 
 #[derive(Debug, thiserror::Error)]
 pub enum CriticRepairError {
@@ -42,6 +44,31 @@ pub fn run_critic_repair(
         resolved && verdict.verdict == Verdict::Reject,
         max,
     )))
+}
+
+/// Persist a blocking negative only when repair is exhausted.
+/// Confirm/resolved outcomes return None (experience, not a ban).
+pub fn persist_if_exhausted(
+    store: &mut dyn NegativeMemoryPort,
+    paper_id: &str,
+    verdict: &CriticVerdict,
+    outcome: &RepairOutcome,
+    record_id: String,
+    recorded_at: String,
+) -> Result<Option<NegativeMemoryRecord>, NegativeMemoryError> {
+    if outcome.exhausted_reason.is_none() {
+        return Ok(None);
+    }
+    let rec = record_from_exhausted(
+        record_id,
+        paper_id.to_string(),
+        outcome.stage.clone(),
+        verdict.failure_pattern.clone(),
+        Some(verdict.id.clone()),
+        recorded_at,
+    );
+    store.append(&rec)?;
+    Ok(Some(rec))
 }
 
 #[cfg(test)]
@@ -97,5 +124,59 @@ mod tests {
         let yaml = include_str!("../../../data/agents/summarizer/manifest.yaml");
         let err = run_critic_repair(yaml, &reject_figure(), 0).unwrap_err();
         assert!(matches!(err, CriticRepairError::NoContract(_)));
+    }
+
+    struct FakeNeg {
+        recs: Vec<NegativeMemoryRecord>,
+    }
+    impl NegativeMemoryPort for FakeNeg {
+        fn append(&mut self, rec: &NegativeMemoryRecord) -> Result<(), NegativeMemoryError> {
+            self.recs.push(rec.clone());
+            Ok(())
+        }
+        fn list_for_paper(
+            &self,
+            paper_id: &str,
+        ) -> Result<Vec<NegativeMemoryRecord>, NegativeMemoryError> {
+            Ok(self
+                .recs
+                .iter()
+                .filter(|r| r.paper_id == paper_id)
+                .cloned()
+                .collect())
+        }
+    }
+
+    #[test]
+    fn exhausted_persists_negative_resolved_does_not() {
+        let yaml = include_str!("../../../data/agents/critic/manifest.yaml");
+        let v = reject_figure();
+        let resolved = run_critic_repair(yaml, &v, 0).unwrap().unwrap();
+        let mut store = FakeNeg { recs: vec![] };
+        let wrote = persist_if_exhausted(
+            &mut store,
+            "2507.19457",
+            &v,
+            &resolved,
+            "n-ok".into(),
+            "t".into(),
+        )
+        .unwrap();
+        assert!(wrote.is_none());
+        assert!(store.recs.is_empty());
+
+        let exhausted = run_critic_repair(yaml, &v, 2).unwrap().unwrap();
+        let wrote = persist_if_exhausted(
+            &mut store,
+            "2507.19457",
+            &v,
+            &exhausted,
+            "n-ban".into(),
+            "t".into(),
+        )
+        .unwrap();
+        assert!(wrote.unwrap().exhausted);
+        assert_eq!(store.recs.len(), 1);
+        assert_eq!(store.recs[0].stage, "figure_analysis");
     }
 }

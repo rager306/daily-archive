@@ -6,6 +6,7 @@
 pub mod acquisition;
 pub mod agent_read_plane;
 pub mod agent_memory;
+pub mod negative_memory;
 pub mod algorithms;
 pub mod assurance;
 pub mod cache_payload;

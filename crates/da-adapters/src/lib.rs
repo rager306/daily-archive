@@ -13,6 +13,7 @@ pub mod catalog_inventory;
 pub mod catalog_mutation;
 pub mod context_conservation_policy;
 pub mod agent_memory;
+pub mod negative_memory;
 pub mod fd_embedder;
 pub mod fs_schema_objects;
 pub mod figure_quote_policy;

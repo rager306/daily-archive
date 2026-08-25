@@ -467,14 +467,71 @@ pub fn run_critic_repair_cli(pair_id: &str) -> anyhow::Result<()> {
     };
     match run_critic_repair(&yaml, &verdict, attempts)? {
         None => println!("critic-repair: no action (confirm/abstain or no matching trigger)"),
-        Some(out) => println!(
-            "== critic-repair ==\nstage={} action={} attempts={} resolved={} exhausted={:?}",
-            out.stage,
-            out.action,
-            out.attempts_used,
-            out.resolved,
-            out.exhausted_reason
-        ),
+        Some(out) => {
+            println!(
+                "== critic-repair ==\nstage={} action={} attempts={} resolved={} exhausted={:?}",
+                out.stage,
+                out.action,
+                out.attempts_used,
+                out.resolved,
+                out.exhausted_reason
+            );
+            if out.exhausted_reason.is_some() {
+                let paper = std::env::var("DA_CRITIC_PAPER_ID")
+                    .unwrap_or_else(|_| pair_id.to_string());
+                let dir = negative_memory_dir();
+                let mut store = da_adapters::negative_memory::JsonlNegativeMemory::open(&dir)?;
+                let rec = da_application::critic_repair_stage::persist_if_exhausted(
+                    &mut store,
+                    &paper,
+                    &verdict,
+                    &out,
+                    format!("neg-{}-{}", paper, out.attempts_used),
+                    chrono_now(),
+                )?;
+                if let Some(rec) = rec {
+                    println!(
+                        "negative-memory: wrote {} paper={} stage={}",
+                        rec.id, rec.paper_id, rec.stage
+                    );
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn negative_memory_dir() -> std::path::PathBuf {
+    std::env::var("DA_NEGATIVE_MEMORY_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|_| std::path::PathBuf::from("data/agent_memory/negatives"))
+}
+
+/// M455: admit a claim against persisted negative semantic knowledge.
+/// Env: DA_NEGATIVE_MEMORY_DIR, DA_ADMIT_STAGE, DA_CRITIC_PATTERN.
+pub fn run_memory_admit(paper_id: &str) -> anyhow::Result<()> {
+    use da_domain::negative_memory::{admit_claim, AdmitKey};
+    use da_ports::negative_memory::NegativeMemoryPort;
+
+    let stage = std::env::var("DA_ADMIT_STAGE").unwrap_or_else(|_| "figure_analysis".into());
+    let pattern = std::env::var("DA_CRITIC_PATTERN").ok();
+    let store = da_adapters::negative_memory::JsonlNegativeMemory::open(negative_memory_dir())?;
+    let recs = store.list_for_paper(paper_id)?;
+    let d = admit_claim(
+        AdmitKey {
+            paper_id,
+            stage: &stage,
+            pattern: pattern.as_deref(),
+        },
+        &recs,
+    );
+    match d {
+        da_domain::negative_memory::AdmitDecision::Allowed { reason } => {
+            println!("memory-admit: allowed paper={paper_id} stage={stage} reason={reason}");
+        }
+        da_domain::negative_memory::AdmitDecision::BlockedExhausted { record_id, reason } => {
+            println!("memory-admit: blocked paper={paper_id} record={record_id} reason={reason}");
+        }
     }
     Ok(())
 }

@@ -23,7 +23,9 @@ Five rules we keep:
 
 ## Follow-ups (not this capture)
 
-- Negative semantic knowledge must block retrieval, not only log Reject.
+- Negative semantic knowledge: **M455** persist+admit on exhausted Reject
+  (jsonl memory-graph, not Samyama). Retrieval of the same paper/stage/pattern
+  is blocked. Remaining: summaries_agent_stage should call admit before reuse.
 - Context snapshots need versioned policy_hash + MSC + as_of for replay.
 - CVF/SONA records should cite canonical paper/section ids when present.
 

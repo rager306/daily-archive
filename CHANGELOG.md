@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-25 — M455-5jxhte: negative semantic knowledge blocks reuse
+
+Vasiliev gap: critic Reject/repair_exhausted was logged but retrieval
+could reuse the same claim. Now:
+
+- Domain: NegativeMemoryRecord + admit_claim (key = paper_id+stage+pattern).
+  Exhausted reject denied; other paper/stage/resolved allowed.
+- Port NegativeMemoryPort separate from CVF AgentMemory.
+- Jsonl adapter `{dir}/{paper_id}.jsonl`. Path: DA_NEGATIVE_MEMORY_DIR.
+- persist_if_exhausted only on exhausted outcomes.
+- CLI: critic-repair writes negative; `da source memory-admit` denies.
+  Live: 2507.19457 figure_analysis schema violation → blocked;
+  other paper/stage → allowed. Not Samyama. D127 false.
+
+Green: domain negative_memory 6, application critic_repair_stage 5,
+adapters jsonl 1, clippy -D warnings touched crates --lib.
+
 ## 2026-08-25 — source capture: Vasiliev 2026 three graph roles
 
 Added Substack article as a blog source (not graph truth, D127):

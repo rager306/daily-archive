@@ -1,9 +1,9 @@
 # continue — session state
 
-## Active direction (M454-c3yx94): critic repair orchestrator + Governor current-milestone
+## Active direction (M455-5jxhte): negative semantic knowledge blocks reuse
 
-S01: AgentManifest.repair parsed; run_critic_repair calls route_repair.
-S02: Governor empty-PLAN only for STATE-active. Close via skip-delivered.
+S01+S02: admit_claim fail-closed on exhausted reject; jsonl store;
+critic-repair persist; memory-admit CLI. Close via skip-delivered.
 
 ## Previous: M451 schema/manifest skeleton BEFORE code
 
