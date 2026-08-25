@@ -16,6 +16,7 @@ import hashlib
 import json
 import re
 import sys
+import threading
 import time
 import urllib.request
 from pathlib import Path
@@ -25,6 +26,130 @@ import yaml
 REPO = Path(__file__).resolve().parent.parent
 CACHE = REPO / "artifacts/pipeline_cache/openalex_works"
 UA = {"User-Agent": "daily-archive/0.1 (mailto:research@example.org)"}
+
+# ── ADR-073: citracer resilience trio ──────────────────────────────────────
+BREAKER_THRESHOLD = 5       # подряд сбоев до отключения upstream
+BREAKER_COOLDOWN_S = 120.0  # сколько upstream отключён
+BATCH_SIZE = 50             # DOI за один вызов (лимит OpenAlex filter)
+
+
+class CircuitBreaker:
+    """Пер-upstream выключатель (citracer _orev_circuit_*): после N подряд
+    сбоев upstream пропускается cooldown секунд; успех сбрасывает счётчик.
+    Потокобезопасен — fetcher работает 8 воркерами."""
+
+    def __init__(self, threshold: int = BREAKER_THRESHOLD,
+                 cooldown: float = BREAKER_COOLDOWN_S) -> None:
+        self._threshold = threshold
+        self._cooldown = cooldown
+        self._lock = threading.Lock()
+        self._failures = 0
+        self._tripped_at: float | None = None
+
+    def allow(self) -> bool:
+        with self._lock:
+            if self._tripped_at is None:
+                return True
+            if time.time() - self._tripped_at > self._cooldown:
+                self._tripped_at = None
+                self._failures = 0
+                return True
+            return False
+
+    def record_failure(self) -> None:
+        with self._lock:
+            self._failures += 1
+            if self._failures >= self._threshold and self._tripped_at is None:
+                self._tripped_at = time.time()
+
+    def record_success(self) -> None:
+        with self._lock:
+            self._failures = 0
+
+
+def purge_negative_cache() -> int:
+    """Self-heal негативного кэша (citracer purge_negatives): терминальные
+    404/422 записи устаревают, когда (a) upstream флапал в момент запроса,
+    (b) наша логика резолва починена (citation-salvage), (c) arXiv-статьи
+    индексируются OpenAlex с задержкой в дни/недели. Позитивы не трогаем."""
+    purged = 0
+    for cf in CACHE.glob("*.json"):
+        try:
+            rec = json.loads(cf.read_text())
+        except ValueError:
+            cf.unlink(missing_ok=True)
+            purged += 1
+            continue
+        if rec.get("http_status") in (404, 422) and rec.get("terminal"):
+            cf.unlink(missing_ok=True)
+            purged += 1
+    return purged
+
+
+def _batch_endpoint(dois: list[str]) -> str:
+    from urllib.parse import quote
+    base = "https://api.openalex.org/works?filter=" + quote("|".join(f"doi:{d}" for d in dois), safe="")
+    key = _api_key()
+    sep = "&" if "?" in base else "?"
+    return f"{base}{sep}mailto=research@example.org" + (f"&api_key={key}" if key else "")
+
+
+def fetch_batch(pids: list[str], breaker: CircuitBreaker) -> dict[str, dict]:
+    """Батч-загрузка (citracer batch_enrich): один вызов на BATCH_SIZE DOI.
+    Возвращает {pid: cache_record}; статьи, не вернувшиеся в ответе,
+    получают честную терминальную 404-запись."""
+    arxiv_doi = {pid: f"10.48550/arXiv.{pid}" for pid in pids}
+    out: dict[str, dict] = {}
+    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    for i in range(0, len(pids), BATCH_SIZE):
+        chunk = pids[i:i + BATCH_SIZE]
+        if not breaker.allow():
+            for pid in chunk:
+                out[pid] = {"http_status": 0, "fetched_at": now, "terminal": False,
+                            "error": "circuit_open", "work": None}
+            continue
+        try:
+            req = urllib.request.Request(_batch_endpoint([arxiv_doi[p] for p in chunk]), headers=UA)
+            with urllib.request.urlopen(req, timeout=60) as r:
+                body = json.loads(r.read().decode())
+            breaker.record_success()
+            by_doi = {}
+            for w in body.get("results", []):
+                doi = (w.get("doi") or "").replace("https://doi.org/", "").lower()
+                by_doi[doi] = w
+            for pid in chunk:
+                w = by_doi.get(arxiv_doi[pid].lower())
+                if w:
+                    out[pid] = {"http_status": 200, "fetched_at": now, "work": _slim(w)}
+                else:
+                    out[pid] = {"http_status": 404, "fetched_at": now, "terminal": True, "work": None}
+        except urllib.error.HTTPError as e:
+            breaker.record_failure()
+            for pid in chunk:
+                out[pid] = {"http_status": e.code, "fetched_at": now,
+                            "terminal": e.code in (404, 422), "work": None}
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError) as e:
+            breaker.record_failure()
+            for pid in chunk:
+                out[pid] = {"http_status": 0, "fetched_at": now, "terminal": False,
+                            "error": str(e)[:120], "work": None}
+    # материализуем в индивидуальные кэш-файлы
+    CACHE.mkdir(parents=True, exist_ok=True)
+    for pid, rec in out.items():
+        (CACHE / f"{pid}.json").write_text(json.dumps(rec, ensure_ascii=False))
+    return out
+
+
+def needs_fetch(pid: str) -> bool:
+    """Кэш отсутствует или нетерминальный сбой → нужен запрос."""
+    cf = CACHE / f"{pid}.json"
+    if not cf.exists():
+        return True
+    try:
+        rec = json.loads(cf.read_text())
+    except ValueError:
+        return True
+    return rec.get("http_status") != 200 and not rec.get("terminal")
 
 
 def _api_key() -> str:
@@ -219,9 +344,27 @@ def enrich(pid: str, root: Path) -> str:
 
 
 def main(argv):
+    no_refetch = "--no-refetch" in argv
+    argv = [a for a in argv if a != "--no-refetch"]
     root = REPO / "data/processed"
     ids = argv[1:] or sorted(d.name for d in root.iterdir()
                              if d.is_dir() and (d / "manifest.yaml").exists())
+
+    # ADR-073 citracer trio, шаг 1: самолечение негативного кэша
+    if not no_refetch:
+        purged = purge_negative_cache()
+        if purged:
+            print(f"purged {purged} stale negative cache entries")
+
+    # шаг 2: батч-загрузка отсутствующих/негативных (50 DOI за вызов)
+    breaker = CircuitBreaker()
+    todo = [pid for pid in ids if needs_fetch(pid)]
+    if todo:
+        fetched = fetch_batch(todo, breaker)
+        ok = sum(1 for r in fetched.values() if r.get("http_status") == 200)
+        print(f"batch: {ok}/{len(todo)} works fetched ({(len(todo) + BATCH_SIZE - 1) // BATCH_SIZE} requests)")
+
+    # шаг 3: существующий enrich по кэшу (манифесты), 8 воркеров
     from concurrent.futures import ThreadPoolExecutor
 
     def work(pid):
@@ -230,8 +373,6 @@ def main(argv):
         except Exception as e:  # per-article isolation: never kill the batch
             return f"error:{str(e)[:80]}"
 
-    # network latency ~6s per request from this host; OpenAlex allows
-    # 10 req/s -> 8 workers stay well inside the limit (~1.4 req/s)
     with ThreadPoolExecutor(max_workers=8) as ex:
         results = list(ex.map(work, ids))
     counts = {}

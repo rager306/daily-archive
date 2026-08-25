@@ -1281,6 +1281,134 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// `da source fetch-openalex <pid...|--pending> [--no-purge]` —
+/// ADR-073 citracer trio in Rust: purge stale negative cache → batch-fetch
+/// pending works (50 DOIs per request, circuit breaker) → write per-pid
+/// cache files (slim shape consumed by enrich-layer).
+pub fn run_fetch_openalex(args: &[String]) -> anyhow::Result<()> {
+    use da_adapters::openalex_adapter::{CircuitBreaker, OpenAlexHttpAdapter};
+
+    let no_purge = args.iter().any(|a| a == "--no-purge");
+    let mut ids: Vec<String> = args
+        .iter()
+        .filter(|a| !a.starts_with("--"))
+        .filter(|a| !matches!(a.as_str(), "pending" | "auto" | "all"))
+        .cloned()
+        .collect();
+    if args.iter().any(|a| matches!(a.as_str(), "--pending" | "pending" | "auto" | "all"))
+        || ids.is_empty()
+    {
+        ids = openalex_pending_ids()?;
+    }
+    if ids.is_empty() {
+        println!("fetch-openalex: cache clean, nothing to do");
+        return Ok(());
+    }
+
+    let cache_dir = std::path::Path::new("artifacts/pipeline_cache/openalex_works");
+    std::fs::create_dir_all(cache_dir)?;
+
+    // шаг 1: purge терминальных негативов (404/422) — устаревают со временем
+    let mut purged = 0usize;
+    if !no_purge {
+        for e in std::fs::read_dir(cache_dir)? {
+            let e = e?;
+            let Ok(text) = std::fs::read_to_string(e.path()) else { continue };
+            let Ok(rec) = serde_json::from_str::<serde_json::Value>(&text) else {
+                let _ = std::fs::remove_file(e.path());
+                purged += 1;
+                continue;
+            };
+            let status = rec.get("http_status").and_then(|s| s.as_u64()).unwrap_or(0);
+            let terminal = rec.get("terminal").and_then(|t| t.as_bool()).unwrap_or(false);
+            if terminal && (status == 404 || status == 422) {
+                let _ = std::fs::remove_file(e.path());
+                purged += 1;
+            }
+        }
+        if purged > 0 {
+            println!("purged {purged} stale negative cache entries");
+        }
+    }
+
+    // шаг 2: batch-fetch pending (после purge список пересчитывается)
+    let pending: Vec<String> = ids
+        .iter()
+        .filter(|pid| openalex_needs_fetch(cache_dir, pid))
+        .cloned()
+        .collect();
+    if pending.is_empty() {
+        println!("fetch-openalex: no pending works");
+        return Ok(());
+    }
+
+    let dois: Vec<String> = pending
+        .iter()
+        .map(|pid| format!("10.48550/arXiv.{pid}"))
+        .collect();
+
+    let adapter = OpenAlexHttpAdapter::default();
+    let breaker = CircuitBreaker::default();
+    let now = chrono_now();
+
+    let rt = tokio::runtime::Runtime::new()?;
+    let works = rt.block_on(adapter.fetch_works_concurrent(&dois, &breaker, 8));
+    let mut ok = 0usize;
+    let mut breaker_open = false;
+    for (pid, w) in pending.iter().zip(works) {
+        let rec = match w {
+            Some(w) => {
+                ok += 1;
+                serde_json::json!({"http_status": 200, "fetched_at": now, "work": w})
+            }
+            None if !breaker_open => serde_json::json!({
+                "http_status": 404, "fetched_at": now, "terminal": true, "work": null,
+            }),
+            None => {
+                breaker_open = true;
+                serde_json::json!({
+                    "http_status": 0, "fetched_at": now, "terminal": false,
+                    "error": "circuit_open_or_upstream_error", "work": null,
+                })
+            }
+        };
+        std::fs::write(
+            cache_dir.join(format!("{pid}.json")),
+            serde_json::to_string(&rec)?,
+        )?;
+    }
+    println!(
+        "fetch: {ok}/{} works (concurrent path-form, breaker={})",
+        pending.len(),
+        if breaker_open { "tripped" } else { "ok" }
+    );
+    Ok(())
+}
+
+/// Cache absent, corrupt, or non-terminal failure → needs a fetch.
+fn openalex_needs_fetch(cache_dir: &std::path::Path, pid: &str) -> bool {
+    let cf = cache_dir.join(format!("{pid}.json"));
+    let Ok(text) = std::fs::read_to_string(&cf) else { return true };
+    let Ok(rec) = serde_json::from_str::<serde_json::Value>(&text) else { return true };
+    let status = rec.get("http_status").and_then(|s| s.as_u64()).unwrap_or(0);
+    let terminal = rec.get("terminal").and_then(|t| t.as_bool()).unwrap_or(false);
+    status != 200 && !terminal
+}
+
+/// All processed article ids (batch targets).
+fn openalex_pending_ids() -> anyhow::Result<Vec<String>> {
+    let root = std::path::Path::new("data/processed");
+    let mut out = Vec::new();
+    for e in std::fs::read_dir(root)? {
+        let e = e?;
+        if e.path().join("manifest.yaml").is_file() {
+            out.push(e.file_name().to_string_lossy().to_string());
+        }
+    }
+    out.sort();
+    Ok(out)
+}
+
 /// Articles whose pipeline is incomplete (validated missing): batch targets.
 pub fn incomplete_pipeline_ids() -> anyhow::Result<Vec<String>> {
     let root = std::path::Path::new("data/processed");

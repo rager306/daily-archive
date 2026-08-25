@@ -310,3 +310,23 @@
 clippy -D warnings clean, RocksDB system-link работает, sccache
 перепрогрет (однократно). cargo check -p da-domain 40s → 22s после
 прогрева.
+
+## 2026-08-25 — ADR-073 citracer trio in Rust (upstream resilience)
+
+Deep vendor-source research wave 2 (13 repos via codebase-memory; ADR-073).
+Implemented for OpenAlex — all in Rust per product direction:
+
+- `da source fetch-openalex <ids|pending> [--no-purge]`:
+  negative-cache purge (stale 404/422 self-heal; citation-salvage makes
+  old negatives wrong) → bounded-concurrent path-form fetch (8 parallel;
+  probe proved doi-filter pipe-OR is HTTP 400 — batch rides concurrency,
+  not unsupported API syntax) → per-pid slim cache files (enrich-layer
+  consumes unchanged).
+- CircuitBreaker in da-adapters (threshold 5, cooldown 120s, success
+  resets) — complements action-level retry from the audit wave.
+- Toolchain registry: enriched = [fetch-openalex, enrich-layer]; python
+  pre-hook removed from the runtime path.
+
+Live: 560×200 (+1 recovered), 85 honest 404 (textbook chapters with
+arXiv-shaped DOIs + not-yet-indexed young papers — purge retries them
+on every run). Clippy 1.98 new lint fixed in load.rs (as_chunks).

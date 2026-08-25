@@ -498,6 +498,11 @@ fn main() {
                 "parse-pdf" => source_cli::run_parse_pdf(&paper_id, pdf.as_deref()),
                 "parse-pdf-toc" => source_cli::run_parse_pdf_toc(&paper_id),
                 "enrich-layer" => source_cli::run_enrich_layer(&paper_id),
+                "fetch-openalex" => {
+                    let mut args: Vec<String> = vec![paper_id.clone()];
+                    args.extend(std::env::args().skip(4).collect::<Vec<_>>().into_iter().filter(|a| a.starts_with("--")));
+                    source_cli::run_fetch_openalex(&args)
+                }
                                 "build-extracted" => source_cli::run_build_extracted(&paper_id),
                 "build-summary" => source_cli::run_build_summary(&paper_id),
                 "eval-frozen" => source_cli::run_eval_frozen(),

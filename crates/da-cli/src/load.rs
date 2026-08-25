@@ -1063,8 +1063,8 @@ fn decode_f32_le(bytes: &[u8], expected_dimensions: usize) -> Result<Vec<f32>, S
         ));
     }
     let mut out = Vec::with_capacity(actual_dimensions);
-    for chunk in bytes.chunks_exact(4) {
-        let value = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
+    for chunk in bytes.as_chunks::<4>().0 {
+        let value = f32::from_le_bytes(*chunk);
         if !value.is_finite() {
             return Err("embed cache vector contains non-finite value".into());
         }

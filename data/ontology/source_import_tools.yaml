@@ -80,14 +80,9 @@ stages:
   tools:
   - id: openalex_work
     impl: rust
-    cli: da enrich/batch-enrich
-    note: порт есть; article-слой якорь — reference
-    pre_hook:
-      command: python3
-      script: scripts/m451_enrich_openalex.py
-      cache_dir: artifacts/pipeline_cache/openalex_works
-      note: work-cache fetcher до enrich-layer; путь из DATA (не из кода) — мета/промпт
-        принцип ADR-068
+    cli: da source fetch-openalex
+    note: 'ADR-073 citracer trio: batch 50 DOI/req, negative purge, circuit breaker
+      (Rust)'
     retry:
       max_attempts: 2
       backoff_ms: 500
@@ -175,6 +170,7 @@ rust_actions:
   extracted:
   - build-extracted
   enriched:
+  - fetch-openalex
   - enrich-layer
   summarized:
   - build-summary
