@@ -1,0 +1,26 @@
+{
+  "contributions": [
+    "A complete taxonomy of GNN prediction tasks (node-level, edge-level, graph-level) with corresponding output head designs",
+    "Detailed exposition of GraphSAGE's inductive aggregation with four aggregator variants (mean, max-pooling, LSTM, attention)",
+    "GAT architecture with learned content-dependent attention coefficients and multi-head attention",
+    "Analysis of skip connections and Jumping Knowledge Networks for enabling deeper GNNs",
+    "Comparison of flat global pooling vs hierarchical pooling (DiffPool, MinCutPool) for graph-level tasks",
+    "Graph augmentation strategies (virtual nodes and edges) for long-range dependencies",
+    "Empirical design guidelines from the You et al. (2020) design space study"
+  ],
+  "limitations": "GCN is transductive, requiring full graph presence during training. Neighborhood blowup is exponential without sampling. LSTM aggregator is permutation-sensitive. GAT's softmax normalization over variable-sized neighborhoods is hard to parallelize on GPU. DiffPool produces dense cluster-level adjacencies, becoming memory-intensive for graphs with more than a few hundred nodes. JK-Net concatenation expands representation dimension by factor K. Over-smoothing limits most GNNs to 2-3 layers without skip connections.",
+  "methods": "The chapter presents two architectures (GraphSAGE and GAT) as design exemplars rather than conducting new experiments. GraphSAGE uses neighborhood sampling (25 neighbors layer 1, 10 layer 2) and concatenation of node/neighbor representations. GAT computes learned attention scores via LeakyReLU-weighted dot products with softmax normalization, using K=8 heads in the first layer. The You et al. (2020) study evaluated GNN designs across 12 datasets spanning node classification, link prediction, and graph classification on four axes: message passing, aggregation, skip connections, and training regularization.",
+  "paper_id": "gnn-ch-chapters__07-gnn-design-space",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 55,
+    "latency_ms": 4122,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 605
+  },
+  "results": "Skip connections improved accuracy on 10 of 12 datasets in the design space study. Sum aggregation outperforms mean on most graph classification tasks, while mean is more robust for node classification. Post-aggregation batch norm is beneficial while pre-aggregation hurts. Optimal layer depth is 2-4 layers across all tasks. A 2-layer MLP pre-processing step consistently helps. Virtual nodes were shown by Hamilton et al. (2017) to consistently improve molecular property prediction benchmarks. Multi-head attention with K=8 heads requires ~32 MB per layer for 1M-edge graphs in float32.",
+  "schema_version": "summary-node.v1",
+  "tldr": "This chapter explores the GNN design space through GraphSAGE and GAT architectures, establishing a taxonomy of node/edge/graph-level prediction tasks and providing a principled framework for navigating GNN design choices including aggregation, skip connections, pooling, and graph augmentation."
+}

@@ -1,0 +1,23 @@
+{
+  "contributions": [
+    "Geometric derivation of TransE, TransR, DistMult, ComplEx, and RotatE as translation, projection, bilinear, complex-bilinear, and rotation operations",
+    "Formal relation pattern analysis showing which embedding model can capture symmetry, antisymmetry, inversion, and composition",
+    "Complete training protocols using negative sampling, margin-based ranking loss, and binary cross-entropy with self-adversarial weighting",
+    "Filtered evaluation protocol with PyKEEN implementation and benchmarks on FB15k-237"
+  ],
+  "limitations": "TransE cannot model symmetric relations or 1-to-N relations. DistMult is structurally incapable of antisymmetric relations. ComplEx cannot model composition. TransR's parameter cost scales with the number of relation types. The closed-world assumption in negative sampling treats unobserved triples as false even when they may simply be missing facts. Implementation of filtered evaluation from scratch is error-prone with reported MRR differences of 10–20 points between filtered and unfiltered protocols.",
+  "methods": "The chapter derives each KG embedding family from first geometric principles: TransE uses vector translation (h + r ≈ t), TransR projects entities into relation-specific subspaces before translation, DistMult uses bilinear diagonal scoring, ComplEx lifts to complex embeddings to capture antisymmetry, and RotatE uses element-wise complex rotation (h ∘ r ≈ t). Models are trained discriminatively via negative sampling (64–512 negatives per positive triple) using margin-based ranking loss or self-adversarial binary cross-entropy. Evaluation uses filtered Mean Reciprocal Rank and Hits@K on FB15k-237, a filtered Freebase subset with 14,541 entities, 237 relations, 272,115 training triples, and 20,466 test triples.",
+  "paper_id": "gnn-ch-chapters__12-knowledge-graph-embeddings",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 121,
+    "latency_ms": 4871,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 628
+  },
+  "results": "RotatE covers all four relation patterns (symmetry, antisymmetry, inversion, composition) with O(d(|E|+|R|)) parameter complexity, while DistMult cannot model antisymmetry and ComplEx cannot model composition. TransE fails on 1-to-N relations and symmetric relations. TransR handles 1-to-N at the cost of O(d·k·|R|) additional parameters. PyKEEN achieves state-of-the-art results on FB15k-237 using RotatE with Hits@1 around 0.29–0.33 and MRR around 0.48–0.52 depending on dimension and training settings.",
+  "schema_version": "summary-node.v1",
+  "tldr": "This chapter derives the main knowledge graph embedding families (TransE, TransR, DistMult, ComplEx, RotatE) from geometric principles and shows that RotatE is the only model covering all four relation patterns—symmetry, antisymmetry, inversion, composition—while maintaining linear parameter complexity."
+}

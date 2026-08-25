@@ -1,0 +1,30 @@
+{
+  "contributions": [
+    "Introduces modularity as a quality function for community partitions, ranging from -0.5 to 1 with values above 0.3 indicating meaningful structure",
+    "Describes the Girvan-Newman divisive hierarchical algorithm using edge betweenness centrality with O(m^2 n) time complexity",
+    "Presents the Louvain algorithm as a scalable greedy modularity optimizer running in O(m log n) time",
+    "Explains the BigCLAM generative model for overlapping communities using non-negative matrix factorization",
+    "Documents the resolution limit of modularity-based methods, which cannot reliably detect communities smaller than approximately sqrt(m) edges"
+  ],
+  "limitations": [
+    "Girvan-Newman has O(m^2 n) time complexity, making it infeasible for graphs with millions of nodes",
+    "Louvain has a fundamental resolution limit: it cannot reliably detect communities smaller than approximately sqrt(m) edges due to a property of the modularity function itself (proven by Fortunato and Barthélemy, 2007)",
+    "Modularity maximization is NP-hard in general",
+    "BigCLAM optimization is non-convex, and selecting the number of communities K requires model selection",
+    "Partition-based methods systematically misclassify boundary nodes that sit at the intersection of multiple communities"
+  ],
+  "methods": "The chapter covers three main algorithmic approaches. The Girvan-Newman algorithm (2002) iteratively removes edges with highest betweenness centrality to produce a hierarchical dendrogram, then cuts at the modularity-maximizing level. The Louvain algorithm (Blondel et al., 2008) uses a greedy two-phase strategy: Phase 1 locally optimizes modularity by moving nodes to neighboring communities based on incremental delta-Q calculations, and Phase 2 compresses discovered communities into super-nodes, repeating until convergence. BigCLAM (Yang and Leskovec, 2013) is a generative model where edge probability between nodes u and v is P(A_uv=1) = 1 - exp(-F_u · F_v), fitted via coordinate ascent maximization of a log-likelihood objective over non-negative membership vectors.",
+  "paper_id": "gnn-ch-chapters__18-community-structure",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 43,
+    "latency_ms": 5324,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 729
+  },
+  "results": "On the Zachary Karate Club graph (34 nodes, 78 edges), the correct ground-truth partition achieves modularity Q ≈ 0.37. Girvan-Newman correctly identifies the two factions by first removing the bridge edge between the instructor's and administrator's clusters. The Karate Club is used as the primary benchmark throughout. Modularity interpretation: Q < 0 indicates anti-community structure, 0 ≤ Q < 0.3 is weak/no structure, 0.3 ≤ Q < 0.7 is moderate to strong structure, and Q ≥ 0.7 is very strong (rare in practice). Louvain's resolution limit prevents detecting communities smaller than ~sqrt(m) edges—for a 10M-edge network, communities with fewer than ~3,162 edges may be missed.",
+  "schema_version": "summary-node.v1",
+  "tldr": "This chapter covers community detection algorithms—including Louvain, Girvan-Newman, and BigCLAM—and their applications to social and fraud networks, emphasizing that real networks organize into dense clusters of internally connected nodes sparsely linked to the rest of the graph."
+}

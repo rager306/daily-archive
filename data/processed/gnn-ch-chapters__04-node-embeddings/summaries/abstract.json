@@ -1,0 +1,22 @@
+{
+  "contributions": [
+    "DeepWalk: first application of the skip-gram framework to graphs, using unbiased random walks to define node similarity",
+    "node2vec: introduces biased random walks with parameters p and q to selectively capture homophily (BFS-like) or structural equivalence (DFS-like)",
+    "Shows theoretical connection between random walk methods and implicit matrix factorization of graph transition matrices"
+  ],
+  "limitations": "Shallow embeddings are transductive: each node has a dedicated learned parameter vector, so new nodes appearing after training cannot be embedded without retraining. Parameters p and q are not universally optimal and depend on downstream task and graph structure, requiring grid search over values like {0.25, 0.5, 1, 2, 4}.",
+  "methods": "DeepWalk generates r random walks of length L from each node, treating walks as sentences and applying the skip-gram model with negative sampling to optimize node embeddings. node2vec extends this with a second-order biased random walk where transition probabilities depend on hyperparameters p (return parameter) and q (in-out parameter), controlling whether walks explore locally (BFS-like) or globally (DFS-like). Both use negative sampling with K≈5-20 samples to avoid the O(|V|) softmax bottleneck.",
+  "paper_id": "gnn-ch-chapters__04-node-embeddings",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 123,
+    "latency_ms": 15887,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 475
+  },
+  "results": "On the Karate Club graph with p=q=1, 2D PCA projections cleanly separate the two factions without using any node labels — the instructor's group (nodes 0-8, 10-14) clusters separately from the president's group (nodes 15-33). The paper establishes that DeepWalk implicitly factorizes log(vol(G)/r * sum_t=1 to r (D^-1 A)^t D^-1) - log(b), connecting random walk methods to algebraic matrix factorization.",
+  "schema_version": "summary-node.v1",
+  "tldr": "Shallow node embedding methods like DeepWalk and node2vec learn low-dimensional vector representations of graph nodes by treating random walks as 'sentences' and applying the skip-gram objective, with node2vec adding hyperparameters p and q to control BFS/DFS exploration trade-offs."
+}

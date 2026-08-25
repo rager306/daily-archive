@@ -1,0 +1,22 @@
+{
+  "contributions": [
+    "Provides a unified treatment of GNN architectures designed around expressiveness theory, from those achieving the 1-WL upper bound (GIN) to those surpassing it (ID-GNN, k-GNN, subgraph GNNs)",
+    "Demonstrates practical implementation details and engineering choices for each architecture, including when simplifications like SGC suffice",
+    "Connects theoretical WL hierarchy to concrete architectural designs with empirical validation on benchmarks"
+  ],
+  "limitations": "SGC suffers from over-smoothing for large K and fails on heterophilic graphs and graph classification tasks. Higher-order k-GNNs have exponential memory cost O(n^k) and computation O(n^{k+1}), limiting them to small molecular graphs (10–50 nodes). ID-GNN and subgraph GNNs incur O(|V|) multiplicative overhead, making them infeasible for large graphs (100K+ nodes). Subgraph GNNs are predominantly limited to molecular property prediction and small graph classification. The chapter notes that many real benchmarks do not require distinguishing beyond 1-WL, questioning the practical necessity of higher-order architectures.",
+  "methods": "The chapter surveys and analyzes multiple GNN architectures: GIN uses sum aggregation with an MLP and learnable epsilon to achieve the 1-WL bound; SGC removes all non-linearities between layers, collapsing to a single linear propagation matrix A^K X W; APPNP decouples feature transformation (via MLP) from graph propagation (via personalized PageRank diffusion with teleportation parameter alpha); PNA combines four aggregators (mean, max, min, standard deviation) with three degree scalers (identity, amplification, attenuation) into 12 concatenated features per node; ID-GNN injects target-node identity into message passing to break symmetry; k-GNNs operate on k-tuples of nodes with delta-sparsification; subgraph GNNs run GNNs on ego subgraphs per node; PairNorm enforces minimum pairwise distance between embeddings to counter over-smoothing.",
+  "paper_id": "gnn-ch-chapters__10-powerful-gnns",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 63,
+    "latency_ms": 9516,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 1055
+  },
+  "results": "SGC achieves accuracy within 1–2% of GCN on Cora, CiteSeer, and PubMed despite being linear. APPNP with alpha=0.1 and K=10 propagation steps outperforms GCN on Cora, CiteSeer, and ogbn-arxiv. On ZINC molecular regression, 3-WL delta-k-GNN reaches MAE below 0.09 compared to 0.16 for GIN, a 44% error reduction. PNA consistently outperforms GIN and GCN on ZINC and OGB molecular benchmarks. PairNorm enables deeper GIN networks without over-smoothing.",
+  "schema_version": "summary-node.v1",
+  "tldr": "This chapter designs GNN encoders that achieve or provably exceed the 1-WL expressiveness bound, covering GIN (which matches the 1-WL ceiling), SGC, APPNP, PNA, ID-GNN, higher-order k-WL GNNs, subgraph GNNs (ESAN/DS-GNN), and PairNorm as principled responses to specific theoretical limitations."
+}

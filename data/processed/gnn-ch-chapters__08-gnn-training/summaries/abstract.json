@@ -1,0 +1,23 @@
+{
+  "contributions": [
+    "Comprehensive overview of 18 GNN training concepts spanning loss functions, data splits, mini-batch strategies, regularization, augmentation, and over-smoothing mitigation",
+    "Practical guidelines for loss function selection and negative sampling ratios in link prediction",
+    "Comparison of four mini-batch training strategies with their tradeoffs",
+    "Structural augmentation techniques including virtual nodes/edges and DropEdge"
+  ],
+  "limitations": "Full-batch training does not scale to large graphs due to O(|V|·d) memory and compute requirements. Over-smoothing limits effective GNN depth to approximately 2–4 layers on most real graphs. Aggressive dropout (above 0.7) destabilizes training on small graphs with limited trainable examples. Cluster-GCN drops cross-cluster edges introducing gradient bias. Batch normalization can degrade performance on heterophilic graphs where nodes have systematically different feature distributions. Aggressive DropEdge on sparse graphs risks creating disconnected components.",
+  "methods": "The chapter surveys loss functions (cross-entropy for node classification, binary cross-entropy with negative sampling for link prediction), evaluation metrics (ROC-AUC for imbalanced graphs), and data splitting strategies (transductive vs. inductive). It describes four mini-batch training approaches: full-batch training, neighbor sampling (GraphSAGE), Cluster-GCN, and GraphSAINT, each with different memory/computation tradeoffs. Regularization techniques covered include dropout (applied at input features, between layers, and attention coefficients), batch normalization, layer normalization, and node feature normalization. Graph augmentation methods include feature augmentation (constant, degree, random, structural features), virtual nodes/edges, and DropEdge.",
+  "paper_id": "gnn-ch-chapters__08-gnn-training",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 64,
+    "latency_ms": 5688,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 948
+  },
+  "results": "Standard transductive splits use 20 labeled nodes per class for training, 500 for validation, and 1,000 for testing on graphs of 2,700–19,000 nodes (Cora, CiteSeer, PubMed). The inductive PPI benchmark uses 20 training, 2 validation, and 2 test graphs. Full-batch training is viable only for graphs under ~100,000 nodes on a 24 GB GPU. ogbn-arxiv has 169,343 nodes and ogbn-papers100M has 111 million nodes. Optimal GNN depth is typically 2–3 layers; test accuracy degrades sharply beyond L>4 on Cora and L>8 even with residual connections. Recommended dropout rates are p_drop in [0.3, 0.6], and DropEdge performs best with p_drop in [0.3, 0.5] on dense graphs. Negative sampling ratios r in [5, 10] are recommended for sparse graphs.",
+  "schema_version": "summary-node.v1",
+  "tldr": "Chapter 8 covers the engineering and practical aspects of training GNNs at scale, including loss functions, mini-batch training strategies, regularization, data augmentation, and mitigating over-smoothing."
+}

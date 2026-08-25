@@ -3,7 +3,7 @@ paper_id: gnn-ch-chapters__01-intro-to-graphs
 grammar_profile: html_headings
 source:
   code: textbook
-lifecycle: structured
+lifecycle: validated
 lifecycle_events:
 - stage: raw
   recorded_at: 2026-08-24 02:57:38+00:00
@@ -16,11 +16,29 @@ lifecycle_events:
   recorded_at: 2026-08-24 02:57:38+00:00
   actor: rust-navigation-stage
   evidence_sha256: ab9f4fe3b222e4d70d815fa353fc8de6164fd0cd68f7b3ce4c4579216ad3a0a0
+- stage: extracted
+  recorded_at: 2026-08-25 01:55:30+00:00
+  actor: rule-based-extractor
+  evidence_sha256: 09571196d8e912b0bb247a81faeb621f308c0bc7f8157c053d24c51b664c2db3
+- stage: enriched
+  recorded_at: 2026-08-25T01:55:35Z
+  actor: rust-enriched-layer
+  evidence_sha256: 26d6a3bd496c9d466373215a8a7b3237e762e241224084ba513ce279394a8415
+- stage: summarized
+  recorded_at: 2026-08-25T01:55:42Z
+  actor: agent:summarizer
+  evidence_sha256: 25d09ef63368585198303db8edca85d2d963c088675f39fe7b44173e1b09f9ae
+- stage: validated
+  recorded_at: 2026-08-25T01:55:42Z
+  actor: rust-source-run
 artifacts:
   extracted:
-    present: false
-    missingness: extraction_not_run
+    file: extracted/entities.json
     derived_from: parsed
+    sha256: 09571196d8e912b0bb247a81faeb621f308c0bc7f8157c053d24c51b664c2db3
+    actor: rule-based-extractor
+    stats:
+      entities: 68
   citations_resolved:
     present: false
     missingness: no_citation_elements
@@ -42,9 +60,19 @@ artifacts:
     missingness: no_external_resources
     derived_from: parsed
   enriched:
-    not_reached: true
+    present: false
+    missingness: openalex_not_found
+    derived_from: parsed
   summaries:
-    not_reached: true
+    file: summaries/abstract.json
+    derived_from: parsed
+    sha256: 25d09ef63368585198303db8edca85d2d963c088675f39fe7b44173e1b09f9ae
+    actor: agent:summarizer
+    stats:
+      prompt_sha256: fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe
+      injection_scrubbed: 56
+      latency_ms: 7349
+      memory_epoch: 22
   quality_signals:
     not_reached: true
   parsed:

@@ -1,0 +1,32 @@
+{
+  "contributions": [
+    "Systematic comparison of LLM-GNN integration strategies (LLM-as-encoder, TAPE, LLM-as-reasoner, joint training)",
+    "Coverage of graph instruction tuning frameworks (InstructGLM, GraphGPT)",
+    "Introduction of graph foundation models (PRODIGY via prompt graphs, OFA via shared text space)",
+    "Empirical benchmarking on ogbn-arxiv showing progressive accuracy gains from BoW baseline (71.7%) to OFA (78.0%)"
+  ],
+  "limitations": [
+    "LLM-as-encoder cannot adjust representations to account for structural signals since the LLM is frozen",
+    "LLM-as-reasoner struggles with structural reasoning beyond a few hops, is constrained by context windows, and may hallucinate structural relationships",
+    "Feature space heterogeneity: no shared vocabulary across graph domains (different dimensionalities, modalities)",
+    "Task heterogeneity: different graph tasks require different output heads and loss functions",
+    "Structural diversity: models trained on one graph topology may not transfer to another",
+    "Graph instruction tuning requires (instruction, graph description, response) triples that are harder to collect than (graph, label) pairs, limiting it to domains like citation networks and knowledge bases",
+    "Joint fine-tuning and OFA require substantial GPU resources for 7B+ parameter models",
+    "Production API costs and latency for per-query LLM calls are not reflected in benchmark accuracy figures"
+  ],
+  "methods": "The chapter describes multiple architectural strategies for combining LLMs and GNNs on text-attributed graphs. Strategy 1 uses a frozen LLM as an offline feature extractor, feeding BERT embeddings into a GCN. Strategy 2 (TAPE) uses an LLM to generate soft pseudo-labels and explanations for unlabeled nodes as additional supervision. Strategy 3 prompts an LLM directly with natural-language descriptions of graph neighborhoods for zero-shot classification. Joint training (GraphGPT, OFA) fine-tunes both components end-to-end. PRODIGY trains a backbone GNN on diverse graphs and uses prompt graphs with labeled examples for in-context learning at inference. OFA projects all node features into a shared natural-language space via an LLM encoder before GNN processing.",
+  "paper_id": "gnn-ch-chapters__23-llm-gnn",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 18,
+    "latency_ms": 6771,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 798
+  },
+  "results": "On ogbn-arxiv (170K nodes, 40 classes), GCN+BoW achieves 71.7% test accuracy. GCN+frozen BERT reaches 73.5%. TAPE with GPT-3.5 achieves 76.5%. InstructGLM (LLaMA-7B) reaches 76.9%. GraphGPT (Vicuna-7B) reaches 77.2%. OFA (LLaMA-7B) achieves 78.0%. The general accuracy gains across strategies are summarized as: LLM-as-encoder +2-4%, TAPE +4-6%, LLM-as-reasoner +0-3%, joint LLM-GNN +6-10% over BoW.",
+  "schema_version": "summary-node.v1",
+  "tldr": "This chapter surveys three LLM+GNN integration strategies—LLM-as-encoder, TAPE pseudo-labels, and joint fine-tuning/graph instruction tuning—for text-attributed graphs, and introduces graph foundation models (PRODIGY, OFA) that enable cross-dataset transfer."
+}

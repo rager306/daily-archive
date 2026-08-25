@@ -1,0 +1,27 @@
+{
+  "contributions": [
+    "Formal taxonomy of multi-hop and conjunctive queries (EPFO class including 1p, 2p, 3p, 2i, 3i, pi, ip query types)",
+    "Query2Box model: geometric box embeddings for representing queries as hyper-rectangles with projection (relation traversal) and intersection (logical AND) operators",
+    "Neural Bellman-Ford Network (NBFNet): a GNN that generalizes the Bellman-Ford shortest-path algorithm with query-conditioned initialization and relation-modulated message passing for multi-hop path reasoning"
+  ],
+  "limitations": [
+    "Query2Box cannot represent disjunction (OR) cleanly since the union of two boxes is not a box; it approximates OR by taking maximum scores across disjuncts, which is non-differentiable at query boundaries",
+    "Query2Box cannot handle negation (NOT) because the complement of a hyper-rectangle is a non-convex union of 2d half-spaces with no compact box representation",
+    "Pure graph traversal fails on incomplete KGs due to exponential recall degradation with path length",
+    "NBFNet is computationally more expensive than Query2Box on dense KGs"
+  ],
+  "methods": "The chapter develops two embedding-based approaches for multi-hop KG query answering. Query2Box (Ren et al., 2020) represents each query as an axis-aligned hyper-rectangle defined by a center and offset vector; relation projection shifts the center and expands the offset via learned parameters with softplus, while logical conjunction is handled by attention-weighted center averaging and sigmoid-shrunk offset intersection. NBFNet (Zhu et al., 2021) generalizes the Bellman-Ford algorithm by replacing scalar distances with representation vectors, using a DistMult-inspired query-conditioned message function h_u ⊙ (W_r' r_q), and initializing only the source entity with the query relation embedding so that information propagates conditionally from the query.",
+  "paper_id": "gnn-ch-chapters__13-kg-reasoning",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 67,
+    "latency_ms": 4478,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 673
+  },
+  "results": "On an 80% complete KG, pure graph traversal recall drops exponentially: 64% at 2 hops, 51% at 3 hops, and 33% at 5 hops. For biomedical KGs that are only 30-50% complete, the situation is far worse. Query2Box inference cost is O(|E|) per query after O(L) query construction time, enabling real-time QA on KGs with 1 million entities in milliseconds on GPU. NBFNet has O(|T| * T) per query cost, making it cheaper on sparse KGs but more expensive on dense ones compared to Query2Box's O(|E| * d).",
+  "schema_version": "summary-node.v1",
+  "tldr": "This chapter extends knowledge graph embeddings from single-triple completion to multi-hop and conjunctive query answering, presenting two approaches: Query2Box, which represents queries as geometric boxes for efficient conjunctive query evaluation, and Neural Bellman-Ford Networks, which generalize the shortest-path algorithm to learn query-conditioned reachability through graph structure."
+}

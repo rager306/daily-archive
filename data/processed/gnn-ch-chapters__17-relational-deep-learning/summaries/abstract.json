@@ -1,0 +1,22 @@
+{
+  "contributions": [
+    "Formalizing Relational Deep Learning as a three-component pipeline: graph construction from relational schemas, heterogeneous GNN encoder, and task-specific prediction head",
+    "Introducing RelBench, a benchmark suite with seven real-world datasets and standardized leakage-free graph construction and temporal train/val/test splits",
+    "Proposing RelGNN, a composite message-passing GNN that adds temporal recency encoding (time2vec) and junction table path compression to standard heterogeneous GNN architectures"
+  ],
+  "limitations": "Temporal ordering is partially addressed only through static cutoff snapshots; continuous temporal updates require separate architectures (deferred to Chapter 22). Junction table patterns are handled by path compression but only for three-table patterns. Higher-order relational patterns beyond what GNN layers can capture remain limited by the number of GNN layers. Feature engineering baselines using automated tools like Featuretools can enumerate join paths but face combinatorial explosion beyond depth 2–3.",
+  "methods": "The framework converts a relational database schema (tables and foreign keys) into a heterogeneous graph where each row becomes a node and each foreign key becomes a directed edge pair with forward and reverse relation types. Node features are derived from non-key column values (standardized numerics, one-hot categoricals, text encoders, extracted timestamp features). A heterogeneous GNN (e.g., R-GCN, HGT) propagates information across FK edges, and a prediction head maps node embeddings to task outputs. RelGNN further encodes edge timestamps via sinusoidal time-to-cutoff features and compresses junction-table three-node paths into direct edges. Evaluation uses walk-forward splits aligned to realistic deployment scenarios.",
+  "paper_id": "gnn-ch-chapters__17-relational-deep-learning",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 47,
+    "latency_ms": 4614,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 614
+  },
+  "results": "RelBench provides seven datasets: rel-amazon (12M rows, e-commerce, Average Precision), rel-f1 (0.5M rows, F1 racing, MAE), rel-hm (5M rows, fashion retail, NDCG@10), rel-stack (15M rows, Q&A, Average Precision), rel-trial (3M rows, clinical trials, Average Precision), rel-avito (8M rows, classified ads, NDCG@10), rel-event (2M rows, event platform, RMSE). Baselines include LightGBM with Featuretools DFS, SAGE on the relational graph, HGT, and a temporal GNN. The chapter notes that temporal cutoff enforcement is responsible for a substantial fraction of the performance gap between offline evaluation and production deployment in historical enterprise ML systems.",
+  "schema_version": "summary-node.v1",
+  "tldr": "Relational Deep Learning (RDL) is a unified framework that treats relational databases as heterogeneous graphs, applying GNNs directly to FK-linked tables without flattening. RelBench standardizes evaluation across seven datasets, and RelGNN extends heterogeneous GNNs with temporal recency encoding and junction table compression."
+}

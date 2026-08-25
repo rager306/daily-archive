@@ -1,0 +1,29 @@
+{
+  "contributions": [
+    "Formal taxonomy of inductive KG reasoning variants (semi-inductive, fully inductive, cross-KG transfer)",
+    "InGram: relation graph-based inductive reasoning using co-occurrence patterns instead of relation ID lookups",
+    "ULTRA: universal pre-training across three diverse KGs achieving zero-shot link prediction on 43 diverse KGs",
+    "Theoretical characterization via double equivariance requiring simultaneous equivariance over both entity and relation permutations"
+  ],
+  "limitations": [
+    "Entity and relation IDs carry no semantic information, making vocabulary mismatch a fundamental challenge across KGs",
+    "Structural heterogeneity across KGs (e.g., power-law vs. hierarchical vs. pathway-dense graphs) complicates learning a unified representation",
+    "Fine-tuning may still underperform on highly specialized KGs (deep biomedical pathways, legal citation graphs) that diverge substantially from the training mixture",
+    "Partial inductiveness is a common pitfall: models using fixed relation ID embeddings are entity-equivariant but not doubly equivariant",
+    "Evaluation leakage can inflate reported MRR if filtered evaluation does not exclude all inference-graph triples rather than just training triples"
+  ],
+  "methods": "The chapter introduces two inductive architectures. InGram constructs a relation graph where relation nodes are connected by four co-occurrence edge types (hh, ht, th, tt), then applies a shared relational GNN to compute relation representations, which are aggregated inductively for entity embeddings before applying a RotatE-style scoring function. ULTRA extends this by combining a shared relation encoder GNN with an NBFNet entity-level path propagation backbone, pre-training jointly on three structurally diverse source KGs (FB15k-237 with 14,541 entities/237 relations, WN18RR with 40,943 entities/11 relations, and Codex-M with 17,050 entities/51 relations) without ever using entity or relation IDs as inputs.",
+  "paper_id": "gnn-ch-chapters__14-kg-foundation-models",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 58,
+    "latency_ms": 7590,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 584
+  },
+  "results": "ULTRA achieves competitive link prediction on 43 diverse KGs in zero-shot mode after training on only 3 source KGs. For specialized KGs where structural patterns differ from the training mix, fine-tuning for a few dozen steps on 500–1,000 observed target triples yields 5–10 MRR points of improvement while remaining inductive to new entities.",
+  "schema_version": "summary-node.v1",
+  "tldr": "Knowledge graph reasoning has traditionally been transductive, relying on fixed entity ID lookups that fail on new graphs. This chapter introduces inductive KG foundation models like InGram and ULTRA that represent entities and relations by structural context rather than IDs, enabling zero-shot generalization to unseen knowledge graphs."
+}

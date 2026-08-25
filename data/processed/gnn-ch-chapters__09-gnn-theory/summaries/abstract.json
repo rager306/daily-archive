@@ -1,0 +1,36 @@
+{
+  "contributions": [
+    "Proves the theorem that any GNN with the standard message-passing update rule cannot distinguish graphs that the 1-WL test cannot distinguish (Xu et al., 2019)",
+    "Derives GIN as the unique 1-WL-equivalent GNN, establishing sum aggregation with a (1+ε) self-loop term and an expressive MLP as necessary and sufficient conditions",
+    "Characterizes over-squashing through the Cheeger constant and provides a formal Jacobian bound showing exponential decay of long-range influence",
+    "Establishes permutation equivariance and over-squashing as the two fundamental theoretical constraints on message-passing networks"
+  ],
+  "limitations": [
+    "1-WL cannot count cycles, triangles, or detect general subgraph patterns—fundamental limits not fixable by training",
+    "Regular graphs are indistinguishable by any standard MPNN regardless of depth or parameters",
+    "The k-WL hierarchy is computationally intractable for k≥3 on large graphs",
+    "Over-squashing is inherent to dense-graph message passing; remedies like graph rewiring or transformers introduce additional complexity or cost",
+    "Sum aggregation's theoretical injectivity assumes a countable domain; practical MLP approximation may not achieve full expressiveness"
+  ],
+  "methods": "The chapter presents rigorous proofs using induction on GNN layer depth to show the equivalence between 1-WL color refinement and MPNN updates. It analyzes aggregation function properties (injectivity on multisets) to derive why sum works while mean and max fail. Over-squashing is characterized formally using the Jacobian of the K-layer GNN output with respect to distant inputs, bounded by Lipschitz constants and degree products along paths. The Cheeger constant is used to quantify graph bottlenecks causing over-squashing.",
+  "paper_id": "gnn-ch-chapters__09-gnn-theory",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 31,
+    "latency_ms": 9877,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 1073
+  },
+  "results": [
+    "1-WL always terminates in at most |V| iterations since distinct colors are bounded by |V|",
+    "GCN mean aggregation collapses distinct multisets (e.g., {1,0},{1,0} and {2,0} both yield [1,0]); max aggregation also loses multiplicity information",
+    "GIN with sum aggregation and an MLP of at least two layers achieves full 1-WL expressiveness; the (1+ε) self-loop term is necessary to prevent different neighborhood sizes from producing identical sums",
+    "1-WL fails on d-regular graphs with the same number of nodes, including the canonical pair K_{3,3} and the triangular prism (both 3-regular on 6 nodes)",
+    "Over-squashing Jacobian bound: ||∂h_v^(K)/∂x_u|| ≤ C^K · ∏(1/deg(v_k)), showing exponential decay along paths through high-degree nodes",
+    "k-WL computational cost grows as O(n^k · d^k), making k=3 impractical even for moderate graphs (e.g., ~4.8×10^15 triples for ogbn-arxiv)"
+  ],
+  "schema_version": "summary-node.v1",
+  "tldr": "Message-passing GNNs are provably bounded by the 1-WL color refinement test in expressiveness, with GIN being the unique architecture achieving this upper bound via injective sum aggregation. Two fundamental failure modes—over-squashing and over-smoothing—constrain practical performance beyond this theoretical ceiling."
+}

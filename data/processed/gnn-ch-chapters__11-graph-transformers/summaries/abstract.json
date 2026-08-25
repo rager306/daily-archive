@@ -1,0 +1,23 @@
+{
+  "contributions": [
+    "Systematic overview of the Graph Transformer architecture family (Graphormer, SAN, GPS) and the positional/structural encodings that make them work on graphs",
+    "Formal treatment of sign invariance (SignNet) and basis invariance (BasisNet) to handle eigenvector ambiguity in Laplacian positional encoding",
+    "Introduction of Random Walk Structural Encoding (RWSE) as a cheaper, non-negative alternative to LapPE",
+    "Demonstration that Graphormer was the first architecture to surpass GNNs on OGB molecular property prediction benchmarks"
+  ],
+  "limitations": "Graphormer has O(N²) attention complexity, making it impractical for graphs with more than a few hundred nodes without approximation; however, this is manageable for typical molecular graphs of 20–50 heavy atoms. Random walk-based encodings only capture local neighborhood structure, while Laplacian-based encodings capture global structure but are more expensive to compute. Eigenvalue multiplicity in regular and symmetric graphs requires BasisNet (more complex) rather than SignNet alone. P-GNN's anchor-based positional encodings are described as coarse, with noise from anchor choice and shortest-path distance being a lossy summary of graph topology.",
+  "methods": "The chapter reviews three landmark Graph Transformer architectures. Graphormer (Ying et al., 2021) adds three encodings to vanilla attention: centrality encoding (learnable embeddings indexed by node degree), spatial bias (learnable scalar bias based on shortest-path distance between node pairs), and edge encoding (weighted average of edge features along shortest paths). SAN (Kreuzer et al., 2021) uses the full Laplacian spectrum as positional encodings and introduces dual attention heads gated by a learned parameter to separate local (edge-conditioned) from global attention. GPS (Rampasek et al., 2022) provides a modular framework that combines local MPNN message passing with global multi-head self-attention in each layer, with plug-in structural encodings (RWSE or LapPE+SignNet). The chapter also covers SignNet and BasisNet as architectures that process eigenvectors in a sign- and rotation-invariant manner.",
+  "paper_id": "gnn-ch-chapters__11-graph-transformers",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 88,
+    "latency_ms": 4470,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 691
+  },
+  "results": "Graphormer was the first architecture to surpass GNNs on the OGB large-scale molecular property prediction benchmarks (ogbg-molhiv, PCQM4Mv2), with particular advantage on tasks where distant functional groups jointly determine biological activity. GPS using RWSE achieves state-of-the-art results on molecular benchmarks. SignNet and BasisNet provide theoretically grounded solutions to the sign ambiguity and eigenvalue multiplicity problems inherent in Laplacian eigenvector computation. The GPS framework scales better than Graphormer by combining linear-complexity MPNN modules with O(N²) attention, making it suitable for larger graphs.",
+  "schema_version": "summary-node.v1",
+  "tldr": "Graph Transformers overcome the K-hop bottleneck of message-passing GNNs by enabling global attention, but require positional/structural encodings—such as Laplacian eigenvectors, random walks, spatial bias, centrality encoding, and edge encoding—to provide the graph topology information that vanilla attention lacks."
+}

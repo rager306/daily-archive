@@ -1,0 +1,22 @@
+{
+  "contributions": [
+    "Introduces three graph-structured agent architectures: scene graphs for visual understanding, agent memory graphs for persistent long-term knowledge, and tool-use graphs for planning and dependency tracking",
+    "Presents the agent graph reasoning loop with query refinement, confidence thresholding, and hop budget termination",
+    "Demonstrates how graph structure provides interpretability and modularity over flat alternatives in agentic systems"
+  ],
+  "limitations": "Confidence estimates in the reasoning loop are self-assessed by the language model and are not guaranteed to be well-calibrated. The systems described are research prototypes, and no single paper or codebase has solved agent-graph systems. Conformalized GNN techniques could provide more principled uncertainty estimation but are not yet integrated. The field is changing rapidly, and specific architectures are expected to evolve.",
+  "methods": "The chapter describes scene graph generation where GNNs with message passing predict pairwise relationships between detected objects, evaluated on Visual Genome (108K images, 3.8M object instances, 2.3M relationships). Agent memory graphs are maintained alongside language models, with LLM-based extraction of entities/relations, entity resolution via merging, and BFS or path-based retrieval from a knowledge graph. Tool-use graphs organize tools as nodes with dependency, compatibility, and constraint edges, enabling topological-sort-based execution planning. Multi-hop reasoning agents follow a query refinement loop that retrieves subgraphs, reasons over them, and generates refined queries until confidence thresholds or hop budgets are met.",
+  "paper_id": "gnn-ch-chapters__25-agents-and-graphs",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 41,
+    "latency_ms": 4617,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 727
+  },
+  "results": "State-of-the-art scene graph generation models achieve approximately 50-60% Recall@50 for predicate classification on Visual Genome. MemGPT (Packer et al., 2023) introduced a tiered memory architecture separating in-context working memory from external long-term storage with dedicated function calls for write, search, and summarize operations. ReAct (Yao et al., 2022) is identified as the dominant pattern for tool-using agents, interleaving reasoning and acting steps as implicit tool graph traversal.",
+  "schema_version": "summary-node.v1",
+  "tldr": "Graph structure serves as the organizing substrate for autonomous AI agents, enabling structured memory, tool-use planning, and multi-hop reasoning through scene graphs, agent memory graphs, and tool-use graphs."
+}

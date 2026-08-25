@@ -469,6 +469,21 @@ fn main() {
             use da_cli::source_cli;
             let r = match action.as_str() {
                 "run" => da_cli::source_cli::run_source_run(&paper_id),
+                "run-batch" => {
+                    // paper_id here is a comma-separated id list or "auto"
+                    // (all processed articles with an incomplete pipeline)
+                    let ids: Vec<String> = if paper_id == "auto" {
+                        da_cli::source_cli::incomplete_pipeline_ids().unwrap_or_default()
+                    } else {
+                        paper_id.split(',').map(str::trim).filter(|s| !s.is_empty()).map(String::from).collect()
+                    };
+                    if ids.is_empty() {
+                        println!("run-batch: nothing to do");
+                        Ok(())
+                    } else {
+                        da_cli::source_cli::run_batch(&ids, 8)
+                    }
+                }
                 "acquire" => {
                     da_cli::source_acquire::acquire(&paper_id, std::path::Path::new("."))
                 }

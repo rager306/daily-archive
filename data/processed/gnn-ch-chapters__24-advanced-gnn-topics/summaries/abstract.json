@@ -1,0 +1,28 @@
+{
+  "contributions": [
+    "Systematic overview of self-supervised learning methods for GNNs including Deep Graph Infomax and graph contrastive learning",
+    "Explanation of PRODIGY's prompt-graph approach for in-context learning on graphs without fine-tuning",
+    "Introduction to conformal prediction and DAPS for calibrated uncertainty quantification on graph data"
+  ],
+  "limitations": [
+    "Labels are scarce in real-world domains (fewer than 1% of nodes carry labels in many graph datasets)",
+    "Standard GNN softmax probabilities are not calibrated and can be confidently wrong",
+    "Naive conformal prediction treats each node independently, ignoring graph structure (addressed partially by DAPS)",
+    "In-context learning is suited for very few labeled examples (fewer than 50) but fine-tuning is needed when distributions shift substantially or latency is critical",
+    "Conformal prediction requires exchangeable calibration and test data (weaker than i.i.d. but still an assumption)"
+  ],
+  "methods": "The chapter covers three main techniques. Deep Graph Infomax (DGI) learns node representations by maximizing mutual information between local node embeddings and global graph summaries, using feature-shuffling corruption to create negative samples optimized via a Jensen-Shannon discriminator. Graph contrastive learning creates two augmented views of a graph (via edge dropout, feature masking, node dropout, subgraph sampling, or diffusion augmentation) and minimizes NT-Xent loss to align representations across views. PRODIGY constructs prompt graphs that combine task graphs with labeled support nodes and query nodes connected through task nodes, enabling classification via cosine similarity without gradient updates. Conformalized GNNs use a held-out calibration set to compute nonconformity scores (1 minus softmax probability) and set a quantile threshold for prediction sets with provable coverage guarantees.",
+  "paper_id": "gnn-ch-chapters__24-advanced-gnn-topics",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 38,
+    "latency_ms": 4974,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 665
+  },
+  "results": "DGI consistently outperforms random initialization and often approaches fully supervised performance on datasets with scarce labels. GraphCL demonstrates consistent downstream improvements on molecular graphs and social networks. GRACE produces per-node embeddings at the node level. The text provides implementation code for DGI (300 epochs, hidden=512, Adam lr=0.001), contrastive loss with temperature tau=0.5, and conformal prediction with alpha=0.1 for 90% coverage. DAPS smooths nonconformity scores over the graph using diffusion operators to produce tighter prediction sets while maintaining coverage guarantees.",
+  "schema_version": "summary-node.v1",
+  "tldr": "This chapter covers advanced GNN paradigms: self-supervised learning (DGI and graph contrastive learning), in-context learning via PRODIGY, and uncertainty quantification through conformalized GNNs, enabling reliable predictions without labels or fine-tuning."
+}

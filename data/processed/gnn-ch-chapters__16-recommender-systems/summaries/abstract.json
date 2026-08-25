@@ -1,0 +1,26 @@
+{
+  "contributions": [
+    "Systematic evolution from matrix factorization through Neural Collaborative Filtering, NGCF, to LightGCN showing deliberate simplification improves recommendation performance",
+    "PinSage industrial system with importance-based neighborhood sampling, curriculum negative mining, and MapReduce-style inference for web-scale GNN recommendation"
+  ],
+  "limitations": [
+    "Graph becomes dense at distance 3, causing 6-hop paths to dilute signal with noise",
+    "Over-smoothing manifests as blurred user profiles where every user looks like the average user",
+    "Industrial deployment requires complex engineering (neighborhood sampling, negative mining, MapReduce inference) not captured in research benchmarks",
+    "Unobserved interactions create ambiguity between genuinely unpreferred and missing-at-random entries"
+  ],
+  "methods": "The chapter traces graph-based recommendation from classical matrix factorization (inner product on user/item embeddings with BPR loss) through NGCF (GCN with learned weight matrices and nonlinear activations on bipartite graphs) to LightGCN, which removes all weight matrices and nonlinearities, retaining only normalized neighborhood aggregation with initial embeddings as the sole trainable parameters. PinSage extends GraphSAGE to Pinterest's scale using importance-based neighbor sampling via random walks, curriculum negative mining, and MapReduce-style batch inference.",
+  "paper_id": "gnn-ch-chapters__16-recommender-systems",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 60,
+    "latency_ms": 4261,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 551
+  },
+  "results": "LightGCN ablations show removing feature transformations (W1, W2) and nonlinear activations consistently outperforms NGCF on standard benchmarks; 3 layers found optimal with 450M users and 3B pins at Pinterest, where the interaction matrix has ~10^18 possible entries with only billions of observed saves",
+  "schema_version": "summary-node.v1",
+  "tldr": "GNNs enable graph-based collaborative filtering for recommender systems by propagating multi-hop signals through user-item bipartite graphs, with LightGCN showing that simple GCN propagation without weight matrices or nonlinearities is near-optimal, and PinSage demonstrating industrial-scale deployment at Pinterest."
+}

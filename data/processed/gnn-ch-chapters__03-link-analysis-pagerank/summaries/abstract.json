@@ -1,0 +1,23 @@
+{
+  "contributions": [
+    "Derives PageRank from first principles using random walk/stationary distribution theory",
+    "Identifies and resolves spider trap and dead end pathologies via teleportation (damping factor d=0.85)",
+    "Introduces Personalized PageRank for local graph proximity and community recovery",
+    "Presents HITS algorithm with mutually reinforcing authority and hub scores"
+  ],
+  "limitations": "Spider traps concentrate all rank mass within a closed subset, and dead ends cause probability mass to leak, both breaking the column-stochastic property. Without teleportation, the Markov chain may not be irreducible or aperiodic, violating conditions for a unique stationary distribution. Lowering d accelerates convergence but overweights teleportation and underweights link structure. HITS can suffer from rank concentration where a small set of nodes dominates scores.",
+  "methods": "The chapter derives PageRank as the stationary distribution of a random walk on a directed graph, formulated as the eigenvector equation r = Mr. Teleportation modifies the transition matrix to A = dM + (1-d)/|V| * 11^T, ensuring irreducibility and aperiodicity. Power iteration r^(t+1) = Ar^(t) is used for computation, with convergence rate O(d^t). Personalized PageRank replaces uniform teleportation with an arbitrary seed distribution s. HITS assigns dual authority and hub scores via principal eigenvectors of A^T A and AA^T respectively. All methods are demonstrated on the Zachary Karate Club graph (34 nodes).",
+  "paper_id": "gnn-ch-chapters__03-link-analysis-pagerank",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 47,
+    "latency_ms": 4434,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 509
+  },
+  "results": "On the Karate Club graph, PageRank correctly identifies node 0 (instructor) and node 33 (president) as the two highest-ranked nodes, matching the actual social split. Personalized PageRank from node 0 assigns high scores to nodes 1, 2, 3, 7, 11, 13 — the instructor's faction. With d=0.85 and tol=1e-6, convergence is achieved in approximately 40 iterations. Error decays geometrically at rate d^t.",
+  "schema_version": "summary-node.v1",
+  "tldr": "PageRank derives node importance from random walk theory on directed graphs, with teleportation fixing spider traps and dead ends, while Personalized PageRank and HITS extend the framework for local proximity and dual-role scoring."
+}

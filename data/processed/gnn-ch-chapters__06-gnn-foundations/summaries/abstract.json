@@ -1,0 +1,23 @@
+{
+  "contributions": [
+    "Formalizes the Message Passing Neural Network (MPNN) framework with message, aggregation, and update functions",
+    "Derives GCN as a first-order Chebyshev polynomial approximation of spectral graph convolution",
+    "Analyzes over-smoothing as a fundamental limitation of deep GNNs",
+    "Defines k-hop neighborhoods, receptive fields, and their relationship to layer depth"
+  ],
+  "limitations": "Over-smoothing limits effective GNN depth to 2-3 layers for most graphs. Full eigendecomposition for spectral methods costs O(|V|^3), making it infeasible for large graphs. The first-order Chebyshev approximation discards higher-order spectral information. GNNs remain fundamentally local algorithms—a node's representation is only influenced by nodes within K hops regardless of architecture depth. Mean aggregation can conflate distinct multisets, reducing expressiveness compared to sum aggregation.",
+  "methods": "The chapter presents a theoretical derivation of GCN starting from spectral graph theory: it defines the graph Laplacian and normalized Laplacian, introduces the graph Fourier transform and spectral convolution, then approximates the spectral filter using Chebyshev polynomials. By restricting to K=1 and applying the renormalization trick (adding self-loops), the first-order approximation yields the GCN update rule. The MPNN framework is presented as a unified formalism where each layer consists of three operations: a message function phi that generates edge messages, an aggregation function that combines incoming messages (sum, mean, or max), and an update function that merges aggregated messages with node states.",
+  "paper_id": "gnn-ch-chapters__06-gnn-foundations",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 112,
+    "latency_ms": 4084,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 576
+  },
+  "results": "The GCN layer update is derived as H^(k+1) = sigma(tilde{D}^(-1/2) tilde{A} tilde{D}^(-1/2) H^(k) W^(k)). The receptive field grows as O(d_bar^K), meaning on typical social/citation networks with average degree ~10, K=3 covers ~1,000 nodes and K=6 covers nearly the entire graph. Over-smoothing causes representations to converge to a global stationary distribution, making deeper GNNs (>3-4 layers) universally perform worse on node classification. The normalized Laplacian eigenvalues are bounded in [0,2], ensuring numerical stability. Sum aggregation is maximally expressive (injective on multisets), while mean aggregation is degree-invariant and more numerically stable.",
+  "schema_version": "summary-node.v1",
+  "tldr": "This chapter derives Graph Convolutional Networks from spectral graph theory, introduces the Message Passing Neural Network framework as a unifying formalism for GNNs, and establishes the spatial vs. spectral perspectives on graph convolutions."
+}

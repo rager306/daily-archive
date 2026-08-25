@@ -4,25 +4,40 @@ grammar_profile: html_headings
 source:
   code: textbook
   identity_ref: sources/textbook/gnn-textbook/gnn-ch-chapters__25-agents-and-graphs/identity.json
-lifecycle: structured
+lifecycle: validated
 lifecycle_events:
 - stage: raw
-  recorded_at: 2026-08-23T13:06:24Z
+  recorded_at: 2026-08-23 13:06:24+00:00
   actor: html-chapter-source
 - stage: parsed
-  recorded_at: 2026-08-23T13:06:24Z
+  recorded_at: 2026-08-23 13:06:24+00:00
   actor: m451-textbook-import
 - stage: structured
-  recorded_at: 2026-08-23T13:06:24Z
+  recorded_at: 2026-08-23 13:06:24+00:00
   actor: html-headings-grammar
   evidence_sha256: 629a20cec651132e0ef2285eaebdb12f6e13b219d65379bca8c95fed2316daba
+- stage: extracted
+  recorded_at: 2026-08-25 01:56:47+00:00
+  actor: rule-based-extractor
+  evidence_sha256: 6fcc1a7d80c2999b2a1287fbfe6d94f4a2f39c9bf59dc15cab4287ff00a61c67
+- stage: enriched
+  recorded_at: 2026-08-25T01:56:54Z
+  actor: rust-enriched-layer
+  evidence_sha256: 26d6a3bd496c9d466373215a8a7b3237e762e241224084ba513ce279394a8415
+- stage: summarized
+  recorded_at: 2026-08-25T01:56:58Z
+  actor: agent:summarizer
+  evidence_sha256: 4672025c32190456d5f849623b8dcffcf6de79c3ad4fae81dc9de3e7913b3993
+- stage: validated
+  recorded_at: 2026-08-25T01:56:59Z
+  actor: rust-source-run
 artifacts:
   parsed:
     file: parsed/article.json
     derived_from:
     - source
     sha256: 887dd137986d986f25c490952f3cbaef677cd92373c5c86ae5895dd2fefa09b5
-    built_at: 2026-08-23T13:06:24Z
+    built_at: 2026-08-23 13:06:24+00:00
     actor: m451-textbook-import
     stats:
       sections: 25
@@ -31,7 +46,7 @@ artifacts:
     derived_from:
     - parsed
     sha256: f1d2c59e65b95f8f0c1ae81cd2e87d76f153f8ac67fb2ae4af55a49ca11ac4e7
-    built_at: 2026-08-23T13:06:24Z
+    built_at: 2026-08-23 13:06:24+00:00
     actor: html-headings-grammar
     navigation:
       file: context/navigation.json
@@ -48,10 +63,12 @@ artifacts:
     stats:
       ast_nodes: 25
   extracted:
-    present: false
-    missingness: extraction_not_run
-    derived_from:
-    - parsed
+    file: extracted/entities.json
+    derived_from: parsed
+    sha256: 6fcc1a7d80c2999b2a1287fbfe6d94f4a2f39c9bf59dc15cab4287ff00a61c67
+    actor: rule-based-extractor
+    stats:
+      entities: 31
   citations_resolved:
     present: false
     missingness: no_citation_elements
@@ -78,8 +95,18 @@ artifacts:
     derived_from:
     - parsed
   enriched:
-    not_reached: true
+    present: false
+    missingness: openalex_not_found
+    derived_from: parsed
   summaries:
-    not_reached: true
+    file: summaries/abstract.json
+    derived_from: parsed
+    sha256: 4672025c32190456d5f849623b8dcffcf6de79c3ad4fae81dc9de3e7913b3993
+    actor: agent:summarizer
+    stats:
+      prompt_sha256: fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe
+      injection_scrubbed: 41
+      latency_ms: 4617
+      memory_epoch: 47
   quality_signals:
     not_reached: true

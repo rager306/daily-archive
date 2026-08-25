@@ -4,25 +4,33 @@ grammar_profile: page_outline
 source:
   code: textbook
   identity_ref: sources/textbook/trench-real-analysis/identity.json
-lifecycle: structured
+lifecycle: enriched
 lifecycle_events:
 - stage: raw
-  recorded_at: 2026-08-23T13:14:20Z
+  recorded_at: 2026-08-23 13:14:20+00:00
   actor: monograph-source
 - stage: parsed
-  recorded_at: 2026-08-23T13:14:20Z
+  recorded_at: 2026-08-23 13:14:20+00:00
   actor: m451-monograph-import
 - stage: structured
-  recorded_at: 2026-08-23T13:14:20Z
+  recorded_at: 2026-08-23 13:14:20+00:00
   actor: page-outline-toc
   evidence_sha256: 91af0af7b3320dd8e32d8c87e2843f05b8d5c6bb53dc5ca16a54086bbdc085f4
+- stage: extracted
+  recorded_at: 2026-08-25 01:56:52+00:00
+  actor: rule-based-extractor
+  evidence_sha256: 75db290203df0a19a45ddbc62e43461587c954829bbe7c91216a069627d69150
+- stage: enriched
+  recorded_at: 2026-08-25T01:56:57Z
+  actor: rust-enriched-layer
+  evidence_sha256: 26d6a3bd496c9d466373215a8a7b3237e762e241224084ba513ce279394a8415
 artifacts:
   parsed:
     file: parsed/article.json
     derived_from:
     - source
     sha256: 2306a8ed8c2f17d1bc71da5ff1ec77b66d0b31bff93d301ffbc17bef8c18cdec
-    built_at: 2026-08-23T13:14:20Z
+    built_at: 2026-08-23 13:14:20+00:00
     actor: m451-monograph-import
     stats:
       sections: 8
@@ -31,7 +39,7 @@ artifacts:
     derived_from:
     - parsed
     sha256: 88d6c4c2839dfdb3c6097fe47a068509e6b2dd52af3e17bce54bc1442803a6df
-    built_at: 2026-08-23T13:14:20Z
+    built_at: 2026-08-23 13:14:20+00:00
     actor: page-outline-toc
     stats:
       ast_nodes: 8
@@ -57,10 +65,12 @@ artifacts:
       inputs:
       - data/ontology/structural_elements_detectors.yaml
   extracted:
-    present: false
-    missingness: extraction_not_run
-    derived_from:
-    - parsed
+    file: extracted/entities.json
+    derived_from: parsed
+    sha256: 75db290203df0a19a45ddbc62e43461587c954829bbe7c91216a069627d69150
+    actor: rule-based-extractor
+    stats:
+      entities: 8
   citations_resolved:
     present: false
     missingness: no_citation_elements
@@ -87,7 +97,9 @@ artifacts:
     derived_from:
     - parsed
   enriched:
-    not_reached: true
+    present: false
+    missingness: openalex_not_found
+    derived_from: parsed
   summaries:
     not_reached: true
   quality_signals:

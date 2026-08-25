@@ -1,0 +1,24 @@
+{
+  "contributions": [
+    "Framework for representing temporal graphs as either snapshot sequences or continuous-time dynamic graphs (CTDGs) with timestamped events",
+    "TGN architecture with modular memory, message, aggregator, and embedding components that maintain persistent per-node state across interactions",
+    "Time2Vec sinusoidal time encoding that captures periodic patterns (daily, weekly) and monotonic trends in irregular temporal sequences",
+    "TGAT architecture demonstrating that graph attention combined with Time2Vec suffices for inductive temporal link prediction without an explicit memory module",
+    "DyRep two-timescale event modeling and JODIE trajectory projection for learning event rate dynamics in bipartite interaction networks"
+  ],
+  "limitations": "Static GNNs cannot handle transductive node sets with newly arriving nodes or edges. Snapshot-based representations discard intra-interval temporal ordering and cannot represent irregular millisecond-level event arrival. TGN requires processing events in strict chronological order, preventing standard mini-batch shuffling. TGAT's long-term memory is limited to a rolling window of k neighbors. The field is young, with all covered models published within a two-year window (2019–2021).",
+  "methods": "The chapter presents TGN as a four-component framework where each node maintains a persistent GRU-based memory vector updated at each interaction event using temporal messages that incorporate elapsed time and edge features. An embedding module then combines this memory with temporal attention over the k most recent neighboring interactions. Time2Vec encodes elapsed time as learnable sinusoidal features, generalizing positional encoding to irregular timestamps. TGAT achieves similar temporal link prediction using only multi-head temporal graph attention without explicit memory, while DyRep separately models structural and communicative events via temporal point processes, and JODIE projects node embeddings forward in time using learned linear functions of elapsed time.",
+  "paper_id": "gnn-ch-chapters__22-temporal-graphs",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 27,
+    "latency_ms": 11601,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 928
+  },
+  "results": "No quantitative results or numerical benchmarks are reported in this chapter. The chapter provides qualitative comparisons: TGN has O(k) cost per event plus memory lookup versus TGAT's O(k^L) per node; TGAT provides unlimited long-term memory through its window of k neighbors while TGN has a persistent memory module; both TGN and TGAT are inductive and handle new nodes natively. The chapter notes all five covered models (TGN, TGAT, DyRep, JODIE, CAWN) were published between 2019 and 2021.",
+  "schema_version": "summary-node.v1",
+  "tldr": "This chapter introduces temporal graph neural network frameworks (TGN, TGAT, DyRep, JODIE) that model graphs as evolving continuous event streams, overcoming the inability of static GNNs to handle recency, temporal ordering, and new nodes."
+}

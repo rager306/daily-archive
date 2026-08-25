@@ -1,0 +1,22 @@
+{
+  "contributions": [
+    "Systematic overview of four distinct generative paradigms for molecular graph generation: autoregressive sequence models (GraphRNN), reinforcement learning (GCPN), variational autoencoders (VGAE), and diffusion models (DiGress)",
+    "Analysis of fundamental challenges in graph generation including permutation invariance, discrete structure, and variable size",
+    "Presentation of DiGress as a discrete diffusion model using permutation-equivariant graph transformers that outperforms prior methods"
+  ],
+  "limitations": "GraphRNN lacks global structural awareness due to fixed-size GRU hidden states, struggling with long-range constraints like ring closure. VGAE's decoder computes O(n²) edge probabilities, making it impractical for graphs beyond a few thousand nodes. GraphRNN and GCPN are autoregressive and inherit train-inference mismatch issues from teacher forcing. The paper is truncated before completing the DiGress description.",
+  "methods": "The chapter surveys four architectures: GraphRNN uses two GRUs at graph-level and edge-level with BFS canonical ordering to autoregressively add nodes and edges; GCPN formulates molecule generation as an RL problem with a GCN policy network optimized via PPO using multi-component rewards (QED, synthetic accessibility, target property, validity); VGAE employs a GCN encoder producing latent distributions and an inner-product decoder trained via ELBO; DiGress applies discrete Markov noise diffusion over node and edge types with a permutation-equivariant graph transformer denoiser.",
+  "paper_id": "gnn-ch-chapters__21-generative-models",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 36,
+    "latency_ms": 3596,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 499
+  },
+  "results": "GraphRNN achieves validity rates above 95% for small molecules (≤40 atoms) but drops for larger drug-like molecules. GCPN has been applied to generate EGFR kinase inhibitors and optimize solubility and QED simultaneously, achieving property distributions substantially better than random sampling. VGAE serves dual purposes as both a state-of-the-art link prediction method and a generative model. DiGress is described as the best-performing approach among the four paradigms covered.",
+  "schema_version": "summary-node.v1",
+  "tldr": "This chapter covers four deep generative model paradigms for graphs—GraphRNN, GCPN, VGAE, and DiGress—with a focus on molecular graph generation for drug discovery, addressing core challenges of discrete structure, variable size, and permutation invariance."
+}

@@ -1274,6 +1274,96 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
 /// first failure with an honest report. The operator gives one command;
 /// the pipeline drives itself.
 pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
+    let outcome = run_pipeline_for(paper_id)?;
+    if !outcome.success {
+        std::process::exit(1);
+    }
+    Ok(())
+}
+
+/// Articles whose pipeline is incomplete (validated missing): batch targets.
+pub fn incomplete_pipeline_ids() -> anyhow::Result<Vec<String>> {
+    let root = std::path::Path::new("data/processed");
+    let mut out = Vec::new();
+    for e in std::fs::read_dir(root)? {
+        let e = e?;
+        let dir = e.path();
+        if !dir.join("manifest.yaml").is_file() {
+            continue;
+        }
+        let Ok(text) = std::fs::read_to_string(dir.join("manifest.yaml")) else { continue };
+        let Ok(m) = serde_yaml::from_str::<serde_yaml::Value>(&text) else { continue };
+        let has_validated = m
+            .get("lifecycle_events")
+            .and_then(|v| v.as_sequence())
+            .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("validated")))
+            .unwrap_or(false);
+        if !has_validated {
+            out.push(e.file_name().to_string_lossy().to_string());
+        }
+    }
+    out.sort();
+    Ok(out)
+}
+
+/// Outcome of one article's pipeline run (for batch aggregation).
+pub struct PipelineOutcome {
+    pub paper_id: String,
+    pub success: bool,
+    pub completed: usize,
+    pub failure: Option<String>,
+}
+
+/// Batch runner: articles in parallel (SMP). Stages within one article stay
+/// sequential (FSM order); independent articles map to threads — GROBID and
+/// OpenAlex are shared services designed for concurrent load, manifests are
+/// per-article files (no cross-article races).
+pub fn run_batch(ids: &[String], workers: usize) -> anyhow::Result<()> {
+    let workers = workers.clamp(1, std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4));
+    println!("═══ batch: {} articles × {} workers ═══", ids.len(), workers);
+    let stdout_lock = std::sync::Mutex::new(());
+    let outcomes = std::sync::Mutex::new(Vec::<PipelineOutcome>::new());
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    std::thread::scope(|scope| {
+        for _ in 0..workers {
+            scope.spawn(|| loop {
+                let i = next.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                let Some(pid) = ids.get(i) else { break };
+                let out = match run_pipeline_for(pid) {
+                    Ok(o) => o,
+                    Err(e) => PipelineOutcome {
+                        paper_id: pid.clone(),
+                        success: false,
+                        completed: 0,
+                        failure: Some(e.to_string()),
+                    },
+                };
+                {
+                    let _g = stdout_lock.lock().unwrap();
+                    println!(
+                        "  {} {pid} (completed={})",
+                        if out.success { "✓" } else { "✗" },
+                        out.completed
+                    );
+                }
+                outcomes.lock().unwrap().push(out);
+            });
+        }
+    });
+    let outcomes = outcomes.into_inner().unwrap();
+    let ok = outcomes.iter().filter(|o| o.success).count();
+    println!();
+    println!("batch: {ok}/{} success", outcomes.len());
+    for o in outcomes.iter().filter(|o| !o.success) {
+        println!("  ✗ {}: {}", o.paper_id, o.failure.as_deref().unwrap_or("?"));
+    }
+    if ok < outcomes.len() {
+        std::process::exit(1);
+    }
+    Ok(())
+}
+
+fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
 // removed dup import
 
     // load toolchain + FSM state
@@ -1292,8 +1382,13 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
 
     let plan = state.plan(&tc);
     if plan.is_empty() {
-        println!("✓ pipeline complete — nothing to do");
-        return Ok(());
+        println!("✓ [{paper_id}] pipeline complete — nothing to do");
+        return Ok(PipelineOutcome {
+            paper_id: paper_id.to_string(),
+            success: true,
+            completed: 0,
+            failure: None,
+        });
     }
     // ensure manifest exists for stages that write to it
     let mp = std::path::Path::new("data/processed").join(paper_id).join("manifest.yaml");
@@ -1477,11 +1572,16 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
 
     println!();
     if let Some(f) = &failed {
-        println!("■ STOPPED: {f}");
+        println!("■ [{paper_id}] STOPPED: {f}");
         println!("  completed={completed} reference-skipped={skipped_reference}");
-        std::process::exit(1);
+        return Ok(PipelineOutcome {
+            paper_id: paper_id.to_string(),
+            success: false,
+            completed,
+            failure: failed,
+        });
     }
-    println!("✓ run complete — completed={completed} reference-skipped={skipped_reference}");
+    println!("✓ [{paper_id}] run complete — completed={completed} reference-skipped={skipped_reference}");
 
     // final status
     let state2 = load_fsm_state(paper_id)?;
@@ -1492,7 +1592,12 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
     } else {
         println!("next:  pipeline complete");
     }
-    Ok(())
+    Ok(PipelineOutcome {
+        paper_id: paper_id.to_string(),
+        success: true,
+        completed,
+        failure: None,
+    })
 }
 
 /// Recompute `data/domains/<domain>/MANIFEST.yaml` (ADR-069 derived cache):

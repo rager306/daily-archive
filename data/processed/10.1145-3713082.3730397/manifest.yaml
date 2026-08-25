@@ -5,7 +5,7 @@ source:
   code: acm
   doi: 10.1145/3713082.3730397
   identity_ref: sources/acm/10.1145-3713082.3730397/identity.json
-lifecycle: summarized
+lifecycle: validated
 lifecycle_events:
 - stage: raw
   recorded_at: 2026-08-23 13:28:43+00:00
@@ -23,12 +23,25 @@ lifecycle_events:
   recorded_at: 2026-08-24 04:38:54+00:00
   actor: agent:summarizer
   evidence_sha256: 27336660832330b95e637f2a2e57efd8ca6c5ea4d93e863d2520584b79e7168d
+- stage: extracted
+  recorded_at: 2026-08-25 01:55:04+00:00
+  actor: rule-based-extractor
+  evidence_sha256: 620b18167c777d70d57bc665dfa388ad4b6f70aac18f3281532e9b3256430dab
+- stage: enriched
+  recorded_at: 2026-08-25T01:55:11Z
+  actor: rust-enriched-layer
+  evidence_sha256: 26d6a3bd496c9d466373215a8a7b3237e762e241224084ba513ce279394a8415
+- stage: validated
+  recorded_at: 2026-08-25T01:55:11Z
+  actor: rust-source-run
 artifacts:
   extracted:
-    present: false
-    missingness: extraction_not_run
-    derived_from:
-    - parsed
+    file: extracted/entities.json
+    derived_from: parsed
+    sha256: 620b18167c777d70d57bc665dfa388ad4b6f70aac18f3281532e9b3256430dab
+    actor: rule-based-extractor
+    stats:
+      entities: 26
   context:
     file: context/projection.json
     derived_from:
@@ -70,3 +83,7 @@ artifacts:
       injection_scrubbed: 0
       latency_ms: 736
       memory_epoch: 4
+  enriched:
+    present: false
+    missingness: openalex_not_found
+    derived_from: parsed

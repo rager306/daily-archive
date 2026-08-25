@@ -1,0 +1,30 @@
+{
+  "contributions": [
+    "Formalizes the neighbor explosion problem with the causal relationship between GNN depth, mean degree, receptive field size (d̄^L), and compute cost",
+    "Introduces neighbor sampling as a fan-out budget K that converts exponential O(d̄^L) compute to polynomial O(K^L)",
+    "Presents layer-wise sampling methods (FastGCN with global importance sampling, LADIES with layer-dependent local importance sampling) that reduce gradient variance and redundant feature loads",
+    "Describes Cluster-GCN's approach of partitioning graphs via METIS into clusters to bound mini-batch memory to cluster size",
+    "Proposes GraphSAINT as an architecture-agnostic method that samples entire subgraphs and applies unbiased normalization coefficients to correct sampling bias"
+  ],
+  "limitations": [
+    "Under uniform neighbor sampling, only mean aggregators produce unbiased gradient estimates; sum and max aggregators introduce bias",
+    "High-degree (power-law hub) nodes accelerate neighborhood expansion dramatically, worsening the explosion",
+    "Cluster-GCN drops cross-cluster edges during training, which introduces gradient variance that must be managed through stochastic partition mixing",
+    "GraphSAINT's random subgraph sampling may miss important structural information, and sampling probabilities must be pre-computed or estimated from trial runs",
+    "Layer-wise sampling requires computing importance distributions, and LADIES introduces layer-dependent conditioning complexity"
+  ],
+  "methods": "The chapter examines multiple mini-batch training strategies for scaling GNNs to billion-node graphs. Neighbor sampling replaces complete neighborhoods at each layer with uniform random samples of fixed size K, bounding nodes loaded per target to K^L. Layer-wise sampling (FastGCN, LADIES) samples fixed node sets per layer using importance distributions—FastGCN uses global column norms of the normalized adjacency, while LADIES conditions importance on actual target neighbors to reduce variance. Cluster-GCN partitions graphs into c clusters using METIS, drops inter-cluster edges during training, and can combine p clusters per batch. GraphSAINT first samples random subgraphs via node, edge, or random walk samplers, then applies unbiased normalization coefficients (dividing by sampling probabilities p_v and p_uv) to correct for sampling bias.",
+  "paper_id": "gnn-ch-chapters__20-scaling-gnns",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 46,
+    "latency_ms": 5119,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 914
+  },
+  "results": "Pinterest's recommendation graph has over 3 billion nodes and 18 billion edges; Microsoft Academic Graph has 250 million nodes; ogbn-papers100M has 111 million nodes and 1.6 billion edges. A graph with n=10^8 nodes and d=256 requires 102 GB per activation matrix—six times an A100 GPU. At depth L=3 with mean degree d̄=50 and batch size 512, neighbor sampling requires loading 64 million nodes per training step. FastGCN uses importance weights proportional to column norms of the normalized adjacency matrix. LADIES selects nodes at layer l with probability proportional to the sum of squared adjacency entries to selected nodes at layer l+1. GraphSAINT provides an unbiased estimator of the full-graph gradient with correct normalization.",
+  "schema_version": "summary-node.v1",
+  "tldr": "The chapter addresses the fundamental scalability challenge of training GNNs on billion-node graphs by introducing neighbor sampling, layer-wise sampling (FastGCN, LADIES), graph partitioning (Cluster-GCN), and subgraph sampling (GraphSAINT) to control the exponential neighbor explosion inherent in recursive message passing."
+}

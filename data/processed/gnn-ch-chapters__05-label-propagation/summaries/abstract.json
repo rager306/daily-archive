@@ -1,0 +1,31 @@
+{
+  "contributions": [
+    "Formalizes label propagation as a harmonic function minimizer with a closed-form solution via the graph Laplacian",
+    "Introduces label spreading with regularization parameter α to handle noisy labels",
+    "Describes belief propagation and loopy belief propagation for probabilistic inference on graphs",
+    "Connects collective classification as a precursor to GNN message-passing",
+    "Demonstrates 94% accuracy on Karate Club with only 2 seed nodes",
+    "Reviews benchmark results showing classical methods lag GNNs on citation networks but remain competitive in feature-free regimes"
+  ],
+  "limitations": [
+    "Pure label propagation cannot correct noisy labeled nodes since they are held as hard boundary constraints",
+    "Loopy belief propagation double-counts evidence on graphs with short cycles (especially triangles), producing overconfident marginals",
+    "Classical methods lack node attributes and perform substantially worse than GNNs on citation networks where feature signal is discriminative",
+    "Influence maximization is NP-hard and #P-hard to approximate exactly",
+    "The approach assumes homophily holds, which the chapter notes is not universal and breaks down in some settings"
+  ],
+  "methods": "The chapter covers iterative label propagation where unlabeled node estimates are updated by averaging neighbors' values until convergence, with a closed-form harmonic solution F_U* = (I - Ã_UU)^(-1) Ã_UL Y_L. Label spreading extends this with a regularization parameter α balancing graph smoothness against label fidelity via F* = (1-α)(I - αS̃)^(-1) Y. Belief propagation frames inference as message passing on a factor graph with prior, edge, and evidence potentials. The chapter also covers the Linear Threshold Model and Independent Cascade Model for influence maximization, both proven submodular with a (1-1/e) ≈ 63% greedy approximation guarantee.",
+  "paper_id": "gnn-ch-chapters__05-label-propagation",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 63,
+    "latency_ms": 5039,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 697
+  },
+  "results": "On the Karate Club graph with 2 seed nodes, label propagation achieves ~94% accuracy on 32 unlabeled nodes. Benchmark comparisons on Planetoid splits (20 labeled nodes per class): Label Propagation scores 68.0% (Cora) and 45.3% (CiteSeer); Label Spreading scores 72.4% and 50.2%; GCN scores 81.5% and 70.3%; APPNP scores 83.3% and 71.8%; C&S post-processing scores 84.2% and 73.4%. Three nodes (2, 8, 28) are occasionally misclassified due to structural ambiguity at faction boundaries.",
+  "schema_version": "summary-node.v1",
+  "tldr": "This chapter presents classical graph-based semi-supervised learning methods—label propagation, label spreading, belief propagation, and collective classification—along with influence maximization and epidemic diffusion models, showing how label and information propagation share a unified mathematical framework."
+}

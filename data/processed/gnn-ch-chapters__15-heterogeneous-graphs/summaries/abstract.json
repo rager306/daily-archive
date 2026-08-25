@@ -1,0 +1,28 @@
+{
+  "contributions": [
+    "Introduces R-GCN with relation-specific weight matrices and basis decomposition to control parameter explosion",
+    "Presents HAN with two-level hierarchical attention over manually specified meta-paths",
+    "Describes HGT with meta-relation-specific key/query/value projections for type-aware transformer attention",
+    "Demonstrates practical implementation of heterogeneous GNNs in PyTorch Geometric for node classification"
+  ],
+  "limitations": [
+    "R-GCN suffers from parameter explosion with many relation types unless basis decomposition is used",
+    "HAN requires manual meta-path specification, demanding domain knowledge and scaling poorly to graphs with many relation types",
+    "HAN materializes dense meta-path-expanded adjacency matrices, increasing memory usage",
+    "Heterogeneous GNNs must handle varying feature dimensions across node types and support inductive learning on large-scale graphs"
+  ],
+  "methods": "The chapter defines heterogeneous graphs formally and introduces meta-paths to capture composite semantic relationships. R-GCN applies separate weight matrices per relation type, using basis decomposition to reduce parameters. HAN expands meta-path-induced subgraphs and applies node-level attention within each meta-path and semantic-level attention across meta-paths. HGT extends multi-head transformer attention by parameterizing key, query, and value projections per meta-relation, with learned attention priors, allowing multi-hop type-aware propagation through layer stacking. All models use type-specific linear projections to map heterogeneous feature spaces into a shared embedding space.",
+  "paper_id": "gnn-ch-chapters__15-heterogeneous-graphs",
+  "provenance": {
+    "agent": "summarizer",
+    "binding": "paper-summary-generate-default",
+    "injection_scrubbed": 97,
+    "latency_ms": 6253,
+    "model": "agnes-ai/agnes-2.5-flash",
+    "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+    "tokens_out": 1051
+  },
+  "results": "For OGB-MAG with 4 meta-relations and dimension d=64, R-GCN uses 16,384 relation parameters per layer. For FB15k-237 (237 relations), basis decomposition with B=3 reduces parameters from ~970,752 to ~12,999 (a 74× reduction). HGT with 4 meta-relations, d=256, and 8 attention heads requires approximately 98,000 parameters per layer for type-specific weights. HAN's semantic attention is interpretable, with meta-path importance scores reflecting task relevance.",
+  "schema_version": "summary-node.v1",
+  "tldr": "This chapter extends message passing to heterogeneous graphs via three architectures (R-GCN, HAN, HGT) that handle multiple node and edge types through relation-specific weights, meta-paths, type-specific projections, and attention mechanisms."
+}
