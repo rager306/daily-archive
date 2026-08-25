@@ -3,7 +3,7 @@ paper_id: algorithms-for-decision-making
 grammar_profile: page_outline
 source:
   code: textbook
-lifecycle: extracted
+lifecycle: validated
 lifecycle_events:
 - stage: raw
   recorded_at: 2026-08-25T04:44:02Z
@@ -19,6 +19,17 @@ lifecycle_events:
   recorded_at: 2026-08-25T05:57:01Z
   actor: rule-based-extractor
   evidence_sha256: 18c296dbfa5d840c9b844eb580f7d80e0b6b45628838e0498dd117d5062fa411
+- stage: enriched
+  recorded_at: 2026-08-25T09:42:35Z
+  actor: rust-enriched-layer
+  evidence_sha256: 26d6a3bd496c9d466373215a8a7b3237e762e241224084ba513ce279394a8415
+- stage: summarized
+  recorded_at: 2026-08-25T09:42:41Z
+  actor: agent:summarizer
+  evidence_sha256: 6f8fe5ad4809191a9e8b89b3afa434e53c157f12575ca38723071ceae4b527d7
+- stage: validated
+  recorded_at: 2026-08-25T09:42:41Z
+  actor: rust-source-run
 artifacts:
   extracted:
     file: extracted/entities.json
@@ -48,9 +59,19 @@ artifacts:
     missingness: no_external_resources
     derived_from: parsed
   enriched:
-    not_reached: true
+    present: false
+    missingness: openalex_not_found
+    derived_from: parsed
   summaries:
-    not_reached: true
+    file: summaries/abstract.json
+    derived_from: parsed
+    sha256: 6f8fe5ad4809191a9e8b89b3afa434e53c157f12575ca38723071ceae4b527d7
+    actor: agent:summarizer
+    stats:
+      prompt_sha256: fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe
+      injection_scrubbed: 0
+      latency_ms: 5811
+      memory_epoch: 51
   quality_signals:
     not_reached: true
   parsed:

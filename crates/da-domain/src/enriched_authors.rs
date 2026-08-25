@@ -66,7 +66,11 @@ pub fn parse_tei_authors(tei: &str) -> Vec<TeiAuthor> {
                 .map(|c| c[1].trim().to_string())
                 .collect();
             let Some(last) = surs.last() else { continue };
-            let initials: String = fores.iter().filter(|f| !f.is_empty()).map(|f| f[..1].to_string()).collect();
+            let initials: String = fores
+                .iter()
+                .filter(|f| !f.is_empty())
+                .filter_map(|f| f.chars().next().map(|c| c.to_string()))
+                .collect();
             let surname = last.clone();
             let full = [fores.join(" "), surname.clone()].join(" ").trim().to_string();
             out.push(TeiAuthor {

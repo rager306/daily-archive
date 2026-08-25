@@ -4,7 +4,7 @@ grammar_profile: page_outline
 source:
   code: textbook
   identity_ref: sources/textbook/trench-real-analysis/identity.json
-lifecycle: enriched
+lifecycle: validated
 lifecycle_events:
 - stage: raw
   recorded_at: 2026-08-23 13:14:20+00:00
@@ -24,6 +24,13 @@ lifecycle_events:
   recorded_at: 2026-08-25T01:56:57Z
   actor: rust-enriched-layer
   evidence_sha256: 26d6a3bd496c9d466373215a8a7b3237e762e241224084ba513ce279394a8415
+- stage: summarized
+  recorded_at: 2026-08-25T09:42:40Z
+  actor: agent:summarizer
+  evidence_sha256: a1b3c8a128b3770e0e5e9bc8020f736b4197b3e68ab905da76503cac23b05136
+- stage: validated
+  recorded_at: 2026-08-25T09:42:40Z
+  actor: rust-source-run
 artifacts:
   parsed:
     file: parsed/article.json
@@ -101,9 +108,14 @@ artifacts:
     missingness: openalex_not_found
     derived_from: parsed
   summaries:
-    not_reached: true
-    per_section:
-      status: failed
-      reason: llm_batch_failed
+    file: summaries/abstract.json
+    derived_from: parsed
+    sha256: a1b3c8a128b3770e0e5e9bc8020f736b4197b3e68ab905da76503cac23b05136
+    actor: agent:summarizer
+    stats:
+      prompt_sha256: fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe
+      injection_scrubbed: 6
+      latency_ms: 5677
+      memory_epoch: 51
   quality_signals:
     not_reached: true

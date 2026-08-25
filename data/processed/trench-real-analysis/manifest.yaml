@@ -3,7 +3,7 @@ paper_id: trench-real-analysis
 grammar_profile: page_outline
 source:
   code: textbook
-lifecycle: structured
+lifecycle: validated
 lifecycle_events:
 - stage: raw
   recorded_at: 2026-08-25T04:01:05Z
@@ -15,11 +15,29 @@ lifecycle_events:
 - stage: structured
   recorded_at: 2026-08-25T04:01:05Z
   actor: rust-navigation-stage
+- stage: extracted
+  recorded_at: 2026-08-25T09:43:07Z
+  actor: rule-based-extractor
+  evidence_sha256: 645067c55bb3806665c1b6407896679754ee6aabe15d3aea257ac06063ef4d98
+- stage: enriched
+  recorded_at: 2026-08-25T09:43:08Z
+  actor: rust-enriched-layer
+  evidence_sha256: 26d6a3bd496c9d466373215a8a7b3237e762e241224084ba513ce279394a8415
+- stage: summarized
+  recorded_at: 2026-08-25T09:43:14Z
+  actor: agent:summarizer
+  evidence_sha256: 60fc3663c8d32a028a9e0a2bc4839233f3869ffdbf088e3d28dd5cc9c3cb9c91
+- stage: validated
+  recorded_at: 2026-08-25T09:43:14Z
+  actor: rust-source-run
 artifacts:
   extracted:
-    present: false
-    missingness: extraction_not_run
+    file: extracted/entities.json
     derived_from: parsed
+    sha256: 645067c55bb3806665c1b6407896679754ee6aabe15d3aea257ac06063ef4d98
+    actor: rule-based-extractor
+    stats:
+      entities: 73
   citations_resolved:
     present: false
     missingness: no_citation_elements
@@ -41,9 +59,19 @@ artifacts:
     missingness: no_external_resources
     derived_from: parsed
   enriched:
-    not_reached: true
+    present: false
+    missingness: openalex_not_found
+    derived_from: parsed
   summaries:
-    not_reached: true
+    file: summaries/abstract.json
+    derived_from: parsed
+    sha256: 60fc3663c8d32a028a9e0a2bc4839233f3869ffdbf088e3d28dd5cc9c3cb9c91
+    actor: agent:summarizer
+    stats:
+      prompt_sha256: fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe
+      injection_scrubbed: 15
+      latency_ms: 6168
+      memory_epoch: 54
   quality_signals:
     not_reached: true
   parsed:

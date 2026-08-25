@@ -560,3 +560,20 @@ Governor flags: 6→4. Remaining 4 = graph materialization backlog:
 - graph_revision_binding_low [high]: 0/295 revision bindings
 
 These are structural corpus work items (M439/M440 backlog), not code bugs.
+
+## 2026-08-25 — Wave 6: pipeline completion + char-boundary fix
+
+1. CHAR-BOUNDARY FIX: enriched_authors.rs f[..1] panicked on
+   math italic glyphs (𝒚 = 4 bytes). Fixed with chars().next().
+   This blocked enrich-layer for 4 articles (2504.16084 etc).
+
+2. PIPELINE COMPLETION: run-batch on all remaining incomplete
+   articles. Result: 0 articles without enriched (was 7),
+   0 without summarized, 0 without extracted.
+
+3. Governor: target_bloat flag eliminated (40GB → 13GB after
+   incremental cleanup + cargo clean -p stale artifacts).
+   resource_target_bloat no longer appears in flags.
+
+Green: domain 713, cli 176, app 337, adapters 249, pytest 142,
+validate 645x0, clippy clean.
