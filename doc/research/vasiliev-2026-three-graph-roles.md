@@ -24,7 +24,7 @@ M454 critic Reject as typed negative knowledge, CVF as source event record.
 
 1. Memory write-boundary must quarantine unreviewed claims.
 2. Retrieval must honour rejection (Negative Semantic Knowledge) — closed
-   M459 (`admit_retrieval` paper-scoped; `agent_failure:negative_blocked`).
+   M459 (agent-run) and M460 (da graph-query / da query by-arxiv/by-vid).
 3. Context freeze of source + contract versions — closed M458 (`freeze_id`).
 
 Full HTML is the captured source. This note is a mapping, not a substitute.

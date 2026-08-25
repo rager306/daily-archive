@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-25 — M460-7tqron: operator graph-query honours exhausted negatives
+
+M459 gated agent-run; da graph-query and da query still hit the store without
+admit_retrieval. admit_operator_read maps paper-scoped admit_retrieval onto
+GraphQueryCliError::Runtime containing negative_blocked. Empty paper_id
+fail-opens. graph_query::run consults before opening the store. da query
+by-arxiv/by-vid uses the same helper; count/orphans/graph-stats stay ungated.
+CLI reads DA_RETRIEVAL_PAPER_ID and DA_NEGATIVE_MEMORY_DIR inline (dual bin/lib).
+Not Samyama. D127 false. D288.
+
+Green: graph_query 9 including admit_operator_read + operator_query_needs_admit;
+clippy -D warnings da-cli --lib; cargo build -p da-cli.
+
 ## 2026-08-25 — M459-sfjk31: agent retrieval honours exhausted negatives
 
 Vasiliev gap after M456-M458: LLM stages and Layer H freeze existed, but

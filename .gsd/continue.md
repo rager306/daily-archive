@@ -1,10 +1,9 @@
 # continue — session state
 
-## Active direction (M459-sfjk31): agent retrieval honours exhausted negatives
+## Active direction (M460-7tqron): operator graph-query honours exhausted negatives
 
-S01+S02: admit_retrieval paper-scoped; NegativeBlocked; AgentRunUseCase
-consults before identity/query. CLI DA_RETRIEVAL_PAPER_ID. Close via
-skip-delivered.
+S01+S02: admit_operator_read before Cypher; da query by-arxiv/by-vid uses
+the same helper. graph-stats ungated. Close via skip-delivered.
 
 ## Previous: M451 schema/manifest skeleton BEFORE code
 

@@ -1534,6 +1534,13 @@ async fn query_graph(
     println!("Query kind: {kind}");
     println!("Cypher: {cypher}");
 
+    if graph_query::operator_query_needs_admit(kind) {
+        if let Err(error) = graph_query::admit_operator_read_from_env(id) {
+            eprintln!("{error}");
+            std::process::exit(error.exit_code());
+        }
+    }
+
     // Embedded: SamyamaGraphStore (WARM path). Remote: RESP read plane.
     // Optional --snapshot is embedded-only (M334 / M421).
     use da_ports::graph_store::GraphStore;

@@ -128,7 +128,60 @@ pub fn count_from_query_result(
     }
 }
 
+/// Paper-scoped operator reads (da query by-arxiv / by-vid). Aggregate
+/// kinds (count, orphans, graph-stats) stay ungated.
+pub fn operator_query_needs_admit(kind: &str) -> bool {
+    matches!(kind, "by-arxiv" | "by-vid")
+}
+
+/// Paper id for operator retrieval: explicit arg wins, else DA_RETRIEVAL_PAPER_ID.
+/// Empty means fail-open (legacy unbound reads).
+pub fn paper_id_for_operator_read(explicit: Option<&str>) -> String {
+    explicit
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| std::env::var("DA_RETRIEVAL_PAPER_ID").unwrap_or_default())
+}
+
+/// Map domain admit_retrieval onto a typed CLI Runtime error.
+/// Empty paper_id fail-opens. Blocked is never a silent empty row set (R087).
+pub fn admit_operator_read(
+    paper_id: &str,
+    records: &[da_domain::negative_memory::NegativeMemoryRecord],
+) -> Result<(), GraphQueryCliError> {
+    match da_domain::negative_memory::admit_retrieval(paper_id, records) {
+        da_domain::negative_memory::AdmitDecision::Allowed { .. } => Ok(()),
+        da_domain::negative_memory::AdmitDecision::BlockedExhausted { record_id, reason } => {
+            Err(GraphQueryCliError::Runtime(format!(
+                "negative_blocked: record={record_id} {reason}"
+            )))
+        }
+    }
+}
+
+/// CLI composition: open JsonlNegativeMemory from DA_NEGATIVE_MEMORY_DIR
+/// (inline env; dual bin/lib) and consult admit_operator_read.
+/// Missing/unreadable store fail-opens so ops without negatives still work.
+pub fn admit_operator_read_from_env(explicit: Option<&str>) -> Result<(), GraphQueryCliError> {
+    let paper_id = paper_id_for_operator_read(explicit);
+    if paper_id.trim().is_empty() {
+        return Ok(());
+    }
+    let dir = std::env::var("DA_NEGATIVE_MEMORY_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|_| std::path::PathBuf::from("data/agent_memory/negatives"));
+    let store = match da_adapters::negative_memory::JsonlNegativeMemory::open(dir) {
+        Ok(store) => store,
+        Err(_) => return Ok(()),
+    };
+    use da_ports::negative_memory::NegativeMemoryPort;
+    let recs = store.list_for_paper(&paper_id).unwrap_or_default();
+    admit_operator_read(&paper_id, &recs)
+}
+
 pub async fn run(args: GraphQueryArgs) -> Result<(), GraphQueryCliError> {
+    admit_operator_read_from_env(None)?;
     let mode = resolve_mode(args.mode)?;
     let result = match mode {
         GraphQueryMode::Remote => {
@@ -261,5 +314,65 @@ mod tests {
             records: vec![],
         };
         assert!(count_from_query_result(&empty).is_err());
+    }
+
+    #[test]
+    fn admit_operator_read_allows_empty_paper_id() {
+        let rec = da_domain::negative_memory::record_from_exhausted(
+            "n1".into(),
+            "2507.19457".into(),
+            "figure_analysis".into(),
+            None,
+            None,
+            "t".into(),
+        );
+        assert!(admit_operator_read("", &[rec.clone()]).is_ok());
+        assert!(admit_operator_read("   ", &[rec]).is_ok());
+    }
+
+    #[test]
+    fn admit_operator_read_blocks_exhausted_paper() {
+        let rec = da_domain::negative_memory::record_from_exhausted(
+            "n1".into(),
+            "2507.19457".into(),
+            "figure_analysis".into(),
+            Some("schema violation".into()),
+            None,
+            "t".into(),
+        );
+        let err = admit_operator_read("2507.19457", &[rec]).unwrap_err();
+        match err {
+            GraphQueryCliError::Runtime(message) => {
+                assert!(message.contains("negative_blocked"), "{message}");
+                assert!(message.contains("n1"), "{message}");
+            }
+            other => panic!("{other}"),
+        }
+    }
+
+    #[test]
+    fn operator_query_needs_admit_only_paper_kinds() {
+        assert!(operator_query_needs_admit("by-arxiv"));
+        assert!(operator_query_needs_admit("by-vid"));
+        for kind in ["count", "orphans", "without-evidence", "citation-hops"] {
+            assert!(!operator_query_needs_admit(kind), "{kind} must stay ungated");
+        }
+    }
+
+    #[test]
+    fn paper_id_for_operator_read_prefers_explicit() {
+        let prior = std::env::var("DA_RETRIEVAL_PAPER_ID").ok();
+        unsafe { std::env::set_var("DA_RETRIEVAL_PAPER_ID", "from-env") };
+        assert_eq!(
+            paper_id_for_operator_read(Some("explicit")),
+            "explicit"
+        );
+        assert_eq!(paper_id_for_operator_read(None), "from-env");
+        unsafe {
+            match prior {
+                Some(v) => std::env::set_var("DA_RETRIEVAL_PAPER_ID", v),
+                None => std::env::remove_var("DA_RETRIEVAL_PAPER_ID"),
+            }
+        }
     }
 }
