@@ -60,7 +60,28 @@ pub struct PdfTocSection {
 /// (headings span lines: "3.5" + "Sum-Product Variable Elimination"). A
 /// preceding pure-number line ("3.5", "7.4.1") is swallowed into the anchor.
 /// Returns None when the heading is absent (page kept whole — fail-open).
-fn find_heading_anchor(page_text: &str, title: &str) -> Option<usize> {
+pub fn find_heading_anchor(page_text: &str, title: &str) -> Option<usize> {
+    find_heading_anchor_on_page(page_text, title, 0)
+}
+
+/// Same as [`find_heading_anchor`] with the physical page number for
+/// evidence features (TOC-page match).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AnchorVerdict {
+    /// FSM: evidence says real heading
+    Accepted,
+    /// FSM rejected (table cell/code) — fail-open position
+    Rejected,
+}
+
+/// Anchor + verdict. Escalated candidates surface as `Rejected` position
+/// with the expectation that the caller marks the overlap for the critic.
+pub fn find_heading_anchor_on_page(
+    page_text: &str,
+    title: &str,
+    page_no: u32,
+) -> Option<(usize, AnchorVerdict)> {
+    let page_no_for_anchor = page_no;
     let norm = |s: &str| {
         // типографские апострофы/кавычки → прямые (TOC хранит ASCII,
         // PDF-текст — U+2018/2019/201C/201D: Prisoner's Dilemma)
@@ -76,13 +97,46 @@ fn find_heading_anchor(page_text: &str, title: &str) -> Option<usize> {
     if title_words == 0 {
         return None;
     }
+    let mut first_match: Option<usize> = None;
     let lines: Vec<&str> = page_text.lines().collect();
     // окна от 1 строки (заголовок целиком на одной) до title_words+1
     // (разбит переносами после дегифенизации)
     for w in 1..=(title_words + 1).min(lines.len()) {
         for start in 0..lines.len().saturating_sub(w - 1) {
             let joined = lines[start..start + w].join(" ");
+            // Якорь = ЗАГОЛОВОК, не ячейка таблицы/строка кода: первая строка
+            // окна обязана начинаться с первого слова заголовка (case- и
+            // quote-normalized). «Hex world» как ячейка посреди таблицы F.1
+            // начинается с 'hex' — но её ПРЕДЫДУЩАЯ строка 'Problem' не
+            // совпадает с началом заголовка... недостаточно; жёстче: вся
+            // строка должна быть префиксом нормализованного заголовка
+            // ('Hex world' == весь заголовок при w=1 — проходит; но ячейка
+            // таблицы тоже пройдёт). Решающий признак: длина строки ячейки
+            // мала и она стоит среди других коротких строк-ячеек — неотличимо
+            // геометрически. Поэтому: требуем, чтобы СЛЕДУЮЩАЯ за якорем
+            // строка была прозой (>60 chars) — у настоящего заголовка далее
+            // идёт абзац.
             if norm(&joined) == title_n {
+                let off: usize = lines[..start].iter().map(|l| l.len() + 1).sum();
+                let off = off.min(page_text.len());
+                match crate::boundary_agent::classify(&crate::boundary_agent::extract_features(
+                    &lines, start, w, page_no_for_anchor, page_no_for_anchor,
+                )) {
+                    crate::boundary_agent::Decision::Accept => {
+                        return Some((off, AnchorVerdict::Accepted));
+                    }
+                    _ => {
+                        if first_match.is_none() {
+                            first_match = Some(off);
+                        }
+                    }
+                }
+                // FSM boundary-agent (ADR-073 wave): ambiguous anchors
+                // classified by evidence features. Accept → split here;
+                // Reject/Escalate → keep scanning for a better candidate,
+                // and if none is found the FIRST candidate position is used
+                // (fail-open split at first match: content must not vanish
+                // from both sections — live lesson, Hex World Table F.1).
                 // проглотить строку-номер перед заголовком ("3.5")
                 let mut s = start;
                 if s > 0 {
@@ -100,7 +154,9 @@ fn find_heading_anchor(page_text: &str, title: &str) -> Option<usize> {
             }
         }
     }
-    None
+    // fail-open: ни одного Accept — позиция первого совпадения с вердиктом
+    // Rejected (спорный блок попадёт в обе секции; критик разрешит)
+    first_match.map(|off| (off.min(page_text.len()), AnchorVerdict::Rejected))
 }
 
 pub fn build_pdf_toc_sections(
@@ -128,25 +184,26 @@ pub fn build_pdf_toc_sections(
                 // до заголовка не входят (algorithms-for-decision-making:
                 // Value Iteration начиналась осями графика + хвостом policy
                 // iteration; Policy Iteration — Julia-кодом прошлой секции)
-                let page_slice: &str = if p == e.page {
-                    match find_heading_anchor(t, &e.title) {
-                        Some(off) => &t[off..],
-                        None => t.as_str(),
-                    }
-                } else {
-                    t.as_str()
-                };
-                // последняя страница: обрезать на заголовке следующей секции
-                // (её текст заберёт свой first-page anchor)
-                let page_slice: String = if p == page_end && p >= next_page {
-                    match toc.get(i + 1).and_then(|n| find_heading_anchor(t, &n.title)) {
-                        Some(off) => page_slice[..off.min(page_slice.len())].to_string(),
-                        None => page_slice.to_string(),
-                    }
-                } else {
-                    page_slice.to_string()
-                };
-                if !text.is_empty() {
+                let mut start_cut = 0usize;
+                let mut end_cut = t.len();
+                // свой заголовок на первой странице диапазона
+                if p == e.page
+                    && let Some(off) = find_heading_anchor_on_page(t, &e.title, p)
+                {
+                    start_cut = off;
+                }
+                // следующая секция может начаться на ЛЮБОЙ странице диапазона
+                if let Some(next) = toc.get(i + 1)
+                    && next.page >= p
+                    && next.page <= page_end
+                    && let Some(shared) = pages_text.get(&next.page)
+                    && let Some(off) = find_heading_anchor_on_page(shared, &next.title, next.page)
+                    && p == next.page
+                {
+                    end_cut = off.min(t.len());
+                }
+                let page_slice: &str = if start_cut < end_cut { &t[start_cut..end_cut] } else { "" };
+if !text.is_empty() {
                     text.push('\n');
                 }
                 text.push_str(&page_slice);
@@ -159,7 +216,7 @@ pub fn build_pdf_toc_sections(
         if let Some(next) = toc.get(i + 1)
             && next.page == page_end + 1
             && let Some(shared) = pages_text.get(&next.page)
-            && let Some(off) = find_heading_anchor(shared, &next.title)
+            && let Some(off) = find_heading_anchor_on_page(shared, &next.title, next.page)
             && off > 0
         {
             let tail = shared[..off].trim();

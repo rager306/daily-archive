@@ -908,6 +908,157 @@ fn compile_injection(yaml_text: String) -> String {
     yaml_text
 }
 
+/// `da source audit-fidelity <paper_id>` — dogfood-гейт качества парсинга
+/// книги: сверка parsed-секций с реконструкцией оригинала (obs pages_text,
+/// body-зона уже вычищена экспортёром). Проверяет: якоря заголовков на
+/// TOC-страницах, возврат граничных хвостов, покрытие слов по секциям,
+/// прикреплённость маргиналий. Порог: покрытие ≥98%, потерянных границ = 0.
+pub fn run_audit_fidelity(paper_id: &str) -> anyhow::Result<()> {
+    use da_domain::pdf_toc::find_heading_anchor;
+
+    let obs_path = std::path::Path::new("artifacts/pipeline_cache/pdf_toc_observations")
+        .join(format!("{paper_id}.json"));
+    let obs: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&obs_path)?)
+        .map_err(|e| anyhow::anyhow!("observations {}: {e}", obs_path.display()))?;
+    let parsed: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(
+        std::path::Path::new("data/processed").join(paper_id).join("parsed/article.json"),
+    )?)?;
+
+    let toc = obs.get("toc").and_then(|t| t.as_array()).cloned().unwrap_or_default();
+    let pages: Vec<(u32, String)> = obs
+        .get("pages_text")
+        .and_then(|p| p.as_object())
+        .map(|m| {
+            let mut v: Vec<(u32, String)> = m
+                .iter()
+                .filter_map(|(k, val)| Some((k.parse().ok()?, val.as_str()?.to_string())))
+                .collect();
+            v.sort_by_key(|(p, _)| *p);
+            v
+        })
+        .unwrap_or_default();
+    let page_text = |p: u32| -> String {
+        pages.iter().find(|(n, _)| *n == p).map(|(_, t)| t.clone()).unwrap_or_default()
+    };
+    let sections = parsed.get("sections").and_then(|s| s.as_array()).cloned().unwrap_or_default();
+
+    let word_set = |s: &str| -> std::collections::HashSet<String> {
+        s.split(|c: char| !c.is_ascii_alphabetic())
+            .filter(|w| w.len() >= 4)
+            .map(str::to_lowercase)
+            .collect()
+    };
+
+    let mut anchor_miss = 0u32;
+    let mut tail_lost = 0u32;
+    let mut tail_total = 0u32;
+    let mut cov_sum = 0.0f64;
+    let mut cov_n = 0u32;
+    let mut worst: Vec<(f64, String)> = Vec::new();
+    let mut margin_missing = 0u32;
+    let margins = obs.get("pages_margin_notes").and_then(|m| m.as_object());
+
+    for (i, t) in toc.iter().enumerate() {
+        let level = t.get("level").and_then(|l| l.as_u64()).unwrap_or(9) as u8;
+        if level < 2 {
+            continue;
+        }
+        let title = t.get("title").and_then(|x| x.as_str()).unwrap_or("");
+        let page = t.get("page").and_then(|x| x.as_u64()).unwrap_or(0) as u32;
+        let own = page_text(page);
+        if find_heading_anchor(&own, title).is_none() {
+            anchor_miss += 1;
+        }
+
+        let next = toc.get(i + 1);
+        let next_page = next.map(|n| n.get("page").and_then(|x| x.as_u64()).unwrap_or(0) as u32);
+        // Expected = семантика anchor-splitting:
+        //   [свой якорь .. конец своей страницы] + промежуточные +
+        //   [начало общей страницы .. якорь следующей]
+        let own_off = find_heading_anchor(&own, title);
+        let mut expected = match own_off {
+            Some(o) => own[o..].to_string(),
+            None => own.clone(),
+        };
+        let mut next_anchor_off: Option<usize> = None;
+        if let (Some(np), Some(nt)) = (next_page, next.and_then(|n| n.get("title").and_then(|x| x.as_str()))) {
+            if np > page {
+                for p in (page + 1)..np {
+                    expected.push('\n');
+                    expected.push_str(&page_text(p));
+                }
+                let shared = page_text(np);
+                if let Some(off) = find_heading_anchor(&shared, nt) {
+                    expected.push('\n');
+                    expected.push_str(&shared[..off]);
+                    next_anchor_off = Some(off);
+                    tail_total += 1;
+                    let tail_probe: String = shared[..off].trim().chars().take(30).collect();
+                    if let Some(sec) = sections.get(i) {
+                        let st = sec.get("text").and_then(|x| x.as_str()).unwrap_or("");
+                        if !tail_probe.is_empty() && !st.contains(&tail_probe) {
+                            tail_lost += 1;
+                        }
+                    }
+                }
+            }
+        }
+        let _ = next_anchor_off;
+        let ew = word_set(&expected);
+        if ew.len() >= 20 {
+            if let Some(sec) = sections.get(i) {
+                let st = sec.get("text").and_then(|x| x.as_str()).unwrap_or("");
+                let miss = ew.difference(&word_set(st)).count();
+                let cov = 1.0 - miss as f64 / ew.len() as f64;
+                cov_sum += cov;
+                cov_n += 1;
+                if cov < 0.90 {
+                    worst.push((cov, title.chars().take(40).collect()));
+                }
+            }
+        }
+        if let Some(m) = margins {
+            let np = next_page.unwrap_or(page + 1);
+            let has_margin = (page..np).any(|p| {
+                m.get(&p.to_string())
+                    .and_then(|v| v.as_str())
+                    .map(|s| !s.trim().is_empty())
+                    .unwrap_or(false)
+            });
+            if has_margin {
+                let sec_margin = sections
+                    .get(i)
+                    .and_then(|s| s.get("margin_notes"))
+                    .and_then(|x| x.as_str())
+                    .unwrap_or("");
+                if sec_margin.trim().is_empty() {
+                    margin_missing += 1;
+                }
+            }
+        }
+    }
+
+    worst.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+    let avg_cov = if cov_n > 0 { cov_sum / cov_n as f64 } else { 1.0 };
+    println!("== audit-fidelity: {paper_id} ==");
+    println!("  anchor misses:   {anchor_miss}");
+    println!("  boundary tails:  {}/{} recovered (lost {tail_lost})", tail_total - tail_lost, tail_total);
+    println!("  word coverage:   avg {:.1}% ({cov_n} sections)", avg_cov * 100.0);
+    println!("  margin attached: {margin_missing} sections missing");
+    if !worst.is_empty() {
+        println!("  worst coverage:");
+        for (c, t) in worst.iter().take(5) {
+            println!("    {:.0}% - {t}", c * 100.0);
+        }
+    }
+    let pass = anchor_miss == 0 && tail_lost == 0 && avg_cov >= 0.98 && margin_missing == 0;
+    println!("  verdict:         {}", if pass { "PASS" } else { "NEEDS-ATTENTION" });
+    if !pass {
+        std::process::exit(1);
+    }
+    Ok(())
+}
+
 /// `da source parse-pdf <paper_id> --pdf <path>` — GROBID structural ->
 /// parsed/article.json + context/projection.json + manifest draft
 /// (idempotent; the article FSM then continues via build-* commands).
