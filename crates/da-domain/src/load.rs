@@ -188,6 +188,20 @@ pub fn try_parse_arxiv_locator(raw: &str) -> Option<(String, Option<u32>)> {
         candidate = rest.to_string();
     }
 
+    // GROBID citation-id salvage: склеенный с категорией/мусором id —
+    // "1706.03762[cs.CL", "1706.05125.[Mnihetal.2013" (1326 Citation-узлов
+    // терялось как Reference-only, логи 2026-08-21/22). Обрезаем первую
+    // '[' и хвостовые точки/пробелы; если голова — валидный id, salvage.
+    if let Some(bracket) = candidate.find('[') {
+        let head = candidate[..bracket]
+            .trim()
+            .trim_end_matches(['.', ' ', ','])
+            .to_string();
+        if is_modern_arxiv_id(&head) || is_legacy_arxiv_id(&head) {
+            return Some((head, None));
+        }
+    }
+
     // Drop trailing path segments for modern ids only (legacy has slash).
     if let Some((head, _tail)) = candidate.split_once('/')
         && head.chars().all(|c| c.is_ascii_digit() || c == '.')
@@ -593,6 +607,32 @@ mod tests {
             ArticleLocator::parse("   "),
             Err(LoadDomainError::EmptyLocator)
         ));
+    }
+
+    // ── GROBID citation-id salvage (1326 lost Citation edges, logs 2026-08-21/22) ──
+    // GROBID склеивает arXiv id с категорией/мусором: непарные скобки, суффиксы
+    #[test]
+    fn normalize_arxiv_grobid_mangled_citation_ids() {
+        let cases = [
+            ("1212.5701[cs.LG]", "1212.5701"),
+            ("1706.03762[cs.CL", "1706.03762"),
+            ("1706.05125.[Mnihetal.2013", "1706.05125"),
+            ("1606.01540[cs.LG].URL", "1606.01540"),
+            ("1708.04782.[Wuetal.2018", "1708.04782"),
+            ("1412.6980[cs.LG]", "1412.6980"),
+        ];
+        for (raw, want) in cases {
+            assert_eq!(
+                try_normalize_arxiv_id(raw),
+                Some(want.to_string()),
+                "GROBID-mangled id must salvage: {raw:?}"
+            );
+        }
+        // валидные id не задеты
+        assert_eq!(try_normalize_arxiv_id("2507.19457"), Some("2507.19457".into()));
+        assert_eq!(try_normalize_arxiv_id("hep-th/9901001"), Some("hep-th/9901001".into()));
+        // мусор без id внутри — по-прежнему None
+        assert_eq!(try_normalize_arxiv_id("[cs.LG]"), None);
     }
 
     #[test]

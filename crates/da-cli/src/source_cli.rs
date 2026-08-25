@@ -1324,14 +1324,8 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
     // stage → CLI action mapping (Rust tools only; reference tools are
     // reported honestly and the stage is marked blocked)
     // stage -> CLI subcommands; validate-objects has a different form
-    let actions: std::collections::BTreeMap<&str, Vec<&str>> = [
-        ("parsed", vec!["parse-pdf"]),
-        ("structured", vec!["build-navigation", "build-figures-tei"]),
-        ("extracted", vec!["build-extracted"]),
-        ("enriched", vec!["enrich-layer"]),
-        ("summarized", vec!["build-summary"]),
-        ("validated", vec!["validate-objects"]),
-    ].into_iter().collect::<std::collections::BTreeMap<&str, Vec<&str>>>();
+    // stage → rust CLI actions: из toolchain-реестра (DATA), не из кода —
+    // мета/промпт принцип (ADR-068); ранее карта была захардкожена тут
 
     let mut completed = 0;
     let mut skipped_reference = 0;
@@ -1339,7 +1333,8 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
 
     for (stage, required) in &plan {
         println!("── {stage} {}", if *required { "(required)" } else { "(optional)" });
-        let Some(action_list) = actions.get(*stage) else {
+        let action_list_owned = tc.rust_actions(stage);
+        let Some(action_first) = action_list_owned.first() else {
             println!("   no rust tool for this stage; reference tools:");
             if let Some(spec) = tc.stage(stage) {
                 for t in &spec.tools {
@@ -1357,6 +1352,7 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
             continue;
         };
 
+        let _ = action_first;
         // special: parsed needs the PDF path — auto-find from catalog
         let pdf = if *stage == "parsed" {
             let mut hits = Vec::new();
@@ -1371,14 +1367,19 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
             break;
         }
 
-        // pre-stage hook: enriched needs work cache (reference fetcher)
-        if *stage == "enriched" {
-            let cache = std::path::Path::new("artifacts/pipeline_cache/openalex_works")
+        // pre-stage hook: команда и кэш-путь из toolchain-реестра (DATA),
+        // не из кода — ранее путь scripts/m451_enrich_openalex.py был
+        // захардкожен (мета/промпт нарушение, ADR-068)
+        let pre_hook = tc.stage(stage).and_then(|s| {
+            s.tools.iter().find_map(|t| t.pre_hook.as_ref().map(|h| (h, t.retry.as_ref())))
+        });
+        if let Some((hook, _)) = pre_hook {
+            let cache = std::path::Path::new(&hook.cache_dir)
                 .join(format!("{paper_id}.json"));
             if !cache.exists() {
                 println!("   [pre] work cache missing — running reference fetcher…");
-                let st = std::process::Command::new("python3")
-                    .args(["scripts/m451_enrich_openalex.py", paper_id])
+                let st = std::process::Command::new(&hook.command)
+                    .args([&hook.script, paper_id])
                     .output();
                 match st {
                     Ok(o) if o.status.success() => println!("   [pre] cache built"),
@@ -1395,7 +1396,7 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
         }
 
         let mut stage_ok = true;
-        for action in action_list {
+        for action in &action_list_owned {
             let mut cmd = std::process::Command::new(std::env::current_exe()?);
             if *action == "validate-objects" {
                 cmd.args(["validate-objects", "--class", "article", paper_id]);
@@ -1405,7 +1406,37 @@ pub fn run_source_run(paper_id: &str) -> anyhow::Result<()> {
             if let Some(pdf_path) = &pdf {
                 cmd.arg("--pdf").arg(pdf_path);
             }
-            let result = cmd.output();
+            // retry из toolchain-реестра (DATA): GROBID warm-up network
+            // errors, OpenAlex 504 — бэкофф между попытками
+            let retry = tc.retry_for(action);
+            let mut result = cmd.output();
+            let mut attempt = 1u32;
+            loop {
+                let failed = match &result {
+                    Ok(o) => !o.status.success(),
+                    Err(_) => true,
+                };
+                if !failed {
+                    break;
+                }
+                let err_text = match &result {
+                    Ok(o) => format!("{}{}", String::from_utf8_lossy(&o.stdout), String::from_utf8_lossy(&o.stderr)),
+                    Err(e) => e.to_string(),
+                };
+                let max_attempts = retry.max_attempts.max(1);
+                let retryable = attempt < max_attempts
+                    && (retry.retry_on.is_empty()
+                        || retry.retry_on.iter().any(|k| err_text.to_lowercase().contains(&k.to_lowercase()))
+                        || err_text.contains("network error"));
+                if !retryable {
+                    break;
+                }
+                let backoff = retry.backoff_ms as f32 * retry.factor.powi((attempt as i32) - 1);
+                println!("   ↻ {action}: attempt {attempt} failed, retry in {backoff:.0}ms");
+                std::thread::sleep(std::time::Duration::from_millis(backoff as u64));
+                attempt += 1;
+                result = cmd.output();
+            }
             match result {
                 Ok(o) if o.status.success() => {
                     let stdout = String::from_utf8_lossy(&o.stdout).to_string();

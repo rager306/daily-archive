@@ -33,6 +33,45 @@ pub struct StageTool {
     pub cli: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub note: Option<String>,
+    /// action-level retry policy (DATA; GROBID warm-up, OpenAlex 504)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retry: Option<RetryPolicy>,
+    /// pre-stage hook command (DATA; path never hardcoded in Rust)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pre_hook: Option<PreHook>,
+}
+
+/// Retry policy for one tool's CLI action.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RetryPolicy {
+    #[serde(default = "default_retry_attempts")]
+    pub max_attempts: u32,
+    #[serde(default = "default_retry_backoff")]
+    pub backoff_ms: u64,
+    #[serde(default = "default_retry_factor")]
+    pub factor: f32,
+    /// retry when any of these substrings appears in the failed output
+    #[serde(default)]
+    pub retry_on: Vec<String>,
+}
+
+fn default_retry_attempts() -> u32 { 2 }
+fn default_retry_backoff() -> u64 { 400 }
+fn default_retry_factor() -> f32 { 2.0 }
+
+impl Default for RetryPolicy {
+    fn default() -> Self {
+        Self { max_attempts: default_retry_attempts(), backoff_ms: default_retry_backoff(), factor: default_retry_factor(), retry_on: Vec::new() }
+    }
+}
+
+/// Pre-stage hook: external command run before the stage's main action.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PreHook {
+    pub command: String,
+    pub script: String,
+    #[serde(default)]
+    pub cache_dir: String,
 }
 
 /// A stage entry of the toolchain registry.
@@ -54,6 +93,20 @@ pub struct Toolchain {
     pub stages: Vec<StageSpec>,
     #[serde(default)]
     pub guards: ToolchainGuards,
+    /// stage → rust CLI actions (single source; was hardcoded in CLI)
+    #[serde(default)]
+    pub rust_actions: std::collections::BTreeMap<String, Vec<String>>,
+    /// action → retry policy (defaults.retry when absent)
+    #[serde(default)]
+    pub action_retry: std::collections::BTreeMap<String, RetryPolicy>,
+    #[serde(default)]
+    pub defaults: Defaults,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct Defaults {
+    #[serde(default)]
+    pub retry: Option<RetryPolicy>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -81,6 +134,23 @@ impl Toolchain {
     }
 
     /// Ordered stage names as declared (must cover STAGE_ORDER).
+    /// Rust CLI actions for a stage (from the registry, not code).
+    pub fn rust_actions(&self, stage: &str) -> Vec<&str> {
+        self.rust_actions
+            .get(stage)
+            .map(|v| v.iter().map(String::as_str).collect())
+            .unwrap_or_default()
+    }
+
+    /// Retry policy for a CLI action (registry-specific or default).
+    pub fn retry_for(&self, action: &str) -> RetryPolicy {
+        self.action_retry
+            .get(action)
+            .cloned()
+            .or_else(|| self.defaults.retry.clone())
+            .unwrap_or_default()
+    }
+
     pub fn stage_names(&self) -> Vec<&str> {
         self.stages.iter().map(|s| s.stage.as_str()).collect()
     }

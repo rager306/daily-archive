@@ -23,6 +23,11 @@ stages:
     impl: rust
     cli: da ingest/batch-ingest
     note: D204 structural профиль; TEI
+    retry:
+      max_attempts: 3
+      backoff_ms: 800
+      factor: 2.0
+      note: GROBID warm-up tolerant
   - id: html_headings_parser
     impl: rust
     cli: da source parse-html <id> --html <path>
@@ -77,6 +82,16 @@ stages:
     impl: rust
     cli: da enrich/batch-enrich
     note: порт есть; article-слой якорь — reference
+    pre_hook:
+      command: python3
+      script: scripts/m451_enrich_openalex.py
+      cache_dir: artifacts/pipeline_cache/openalex_works
+      note: work-cache fetcher до enrich-layer; путь из DATA (не из кода) — мета/промпт
+        принцип ADR-068
+    retry:
+      max_attempts: 2
+      backoff_ms: 500
+      factor: 2.0
   - id: article_enriched_layer
     impl: rust
     cli: 'da source enrich-layer <id> (work-кэш: scripts/m451_enrich_openalex.py)'
@@ -105,6 +120,8 @@ stages:
     impl: rust
     cli: da validate-objects
     note: generic движок паттернов, file-backed
+    retry:
+      max_attempts: 1
 guards:
   grammar_optional_stages:
     chapter:
@@ -141,3 +158,44 @@ research_candidates:
     - parsed-стадия для офисных источников (учебные материалы как KB)
     - 'расширение grammar-профилей: office_blocks'
     indexed: 'codebase-memory: firecrawl-anydoc (1884 узла)'
+defaults:
+  retry:
+    max_attempts: 2
+    backoff_ms: 400
+    factor: 2.0
+    retry_on:
+    - network error
+    note: действие по умолчанию, если action_retry не задаёт своё
+rust_actions:
+  parsed:
+  - parse-pdf
+  structured:
+  - build-navigation
+  - build-figures-tei
+  extracted:
+  - build-extracted
+  enriched:
+  - enrich-layer
+  summarized:
+  - build-summary
+  validated:
+  - validate-objects
+  note: единственный источник stage→CLI-действий (было захардкожено в source_cli.rs
+    — мета/промпт нарушение, ADR-068)
+action_retry:
+  parse-pdf:
+    max_attempts: 3
+    backoff_ms: 800
+    factor: 2.0
+    retry_on:
+    - network error
+    - service unavailable
+    - connection refused
+    note: 'GROBID warm-up: контейнер до 5 минут отдаёт network error — бэкофф 800/1600/3200ms'
+  enrich-layer:
+    max_attempts: 2
+    backoff_ms: 500
+    factor: 2.0
+    retry_on:
+    - '504'
+    - timeout
