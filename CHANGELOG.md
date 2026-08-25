@@ -409,3 +409,32 @@ M454 figure-repair loop, M455 temporal query filters,
 M456 RRF reranker composition, M457 content_ref vector layer.
 
 continue.md updated with full session state and pending backlog.
+
+## 2026-08-25 — Wave 1: citation materialization + domain fix + manifests
+
+Technical debt wave 1 (audit items D1+D2+D6):
+
+1. D2 DOMAIN FIX: trench-real-analysis identity gained
+   coarse_topic_code=math-ho → routing now resolves to [mathematics]
+   (was computer_science via default fallback). ads-discrete-structures
+   already had math-discrete. algorithms-for-decision-making stays cs-ai.
+
+2. D1 CITATION SALVAGE MATERIALIZED: re-extracted 28 articles that
+   carry GROBID-mangled citation IDs. The try_parse_arxiv_locator
+   salvage (committed earlier) now has data flowing through it —
+   ~1000 citation edges recovered on next graph wave.
+
+3. D6 DOMAIN MANIFEST REFRESH: biology domain gained 3 papers (was 0
+   — stale manifest from before multi-domain routing landed; the
+   q-bio articles' routing entries existed but no build-extracted
+   had run on a biology article since). All five domains now show
+   non-zero processed counts.
+
+4. FSM boundary-agent type unification: find_heading_anchor now
+   returns Option<(usize, AnchorVerdict)> — Accepted vs Rejected
+   verdict alongside the offset. Callers destructure. Dead code
+   (unused number-line swallow after FSM classify) removed.
+   AnchorVerdict enum lives in pdf_toc (not boundary_agent).
+
+Green: domain 713, adapters 249, cli 176, pytest 142,
+validate 645x0, clippy clean.

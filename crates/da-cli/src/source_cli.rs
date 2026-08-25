@@ -977,44 +977,41 @@ pub fn run_audit_fidelity(paper_id: &str) -> anyhow::Result<()> {
         //   [начало общей страницы .. якорь следующей]
         let own_off = find_heading_anchor(&own, title);
         let mut expected = match own_off {
-            Some(o) => own[o..].to_string(),
+            Some((o, _)) => own[o..].to_string(),
             None => own.clone(),
         };
-        let mut next_anchor_off: Option<usize> = None;
-        if let (Some(np), Some(nt)) = (next_page, next.and_then(|n| n.get("title").and_then(|x| x.as_str()))) {
-            if np > page {
-                for p in (page + 1)..np {
-                    expected.push('\n');
-                    expected.push_str(&page_text(p));
-                }
-                let shared = page_text(np);
-                if let Some(off) = find_heading_anchor(&shared, nt) {
-                    expected.push('\n');
-                    expected.push_str(&shared[..off]);
-                    next_anchor_off = Some(off);
-                    tail_total += 1;
-                    let tail_probe: String = shared[..off].trim().chars().take(30).collect();
-                    if let Some(sec) = sections.get(i) {
-                        let st = sec.get("text").and_then(|x| x.as_str()).unwrap_or("");
-                        if !tail_probe.is_empty() && !st.contains(&tail_probe) {
-                            tail_lost += 1;
-                        }
+        if let (Some(np), Some(nt)) = (next_page, next.and_then(|n| n.get("title").and_then(|x| x.as_str())))
+            && np > page
+        {
+            for p in (page + 1)..np {
+                expected.push('\n');
+                expected.push_str(&page_text(p));
+            }
+            let shared = page_text(np);
+            if let Some((off, _)) = find_heading_anchor(&shared, nt) {
+                expected.push('\n');
+                expected.push_str(&shared[..off]);
+                tail_total += 1;
+                let tail_probe: String = shared[..off].trim().chars().take(30).collect();
+                if let Some(sec) = sections.get(i) {
+                    let st = sec.get("text").and_then(|x| x.as_str()).unwrap_or("");
+                    if !tail_probe.is_empty() && !st.contains(&tail_probe) {
+                        tail_lost += 1;
                     }
                 }
             }
         }
-        let _ = next_anchor_off;
         let ew = word_set(&expected);
-        if ew.len() >= 20 {
-            if let Some(sec) = sections.get(i) {
-                let st = sec.get("text").and_then(|x| x.as_str()).unwrap_or("");
-                let miss = ew.difference(&word_set(st)).count();
-                let cov = 1.0 - miss as f64 / ew.len() as f64;
-                cov_sum += cov;
-                cov_n += 1;
-                if cov < 0.90 {
-                    worst.push((cov, title.chars().take(40).collect()));
-                }
+        if ew.len() >= 20
+            && let Some(sec) = sections.get(i)
+        {
+            let st = sec.get("text").and_then(|x| x.as_str()).unwrap_or("");
+            let miss = ew.difference(&word_set(st)).count();
+            let cov = 1.0 - miss as f64 / ew.len() as f64;
+            cov_sum += cov;
+            cov_n += 1;
+            if cov < 0.90 {
+                worst.push((cov, title.chars().take(40).collect()));
             }
         }
         if let Some(m) = margins {
@@ -1025,15 +1022,16 @@ pub fn run_audit_fidelity(paper_id: &str) -> anyhow::Result<()> {
                     .map(|s| !s.trim().is_empty())
                     .unwrap_or(false)
             });
-            if has_margin {
-                let sec_margin = sections
+            if has_margin
+                && sections
                     .get(i)
                     .and_then(|s| s.get("margin_notes"))
                     .and_then(|x| x.as_str())
-                    .unwrap_or("");
-                if sec_margin.trim().is_empty() {
-                    margin_missing += 1;
-                }
+                    .map(str::trim)
+                    .unwrap_or("")
+                    .is_empty()
+            {
+                margin_missing += 1;
             }
         }
     }

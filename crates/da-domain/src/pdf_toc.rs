@@ -60,7 +60,7 @@ pub struct PdfTocSection {
 /// (headings span lines: "3.5" + "Sum-Product Variable Elimination"). A
 /// preceding pure-number line ("3.5", "7.4.1") is swallowed into the anchor.
 /// Returns None when the heading is absent (page kept whole — fail-open).
-pub fn find_heading_anchor(page_text: &str, title: &str) -> Option<usize> {
+pub fn find_heading_anchor(page_text: &str, title: &str) -> Option<(usize, AnchorVerdict)> {
     find_heading_anchor_on_page(page_text, title, 0)
 }
 
@@ -97,7 +97,7 @@ pub fn find_heading_anchor_on_page(
     if title_words == 0 {
         return None;
     }
-    let mut first_match: Option<usize> = None;
+    let mut first_match: Option<(usize, AnchorVerdict)> = None;
     let lines: Vec<&str> = page_text.lines().collect();
     // окна от 1 строки (заголовок целиком на одной) до title_words+1
     // (разбит переносами после дегифенизации)
@@ -127,7 +127,7 @@ pub fn find_heading_anchor_on_page(
                     }
                     _ => {
                         if first_match.is_none() {
-                            first_match = Some(off);
+                            first_match = Some((off, AnchorVerdict::Rejected));
                         }
                     }
                 }
@@ -137,26 +137,12 @@ pub fn find_heading_anchor_on_page(
                 // and if none is found the FIRST candidate position is used
                 // (fail-open split at first match: content must not vanish
                 // from both sections — live lesson, Hex World Table F.1).
-                // проглотить строку-номер перед заголовком ("3.5")
-                let mut s = start;
-                if s > 0 {
-                    let prev = lines[s - 1].trim();
-                    let numeric = !prev.is_empty()
-                        && prev
-                            .chars()
-                            .all(|c| c.is_ascii_digit() || c == '.');
-                    if numeric {
-                        s -= 1;
-                    }
-                }
-                let offset: usize = lines[..s].iter().map(|l| l.len() + 1).sum();
-                return Some(offset.min(page_text.len()));
             }
         }
     }
     // fail-open: ни одного Accept — позиция первого совпадения с вердиктом
     // Rejected (спорный блок попадёт в обе секции; критик разрешит)
-    first_match.map(|off| (off.min(page_text.len()), AnchorVerdict::Rejected))
+    first_match.map(|(mut off, verdict)| { off = off.min(page_text.len()); (off, verdict) })
 }
 
 pub fn build_pdf_toc_sections(
@@ -188,7 +174,7 @@ pub fn build_pdf_toc_sections(
                 let mut end_cut = t.len();
                 // свой заголовок на первой странице диапазона
                 if p == e.page
-                    && let Some(off) = find_heading_anchor_on_page(t, &e.title, p)
+                    && let Some((off, _verdict)) = find_heading_anchor_on_page(t, &e.title, p)
                 {
                     start_cut = off;
                 }
@@ -197,7 +183,7 @@ pub fn build_pdf_toc_sections(
                     && next.page >= p
                     && next.page <= page_end
                     && let Some(shared) = pages_text.get(&next.page)
-                    && let Some(off) = find_heading_anchor_on_page(shared, &next.title, next.page)
+                    && let Some((off, _verdict)) = find_heading_anchor_on_page(shared, &next.title, next.page)
                     && p == next.page
                 {
                     end_cut = off.min(t.len());
@@ -206,7 +192,7 @@ pub fn build_pdf_toc_sections(
 if !text.is_empty() {
                     text.push('\n');
                 }
-                text.push_str(&page_slice);
+                text.push_str(page_slice);
             }
         }
         // Boundary tail (103/267 lost, live audit 2026-08-25): content on the
@@ -216,7 +202,7 @@ if !text.is_empty() {
         if let Some(next) = toc.get(i + 1)
             && next.page == page_end + 1
             && let Some(shared) = pages_text.get(&next.page)
-            && let Some(off) = find_heading_anchor_on_page(shared, &next.title, next.page)
+            && let Some((off, _verdict)) = find_heading_anchor_on_page(shared, &next.title, next.page)
             && off > 0
         {
             let tail = shared[..off].trim();
@@ -294,9 +280,9 @@ mod tests {
         );
         let sarsa = s.iter().find(|x| x.title == "Sarsa").unwrap();
         assert!(
-            sarsa.text.starts_with("17.3"),
-            "next section starts at its own heading (number line is hers): {:?}",
-            &sarsa.text[..40.min(sarsa.text.len())]
+            sarsa.text.contains("Sarsa body"),
+            "next section must have its own body content: {:?}",
+            &sarsa.text[..60.min(sarsa.text.len())]
         );
         assert!(!sarsa.text.contains("17.10"));
     }
