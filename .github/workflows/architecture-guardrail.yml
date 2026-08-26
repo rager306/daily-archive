@@ -66,7 +66,7 @@ jobs:
           cargo fmt \
             -p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline \
             -p da-domain -p da-ports -p da-application \
-            -p da-graph -p da-adapters -p da-cli \
+            -p da-graph -p da-adapters -p da-parse -p da-cli \
             -- --check
 
       - name: Cargo check (workspace)
@@ -82,7 +82,7 @@ jobs:
           cargo clippy \
             -p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline \
             -p da-domain -p da-ports -p da-application \
-            -p da-adapters -p da-cli -p da-mcp \
+            -p da-adapters -p da-parse -p da-cli -p da-mcp \
             --all-targets --no-deps -- -D warnings
 
       - name: Unit + integration tests (per-crate, M339 + M432)
@@ -98,6 +98,7 @@ jobs:
           cargo test -p kg-algorithms --lib
           cargo test -p kg-pipeline --lib
           cargo test -p da-domain --lib
+          cargo test -p da-parse --lib
           cargo test -p da-application --tests
           cargo test -p da-adapters --tests
           cargo test -p da-cli --tests
@@ -132,12 +133,15 @@ jobs:
           echo "Checking da-application does not depend on da-adapters..."
           ! grep_deps crates/da-application/Cargo.toml 'da-adapters' || {
             echo "ERROR: da-application must not depend on da-adapters (hexagonal violation)"; exit 1; }
+          echo "Checking da-application does not depend on da-parse..."
+          ! grep_deps crates/da-application/Cargo.toml 'da-parse' || {
+            echo "ERROR: da-application must not depend on da-parse (hexagonal violation)"; exit 1; }
           echo "Checking da-graph does not depend on da-adapters..."
           ! grep_deps crates/da-graph/Cargo.toml 'da-adapters' || {
             echo "ERROR: da-graph must not depend on da-adapters (hexagonal violation)"; exit 1; }
           echo "Checking kg-* crates have no da-* dependencies (ADR-050 invariant)..."
           for kg in kg-ontology kg-storage kg-embeddings kg-algorithms kg-pipeline; do
-            ! grep_deps_all "crates/$kg/Cargo.toml" 'da-domain|da-ports|da-application|da-adapters|da-graph|da-cli' || {
+            ! grep_deps_all "crates/$kg/Cargo.toml" 'da-domain|da-ports|da-application|da-adapters|da-parse|da-graph|da-cli' || {
               echo "ERROR: $kg must not depend on da-* crates (ADR-050 universal invariant)"; exit 1; }
             echo "  $kg: OK (no da-* deps)"
           done

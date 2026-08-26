@@ -9,14 +9,15 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use da_adapters::{
-    FigureDetectionStage, FilePipelineCache, GrobidParseStage, GrobidParser, GrobidProfile,
-    PdfFigures2Adapter, SamyamaGraphStore,
+    FigureDetectionStage, FilePipelineCache, GrobidParseStage, PdfFigures2Adapter,
+    SamyamaGraphStore,
 };
 use da_application::{
     FigureAnalysisStage, FigureContextStage, FigureRevisionIdentity, FigureSectionLocator,
     MultimodalComposition, MultimodalFingerprintSummary, PipelineOrchestrator,
 };
 use da_domain::{PipelineStageLedger, StageIdRegistry};
+use da_parse::{GrobidParser, GrobidProfile};
 use da_ports::figure_detection::{FigureDetectionPort, FigureDetectionRequest};
 use da_ports::multimodal_llm::{ModelRouteDescriptor, ModelWireProtocol, MultimodalLlmPort};
 use da_ports::parser::ParserPort;

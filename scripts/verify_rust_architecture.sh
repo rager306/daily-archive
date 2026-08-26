@@ -12,7 +12,7 @@ KG_CRATES="kg-ontology kg-storage kg-embeddings kg-algorithms kg-pipeline"
 
 # Packages included in fmt/clippy/test guardrails.
 KG_FMT_PKGS="-p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline"
-DA_FMT_PKGS="-p da-domain -p da-ports -p da-application -p da-adapters -p da-cli -p da-mcp"
+DA_FMT_PKGS="-p da-domain -p da-ports -p da-application -p da-adapters -p da-parse -p da-cli -p da-mcp"
 
 echo "=== cargo fmt --check (our crates only, kg-* + da-*) ==="
 cargo fmt $KG_FMT_PKGS $DA_FMT_PKGS -- --check
@@ -25,7 +25,7 @@ echo "=== cargo clippy (our crates incl kg-*, no-deps, deny warnings) ==="
 cargo clippy \
   $KG_FMT_PKGS \
   -p da-domain -p da-ports -p da-application \
-  -p da-adapters -p da-cli -p da-mcp \
+  -p da-adapters -p da-parse -p da-cli -p da-mcp \
   --all-targets --no-deps -- -D warnings
 
 # M441 lesson (M442 pin): documented CLI feature combinations must compile.
@@ -71,9 +71,9 @@ for kg in $KG_CRATES; do
     fail=1
     continue
   fi
-  if grep_deps "$toml" 'da-domain|da-ports|da-application|da-adapters|da-cli'; then
+  if grep_deps "$toml" 'da-domain|da-ports|da-application|da-adapters|da-parse|da-cli'; then
     echo "ERROR: $kg must not depend on da-* crates (ADR-050 universal invariant)"
-    grep_deps "$toml" 'da-domain|da-ports|da-application|da-adapters|da-cli'
+    grep_deps "$toml" 'da-domain|da-ports|da-application|da-adapters|da-parse|da-cli'
     fail=1
   else
     echo "  $kg: OK (no da-* deps)"
@@ -101,6 +101,13 @@ else
   echo "  da-application: OK (no da-adapters in prod deps; dev-deps allowed for tests)"
 fi
 
+if grep_deps_prod crates/da-application/Cargo.toml 'da-parse'; then
+  echo "ERROR: da-application must not depend on da-parse (hexagonal violation)"
+  fail=1
+else
+  echo "  da-application: OK (no da-parse in prod deps; construct at composition root)"
+fi
+
 echo "=== unit tests (per-package, avoids rocksdb test-profile rebuild hang) ==="
 cargo test -p kg-ontology --lib
 cargo test -p kg-storage --lib
@@ -108,6 +115,8 @@ cargo test -p kg-embeddings --lib
 cargo test -p kg-algorithms --lib
 cargo test -p kg-pipeline --lib
 cargo test -p da-domain --lib
+# Parse-plane article locks live in da-parse --lib after the GROBID extract.
+cargo test -p da-parse --lib
 cargo test -p da-application --tests
 # M432: integration suites — acquisition contracts + pipeline cache
 # (hub_ocr_probe compiles empty without the pdf-classifier feature).

@@ -33,8 +33,8 @@ use std::path::Path;
 use std::sync::Arc;
 
 use da_adapters::{
-    FdApiEmbedder, FigureDetectionStage, GrobidParseStage, GrobidParser, GrobidProfile,
-    ParsedArticleEmbeddingStage, PdfFigures2Adapter, RuleExtractionStage, SamyamaGraphStore,
+    FdApiEmbedder, FigureDetectionStage, GrobidParseStage, ParsedArticleEmbeddingStage,
+    PdfFigures2Adapter, RuleExtractionStage, SamyamaGraphStore,
 };
 use da_application::candidate_materialization_stage::CandidateMaterializationStage;
 use da_application::equation_extraction_stage::EquationExtractionStage;
@@ -56,6 +56,7 @@ use da_application::{
 };
 use da_domain::figure_analysis::FigureQuotePolicy;
 use da_domain::{LoadCacheRecord, StageCacheMode, StageIdRegistry};
+use da_parse::{GrobidParser, GrobidProfile};
 use da_ports::clock::Clock;
 use da_ports::embedder::Embedder;
 use da_ports::extractor::Extractor;
@@ -649,9 +650,7 @@ pub async fn run_journey_content(
                 .with_quote_policy(quote_policy.clone());
                 let neg_dir = std::env::var("DA_NEGATIVE_MEMORY_DIR")
                     .map(std::path::PathBuf::from)
-                    .unwrap_or_else(|_| {
-                        std::path::PathBuf::from("data/agent_memory/negatives")
-                    });
+                    .unwrap_or_else(|_| std::path::PathBuf::from("data/agent_memory/negatives"));
                 match da_adapters::negative_memory::JsonlNegativeMemory::open(neg_dir) {
                     Ok(store) => stage.with_negatives(std::sync::Arc::new(store)),
                     Err(_) => stage,

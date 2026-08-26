@@ -13,8 +13,9 @@
 //!   cargo run -p da-cli --example gepa_hub_research
 //!   cargo run -p da-cli --example gepa_hub_research -- --ids-file artifacts/gepa_hub_research/ingest_ids.txt
 
-use da_adapters::{GrobidParser, RuleBasedExtractor, SamyamaGraphStore};
+use da_adapters::{RuleBasedExtractor, SamyamaGraphStore};
 use da_application::{IngestUseCase, batch_ingest_pdfs};
+use da_parse::GrobidParser;
 use da_ports::extractor::Extractor;
 use da_ports::parser::ParserPort;
 use kg_embeddings::mock::MockEmbedder;

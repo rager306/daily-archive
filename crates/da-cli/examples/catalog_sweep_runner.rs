@@ -13,13 +13,14 @@
 use anyhow::Result;
 use clap::Parser;
 use da_adapters::{
-    FdApiEmbedder, FilePipelineCache, GrobidParseStage, GrobidParser, GrobidProfile,
-    ParsedArticleEmbeddingStage, RuleBasedExtractor, RuleExtractionStage,
+    FdApiEmbedder, FilePipelineCache, GrobidParseStage, ParsedArticleEmbeddingStage,
+    RuleBasedExtractor, RuleExtractionStage,
 };
 use da_application::{PipelineOrchestrator, PipelineRunReport, StageDisposition};
 use da_cli::catalog_sweep::{
     ArticleMetrics, CatalogEntry, DeviationKind, SweepThresholds, classify_deviations,
 };
+use da_parse::{GrobidParser, GrobidProfile};
 use da_ports::pipeline_cache::{PipelineCache, SourceIdentity};
 use da_ports::pipeline_stage::{PipelineStageExecutor, StageContract};
 use kg_pipeline::PipelineBuilder;

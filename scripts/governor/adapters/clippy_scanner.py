@@ -21,6 +21,7 @@ OUR_CRATES = [
     "da-ports",
     "da-application",
     "da-adapters",
+    "da-parse",
     "da-cli",
     "da-mcp",
 ]

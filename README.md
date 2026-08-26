@@ -41,7 +41,8 @@ crates/
                     #   Embedder, Extractor, OpenAlexClient, LLMClient,
                     #   GraphAlgorithms (PPR, neighbors)
   da-application/   # use cases: Ingest, Extraction, Enrich, Healing, Scheduler
-  da-adapters/      # GROBID/HTML, FD API, Samyama, extraction/OpenAlex adapters
+  da-parse/         # scholarly PDF fulltext: Java GROBID HTTP, TEI IR, ParserPort
+  da-adapters/      # HTML, pdf-classifier, Samyama, FD API, extraction/OpenAlex
   da-cli/           # binary `da` + cache/materialization/evaluation operators
   da-mcp/           # read-only MCP knowledge-base access
   kg-ontology/      # universal YAML-driven ontology registry and temporal types
@@ -56,8 +57,9 @@ Dependency direction (enforced by CI):
 ```
 da-domain  ──►  (no infra)
 da-ports   ──►  da-domain
-da-application ──►  da-domain, da-ports  (no da-adapters)
-da-adapters  ──►  da-domain, da-ports, samyama
+da-application ──►  da-domain, da-ports  (no da-adapters, no da-parse)
+da-parse     ──►  da-ports (Java GROBID HTTP + TEI IR; no Samyama)
+da-adapters  ──►  da-domain, da-ports, da-parse, samyama
 da-cli / da-mcp ──► composition and infrastructure layers
 kg-*          ──►  universal only (never da-*)
 ```
@@ -326,11 +328,12 @@ Current complete-denominator metrics: **P=0.766 R=1.000 micro-F1=0.868**
 bash scripts/verify_rust_architecture.sh
 
 # Or piece-wise (preferred — avoids rocksdb test-profile rebuild):
-cargo fmt -p da-domain -p da-ports -p da-application -p da-adapters -p da-cli -p da-mcp
+cargo fmt -p da-domain -p da-ports -p da-application -p da-adapters -p da-parse -p da-cli -p da-mcp
 cargo check -p da-cli
 cargo test -p da-domain --lib
 cargo test -p kg-ontology --lib
 cargo test -p da-application --tests
+cargo test -p da-parse --lib
 cargo test -p da-adapters --lib
 
 # ADR-051 P1 property tests (M344/M353–M355)

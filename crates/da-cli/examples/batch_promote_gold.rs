@@ -11,11 +11,12 @@
 //! Requires GROBID at GROBID_URL (default http://127.0.0.1:8070).
 //! Does **not** open graph import (D127).
 
-use da_adapters::{GrobidParser, RuleBasedExtractor};
+use da_adapters::RuleBasedExtractor;
 use da_domain::{
     ExtractionMetrics, GoldEntity, MultiPaperGoldIndex, PredictedEntity, list_false_positives,
     promote_candidates,
 };
+use da_parse::GrobidParser;
 use da_ports::extractor::Extractor;
 use da_ports::parser::ParserPort;
 use std::path::PathBuf;

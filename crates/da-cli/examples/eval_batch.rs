@@ -5,9 +5,10 @@
 //!
 //! Usage: cargo run -p da-cli --example eval_batch
 
-use da_adapters::{GrobidParser, HtmlParser, RuleBasedExtractor};
+use da_adapters::{HtmlParser, RuleBasedExtractor};
 use da_cli::gold_corpus::{CanonicalSourceKind, build_gold_corpus_manifest};
 use da_domain::eval::{ExtractionMetrics, GoldEntity, PredictedEntity};
+use da_parse::GrobidParser;
 use da_ports::extractor::Extractor;
 use da_ports::parser::ParserPort;
 

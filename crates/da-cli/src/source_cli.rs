@@ -1182,7 +1182,7 @@ pub fn run_parse_pdf(
     bookmarks: Option<u32>,
     quality: Option<f32>,
 ) -> anyhow::Result<()> {
-    use da_adapters::GrobidParser;
+    use da_parse::GrobidParser;
     use da_ports::parser::ParserPort;
 
     let grammar = consult_parse_grammar_cli(paper_id, pages, bookmarks, quality).ok();
@@ -1206,7 +1206,7 @@ pub fn run_parse_pdf(
         // regression: rich profile hung 120s until client timeout when the
         // container had no crossref route). Bibliography enrichment runs via
         // the separately cached OpenAlex/Crossref enrich stage from the host.
-        let parser = GrobidParser::from_env().with_profile(da_adapters::GrobidProfile::structural());
+        let parser = GrobidParser::from_env().with_profile(da_parse::GrobidProfile::structural());
         parser.parse_pdf(pdf, paper_id).await.map_err(|e| anyhow::anyhow!("grobid: {e}"))
     })?;
 

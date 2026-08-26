@@ -7,8 +7,9 @@
 //!   cargo run -p da-cli --example eval_extract -- 2507.19457
 //!   cargo run -p da-cli --example eval_extract -- 2603.21520
 
-use da_adapters::{GrobidParser, RuleBasedExtractor};
+use da_adapters::RuleBasedExtractor;
 use da_domain::eval::{ExtractionMetrics, GoldEntity, PredictedEntity};
+use da_parse::GrobidParser;
 use da_ports::extractor::Extractor;
 use da_ports::parser::ParserPort;
 

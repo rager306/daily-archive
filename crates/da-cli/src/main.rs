@@ -885,7 +885,8 @@ async fn export_store_snapshot(
 }
 
 async fn check_health() {
-    use da_adapters::{FdApiEmbedder, GrobidParser};
+    use da_adapters::FdApiEmbedder;
+    use da_parse::GrobidParser;
     use da_ports::embedder::Embedder;
     use da_ports::graph_store::GraphStore;
     use kg_storage::GraphMode;
@@ -1003,7 +1004,8 @@ fn require_fd_api_key_for_ingest() {
 }
 
 async fn ingest_pdf(pdf_path: &str, paper_id: &str, enable_import: bool) {
-    use da_adapters::{FdApiEmbedder, GrobidParser};
+    use da_adapters::FdApiEmbedder;
+    use da_parse::GrobidParser;
     use da_application::IngestUseCase;
     use std::sync::Arc;
 
@@ -1107,7 +1109,8 @@ async fn batch_ingest(
     inventory_dir: Option<&std::path::Path>,
     enable_import: bool,
 ) {
-    use da_adapters::{FdApiEmbedder, GrobidParser};
+    use da_adapters::FdApiEmbedder;
+    use da_parse::GrobidParser;
     use da_application::{IngestUseCase, batch_ingest_pdfs_with_context};
     use std::sync::Arc;
 
@@ -1659,7 +1662,7 @@ async fn summarize_paper(
     snapshot: Option<&std::path::Path>,
     output_snapshot: Option<&std::path::Path>,
 ) {
-    use da_adapters::GrobidParser;
+    use da_parse::GrobidParser;
     use da_adapters::{
         model_registry::{load_model_registry, validate_prompt_model_bindings},
         openai_compatible_llm::OpenAiCompatibleLlmClient,
@@ -1820,8 +1823,9 @@ async fn extract_entities(
     snapshot: Option<&std::path::Path>,
     output_snapshot: Option<&std::path::Path>,
 ) {
-    use da_adapters::{GrobidParser, RuleBasedExtractor};
+    use da_adapters::RuleBasedExtractor;
     use da_application::ExtractionUseCase;
+    use da_parse::GrobidParser;
     use da_ports::parser::ParserPort;
     use std::sync::Arc;
 
@@ -2225,13 +2229,13 @@ async fn run_scheduler(queue_dir: &str) -> anyhow::Result<()> {
     let catalog_locator = Arc::new(da_application::FilesystemCatalogPdfLocator::from_env());
     let ingest_executor = da_application::IngestSchedulerExecutor::new(
         catalog_locator.clone(),
-        Box::new(da_adapters::GrobidParser::from_env()),
+        Box::new(da_parse::GrobidParser::from_env()),
         Box::new(da_adapters::FdApiEmbedder::from_env()),
         graph_store.clone(),
     );
     let reparse_executor = da_application::ReparseSchedulerExecutor::new(
         catalog_locator,
-        Box::new(da_adapters::GrobidParser::from_env()),
+        Box::new(da_parse::GrobidParser::from_env()),
         Box::new(da_adapters::FdApiEmbedder::from_env()),
         graph_store.clone(),
     );

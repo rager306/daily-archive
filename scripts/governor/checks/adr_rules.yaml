@@ -109,7 +109,7 @@ rules:
     anchor: "ADR-050 (kg-* crate family — universal, no da-* deps)"
     severity: high
     scan: crates/
-    pattern: '^(?:da-domain|da-ports|da-application|da-adapters|da-graph|da-cli)\s*='
+    pattern: '^(?:da-domain|da-ports|da-application|da-adapters|da-graph|da-cli|da-parse)\s*='
     rationale: "kg-* crates are universal (ADR-050). They must NOT declare any da-* dependency in Cargo.toml."
     filename_filter: Cargo.toml
     path_prefix_include: crates/kg-
@@ -128,6 +128,14 @@ rules:
     scan: crates/da-application/Cargo.toml
     pattern: '^da-adapters\s*='
     rationale: "da-application must not depend on da-adapters in prod deps."
+    section_filter: dependencies
+
+  - id: da_application_must_not_depend_on_da_parse
+    anchor: "ADR-034 (Hexagonal/Onion overlay)"
+    severity: medium
+    scan: crates/da-application/Cargo.toml
+    pattern: '^da-parse\s*='
+    rationale: "da-application must not depend on da-parse in prod deps. Parse is constructed at the composition root."
     section_filter: dependencies
 
   # --- ADR-040 binding: Samyama sole KG+vector+persist store ---

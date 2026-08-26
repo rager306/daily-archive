@@ -3,13 +3,12 @@
 use anyhow::{Context, Result};
 use chrono::{Duration, Utc};
 use clap::Parser;
-use da_adapters::{
-    FigureDetectionStage, FilePipelineCache, GrobidParseStage, GrobidParser, PdfFigures2Adapter,
-};
+use da_adapters::{FigureDetectionStage, FilePipelineCache, GrobidParseStage, PdfFigures2Adapter};
 use da_application::{
     FigureContextStage, FigureSectionLocator, PipelineOrchestrator, StageDisposition,
 };
 use da_domain::FigureSemanticContext;
+use da_parse::GrobidParser;
 use da_ports::clock::SystemClock;
 use da_ports::pipeline_cache::{CacheLookup, PipelineCache, SourceFormat, SourceIdentity};
 use da_ports::{FigureDetectionPort, FigureDetectionRequest, ParserPort};

@@ -4,9 +4,9 @@
 
 use clap::Args;
 use da_adapters::{
-    ArxivSourceAcquisition, CatalogHtmlAcquisition, FdApiEmbedder, FilePipelineCache, GrobidParser,
-    GrobidProfile, HtmlParser, RuleBasedExtractor,
-    context_conservation_policy::load_context_conservation_policy, toc_unit_keys,
+    ArxivSourceAcquisition, CatalogHtmlAcquisition, FdApiEmbedder, FilePipelineCache, HtmlParser,
+    RuleBasedExtractor, context_conservation_policy::load_context_conservation_policy,
+    toc_unit_keys,
 };
 use da_application::{
     ArticleLoadUseCase, ExtractionUseCase, IngestUseCase, LoadContentOutcome, LoadContentPipeline,
@@ -18,6 +18,7 @@ use da_domain::{
     AcquisitionPolicy, LOAD_REPORT_SCHEMA_VERSION, LoadAssetRecord, LoadCacheRecord, LoadStageSet,
     PrimaryContentKind, StageIdRegistry,
 };
+use da_parse::{GrobidParser, GrobidProfile};
 use da_ports::SourceAcquisitionPort;
 use da_ports::embedder::Embedder;
 use da_ports::extractor::{ExtractedEntity, Extractor};
@@ -1226,8 +1227,7 @@ fn resolve_network_policy(disallow: bool) -> bool {
             {
                 return false;
             }
-            if key == "DA_LOAD_ALLOW_NETWORK"
-                && matches!(v.as_str(), "0" | "false" | "no" | "off")
+            if key == "DA_LOAD_ALLOW_NETWORK" && matches!(v.as_str(), "0" | "false" | "no" | "off")
             {
                 return false;
             }

@@ -302,6 +302,61 @@ def test_kg_crate_da_dependency_caught():
     assert kg_violations[0].severity == "high"
 
 
+def test_kg_crate_da_parse_dependency_caught():
+    """Governor should catch kg-* crate depending on da-parse (KTD8)."""
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+
+    _write(
+        root / "crates" / "kg-ontology" / "Cargo.toml",
+        "[package]\nname = \"kg-ontology\"\n\n[dependencies]\nda-parse = { path = \"../da-parse\" }\n",
+    )
+
+    scanner = FilesystemCodeScanner(root)
+    rule_repo = YAMLRuleRepository(checks_dir)
+    audit = AuditService(scanner=scanner, rule_repo=rule_repo)
+    report = audit.run_audit()
+
+    kg_violations = [
+        v
+        for r in report.results
+        if r.rule.id == "kg_crates_must_not_depend_on_da"
+        for v in r.violations
+    ]
+    assert len(kg_violations) >= 1, "Expected kg_crates_must_not_depend_on_da for da-parse"
+    assert kg_violations[0].severity == "high"
+
+
+def test_da_application_must_not_depend_on_da_parse():
+    """Prod da-parse on da-application is a hexagonal violation (KTD8 / AE4)."""
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+
+    _write(
+        root / "crates" / "da-application" / "Cargo.toml",
+        """[package]
+name = "da-application"
+
+[dependencies]
+da-parse = { workspace = true }
+""",
+    )
+
+    scanner = FilesystemCodeScanner(root)
+    rule_repo = YAMLRuleRepository(checks_dir)
+    audit = AuditService(scanner=scanner, rule_repo=rule_repo)
+    report = audit.run_audit()
+
+    parse_violations = [
+        v
+        for r in report.results
+        if r.rule.id == "da_application_must_not_depend_on_da_parse"
+        for v in r.violations
+    ]
+    assert len(parse_violations) >= 1, "Expected da_application_must_not_depend_on_da_parse"
+    assert parse_violations[0].severity == "medium"
+
+
 def test_dev_dependencies_not_flagged_as_prod_violation():
     """da-adapters in [dev-dependencies] should NOT trigger prod-dep violation."""
     root = _make_root()

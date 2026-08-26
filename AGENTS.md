@@ -436,7 +436,8 @@ re-orient in <1 min.
 | Domain | `crates/da-domain/` | Paper/Entity/Evidence/Relation/Healing/Scheduler/Eval types |
 | Ports | `crates/da-ports/` | GraphStore/DirectGraphStore (HOT path), ParserPort, Embedder, Extractor, OpenAlexClient |
 | Application | `crates/da-application/` | Ingest/BatchIngest/Extraction/Healing/Enrich/Scheduler use-cases |
-| Adapters | `crates/da-adapters/` | GROBID, fd_api embedder (bge-m3), SamyamaGraphStore, RuleBasedExtractor, OpenAlexHttpAdapter |
+| Parse | `crates/da-parse/` | Scholarly PDF fulltext: Java GROBID HTTP, TEI IR, ParserPort projector |
+| Adapters | `crates/da-adapters/` | HTML parse, pdf-classifier, XY-Cut, fd_api embedder (bge-m3), SamyamaGraphStore, RuleBasedExtractor, OpenAlexHttpAdapter, GrobidParseStage |
 | CLI | `crates/da-cli/` | `da` binary: health/version/ingest/batch-ingest/extract/schema-init/heal/enrich/scheduler-run |
 | **kg-ontology** | `crates/kg-ontology/` | Universal types: Violation/Severity/PropertySnapshot/TemporalEdge (ADR-050, no da-* deps) |
 | **kg-storage** | `crates/kg-storage/` | Universal storage traits: GraphStore/DirectGraphStore/MockGraphStore (ADR-050) |
@@ -466,6 +467,7 @@ cargo test   -p <changed-crate> --lib
 
 # Common per-crate test targets (AVOIDS `cargo test --workspace`)
 cargo test -p da-domain --lib
+cargo test -p da-parse --lib
 cargo test -p da-adapters --lib
 cargo test -p da-application --tests
 cargo test -p kg-ontology --lib
@@ -626,7 +628,7 @@ This project is indexed by GitNexus as **daily-archive** (35663 symbols, 60292 r
 # Parser sidecars (GROBID)
 
 Hybrid PDF path expects **GROBID** HTTP service (default `http://127.0.0.1:8070`).
-GROBID TEI output is consumed by `crates/da-adapters/src/grobid_parser.rs` (Rust),
+GROBID TEI output is consumed by `crates/da-parse` (Rust `GrobidParser`),
 not by Python code anymore.
 
 ## Start / stop
@@ -641,7 +643,7 @@ docker compose -f .docker/docker-compose.yml --env-file .env down
 
 Env keys: see `.env.example` (`GROBID_*`, `HYBRID_AUTO_START_CONTAINERS`). GROBID CRF has **no API key**.
 
-**GROBID REST profiles** (`da-adapters::GrobidProfile`, D204):
+**GROBID REST profiles** (`da_parse::GrobidProfile`, D204):
 - `rich` (backward-compatible default): `consolidateCitations=1`,
   `consolidateHeader=1`, `teiCoordinates=["figure","table","note"]`.
 - `structural` (gold/bounded pipeline): both consolidation flags are `0`, while
@@ -657,7 +659,7 @@ corpus parsing.
 ## Auto ensure from code (Rust)
 
 ```rust
-use da_adapters::GrobidParser;
+use da_parse::GrobidParser;
 use da_ports::parser::ParserPort;
 
 let parser = GrobidParser::from_env();
@@ -705,7 +707,8 @@ jq 'select(.fields.duration_ms > 1000)' logs/da.log.2026-08-05
 
 - **da-cli** (infrastructure): owns subscriber, WorkerGuard, `logging::init_logging()`
 - **da-application** (use cases): `#[instrument]` on `ingest_pdf`, `batch_ingest_pdfs`, `extract_from_parsed`
-- **da-adapters** (adapters): `#[instrument]` on `GrobidParser::parse_pdf`; `tracing::info!` calls
+- **da-parse** (parse plane): `#[instrument]` on `GrobidParser::parse_pdf`
+- **da-adapters** (adapters): `tracing::info!` on remaining port impls
 - **da-domain, da-ports, kg-***: **zero tracing dependency** (pure types/traits)
 
 ## WorkerGuard

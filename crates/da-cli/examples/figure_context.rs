@@ -2,9 +2,9 @@
 
 use anyhow::{Context, Result, bail};
 use clap::Parser;
-use da_adapters::GrobidParser;
 use da_application::{FigureContextAssembler, FigureSectionLocator};
 use da_domain::{ArticleSummaryContext, DetectedVisualArtifact};
+use da_parse::GrobidParser;
 use da_ports::parser::{ParsedArticle, ParserPort};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};

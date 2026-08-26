@@ -7,13 +7,13 @@ use anyhow::{Context, Result};
 use chrono::{Duration, Utc};
 use clap::Parser;
 use da_adapters::{
-    FdApiEmbedder, FilePipelineCache, GrobidParseStage, GrobidParser, GrobidProfile,
-    HtmlParseStage, HtmlParser, ParsedArticleEmbeddingStage, RuleBasedExtractor,
-    RuleExtractionStage,
+    FdApiEmbedder, FilePipelineCache, GrobidParseStage, HtmlParseStage, HtmlParser,
+    ParsedArticleEmbeddingStage, RuleBasedExtractor, RuleExtractionStage,
 };
 use da_application::{PipelineOrchestrator, PipelineRunReport, StageDisposition};
 use da_cli::gold_corpus::{CanonicalSourceKind, GoldCorpusManifest};
 use da_domain::eval::{ExtractionMetrics, GoldEntity, PredictedEntity};
+use da_parse::{GrobidParser, GrobidProfile};
 use da_ports::extractor::ExtractedEntity;
 use da_ports::pipeline_cache::{
     CacheLookup, PipelineCache, SourceFormat, SourceIdentity, StageOutcome,

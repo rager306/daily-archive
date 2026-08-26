@@ -13,12 +13,13 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use chrono::{TimeZone, Utc};
-use da_adapters::{FilePipelineCache, GrobidProfile, SamyamaGraphStore};
+use da_adapters::{FilePipelineCache, SamyamaGraphStore};
 use da_application::revision_materialization::RevisionManifestationInput;
 use da_application::{PipelineRunReport, StageDisposition};
 use da_cli::load_journey::{JourneyPorts, load_parse_contract, run_journey_content};
 use da_domain::entity::EntityType;
 use da_domain::{LoadCacheRecord, StageIdRegistry};
+use da_parse::GrobidProfile;
 use da_ports::clock::{Clock, FixedClock};
 use da_ports::embedder::EmbedResult;
 use da_ports::embedder::{Embedder, EmbedderError};
