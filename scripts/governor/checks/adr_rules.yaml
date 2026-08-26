@@ -138,6 +138,14 @@ rules:
     rationale: "da-application must not depend on da-parse in prod deps. Parse is constructed at the composition root."
     section_filter: dependencies
 
+  - id: da_parse_must_not_depend_on_samyama_or_kg
+    anchor: "ADR-034 / ADR-050 (da-parse direct [dependencies], not cargo tree)"
+    severity: medium
+    scan: crates/da-parse/Cargo.toml
+    pattern: '^(?:samyama|kg-ontology|kg-storage|kg-embeddings|kg-algorithms|kg-pipeline)\s*='
+    rationale: "da-parse production dependencies must not include Samyama or kg-* crates. Inspect this crate's Cargo.toml, not cargo tree. da-ports is allowed."
+    section_filter: dependencies
+
   # --- ADR-040 binding: Samyama sole KG+vector+persist store ---
   - id: no_forbidden_graph_stores_in_cargo
     anchor: "ADR-040 §3 (binding inventory — Samyama sole KG store)"

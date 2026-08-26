@@ -1,7 +1,7 @@
 <!-- project-current:start -->
 # daily-archive — agent map (what / where)
 
-Runtime: **Rust workspace** `crates/da-{domain,ports,application,graph,adapters,cli}` (hexagonal / onion).  
+Runtime: **Rust workspace** `crates/da-{domain,ports,application,parse,adapters,cli}` (hexagonal / onion).  
 Frozen evidence: Python stack cold-archived under `archive/python-era-cold-*/` (see `archive/PYTHON-ERA-COLD.md`); `legacy/` is a restore stub — not on the runtime path.
 
 ## Hard locks (do not violate)

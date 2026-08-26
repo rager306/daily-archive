@@ -108,6 +108,16 @@ else
   echo "  da-application: OK (no da-parse in prod deps; construct at composition root)"
 fi
 
+if [ ! -f crates/da-parse/Cargo.toml ]; then
+  echo "ERROR: crates/da-parse/Cargo.toml missing"
+  fail=1
+elif grep_deps_prod crates/da-parse/Cargo.toml 'samyama|kg-ontology|kg-storage|kg-embeddings|kg-algorithms|kg-pipeline'; then
+  echo "ERROR: da-parse must not depend on Samyama or kg-* (R4 / KTD6: direct [dependencies])"
+  fail=1
+else
+  echo "  da-parse: OK (no Samyama/kg-* in prod deps; da-ports allowed)"
+fi
+
 echo "=== unit tests (per-package, avoids rocksdb test-profile rebuild hang) ==="
 cargo test -p kg-ontology --lib
 cargo test -p kg-storage --lib

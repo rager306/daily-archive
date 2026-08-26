@@ -66,7 +66,7 @@ jobs:
           cargo fmt \
             -p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline \
             -p da-domain -p da-ports -p da-application \
-            -p da-graph -p da-adapters -p da-parse -p da-cli \
+            -p da-adapters -p da-parse -p da-cli -p da-mcp \
             -- --check
 
       - name: Cargo check (workspace)
@@ -136,9 +136,12 @@ jobs:
           echo "Checking da-application does not depend on da-parse..."
           ! grep_deps crates/da-application/Cargo.toml 'da-parse' || {
             echo "ERROR: da-application must not depend on da-parse (hexagonal violation)"; exit 1; }
-          echo "Checking da-graph does not depend on da-adapters..."
-          ! grep_deps crates/da-graph/Cargo.toml 'da-adapters' || {
-            echo "ERROR: da-graph must not depend on da-adapters (hexagonal violation)"; exit 1; }
+          echo "Checking da-parse does not depend on Samyama or kg-*..."
+          if [ ! -f crates/da-parse/Cargo.toml ]; then
+            echo "ERROR: crates/da-parse/Cargo.toml missing"; exit 1
+          fi
+          ! grep_deps crates/da-parse/Cargo.toml 'samyama|kg-ontology|kg-storage|kg-embeddings|kg-algorithms|kg-pipeline' || {
+            echo "ERROR: da-parse must not depend on Samyama or kg-* (inspect direct [dependencies], not cargo tree)"; exit 1; }
           echo "Checking kg-* crates have no da-* dependencies (ADR-050 invariant)..."
           for kg in kg-ontology kg-storage kg-embeddings kg-algorithms kg-pipeline; do
             ! grep_deps_all "crates/$kg/Cargo.toml" 'da-domain|da-ports|da-application|da-adapters|da-parse|da-graph|da-cli' || {

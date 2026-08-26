@@ -357,6 +357,67 @@ da-parse = { workspace = true }
     assert parse_violations[0].severity == "medium"
 
 
+def test_da_parse_must_not_depend_on_samyama_or_kg():
+    """Prod samyama/kg-* on da-parse is a hexagonal violation (R4 / KTD6)."""
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+
+    _write(
+        root / "crates" / "da-parse" / "Cargo.toml",
+        """[package]
+name = "da-parse"
+
+[dependencies]
+da-ports = { workspace = true }
+samyama = { workspace = true }
+""",
+    )
+
+    scanner = FilesystemCodeScanner(root)
+    rule_repo = YAMLRuleRepository(checks_dir)
+    audit = AuditService(scanner=scanner, rule_repo=rule_repo)
+    report = audit.run_audit()
+
+    parse_violations = [
+        v
+        for r in report.results
+        if r.rule.id == "da_parse_must_not_depend_on_samyama_or_kg"
+        for v in r.violations
+    ]
+    assert len(parse_violations) >= 1, "Expected da_parse_must_not_depend_on_samyama_or_kg"
+    assert parse_violations[0].severity == "medium"
+
+
+def test_da_parse_da_ports_not_flagged_as_graph_dep():
+    """da-ports on da-parse is allowed; only Samyama/kg-* are banned."""
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+
+    _write(
+        root / "crates" / "da-parse" / "Cargo.toml",
+        """[package]
+name = "da-parse"
+
+[dependencies]
+da-ports = { workspace = true }
+reqwest = { workspace = true }
+""",
+    )
+
+    scanner = FilesystemCodeScanner(root)
+    rule_repo = YAMLRuleRepository(checks_dir)
+    audit = AuditService(scanner=scanner, rule_repo=rule_repo)
+    report = audit.run_audit()
+
+    parse_violations = [
+        v
+        for r in report.results
+        if r.rule.id == "da_parse_must_not_depend_on_samyama_or_kg"
+        for v in r.violations
+    ]
+    assert parse_violations == []
+
+
 def test_dev_dependencies_not_flagged_as_prod_violation():
     """da-adapters in [dev-dependencies] should NOT trigger prod-dep violation."""
     root = _make_root()
