@@ -1,0 +1,1075 @@
+schema_version: grobid-compatibility.v1
+adr_ref: ADR-075
+ledger_id: grobid-compatibility
+requirement_ids: [R113, R117, R085, R110, R112]
+decisions: [D127, D204, D291, D292, D294, D295]
+import_eligible: false
+auto_promote: forbidden
+
+# Source-bound identities. T03 fills hashes/latency; T01 records the
+# contract those reports must bind. Never store raw TEI/PDF here.
+defaults:
+  baseline:
+    backend: java-grobid-http
+    product: GROBID
+    version: 0.9.0-crf
+    license: Apache-2.0
+    rest_base: /api
+    default_port: 8070
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    vendor_paths: /root/vendor-source/grobid/grobid-service/src/main/java/org/grobid/service/GrobidPaths.java
+  candidate:
+    backend: da-parse
+    crate: da-parse
+    surface: crates/da-parse
+    version: workspace
+    license: project
+  rollback_target: java-grobid-http@0.9.0-crf
+  profiles:
+    rich:
+      consolidateHeader: 1
+      consolidateCitations: 1
+      teiCoordinates: [figure, table, note, formula]
+    structural:
+      consolidateHeader: 0
+      consolidateCitations: 0
+      teiCoordinates: [figure, table, note, formula]
+  current_request_dialect:
+    # da-parse GrobidProfile currently maps two bools onto 0|1, not the
+    # official 0|1|2(|3) consolidation dialect. S04 types the full dialect.
+    consolidateHeader: bool-as-0-1
+    consolidateCitations: bool-as-0-1
+    teiCoordinates_constant: figure,table,note,formula
+  known_hard_regressions_until_t02:
+  - silent_skip_missing_tei_fixture
+  configuration_keys_documented_not_owned:
+    # Values live at da-cli composition root (R116). Ledger records names only.
+  - DA_GROBID_URL
+  - DA_PARSE_BACKEND
+  - DA_PARSE_CACHE_MODE
+  - DA_PARSE_CACHE_ROOT
+  - DA_PARSE_BATCH_SIZE
+  - DA_PARSE_WORKERS
+  - DA_PARSE_QUEUE_CAPACITY
+  - DA_PARSE_POLICY_ROOT
+  - DA_PARSE_EXPERIENCE_RVF_PATH
+  - DA_PARSE_REDB_INDEX_ENABLED
+  - DA_PARSE_REDB_INDEX_PATH
+
+capability_groups:
+  1: service_liveness
+  2: fulltext
+  3: header_and_references
+  4: fine_grained_header_citation
+  5: coordinates_and_annotations
+  6: training_evaluation_promotion
+  7: patent_deferred
+
+capabilities:
+  # ------------------------------------------------------------------
+  # Group 1 — service liveness (ADR-075 §2.8 required subset)
+  # ------------------------------------------------------------------
+  - id: rest.isalive
+    group: 1
+    kind: endpoint
+    state: proxy
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: GET /api/isalive
+      grobid_path_constant: PATH_ALIVE
+      request_fields: []
+      response_format: text/plain true|false
+    implementation:
+      crate: da-parse
+      surface: crates/da-parse/src/http.rs GrobidParser::is_alive
+      notes: GET {GROBID_URL}/api/isalive; fail-closed ParserError::Unavailable
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: da-parse@http-proxy
+    evidence_ref: crates/da-parse/src/http.rs
+    hard_regressions: [panic]
+    metrics:
+      conservation: not_applicable
+      quality: boolean_alive
+      performance: probe_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.health
+    group: 1
+    kind: endpoint
+    state: absent
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: GET /api/health
+      grobid_path_constant: PATH_HEALTH
+      request_fields: []
+      response_format: JSON Dropwizard/health payload
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Not called. Optional REST facade (D291) must not bind :8070.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [panic]
+    metrics:
+      conservation: not_applicable
+      quality: status_code
+      performance: probe_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.version
+    group: 1
+    kind: endpoint
+    state: absent
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: GET /api/version
+      grobid_path_constant: PATH_VERSION
+      request_fields: []
+      response_format: JSON {name, version, revision} or plain version string
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: T03 reports Java version when the service is reachable; no client yet.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [incorrect_cache_reuse]
+    metrics:
+      conservation: not_applicable
+      quality: version_string_match
+      performance: probe_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  # ------------------------------------------------------------------
+  # Group 2 — fulltext
+  # ------------------------------------------------------------------
+  - id: rest.processFulltextDocument
+    group: 2
+    kind: endpoint
+    state: proxy
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: POST /api/processFulltextDocument
+      grobid_path_constant: PATH_FULL_TEXT
+      request_fields:
+      - {name: input, required: true, type: pdf-bytes}
+      - {name: consolidateHeader, required: false, type: enum, values: [0, 1, 2, 3]}
+      - {name: consolidateCitations, required: false, type: enum, values: [0, 1, 2]}
+      - {name: consolidateFunders, required: false, type: enum, values: [0, 1, 2]}
+      - {name: includeRawCitations, required: false, type: enum, values: [0, 1]}
+      - {name: includeRawAffiliations, required: false, type: enum, values: [0, 1]}
+      - {name: teiCoordinates, required: false, type: list, values: [persName, figure, ref, biblStruct, formula, s, note, title, head, p, affiliation, table]}
+      - {name: segmentSentences, required: false, type: enum, values: [0, 1]}
+      - {name: generateIDs, required: false, type: enum, values: [0, 1]}
+      - {name: start, required: false, type: int, meaning: first_page}
+      - {name: end, required: false, type: int, meaning: last_page}
+      response_format: application/xml TEI (200); 204 empty; 400 invalid; 503 busy
+      busy_semantics: honest_503_not_internal_retry
+    implementation:
+      crate: da-parse
+      surface: crates/da-parse/src/http.rs GrobidParser::parse_pdf
+      notes: >-
+        Multipart input + consolidateHeader/Citations from GrobidProfile bools
+        (0|1 only) + teiCoordinates JSON [figure,table,note,formula]. Timeout
+        120s. Profile fingerprint rotates cache identity (D204). Full dialect
+        (modes 2/3, funders, raw fields, page window) is S04.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: da-parse@http-proxy
+    evidence_ref: crates/da-parse/src/http.rs
+    hard_regressions:
+    - lost_references_or_links
+    - changed_reading_order
+    - lost_figures_tables_formulas
+    - invented_revision
+    - nondeterministic_output
+    - panic
+    - dropped_parser_work
+    - incorrect_cache_reuse
+    metrics:
+      conservation: tei_family_counts
+      quality: header_reference_field_accuracy
+      performance: p50_p95_p99_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.processFulltextAssetDocument
+    group: 2
+    kind: endpoint
+    state: absent
+    product_scope: supporting
+    promotion_state: candidate
+    official:
+      identity: POST /api/processFulltextAssetDocument
+      grobid_path_constant: PATH_FULL_TEXT_ASSET
+      request_fields:
+      - {name: input, required: true, type: pdf-bytes}
+      - {name: consolidateHeader, required: false, type: enum, values: [0, 1, 2, 3]}
+      - {name: consolidateCitations, required: false, type: enum, values: [0, 1, 2]}
+      - {name: teiCoordinates, required: false, type: list}
+      response_format: zip of TEI plus extracted assets
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Not a compatibility requirement. Asset zip is not graph truth (D127).
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [incorrect_cache_reuse]
+    metrics:
+      conservation: asset_family_counts
+      quality: not_gated
+      performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.processFulltextDocumentHTML
+    group: 2
+    kind: endpoint
+    state: absent
+    product_scope: supporting
+    promotion_state: candidate
+    official:
+      identity: POST /api/processFulltextDocumentHTML
+      grobid_path_constant: PATH_FULL_TEXT_HTML
+      request_fields:
+      - {name: input, required: true, type: pdf-bytes}
+      response_format: text/html visualization, not TEI truth
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Visualization only. Markdown/HTML is not TEI conservation proof.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [changed_reading_order]
+    metrics:
+      conservation: not_applicable
+      quality: not_gated
+      performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  # ------------------------------------------------------------------
+  # Group 3 — header and references (ADR-075 §2.8 required subset)
+  # ------------------------------------------------------------------
+  - id: rest.processHeaderDocument
+    group: 3
+    kind: endpoint
+    state: absent
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: POST /api/processHeaderDocument
+      grobid_path_constant: PATH_HEADER
+      request_fields:
+      - {name: input, required: true, type: pdf-bytes}
+      - {name: consolidateHeader, required: false, type: enum, values: [0, 1, 2, 3]}
+      - {name: includeRawAffiliations, required: false, type: enum, values: [0, 1]}
+      - {name: teiCoordinates, required: false, type: list}
+      response_format: application/xml TEI header
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: S05 proxy compatibility. Currently only fulltext is spoken.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [invented_revision, lost_references_or_links]
+    metrics:
+      conservation: header_field_counts
+      quality: title_author_date_affiliation_accuracy
+      performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.processReferences
+    group: 3
+    kind: endpoint
+    state: absent
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: POST /api/processReferences
+      grobid_path_constant: PATH_REFERENCES
+      request_fields:
+      - {name: input, required: true, type: pdf-bytes}
+      - {name: consolidateCitations, required: false, type: enum, values: [0, 1, 2]}
+      - {name: includeRawCitations, required: false, type: enum, values: [0, 1]}
+      - {name: teiCoordinates, required: false, type: list}
+      response_format: application/xml TEI listBibl
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: S05 proxy compatibility. Citation conservation is a hard regression.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [lost_references_or_links, nondeterministic_output]
+    metrics:
+      conservation: biblstruct_count
+      quality: citation_field_accuracy
+      performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  # ------------------------------------------------------------------
+  # Group 4 — fine-grained date/name/affiliation/citation
+  # ------------------------------------------------------------------
+  - id: rest.processDate
+    group: 4
+    kind: endpoint
+    state: absent
+    product_scope: supporting
+    promotion_state: candidate
+    official:
+      identity: POST /api/processDate
+      grobid_path_constant: PATH_DATE
+      request_fields:
+      - {name: date, required: true, type: string}
+      response_format: application/xml TEI date
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Native candidate is S08. Java remains oracle.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [invented_revision, nondeterministic_output]
+    metrics:
+      conservation: date_field_presence
+      quality: strict_soft_date_match
+      performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.processHeaderNames
+    group: 4
+    kind: endpoint
+    state: absent
+    product_scope: supporting
+    promotion_state: candidate
+    official:
+      identity: POST /api/processHeaderNames
+      grobid_path_constant: PATH_HEADER_NAMES
+      request_fields:
+      - {name: names, required: true, type: string}
+      response_format: application/xml TEI persName sequence
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Native personal-name parser is S09.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [lost_references_or_links, nondeterministic_output]
+    metrics:
+      conservation: persname_count
+      quality: forename_surname_accuracy
+      performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.processCitationNames
+    group: 4
+    kind: endpoint
+    state: absent
+    product_scope: supporting
+    promotion_state: candidate
+    official:
+      identity: POST /api/processCitationNames
+      grobid_path_constant: PATH_CITE_NAMES
+      request_fields:
+      - {name: names, required: true, type: string}
+      response_format: application/xml TEI persName sequence
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Citation-name dialect differs from header names; S09/S11.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [lost_references_or_links]
+    metrics:
+      conservation: persname_count
+      quality: citation_name_accuracy
+      performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.processAffiliations
+    group: 4
+    kind: endpoint
+    state: absent
+    product_scope: supporting
+    promotion_state: candidate
+    official:
+      identity: POST /api/processAffiliations
+      grobid_path_constant: PATH_AFFILIATION
+      request_fields:
+      - {name: affiliations, required: true, type: string}
+      response_format: application/xml TEI affiliation
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Native affiliation parser and linker is S10.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [lost_references_or_links]
+    metrics:
+      conservation: affiliation_org_count
+      quality: org_addr_marker_accuracy
+      performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.processCitation
+    group: 4
+    kind: endpoint
+    state: absent
+    product_scope: supporting
+    promotion_state: candidate
+    official:
+      identity: POST /api/processCitation
+      grobid_path_constant: PATH_CITATION
+      request_fields:
+      - {name: citations, required: true, type: string}
+      - {name: consolidateCitations, required: false, type: enum, values: [0, 1, 2]}
+      - {name: includeRawCitations, required: false, type: enum, values: [0, 1]}
+      response_format: application/xml TEI biblStruct
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Native citation parser is S11.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [lost_references_or_links, invented_revision]
+    metrics:
+      conservation: biblstruct_count
+      quality: citation_field_accuracy
+      performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.processCitationListTEI
+    group: 4
+    kind: endpoint
+    state: absent
+    product_scope: supporting
+    promotion_state: candidate
+    official:
+      identity: POST /api/processCitationListTEI
+      grobid_path_constant: PATH_CITATION_LIST
+      request_fields:
+      - {name: input, required: true, type: string-or-file}
+      - {name: consolidateCitations, required: false, type: enum, values: [0, 1, 2]}
+      response_format: application/xml TEI listBibl
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Native reference segmentation and header composition is S12.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [lost_references_or_links, changed_reading_order]
+    metrics:
+      conservation: biblstruct_count
+      quality: citation_list_order
+      performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  # ------------------------------------------------------------------
+  # Group 5 — coordinates and annotations
+  # ------------------------------------------------------------------
+  - id: dialect.teiCoordinates
+    group: 5
+    kind: request_dialect
+    state: proxy
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: teiCoordinates request field on fulltext/header/references
+      grobid_path_constant: n/a
+      request_fields:
+      - {name: teiCoordinates, required: false, type: list}
+      response_format: coords attribute on requested TEI element families
+    implementation:
+      crate: da-parse
+      surface: crates/da-parse/src/profile.rs GrobidProfile::TEI_COORDINATES
+      notes: >-
+        Constant figure,table,note,formula is part of configuration_fingerprint
+        (D204). Typed per-family coordinates and callouts are S07.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: da-parse@profile-constant
+    evidence_ref: crates/da-parse/src/profile.rs
+    hard_regressions: [lost_figures_tables_formulas, incorrect_cache_reuse]
+    metrics:
+      conservation: coords_attribute_coverage
+      quality: coordinate_roundtrip
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.referenceAnnotations
+    group: 5
+    kind: endpoint
+    state: absent
+    product_scope: supporting
+    promotion_state: candidate
+    official:
+      identity: POST /api/referenceAnnotations
+      grobid_path_constant: PATH_CITATION_POSITIONS
+      request_fields:
+      - {name: input, required: true, type: pdf-bytes}
+      response_format: JSON/XML citation positions in PDF
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Annotation overlay is not TEI graph truth.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Coordinates-in-PDF/
+    hard_regressions: [lost_references_or_links]
+    metrics:
+      conservation: annotation_count
+      quality: not_gated
+      performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.annotatePDF
+    group: 5
+    kind: endpoint
+    state: absent
+    product_scope: supporting
+    promotion_state: candidate
+    official:
+      identity: POST /api/annotatePDF
+      grobid_path_constant: PATH_PDF_ANNOTATION
+      request_fields:
+      - {name: input, required: true, type: pdf-bytes}
+      response_format: application/pdf annotated
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: PDF overlay is visualization, not conservation proof.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Coordinates-in-PDF/
+    hard_regressions: [lost_figures_tables_formulas]
+    metrics:
+      conservation: not_applicable
+      quality: not_gated
+      performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  # ------------------------------------------------------------------
+  # Group 6 — project-native training / evaluation / promotion (D294)
+  # Java training endpoints are recorded but are not compatibility requirements.
+  # ------------------------------------------------------------------
+  - id: learning.sona_trajectory
+    group: 6
+    kind: learning_surface
+    state: absent
+    product_scope: supporting
+    promotion_state: candidate
+    official:
+      identity: project-native SONA QueryTrajectory / ReasoningBank
+      grobid_path_constant: n/a
+      request_fields:
+      - {name: source_hash, required: true, type: sha256}
+      - {name: corpus_hash, required: true, type: sha256}
+      - {name: configuration_fingerprint, required: true, type: string}
+      - {name: policy_hash, required: false, type: sha256}
+      response_format: RVF experience record (D295); never Samyama write
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: >-
+        D294 opens training. Deterministic da-parse must not depend on SONA
+        runtime (R112). Injected ports + RVF persistence (S18). Auto-promote
+        remains forbidden (R111).
+    baseline: none
+    candidate: sona-reasoningbank@versioned
+    evidence_ref: doc/adr/ADR-075-scholarly-parse-plane-staged-platform.md
+    hard_regressions: [train_eval_contamination, self_promotion]
+    metrics:
+      conservation: not_applicable
+      quality: ablation_lift_same_n
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: learning.microlora_ewc
+    group: 6
+    kind: learning_surface
+    state: absent
+    product_scope: supporting
+    promotion_state: candidate
+    official:
+      identity: project-native MicroLoRA + EWC++ policy candidates
+      grobid_path_constant: n/a
+      request_fields:
+      - {name: policy_hash, required: true, type: sha256}
+      - {name: train_corpus_hash, required: true, type: sha256}
+      - {name: eval_corpus_hash, required: true, type: sha256}
+      response_format: versioned WASM policy artifact; promotion receipt required
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: S19. Training allowed; automatic promotion forbidden.
+    baseline: none
+    candidate: microlora-ewc@versioned
+    evidence_ref: doc/adr/ADR-075-scholarly-parse-plane-staged-platform.md
+    hard_regressions: [train_eval_contamination, self_promotion]
+    metrics:
+      conservation: unchanged_parse_hashes
+      quality: dual_task_metrics_val_gap
+      performance: p95_latency_ms
+    rollback_target: previous_policy_hash
+
+  - id: learning.ruvllm_ablation
+    group: 6
+    kind: learning_surface
+    state: absent
+    product_scope: supporting
+    promotion_state: candidate
+    official:
+      identity: project-native ruVLLM critic and ablation harness
+      grobid_path_constant: n/a
+      request_fields:
+      - {name: conservation_delta, required: true, type: structured}
+      - {name: backend_error, required: false, type: structured}
+      response_format: critic verdict + ablation table; candidate only
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Critic must not write graph state. Serving runtime stays outside da-parse.
+    baseline: none
+    candidate: ruvllm-critic@versioned
+    evidence_ref: doc/adr/ADR-075-scholarly-parse-plane-staged-platform.md
+    hard_regressions: [self_promotion, train_eval_contamination]
+    metrics:
+      conservation: not_applicable
+      quality: ablation_table_same_n
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.createTraining
+    group: 6
+    kind: endpoint
+    state: absent
+    product_scope: not_compatibility_requirement
+    promotion_state: candidate
+    official:
+      identity: POST /api/createTraining
+      grobid_path_constant: PATH_CREATE_TRAINING
+      request_fields:
+      - {name: input, required: true, type: pdf-or-corpus}
+      response_format: training TEI / model job
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Java GROBID training is not a product compatibility requirement.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: /root/vendor-source/grobid/grobid-service/src/main/java/org/grobid/service/GrobidPaths.java
+    hard_regressions: [train_eval_contamination]
+    metrics:
+      conservation: not_applicable
+      quality: not_gated
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.trainingResult
+    group: 6
+    kind: endpoint
+    state: absent
+    product_scope: not_compatibility_requirement
+    promotion_state: candidate
+    official:
+      identity: GET /api/trainingResult
+      grobid_path_constant: PATH_TRAINING_RESULT
+      request_fields: []
+      response_format: training metrics or model status
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Observed only; project evaluation uses comparison_contract.yaml.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: /root/vendor-source/grobid/grobid-service/src/main/java/org/grobid/service/GrobidPaths.java
+    hard_regressions: [self_promotion]
+    metrics:
+      conservation: not_applicable
+      quality: not_gated
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.allTraining
+    group: 6
+    kind: endpoint
+    state: absent
+    product_scope: not_compatibility_requirement
+    promotion_state: candidate
+    official:
+      identity: GET /api/allTraining
+      grobid_path_constant: PATH_ALL_TRAINING
+      request_fields: []
+      response_format: training job list
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Not a compatibility requirement.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: /root/vendor-source/grobid/grobid-service/src/main/java/org/grobid/service/GrobidPaths.java
+    hard_regressions: [self_promotion]
+    metrics:
+      conservation: not_applicable
+      quality: not_gated
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.killTraining
+    group: 6
+    kind: endpoint
+    state: absent
+    product_scope: not_compatibility_requirement
+    promotion_state: candidate
+    official:
+      identity: DELETE /api/killTraining
+      grobid_path_constant: PATH_KILL_TRAINING
+      request_fields:
+      - {name: token, required: true, type: string}
+      response_format: status
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Not a compatibility requirement.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: /root/vendor-source/grobid/grobid-service/src/main/java/org/grobid/service/GrobidPaths.java
+    hard_regressions: [self_promotion]
+    metrics:
+      conservation: not_applicable
+      quality: not_gated
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.model
+    group: 6
+    kind: endpoint
+    state: absent
+    product_scope: not_compatibility_requirement
+    promotion_state: candidate
+    official:
+      identity: GET|POST /api/model
+      grobid_path_constant: PATH_MODEL
+      request_fields: []
+      response_format: model metadata
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Java model admin is out of product scope.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: /root/vendor-source/grobid/grobid-service/src/main/java/org/grobid/service/GrobidPaths.java
+    hard_regressions: [self_promotion]
+    metrics:
+      conservation: not_applicable
+      quality: not_gated
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  # ------------------------------------------------------------------
+  # Group 7 — patent family: visible, deferred, never promoted (D294/R110)
+  # ------------------------------------------------------------------
+  - id: rest.processCitationPatentTEI
+    group: 7
+    kind: endpoint
+    state: absent
+    product_scope: deferred
+    promotion_state: candidate
+    official:
+      identity: POST /api/processCitationPatentTEI
+      grobid_path_constant: PATH_CITATION_PATENT_TEI
+      request_fields:
+      - {name: input, required: true, type: patent-bytes}
+      response_format: application/xml TEI
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Recorded for completeness. Deferred product scope. Must stay absent.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [self_promotion]
+    metrics:
+      conservation: not_applicable
+      quality: not_gated
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.processCitationPatentST36
+    group: 7
+    kind: endpoint
+    state: absent
+    product_scope: deferred
+    promotion_state: candidate
+    official:
+      identity: POST /api/processCitationPatentST36
+      grobid_path_constant: PATH_CITATION_PATENT_ST36
+      request_fields:
+      - {name: input, required: true, type: st36-xml}
+      response_format: application/xml TEI
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Deferred patent scope.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [self_promotion]
+    metrics:
+      conservation: not_applicable
+      quality: not_gated
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.processCitationPatentPDF
+    group: 7
+    kind: endpoint
+    state: absent
+    product_scope: deferred
+    promotion_state: candidate
+    official:
+      identity: POST /api/processCitationPatentPDF
+      grobid_path_constant: PATH_CITATION_PATENT_PDF
+      request_fields:
+      - {name: input, required: true, type: pdf-bytes}
+      response_format: application/xml TEI
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Deferred patent scope.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [self_promotion]
+    metrics:
+      conservation: not_applicable
+      quality: not_gated
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.processCitationPatentTXT
+    group: 7
+    kind: endpoint
+    state: absent
+    product_scope: deferred
+    promotion_state: candidate
+    official:
+      identity: POST /api/processCitationPatentTXT
+      grobid_path_constant: PATH_CITATION_PATENT_TXT
+      request_fields:
+      - {name: input, required: true, type: text}
+      response_format: application/xml TEI
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Deferred patent scope.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    hard_regressions: [self_promotion]
+    metrics:
+      conservation: not_applicable
+      quality: not_gated
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  # ------------------------------------------------------------------
+  # Internal cascade stages (not REST). Replacement order from ADR-075 §2.5.
+  # ------------------------------------------------------------------
+  - id: stage.pdfalto_layout
+    group: 2
+    kind: internal_stage
+    state: fallback
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: GROBID pdfalto visual/layout extraction
+      grobid_path_constant: n/a
+      request_fields:
+      - {name: pdf, required: true, type: pdf-bytes}
+      response_format: LayoutToken lattice
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Java cascade via processFulltextDocument. Native LayoutToken bake-off is S13.
+    baseline: java-grobid-pdfalto
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Principles/
+    hard_regressions: [changed_reading_order, dropped_parser_work]
+    metrics:
+      conservation: token_count_reading_order
+      quality: layout_token_stability
+      performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: stage.document_segmentation
+    group: 2
+    kind: internal_stage
+    state: fallback
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: GROBID document segmentation CRF
+      grobid_path_constant: n/a
+      request_fields: []
+      response_format: header/body/references/annex labels
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: Native segmentation is S15. Java remains fallback.
+    baseline: java-grobid-segmentation
+    candidate: none
+    evidence_ref: https://grobid.readthedocs.io/en/latest/Principles/
+    hard_regressions: [changed_reading_order, lost_references_or_links]
+    metrics:
+      conservation: section_family_counts
+      quality: segmentation_label_accuracy
+      performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: stage.header_composition
+    group: 3
+    kind: internal_stage
+    state: fallback
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: GROBID header model + TEI header
+      grobid_path_constant: n/a
+      request_fields: []
+      response_format: TEI teiHeader
+    implementation:
+      crate: da-parse
+      surface: crates/da-parse/src/lift.rs (partial title/idno/authors)
+      notes: P0 lift S07; native header composition S12.
+    baseline: java-grobid-header
+    candidate: da-parse@lift-partial
+    evidence_ref: crates/da-parse/src/lift.rs
+    hard_regressions: [invented_revision]
+    metrics:
+      conservation: header_field_presence
+      quality: title_author_date_accuracy
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: stage.reference_segmentation
+    group: 3
+    kind: internal_stage
+    state: fallback
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: GROBID reference segmentation + citation parsing
+      grobid_path_constant: n/a
+      request_fields: []
+      response_format: TEI listBibl
+    implementation:
+      crate: da-parse
+      surface: crates/da-parse/src/lift.rs (listBibl characterization)
+      notes: Native citation/reference heads are S11-S12.
+    baseline: java-grobid-references
+    candidate: da-parse@lift-partial
+    evidence_ref: crates/da-parse/src/lift.rs
+    hard_regressions: [lost_references_or_links]
+    metrics:
+      conservation: biblstruct_count
+      quality: citation_field_accuracy
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: stage.figure_table_formula
+    group: 2
+    kind: internal_stage
+    state: fallback
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: GROBID figure/table/formula recognition
+      grobid_path_constant: n/a
+      request_fields: []
+      response_format: TEI figure/table/formula
+    implementation:
+      crate: da-parse
+      surface: crates/da-parse/src/lift.rs (tables/formulas characterization)
+      notes: Native heads S16. Lost figures/tables/formulas is a hard regression.
+    baseline: java-grobid-fulltext
+    candidate: da-parse@lift-partial
+    evidence_ref: crates/da-parse/src/lift.rs
+    hard_regressions: [lost_figures_tables_formulas]
+    metrics:
+      conservation: figure_table_formula_counts
+      quality: caption_head_accuracy
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: stage.bibliographic_consolidation
+    group: 2
+    kind: internal_stage
+    state: fallback
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: GROBID Crossref/GLUTTON consolidation dialect
+      grobid_path_constant: n/a
+      request_fields:
+      - {name: consolidateHeader, required: false, type: enum, values: [0, 1, 2, 3]}
+      - {name: consolidateCitations, required: false, type: enum, values: [0, 1, 2]}
+      response_format: enriched TEI header/biblStruct
+    implementation:
+      crate: da-parse
+      surface: crates/da-parse/src/profile.rs GrobidProfile rich|structural
+      notes: >-
+        Structural profile disables consolidation so Crossref 429 cannot block
+        TEI (D204/MEM684). Consolidation is a dialect, not a boolean.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: da-parse@profile-bool
+    evidence_ref: crates/da-parse/src/profile.rs
+    hard_regressions: [incorrect_cache_reuse, invented_revision]
+    metrics:
+      conservation: not_applicable
+      quality: consolidation_field_accuracy
+      performance: bounded_parse_time
+    rollback_target: java-grobid-http@structural-profile
+
+  - id: stage.tei_lift
+    group: 2
+    kind: internal_stage
+    state: candidate
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: project TeiLifter over preserved or live TEI
+      grobid_path_constant: n/a
+      request_fields:
+      - {name: tei_xml, required: true, type: xml-string}
+      response_format: TeiParseIr then ParsedArticle
+    implementation:
+      crate: da-parse
+      surface: crates/da-parse/src/lift.rs
+      notes: >-
+        String-find lift; no XML parser (no XXE). Silent skip of missing
+        fixtures is a hard integrity regression until T02. Conservation
+        inventory is S03. P0 idno/authors/figures/coords is S07.
+    baseline: preserved-java-tei
+    candidate: da-parse@lift-v1
+    evidence_ref: crates/da-parse/src/lift.rs
+    hard_regressions:
+    - silent_skip_missing_tei_fixture
+    - lost_figures_tables_formulas
+    - lost_references_or_links
+    - invented_revision
+    - nondeterministic_output
+    metrics:
+      conservation: family_counts_vs_tei
+      quality: current_lifted_counts
+      performance: lift_latency_ms
+    rollback_target: preserved-java-tei

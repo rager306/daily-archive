@@ -1,0 +1,181 @@
+schema_version: parse-comparison.v1
+adr_ref: ADR-075
+contract_id: parse-comparison
+requirement_ids: [R113, R117, R106]
+decisions: [D127, D204, D294, D295]
+import_eligible: false
+auto_promote: forbidden
+
+# Source-bound comparison artifact for every small capability.
+# T03 emits the first baseline report. Later slices update the ledger
+# against this contract. Reports must never contain raw document content.
+
+report_identity:
+  required_fields:
+  - source_hash
+  - backend_id
+  - backend_version
+  - profile_fingerprint
+  - request_fields
+  - output_hash
+  - corpus_id
+  - corpus_hash
+  - corpus_n
+  - same_n
+  - fixture_ids
+  - family_counts
+  - current_lifted_counts
+  - promotion_state
+  - rollback_target
+  optional_fields:
+  - grobid_version
+  - latency_p50_ms
+  - latency_p95_ms
+  - latency_p99_ms
+  - peak_rss_bytes
+  - duration_ms
+  - malformed_input_results
+  - known_hard_regressions
+  identity_rule: >-
+    Bind source hash + profile fingerprint + request fields + output hash.
+    Output hash alone is ambiguous when different stage/profile contracts
+    emit identical bytes.
+
+forbidden_report_fields:
+- tei_xml
+- body_text
+- pdf_bytes
+- raw_document_content
+- raw_tei
+- fulltext
+- page_images
+
+corpus_classes:
+  fast_local_fixtures:
+    id: fast_local_fixtures
+    purpose: CI and slice-local characterization
+    location: crates/da-parse/tests/fixtures/
+    missing_behavior: fail_visible
+    silent_skip: forbidden
+    required_coverage:
+    - sections
+    - references
+    - tables
+    - formulas
+    - authors
+    - idno
+    - figures
+    - coordinates
+    - restarted_numbering_anchors
+    used_by: [S01-T02, S01-T03]
+  publisher_acceptance:
+    id: publisher_acceptance
+    purpose: same-n GROBID publisher-style corpora
+    location: later (not S01)
+    missing_behavior: fail_visible
+    used_by: [later-slices]
+  layout_omnidocbench:
+    id: layout_omnidocbench
+    purpose: layout/Markdown comparison only; not TEI conservation proof
+    location: later
+    missing_behavior: fail_visible
+    used_by: [later-slices]
+  entity_f1_supporting:
+    id: entity_f1_supporting
+    purpose: downstream extraction F1 is supporting evidence, not parse proof
+    location: data/gold_standard/
+    used_by: [eval_batch]
+
+same_n:
+  required: true
+  meaning: baseline and candidate evaluated on exactly the same documents
+  mismatch: hard_failure
+
+hard_regressions:
+  # A better average cannot hide any of these.
+  - id: lost_references_or_links
+    description: References, citation links or callouts disappear
+  - id: changed_reading_order
+    description: Section or token reading order changes
+  - id: lost_figures_tables_formulas
+    description: Figures, tables or formulas are dropped
+  - id: invented_revision
+    description: Article revision or idno is invented or rewritten
+  - id: nondeterministic_output
+    description: Output hash changes across replay or worker counts
+  - id: panic
+    description: Parser panics instead of typed BackendError
+  - id: dropped_parser_work
+    description: Parser tasks are dropped instead of backpressured
+  - id: incorrect_cache_reuse
+    description: Cache hit across distinct profile/request fingerprints
+  - id: train_eval_contamination
+    description: Train and eval corpora overlap
+  - id: self_promotion
+    description: Candidate promotes itself without explicit receipt
+  - id: silent_skip_missing_tei_fixture
+    description: Missing or changed TEI fixture is skipped instead of failing
+
+metrics:
+  conservation:
+    family_counts: required
+    source_span_retention: required_from_s03
+    coordinate_coverage: required_from_s07
+  quality:
+    strict_field_match: required_from_s03
+    soft_field_match: required_from_s03
+    levenshtein_or_ratcliff: optional
+  determinism:
+    identical_hashes_across_replay: required
+    identical_hashes_across_workers: required_from_s14
+  operations:
+    latency_p50_p95_p99_ms: when_executable
+    peak_rss_bytes: when_executable
+    throughput: when_executable
+    busy_503_honest: required_from_s04
+  malformed_input:
+    empty_pdf: typed_error
+    truncated_pdf: typed_error
+    non_pdf_bytes: typed_error
+    missing_fixture: fail_visible
+    checksum_mismatch: fail_visible
+  learning:
+    train_eval_disjoint: required_when_training
+    ablation_lift_same_n: required_when_training
+    lineage_hashes: required_when_training
+    auto_promote: forbidden
+
+promotion:
+  default_state: candidate
+  allowed_states: [absent, proxy, shadow, candidate, promoted, fallback]
+  auto_promote: forbidden
+  required_receipt_fields:
+  - source_revision
+  - corpus_hash
+  - configuration_fingerprint
+  - policy_hash
+  - conservation_verdict
+  - quality_verdict
+  - same_n
+  - explicit_decision
+  rule: >-
+    Training is allowed (D294). Automatic promotion is not. A better average
+    cannot hide a hard regression.
+
+rollback:
+  default_target: java-grobid-http@0.9.0-crf
+  required: true
+  rule: Every capability names a rollback target. Java GROBID remains oracle
+    and fallback until explicit per-stage promotion.
+
+cache:
+  raw_tei_and_projected_article: separate_from_s06
+  modes: [off, read-only, write-through, refresh]
+  mode_changes_performance_not_semantics: true
+  historical_identities_readable: true
+
+observability:
+  report_path: artifacts/parse_compat/
+  first_emitter: crates/da-cli/examples/parse_compat_baseline.rs
+  never_log_raw_document_content: true
+  aggregate_counts_only: true

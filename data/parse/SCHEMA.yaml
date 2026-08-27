@@ -1,0 +1,100 @@
+schema_version: v2
+path: data/parse
+description: >-
+  Schema-governed GROBID compatibility ledger and comparison contracts for the
+  staged scholarly parse plane (ADR-075, R113, R117). Stage identity, endpoint
+  dialect, metric thresholds, hard regressions and promotion rules live here;
+  Rust executes a generic reader rather than duplicating these lists.
+adr_ref: ADR-075
+valid_files:
+- '*.yaml'
+- '*.md'
+forbidden:
+- '*.rs'
+- '*.json'
+- '*.py'
+- '*.pdf'
+- '*.xml'
+ignore:
+- .*
+required_files:
+- grobid_compatibility.yaml
+- comparison_contract.yaml
+
+# Generic-reader contract (R117). Governor and later Rust readers validate
+# grobid_compatibility.yaml against these enums and required keys. Extra keys
+# are allowed; missing required keys or values outside enums are rejected.
+ledger_document:
+  required_keys:
+  - schema_version
+  - adr_ref
+  - ledger_id
+  - defaults
+  - capabilities
+  schema_version: grobid-compatibility.v1
+  allowed_states:
+  - absent
+  - proxy
+  - shadow
+  - candidate
+  - promoted
+  - fallback
+  allowed_kinds:
+  - endpoint
+  - internal_stage
+  - learning_surface
+  - request_dialect
+  allowed_product_scope:
+  - required
+  - supporting
+  - deferred
+  - not_compatibility_requirement
+  capability_required_keys:
+  - id
+  - group
+  - kind
+  - state
+  - official
+  - implementation
+  - baseline
+  - candidate
+  - evidence_ref
+  - hard_regressions
+  - metrics
+  - rollback_target
+  - product_scope
+  - promotion_state
+  official_required_keys:
+  - identity
+  - request_fields
+  - response_format
+  implementation_required_keys:
+  - crate
+  - surface
+  - notes
+  patent_rule: >-
+    Capabilities with product_scope deferred (patent family) MUST remain
+    state=absent and promotion_state=candidate. They stay visible in the
+    ledger and must not be treated as absent-from-product.
+  auto_promote_rule: forbidden
+  import_eligible: false
+
+comparison_document:
+  required_keys:
+  - schema_version
+  - adr_ref
+  - contract_id
+  - report_identity
+  - forbidden_report_fields
+  - corpus_classes
+  - hard_regressions
+  - metrics
+  - promotion
+  - rollback
+  schema_version: parse-comparison.v1
+  forbidden_report_fields:
+  - tei_xml
+  - body_text
+  - pdf_bytes
+  - raw_document_content
+  - raw_tei
