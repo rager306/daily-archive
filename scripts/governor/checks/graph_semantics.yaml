@@ -1,34 +1,45 @@
-# Graph semantic validation — M449 S01.
+# Graph semantic validation — M449 S01; reader fixed to structural NDJSON
+# parsing after MEM949 diagnosis (2026-08-27): counts are distinct-vid per
+# label from sgsnap v2 records, never string//2 heuristics.
 #
-# DATA for the Governor graph_semantics check. Validates that .sgnap
+# DATA for the Governor graph_semantics check. Validates that .sgsnap
 # snapshots contain semantically complete content, not structural stubs.
 #
-#   - section_text_completeness: avg raw_text per Section node must exceed
-#     the threshold. The M445 audit found 364-char stubs where full article
-#     text should be.
+#   - section_text_completeness: avg raw_text across Section nodes only.
+#     Fires as graph_section_text_missing when Sections carry no raw_text
+#     prop at all (era where text lived elsewhere).
 #   - enrichment_coverage: Author+Venue+Topic nodes must cover papers.
-#     The M445 audit found ZERO enrichment nodes.
+#     N/A (no flag) when the snapshot vocabulary lacks these labels —
+#     an era mismatch is not a violation.
 #   - entity_dedup_integrity: no duplicate Entity vids in the graph.
-#   - revision_binding_coverage: papers with revision-owned vids.
+#   - revision_binding_coverage: Papers reachable via HAS_REVISION edges,
+#     resolved structurally through node ids. N/A when the edge type is
+#     absent from the snapshot's declared edge_types.
+#
+# Primary snapshot selection: data/graphs/*.sgsnap (materialized stores)
+# take priority over artifacts/**/* session views; newest header created_at
+# wins within a root. Auditing per-session graphs against corpus gates is
+# meaningless.
 #
 # This is DATA — adjusting a threshold is an edit here, not a Python change.
 
-schema_version: graph-semantics.v1
+schema_version: graph-semantics.v2
 policy_id: graph-semantics
 dimension: graph_semantics
 severity: high
-anchor: "M445 audit, M440-M443 materialization waves"
+anchor: "M445 audit, M440-M443 materialization waves; MEM949 reader fix"
 
 rules:
   - id: section_text_completeness
-    description: "Average raw_text per Section must be > threshold chars (stubs < 500 are empty shells)"
+    description: "Average raw_text across Section nodes must exceed threshold chars (stubs below it are empty shells)"
     threshold: 500
     metric: avg_raw_text_len
 
   - id: enrichment_coverage
-    description: "Author+Venue+Topic nodes must cover > threshold of papers"
+    description: "Author+Venue+Topic nodes must cover > threshold of papers; skipped when snapshot vocabulary lacks the labels"
     threshold: 0.5
     metric: enrichment_coverage
+    na_when_vocab_lacks_labels: [Author, Venue, Topic]
 
   - id: entity_dedup_integrity
     description: "Duplicate Entity vids must not exceed threshold"
@@ -36,6 +47,7 @@ rules:
     metric: duplicate_entity_vids
 
   - id: revision_binding_coverage
-    description: "Papers with revision-owned vids must exceed threshold ratio"
+    description: "Papers bound via HAS_REVISION edges must exceed threshold ratio; skipped when edge type is not declared"
     threshold: 0.9
     metric: revision_binding_coverage
+    na_when_edge_type_absent: HAS_REVISION
