@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Идеи: pure-Rust crate для разбора научных PDF</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --surface: #1a2332;
+    --border: #2d3a4d;
+    --text: #e6edf3;
+    --muted: #8b9cb3;
+    --accent: #3d9eff;
+    --accent2: #7ee787;
+    --warn: #f0883e;
+    --danger: #f85149;
+    --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: "Cascadia Code", "Fira Code", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    font-size: 15px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  h1 { font-size: 1.75rem; margin: 0 0 0.5rem; font-weight: 600; }
+  .meta { color: var(--muted); font-size: 0.9rem; }
+  .meta span { display: inline-block; margin-right: 1.25rem; }
+  h2 {
+    font-size: 1.2rem;
+    margin: 2rem 0 0.75rem;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.35rem;
+  }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 0.5rem; }
+  p { margin: 0.5rem 0; max-width: 70ch; }
+  ul { margin: 0.5rem 0; padding-left: 1.25rem; }
+  .jump-list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+  }
+  .jump-list a { color: var(--accent); text-decoration: none; }
+  .jump-list a:hover { text-decoration: underline; }
+  .jump-list li { margin: 0.25rem 0; }
+  .idea-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.35rem;
+    margin: 1.25rem 0;
+  }
+  .idea-card h3 { margin-top: 0; }
+  .tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .tag {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: #243044;
+    color: var(--muted);
+  }
+  .tag.conf-high { color: var(--accent2); border: 1px solid #2d6a4f; }
+  .tag.conf-med { color: var(--warn); border: 1px solid #8b5a2b; }
+  .tag.complexity { color: var(--accent); }
+  dl { margin: 0.5rem 0; }
+  dt { font-weight: 600; color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; }
+  dd { margin: 0.15rem 0 0.5rem; max-width: 70ch; }
+  code, pre { font-family: var(--mono); font-size: 0.85rem; }
+  pre {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin: 1rem 0;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.65rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: var(--surface); color: var(--muted); }
+  .diagram {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--muted);
+  }
+  footer.composition-signal {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  svg text { font-family: var(--font); }
+  strong { color: inherit; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Идеи: независимый Rust-crate для разбора научных статей</h1>
+  <div class="meta">
+    <span><strong>Дата:</strong> <time datetime="2026-08-26">2026-08-26</time></span>
+    <span><strong>Тема:</strong> pure-rust-scholarly-parse-crate</span>
+    <span><strong>Режим:</strong> этот репозиторий — плоскость разбора научных PDF</span>
+  </div>
+  <div class="meta">
+    <span><strong>Фокус:</strong> не декорации. Постепенно вынести <em>существующий</em> Rust-функционал разбора (аналог GROBID + вся обработка PDF/HTML) в независимый crate с контролем по API crate; реализовать глубину GROBID на Rust; база — фишки ruVector (SIMD, SMP, арены, HNSW, paged), не только SONA. codebase-memory-mcp.</span>
+  </div>
+  <nav class="jump-list" aria-label="Разделы">
+    <a href="#grounding">обоснование</a> ·
+    <a href="#axes">оси</a> ·
+    <a href="#grobid-map">карта GROBID</a> ·
+    <a href="#matrix">матрица решений</a> ·
+    <a href="#ranked-ideas">идеи</a> ·
+    <a href="#rejections">отказы</a>
+  </nav>
+</header>
+
+<section id="grounding">
+<h2>Контекст обоснования</h2>
+<p><strong>Репозиторий.</strong> Разбор научных статей уже написан на Rust, но размазан по onion и не является crate. Workspace-члена <code>da-parse</code> нет. Индекс 2026-08-19 (metadata-changed / not_tracked на parse-файлах — claims сверены исходником). В <code>da-adapters</code>: <code>GrobidParser</code> (~3,5k, HTTP :8070 + string-lift TEI), <code>HtmlParser</code> (тот же string-скан секций, <code>tei_xml: None</code>), feature-gated <code>pdf_classifier</code> / <code>region_text</code> (pdf-inspector), клиент <code>pdffigures2</code>. В <code>da-domain</code> уже лежат parse-типы вне adapters: XY-Cut <code>LineBox</code>, <code>TeiFigure</code> (M451, regex по TEI), <code>HtmlSection</code>, <code>pdf_toc</code>, <code>pdf_classification</code>. В <code>da-ports</code> — <code>ParsedArticle</code> без authors / article-idno / индекса нетабличных фигур; <code>layout_json</code> всегда <code>None</code>. Application оркестрирует ingest, кэш, fail-open <code>grammar_route</code>. Это и есть «существующий функционал»: его выносят, а не рисуют фасад вокруг Java.</p>
+<p><strong>Боль.</strong> M463: 2608.22118 authors TEI=1 / поля lift нет; нетабличные фигуры 48 / 0 при том, что <code>TeiFigure</code> уже умеет считать <code>&lt;figure&gt;</code>. <code>eval_batch</code> Micro-F1 ~0.87 зелёный. Coords <code>figure,table,note,formula</code> запрашиваются и ампутируются. Второй JVM — pdffigures2. <code>GrobidParseStage</code> отпечатывает rich <code>consolidate*=1</code> при наличии <code>structural()</code>. vendor GROBID ~166k узлов полного каскада. grobid-rs = JNI + pdfalto GPL-3. Workspace уже тянет ruvector-sona / hybrid / gnn-rerank / agent-memory / solver / rvf — <em>не</em> на parse-пути. В ruvector (~351k узлов) лежат не только SONA: SIMD (<code>ruvector-cnn</code>, <code>prime-radiant</code>), арены (<code>ruvector-core</code>, <code>QueryArena</code>), paged attention (ruvllm), HNSW (<code>ruvector-core</code> index/hnsw), SciPix — math OCR + SIMD/arena, не TEI-каскад.</p>
+<p><strong>Замки.</strong> D127: TEI ≠ истина графа. Лук: application не зависит от adapters; новый crate реализует <code>ParserPort</code>, не <code>kg-parse</code>. Не форкать pdfalto/PDFium в runtime — <em>контракт</em> LayoutToken и reading-order берём (идея 4). Не считать MinerU TEI-продуктом, паттерны таблиц/layout можно читать. Обучение контура открыто; продвижение — conservation (идея 2). Не строить пустой фасад :8072. Чужие реализации не выбрасывать: оценить → адаптировать на Rust.</p>
+<p><strong>Снаружи и доноры (этот проход).</strong> Чужие реализации <em>не отбрасываем</em>: оцениваем → берём контракт/паттерны → адаптируем на Rust с SIMD/аренами/SMP ruVector, либо ищем более элегантный аналог. GROBID: модели работают на <em>Layout Tokens</em> (Unicode + шрифт/стиль + bbox), не на голом тексте; pdfalto даёт ALTO + XY-проекции линий/блоков/колонок — контракт IR, не обязанность форка C++. ScienceBeam — Python-порт каскада (уроки переписывания, не runtime). Уже в репо: XY-Cut из Java opendataloader-pdf → <code>LineBox</code>. oxidize-pdf / pdf_oxide — pure-Rust spatial text, bbox, у pdf_oxide 4 стратегии reading order включая XY-Cut; продукт RAG/markdown, <em>паттерны токенов годны</em>. LiteParse — PDFium C++: не зависимость runtime, алгоритм reading-order можно читать. Не считать их TEI-движком. SciPix — OCR формул, не TEI.</p>
+<p><strong>Поправка верификатора (нагрузка).</strong> <code>PdfProcessResult</code> из classify-time <code>process_pdf_mem</code> <em>не</em> отдаёт <code>TextItem</code>/<code>TextLine</code>/<code>PdfRect</code> — «собрать Full, который уже платим» в решётку токенов перечитывает API. <code>data/gold_standard</code> — 193 файла <em>entity</em>-gold, не 193 TEI (закоммиченные TEI-инвентари — две статьи). <code>grammar_route</code> работает <em>до</em> lift, поэтому коэффициенты консервации не могут быть его входом на первой консультации.</p>
+<p><strong>LLM / агенты / место ruVLLM+SONA (этот проход).</strong> Развилка: N специалистов как GROBID + FSM-оркестратор <em>против</em> одной большой модели + FSM. Индекс grobid: <code>EngineParsers</code> — ленивый реестр Segmentation, Header(+Flavor), AffiliationAddress, Author, Date, Citation, ReferenceSegmenter, FullText, Figure, Table, Funding…; <code>GrobidModels</code> — папка на каждую модель, flavors = те же парсеры, другие веса. ruvector SONA: <code>apply_micro_lora(&[f32], &amp;mut [f32])</code> — адаптер скрытого вектора rank 1–2, не sequence labeler; вход траектории — <code>query_embedding</code>. ruVLLM — GGUF-runtime (пример в README: Qwen2.5-7B) с SONA на generation; training-модуль учит <em>роутинг агентов</em> Claude Flow (13 типов) и выбор Haiku/Sonnet/Opus, не BIO-лейблы TEI. FSM daily-archive: пять <code>DecisionPoint</code> (grammar_route, admission, concurrency, retry, summary_depth) на <code>ArticleFeatures</code> без сырого текста — оркестратор, не таггер. Вердикт: baseline crate = специалисты + FSM, <em>сейчас без LLM</em>. ruVLLM — критик и учитель на этапе отладки/обучения (Gauntlet train-path), не <code>processFulltext</code>. Позже функционал crate можно расширить LLM-остатком; агентский флот не baseline parse.</p>
+</section>
+
+<section id="axes">
+<h2>Оси темы</h2>
+<ul>
+  <li>Граница crate — вынос существующего Rust PDF/HTML/TEI-lift в <code>da-parse</code>, не зонтик ingest/граф</li>
+  <li>Фундамент layout-токенов — пространственный текст, reading order, bbox до каскадной разметки</li>
+  <li>Паритет каскада GROBID — существующий lift → нативные стадии → TEI/coords; API crate как контроль</li>
+  <li>Движок ruVector — SIMD / SMP / арены / HNSW / paged; SONA Instant/Background/Deep как один контур, не весь набор</li>
+  <li>Офлайн-проверка Gauntlet — gold TEI, метрики консервации, не один entity F1</li>
+</ul>
+</section>
+
+<section id="grobid-map">
+<h2>Карта GROBID → проекция на da-parse</h2>
+<p>Снято с <code>FullTextParser.processing</code> (строки 145–442), <code>HeaderParser.processingHeaderSection</code> (137–396), <code>EngineParsers</code>, <code>GrobidModels</code>, <code>SegmentationLabels</code>. Это карта донора, не план реализации.</p>
+
+<h3>Каскад processFulltext (ядро качества)</h3>
+<div class="diagram">
+pdfalto → LayoutToken
+  → Segmentation (зоны: cover, header, body, references, annex, page, headnote/footnote/marginnote,
+                  acknowledgement, funding, availability, toc, conflict, contribution)
+  → Header(flavor) на зоне header
+       → AuthorParser (names/header) + sanityCheck + deduplicate
+       → AffiliationAddressParser + attachEmails + preLinkByPrecedingAuthorCluster + attachAffiliations
+       → DateParser (normalize pub/sub/download/server)
+       → language id · dehyphenize · keywords · DOI-from-doc
+       → consolidateHeader (опционально, Crossref)
+  → abstract ещё раз через fulltext/shorttext
+  → CitationParser.processingReferenceSection + ReferenceSegmenter
+       → consolidateCitations пачкой (опционально)
+  → Fulltext label body → FigureParser / TableParser / EquationParser
+       → revert bad figures/tables в paragraph
+  → то же на annex (та же fulltext-голова)
+  → postProcessCallout (bibr vs footnote superscript)
+  → toTEI (body+annex+header+figures+tables+equations+markers+coords)
+</div>
+
+<h3>Проекция на crate</h3>
+<table>
+  <thead><tr><th>Слой GROBID</th><th>da-parse сейчас</th><th>Идея</th><th>Не терять</th></tr></thead>
+  <tbody>
+    <tr><td>LayoutToken + pdfalto</td><td>нет lattice; LineBox XY-Cut уже порт opendataloader</td><td>4</td><td>bbox, font/style, line/block; не форк C++</td></tr>
+    <tr><td>Segmentation</td><td>нет; Java целиком в processFulltext</td><td>5, 6</td><td>зоны header/body/references/annex</td></tr>
+    <tr><td>Header + Author + Affil + Date</td><td>title/abstract lift; authors нет в ParsedArticle</td><td>3, 5</td><td>dedup/preLink/sanityCheck — это качество, не зоопарк</td></tr>
+    <tr><td>ReferenceSegmenter + Citation</td><td>biblStruct + bibr; idno статьи нет</td><td>3, 5</td><td>segmenter отдельно от citation</td></tr>
+    <tr><td>Fulltext + fig/table/eq</td><td>tables/formulas да; nontable figures 0/48</td><td>3, 5</td><td>revert bad + captions + coords</td></tr>
+    <tr><td>postProcessCallout</td><td>только ref type=bibr</td><td>3 (гейт)</td><td>figure/table/equation markers</td></tr>
+    <tr><td>toTEI + coords</td><td>сырой tei_xml; coords запрашиваются и режутся</td><td>1, 2, 7</td><td>structural TEI как gold</td></tr>
+    <tr><td>Consolidation Crossref</td><td>стадия всё ещё rich; structural() есть</td><td>6, 7</td><td>не в ядре; mock/local</td></tr>
+    <tr><td>REST isalive + processFulltext</td><td>только эти два</td><td>6</td><td>multipart parity; header/refs — позже как ParseStage</td></tr>
+    <tr><td>SONA / ruVLLM</td><td>нет на parse</td><td>5</td><td>адаптер на головах; LLM = train critic</td></tr>
+  </tbody>
+</table>
+
+<h3>Отложить на фазы — не отказаться</h3>
+<p>Строки ниже — <em>не выкинуть из продукта</em>. Пока native-голова не зелёная, тот же GROBID-совместимый API (идея 6) отвечает <em>Java-бэкендом</em>. Клиент не видит дыру. Native подменяет стадию, когда conservation проходит. Расширения (patent, flavors, Crossref, language) включаются отдельной фазой, не ломая контракт.</p>
+<table>
+  <thead><tr><th>Пункт</th><th>Что это у GROBID</th><th>Почему не фаза 1</th><th>Куда отодвинуть</th><th>API</th></tr></thead>
+  <tbody>
+    <tr><td>patent / chemistry / NER / dictionaries / software / dataseer / monograph</td><td>Отдельные модели в <code>GrobidModels</code> и парсеры в <code>EngineParsers</code> (патенты, химия, NER, словари, software mentions, датасеты, монографии). Это не каскад научной статьи.</td><td>Наш корпус — arXiv CS papers. Эти модели не участвуют в <code>FullTextParser.processing</code> статьи.</td><td>Фаза «доменные головы»: тот же ParseStage, другие веса/лейблы, когда появится gold.</td><td>Эндпоинты GROBID для patent/NER, если понадобятся, до native остаются на Java. Не удаляем из контракта.</td></tr>
+    <tr><td>SDO-flavors (3GPP/IETF) и article/light</td><td><code>GrobidModels.Flavor</code>: те же Header/Segmentation/Fulltext, другие веса под стандарты и «лёгкую» статью.</td><td>Корпус сейчас arXiv CS; default flavor покрывает bar. Flavors — не вторая архитектура.</td><td>Фаза flavors: query-param / multipart <code>flavor</code> как у GROBID, своя пачка весов на тех же головах.</td><td>Параметр flavor в REST сохраняем в схеме сразу; пока нет native-весов — Java.</td></tr>
+    <tr><td>XMP metadata fallback</td><td>Подставить title/authors из PDF XMP, если header-модель пустая. В Java <em>закомментировано</em> (тест PMC 1942 не улучшил).</td><td>Сам GROBID не считает это надёжным. Риск мусора в шапке.</td><td>Фаза residual: опциональный last-chance, за feature-flag, после conservation авторов.</td><td>На wire невидимо (внутри processFulltext). Включать флагом, не новым URL.</td></tr>
+    <tr><td>Consolidation header/citations = 0</td><td>Поход в Crossref/GLI, чтобы дописать DOI/метаданные. D204: <code>structural()</code> оба флага 0; rich = 1.</td><td>Сеть ломает офлайн-gold и масштабирование. Ядро — то, что видно в PDF.</td><td>Фаза enrich (уже есть отдельно в daily-archive / OpenAlex). Не внутри parse-ядра.</td><td>Те же query <code>consolidateHeader</code>/<code>consolidateCitations</code> 0|1|2. structural-default=0; 1|2 → Java или local mock, пока нет native enrich.</td></tr>
+    <tr><td>Copyright DeLFT classifier</td><td>Если в header есть copyright-строка и engine=delft — классификатор лицензии.</td><td>Не P0 occupancy (authors/figures/idno). Тянет DeLFT/Python.</td><td>Фаза license: маленькая голова или правило; не Java-zoo.</td><td>Поле в TEI header появится, когда голова зелёная; до того Java, если клиент ждёт.</td></tr>
+    <tr><td>Annex = повтор fulltext-головы</td><td>Java уже так делает: annex гоняется тем же fulltext labeler, не отдельной CRF.</td><td>Это <em>уже упрощение донора</em>. Не плодить AnnexParser.</td><td>Сразу: одна Fulltext-голова, два прогона (body, annex). Не откладывать качество annex.</td><td>Внутри processFulltext; отдельного URL нет.</td></tr>
+    <tr><td>TOC label без training data</td><td>В <code>SegmentationLabels</code> есть <code>&lt;toc&gt;</code>, комментарий «not yet used / no training data».</td><td>Нельзя обещать паритет по пустой модели.</td><td>Фаза segmentation+, когда появится gold TOC. До тех пор зона может быть &lt;other&gt;/body.</td><td>Не выдумывать processToc. Когда будет — тот же segmentation output.</td></tr>
+    <tr><td>Не портировать Wapiti/DeLFT</td><td>Wapiti = C++ CRF; DeLFT = Python DL. Статический зоопарк обучения.</td><td>Цель — SONA на тех же layout features, не JNI к Wapiti.</td><td>Навсегда не тащить <em>рантайм</em> Wapiti/DeLFT. Сами лейблы/фичи — донор. Обучение — SONA фазы идеи 5.</td><td>Клиенту всё равно, чем размечено; TEI тот же. Java CRF живёт за API, пока native-голова не прошла conservation.</td></tr>
+    <tr><td>Language-id</td><td>langdetect по title+abstract (+body sample), пишет xml:lang.</td><td>Не в P0 conservation (authors/figures/idno). Можно снять с Java, пока native header не готов.</td><td>Фаза header-polish: маленькая утилита после header-головы.</td><td>Атрибут xml:lang в TEI. Пока native нет — Java его уже ставит в полном ответе API.</td></tr>
+  </tbody>
+</table>
+<p><strong>Совместимость API.</strong> Контракт — GROBID REST (идея 6), не «наш урезанный JSON». Пока стадия не нативная: Java за тем же URL. Отложенное ≠ 404. Не упрощать каскад статьи (segmentation → header-подмодели → ref-seg+citation → fulltext+fig/table/eq → callout → TEI/coords): это и есть качество, которое API обязан отдавать уже сейчас через Java.</p>
+<p><strong>Не откладывать (ядро статьи):</strong> author dedup/preLink/sanityCheck, revert bad figures/tables, postProcessCallout, dehyphenize, coords на запрошенных типах.</p>
+
+<h3>Доисследовать (дыры карты)</h3>
+<ol>
+  <li>Шаблоны фич <code>FeaturesVector*</code> (header/fulltext/citation) — вход SONA, не «эмбед текст».</li>
+  <li>Полный набор TaggingLabels по модели (планка 55–68).</li>
+  <li>Алгоритм linking citation contexts внутри <code>toTEI</code>.</li>
+  <li>Паритет LayoutToken vs pdf_oxide span/XY-Cut (bake-off, идея 4).</li>
+  <li>FigureParser vs метка I-figure fulltext — кто авторитет caption/graphic.</li>
+  <li>Минимальный TEI subset, который conservation считает полным (не весь TEIFormatter на 300+ строк).</li>
+</ol>
+
+<h3>Порядок исследования (не GSD-план)</h3>
+<ol>
+  <li>Заморозить эту карту + conservation pins (идея 2).</li>
+  <li>Вынести существующий Rust в da-parse (идея 1).</li>
+  <li>P0 lift тканей, которые Java уже эмитит (идея 3).</li>
+  <li>Bake-off token lattice (идея 4).</li>
+  <li>API + ParseStage + разрез кэша (идеи 6, 7).</li>
+  <li>Нативные головы в порядке каскада; SONA на голове; ruVLLM-критик на train-path (идея 5).</li>
+</ol>
+</section>
+
+<section id="matrix">
+<h2>Матрица: GROBID × наш функционал × решение</h2>
+<p>Колонка «решение» — пересечение. Коды: <strong>JAVA</strong> = полный ответ уже сейчас через Java за совместимым API; <strong>LIFT</strong> = ткань уже в TEI, поднять в IR (P0); <strong>NATIVE</strong> = заменить Java головой, когда conservation зелёная; <strong>PHASE</strong> = позже, Java держит контракт (не 404); <strong>OURS</strong> = есть у нас, у GROBID нет. Бывшие «?» зафиксированы 2026-08-26 (принять lean).</p>
+
+<h3>Ещё не обсуждали — закрыто lean’ами ниже</h3>
+<ul>
+  <li>HTML-варианты REST (<code>processFulltextDocumentHTML</code> / header HTML)</li>
+  <li>ZIP ассетов (<code>processFulltextAssetDocument</code>) и <code>annotatePDF</code> / <code>referenceAnnotations</code></li>
+  <li>Строковые микро-API: <code>processDate</code>, <code>processHeaderNames</code>, <code>processCitationNames</code>, <code>processAffiliations</code>, <code>processCitation</code>, <code>processCitationList</code></li>
+  <li>Расширение <code>teiCoordinates</code> сверх figure/table/note/formula (persName, ref, s, title…)</li>
+  <li>BibTeX <code>Accept</code> и debug-mode fulltext</li>
+  <li>Admin/training REST GROBID (<code>modelTraining</code>, <code>createTraining</code>)</li>
+  <li>Публичный IR: <code>TeiDocument</code> vs <code>ParsedArticle</code> как ответ API</li>
+  <li>Зоны segmentation: cover, headnote/footnote/marginnote, availability, COI, contribution</li>
+</ul>
+
+<h3>A. Сервис и API</h3>
+<table>
+  <thead><tr><th>GROBID</th><th>У нас сейчас</th><th>Решение</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET isalive</code> / <code>health</code> / <code>version</code></td><td>клиент: только isalive</td><td>NATIVE-crate: все три на API (идея 6). JAVA не нужен для health.</td></tr>
+    <tr><td><code>POST processFulltextDocument</code> + multipart consolidate / teiCoordinates / 503</td><td>единственный parse-вызов</td><td>JAVA пока; NATIVE по стадиям. Контракт не менять.</td></tr>
+    <tr><td><code>processHeaderDocument</code> / <code>processReferences</code></td><td>нет клиента</td><td>PHASE: те же URL, JAVA, затем ParseStage. Нужны Gauntlet-тестам голов.</td></tr>
+    <tr><td><code>processHeaderFundingDocument</code> / <code>processFundingAcknowledgement</code></td><td>нет</td><td>PHASE (funding в SegmentationLabels есть). Не 404.</td></tr>
+    <tr><td>строки: Date / HeaderNames / CitationNames / Affiliations / Citation / CitationList</td><td>нет</td><td>PHASE: unit-API Gauntlet без PDF. JAVA пока. Не ядро статьи. (зафиксировано)</td></tr>
+    <tr><td><code>processFulltextDocumentHTML</code> / header HTML</td><td>HtmlParser = вход учебников, не выход GROBID</td><td>Выход API = TEI, не HTML. Вход HTML = OURS. (зафиксировано)</td></tr>
+    <tr><td><code>processFulltextAssetDocument</code> (ZIP картинок)</td><td>нет; pdffigures2 отдельно</td><td>PHASE после LIFT TEI graphics. Не второй JVM. (зафиксировано)</td></tr>
+    <tr><td><code>annotatePDF</code> / <code>referenceAnnotations</code></td><td>нет</td><td>PHASE после coords в TEI. (зафиксировано)</td></tr>
+    <tr><td>BibTeX Accept</td><td>нет</td><td>PHASE; TEI каноничен. (зафиксировано)</td></tr>
+    <tr><td>debug=true (все primary models в ответе)</td><td>нет</td><td>PHASE для train-path критика. (зафиксировано)</td></tr>
+    <tr><td>patent PDF/ST36/TXT + patent annotations</td><td>нет</td><td>PHASE домен; JAVA, не 404.</td></tr>
+    <tr><td>admin: modelTraining / createTraining / sha1 / allProperties</td><td>нет</td><td>OUT crate. Наш train-path = conservation + SONA + ruVLLM-критик, не UI GROBID trainer.</td></tr>
+  </tbody>
+</table>
+
+<h3>B. Каскад статьи (качество)</h3>
+<table>
+  <thead><tr><th>GROBID</th><th>У нас сейчас</th><th>Решение</th></tr></thead>
+  <tbody>
+    <tr><td>LayoutToken (text+font+style+bbox)</td><td>нет lattice; LineBox XY-Cut есть; layout_json=None</td><td>NATIVE идея 4 (донор+bake-off). JAVA pdfalto пока.</td></tr>
+    <tr><td>Segmentation зоны header/body/references/annex/page</td><td>нет своей головы</td><td>JAVA → NATIVE голова 1.</td></tr>
+    <tr><td>Segmentation cover / headnote / footnote / marginnote / availability / COI / contribution / toc</td><td>нет</td><td>JAVA держит. Native после ядра зон header/body/refs/annex/page. TOC без gold не обещать. (зафиксировано)</td></tr>
+    <tr><td>Header title/abstract/date/keywords</td><td>title, abstract lift</td><td>LIFT ок; date/keywords — LIFT если в TEI, иначе JAVA.</td></tr>
+    <tr><td>AuthorParser + Affil + attach/dedup/preLink</td><td>TEI authors есть, поля ParsedArticle нет</td><td>LIFT P0 (идея 3), затем NATIVE header-головы.</td></tr>
+    <tr><td>article-level idno (arXiv)</td><td>extract_idno есть на citation; article field нет</td><td>LIFT P0 (ADR-065).</td></tr>
+    <tr><td>ReferenceSegmenter + Citation + bibr contexts</td><td>citations + bibr; callout figure/table нет</td><td>JAVA; LIFT callouts как гейт; NATIVE две головы.</td></tr>
+    <tr><td>Fulltext sections/p/lists</td><td>sections lift</td><td>JAVA → NATIVE. Иерархия lexical (MEM654) не ломать.</td></tr>
+    <tr><td>FigureParser + graphic coords</td><td>TeiFigure в domain; ParsedArticle 0/48; coords режутся</td><td>LIFT P0 + перестать резать coords. pdffigures2 снять когда occupancy зелёная.</td></tr>
+    <tr><td>TableParser</td><td>tables + R087 missingness</td><td>KEEP lift; NATIVE позже.</td></tr>
+    <tr><td>EquationParser</td><td>formulas + R087</td><td>KEEP lift; NATIVE позже.</td></tr>
+    <tr><td>postProcessCallout</td><td>только bibr</td><td>LIFT гейт идея 3; NATIVE с fulltext.</td></tr>
+    <tr><td>toTEI + teiCoordinates</td><td>сырой tei_xml</td><td>IR = TeiDocument (идея 1); ParsedArticle = проектор+R087.</td></tr>
+    <tr><td>Annex = повтор fulltext</td><td>не отдельно</td><td>NATIVE: одна голова, два прогона. Не вторая модель.</td></tr>
+    <tr><td>Dehyphenize / language-id</td><td>нет</td><td>dehyphenize с header-головой; language PHASE.</td></tr>
+    <tr><td>Flavors article/light, SDO</td><td>нет</td><td>PHASE; param в API сразу, JAVA пока.</td></tr>
+    <tr><td>Wapiti / DeLFT runtime</td><td>нет</td><td>не портировать runtime. JAVA CRF пока. NATIVE = SONA на фичах.</td></tr>
+  </tbody>
+</table>
+
+<h3>C. Обогащение и домены</h3>
+<table>
+  <thead><tr><th>GROBID</th><th>У нас сейчас</th><th>Решение</th></tr></thead>
+  <tbody>
+    <tr><td>consolidateHeader/Citations 0\|1\|2</td><td>профиль rich=1, structural=0; стадия ещё rich</td><td>Default structural. 1\|2 = PHASE enrich (OpenAlex уже снаружи parse). API флаги сохранить.</td></tr>
+    <tr><td>XMP fallback title/authors</td><td>нет</td><td>PHASE flag; GROBID сам выключил.</td></tr>
+    <tr><td>Copyright DeLFT</td><td>нет</td><td>PHASE.</td></tr>
+    <tr><td>patent / chemistry / NER / dictionaries / software / dataseer / monograph</td><td>нет</td><td>PHASE домен. JAVA, не 404.</td></tr>
+  </tbody>
+</table>
+
+<h3>D. Наше, чего нет у GROBID</h3>
+<table>
+  <thead><tr><th>Наше</th><th>GROBID</th><th>Решение</th></tr></thead>
+  <tbody>
+    <tr><td>HtmlParser + HtmlSection (учебники)</td><td>нет (GROBID = PDF)</td><td>OURS в da-parse. Не TEI v1, общий SectionPath.</td></tr>
+    <tr><td>pdf-classifier / page_text_missingness / OCR detect</td><td>нет как admission</td><td>OURS. GROBID body не переписываем (M422).</td></tr>
+    <tr><td>grammar_route FSM (5 DecisionPoint)</td><td>нет</td><td>OURS оркестратор поверх ParseStage.</td></tr>
+    <tr><td>conservation_inventory</td><td>нет</td><td>OURS расширение API (идея 2).</td></tr>
+    <tr><td>SONA на головах + ruVLLM critic train-path</td><td>offline retrain zoo</td><td>OURS. Не baseline LLM.</td></tr>
+    <tr><td>кэш blob≠projector, structural fingerprint</td><td>нет</td><td>OURS идея 7.</td></tr>
+    <tr><td>region_text / pdf_toc / XY-Cut LineBox</td><td>частично внутри pdfalto</td><td>OURS+донор. Не classify-time как lattice.</td></tr>
+    <tr><td>pdffigures2 72 DPI</td><td>свои figure coords</td><td>снять default, когда TEI figures LIFT зелёный.</td></tr>
+    <tr><td>Samyama / extract / import</td><td>нет</td><td>не в da-parse. D127.</td></tr>
+  </tbody>
+</table>
+
+<h3>Зафиксированные бывшие «?»</h3>
+<ol>
+  <li>Строковые микро-API — PHASE, Gauntlet без PDF, JAVA пока.</li>
+  <li>Выход API — только TEI; HTML только как вход (HtmlParser).</li>
+  <li>Asset ZIP / annotatePDF — PHASE после LIFT figures/coords.</li>
+  <li><code>teiCoordinates</code> P0 — остаётся figure/table/note/formula; persName/ref/s не расширяем сейчас.</li>
+  <li>BibTeX Accept и debug-mode — PHASE.</li>
+  <li>Segmentation: native ядро зон сначала; cover/headnote/… остаются JAVA.</li>
+</ol>
+<p>Открытых ячеек матрицы в этой ideation больше нет. Новые дыры появятся на brainstorm/plan (FeaturesVector, полный набор лейблов, linking в toTEI) — это исследование, не пустой контракт API.</p>
+</section>
+
+<section id="ranked-ideas">
+<h2>Ранжированные идеи</h2>
+<nav class="jump-list" aria-label="Переход к идее">
+  <strong>К идее:</strong>
+  <ol>
+    <li><a href="#idea-1">da-parse: вынести существующий Rust-разбор PDF/HTML/TEI</a></li>
+    <li><a href="#idea-2">conservation_inventory как первый публичный API</a></li>
+    <li><a href="#idea-3">Сначала мигрировать ткани TEI (neural-crest) по R087</a></li>
+    <li><a href="#idea-4">Донор layout: LayoutToken + оценка Rust-экстракторов</a></li>
+    <li><a href="#idea-5">N специалистов + FSM; ruVLLM не baseline</a></li>
+    <li><a href="#idea-6">API crate = контроль GROBID-совместимости, не декорация</a></li>
+    <li><a href="#idea-7">Разрезать GrobidParseStage: кэш TEI-blob ≠ кэш проектора</a></li>
+  </ol>
+</nav>
+
+<article class="idea-card" id="idea-1">
+  <h3>1. da-parse: вынести существующий Rust-разбор PDF/HTML/TEI</h3>
+  <div class="tags">
+    <span class="tag conf-high">Уверенность 93%</span>
+    <span class="tag complexity">Сложность средняя</span>
+    <span class="tag">Ось: граница crate</span>
+  </div>
+  <dl>
+    <dt>Описание</dt>
+    <dd>Продукт — рабочее имя <code>da-parse</code>: независимый crate, в который <em>переезжает уже написанный</em> Rust-разбор научных статей, а не пустой фасад. Переезд поэтапный, не big-bang dump одного файла: (1) TEI-lift из <code>GrobidParser</code> (<code>extract_title/abstract/body/sections/citations/tables/formulas</code>) + типы <code>TeiFigure</code> из domain; (2) <code>HtmlParser</code> + <code>HtmlSection</code>; (3) pdf-classifier / <code>region_text</code>; (4) потребитель XY-Cut <code>LineBox</code> (геометрия может остаться нейтральным типом в domain). HTTP к Java GROBID — <em>один бэкенд</em> внутри crate (пока стадии не зелёные), не «остаётся навсегда в da-adapters как декорация». Нативные стадии — адаптация доноров (GROBID Java каскад, ScienceBeam, pdfalto LayoutToken, opendataloader XY-Cut) на Rust + ruVector, не «выбросить Java и угадать заново». Модуль без IO (<code>TeiDocument</code> + проекторы + идея 2) — слой crate, не отдельный продукт. Публичный Cargo.toml: нет <code>samyama</code> / <code>kg-*</code>. Лук: crate реализует <code>ParserPort</code>; application оркестрирует ingest; adapters после переезда тонкие. Не глотать extraction/граф — это старый зонтик P6.</dd>
+    <dt>Основание</dt>
+    <dd><code>direct:</code> члена <code>da-parse</code> нет (<code>Cargo.toml</code> members). Parse-код уже есть: <code>grobid_parser.rs</code>, <code>html_parser.rs</code> (~662 строк, тот же string-скан), <code>tei_figures.rs</code> (<code>TeiFigure</code>, M451), <code>html_headings.rs</code>, <code>xy_cut.rs</code> <code>LineBox</code>, feature-gated <code>pdf_classifier</code>/<code>region_text</code>. <code>parse_pdf</code> = HTTP затем lift. Пользователь: «не декорации; постепенно выносим существующую rust-функциональность + всю обработку pdf/html; контроль по API». <code>reasoned:</code> zero-IO crate при PDF/HTML в adapters — как раз декорация. Свалить HTTP+дырявый lift одним пакетом — воспроизвести потери; поэтому переезд по тканям (идея 3), не «весь GrobidParser.rs в новый том».</dd>
+    <dt>Зачем</dt>
+    <dd>Это и есть вынос функционала: независимый crate становится местом, где живёт scholarly parse, растёт нативный каскад (идея 6) и подключается ruVector (идея 5). Тесты и API бьют в crate, не в размазанные модули adapters/domain. Java — временный бэкенд, не идентичность продукта.</dd>
+    <dt>Минусы</dt>
+    <dd>Churn импортов; соблазн затянуть ingest/OpenAlex в тот же crate (P6); XY-Cut в domain vs parse — нужна дисциплина границы; HTML в v1 всё ещё не полный TEI AST.</dd>
+  </dl>
+  <svg viewBox="0 0 640 170" width="100%" aria-label="da-parse владеет существующим Rust-разбором; Java — один бэкенд" style="margin-top:0.75rem">
+    <rect x="10" y="60" width="80" height="50" fill="#243044" stroke="#3d9eff" rx="4"/>
+    <text x="50" y="90" fill="#e6edf3" text-anchor="middle" font-size="11">PDF/HTML</text>
+    <rect x="110" y="20" width="280" height="130" fill="#1a2332" stroke="#7ee787" rx="4"/>
+    <text x="250" y="42" fill="#7ee787" text-anchor="middle" font-size="12">da-parse (продукт)</text>
+    <text x="250" y="62" fill="#8b9cb3" text-anchor="middle" font-size="10">TEI-lift · HtmlParser · TeiFigure · region_text</text>
+    <text x="250" y="80" fill="#8b9cb3" text-anchor="middle" font-size="10">API контроля (идея 6) · conservation (идея 2)</text>
+    <text x="250" y="102" fill="#8b9cb3" text-anchor="middle" font-size="10">бэкенд Java :8070  →  нативные стадии + ruVector</text>
+    <text x="250" y="124" fill="#8b9cb3" text-anchor="middle" font-size="10">нет samyama / kg-*</text>
+    <rect x="420" y="60" width="200" height="50" fill="#243044" stroke="#3d9eff" rx="4"/>
+    <text x="520" y="82" fill="#e6edf3" text-anchor="middle" font-size="11">da-application</text>
+    <text x="520" y="98" fill="#8b9cb3" text-anchor="middle" font-size="10">ParserPort · ingest · граф</text>
+    <line x1="90" y1="85" x2="110" y2="85" stroke="#8b9cb3"/>
+    <line x1="390" y1="85" x2="420" y2="85" stroke="#8b9cb3"/>
+  </svg>
+</article>
+
+<article class="idea-card" id="idea-2">
+  <h3>2. conservation_inventory как первый публичный API</h3>
+  <div class="tags">
+    <span class="tag conf-high">Уверенность 90%</span>
+    <span class="tag complexity">Сложность средняя</span>
+    <span class="tag">Ось: офлайн-проверка Gauntlet</span>
+  </div>
+  <dl>
+    <dt>Описание</dt>
+    <dd>Gauntlet v1 — это функция, не флот critic-агентов в CI. <code>conservation_inventory(gold_tei, lifted) → delta</code> — первый публичный символ <code>da-parse</code> и рычаг контроля по API (идея 6). Ключевые характеристики — набор occupancy M463: recall авторов шапки, bind arXiv idno, консервация нетабличных фигур, recall bibr/типа callout, счётчики таблиц/формул. Каждый bump <code>output_schema_fingerprint</code> привязан к этим пинам. Fail-closed: 48 фигур в TEI, 0 поднято — <code>Err(ConservationFault)</code>, не зелёный entity F1. Диалект gold — <code>GrobidProfile::structural()</code>. LLM-<em>критик</em> (ruVLLM) допускается на пути отладки/обучения: сравнивает fail с gold, пишет траекторию для SONA Instant; он вызывает эту функцию, не заменяет её. В CI crate остаётся без LLM. Builder/critic-агенты, если появятся позже, тот же контракт.</dd>
+    <dt>Основание</dt>
+    <dd><code>direct:</code> «eval_batch entity F1 (корпус ~0.87) может оставаться зелёным, пока authors=0 и 48 фигур отброшены. Качество разбора — консервация против TEI» (m463). Real-TEI тесты пинят <code>citations.len() &gt;= 80</code>, tables=3, formulas=24 и не пинят authors/figures/idno. <code>output_schema_fingerprint: ParsedArticle@serde-v3-unique-navigation</code> уже есть на <code>GrobidParseStage</code>. Символа <code>gauntlet</code> в runtime нет. <code>structural()</code> уже обнуляет оба флага consolidate; стадия всё ещё отпечатывает rich <code>consolidate*=1</code>.</dd>
+    <dt>Зачем</dt>
+    <dd>Без этой планки каждый нативный движок и каждый SONA timing sheet может заявлять прогресс через extractor F1, пока ткани гребня не мигрировали. Это превращает пользовательскую планку глубины GROBID в то, что CI может уронить сегодня вечером, полностью офлайн, без сети и без архитектуры critic-агентов.</dd>
+    <dt>Минусы</dt>
+    <dd>Обслуживание фикстур; TEI-квирки как ложные фейлы; 2608.22118 краснеет, пока не приземлится P0 lift (этот падающий тест <em>и есть</em> мандат); нельзя путать число entity-gold (193) с размером TEI-заморозки.</dd>
+  </dl>
+  <div class="diagram">
+gold structural TEI ──► conservation_inventory(gold, lifted)
+                              │
+              pass ──► можно bump схемы
+              fail ──► ConservationFault (authors / figures / idno / callouts)
+eval_batch entity F1 ──► только приложение, никогда не parse-gate
+  </div>
+</article>
+
+<article class="idea-card" id="idea-3">
+  <h3>3. Сначала мигрировать ткани TEI (neural-crest) по R087</h3>
+  <div class="tags">
+    <span class="tag conf-high">Уверенность 90%</span>
+    <span class="tag complexity">Сложность средняя</span>
+    <span class="tag">Ось: паритет каскада GROBID</span>
+  </div>
+  <dl>
+    <dt>Описание</dt>
+    <dd>Java <code>FullTextParser.processing</code> уже построил зародыш: segmentation → header → citations → body figures/tables/equations → <code>postProcessCallout</code> → <code>toTEI</code>. P0-дыры daily-archive — провалы миграции: ткани есть в TEI и не доходят до <code>ParsedArticle</code>. Не переигрывать гаструляцию (порт CRF / FullTextParser). Поднять authors, article-level idno, нетабличные фигуры и — как <em>гейт</em>, не всю планку — типы callout figure/table/equation. Каждая новая проекция следует R087: Vec + enum missingness + пин инвентаря + bump схемы. Семейства координат в D204-отпечатке обязаны иметь руку lift (запрошенные coords <code>figure</code> не могут исчезнуть). Нативный каскад ждёт, пока консервация на pinned TEI честна.</dd>
+    <dt>Основание</dt>
+    <dd><code>direct:</code> матрица P0 M463 — 2608.22118 authors TEI=1 / поля нет; figures 48 / 0; 2507.19457 authors 21 / 0, formulas 24/24. Комментарии R087 уже запрещают тихую потерю только для tables/formulas (<code>parser.rs:34-51</code>). Адаптер цепляет только <code>&lt;ref type="bibr"&gt;</code> (<code>grobid_parser.rs:712-717</code>); vendor <code>postProcessCallout</code> идёт до <code>toTEI</code>. TEI-<em>потребители</em> grobid-rs уже парсят authors и figures без CRF — JNI-путь движка остаётся non-goal.</dd>
+    <dt>Зачем</dt>
+    <dd>Команда, которая стартует Rust FullTextParser, пока authors/figures ещё умирают в lift, переигрывает гаструляцию на зародыше, чей гребень так и не мигрировал. Функциональный паритет GROBID на Rust делится: (1) полнота издания против TEI, который Java уже эмитит; (2) in-process каскад только когда gold говорит, что узкое место — Java. Консервация callout — как глубина citation-context (неповторимая поверхность GROBID) входит в crate без зоопарка CRF.</dd>
+    <dt>Минусы</dt>
+    <dd>Само по себе JVM не убирает; grobid-rs как зависимость — JNI+GPL, пока не вынесут/не перепишут только TEI-walker; большие TEI всё ещё требуют аккуратности со стримингом.</dd>
+  </dl>
+  <div class="diagram">
+Java-каскад ──► TEI (authors, 48 фигур, callouts, coords)     [уже происходит]
+                      │
+                      ▼
+              проекторы da-parse  ── сегодня: tables/formulas/bibr; TeiFigure в domain не в ParsedArticle
+                                 ── нет: authors, idno, graphics, figure/table refs
+                      │
+                      ▼
+              ConservationFault пока occupancy не совпадёт с gold
+  </div>
+</article>
+
+<article class="idea-card" id="idea-4">
+  <h3>4. Донор layout: LayoutToken-контракт + оценка Rust-экстракторов</h3>
+  <div class="tags">
+    <span class="tag conf-high">Уверенность 86%</span>
+    <span class="tag complexity">Сложность высокая</span>
+    <span class="tag">Ось: фундамент layout-токенов</span>
+  </div>
+  <dl>
+    <dt>Описание</dt>
+    <dd>Метод: если функционал уже есть не на Rust — <em>оценим и адаптируем</em>, не выбросим. Целевой IR каскада — GROBID <code>LayoutToken</code>: Unicode + шрифт/стиль (bold/italic/super/sub) + bbox + группировка line/block/column; фичи (indent, relative spacing, page position, density) считаются на каждом токене. pdfalto — донор этого контракта (ALTO, XY-проекции, колонки, PNG/SVG графики), не форк C++ в runtime. Дальше <em>оценка</em> источников токенов на Rust: (1) уже портированный XY-Cut из Java opendataloader-pdf → <code>LineBox</code>; (2) pdf_oxide — character/span/page + font + bbox и 4 стратегии reading order (XY-Cut, Structure Tree, Geometric, Simple); (3) oxidize-pdf — structure-aware chunks + bbox, zero C; (4) layout-API pdf-inspector, если реально отдаёт боксы (classify-time <code>process_pdf_mem</code> — нет). LiteParse/PDFium — читать алгоритм, не тащить C++. Выбранный экстрактор эмитит нейтральный token lattice; каскад (идея 5) вешает лейблы; TEI <code>&lt;graphic coords&gt;</code> снимает второй JVM pdffigures2, когда occupancy фигур зелёная. <code>GrammarRoute::XyCut</code> — штамп, пока lattice нет.</dd>
+    <dt>Основание</dt>
+    <dd><code>direct:</code> GROBID Principles: модели работают на Layout Tokens, не на тексте; pdfalto строит layout features. <code>xy_cut.rs</code>: «Ported from opendataloader-pdf XYCutPlusPlusSorter». Пользователь: не отбрасывать чужие реализации; брать идеи/паттерны или искать элегантнее. <code>external:</code> pdf_oxide docs — 4 reading-order strategies; oxidize-pdf — pure Rust bbox chunks. Верификатор: <code>PdfProcessResult</code> ≠ TextItem. <code>reasoned:</code> «RAG, не TEI» запрещает <em>считать crate TEI-продуктом</em>, не запрещает взять spatial tokens. Зависимость от PDFium — отдельный отказ runtime, не отказ читать код.</dd>
+    <dt>Зачем</dt>
+    <dd>Это северная звезда «зрелые layout-экстракторы как фундамент» без конкуренции на markdown и без pdfalto в процессе. Каскад получает тот же класс входа, что Java GROBID, реализованный на Rust + ruVector (арены, SIMD фичи, SMP по страницам). Смена экстрактора не ломает головы стадий.</dd>
+    <dt>Минусы</dt>
+    <dd>Оценка нескольких crate — отдельный Gauntlet на reading-order/coords, не на entity F1; pdfalto-паритет superscript/line-numbers всё ещё дыра; соблазн протащить markdown-chunker как «парсер статьи»; сканам нужен OCR (SciPix residual, не baseline).</dd>
+  </dl>
+  <div class="diagram">
+доноры (Java/C++/Python)          оценка / адаптация на Rust
+pdfalto ALTO + LayoutToken   ──►  нейтральный token lattice (bbox, font, line/block)
+opendataloader XY-Cut        ──►  LineBox (уже в da-domain)
+pdf_oxide / oxidize-pdf      ──►  candidate extractors (не TEI-продукт)
+ScienceBeam cascade          ──►  уроки порта, не runtime
+        │
+        ▼
+  SIMD features + Arena  ──►  N specialist heads (идея 5)
+        │
+        ▼
+  TEI graphic coords  ──►  pdffigures2 снимается, когда conservation фигур зелёная
+  </div>
+</article>
+
+<article class="idea-card" id="idea-5">
+  <h3>5. N специалистов + FSM-оркестратор; ruVLLM не baseline</h3>
+  <div class="tags">
+    <span class="tag conf-high">Уверенность 88%</span>
+    <span class="tag complexity">Сложность высокая</span>
+    <span class="tag">Ось: движок ruVector</span>
+  </div>
+  <dl>
+    <dt>Описание</dt>
+    <dd><strong>Вердикт развилки.</strong> В <code>da-parse</code> базовое извлечение — <em>несколько специализированных узлов</em> по форме GROBID плюс FSM-оркестратор. Crate <em>сейчас без LLM</em> на hot path. Каждый узел: SIMD-энкодер / LayoutToken (идея 4) → голова разметки → свой SONA-адаптер на <code>hidden_dim</code>. FSM (<code>DecisionPoint</code>) оркестрирует стадии, не таггирует текст. <strong>Место ruVLLM сейчас:</strong> критик и элемент пути обучения/отладки — читает conservation-delta + gold TEI, предлагает траекторию для Instant/Background, синтетические последовательности для Deep; не вызывается из <code>processFulltextDocument</code>. <strong>Позже:</strong> тот же runtime можно включить как расширенный residual (формулы/OCR/ambiguous header), опциональной фичей crate, не сменой архитектуры. Агенты Claude Flow (13 типов из training README) — не parse-baseline. Продвижение: conservation (идея 2), не граф (D127).</dd>
+    <dt>Основание</dt>
+    <dd><code>direct:</code> <code>EngineParsers</code> — N парсеров. <code>apply_micro_lora</code> — вектор→вектор. Пользователь: LLM как критик на отладке/обучении; crate пока без LLM; позже расширить. Non-goal остаётся только «постоянный LLM на базовом извлечении». <code>reasoned:</code> conservation детерминирует CI без сети; LLM-критик обогащает train-path. Одна 7B как processFulltext по-прежнему ломает occupancy TEI.</dd>
+    <dt>Зачем</dt>
+    <dd>Закрывает «куда LLM». Сейчас crate извлекает без LLM. ruVLLM — критик/учитель train-path (идея 2). Позже — опциональное расширение, не переписывание. SONA на головах учится и без генерации токенов.</dd>
+    <dt>Минусы</dt>
+    <dd>N голов = N eval (идея 2 должна покрывать каждую стадию); MicroLoRA на фичах ≠ доказанный паритет Wapiti; соблазн всё равно воткнуть 7B «на всякий случай» и сломать офлайн-CI; shared 0.5B encoder может протащить GGUF на hot path, если не держать границу.</dd>
+  </dl>
+  <div class="diagram">
+PDF ──► SIMD features + Arena/paged + region graph
+            │
+            ▼
+     FSM orchestrator (DecisionPoint + ParseStage)
+            │
+            ├─ Seg head + SONA adapter
+            ├─ Header/aff/name/date heads + SONA
+            ├─ Ref-seg + Citation heads + SONA
+            └─ Fulltext / figure / table heads + SONA
+            │
+            ▼
+     TEI + coords ──► conservation ──► promote stage (не граф)
+
+ruVLLM GGUF ── train/debug critic + Deep teacher (не processFulltext)
+             ── позже: optional residual feature, не смена архитектуры
+  </div>
+</article>
+
+<article class="idea-card" id="idea-6">
+  <h3>6. API crate = контроль GROBID-совместимости, не декорация</h3>
+  <div class="tags">
+    <span class="tag conf-high">Уверенность 88%</span>
+    <span class="tag complexity">Сложность высокая</span>
+    <span class="tag">Ось: паритет каскада GROBID</span>
+  </div>
+  <dl>
+    <dt>Описание</dt>
+    <dd>API — <em>публичный контроль</em> crate идеи 1, не отдельный sidecar-фасад перед Java. Контракт: совместимое подмножество REST GROBID (<code>isalive</code>/<code>health</code>/<code>version</code>, <code>processFulltextDocument</code>, далее header/references, multipart: consolidate, <code>teiCoordinates</code>, 503) плюс расширения crate: <code>conservation_inventory</code>, region graph, structural-профиль, SIMD/SMP-статы. За API — трейт <code>ParseStage</code> (Segmentation, Header, Citation, ReferenceSegmenter, FullText). Первые «нативные» стадии — уже существующий Rust: TEI-lift, HTML, <code>TeiFigure</code>, region_text. Java :8070 — бэкенд одной стадии, пока conservation не зелёная. Следующие стадии — Rust-реализация каскада на kit ruVector (идея 5). Конечное состояние: клиент говорит на GROBID API + расширения; процесса Java нет. Не порт весов CRF. D127: ответ — кандидат, не граф.</dd>
+    <dt>Основание</dt>
+    <dd><code>direct:</code> клиент сегодня только <code>isalive</code> + <code>processFulltextDocument</code>; vendor EngineParsers проиндексирован. Пользователь: контроль по API + реализовать rust/GROBID; не строить декорации. <code>reasoned:</code> пустой :8072 без переезда кода — P3, отвергнут. API без выноса существующего Rust (идея 1) снова декорация. API поверх переехавшего lift — рычаг тестов и послойной замены.</dd>
+    <dt>Зачем</dt>
+    <dd>Один провод для daily-archive, Gauntlet и внешнего клиента. Замена Java видна как смена реализации стадии, а не как новый зоопарк клиентов. Расширения (консервация, layout, скорость) едут тем же контрактом.</dd>
+    <dt>Минусы</dt>
+    <dd>Дрейф REST GROBID; переходный Java-бэкенд легко принять за продукт; 55–68 лейблов — длинная поверхность; первые нативные стадии могут проигрывать CRF, пока kit не greен на gold.</dd>
+  </dl>
+  <div class="diagram">
+клиент / тесты
+        │  GROBID-совместимый REST + расширения crate
+        ▼
+   da-parse (идея 1)  —  это и есть контроль
+        │
+        ├─ существующий Rust (lift, HTML, TeiFigure, region_text)
+        ├─ Java :8070 как ParseStage backend  ← пока conservation красная
+        └─ нативные стадии: N голов + SONA-адаптер (идея 5); ruVLLM не здесь
+        │
+        ▼
+   TEI + coords  ──► conservation_inventory (идея 2)
+  </div>
+</article>
+
+<article class="idea-card" id="idea-7">
+  <h3>7. Разрезать GrobidParseStage: кэш TEI-blob ≠ кэш проектора</h3>
+  <div class="tags">
+    <span class="tag conf-med">Уверенность 76%</span>
+    <span class="tag complexity">Сложность средняя</span>
+    <span class="tag">Ось: граница crate</span>
+  </div>
+  <dl>
+    <dt>Описание</dt>
+    <dd><code>StageContract</code> уже именует пять отпечатков; <code>GrobidParseStage</code> заполняет четыре (<code>prompt=None</code>), а <code>execute()</code> всё ещё вызывает <code>parse_pdf</code> как один шаг HTTP+lift. Разрезать. <code>configuration_fingerprint</code> + <code>model_fingerprint</code> владеют байтами TEI бэкенда (профиль/coords/движок D204). <code>implementation_fingerprint</code> + <code>output_schema_fingerprint</code> владеют проектором <code>da-parse</code>. Повторный lift замороженных TEI — попадание в кэш блоба и промах проектора. Нативные движки позже меняют только <code>model_fingerprint</code>. Это не утверждение, что структура уже реализует два кэша — это использование имён, которые пайплайн уже имеет.</dd>
+    <dt>Основание</dt>
+    <dd><code>direct:</code> пять полей отпечатка в <code>pipeline_stage.rs</code>; живые значения <code>pipeline_stages.rs:35-43</code>, включая rich <code>consolidate*=1</code> и <code>ParsedArticle@serde-v3-unique-navigation</code>. Верификатор: fission — предлагаемое использование имён, не нынешний механизм — идея и есть разрез. D204 уже запрещает мешать профиль/coords под одним ключом кэша.</dd>
+    <dt>Зачем</dt>
+    <dd>Без разреза каждое P0-поле (идея 3) выглядит как смена идентичности parse-стадии и заново GROBID-ит корпус. С ним идеи 1–3 и будущий нативный бэкенд становятся replay против content-addressed TEI.</dd>
+    <dt>Минусы</dt>
+    <dd>Миграция ключей кэша; два артефакта на статью (blob + проекция); легко ошибиться в отпечатках и тихо пропустить lift.</dd>
+  </dl>
+</article>
+</section>
+
+<section id="rejections">
+<h2>Сводка отказов</h2>
+<p>Ранжированные идеи первого прохода перенесены сюда, если понижены. Отказы первого прохода сохранены. Новые отказы resume-генерации сгруппированы.</p>
+<table>
+  <thead>
+    <tr><th>#</th><th>Идея</th><th>Почему отказано</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>P1</td><td>Gauntlet v1 = флот critic-агентов <em>вместо</em> функции</td><td>Удержано: CI-планка = conservation_inventory. LLM-критик на train-path (идея 2/5) вызывает функцию, не заменяет её в CI</td></tr>
+    <tr><td>P2</td><td>Клин извлечения da-parse + P0 lift (HTTP+lift одним dump)</td><td>Анти-blob удержан: не сваливать дырявый GrobidParser целиком. Сам вынос существующего Rust в da-parse восстановлен как идея 1; P0 — идея 3</td></tr>
+    <tr><td>P3</td><td>Совместимый фасад-роутер GROBID :8072 (пустой)</td><td>Остаётся отказом как декорация. Идея 6 — API как контроль crate после выноса кода, не sidecar перед Java</td></tr>
+    <tr><td>P4</td><td>Композит oxidize/LiteParse/pdf_oxide как <em>TEI-продукт</em></td><td>Удержано: они не bibliographic TEI. <em>Снято как «не трогать»:</em> идея 4 теперь оценивает их как доноров spatial tokens; LiteParse C++ — не runtime-dep</td></tr>
+    <tr><td>P5</td><td>Контур маршрутизации/admission SONA (D136-safe, первая формулировка)</td><td>Поглощён идеей 5 как боковой контур; consult-only не veto; SONA не весь ruVector-kit</td></tr>
+    <tr><td>P7</td><td>Длинная дуга разметки каскада SONA-only</td><td>Поглощена идеей 5: обучение узлов остаётся, но kit шире (SIMD/SMP/арены/HNSW/paged)</td></tr>
+    <tr><td>P6</td><td>Зонтичный pipeline-crate da-scholarly (ingest+граф+extract)</td><td>Слишком широко. da-parse (идея 1) — только разбор PDF/HTML/TEI, не Samyama</td></tr>
+    <tr><td>P8</td><td>da-tei как продуктовый crate без IO (HTTP навсегда в adapters)</td><td>Декорация: PDF/HTML остаются снаружи. TEI-IR — модуль da-parse, не отдельный продукт</td></tr>
+    <tr><td>P9</td><td>SciPix как фундамент scholarly TEI</td><td>Math OCR + tesseract/pdf-extract в дизайн-доке; брать SIMD/arena, не TEI-каскад</td></tr>
+    <tr><td>P10</td><td>SONA-only как вся история ruVector</td><td>Пользователь: фишки ruVector не ограничиваются SONA; kit остаётся, идея 5 фиксирует место SONA — адаптер на специалистах</td></tr>
+    <tr><td>P11</td><td>Одна большая ruVLLM (7B GGUF) + FSM как baseline parse</td><td>Противоречит non-goal «нет постоянного LLM на базовом извлечении»; generate() ≠ occupancy TEI; SONA API — hidden vector, не каскад лейблов; ломает офлайн-Gauntlet</td></tr>
+    <tr><td>P12</td><td>Агентский флот / 13 Claude Flow adapters внутри da-parse</td><td>ruVLLM training учит роутинг агентов, не TEI. critic_repair/negative_memory — post-parse. Gauntlet v1 = conservation_inventory</td></tr>
+    <tr><td>P13</td><td>Отбросить не-Rust реализации (GROBID/pdfalto/ScienceBeam/opendataloader)</td><td>Снято указанием пользователя: оценивать и адаптировать паттерны на Rust; не форкать C++/JNI в runtime</td></tr>
+    <tr><td>1</td><td>Big-bang паритет GROBID на pure Rust за один milestone</td><td>Нарушает MEM681 инкрементальные gold-gated нативные движки</td></tr>
+    <tr><td>2</td><td>Взять JNI grobid-rs (путь движка)</td><td>JVM + ~500MB + pdfalto GPL-3; сохраняет зоопарк. Только TEI-потребитель остаётся слабым вариантом, не crate-зависимостью</td></tr>
+    <tr><td>3</td><td>Entity Micro-F1 как единственный parse-gate</td><td>direct: F1 ~0.87 при authors=0 и figures 0/48</td></tr>
+    <tr><td>4</td><td>Универсальный crate kg-parse</td><td>ADR-050 — scholarly TEI остаётся на стороне продукта</td></tr>
+    <tr><td>5</td><td>Разметка SONA без eval-фикстур (вечный consult-only)</td><td>Снято: идея 2 даёт eval; идея 5 обучает узлы внутри ruVector-kit. Остаётся D127 (нет auto-promote в граф)</td></tr>
+    <tr><td>6</td><td>MinerU / Docling / Marker как замена TEI</td><td>MD/JSON потерянны относительно библиографической глубины</td></tr>
+    <tr><td>7</td><td>Только RAG/layout-парсер как продукт</td><td>Non-goal пользователя; нет citation contexts и планки TEI coords</td></tr>
+    <tr><td>8</td><td>Пропустить P0 TEI lift, пока строится нативный каскад</td><td>Сегодняшняя консервация фигур 0/48 — потеря проектора, не дыра модели</td></tr>
+    <tr><td>9</td><td>Базовое извлечение, <em>требующее</em> LLM на каждом PDF</td><td>Удержано как non-goal hot path. <em>Снято:</em> LLM-критик на отладке/обучении и позднее расширение crate — идея 5 train-path</td></tr>
+    <tr><td>10</td><td>Форк pdfalto / перенос весов Wapiti CRF</td><td>M463 — не форкать pdfalto; классический порт CRF — non-goal</td></tr>
+    <tr><td>11</td><td>Собрать process_pdf_mem Full в TextItem/LineBox</td><td>Слабо/перечит: PdfProcessResult имеет markdown + списки сложности, не TextItem</td></tr>
+    <tr><td>12</td><td>Считать fail-open XyCut body TEI-бэкендом уже сегодня</td><td>Штамп, затем arxiv_pdf_dot / GROBID; fail-open ≠ продуктовое обязательство</td></tr>
+    <tr><td>13</td><td>Трёхдатумный spatial join (inspector + TEI + pdffigures2)</td><td>Кадастровый грех, который называет сама аналогия; боксов inspector нет на classify-результате</td></tr>
+    <tr><td>14</td><td>postProcessCallout как определение паритета GROBID</td><td>Консервация callout — гейт (внутри идеи 3), не вся планка</td></tr>
+    <tr><td>15</td><td>Заморозить 193 structural TEI</td><td>193 — это entity gold.json, не TEI; размер заморозки TBD по id статей</td></tr>
+    <tr><td>16</td><td>Фичи grammar_route = дельты консервации</td><td>Опровергнуто: консервация после lift; grammar_route до parse</td></tr>
+    <tr><td>17</td><td>Governor: никаких TEI-типов в kg-*</td><td>Избыточно при kg↛da; ниже meeting floor</td></tr>
+    <tr><td>18</td><td>Метафоры bonded warehouse / Вестфалия как отдельные продукты</td><td>D127 — флаг, не система типов; поглощено как окраска идеи 1</td></tr>
+    <tr><td>19</td><td>AS9102 FAI как отдельная идея</td><td>Звучная аналогия, хода сверх идеи 2 нет</td></tr>
+    <tr><td>20</td><td>Скоры консервации уже СУТЬ фикстуры D136</td><td>Перепись политики; говорить «parse conservation eval до любой LoRA», не «D136 уже значит occupancy TEI»</td></tr>
+    <tr><td>21</td><td>HTML и PDF как один TEI-эмиттер в v1</td><td>Цитата html_parser поддерживает общий скан, не общий TEI AST</td></tr>
+    <tr><td>—</td><td>покрытие осей</td><td>У всех пяти осей есть выжившие; пробела recovery нет</td></tr>
+  </tbody>
+</table>
+</section>
+
+<footer class="composition-signal">
+  Собрано 2026-08-26T15:35+07:00 ce-ideate (resume, RU). Матрица: все «?» приняты lean’ами пользователя.
+</footer>
+</div>
+</body>
+</html>

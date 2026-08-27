@@ -585,6 +585,19 @@ rules:
       - scripts/tests/
       - scripts/README.md
       - scripts/run_in_env.sh
+      # M451 session blessing (see .gsd/continue.md): textbook_import /
+      # monograph_import are one-time import tools; reference_layers /
+      # summary_eval are pilot/eval session scripts; m450/migrate/pdf_* are
+      # legacy data migrations. Grandfathered here so the rule still blocks
+      # any NEW product-runtime Python script.
+      - scripts/m450_build_processed.py
+      - scripts/m451_textbook_import.py
+      - scripts/m451_monograph_import.py
+      - scripts/m451_reference_layers.py
+      - scripts/m451_summary_eval.py
+      - scripts/m451_migrate_article_manifests.py
+      - scripts/m451_pdf_toc_observations.py
+      - scripts/m451_pdf_observations.py
 
   # No Rust product code may spawn a Python subprocess (D237).
   - id: no_rust_python_subprocess
