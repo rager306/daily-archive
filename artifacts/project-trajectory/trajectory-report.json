@@ -1,0 +1,241 @@
+{
+  "schema_version": "m286.hexagonal.governor.v1",
+  "phase": "preflight",
+  "verdict": "drift_risk",
+  "dimensions": {
+    "schema_readiness": {
+      "description": "Typed knowledge schema (node labels, property types, edge contracts)",
+      "status": "implemented",
+      "evidence": [
+        "da-domain::schema canonical home (Rust workspace)",
+        "ADR-040 Samyama unified store",
+        "ADR-045 edge contract matrix",
+        "31 node schemas (XSchema)"
+      ]
+    },
+    "extraction_coverage": {
+      "description": "Extraction pipeline quality on gold-standard corpus",
+      "status": "prototype_done",
+      "evidence": [
+        "Rust RuleBasedExtractor (crates/da-adapters)",
+        "Gold-standard corpus: 12 modern papers, 96 gold entities",
+        "Precision 0.639 / Recall 0.979 / F1 0.774 (micro)",
+        "import_eligible=false (D127)"
+      ]
+    },
+    "graph_store_binding": {
+      "description": "KG+vector+persist store binding (ADR-040 Samyama)",
+      "status": "superseded_by_samyama",
+      "evidence": [
+        "ADR-040 Samyama = sole KG+vector+persist store",
+        "SamyamaGraphStore impl (GraphStore + DirectGraphStore)",
+        "kg-storage traits re-exported via da-ports (M285-z09px0/S05)"
+      ]
+    },
+    "hexagonal_discipline": {
+      "description": "Hexagonal/Onion overlay maturity (ADR-034)",
+      "status": "crystallized",
+      "evidence": [
+        "ADR-034 hexagonal/onion overlay on Rust workspace",
+        "da-domain <- da-ports <- da-application (da-parse implements PDF ParserPort; da-adapters implements remaining ports including HTML and GrobidParseStage; da-cli/da-mcp are composition roots)",
+        "kg-* universal crate family (ADR-050, no da-* deps)",
+        "scripts/verify_rust_architecture.sh guardrail"
+      ]
+    },
+    "kg_crate_family": {
+      "description": "Universal kg-* crate family migration (ADR-050)",
+      "status": "phase_a_complete",
+      "evidence": [
+        "ADR-050 kg-* crate family (5 crates)",
+        "Phase A: da-domain re-exports kg-ontology (M285/S03)",
+        "Phase B: da-ports re-exports kg-storage (M285/S05)",
+        "Phase D: YAML ontology export pending"
+      ]
+    },
+    "canary_resolvability": {
+      "description": "Canary paper resolvability metric (M280-M284)",
+      "status": "not_started",
+      "evidence": [
+        "M280: canary paper ids assigned, 12 held-out frozen",
+        "M281: gold char-span grounding",
+        "M282: relation entity-id resolve",
+        "M284: evidence governor fleet wire"
+      ]
+    },
+    "structure_gate": {
+      "description": "Structure gate v2 IR signals (M277)",
+      "status": "not_started",
+      "evidence": [
+        "M277: v2 IR hard structure, newline soft_legacy",
+        "M283: ODL layout key fix, hybrid gold batch"
+      ]
+    },
+    "gepa_isolation": {
+      "description": "GEPA held-out isolation wire (M279)",
+      "status": "not_started",
+      "evidence": [
+        "M279: held_out excluded from GEPA train fail-closed",
+        "M280: 60 paper_ids assigned, 12 held-out frozen"
+      ]
+    },
+    "test_coverage_delta": {
+      "description": "Test coverage: files without tests (MEM515)",
+      "status": "measured",
+      "evidence": [
+        "governor --check-dead-code surfaces dead code",
+        "Manual scan: kg-* src files >30 lines without #[test] or #[cfg(test)]",
+        "test_coverage_delta dimension added M287 post-session"
+      ]
+    },
+    "resource_safety": {
+      "description": "Disk space and memory checks — prevent mid-process crashes (M360+)",
+      "status": "healthy",
+      "evidence": [
+        "Preflight disk/memory check before cargo builds and long-running pipelines",
+        "df -h / and free -m via psutil or /proc/meminfo",
+        "Blocks cargo test --workspace when disk < 5GB (rocksdb rebuild needs space)",
+        "Added after disk pollution incident from excessive cargo build calls"
+      ]
+    },
+    "mcp_surface_completeness": {
+      "description": "MCP product surface: tools + resources + prompts (ADR-054, D194)",
+      "status": "not_started",
+      "evidence": [
+        "crates/da-mcp/src/tools.rs has >= 8 pub async fn handlers",
+        "crates/da-mcp/src/lib.rs has list_mcp_resources method",
+        "crates/da-mcp/src/lib.rs has list_mcp_prompts method",
+        "Governor checks product completeness, not just ADR invariants",
+        "Added D194 Wave 1: catches product-readiness drift"
+      ]
+    },
+    "ontology_layer_readiness": {
+      "description": "ADR-053 Layer A-J implementation status (D194 audit)",
+      "status": "not_started",
+      "evidence": [
+        "crates/da-domain/src/article.rs: path_id in SectionSchema",
+        "crates/da-domain/src/article.rs: SummarySchema struct",
+        "crates/da-domain/src/article.rs: MethodSchema/DatasetSchema/MetricSchema structs",
+        "data/ontology/node_schemas.yaml: Summary/Method/Dataset/Metric labels",
+        "data/ontology/edge_contracts.yaml: hasSummary edge",
+        "D194 audit: Layer A-C done, D-J pending"
+      ]
+    },
+    "agent_read_plane": {
+      "description": "Read-only agent plane with verified envelopes (PIR-017/PIR-021, ADR-061)",
+      "status": "not_started",
+      "evidence": [
+        "Rust offline verifier pinned: da agent-run verify exit 0 PASS / exit 3 FAIL (D273)",
+        "Governor DATA contract scripts/governor/checks/read_only_agent_contract.yaml",
+        "Committed genuine envelopes (positive + tampered negative)",
+        "D127 locked: envelope carries no import_eligible key",
+        "serve-graph path does not instantiate vendor RespServer"
+      ]
+    },
+    "graph_semantics": {
+      "description": "Semantic content quality of .sgnap snapshots (text, enrichment, dedup)",
+      "status": "implemented",
+      "evidence": [
+        "Section text completeness (avg raw_text length)",
+        "Enrichment coverage (Author/Venue/Topic nodes)",
+        "Entity dedup integrity (duplicate vids)",
+        "Revision binding coverage"
+      ]
+    },
+    "data_integrity": {
+      "description": "Data path canonicality, cache invalidation, hardcode scan, artifact GC",
+      "status": "implemented",
+      "evidence": [
+        "No hardcoded service URLs in Rust src",
+        "No nested data directories",
+        "Cache fingerprints bound to DATA content",
+        "Artifact lifecycle GC policy"
+      ]
+    },
+    "citation_dictionaries": {
+      "description": "Citation style patterns, venue registry, author identity for scientific context",
+      "status": "implemented",
+      "evidence": [
+        "citation_styles.yaml: typed classification of unresolvable references",
+        "venue_registry.yaml: canonical venue names with aliases",
+        "author_identity.yaml: author disambiguation registry",
+        "Enables W-C (citation entities) and W-G (scientific context depth)"
+      ]
+    },
+    "schema_hierarchy": {
+      "description": "SCHEMA.yaml + MANIFEST.yaml pair for every directory (ADR-068)",
+      "status": "implemented",
+      "evidence": [
+        "Every top-level dir has SCHEMA + MANIFEST",
+        "Schema versioned, manifest timestamped",
+        "No forbidden directories"
+      ]
+    },
+    "test_fidelity_drift": {
+      "description": "Pipeline behavioral regression detection (audit-fidelity gate + fixture metrics)",
+      "status": "missing",
+      "evidence": [
+        {
+          "audit-fidelity CLI gate (M451 wave 3": "false-positive fix)"
+        },
+        "FSM boundary-agent with AnchorVerdict (M451)",
+        {
+          "3 regression classes caught": "citation loss, boundary deletion, figure terminal"
+        },
+        {
+          "waves 1-3 lessons": "code-green ≠ data-correct"
+        }
+      ]
+    },
+    "scholarly_parse_plane": {
+      "description": "ADR-075 staged native Rust scholarly parse platform readiness",
+      "status": "staged_platform_decided",
+      "evidence": [
+        "da-parse owns Java GROBID HTTP, TEI IR and ParserPort projector",
+        "ADR-075 binds ParseBackend, pure TeiLifter, conservation-first native replacement and split cache lineage",
+        "D294 opens SONA/MicroLoRA/EWC++ and ruVLLM training while preserving explicit promotion",
+        "D295 keeps unique experience in RVF, derived parse artifacts in pipeline cache and redb rebuildable only",
+        "ruVector CPU/SMP patterns are narrow, measured and outside graph/LLM runtime coupling",
+        "D127 remains false and Java GROBID remains oracle/fallback until stage acceptance"
+      ]
+    }
+  },
+  "drift_flags": [
+    {
+      "flag": "gsd_planning_projection_degraded",
+      "severity": "medium",
+      "evidence": "active milestone M464-z84in2 slice S02 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S03 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S04 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S05 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S06 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S07 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S08 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S09 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S10 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S11 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S12 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S13 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S14 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S15 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S16 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S17 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S18 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M464-z84in2 slice S19 has no PLAN tasks — run gsd_plan_slice before execute"
+    },
+    {
+      "flag": "resource_target_bloat",
+      "severity": "medium",
+      "evidence": "target/ is 30.8GB (70GB free on disk) — consider 'cargo clean' before workspace builds Recommendation: Remove incremental cache: rm -rf target/debug/incremental (11.0GB); Dependencies cache large (16.9GB) — cargo clean -p <crate> to prune specific deps; Debug profile 30.8GB — run 'cargo clean' before workspace builds"
+    },
+    {
+      "flag": "graph_section_text_missing",
+      "severity": "high",
+      "evidence": "28346 Section nodes carry no raw_text prop. Average raw_text across Section nodes must exceed threshold chars (stubs below it are empty shells)"
+    }
+  ],
+  "reverse_adr_audit_details": {
+    "status": "violations",
+    "violations": [
+      {
+        "rule_id": "gsd_lifecycle_attempt_desync_in_summary",
+        "file": "/root/daily-archive/.gsd/phases/440-rv8tlx-sweep-cache-materialization-into-semanti/440-03-ASSESSMENT.md",
+        "line": 32,
+        "anchor": "GSD canonical Attempt (D144)",
+        "severity": "medium",
+        "rationale": "SUMMARY notes gsd_task_complete blocked without Attempt while work may already be committed. Do not hand-edit gsd.db; run /gsd auto <milestone> so attempt.claim then complete. See D144.",
+        "matched_text": "\"reason\": \"canonical Task completion requires a running or replay-matched Attempt; free-form session delivered work per M306-proven manual closeout (commit 228e7853)\""
+      }
+    ],
+    "violations_count": 1
+  },
+  "next_actions": [
+    "target/ bloated: prune debug incremental/examples before workspace cargo."
+  ],
+  "milestone_context": {
+    "latest_milestone_id": "464",
+    "latest_milestone_title": "z84in2-staged-native-scholarly-parse-platform"
+  }
+}

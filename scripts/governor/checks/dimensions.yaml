@@ -209,3 +209,17 @@ dimensions:
   - 3 regression classes caught: citation loss, boundary deletion, figure terminal
   - waves 1-3 lessons: code-green ≠ data-correct
   artifact_ref: scripts/governor/checks/test_fidelity_drift.yaml
+- id: scholarly_parse_plane
+  description: ADR-075 staged native Rust scholarly parse platform readiness
+  status_logic:
+    staged_platform_decided: doc/adr/ADR-075-scholarly-parse-plane-staged-platform.md exists AND crates/da-parse/src/lib.rs exists AND doc/research/m463-grobid-rust-ruvector-platform.md exists
+    ownership_cut: crates/da-parse/src/lib.rs exists
+    not_started: always (fallback)
+  evidence:
+  - da-parse owns Java GROBID HTTP, TEI IR and ParserPort projector
+  - ADR-075 binds ParseBackend, pure TeiLifter, conservation-first native replacement and split cache lineage
+  - D294 opens SONA/MicroLoRA/EWC++ and ruVLLM training while preserving explicit promotion
+  - D295 keeps unique experience in RVF, derived parse artifacts in pipeline cache and redb rebuildable only
+  - ruVector CPU/SMP patterns are narrow, measured and outside graph/LLM runtime coupling
+  - D127 remains false and Java GROBID remains oracle/fallback until stage acceptance
+  artifact_ref: doc/adr/ADR-075-scholarly-parse-plane-staged-platform.md

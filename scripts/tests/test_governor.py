@@ -420,6 +420,127 @@ reqwest = { workspace = true }
     assert parse_violations == []
 
 
+def test_da_parse_must_not_embed_learning_or_graph_runtimes():
+    """Active SONA/LoRA work stays behind ports, not in deterministic parse deps."""
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+
+    _write(
+        root / "crates" / "da-parse" / "Cargo.toml",
+        """[package]
+name = "da-parse"
+
+[dependencies]
+da-ports = { workspace = true }
+sona = { workspace = true }
+ruvllm = { workspace = true }
+redb = "2"
+""",
+    )
+
+    scanner = FilesystemCodeScanner(root)
+    rule_repo = YAMLRuleRepository(checks_dir)
+    audit = AuditService(scanner=scanner, rule_repo=rule_repo)
+    report = audit.run_audit()
+
+    violations = [
+        v
+        for r in report.results
+        if r.rule.id == "da_parse_must_not_embed_learning_or_graph_runtimes"
+        for v in r.violations
+    ]
+    assert len(violations) == 3
+    assert all(v.severity == "high" for v in violations)
+
+
+def test_da_parse_direct_cpu_substrate_dependencies_are_allowed():
+    """Narrow measured CPU/SMP deps are allowed by ADR-075."""
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+
+    _write(
+        root / "crates" / "da-parse" / "Cargo.toml",
+        """[package]
+name = "da-parse"
+
+[dependencies]
+da-ports = { workspace = true }
+rayon = "1"
+crossbeam = "0.8"
+memmap2 = "0.9"
+bytemuck = "1"
+""",
+    )
+
+    scanner = FilesystemCodeScanner(root)
+    rule_repo = YAMLRuleRepository(checks_dir)
+    audit = AuditService(scanner=scanner, rule_repo=rule_repo)
+    report = audit.run_audit()
+
+    violations = [
+        v
+        for r in report.results
+        if r.rule.id in {
+            "da_parse_must_not_embed_learning_or_graph_runtimes",
+            "da_parse_must_not_embed_jvm",
+        }
+        for v in r.violations
+    ]
+    assert violations == []
+
+
+def test_da_parse_must_not_embed_jvm():
+    """The native platform must not pull the grobid-rs JNI engine in-process."""
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+
+    _write(
+        root / "crates" / "da-parse" / "Cargo.toml",
+        """[package]
+name = "da-parse"
+
+[dependencies]
+jni = "0.21"
+""",
+    )
+
+    scanner = FilesystemCodeScanner(root)
+    rule_repo = YAMLRuleRepository(checks_dir)
+    audit = AuditService(scanner=scanner, rule_repo=rule_repo)
+    report = audit.run_audit()
+
+    violations = [
+        v
+        for r in report.results
+        if r.rule.id == "da_parse_must_not_embed_jvm"
+        for v in r.violations
+    ]
+    assert len(violations) == 1
+    assert violations[0].severity == "high"
+
+
+def test_parse_persistence_authority_and_memory_only_experience_are_caught():
+    """D295 keeps unique learning state in RVF and redb rebuildable."""
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+    _write(
+        root / "artifacts" / "parse" / "state.json",
+        '{"redb_authoritative": true, "experience_persistence": "memory-only"}',
+    )
+
+    scanner = FilesystemCodeScanner(root)
+    rule_repo = YAMLRuleRepository(checks_dir)
+    audit = AuditService(scanner=scanner, rule_repo=rule_repo)
+    report = audit.run_audit()
+    ids = {
+        r.rule.id
+        for r in report.results
+        if r.violations
+    }
+    assert "no_authoritative_redb_parse_state_in_artifacts" in ids
+    assert "no_memory_only_parse_experience_in_artifacts" in ids
+
+
 def test_dev_dependencies_not_flagged_as_prod_violation():
     """da-adapters in [dev-dependencies] should NOT trigger prod-dep violation."""
     root = _make_root()
@@ -1055,6 +1176,9 @@ def test_yaml_rules_load_successfully():
 
     dims = repo.load_dimensions()
     assert len(dims) >= 9, f"Expected >=9 dimensions, got {len(dims)}"
+    parse_dimension = next(d for d in dims if d["id"] == "scholarly_parse_plane")
+    assert "staged_platform_decided" in parse_dimension["status_logic"]
+    assert parse_dimension["artifact_ref"].endswith("ADR-075-scholarly-parse-plane-staged-platform.md")
 
     # Verify all rules have required fields.
     for rule in rules:

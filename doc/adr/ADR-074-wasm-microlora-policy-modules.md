@@ -1,12 +1,20 @@
 # ADR-074: WASM MicroLoRA as Swappable FSM Policy Modules
 
-- Status: Accepted (W1 record + W2 patterns + W3 host shipped; LoRA still D136)
+- Status: Accepted (W1 record + W2 patterns + W3 host shipped; training path active)
 - Date: 2026-08-25
-- Updated: 2026-08-25 (M453: parse-pdf consults grammar_route)
+- Updated: 2026-08-27 (D294: D136 is not a blanket SONA or LoRA lock)
 - Deciders: repo owner + agent
 - Tags: wasm, microlora, sona, fsm, self-learning, policy-modules, sandbox, hot-swap
 - Sources: ruvector/crates/sona (1638 nodes), ruvector rvf-* family,
   ruflo harness docs, micro-hnsw-wasm
+
+### 2026-08-27 amendment (D294)
+
+SONA Loop A/B/C, ReasoningBank, MicroLoRA, EWC++ and ruVLLM training are
+active implementation and experimentation scope. Earlier text incorrectly
+expanded the DSPy-specific D136 note into a blanket LoRA prohibition.
+Training and candidate packaging may proceed; automatic production promotion
+remains forbidden and requires frozen evaluation plus explicit acceptance.
 
 ## 0. One-line Decision
 
@@ -119,9 +127,10 @@ Phase W2 (after ~1000 trajectories): ReasoningBank pattern extraction
 (K-means++ clustering by article_features embedding). Patterns with
 avg_quality > threshold become training inputs for MicroLoRA adapters.
 
-Phase D136 gate: LoRA/fine-tuning requires frozen eval + explicit user
-approval. The WASM packaging makes this concrete: the eval runs against
-a specific `.wasm` hash, not against "the current code".
+MicroLoRA training and candidate packaging may proceed under D294. Promotion
+still requires frozen evaluation and explicit acceptance. The WASM packaging
+makes this concrete: evaluation runs against a specific `.wasm` hash, not
+against "the current code".
 
 ## 3. Pros and Cons (honest assessment)
 
@@ -162,7 +171,7 @@ a specific `.wasm` hash, not against "the current code".
 | Phase | Gate | Deliverable |
 |---|---|---|
 | W1 (now) | none — record only | TrajectoryRecord accumulation (already shipping) |
-| W2 (~1000 trajs) | D136 user approval | ReasoningBank pattern extraction; first MicroLoRA trained |
+| W2 (~1000 trajs) | trajectory corpus + train/eval split | ReasoningBank pattern extraction; first MicroLoRA candidate trained |
 | W3 (W2 stable) | fidelity-audit PASS with learned policy ≥ hand-tuned | WASM packaging; hot-swap infrastructure; per-domain modules |
 | W4 (multi-domain) | corpus >1000 objects across ≥4 domains | Domain-specialized routing; cross-domain transfer evaluation |
 

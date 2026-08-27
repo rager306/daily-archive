@@ -24,7 +24,7 @@ Win by making a **local-first, fail-closed knowledge graph** the sole authority 
 - No fake deferred-write seams (GraphWrite stays deferred-by-design until an honest producer exists; ADR-063).
 - No auto-promote of GEPA/LLM extraction without dual F1, same-n, and val_gap evidence.
 - No treating sidecar TEI/markdown or LLM output as graph truth without candidate→verify→promote.
-- No DSPy/LoRA training paths until eval metrics and benchmark fixtures are verified (D136).
+- DSPy enablement remains gated by verified eval metrics and benchmark fixtures. SONA, MicroLoRA, EWC++ and ruVLLM training are active under D294; candidates never auto-promote and require frozen evaluation plus explicit acceptance.
 
 _Resist a change when:_ it trades auditability or fail-closed graph semantics for faster demos, chat UX, or "good enough" retrieval without graph-task or gold-corpus evidence.
 

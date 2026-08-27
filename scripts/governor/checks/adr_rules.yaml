@@ -41,7 +41,7 @@ rules:
     suffix_allowlist: [.yaml, .yml]
 
   - id: prompt_eval_data_must_not_enable_optimizer_or_promotion
-    anchor: "ADR-059, D136, D127"
+    anchor: "ADR-059, D294, D127"
     severity: high
     scan: governor/fixtures/prompt_eval/
     pattern: '(?:optimizer_enabled|auto_promote)\s*:\s*true'
@@ -49,11 +49,11 @@ rules:
     suffix_allowlist: [.yaml, .yml]
 
   - id: no_optimizer_or_auto_promote_true_in_artifacts
-    anchor: "ADR-059 (no auto-promote), D136 (DSPy disabled), M387 optimizer FSM"
+    anchor: "ADR-059 (no auto-promote), D294 (SONA/LoRA training open, promotion explicit), M387 optimizer FSM"
     severity: high
     scan: artifacts/
     pattern: '"(?:optimizer_enabled|auto_promote)"\s*:\s*true'
-    rationale: "No runtime artifact may enable optimizer admission or automatic promotion; candidates stay evaluated until explicit human authorization. D127 import lock remains separate."
+    rationale: "Training and candidate generation are allowed, including SONA/MicroLoRA/EWC++ and ruVLLM. Runtime artifacts may not enable automatic promotion; candidates require source-bound evaluation and explicit authorization. D127 import lock remains separate."
 
   # --- M333: D127 source lock — import_eligible must not be set true in crates ---
   # Artifacts already covered by no_import_eligible_true_in_artifacts.
@@ -144,6 +144,36 @@ rules:
     scan: crates/da-parse/Cargo.toml
     pattern: '^(?:samyama|kg-ontology|kg-storage|kg-embeddings|kg-algorithms|kg-pipeline)\s*='
     rationale: "da-parse production dependencies must not include Samyama or kg-* crates. Inspect this crate's Cargo.toml, not cargo tree. da-ports is allowed."
+    section_filter: dependencies
+
+  - id: da_parse_must_not_embed_learning_or_graph_runtimes
+    anchor: "ADR-075 / D294 / D295 (deterministic parse core; active learning and persistence through ports and adapters)"
+    severity: high
+    scan: crates/da-parse/Cargo.toml
+    pattern: '^(?:sona|ruvllm|ruvector-core|ruvector-graph|rvf-runtime|redb)\s*='
+    rationale: "Active learning and persistence stay behind injected infrastructure. Deterministic da-parse must not embed learning, graph, RVF or redb runtimes; narrow CPU dependencies such as rayon and crossbeam are allowed. redb is an optional rebuildable cache adapter, never core or authority."
+    section_filter: dependencies
+
+  - id: no_authoritative_redb_parse_state_in_artifacts
+    anchor: "ADR-075 / D295 (redb is rebuildable cache or cursor only)"
+    severity: high
+    scan: artifacts/
+    pattern: '"redb_authoritative"\s*:\s*true'
+    rationale: "redb must not be the sole authority for parse or learning state. Unique experience persists in RVF; redb rebuilds from canonical sources."
+
+  - id: no_memory_only_parse_experience_in_artifacts
+    anchor: "ADR-075 / D295 (unique learning experience survives restart in RVF)"
+    severity: high
+    scan: artifacts/
+    pattern: '"experience_persistence"\s*:\s*"memory-only"'
+    rationale: "SONA, MicroLoRA, EWC++ and ruVLLM experience cannot exist only in process memory; durable RVF lineage is required."
+
+  - id: da_parse_must_not_embed_jvm
+    anchor: "ADR-075 (staged native Rust platform, Java GROBID remains external oracle/fallback)"
+    severity: high
+    scan: crates/da-parse/Cargo.toml
+    pattern: '^(?:jni|jni-sys|j4rs)\s*='
+    rationale: "da-parse must not embed a JVM or the grobid-rs JNI engine. Java GROBID remains an external backend while native stages replace it incrementally."
     section_filter: dependencies
 
   # --- ADR-040 binding: Samyama sole KG+vector+persist store ---

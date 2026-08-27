@@ -1,9 +1,56 @@
 # continue — session state
 
-## Active direction (M462-ieh2tt): load network is on by default
+## Active direction (M464-z84in2): staged native scholarly parse platform
 
-S01: allow_network default true; --disallow-network opt-out. Close via
-skip-delivered.
+Branch `feat/da-parse`. Canonical DB: M464 active, 19 small slices. S01
+`API ledger and binding fixtures` is pending with 3 tasks: T01 DATA contracts,
+T02 tracked non-skipping TEI fixtures, T03 Java/direct-TEI baseline reports.
+S02-S19 remain sketches and auto refines them incrementally.
+
+**Architecture locked for execution:** ADR-075 accepted; D294 opens active
+SONA/MicroLoRA/EWC++/ruVLLM training while auto-promote stays forbidden. D295:
+Samyama=KG truth, RVF=canonical learning experience, pipeline cache=derived
+parse artifacts, redb=rebuildable index/cursor only, CVF=trajectory interchange
+schema. Requirements R105-R117 are in GSD. Final context is stored through GSD
+at `phases/464-z84in2-staged-native-scholarly-parse-platform/464-CONTEXT.md`.
+
+**GSD auto root cause fixed (MEM953):** GSD 1.16.2 parsed flat-phase directory
+`464-z84in2-*` as bare `M464`, so `/gsd auto M464-z84in2` failed before any
+journal flow. Both user and system `extensions/gsd/milestone-ids.js` now read
+the canonical suffixed ID from `464-ROADMAP.md`. Fresh-process proof:
+`findMilestoneIds -> M464-z84in2`; `gsd headless next M464-z84in2` reached
+`Step-mode started` and `Session started`. The test process was intentionally
+stopped before edits. **Current TUI has stale module cache: restart pi/GSD,
+then run exactly `/gsd auto M464-z84in2` (never bare M464).** GSD upgrades may
+wipe both hotfix copies.
+
+**Repository state:** GSD created commit `9bbeb8027` (`gsd snapshot:
+pre-dispatch`). Relevant research/ADR files remain untracked: the two
+2026-08-27 CE research artifacts, ADR-075, and
+`doc/research/m463-grobid-rust-ruvector-platform.md`. Unrelated untracked
+`archive/m451-cleanup/data-corpora-*` and `artifacts/project-trajectory/` must
+not be swept into a blanket add. Governor tests: 134 passed; preflight has 0
+ADR violations and only pre-existing drift flags (M446 projection, target
+bloat, graph Section raw_text gap).
+
+Do not fork GROBID. Do not open D127. MinerU/Docling are donors, not TEI truth.
+
+**Governor graph flags fixed (MEM949, commit this session):** old reader
+reported paper_count=295 via count("Paper")//2 heuristic; truth = 589
+(md5-тождественный с архивной копией snapshot в data/graphs/, эпоха
+2026-08-22, совпадает с run-report completed=589). Reader теперь парсит
+NDJSON структурно (sgsnap v2): paper_count=589, revision binding 589/589,
+enrichment N/A по онтологии снапшота; честный флаг остался:
+graph_section_text_missing — 28346 Section узлов БЕЗ raw_text в этом
+сторе (текст жил в других узлах той эпохи). Выбор primary:
+data/graphs приоритетнее artifacts/loads сессионных видов. Контракт
+v2: graph-semantics.yaml. data/corpora дубликат карантинен →
+archive/m451-cleanup/data-corpora-m033grobidprobe-dup-20260827.
+
+## Previous: M462-ieh2tt load network is on by default
+
+S01: allow_network default true; --disallow-network opt-out. Closed via
+skip-delivered (`16c982357`, D290).
 
 ## Previous: M451 schema/manifest skeleton BEFORE code
 
@@ -28,16 +75,20 @@ Shipped (commit HEAD):
 - Tests: 140 passed. Real repo: 0 schema_hierarchy flags.
 
 ## Next actions
-1. Close M452-mhx138 via AGENTS.md manual protocol (S01+S02 skip-delivered
-   → runtime UAT → validate). No running Attempt in this session.
-2. Optional: wire grammar_route consult into parse-pdf (fail-open).
-3. D136 still locks LoRA training; do not put .safetensors in data/policies.
-4. Governor graph_* flags are corpus-state (not this milestone). Do not
-   treat them as a 295-paper graph materialization wave.
+1. Restart the current pi/GSD TUI so it loads the patched `milestone-ids.js`.
+2. Run `/gsd auto M464-z84in2`. Auto must mint the canonical Attempt and begin
+   M464/S01/T01; do not use bare `M464`.
+3. Keep S01 small: first DATA compatibility/regression ledger, then fixtures,
+   then baseline reports. Do not pull S02 contracts into T01.
+4. Preserve existing cache identities. Batch/cache modes arrive in S06.
+5. Keep learning persistent: RVF authority, redb rebuildable only. Training is
+   active; promotion remains source-bound and explicit.
 
 ## Operators
-PYTHONPATH=scripts python3 -m governor doctor      # full: trajectory+arch+docs
-PYTHONPATH=scripts python3 -c "from pathlib import Path; from governor.adapters.schema_hierarchy_checker import check_schema_hierarchy as c; print(c(Path('.')))"
+`/gsd auto M464-z84in2`                              # after TUI restart
+`gsd headless next M464-z84in2`                      # fresh-process diagnostic
+`PYTHONPATH=scripts python3 -m pytest scripts/tests/test_governor.py -q`
+`PYTHONPATH=scripts python3 -m governor --phase preflight --check-only`
 
 ## Do not forget
 - D127: import_eligible stays false
@@ -74,12 +125,12 @@ PYTHONPATH=scripts python3 -c "from pathlib import Path; from governor.adapters.
   closed DSL operations in DATA, no eval; LLM proposes plans, Rust executes
 - SONA three-loop learning maps to our CVF trajectories:
   Loop A=instant grounding_hint, Loop B=hourly pattern extraction,
-  Loop C=EWC++ consolidation (D136 gate)
+  Loop C=EWC++ consolidation. D294 opens training; promotion stays explicit.
 
 ### Pending (next session)
 1. ADR-074 Phase W2: ReasoningBank K-means over accumulated CVF trajectories
    (~1000 needed; currently ~19 summarizer + growing)
-2. D136 gate: frozen eval before any LoRA training
+2. Train MicroLoRA candidates now; frozen eval is the promotion gate, not the training gate
 3. Figure-repair loop (symmetric with critic repair)
 4. Table-cells → extraction surface (ADR-071 §2.2 partially shipped for
    algorithms-for-decision-making; needs generalization)
@@ -98,7 +149,8 @@ PYTHONPATH=scripts python3 -c "from pathlib import Path; from governor.adapters.
 - Agents: summarizer+critic manifests DATA-driven; critic repair contract
   covers enriched/citations_resolved/summaries; figure-repair gap noted
 - WASM: ADR-074 W3 infra SHIPPED (wasmi host, hot-swap, native fallback).
-  W2 pattern extraction SHIPPED (sona-analyze). LoRA training still D136.
-  Next: wire grammar_route consult into parse-pdf (optional, fail-open).
+  W2 pattern extraction SHIPPED (sona-analyze). D294 opens MicroLoRA/EWC++
+  training and ruVLLM evaluation; auto-promote remains forbidden.
+  Next: train/evaluate the first source-bound policy candidate.
 - Tests: domain 707(+boundary_agent 6), adapters 249, cli 176,
   pytest 142, validate 645×0, clippy clean on all touched crates

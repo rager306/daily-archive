@@ -1,7 +1,7 @@
 # M463 — GROBID-compatible parse plane (research)
 
-Status: research (M463-snmgcd). Not an implementation ADR.
-Binding: D203, R085, ADR-053, ADR-065, ADR-072, ADR-074, D127, D136.
+Status: reviewed research (M463-snmgcd), superseded in scope by accepted ADR-075.
+Binding: D203, R085, ADR-053, ADR-065, ADR-072, ADR-074, ADR-075, D127, D294.
 Live evidence: `artifacts/research/m463/tei-inventory-2608.22118.json`,
 `artifacts/research/m463/tei-inventory-2507.19457.json`.
 
@@ -12,7 +12,7 @@ Live evidence: `artifacts/research/m463/tei-inventory-2608.22118.json`,
 | D203 | Analogue = provider-neutral **staged platform**, not a Java GROBID fork |
 | R085 | Own admission, cache, backpressure, merge; GROBID starts as **one backend** |
 | D127 | TEI/sidecar is candidate evidence, not graph truth; `import_eligible=false` |
-| D136 | No LoRA / `.safetensors` under `data/policies`; SONA consult-only |
+| D294 | SONA/MicroLoRA/EWC++ and ruVLLM training are active; candidates do not auto-promote |
 | ADR-050 | `kg-*` must not depend on `da-*`; scholarly TEI types stay product-side |
 | ADR-065 | arXiv `idno` is the honest revision bind; do not invent `v1` |
 | MEM681 | Native engines incrementally, gold-gated; no big-bang rewrite |
@@ -224,19 +224,21 @@ keep GROBID parse (MEM930). `policy_hash` is already stamped.
 | `concurrency_tune` | pool size vs GROBID engine idle | hide 503 |
 | `summary_depth` | downstream of parse | parse TEI |
 
-**SONA three-loop** (ADR-074 W1–W4) is allowed later as **routing/admission
-weights**, still behind D136: no auto-promote, dual F1 + same-n + val_gap
-if a learned policy ships. Parse extract cycle stays deterministic TEI lift.
-Critic repair / NegativeMemory consult **after** parse, not inside CRF.
+**SONA three-loop** (ADR-074 W1–W4) is active for routing/admission/retry and
+concurrency policies. ReasoningBank, MicroLoRA, EWC++ and ruVLLM training may
+advance under D294. Candidates still require frozen evaluation, dual task
+metrics, same-n and validation-gap evidence plus explicit promotion. The
+accepted parse baseline remains deterministic and versioned.
 
 Do not invent a `sona-policy` CLI as the only consult path (MEM930).
 `parse-pdf` / `GrobidParseStage` must consult `grammar_route` fail-open.
 
 ---
 
-## Wave 5 / S06 — ADR-075 and `da-parse` crate (proposed)
+## Wave 5 / S06 — ADR-075 and `da-parse` staged platform
 
-**ADR number:** 075 (next after 074). Status to set: Proposed.
+**ADR-075 is Accepted (2026-08-27, D294).** The crate ownership cut already
+shipped; S06 now closes architecture, governor and promotion semantics.
 
 ### Choice
 
@@ -264,15 +266,16 @@ Default backend = Java GROBID `:8070`. Facade is a **compatible subset**,
 not a replica of patents/training. Cache key = D204 fingerprint. 503 from
 upstream is 503 to the caller (honest). D127: facade output is not import.
 
-### Follow-up implementation milestones (not this research unit)
+### Follow-up implementation sequence
 
-| After ADR-075 accepted | Work |
-|------------------------|------|
-| M464 (impl P0 lift) | idno + authors + figure index in parser; tests on both TEIs |
-| M465 (crate extract) | move `grobid_parser.rs` (~3500 lines) into `da-parse` |
-| M466 (metrics gate) | conservation scores in `eval` example; CI on fixtures |
-| M467 (header/refs endpoints) | client methods; optional facade |
-| M468+ | AnyStyle salvage, XY-Cut grammar CLI, MD backend behind gold |
+| Stage | Work |
+|-------|------|
+| Platform contracts | live fixtures, `ParseBackend`, pure `TeiLifter`, typed envelope and conservation API |
+| Protocol | typed fulltext/header/reference requests, failures, 503/backpressure and split caches |
+| P0 lift | idno + authors + non-table figures + typed coordinates |
+| Native CPU | neutral LayoutToken IR, bounded Rayon/arena/SIMD benchmarks |
+| Learning | active SONA ReasoningBank/MicroLoRA/EWC++ and ruVLLM candidates with explicit promotion |
+| Governor | parse-plane dimension, dependency and no-auto-promote negative tests |
 
 ---
 
@@ -282,12 +285,11 @@ upstream is 503 to the caller (honest). D127: facade output is not import.
 - Not MinerU-as-default.
 - Not opening D127.
 - Not a 295-paper graph wave.
-- Not LoRA on CRF.
+- Not unversioned LoRA mutation of the deterministic lifter or CRF baseline.
 - Not editing `try_parse_arxiv_locator` (GitNexus CRITICAL; policy stays sibling).
 
 ## Next executable unit
 
-M463/S01 T01–T03: inventories are already on disk; remaining work is the
-ranked matrix (this file) plus GSD RESEARCH projection, then S02 REST table
-as a sketch slice. Implementation of P0 lift waits for ADR-075 accept
-**or** a user yes to lift inside `da-adapters` first (smaller blast radius).
+M463/S02: tracked non-skipping fixtures, public platform contracts and
+`conservation_inventory`. SONA/ruVLLM work proceeds in parallel under D294;
+production promotion remains evidence-gated and explicit.
