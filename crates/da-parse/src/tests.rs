@@ -1061,3 +1061,110 @@ fn empty_tei_projects_success_with_tei_xml_present() {
     assert!(article.sections.is_empty());
     assert!(article.citations.is_empty());
 }
+
+// ─── S02/T03 (M464-z84in2): ScholarlyParser composition units ───
+//
+// Full composition assertions (exactly-once, error short-circuit, facade
+// parity over a stub transport) live in tests/parser_composition.rs. These
+// units pin the crate-internal invariants of the pure stage.
+
+mod composition_units {
+    use super::*;
+    use da_ports::parser::ParseResult;
+    use std::sync::Mutex;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    /// Stateful fake recording every backend invocation.
+    struct CountingBackend {
+        calls: AtomicUsize,
+        requests: Mutex<Vec<(String, Vec<u8>)>>,
+    }
+
+    impl CountingBackend {
+        fn new() -> Self {
+            Self {
+                calls: AtomicUsize::new(0),
+                requests: Mutex::new(Vec::new()),
+            }
+        }
+
+        fn call_count(&self) -> usize {
+            self.calls.load(Ordering::SeqCst)
+        }
+
+        fn last_request(&self) -> (String, Vec<u8>) {
+            self.requests
+                .lock()
+                .expect("request log")
+                .last()
+                .cloned()
+                .expect("at least one recorded request")
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl ParseBackend for CountingBackend {
+        async fn fetch_tei(&self, request: ParseBackendRequest) -> ParseResult<TeiEnvelope> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            self.requests
+                .lock()
+                .expect("request log")
+                .push((request.paper_id().to_string(), request.pdf_bytes().to_vec()));
+            Ok(TeiEnvelope::new(
+                b"<TEI><text><body><div><head n=\"1\">S</head><p>x</p></div></body></text></TEI>"
+                    .to_vec(),
+                TeiIdentity::new("unit-fake", "profile=unit"),
+            ))
+        }
+    }
+
+    #[test]
+    fn lift_and_project_is_pure_and_backend_free() {
+        let parser = ScholarlyParser::new(CountingBackend::new());
+        let envelope = TeiEnvelope::new(
+            b"<TEI><text><body><div><head n=\"1\">Intro</head><p>Body text.</p></div></body></text></TEI>"
+                .to_vec(),
+            TeiIdentity::new("unit-fake", "profile=unit"),
+        );
+
+        let article = parser.lift_and_project("pure-paper", "hash-1", envelope);
+
+        assert_eq!(
+            parser.backend().call_count(),
+            0,
+            "the pure lift+project stage must never touch the backend"
+        );
+        assert_eq!(article.paper_id, "pure-paper");
+        assert_eq!(article.pdf_hash, "hash-1");
+        assert_eq!(article.layout_json, None);
+        assert_eq!(article.page_text_missingness, None);
+        assert!(
+            article
+                .tei_xml
+                .as_deref()
+                .is_some_and(|t| t.contains("Intro")),
+            "tei_xml must stay Some(raw TEI)"
+        );
+        assert_eq!(article.sections.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn fetch_envelope_once_passes_logical_request_verbatim() {
+        let parser = ScholarlyParser::new(CountingBackend::new());
+
+        let envelope = parser
+            .fetch_envelope_once("unit-paper", b"unit source bytes".to_vec())
+            .await
+            .expect("fake backend must succeed");
+
+        assert_eq!(parser.backend().call_count(), 1);
+        let (paper_id, bytes) = parser.backend().last_request();
+        assert_eq!(paper_id, "unit-paper");
+        assert_eq!(bytes, b"unit source bytes");
+        assert_eq!(
+            envelope.identity().backend_id(),
+            "unit-fake",
+            "envelope identity flows through the composition untouched"
+        );
+    }
+}

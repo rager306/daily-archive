@@ -6,6 +6,11 @@
 //! it, so existing `Arc<dyn ParserPort>` callers, the `grobid_parse` lifecycle
 //! span, external `ParserError` mapping and cache identities are unchanged
 //! (R105). Typed 204/503/timeout semantics remain slice S04 scope.
+//!
+//! Since S02/T03 the facade's `impl ParserPort` lives in [`crate::parser`] and
+//! drives the full backend→envelope→lift→project composition through
+//! [`crate::parser::ScholarlyParser`]; filesystem/env/HTTP stay in this shell
+//! only.
 
 use crate::backend::{ParseBackend, ParseBackendRequest};
 use crate::envelope::{TeiEnvelope, TeiIdentity};
@@ -198,10 +203,13 @@ impl ParseBackend for GrobidHttpBackend {
 
 /// GROBID HTTP adapter for PDF → scholarly structure (TEI XML).
 ///
-/// Compatibility facade: same constructors, builder methods, `is_alive` and
-/// `process_fulltext` semantics as before the seam extraction; all of them
+/// Compatibility facade: same constructors, builder methods, `is_alive`
+/// semantics as before the seam extraction; all of them
 /// delegate to [`GrobidHttpBackend`]. The `impl ParserPort` in
-/// `crate::projector` is untouched.
+/// [`crate::parser`] delegates through
+/// [`crate::parser::ScholarlyParser::fetch_envelope_once`] +
+/// [`crate::parser::ScholarlyParser::lift_and_project`], preserving the
+/// `grobid_parse` span and aggregate identity/size/timing-only logs.
 #[derive(Clone, Debug)]
 pub struct GrobidParser {
     transport: GrobidHttpBackend,
@@ -244,9 +252,11 @@ impl GrobidParser {
         self.transport.is_alive().await
     }
 
-    /// Process PDF via GROBID full-text endpoint → TEI XML
-    /// (delegates to [`GrobidHttpBackend::process_fulltext`]).
-    pub(crate) async fn process_fulltext(&self, pdf_bytes: &[u8]) -> ParseResult<String> {
-        self.transport.process_fulltext(pdf_bytes).await
+    /// Provider-neutral transport seam behind this facade (R105).
+    ///
+    /// The `impl ParserPort` (crate::parser) drives the composition over this
+    /// backend; only the facade shell keeps filesystem/env concerns.
+    pub(crate) fn backend(&self) -> &GrobidHttpBackend {
+        &self.transport
     }
 }
