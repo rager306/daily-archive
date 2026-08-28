@@ -108,7 +108,9 @@ pub fn extract_features(
         .unwrap_or_default();
     let number_precedes = preceding.trim().lines().next_back().is_some_and(|l| {
         let t = l.trim();
-        !t.is_empty() && t.chars().all(|c| c.is_ascii_digit() || c == '.' || c == ' ')
+        !t.is_empty()
+            && t.chars()
+                .all(|c| c.is_ascii_digit() || c == '.' || c == ' ')
     });
 
     // table-band heuristic: ≥3 of 6 surrounding lines are short numeric/cell-ish
@@ -125,8 +127,7 @@ pub fn extract_features(
         .iter()
         .filter(|l| {
             // em-dash ячейка таблицы выплат — тоже признак таблицы
-            let bare: String =
-                l.replace(['\u{2014}', '-', '|'], "").trim().to_string();
+            let bare: String = l.replace(['\u{2014}', '-', '|'], "").trim().to_string();
             if bare.is_empty() {
                 return !l.trim().is_empty();
             }
@@ -197,24 +198,36 @@ mod tests {
     #[test]
     fn table_cell_rejected() {
         // specimen: 'Hex world' inside Table F.1 — cells around, no prose
-        assert_eq!(classify(&feats(5, false, true, false, true)), Decision::RejectToPrev);
+        assert_eq!(
+            classify(&feats(5, false, true, false, true)),
+            Decision::RejectToPrev
+        );
     }
 
     #[test]
     fn code_token_rejected() {
         // specimen: 'label'/'executes' inside Julia blocks
-        assert_eq!(classify(&feats(8, false, false, true, true)), Decision::RejectToPrev);
+        assert_eq!(
+            classify(&feats(8, false, false, true, true)),
+            Decision::RejectToPrev
+        );
     }
 
     #[test]
     fn unnumbered_long_prose_heading_accepted() {
-        assert_eq!(classify(&feats(80, false, false, false, true)), Decision::Accept);
+        assert_eq!(
+            classify(&feats(80, false, false, false, true)),
+            Decision::Accept
+        );
     }
 
     #[test]
     fn tie_escalates() {
         // prose present but table band also detected — conflicting evidence
-        assert_eq!(classify(&feats(50, false, true, false, true)), Decision::Escalate);
+        assert_eq!(
+            classify(&feats(50, false, true, false, true)),
+            Decision::Escalate
+        );
     }
 
     #[test]

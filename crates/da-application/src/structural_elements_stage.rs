@@ -3,7 +3,7 @@
 //! persist (context/structural_elements.json + manifest artifact entry).
 
 use da_domain::structural_elements::{
-    detect_all, SectionInput, StructuralDetectors, StructuralElement,
+    SectionInput, StructuralDetectors, StructuralElement, detect_all,
 };
 use da_ports::schema_objects::{SchemaObjectStore, SchemaObjectStoreError};
 
@@ -39,10 +39,9 @@ pub fn build_structural_elements(
         .ok_or_else(|| StructuralStageError::NoParsed(paper_id.to_string()))?;
     let parsed: serde_json::Value = serde_json::from_str(&raw)
         .map_err(|e| StructuralStageError::NoParsed(format!("{paper_id}: {e}")))?;
-    let sections: Vec<SectionInput> = serde_json::from_value(
-        parsed.get("sections").cloned().unwrap_or_default(),
-    )
-    .map_err(|e| StructuralStageError::NoParsed(format!("{paper_id}: sections: {e}")))?;
+    let sections: Vec<SectionInput> =
+        serde_json::from_value(parsed.get("sections").cloned().unwrap_or_default())
+            .map_err(|e| StructuralStageError::NoParsed(format!("{paper_id}: sections: {e}")))?;
 
     let elements = detect_all(&detectors, &sections);
     let mut by_kind = std::collections::BTreeMap::new();
@@ -73,13 +72,36 @@ mod tests {
         files: BTreeMap<(String, String), String>,
     }
     impl SchemaObjectStore for FakeStore {
-        fn object_class(&self) -> &str { "article" }
-        fn norm(&self) -> Result<da_domain::schema_invariants::ObjectNorm, SchemaObjectStoreError> { unimplemented!() }
-        fn list_ids(&self) -> Result<Vec<String>, SchemaObjectStoreError> { Ok(vec![]) }
-        fn read_object(&self, _id: &str) -> Result<Option<serde_yaml::Value>, SchemaObjectStoreError> { Ok(None) }
-        fn read_collection(&self, _id: &str, _rel: &str) -> Result<Option<Vec<serde_yaml::Value>>, SchemaObjectStoreError> { Ok(None) }
-        fn file_exists(&self, _id: &str, _rel: &str) -> Result<bool, SchemaObjectStoreError> { Ok(true) }
-        fn file_backed_checks(&self) -> Box<dyn da_domain::schema_invariants::FileBackedChecks + '_> { unimplemented!() }
+        fn object_class(&self) -> &str {
+            "article"
+        }
+        fn norm(&self) -> Result<da_domain::schema_invariants::ObjectNorm, SchemaObjectStoreError> {
+            unimplemented!()
+        }
+        fn list_ids(&self) -> Result<Vec<String>, SchemaObjectStoreError> {
+            Ok(vec![])
+        }
+        fn read_object(
+            &self,
+            _id: &str,
+        ) -> Result<Option<serde_yaml::Value>, SchemaObjectStoreError> {
+            Ok(None)
+        }
+        fn read_collection(
+            &self,
+            _id: &str,
+            _rel: &str,
+        ) -> Result<Option<Vec<serde_yaml::Value>>, SchemaObjectStoreError> {
+            Ok(None)
+        }
+        fn file_exists(&self, _id: &str, _rel: &str) -> Result<bool, SchemaObjectStoreError> {
+            Ok(true)
+        }
+        fn file_backed_checks(
+            &self,
+        ) -> Box<dyn da_domain::schema_invariants::FileBackedChecks + '_> {
+            unimplemented!()
+        }
         fn read_raw(&self, id: &str, rel: &str) -> Result<Option<String>, SchemaObjectStoreError> {
             Ok(self.files.get(&(id.to_string(), rel.to_string())).cloned())
         }

@@ -3,6 +3,7 @@
 pub mod acquire_arxiv;
 pub mod agent_run;
 pub mod audit_fields;
+pub mod background_tasks;
 pub mod batch_ids;
 pub mod catalog_materialize;
 pub mod catalog_regression;
@@ -15,13 +16,12 @@ pub mod health_report;
 pub mod load;
 pub mod load_journey;
 pub mod logging;
-pub mod source_acquire;
-pub mod background_tasks;
-pub mod source_cli;
 pub mod materialization_progress;
 pub mod production;
 pub mod snapshot_identity;
 pub mod snapshot_lineage;
+pub mod source_acquire;
+pub mod source_cli;
 pub mod summarize_revisions;
 
 /// ADR-051 §4.4 — JSON roundtrip helper for Serialize+Deserialize types.

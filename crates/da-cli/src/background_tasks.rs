@@ -31,9 +31,16 @@ fn load_task(task_id: &str) -> anyhow::Result<TaskSpec> {
     let task = v
         .get("tasks")
         .and_then(|t| t.as_sequence())
-        .and_then(|s| s.iter().find(|t| t.get("id").and_then(|i| i.as_str()) == Some(task_id)))
+        .and_then(|s| {
+            s.iter()
+                .find(|t| t.get("id").and_then(|i| i.as_str()) == Some(task_id))
+        })
         .ok_or_else(|| anyhow::anyhow!("task {task_id} not in background_tasks.yaml"))?;
-    if !task.get("enabled").and_then(|e| e.as_bool()).unwrap_or(false) {
+    if !task
+        .get("enabled")
+        .and_then(|e| e.as_bool())
+        .unwrap_or(false)
+    {
         anyhow::bail!("task {task_id} disabled in registry");
     }
     let policy = task.get("policy").cloned().unwrap_or_default();
@@ -91,7 +98,10 @@ fn extract_json_array(content: &str) -> Option<serde_json::Value> {
     // 9router gotchas (python parity): <think> blocks, markdown fences
     let cleaned = if let Some(a) = content.find("<think>") {
         let tail = &content[a..];
-        let end = tail.find("</think>").map(|e| a + e + 8).unwrap_or(content.len());
+        let end = tail
+            .find("</think>")
+            .map(|e| a + e + 8)
+            .unwrap_or(content.len());
         &content[end..]
     } else {
         content
@@ -128,8 +138,9 @@ fn extract_json_array(content: &str) -> Option<serde_json::Value> {
     // поток склеенных объектов (по одному на секцию):
     // {..}
     // {..}
-    let stream: Result<Vec<_>, _> =
-        serde_json::Deserializer::from_str(cleaned).into_iter::<serde_json::Value>().collect();
+    let stream: Result<Vec<_>, _> = serde_json::Deserializer::from_str(cleaned)
+        .into_iter::<serde_json::Value>()
+        .collect();
     if let Ok(items) = stream
         && !items.is_empty()
     {
@@ -151,21 +162,31 @@ struct RunCtx<'a> {
 }
 
 fn run_per_section(pid: &str, spec: &TaskSpec, ctx: &RunCtx<'_>) -> anyhow::Result<&'static str> {
-    let (llm, model, prompt, prompt_sha, patterns, state_path, rt) =
-        (&ctx.llm, &ctx.model, &ctx.prompt, &ctx.prompt_sha, &ctx.patterns, &ctx.state_path, &ctx.rt);
+    let (llm, model, prompt, prompt_sha, patterns, state_path, rt) = (
+        &ctx.llm,
+        &ctx.model,
+        &ctx.prompt,
+        &ctx.prompt_sha,
+        &ctx.patterns,
+        &ctx.state_path,
+        &ctx.rt,
+    );
     use da_ports::llm_client::LLMClient as _;
     let cache_dir = std::path::Path::new(CACHE_DIR);
     std::fs::create_dir_all(cache_dir)?;
     let cf = cache_dir.join(format!("{pid}.json"));
 
     let article_dir = std::path::Path::new("data/processed").join(pid);
-    let nav: Vec<serde_json::Value> = serde_json::from_str(
-        &std::fs::read_to_string(article_dir.join("context/navigation.json"))?)?;
+    let nav: Vec<serde_json::Value> = serde_json::from_str(&std::fs::read_to_string(
+        article_dir.join("context/navigation.json"),
+    )?)?;
     // long sections only (policy); navigation carries path_id/section_id/title
     let sections: Vec<&serde_json::Value> = nav
         .iter()
-        .filter(|n| n.get("char_count").and_then(|c| c.as_u64()).unwrap_or(0) as usize
-            >= spec.min_section_chars)
+        .filter(|n| {
+            n.get("char_count").and_then(|c| c.as_u64()).unwrap_or(0) as usize
+                >= spec.min_section_chars
+        })
         .collect();
     if sections.is_empty() {
         return Ok("no_sections");
@@ -183,10 +204,10 @@ fn run_per_section(pid: &str, spec: &TaskSpec, ctx: &RunCtx<'_>) -> anyhow::Resu
     if let Ok(prev) = std::fs::read_to_string(&cf)
         && let Ok(p) = serde_json::from_str::<serde_json::Value>(&prev)
     {
-            let same = p.get("model").and_then(|m| m.as_str()) == Some(model)
-                && p.get("prompt_sha256").and_then(|s| s.as_str()) == Some(prompt_sha)
-                && p.get("sections_sha256").and_then(|s| s.as_str()) == Some(&sections_sha)
-                && p.get("ok").and_then(|o| o.as_bool()) == Some(true);
+        let same = p.get("model").and_then(|m| m.as_str()) == Some(model)
+            && p.get("prompt_sha256").and_then(|s| s.as_str()) == Some(prompt_sha)
+            && p.get("sections_sha256").and_then(|s| s.as_str()) == Some(&sections_sha)
+            && p.get("ok").and_then(|o| o.as_bool()) == Some(true);
         if same {
             return Ok("cache");
         }
@@ -221,21 +242,35 @@ fn run_per_section(pid: &str, spec: &TaskSpec, ctx: &RunCtx<'_>) -> anyhow::Resu
 
         let resp = rt.block_on(llm.chat(
             &[
-                ChatMessage { role: "system".into(), content: prompt.to_string() },
-                ChatMessage { role: "user".into(), content: user },
+                ChatMessage {
+                    role: "system".into(),
+                    content: prompt.to_string(),
+                },
+                ChatMessage {
+                    role: "user".into(),
+                    content: user,
+                },
             ],
-            &ChatOptions { model: model.to_string(), temperature: 0.2, max_tokens: 4000 },
+            &ChatOptions {
+                model: model.to_string(),
+                temperature: 0.2,
+                max_tokens: 4000,
+            },
         ));
         match resp {
-            Ok(r) => {
-                match extract_json_array(&r.text) {
-                Some(arr) if arr.is_array() => summaries.extend(
-                    arr.as_array().cloned().unwrap_or_default(),
-                ),
-                _ => { ok_all = false; break; }
+            Ok(r) => match extract_json_array(&r.text) {
+                Some(arr) if arr.is_array() => {
+                    summaries.extend(arr.as_array().cloned().unwrap_or_default())
                 }
+                _ => {
+                    ok_all = false;
+                    break;
+                }
+            },
+            Err(_) => {
+                ok_all = false;
+                break;
             }
-            Err(_) => { ok_all = false; break; }
         }
         std::thread::sleep(rate_delay);
     }
@@ -298,7 +333,9 @@ pub fn run_background(task_id: &str, target: &str) -> anyhow::Result<()> {
     let binding = registry
         .resolve(&spec.model_binding, None)
         .map_err(|e| anyhow::anyhow!("binding {}: {e}", spec.model_binding))?;
-    let key = std::env::var("NINE_ROUTER_API_KEY").ok().filter(|k| !k.trim().is_empty());
+    let key = std::env::var("NINE_ROUTER_API_KEY")
+        .ok()
+        .filter(|k| !k.trim().is_empty());
     let llm = OpenAiCompatibleLlmClient::new(binding.clone(), key, 240)
         .map_err(|e| anyhow::anyhow!("llm client: {e}"))?;
     let prompt = std::fs::read_to_string(&spec.prompt_file)?;
@@ -356,7 +393,6 @@ fn chrono_now() -> String {
         .unwrap_or_default()
 }
 
-
 /// SONA pattern extraction from CVF trajectories (M452 S01).
 /// Reads trajectory.jsonl for the given paper, builds ReasoningBank,
 /// prints extracted patterns with quality metrics.
@@ -387,7 +423,10 @@ pub fn run_sona_analyze(pid: &str) -> anyhow::Result<()> {
         records.len(),
         patterns.len()
     );
-    println!("{}", da_application::sona_bridge::summarize_patterns(&patterns));
+    println!(
+        "{}",
+        da_application::sona_bridge::summarize_patterns(&patterns)
+    );
     Ok(())
 }
 
@@ -434,7 +473,9 @@ pub fn run_sona_policy(
         d.route.map(|r| r.as_str()),
         d.admission.map(|a| a.as_str()),
         d.id.source.hash_stamp(),
-        host.as_ref().map(|h| h.policy_hash()).unwrap_or_else(|| "native".into()),
+        host.as_ref()
+            .map(|h| h.policy_hash())
+            .unwrap_or_else(|| "native".into()),
     );
     Ok(())
 }
@@ -470,15 +511,11 @@ pub fn run_critic_repair_cli(pair_id: &str) -> anyhow::Result<()> {
         Some(out) => {
             println!(
                 "== critic-repair ==\nstage={} action={} attempts={} resolved={} exhausted={:?}",
-                out.stage,
-                out.action,
-                out.attempts_used,
-                out.resolved,
-                out.exhausted_reason
+                out.stage, out.action, out.attempts_used, out.resolved, out.exhausted_reason
             );
             if out.exhausted_reason.is_some() {
-                let paper = std::env::var("DA_CRITIC_PAPER_ID")
-                    .unwrap_or_else(|_| pair_id.to_string());
+                let paper =
+                    std::env::var("DA_CRITIC_PAPER_ID").unwrap_or_else(|_| pair_id.to_string());
                 let dir = negative_memory_dir();
                 let mut store = da_adapters::negative_memory::JsonlNegativeMemory::open(&dir)?;
                 let rec = da_application::critic_repair_stage::persist_if_exhausted(
@@ -510,7 +547,7 @@ pub fn negative_memory_dir() -> std::path::PathBuf {
 /// M455: admit a claim against persisted negative semantic knowledge.
 /// Env: DA_NEGATIVE_MEMORY_DIR, DA_ADMIT_STAGE, DA_CRITIC_PATTERN.
 pub fn run_memory_admit(paper_id: &str) -> anyhow::Result<()> {
-    use da_domain::negative_memory::{admit_claim, AdmitKey};
+    use da_domain::negative_memory::{AdmitKey, admit_claim};
     use da_ports::negative_memory::NegativeMemoryPort;
 
     let stage = std::env::var("DA_ADMIT_STAGE").unwrap_or_else(|_| "figure_analysis".into());

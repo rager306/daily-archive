@@ -7,8 +7,8 @@
 //! applies them append-only.
 
 use da_domain::navigation::{
-    build_navigation, stats, tree_cost, FurnitureDetectors, NavNode, NavigationStats,
-    ProjectionSection,
+    FurnitureDetectors, NavNode, NavigationStats, ProjectionSection, build_navigation, stats,
+    tree_cost,
 };
 use da_ports::schema_objects::{SchemaObjectStore, SchemaObjectStoreError};
 
@@ -47,8 +47,9 @@ pub fn build_navigation_stage(
 ) -> Result<NavigationStageOutput, NavigationStageError> {
     let detectors = FurnitureDetectors::from_yaml_str(detectors_yaml)
         .map_err(|e| NavigationStageError::Registry(e.to_string()))?;
-    let type_detectors = da_domain::navigation::StructuralTypeDetectors::from_yaml_str(type_detectors_yaml)
-        .map_err(|e| NavigationStageError::Registry(e.to_string()))?;
+    let type_detectors =
+        da_domain::navigation::StructuralTypeDetectors::from_yaml_str(type_detectors_yaml)
+            .map_err(|e| NavigationStageError::Registry(e.to_string()))?;
     let policy: serde_yaml::Value = serde_yaml::from_str(policy_yaml)
         .map_err(|e| NavigationStageError::Policy(e.to_string()))?;
     let routing = policy
@@ -63,13 +64,13 @@ pub fn build_navigation_stage(
         .ok_or_else(|| NavigationStageError::NoProjection(paper_id.to_string()))?;
     let proj: serde_json::Value = serde_json::from_str(&raw)
         .map_err(|e| NavigationStageError::NoProjection(format!("{paper_id}: {e}")))?;
-    let sections: Vec<ProjectionSection> = serde_json::from_value(
-        proj.get("sections").cloned().unwrap_or_default(),
-    )
-    .map_err(|e| NavigationStageError::NoProjection(format!("{paper_id}: sections: {e}")))?;
+    let sections: Vec<ProjectionSection> =
+        serde_json::from_value(proj.get("sections").cloned().unwrap_or_default()).map_err(|e| {
+            NavigationStageError::NoProjection(format!("{paper_id}: sections: {e}"))
+        })?;
 
     let nodes = build_navigation(&sections, &detectors, &type_detectors, cross_layer);
-    
+
     let cost = tree_cost(&nodes, routing);
     let st = stats(&nodes, cost);
 
@@ -77,7 +78,10 @@ pub fn build_navigation_stage(
     let nav_pol = policy.get("signal").cloned().unwrap_or_default();
     let (warn, alarm) = thresholds_u64(&nav_pol, "warn_above", "alarm_above");
     let tc_verdict = da_domain::navigation::verdict_above(cost, warn, alarm);
-    let fs_pol = policy.get("furniture_cleanliness").cloned().unwrap_or_default();
+    let fs_pol = policy
+        .get("furniture_cleanliness")
+        .cloned()
+        .unwrap_or_default();
     let (fw, fa) = thresholds_f64(&fs_pol);
     let share = st.furniture_share;
     let fs_verdict = if fa.map(|a| share > a).unwrap_or(false) {
@@ -106,7 +110,11 @@ pub fn build_navigation_stage(
     })
 }
 
-fn thresholds_u64(v: &serde_yaml::Value, warn_k: &str, alarm_k: &str) -> (Option<u64>, Option<u64>) {
+fn thresholds_u64(
+    v: &serde_yaml::Value,
+    warn_k: &str,
+    alarm_k: &str,
+) -> (Option<u64>, Option<u64>) {
     (
         v.get(warn_k).and_then(|x| x.as_f64()).map(|x| x as u64),
         v.get(alarm_k).and_then(|x| x.as_f64()).map(|x| x as u64),
@@ -181,8 +189,16 @@ mod tests {
                     .to_string(),
             )]),
         };
-let types_yaml = "types: {}\n";
-        let out = build_navigation_stage(&store, "p1", DETECTORS, types_yaml, POLICY, &Default::default()).unwrap();
+        let types_yaml = "types: {}\n";
+        let out = build_navigation_stage(
+            &store,
+            "p1",
+            DETECTORS,
+            types_yaml,
+            POLICY,
+            &Default::default(),
+        )
+        .unwrap();
         assert_eq!(out.nodes.len(), 3);
         assert_eq!(out.stats.furniture, 1);
         assert_eq!(out.stats.nodes, 3);
@@ -198,8 +214,17 @@ let types_yaml = "types: {}\n";
 
     #[test]
     fn missing_projection_is_honest() {
-        let store = FakeStore { files: BTreeMap::new() };
-        let r = build_navigation_stage(&store, "ghost", DETECTORS, "types: {}", POLICY, &Default::default());
+        let store = FakeStore {
+            files: BTreeMap::new(),
+        };
+        let r = build_navigation_stage(
+            &store,
+            "ghost",
+            DETECTORS,
+            "types: {}",
+            POLICY,
+            &Default::default(),
+        );
         assert!(matches!(r, Err(NavigationStageError::NoProjection(_))));
     }
 }

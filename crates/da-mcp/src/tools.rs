@@ -615,11 +615,11 @@ pub async fn graph_rank(
             // WccResult has node_component: HashMap<NodeId, usize>
             let mut comp_sizes: std::collections::HashMap<usize, u32> =
                 std::collections::HashMap::new();
-            for (_, &comp) in components.node_component.iter() {
+            for &comp in components.node_component.values() {
                 *comp_sizes.entry(comp).or_insert(0) += 1;
             }
             let mut sizes: Vec<(usize, u32)> = comp_sizes.into_iter().collect();
-            sizes.sort_by(|a, b| b.1.cmp(&a.1));
+            sizes.sort_by_key(|entry| std::cmp::Reverse(entry.1));
             sizes.truncate(limit);
             let results = sizes
                 .into_iter()

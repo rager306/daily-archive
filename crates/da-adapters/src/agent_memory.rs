@@ -42,7 +42,12 @@ impl CvfAgentMemory {
                 }
             }
         }
-        Ok(Self { container, dir, trajectories, last_epoch_in_ms: None })
+        Ok(Self {
+            container,
+            dir,
+            trajectories,
+            last_epoch_in_ms: None,
+        })
     }
 
     fn log_path(&self) -> PathBuf {
@@ -65,7 +70,11 @@ fn trajectory_deltas(rec: &TrajectoryRecord) -> Vec<Delta> {
     let value = if rec.ok { 1.0 } else { 0.0 };
     vec![
         Delta::Observation { node: paper, value },
-        Delta::EdgeAdd { u: model, v: paper, weight: value },
+        Delta::EdgeAdd {
+            u: model,
+            v: paper,
+            weight: value,
+        },
     ]
 }
 
@@ -92,7 +101,10 @@ impl AgentMemory for CvfAgentMemory {
 
     fn verify(&self) -> bool {
         use ruvector_cognitive_container::VerificationResult;
-        matches!(self.container.verify_chain(), VerificationResult::Valid { .. })
+        matches!(
+            self.container.verify_chain(),
+            VerificationResult::Valid { .. }
+        )
     }
 
     fn persist(&self) -> Result<(), AgentMemoryError> {

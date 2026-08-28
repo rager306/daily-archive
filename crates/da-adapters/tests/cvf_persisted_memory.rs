@@ -3,9 +3,21 @@
 fn verify_persisted_summarizer_memory() {
     use da_adapters::agent_memory::CvfAgentMemory;
     use da_ports::agent_memory::AgentMemory as _;
-    let m = CvfAgentMemory::open(concat!(env!("CARGO_MANIFEST_DIR"), "/../../data/agent_memory/summarizer").into()).unwrap();
+    let m = CvfAgentMemory::open(
+        concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../data/agent_memory/summarizer"
+        )
+        .into(),
+    )
+    .unwrap();
     let s = m.stats();
-    println!("epochs={} trajectories={} verify={}", s.epochs, s.trajectories, m.verify());
+    println!(
+        "epochs={} trajectories={} verify={}",
+        s.epochs,
+        s.trajectories,
+        m.verify()
+    );
     assert!(s.trajectories >= 2, "trajectories={}", s.trajectories);
     assert!(m.verify());
 }

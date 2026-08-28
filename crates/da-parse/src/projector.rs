@@ -8,7 +8,12 @@ use da_ports::parser::{ParseResult, ParsedArticle, ParserError, ParserPort};
 impl GrobidParser {
     /// Project IR onto the ports article. `layout_json` and
     /// `page_text_missingness` stay `None` on the GROBID path (classifier stamps later).
-    pub(crate) fn project_article(ir: TeiParseIr) -> ParsedArticle {
+    ///
+    /// `pub` since M464-z84in2 S01/T03: `parse.stage.project_article` is a
+    /// recorded compatibility stage and the parse-compat baseline emitter is
+    /// its first sanctioned out-of-crate consumer. Projection stays total and
+    /// allocation-safe over any `TeiParseIr` (compatibility obligation).
+    pub fn project_article(ir: TeiParseIr) -> ParsedArticle {
         ParsedArticle {
             paper_id: ir.paper_id,
             title: ir.title,

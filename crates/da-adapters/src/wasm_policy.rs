@@ -260,6 +260,9 @@ mod tests {
     fn missing_file_is_load_error() {
         let err = WasmPolicyHost::from_path("/no/such/policy.wat", DecisionPoint::GrammarRoute)
             .unwrap_err();
-        assert!(matches!(err, FsmPolicyError::Io(_) | FsmPolicyError::Load(_)));
+        assert!(matches!(
+            err,
+            FsmPolicyError::Io(_) | FsmPolicyError::Load(_)
+        ));
     }
 }

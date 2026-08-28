@@ -8,22 +8,21 @@
 //! ADR-040 §11: Schema enforcement lives here, not in DDL.
 
 pub mod acquisition_batch;
-pub mod agent_manifest;
-pub mod critic_repair;
-pub mod negative_memory;
-pub mod article_manifest;
 pub mod agent;
+pub mod agent_manifest;
 pub mod article;
+pub mod article_manifest;
 pub mod assurance;
+pub mod boundary_agent;
 pub mod catalog;
 pub mod cluster;
 pub mod context_conservation;
-pub mod xy_cut;
-pub mod boundary_agent;
-pub mod cv_structure;
 pub mod corpus_checkpoint;
+pub mod critic_repair;
+pub mod cv_structure;
 pub mod domain;
 pub mod edge_contract;
+pub mod enriched_authors;
 pub mod entity;
 pub mod entity_resolution;
 pub mod equation_candidate;
@@ -35,15 +34,21 @@ pub mod figure;
 pub mod figure_analysis;
 pub mod figure_candidate;
 pub mod figure_context;
+pub mod figure_geometry;
 pub mod finalize;
+pub mod fsm_policy;
 pub mod graph_tasks;
 pub mod healing;
+pub mod html_headings;
 pub mod hypergraph;
 pub mod influence_flower;
 pub mod load;
 pub mod materialization_profile;
+pub mod navigation;
+pub mod negative_memory;
 pub mod ordered_mutation;
 pub mod paper;
+pub mod pdf_toc;
 pub mod pipeline_cache_lineage;
 pub mod pipeline_ledger;
 pub mod pipeline_metrics;
@@ -57,32 +62,26 @@ pub mod revision_schema;
 pub mod scheduler;
 pub mod schema;
 pub mod schema_invariants;
-pub mod figure_geometry;
-pub mod enriched_authors;
-pub mod html_headings;
-pub mod navigation;
-pub mod pdf_toc;
-pub mod structural_elements;
-pub mod summaries_llm;
-pub mod tei_figures;
-pub mod source_import_fsm;
-pub mod fsm_policy;
 pub mod scholarly_evidence;
 pub mod section_summary_policy;
 pub mod source;
+pub mod source_import_fsm;
+pub mod structural_elements;
+pub mod summaries_llm;
 pub mod table_fidelity;
+pub mod tei_figures;
 pub mod temporal;
 pub mod tex_source;
 pub mod validator;
 pub mod vid;
 pub mod vocabulary;
+pub mod xy_cut;
 pub mod yaml_schema_adapter;
 
 pub use agent::{
     AgentAdmissionDecision, AgentAdmissionError, AgentBudget, AgentBudgetError, AgentClaim,
     AgentFailureCode, AgentGroundingError, AgentQueryEvidence, AgentState, ContextBundle,
-    ContextFreeze, GraphIdentity, GraphIdentityError,
-    admit_transition as agent_admit_transition,
+    ContextFreeze, GraphIdentity, GraphIdentityError, admit_transition as agent_admit_transition,
     verify_identity as agent_verify_identity,
 };
 pub use article::{

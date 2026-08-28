@@ -32,12 +32,16 @@ impl NegativeMemoryPort for JsonlNegativeMemory {
             .append(true)
             .open(&path)
             .map_err(|e| NegativeMemoryError::Io(e.to_string()))?;
-        let line = serde_json::to_string(rec).map_err(|e| NegativeMemoryError::Io(e.to_string()))?;
+        let line =
+            serde_json::to_string(rec).map_err(|e| NegativeMemoryError::Io(e.to_string()))?;
         writeln!(f, "{line}").map_err(|e| NegativeMemoryError::Io(e.to_string()))?;
         Ok(())
     }
 
-    fn list_for_paper(&self, paper_id: &str) -> Result<Vec<NegativeMemoryRecord>, NegativeMemoryError> {
+    fn list_for_paper(
+        &self,
+        paper_id: &str,
+    ) -> Result<Vec<NegativeMemoryRecord>, NegativeMemoryError> {
         let path = self.path_for(paper_id);
         if !path.exists() {
             return Ok(Vec::new());
@@ -60,7 +64,7 @@ impl NegativeMemoryPort for JsonlNegativeMemory {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use da_domain::negative_memory::{admit_claim, AdmitKey, record_from_exhausted};
+    use da_domain::negative_memory::{AdmitKey, admit_claim, record_from_exhausted};
 
     #[test]
     fn persist_then_admit_denies() {

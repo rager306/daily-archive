@@ -64,24 +64,24 @@ pub mod batch_ingest;
 pub use batch_ingest::{
     BatchIngestResult, BatchPdfTriageSummary, batch_ingest_pdfs, batch_ingest_pdfs_with_context,
 };
-pub mod entity_resolution;
-pub mod figures_stage;
+pub mod critic_repair_stage;
 pub mod cross_layer_signals;
 pub mod enriched_layer_stage;
-pub mod html_parsed_stage;
-pub mod pdf_toc_stage;
-pub mod navigation_stage;
-pub mod structural_elements_stage;
-pub mod sona_bridge;
-pub mod fsm_policy_fallback;
+pub mod entity_resolution;
+pub mod extraction;
+pub mod extractive_summary;
+pub mod figures_stage;
 pub mod fsm_policy_consult;
+pub mod fsm_policy_fallback;
+pub mod html_parsed_stage;
+pub mod navigation_stage;
 pub mod parse_grammar;
-pub mod critic_repair_stage;
+pub mod pdf_toc_stage;
+pub mod sona_bridge;
+pub mod structural_elements_stage;
 pub mod summaries_agent_stage;
 pub mod tei_figures_stage;
 pub mod validate_schema_objects;
-pub mod extraction;
-pub mod extractive_summary;
 pub use entity_resolution::{
     EntityResolutionError, EntityResolutionUseCase, ReviewedMergeRequest, ReviewedMergeResult,
     SystemExactAliasApplied, SystemExactAliasBatchResult, SystemExactAliasFailure,

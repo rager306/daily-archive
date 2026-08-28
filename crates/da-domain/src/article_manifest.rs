@@ -73,9 +73,7 @@ pub enum ArtifactEntry {
         derived_from: Vec<String>,
     },
     /// Lifecycle of the article has not arrived at this layer yet.
-    NotReached {
-        not_reached: bool,
-    },
+    NotReached { not_reached: bool },
 }
 
 impl ArtifactEntry {
@@ -168,7 +166,10 @@ derived_from: [parsed]"#;
         let m = ArticleManifest {
             schema_version: "article-manifest.v1".into(),
             paper_id: "2501.00001".into(),
-            source: Some(ArticleSourceRef { code: "arxiv".into(), identity_ref: None }),
+            source: Some(ArticleSourceRef {
+                code: "arxiv".into(),
+                identity_ref: None,
+            }),
             lifecycle: "parsed".into(),
             lifecycle_events: vec![LifecycleEvent {
                 stage: "parsed".into(),
@@ -192,8 +193,20 @@ derived_from: [parsed]"#;
             source: None,
             lifecycle: "unused".into(),
             lifecycle_events: vec![
-                LifecycleEvent { stage: "parsed".into(), recorded_at: "1".into(), observed_at: None, actor: "a".into(), evidence_sha256: None },
-                LifecycleEvent { stage: "extracted".into(), recorded_at: "2".into(), observed_at: None, actor: "a".into(), evidence_sha256: None },
+                LifecycleEvent {
+                    stage: "parsed".into(),
+                    recorded_at: "1".into(),
+                    observed_at: None,
+                    actor: "a".into(),
+                    evidence_sha256: None,
+                },
+                LifecycleEvent {
+                    stage: "extracted".into(),
+                    recorded_at: "2".into(),
+                    observed_at: None,
+                    actor: "a".into(),
+                    evidence_sha256: None,
+                },
             ],
             artifacts: BTreeMap::new(),
         };

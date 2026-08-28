@@ -115,12 +115,13 @@ fn consult_parse_grammar_cli(
 
 fn load_toolchain() -> anyhow::Result<Toolchain> {
     let text = std::fs::read_to_string(registry_path())?;
-    Toolchain::from_yaml_str(&text)
-        .map_err(|e| anyhow::anyhow!("toolchain registry: {e}"))
+    Toolchain::from_yaml_str(&text).map_err(|e| anyhow::anyhow!("toolchain registry: {e}"))
 }
 
 fn load_state(paper_id: &str) -> anyhow::Result<ImportFsmState> {
-    let mp = Path::new("data/processed").join(paper_id).join("manifest.yaml");
+    let mp = Path::new("data/processed")
+        .join(paper_id)
+        .join("manifest.yaml");
     let m: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&mp)?)
         .map_err(|e| anyhow::anyhow!("{}: {e}", mp.display()))?;
     let profile = m
@@ -129,10 +130,7 @@ fn load_state(paper_id: &str) -> anyhow::Result<ImportFsmState> {
         .unwrap_or("arxiv_pdf_dot")
         .to_string();
     let mut events = Vec::new();
-    if let Some(seq) = m
-        .get("lifecycle_events")
-        .and_then(|v| v.as_sequence())
-    {
+    if let Some(seq) = m.get("lifecycle_events").and_then(|v| v.as_sequence()) {
         for e in seq {
             if let Some(stage) = e.get("stage").and_then(|s| s.as_str()) {
                 events.push(stage.to_string());
@@ -147,12 +145,23 @@ fn print_status(paper_id: &str, tc: &Toolchain, state: &ImportFsmState) {
     let domains = resolve_domain(paper_id, &cfg);
     println!("object:   {paper_id}");
     println!("domains:  {domains:?}");
-    println!("grammar:  {} (class: {})", state.grammar_profile, state.object_class());
+    println!(
+        "grammar:  {} (class: {})",
+        state.grammar_profile,
+        state.object_class()
+    );
     println!("stage:    {}", state.current_stage());
     println!("reached:  {:?}", state.reached);
     if let Some((next, required)) = state.next_stage(tc) {
         println!();
-        println!("next:     {next} ({})", if required { "REQUIRED" } else { "optional/lazy" });
+        println!(
+            "next:     {next} ({})",
+            if required {
+                "REQUIRED"
+            } else {
+                "optional/lazy"
+            }
+        );
         if let Some(spec) = tc.stage(next) {
             for t in &spec.tools {
                 println!(
@@ -160,7 +169,10 @@ fn print_status(paper_id: &str, tc: &Toolchain, state: &ImportFsmState) {
                     t.id,
                     t.r#impl,
                     t.cli,
-                    t.note.as_ref().map(|n| format!(" ({n})")).unwrap_or_default()
+                    t.note
+                        .as_ref()
+                        .map(|n| format!(" ({n})"))
+                        .unwrap_or_default()
                 );
             }
         }
@@ -180,11 +192,19 @@ pub fn run_status(paper_id: &str) -> anyhow::Result<()> {
 pub fn run_plan(paper_id: &str) -> anyhow::Result<()> {
     let tc = load_toolchain()?;
     let state = load_fsm_state(paper_id)?;
-    println!("plan for {paper_id} ({} → validated):", state.current_stage());
+    println!(
+        "plan for {paper_id} ({} → validated):",
+        state.current_stage()
+    );
     for (stage, required) in state.plan(&tc) {
         let tools: Vec<String> = tc
             .stage(stage)
-            .map(|s| s.tools.iter().map(|t| format!("{}[{}]", t.id, t.r#impl)).collect())
+            .map(|s| {
+                s.tools
+                    .iter()
+                    .map(|t| format!("{}[{}]", t.id, t.r#impl))
+                    .collect()
+            })
             .unwrap_or_default();
         println!(
             "  {stage:<12} {:<10} {}",
@@ -214,10 +234,7 @@ pub fn run_import(paper_id: &str, dry_run: bool) -> anyhow::Result<()> {
             println!("      rust-exec: {} — {}", t.id, t.cli);
         }
         for t in reference_tools {
-            println!(
-                "      reference (phase-2 port): {} — {}",
-                t.id, t.cli
-            );
+            println!("      reference (phase-2 port): {} — {}", t.id, t.cli);
         }
         if dry_run {
             continue;
@@ -242,8 +259,9 @@ pub fn run_build_navigation(paper_id: &str) -> anyhow::Result<()> {
 
     let detectors_yaml = std::fs::read_to_string("data/ontology/furniture_detectors.yaml")
         .map_err(|e| anyhow::anyhow!("furniture_detectors: {e}"))?;
-    let type_detectors_yaml = std::fs::read_to_string("data/ontology/structural_type_detectors.yaml")
-        .map_err(|e| anyhow::anyhow!("structural_type_detectors: {e}"))?;
+    let type_detectors_yaml =
+        std::fs::read_to_string("data/ontology/structural_type_detectors.yaml")
+            .map_err(|e| anyhow::anyhow!("structural_type_detectors: {e}"))?;
     let policy_yaml = std::fs::read_to_string("data/ontology/navigation_quality_policy.yaml")
         .map_err(|e| anyhow::anyhow!("navigation_quality_policy: {e}"))?;
 
@@ -257,23 +275,74 @@ pub fn run_build_navigation(paper_id: &str) -> anyhow::Result<()> {
         && let Some(secs) = parsed.get("sections").and_then(|s| s.as_array())
     {
         for (i, s) in secs.iter().enumerate() {
-            let text = s.get("text").and_then(|t| t.as_str()).unwrap_or("").to_string();
+            let text = s
+                .get("text")
+                .and_then(|t| t.as_str())
+                .unwrap_or("")
+                .to_string();
             cross_layer.section_texts.insert(i, text);
         }
-        for t in parsed.get("tables").and_then(|t| t.as_array()).into_iter().flatten() {
-            let pid = t.get("section_path_id").and_then(|x| x.as_str()).unwrap_or("").to_string();
-            let id = t.get("table_id").and_then(|x| x.as_str()).unwrap_or("").to_string();
+        for t in parsed
+            .get("tables")
+            .and_then(|t| t.as_array())
+            .into_iter()
+            .flatten()
+        {
+            let pid = t
+                .get("section_path_id")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string();
+            let id = t
+                .get("table_id")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string();
             cross_layer.tables_by_path.entry(pid).or_default().push(id);
         }
-        for f in parsed.get("formulas").and_then(|f| f.as_array()).into_iter().flatten() {
-            let pid = f.get("section_path_id").and_then(|x| x.as_str()).unwrap_or("").to_string();
-            let id = f.get("formula_id").and_then(|x| x.as_str()).unwrap_or("").to_string();
-            cross_layer.equations_by_path.entry(pid).or_default().push(id);
+        for f in parsed
+            .get("formulas")
+            .and_then(|f| f.as_array())
+            .into_iter()
+            .flatten()
+        {
+            let pid = f
+                .get("section_path_id")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string();
+            let id = f
+                .get("formula_id")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string();
+            cross_layer
+                .equations_by_path
+                .entry(pid)
+                .or_default()
+                .push(id);
         }
-        for c in parsed.get("citations").and_then(|c| c.as_array()).into_iter().flatten() {
-            for anc in c.get("anchors").and_then(|a| a.as_array()).into_iter().flatten() {
-                let spid = anc.get("section_path_id").and_then(|x| x.as_str()).unwrap_or("").to_string();
-                *cross_layer.citation_anchors_by_path.entry(spid).or_insert(0) += 1;
+        for c in parsed
+            .get("citations")
+            .and_then(|c| c.as_array())
+            .into_iter()
+            .flatten()
+        {
+            for anc in c
+                .get("anchors")
+                .and_then(|a| a.as_array())
+                .into_iter()
+                .flatten()
+            {
+                let spid = anc
+                    .get("section_path_id")
+                    .and_then(|x| x.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                *cross_layer
+                    .citation_anchors_by_path
+                    .entry(spid)
+                    .or_insert(0) += 1;
             }
         }
     }
@@ -282,34 +351,68 @@ pub fn run_build_navigation(paper_id: &str) -> anyhow::Result<()> {
         && let Ok(figs) = serde_json::from_str::<serde_json::Value>(&figs_raw)
     {
         for f in figs.as_array().map(|a| a.as_slice()).unwrap_or(&[]) {
-            let page = f.get("page").and_then(|x| x.as_u64()).unwrap_or(0).to_string();
-            let fid = f.get("figure_id").and_then(|x| x.as_str()).unwrap_or("").to_string();
-            cross_layer.figures_by_path.entry(page).or_default().push(fid);
+            let page = f
+                .get("page")
+                .and_then(|x| x.as_u64())
+                .unwrap_or(0)
+                .to_string();
+            let fid = f
+                .get("figure_id")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string();
+            cross_layer
+                .figures_by_path
+                .entry(page)
+                .or_default()
+                .push(fid);
         }
     }
 
     let out = build_navigation_stage(
-        &store, paper_id, &detectors_yaml, &type_detectors_yaml,
-        &policy_yaml, &cross_layer,
+        &store,
+        paper_id,
+        &detectors_yaml,
+        &type_detectors_yaml,
+        &policy_yaml,
+        &cross_layer,
     )?;
     std::fs::write(dir.join("context/navigation.json"), &out.navigation_json)?;
 
     // Manifest patch
     let mp = dir.join("manifest.yaml");
-    let mut m: serde_yaml::Value =
-        serde_yaml::from_str(&std::fs::read_to_string(&mp).map_err(|e| anyhow::anyhow!("{}: {e}", mp.display()))?)?;
+    let mut m: serde_yaml::Value = serde_yaml::from_str(
+        &std::fs::read_to_string(&mp).map_err(|e| anyhow::anyhow!("{}: {e}", mp.display()))?,
+    )?;
     let reached = m
         .get("lifecycle_events")
         .and_then(|e| e.as_sequence())
-        .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("structured")))
+        .map(|s| {
+            s.iter()
+                .any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("structured"))
+        })
         .unwrap_or(false);
     if !reached {
-        if let Some(events) = m.get_mut("lifecycle_events").and_then(|v| v.as_sequence_mut()) {
-            events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
-                (serde_yaml::Value::from("stage"), serde_yaml::Value::from("structured")),
-                (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(chrono_now())),
-                (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-navigation-stage")),
-            ])));
+        if let Some(events) = m
+            .get_mut("lifecycle_events")
+            .and_then(|v| v.as_sequence_mut())
+        {
+            events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                [
+                    (
+                        serde_yaml::Value::from("stage"),
+                        serde_yaml::Value::from("structured"),
+                    ),
+                    (
+                        serde_yaml::Value::from("recorded_at"),
+                        serde_yaml::Value::from(chrono_now()),
+                    ),
+                    (
+                        serde_yaml::Value::from("actor"),
+                        serde_yaml::Value::from("rust-navigation-stage"),
+                    ),
+                ],
+            )));
         }
         if let Some(l) = m.get_mut("lifecycle") {
             *l = serde_yaml::Value::from("structured");
@@ -318,24 +421,43 @@ pub fn run_build_navigation(paper_id: &str) -> anyhow::Result<()> {
 
     if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
         let nav_entry = serde_yaml::Mapping::from_iter([
-            (serde_yaml::Value::from("file"), serde_yaml::Value::from("context/navigation.json")),
-            ("actor".into(), serde_yaml::Value::from("rust-navigation-stage")),
-            ("stats".into(), serde_yaml::to_value(&out.stats).unwrap_or_default()),
+            (
+                serde_yaml::Value::from("file"),
+                serde_yaml::Value::from("context/navigation.json"),
+            ),
+            (
+                "actor".into(),
+                serde_yaml::Value::from("rust-navigation-stage"),
+            ),
+            (
+                "stats".into(),
+                serde_yaml::to_value(&out.stats).unwrap_or_default(),
+            ),
         ]);
         if let Some(ctx) = arts.get_mut("context").and_then(|c| c.as_mapping_mut()) {
-            ctx.insert(serde_yaml::Value::from("navigation"), serde_yaml::Value::Mapping(nav_entry));
+            ctx.insert(
+                serde_yaml::Value::from("navigation"),
+                serde_yaml::Value::Mapping(nav_entry),
+            );
         } else {
-            arts.insert(serde_yaml::Value::from("context"), serde_yaml::Value::Mapping(
-                serde_yaml::Mapping::from_iter([
-                    ("navigation".into(), serde_yaml::Value::Mapping(nav_entry)),
-                ])));
+            arts.insert(
+                serde_yaml::Value::from("context"),
+                serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([(
+                    "navigation".into(),
+                    serde_yaml::Value::Mapping(nav_entry),
+                )])),
+            );
         }
     }
     std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
     println!(
         "{paper_id}: navigation built — nodes={}, furniture={}, tree_cost={} ({}) share={} ({})",
-        out.stats.nodes, out.stats.furniture, out.stats.tree_cost,
-        out.tree_cost_verdict, out.stats.furniture_share, out.furniture_share_verdict
+        out.stats.nodes,
+        out.stats.furniture,
+        out.stats.tree_cost,
+        out.tree_cost_verdict,
+        out.stats.furniture_share,
+        out.furniture_share_verdict
     );
     Ok(())
 }
@@ -365,7 +487,14 @@ fn epoch_to_utc(secs: u64) -> (i64, u32, u32, u32, u32, u32) {
     let d = doy - (153 * mp + 2) / 5 + 1;
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     let y = if m <= 2 { y + 1 } else { y };
-    (y, m as u32, d as u32, rem / 3600, (rem % 3600) / 60, rem % 60)
+    (
+        y,
+        m as u32,
+        d as u32,
+        rem / 3600,
+        (rem % 3600) / 60,
+        rem % 60,
+    )
 }
 
 fn sha256_hex(data: &[u8]) -> String {
@@ -381,14 +510,18 @@ pub fn run_build_structural(paper_id: &str) -> anyhow::Result<()> {
     use da_application::structural_elements_stage::build_structural_elements;
     use da_ports::path_config::PathConfig;
 
-    let detectors_yaml = std::fs::read_to_string("data/ontology/structural_elements_detectors.yaml")
-        .map_err(|e| anyhow::anyhow!("structural_elements_detectors.yaml: {e}"))?;
+    let detectors_yaml =
+        std::fs::read_to_string("data/ontology/structural_elements_detectors.yaml")
+            .map_err(|e| anyhow::anyhow!("structural_elements_detectors.yaml: {e}"))?;
     let cfg = PathConfig::load();
     let store = FsSchemaObjectStore::from_path_config(&cfg, "article")?;
     let out = build_structural_elements(&store, paper_id, &detectors_yaml)?;
 
     let dir = std::path::Path::new("data/processed").join(paper_id);
-    std::fs::write(dir.join("context/structural_elements.json"), &out.elements_json)?;
+    std::fs::write(
+        dir.join("context/structural_elements.json"),
+        &out.elements_json,
+    )?;
 
     // manifest: context.structural_elements entry (append-only: refresh stats only)
     let mp = dir.join("manifest.yaml");
@@ -396,26 +529,53 @@ pub fn run_build_structural(paper_id: &str) -> anyhow::Result<()> {
     let by_kind: serde_yaml::Mapping = out
         .by_kind
         .iter()
-        .map(|(k, v)| (serde_yaml::Value::from(k.as_str()), serde_yaml::Value::from(*v as u64)))
+        .map(|(k, v)| {
+            (
+                serde_yaml::Value::from(k.as_str()),
+                serde_yaml::Value::from(*v as u64),
+            )
+        })
         .collect();
     let entry = serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("file"), serde_yaml::Value::from("context/structural_elements.json")),
-        (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha256_hex(out.elements_json.as_bytes()))),
-        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-structural-stage")),
-        (serde_yaml::Value::from("stats"), serde_yaml::Value::Mapping(
-            serde_yaml::Mapping::from_iter([
-                (serde_yaml::Value::from("count"), serde_yaml::Value::from(out.elements.len() as u64)),
-                (serde_yaml::Value::from("definition_sources"), serde_yaml::Value::from(out.definition_sources as u64)),
-                (serde_yaml::Value::from("by_kind"), serde_yaml::Value::Mapping(by_kind)),
-            ]),
-        )),
+        (
+            serde_yaml::Value::from("file"),
+            serde_yaml::Value::from("context/structural_elements.json"),
+        ),
+        (
+            serde_yaml::Value::from("sha256"),
+            serde_yaml::Value::String(sha256_hex(out.elements_json.as_bytes())),
+        ),
+        (
+            serde_yaml::Value::from("actor"),
+            serde_yaml::Value::from("rust-structural-stage"),
+        ),
+        (
+            serde_yaml::Value::from("stats"),
+            serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
+                (
+                    serde_yaml::Value::from("count"),
+                    serde_yaml::Value::from(out.elements.len() as u64),
+                ),
+                (
+                    serde_yaml::Value::from("definition_sources"),
+                    serde_yaml::Value::from(out.definition_sources as u64),
+                ),
+                (
+                    serde_yaml::Value::from("by_kind"),
+                    serde_yaml::Value::Mapping(by_kind),
+                ),
+            ])),
+        ),
     ]);
     if let Some(ctx) = m
         .get_mut("artifacts")
         .and_then(|a| a.get_mut("context"))
         .and_then(|c| c.as_mapping_mut())
     {
-        ctx.insert("structural_elements".into(), serde_yaml::Value::Mapping(entry));
+        ctx.insert(
+            "structural_elements".into(),
+            serde_yaml::Value::Mapping(entry),
+        );
     }
     std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
 
@@ -437,8 +597,12 @@ pub fn run_build_figures(paper_id: &str) -> anyhow::Result<()> {
 
     let obs_path = std::path::Path::new("artifacts/pipeline_cache/pdf_observations")
         .join(format!("{paper_id}.json"));
-    let obs_json = std::fs::read_to_string(&obs_path)
-        .map_err(|e| anyhow::anyhow!("observations {} (run scripts/m451_pdf_observations.py): {e}", obs_path.display()))?;
+    let obs_json = std::fs::read_to_string(&obs_path).map_err(|e| {
+        anyhow::anyhow!(
+            "observations {} (run scripts/m451_pdf_observations.py): {e}",
+            obs_path.display()
+        )
+    })?;
 
     let cfg = PathConfig::load();
     let store = FsSchemaObjectStore::from_path_config(&cfg, "article")?;
@@ -451,9 +615,18 @@ pub fn run_build_figures(paper_id: &str) -> anyhow::Result<()> {
     let mut m: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&mp)?)?;
     let stats_yaml = serde_yaml::to_value(&out.stats)?;
     let entry = serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("file"), serde_yaml::Value::from("figures/index.json")),
-        (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha256_hex(out.index_json.as_bytes()))),
-        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-figures-stage")),
+        (
+            serde_yaml::Value::from("file"),
+            serde_yaml::Value::from("figures/index.json"),
+        ),
+        (
+            serde_yaml::Value::from("sha256"),
+            serde_yaml::Value::String(sha256_hex(out.index_json.as_bytes())),
+        ),
+        (
+            serde_yaml::Value::from("actor"),
+            serde_yaml::Value::from("rust-figures-stage"),
+        ),
         (serde_yaml::Value::from("stats"), stats_yaml),
     ]);
     if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
@@ -463,8 +636,10 @@ pub fn run_build_figures(paper_id: &str) -> anyhow::Result<()> {
 
     println!(
         "{paper_id}: figures — indexed={} with_files={} captions={} unassigned_images={}",
-        out.stats.figures_indexed, out.stats.with_image_file,
-        out.stats.captions_in_text, out.stats.unassigned_images
+        out.stats.figures_indexed,
+        out.stats.with_image_file,
+        out.stats.captions_in_text,
+        out.stats.unassigned_images
     );
     Ok(())
 }
@@ -488,9 +663,18 @@ pub fn run_build_figures_tei(paper_id: &str) -> anyhow::Result<()> {
     let mut m: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&mp)?)?;
     let stats_yaml = serde_yaml::to_value(&out.stats)?;
     let entry = serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("file"), serde_yaml::Value::from("figures/index.json")),
-        (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha256_hex(out.index_json.as_bytes()))),
-        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-tei-figures-stage")),
+        (
+            serde_yaml::Value::from("file"),
+            serde_yaml::Value::from("figures/index.json"),
+        ),
+        (
+            serde_yaml::Value::from("sha256"),
+            serde_yaml::Value::String(sha256_hex(out.index_json.as_bytes())),
+        ),
+        (
+            serde_yaml::Value::from("actor"),
+            serde_yaml::Value::from("rust-tei-figures-stage"),
+        ),
         (serde_yaml::Value::from("stats"), stats_yaml),
     ]);
     if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
@@ -499,7 +683,10 @@ pub fn run_build_figures_tei(paper_id: &str) -> anyhow::Result<()> {
     std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
     println!(
         "{paper_id}: tei figures — count={} with_caption={} with_graphic={} refs={}",
-        out.stats.count, out.stats.with_caption, out.stats.with_graphic, out.stats.total_in_text_refs
+        out.stats.count,
+        out.stats.with_caption,
+        out.stats.with_graphic,
+        out.stats.total_in_text_refs
     );
     Ok(())
 }
@@ -513,8 +700,7 @@ pub fn run_parse_html(paper_id: &str, html_path: Option<&str>) -> anyhow::Result
     let Some(path) = html_path else {
         anyhow::bail!("parse-html requires --html <path>");
     };
-    let html = std::fs::read_to_string(path)
-        .map_err(|e| anyhow::anyhow!("read {path}: {e}"))?;
+    let html = std::fs::read_to_string(path).map_err(|e| anyhow::anyhow!("read {path}: {e}"))?;
     let out = build_html_parsed(&html, paper_id)?;
 
     let dir = std::path::Path::new("data/processed").join(paper_id);
@@ -535,54 +721,120 @@ pub fn run_parse_html(paper_id: &str, html_path: Option<&str>) -> anyhow::Result
     m.insert("source".into(), src.into());
     m.insert("lifecycle".into(), "parsed".into());
     let ev_raw = serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("stage"), serde_yaml::Value::from("raw")),
-        (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(now.clone())),
-        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("html-chapter-source")),
+        (
+            serde_yaml::Value::from("stage"),
+            serde_yaml::Value::from("raw"),
+        ),
+        (
+            serde_yaml::Value::from("recorded_at"),
+            serde_yaml::Value::from(now.clone()),
+        ),
+        (
+            serde_yaml::Value::from("actor"),
+            serde_yaml::Value::from("html-chapter-source"),
+        ),
     ]);
     let ev_parsed = serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("stage"), serde_yaml::Value::from("parsed")),
-        (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(now)),
-        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-html-parsed-stage")),
-        (serde_yaml::Value::from("evidence_sha256"), serde_yaml::Value::String(sha_p.clone())),
+        (
+            serde_yaml::Value::from("stage"),
+            serde_yaml::Value::from("parsed"),
+        ),
+        (
+            serde_yaml::Value::from("recorded_at"),
+            serde_yaml::Value::from(now),
+        ),
+        (
+            serde_yaml::Value::from("actor"),
+            serde_yaml::Value::from("rust-html-parsed-stage"),
+        ),
+        (
+            serde_yaml::Value::from("evidence_sha256"),
+            serde_yaml::Value::String(sha_p.clone()),
+        ),
     ]);
-    m.insert("lifecycle_events".into(), serde_yaml::Value::Sequence(vec![
-        serde_yaml::Value::Mapping(ev_raw), serde_yaml::Value::Mapping(ev_parsed)]));
+    m.insert(
+        "lifecycle_events".into(),
+        serde_yaml::Value::Sequence(vec![
+            serde_yaml::Value::Mapping(ev_raw),
+            serde_yaml::Value::Mapping(ev_parsed),
+        ]),
+    );
     let mut arts = serde_yaml::Mapping::new();
     let miss = |kind: &str, reason: &str| {
         serde_yaml::Mapping::from_iter([
-            (serde_yaml::Value::from("present"), serde_yaml::Value::from(false)),
-            (serde_yaml::Value::from(kind), serde_yaml::Value::from(reason)),
-            (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
+            (
+                serde_yaml::Value::from("present"),
+                serde_yaml::Value::from(false),
+            ),
+            (
+                serde_yaml::Value::from(kind),
+                serde_yaml::Value::from(reason),
+            ),
+            (
+                serde_yaml::Value::from("derived_from"),
+                serde_yaml::Value::from("parsed"),
+            ),
         ])
     };
-    let nr = || serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("not_reached"), serde_yaml::Value::from(true)),
-    ]);
+    let nr = || {
+        serde_yaml::Mapping::from_iter([(
+            serde_yaml::Value::from("not_reached"),
+            serde_yaml::Value::from(true),
+        )])
+    };
     for (k, v) in [
         ("extracted", miss("missingness", "extraction_not_run")),
-        ("citations_resolved", miss("missingness", "no_citation_elements")),
+        (
+            "citations_resolved",
+            miss("missingness", "no_citation_elements"),
+        ),
         ("equations", miss("missingness", "no_formula_elements")),
         ("tables", miss("missingness", "no_table_elements")),
         ("figures", miss("missingness", "no_figure_elements")),
-        ("external_resources", miss("missingness", "no_external_resources")),
+        (
+            "external_resources",
+            miss("missingness", "no_external_resources"),
+        ),
         ("enriched", nr()),
         ("summaries", nr()),
         ("quality_signals", nr()),
     ] {
         arts.insert(k.into(), serde_yaml::Value::Mapping(v));
     }
-    arts.insert("parsed".into(), serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("file"), serde_yaml::Value::from("parsed/article.json")),
-        (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("source")),
-        (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha_p)),
-        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-html-parsed-stage")),
-        (serde_yaml::Value::from("stats"), serde_yaml::Value::Mapping(
-            serde_yaml::Mapping::from_iter([
-                (serde_yaml::Value::from("sections"), serde_yaml::Value::from(out.sections as u64)),
-            ]))),
-    ]).into());
+    arts.insert(
+        "parsed".into(),
+        serde_yaml::Mapping::from_iter([
+            (
+                serde_yaml::Value::from("file"),
+                serde_yaml::Value::from("parsed/article.json"),
+            ),
+            (
+                serde_yaml::Value::from("derived_from"),
+                serde_yaml::Value::from("source"),
+            ),
+            (
+                serde_yaml::Value::from("sha256"),
+                serde_yaml::Value::String(sha_p),
+            ),
+            (
+                serde_yaml::Value::from("actor"),
+                serde_yaml::Value::from("rust-html-parsed-stage"),
+            ),
+            (
+                serde_yaml::Value::from("stats"),
+                serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([(
+                    serde_yaml::Value::from("sections"),
+                    serde_yaml::Value::from(out.sections as u64),
+                )])),
+            ),
+        ])
+        .into(),
+    );
     m.insert("artifacts".into(), arts.into());
-    std::fs::write(dir.join("manifest.yaml"), serde_yaml::to_string(&serde_yaml::Value::Mapping(m))?)?;
+    std::fs::write(
+        dir.join("manifest.yaml"),
+        serde_yaml::to_string(&serde_yaml::Value::Mapping(m))?,
+    )?;
 
     // reuse the rust navigation stage for structure
     run_build_navigation(paper_id)?;
@@ -597,8 +849,12 @@ pub fn run_parse_pdf_toc(paper_id: &str) -> anyhow::Result<()> {
 
     let obs_path = std::path::Path::new("artifacts/pipeline_cache/pdf_toc_observations")
         .join(format!("{paper_id}.json"));
-    let obs_json = std::fs::read_to_string(&obs_path)
-        .map_err(|e| anyhow::anyhow!("observations {} (run scripts/m451_pdf_toc_observations.py): {e}", obs_path.display()))?;
+    let obs_json = std::fs::read_to_string(&obs_path).map_err(|e| {
+        anyhow::anyhow!(
+            "observations {} (run scripts/m451_pdf_toc_observations.py): {e}",
+            obs_path.display()
+        )
+    })?;
 
     let out = build_pdf_toc_stage(paper_id, &obs_json)?;
 
@@ -611,14 +867,26 @@ pub fn run_parse_pdf_toc(paper_id: &str) -> anyhow::Result<()> {
     // manifest: parsed event (idempotent full draft, like parse-html)
     let now = chrono_now();
     let sha_p = sha256_hex(out.parsed_json.as_bytes());
-    let miss = |reason: &str| serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("present"), serde_yaml::Value::from(false)),
-        (serde_yaml::Value::from("missingness"), serde_yaml::Value::from(reason)),
-        (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
-    ]);
-    let nr = serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("not_reached"), serde_yaml::Value::from(true)),
-    ]);
+    let miss = |reason: &str| {
+        serde_yaml::Mapping::from_iter([
+            (
+                serde_yaml::Value::from("present"),
+                serde_yaml::Value::from(false),
+            ),
+            (
+                serde_yaml::Value::from("missingness"),
+                serde_yaml::Value::from(reason),
+            ),
+            (
+                serde_yaml::Value::from("derived_from"),
+                serde_yaml::Value::from("parsed"),
+            ),
+        ])
+    };
+    let nr = serde_yaml::Mapping::from_iter([(
+        serde_yaml::Value::from("not_reached"),
+        serde_yaml::Value::from(true),
+    )]);
     let mut m = serde_yaml::Mapping::new();
     m.insert("schema_version".into(), "article-manifest.v1".into());
     m.insert("paper_id".into(), paper_id.into());
@@ -628,18 +896,44 @@ pub fn run_parse_pdf_toc(paper_id: &str) -> anyhow::Result<()> {
     m.insert("source".into(), src.into());
     m.insert("lifecycle".into(), "parsed".into());
     let ev = serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("stage"), serde_yaml::Value::from("raw")),
-        (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(now.clone())),
-        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("monograph-source")),
+        (
+            serde_yaml::Value::from("stage"),
+            serde_yaml::Value::from("raw"),
+        ),
+        (
+            serde_yaml::Value::from("recorded_at"),
+            serde_yaml::Value::from(now.clone()),
+        ),
+        (
+            serde_yaml::Value::from("actor"),
+            serde_yaml::Value::from("monograph-source"),
+        ),
     ]);
     let ev2 = serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("stage"), serde_yaml::Value::from("parsed")),
-        (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(now)),
-        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-pdf-toc-stage")),
-        (serde_yaml::Value::from("evidence_sha256"), serde_yaml::Value::String(sha_p.clone())),
+        (
+            serde_yaml::Value::from("stage"),
+            serde_yaml::Value::from("parsed"),
+        ),
+        (
+            serde_yaml::Value::from("recorded_at"),
+            serde_yaml::Value::from(now),
+        ),
+        (
+            serde_yaml::Value::from("actor"),
+            serde_yaml::Value::from("rust-pdf-toc-stage"),
+        ),
+        (
+            serde_yaml::Value::from("evidence_sha256"),
+            serde_yaml::Value::String(sha_p.clone()),
+        ),
     ]);
-    m.insert("lifecycle_events".into(), serde_yaml::Value::Sequence(vec![
-        serde_yaml::Value::Mapping(ev), serde_yaml::Value::Mapping(ev2)]));
+    m.insert(
+        "lifecycle_events".into(),
+        serde_yaml::Value::Sequence(vec![
+            serde_yaml::Value::Mapping(ev),
+            serde_yaml::Value::Mapping(ev2),
+        ]),
+    );
     let mut arts = serde_yaml::Mapping::new();
     for (k, v) in [
         ("extracted", miss("extraction_not_run")),
@@ -654,23 +948,53 @@ pub fn run_parse_pdf_toc(paper_id: &str) -> anyhow::Result<()> {
     ] {
         arts.insert(k.into(), serde_yaml::Value::Mapping(v));
     }
-    arts.insert("parsed".into(), serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("file"), serde_yaml::Value::from("parsed/article.json")),
-        (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("source")),
-        (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha_p)),
-        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-pdf-toc-stage")),
-        (serde_yaml::Value::from("stats"), serde_yaml::Value::Mapping(
-            serde_yaml::Mapping::from_iter([
-                (serde_yaml::Value::from("sections"), serde_yaml::Value::from(out.sections as u64)),
-                (serde_yaml::Value::from("furniture"), serde_yaml::Value::from(out.furniture as u64)),
-            ]))),
-    ]).into());
+    arts.insert(
+        "parsed".into(),
+        serde_yaml::Mapping::from_iter([
+            (
+                serde_yaml::Value::from("file"),
+                serde_yaml::Value::from("parsed/article.json"),
+            ),
+            (
+                serde_yaml::Value::from("derived_from"),
+                serde_yaml::Value::from("source"),
+            ),
+            (
+                serde_yaml::Value::from("sha256"),
+                serde_yaml::Value::String(sha_p),
+            ),
+            (
+                serde_yaml::Value::from("actor"),
+                serde_yaml::Value::from("rust-pdf-toc-stage"),
+            ),
+            (
+                serde_yaml::Value::from("stats"),
+                serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
+                    (
+                        serde_yaml::Value::from("sections"),
+                        serde_yaml::Value::from(out.sections as u64),
+                    ),
+                    (
+                        serde_yaml::Value::from("furniture"),
+                        serde_yaml::Value::from(out.furniture as u64),
+                    ),
+                ])),
+            ),
+        ])
+        .into(),
+    );
     m.insert("artifacts".into(), arts.into());
-    std::fs::write(dir.join("manifest.yaml"), serde_yaml::to_string(&serde_yaml::Value::Mapping(m))?)?;
+    std::fs::write(
+        dir.join("manifest.yaml"),
+        serde_yaml::to_string(&serde_yaml::Value::Mapping(m))?,
+    )?;
 
     // structure via the rust navigation stage
     run_build_navigation(paper_id)?;
-    println!("{paper_id}: pdf-toc parsed — sections={} furniture={}", out.sections, out.furniture);
+    println!(
+        "{paper_id}: pdf-toc parsed — sections={} furniture={}",
+        out.sections, out.furniture
+    );
     Ok(())
 }
 
@@ -683,8 +1007,12 @@ pub fn run_enrich_layer(paper_id: &str) -> anyhow::Result<()> {
 
     let obs_path = std::path::Path::new("artifacts/pipeline_cache/openalex_works")
         .join(format!("{paper_id}.json"));
-    let obs = std::fs::read_to_string(&obs_path)
-        .map_err(|e| anyhow::anyhow!("work cache {} (run `da source fetch-openalex {paper_id}`): {e}", obs_path.display()))?;
+    let obs = std::fs::read_to_string(&obs_path).map_err(|e| {
+        anyhow::anyhow!(
+            "work cache {} (run `da source fetch-openalex {paper_id}`): {e}",
+            obs_path.display()
+        )
+    })?;
 
     let cfg = PathConfig::load();
     let store = FsSchemaObjectStore::from_path_config(&cfg, "article")?;
@@ -696,28 +1024,59 @@ pub fn run_enrich_layer(paper_id: &str) -> anyhow::Result<()> {
 
     if out.not_found {
         if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
-            arts.insert("enriched".into(), serde_yaml::Mapping::from_iter([
-                (serde_yaml::Value::from("present"), serde_yaml::Value::from(false)),
-                (serde_yaml::Value::from("missingness"), serde_yaml::Value::from("openalex_not_found")),
-                (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
-            ]).into());
+            arts.insert(
+                "enriched".into(),
+                serde_yaml::Mapping::from_iter([
+                    (
+                        serde_yaml::Value::from("present"),
+                        serde_yaml::Value::from(false),
+                    ),
+                    (
+                        serde_yaml::Value::from("missingness"),
+                        serde_yaml::Value::from("openalex_not_found"),
+                    ),
+                    (
+                        serde_yaml::Value::from("derived_from"),
+                        serde_yaml::Value::from("parsed"),
+                    ),
+                ])
+                .into(),
+            );
         }
         // typed event: enriched attempted, not found — FSM stage reached
         let has_enriched = m
             .get("lifecycle_events")
             .and_then(|e| e.as_sequence())
-            .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("enriched")))
+            .map(|s| {
+                s.iter()
+                    .any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("enriched"))
+            })
             .unwrap_or(false);
         if !has_enriched {
-            let events = m.get_mut("lifecycle_events").and_then(|v| v.as_sequence_mut());
+            let events = m
+                .get_mut("lifecycle_events")
+                .and_then(|v| v.as_sequence_mut());
             if let Some(events) = events {
-                events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
-                    (serde_yaml::Value::from("stage"), serde_yaml::Value::from("enriched")),
-                    (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(chrono_now())),
-                    (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-enriched-layer")),
-                    (serde_yaml::Value::from("evidence_sha256"), serde_yaml::Value::String(
-                        sha256_hex(b"openalex_not_found"))),
-                ])));
+                events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                    [
+                        (
+                            serde_yaml::Value::from("stage"),
+                            serde_yaml::Value::from("enriched"),
+                        ),
+                        (
+                            serde_yaml::Value::from("recorded_at"),
+                            serde_yaml::Value::from(chrono_now()),
+                        ),
+                        (
+                            serde_yaml::Value::from("actor"),
+                            serde_yaml::Value::from("rust-enriched-layer"),
+                        ),
+                        (
+                            serde_yaml::Value::from("evidence_sha256"),
+                            serde_yaml::Value::String(sha256_hex(b"openalex_not_found")),
+                        ),
+                    ],
+                )));
             }
         }
         if let Some(l) = m.get_mut("lifecycle") {
@@ -738,35 +1097,77 @@ pub fn run_enrich_layer(paper_id: &str) -> anyhow::Result<()> {
     let already = m
         .get("lifecycle_events")
         .and_then(|e| e.as_sequence())
-        .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("enriched")))
+        .map(|s| {
+            s.iter()
+                .any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("enriched"))
+        })
         .unwrap_or(false);
     if !already {
-        if let Some(events) = m.get_mut("lifecycle_events").and_then(|v| v.as_sequence_mut()) {
-            events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
-                (serde_yaml::Value::from("stage"), serde_yaml::Value::from("enriched")),
-                (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(chrono_now())),
-                (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-enriched-layer")),
-                (serde_yaml::Value::from("evidence_sha256"),
-                 serde_yaml::Value::String(sha256_hex(out.provenance_json.as_bytes()))),
-            ])));
+        if let Some(events) = m
+            .get_mut("lifecycle_events")
+            .and_then(|v| v.as_sequence_mut())
+        {
+            events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                [
+                    (
+                        serde_yaml::Value::from("stage"),
+                        serde_yaml::Value::from("enriched"),
+                    ),
+                    (
+                        serde_yaml::Value::from("recorded_at"),
+                        serde_yaml::Value::from(chrono_now()),
+                    ),
+                    (
+                        serde_yaml::Value::from("actor"),
+                        serde_yaml::Value::from("rust-enriched-layer"),
+                    ),
+                    (
+                        serde_yaml::Value::from("evidence_sha256"),
+                        serde_yaml::Value::String(sha256_hex(out.provenance_json.as_bytes())),
+                    ),
+                ],
+            )));
         }
         if let Some(l) = m.get_mut("lifecycle") {
             *l = serde_yaml::Value::from("enriched");
         }
     }
-    let stats: serde_yaml::Value = serde_yaml::from_str(&serde_json::to_string(&out.stats).unwrap())?;
+    let stats: serde_yaml::Value =
+        serde_yaml::from_str(&serde_json::to_string(&out.stats).unwrap())?;
     if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
-        arts.insert("enriched".into(), serde_yaml::Mapping::from_iter([
-            (serde_yaml::Value::from("file"), serde_yaml::Value::from("enriched/authors.json")),
-            (serde_yaml::Value::from("files"), serde_yaml::Value::from("enriched/{authors,venue,topics,provenance}.json")),
-            (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
-            (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha256_hex(out.provenance_json.as_bytes()))),
-            (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-enriched-layer")),
-            (serde_yaml::Value::from("stats"), stats),
-        ]).into());
+        arts.insert(
+            "enriched".into(),
+            serde_yaml::Mapping::from_iter([
+                (
+                    serde_yaml::Value::from("file"),
+                    serde_yaml::Value::from("enriched/authors.json"),
+                ),
+                (
+                    serde_yaml::Value::from("files"),
+                    serde_yaml::Value::from("enriched/{authors,venue,topics,provenance}.json"),
+                ),
+                (
+                    serde_yaml::Value::from("derived_from"),
+                    serde_yaml::Value::from("parsed"),
+                ),
+                (
+                    serde_yaml::Value::from("sha256"),
+                    serde_yaml::Value::String(sha256_hex(out.provenance_json.as_bytes())),
+                ),
+                (
+                    serde_yaml::Value::from("actor"),
+                    serde_yaml::Value::from("rust-enriched-layer"),
+                ),
+                (serde_yaml::Value::from("stats"), stats),
+            ])
+            .into(),
+        );
     }
     std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
-    println!("{paper_id}: enriched — {}", serde_json::to_string(&out.stats)?);
+    println!(
+        "{paper_id}: enriched — {}",
+        serde_json::to_string(&out.stats)?
+    );
     Ok(())
 }
 
@@ -787,7 +1188,9 @@ pub fn run_build_summary(paper_id: &str) -> anyhow::Result<()> {
         .map_err(|e| anyhow::anyhow!("agent manifest: {e}"))?;
     let manifest = AgentManifest::from_yaml_str(&agent_yaml)
         .map_err(|e| anyhow::anyhow!("agent manifest: {e}"))?;
-    manifest.check_locks().map_err(|e| anyhow::anyhow!("agent locks: {e}"))?;
+    manifest
+        .check_locks()
+        .map_err(|e| anyhow::anyhow!("agent locks: {e}"))?;
 
     let system_prompt = std::fs::read_to_string(&manifest.prompt.system_file)
         .map_err(|e| anyhow::anyhow!("system prompt {}: {e}", manifest.prompt.system_file))?;
@@ -799,7 +1202,9 @@ pub fn run_build_summary(paper_id: &str) -> anyhow::Result<()> {
     let binding = registry
         .resolve(&manifest.model.generate_binding, None)
         .map_err(|e| anyhow::anyhow!("binding {}: {e}", manifest.model.generate_binding))?;
-    let key = std::env::var("NINE_ROUTER_API_KEY").ok().filter(|k| !k.trim().is_empty());
+    let key = std::env::var("NINE_ROUTER_API_KEY")
+        .ok()
+        .filter(|k| !k.trim().is_empty());
     let llm = OpenAiCompatibleLlmClient::new(binding.clone(), key, 240)
         .map_err(|e| anyhow::anyhow!("llm client: {e}"))?;
 
@@ -807,10 +1212,14 @@ pub fn run_build_summary(paper_id: &str) -> anyhow::Result<()> {
     let store = FsSchemaObjectStore::from_path_config(&cfg, "article")?;
 
     // CVF memory: per-agent namespace, persist after the run
-    let ns = manifest.memory.namespace.clone().unwrap_or_else(|| manifest.agent_id.clone());
+    let ns = manifest
+        .memory
+        .namespace
+        .clone()
+        .unwrap_or_else(|| manifest.agent_id.clone());
     let mem_dir = std::path::Path::new("data/agent_memory").join(&ns);
-    let mut memory = CvfAgentMemory::open(mem_dir)
-        .map_err(|e| anyhow::anyhow!("cvf memory: {e}"))?;
+    let mut memory =
+        CvfAgentMemory::open(mem_dir).map_err(|e| anyhow::anyhow!("cvf memory: {e}"))?;
     let neg_store = da_adapters::negative_memory::JsonlNegativeMemory::open(
         crate::background_tasks::negative_memory_dir(),
     )?;
@@ -845,7 +1254,10 @@ pub fn run_build_summary(paper_id: &str) -> anyhow::Result<()> {
     let reached_enriched = m
         .get("lifecycle_events")
         .and_then(|e| e.as_sequence())
-        .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("enriched")))
+        .map(|s| {
+            s.iter()
+                .any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("enriched"))
+        })
         .unwrap_or(false);
     if !reached_enriched {
         anyhow::bail!(
@@ -855,17 +1267,36 @@ pub fn run_build_summary(paper_id: &str) -> anyhow::Result<()> {
     let already = m
         .get("lifecycle_events")
         .and_then(|e| e.as_sequence())
-        .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("summarized")))
+        .map(|s| {
+            s.iter()
+                .any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("summarized"))
+        })
         .unwrap_or(false);
     if !already {
-        if let Some(events) = m.get_mut("lifecycle_events").and_then(|v| v.as_sequence_mut()) {
-            events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
-                (serde_yaml::Value::from("stage"), serde_yaml::Value::from("summarized")),
-                (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(chrono_now())),
-                (serde_yaml::Value::from("actor"), serde_yaml::Value::from(format!("agent:{}", manifest.agent_id))),
-                (serde_yaml::Value::from("evidence_sha256"),
-                 serde_yaml::Value::String(sha256_hex(out.summary_node_json.as_bytes()))),
-            ])));
+        if let Some(events) = m
+            .get_mut("lifecycle_events")
+            .and_then(|v| v.as_sequence_mut())
+        {
+            events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                [
+                    (
+                        serde_yaml::Value::from("stage"),
+                        serde_yaml::Value::from("summarized"),
+                    ),
+                    (
+                        serde_yaml::Value::from("recorded_at"),
+                        serde_yaml::Value::from(chrono_now()),
+                    ),
+                    (
+                        serde_yaml::Value::from("actor"),
+                        serde_yaml::Value::from(format!("agent:{}", manifest.agent_id)),
+                    ),
+                    (
+                        serde_yaml::Value::from("evidence_sha256"),
+                        serde_yaml::Value::String(sha256_hex(out.summary_node_json.as_bytes())),
+                    ),
+                ],
+            )));
         }
         if let Some(l) = m.get_mut("lifecycle") {
             *l = serde_yaml::Value::from("summarized");
@@ -873,17 +1304,45 @@ pub fn run_build_summary(paper_id: &str) -> anyhow::Result<()> {
     }
     if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
         let mut sm = serde_yaml::Mapping::from_iter([
-            (serde_yaml::Value::from("file"), serde_yaml::Value::from("summaries/abstract.json")),
-            (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
-            (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha256_hex(out.summary_node_json.as_bytes()))),
-            (serde_yaml::Value::from("actor"), serde_yaml::Value::from(format!("agent:{}", manifest.agent_id))),
+            (
+                serde_yaml::Value::from("file"),
+                serde_yaml::Value::from("summaries/abstract.json"),
+            ),
+            (
+                serde_yaml::Value::from("derived_from"),
+                serde_yaml::Value::from("parsed"),
+            ),
+            (
+                serde_yaml::Value::from("sha256"),
+                serde_yaml::Value::String(sha256_hex(out.summary_node_json.as_bytes())),
+            ),
+            (
+                serde_yaml::Value::from("actor"),
+                serde_yaml::Value::from(format!("agent:{}", manifest.agent_id)),
+            ),
         ]);
-        sm.insert("stats".into(), serde_yaml::Mapping::from_iter([
-            (serde_yaml::Value::from("prompt_sha256"), serde_yaml::Value::String(out.prompt_sha256.clone())),
-            (serde_yaml::Value::from("injection_scrubbed"), serde_yaml::Value::from(out.scrubbed as u64)),
-            (serde_yaml::Value::from("latency_ms"), serde_yaml::Value::from(out.latency_ms)),
-            (serde_yaml::Value::from("memory_epoch"), serde_yaml::Value::from(out.epoch.unwrap_or(0))),
-        ]).into());
+        sm.insert(
+            "stats".into(),
+            serde_yaml::Mapping::from_iter([
+                (
+                    serde_yaml::Value::from("prompt_sha256"),
+                    serde_yaml::Value::String(out.prompt_sha256.clone()),
+                ),
+                (
+                    serde_yaml::Value::from("injection_scrubbed"),
+                    serde_yaml::Value::from(out.scrubbed as u64),
+                ),
+                (
+                    serde_yaml::Value::from("latency_ms"),
+                    serde_yaml::Value::from(out.latency_ms),
+                ),
+                (
+                    serde_yaml::Value::from("memory_epoch"),
+                    serde_yaml::Value::from(out.epoch.unwrap_or(0)),
+                ),
+            ])
+            .into(),
+        );
         arts.insert("summaries".into(), sm.into());
     }
     std::fs::write(&mp, serde_yaml::to_string(&m)?)?;
@@ -895,7 +1354,6 @@ pub fn run_build_summary(paper_id: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-
 /// `da source eval-frozen` — run the frozen 6-article benchmark for
 /// EVERY model in the frozen eval manifest, writing ALL trajectories to
 /// CVF (comparative decision base; prod binding untouched).
@@ -904,12 +1362,12 @@ pub fn run_eval_frozen() -> anyhow::Result<()> {
     use da_adapters::fs_schema_objects::FsSchemaObjectStore;
     use da_adapters::model_registry::load_model_registry;
     use da_adapters::openai_compatible_llm::OpenAiCompatibleLlmClient;
-    use da_application::summaries_agent_stage::{run_summaries_agent, AgentRunContext};
+    use da_application::summaries_agent_stage::{AgentRunContext, run_summaries_agent};
     use da_domain::agent_manifest::AgentManifest;
     use da_ports::path_config::PathConfig;
 
-    let fixture_path = std::path::Path::new(
-        "governor/fixtures/prompt_eval/article-summary.eval.v1.json");
+    let fixture_path =
+        std::path::Path::new("governor/fixtures/prompt_eval/article-summary.eval.v1.json");
     let fx: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(fixture_path)?)?;
     let articles: Vec<String> = fx["frozen_articles"]
         .as_array()
@@ -922,10 +1380,8 @@ pub fn run_eval_frozen() -> anyhow::Result<()> {
     let agent_yaml = std::fs::read_to_string("data/agents/summarizer/manifest.yaml")?;
     let manifest = AgentManifest::from_yaml_str(&agent_yaml)
         .map_err(|e| anyhow::anyhow!("agent manifest: {e}"))?;
-    let system_prompt =
-        std::fs::read_to_string("data/prompts/summarizer/system.v1.md")?;
-    let injection_yaml =
-        std::fs::read_to_string("data/ontology/prompt_injection_policy.yaml")?;
+    let system_prompt = std::fs::read_to_string("data/prompts/summarizer/system.v1.md")?;
+    let injection_yaml = std::fs::read_to_string("data/ontology/prompt_injection_policy.yaml")?;
 
     // candidate models from the benchmark policy (DATA), baseline included;
     // each gets its own CVF namespace -> comparative but non-mixing
@@ -933,7 +1389,12 @@ pub fn run_eval_frozen() -> anyhow::Result<()> {
         .map_err(|e| anyhow::anyhow!("summary_eval_policy: {e}"))?;
     let pol: serde_yaml::Value = serde_yaml::from_str(&policy)?;
     let mut models: Vec<String> = Vec::new();
-    for m in pol.get("models").and_then(|m| m.as_sequence()).into_iter().flatten() {
+    for m in pol
+        .get("models")
+        .and_then(|m| m.as_sequence())
+        .into_iter()
+        .flatten()
+    {
         match m {
             serde_yaml::Value::String(s) => models.push(s.clone()),
             serde_yaml::Value::Mapping(mm) => {
@@ -967,13 +1428,12 @@ pub fn run_eval_frozen() -> anyhow::Result<()> {
     for model in &models {
         // namespace per MODEL: comparative trajectories, no mixing
         let mem_dir = std::path::Path::new("data/agent_memory/eval").join(model.replace('/', "-"));
-        let mut memory = CvfAgentMemory::open(mem_dir)
-            .map_err(|e| anyhow::anyhow!("cvf memory: {e}"))?;
+        let mut memory =
+            CvfAgentMemory::open(mem_dir).map_err(|e| anyhow::anyhow!("cvf memory: {e}"))?;
         // resolve by model name (the agent contract rejects model !=
         // binding — so the client itself must match the candidate)
-        let resolved =
-            da_adapters::model_registry::resolve_model_record(&registry, model)
-                .map_err(|e| anyhow::anyhow!("{e}"))?;
+        let resolved = da_adapters::model_registry::resolve_model_record(&registry, model)
+            .map_err(|e| anyhow::anyhow!("{e}"))?;
         let llm = OpenAiCompatibleLlmClient::new(resolved.clone(), key.clone(), 240)
             .map_err(|e| anyhow::anyhow!("llm client: {e}"))?;
 
@@ -1027,10 +1487,16 @@ pub fn run_audit_fidelity(paper_id: &str) -> anyhow::Result<()> {
     let obs: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&obs_path)?)
         .map_err(|e| anyhow::anyhow!("observations {}: {e}", obs_path.display()))?;
     let parsed: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(
-        std::path::Path::new("data/processed").join(paper_id).join("parsed/article.json"),
+        std::path::Path::new("data/processed")
+            .join(paper_id)
+            .join("parsed/article.json"),
     )?)?;
 
-    let toc = obs.get("toc").and_then(|t| t.as_array()).cloned().unwrap_or_default();
+    let toc = obs
+        .get("toc")
+        .and_then(|t| t.as_array())
+        .cloned()
+        .unwrap_or_default();
     let pages: Vec<(u32, String)> = obs
         .get("pages_text")
         .and_then(|p| p.as_object())
@@ -1044,9 +1510,17 @@ pub fn run_audit_fidelity(paper_id: &str) -> anyhow::Result<()> {
         })
         .unwrap_or_default();
     let page_text = |p: u32| -> String {
-        pages.iter().find(|(n, _)| *n == p).map(|(_, t)| t.clone()).unwrap_or_default()
+        pages
+            .iter()
+            .find(|(n, _)| *n == p)
+            .map(|(_, t)| t.clone())
+            .unwrap_or_default()
     };
-    let sections = parsed.get("sections").and_then(|s| s.as_array()).cloned().unwrap_or_default();
+    let sections = parsed
+        .get("sections")
+        .and_then(|s| s.as_array())
+        .cloned()
+        .unwrap_or_default();
 
     let word_set = |s: &str| -> std::collections::HashSet<String> {
         s.split(|c: char| !c.is_ascii_alphabetic())
@@ -1086,8 +1560,10 @@ pub fn run_audit_fidelity(paper_id: &str) -> anyhow::Result<()> {
             Some((o, _)) => own[o..].to_string(),
             None => own.clone(),
         };
-        if let (Some(np), Some(nt)) = (next_page, next.and_then(|n| n.get("title").and_then(|x| x.as_str())))
-            && np > page
+        if let (Some(np), Some(nt)) = (
+            next_page,
+            next.and_then(|n| n.get("title").and_then(|x| x.as_str())),
+        ) && np > page
         {
             for p in (page + 1)..np {
                 expected.push('\n');
@@ -1100,12 +1576,14 @@ pub fn run_audit_fidelity(paper_id: &str) -> anyhow::Result<()> {
                 tail_total += 1;
                 let tail_probe: String = shared[..off].trim().chars().take(30).collect();
                 if !tail_probe.is_empty() {
-                    let in_cur = sections.get(i)
+                    let in_cur = sections
+                        .get(i)
                         .and_then(|s| s.get("text"))
                         .and_then(|x| x.as_str())
                         .map(|st| st.contains(&tail_probe))
                         .unwrap_or(false);
-                    let in_next = sections.get(i + 1)
+                    let in_next = sections
+                        .get(i + 1)
                         .and_then(|s| s.get("text"))
                         .and_then(|x| x.as_str())
                         .map(|st| st.contains(&tail_probe))
@@ -1152,11 +1630,22 @@ pub fn run_audit_fidelity(paper_id: &str) -> anyhow::Result<()> {
     }
 
     worst.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-    let avg_cov = if cov_n > 0 { cov_sum / cov_n as f64 } else { 1.0 };
+    let avg_cov = if cov_n > 0 {
+        cov_sum / cov_n as f64
+    } else {
+        1.0
+    };
     println!("== audit-fidelity: {paper_id} ==");
     println!("  anchor misses:   {anchor_miss}");
-    println!("  boundary tails:  {}/{} recovered (lost {tail_lost})", tail_total - tail_lost, tail_total);
-    println!("  word coverage:   avg {:.1}% ({cov_n} sections)", avg_cov * 100.0);
+    println!(
+        "  boundary tails:  {}/{} recovered (lost {tail_lost})",
+        tail_total - tail_lost,
+        tail_total
+    );
+    println!(
+        "  word coverage:   avg {:.1}% ({cov_n} sections)",
+        avg_cov * 100.0
+    );
     println!("  margin attached: {margin_missing} sections missing");
     if !worst.is_empty() {
         println!("  worst coverage:");
@@ -1165,7 +1654,10 @@ pub fn run_audit_fidelity(paper_id: &str) -> anyhow::Result<()> {
         }
     }
     let pass = anchor_miss == 0 && tail_lost == 0 && avg_cov >= 0.98 && margin_missing == 0;
-    println!("  verdict:         {}", if pass { "PASS" } else { "NEEDS-ATTENTION" });
+    println!(
+        "  verdict:         {}",
+        if pass { "PASS" } else { "NEEDS-ATTENTION" }
+    );
     if !pass {
         std::process::exit(1);
     }
@@ -1207,7 +1699,10 @@ pub fn run_parse_pdf(
         // container had no crossref route). Bibliography enrichment runs via
         // the separately cached OpenAlex/Crossref enrich stage from the host.
         let parser = GrobidParser::from_env().with_profile(da_parse::GrobidProfile::structural());
-        parser.parse_pdf(pdf, paper_id).await.map_err(|e| anyhow::anyhow!("grobid: {e}"))
+        parser
+            .parse_pdf(pdf, paper_id)
+            .await
+            .map_err(|e| anyhow::anyhow!("grobid: {e}"))
     })?;
 
     let dir = std::path::Path::new("data/processed").join(paper_id);
@@ -1231,23 +1726,40 @@ pub fn run_parse_pdf(
             })
         }).collect::<Vec<_>>(),
     });
-    std::fs::write(dir.join("context/projection.json"), serde_json::to_string_pretty(&proj)?)?;
+    std::fs::write(
+        dir.join("context/projection.json"),
+        serde_json::to_string_pretty(&proj)?,
+    )?;
 
     // manifest draft (raw+parsed events), idempotent rebuild
     let now = chrono_now();
-    let miss = |reason: &str| serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("present"), serde_yaml::Value::from(false)),
-        (serde_yaml::Value::from("missingness"), serde_yaml::Value::from(reason)),
-        (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
-    ]);
-    let nr = serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("not_reached"), serde_yaml::Value::from(true)),
-    ]);
+    let miss = |reason: &str| {
+        serde_yaml::Mapping::from_iter([
+            (
+                serde_yaml::Value::from("present"),
+                serde_yaml::Value::from(false),
+            ),
+            (
+                serde_yaml::Value::from("missingness"),
+                serde_yaml::Value::from(reason),
+            ),
+            (
+                serde_yaml::Value::from("derived_from"),
+                serde_yaml::Value::from("parsed"),
+            ),
+        ])
+    };
+    let nr = serde_yaml::Mapping::from_iter([(
+        serde_yaml::Value::from("not_reached"),
+        serde_yaml::Value::from(true),
+    )]);
     let mut m = serde_yaml::Mapping::new();
     m.insert("schema_version".into(), "article-manifest.v1".into());
     m.insert("paper_id".into(), paper_id.into());
     match &grammar {
-        Some(g) => stamp_parse_grammar(&mut m, &g.grammar_profile, g.route.as_str(), &g.policy_hash),
+        Some(g) => {
+            stamp_parse_grammar(&mut m, &g.grammar_profile, g.route.as_str(), &g.policy_hash)
+        }
         None => stamp_parse_grammar(&mut m, "arxiv_pdf_dot", "unavailable", "native"),
     }
     m.insert("lifecycle".into(), "parsed".into());
@@ -1257,15 +1769,31 @@ pub fn run_parse_pdf(
         ("actor".into(), "source-acquire".into()),
     ]);
     let ev_parsed = serde_yaml::Mapping::from_iter([
-        (serde_yaml::Value::from("stage"), serde_yaml::Value::from("parsed")),
-        (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(now.clone())),
-        (serde_yaml::Value::from("actor"), serde_yaml::Value::from("grobid-structural")),
-        (serde_yaml::Value::from("evidence_sha256"),
-         serde_yaml::Value::String(sha256_hex(parsed_json.as_bytes()))),
+        (
+            serde_yaml::Value::from("stage"),
+            serde_yaml::Value::from("parsed"),
+        ),
+        (
+            serde_yaml::Value::from("recorded_at"),
+            serde_yaml::Value::from(now.clone()),
+        ),
+        (
+            serde_yaml::Value::from("actor"),
+            serde_yaml::Value::from("grobid-structural"),
+        ),
+        (
+            serde_yaml::Value::from("evidence_sha256"),
+            serde_yaml::Value::String(sha256_hex(parsed_json.as_bytes())),
+        ),
     ]);
-    m.insert("lifecycle_events".into(), vec![
-        serde_yaml::Value::Mapping(ev_raw), serde_yaml::Value::Mapping(ev_parsed),
-    ].into());
+    m.insert(
+        "lifecycle_events".into(),
+        vec![
+            serde_yaml::Value::Mapping(ev_raw),
+            serde_yaml::Value::Mapping(ev_parsed),
+        ]
+        .into(),
+    );
     let mut arts = serde_yaml::Mapping::new();
     for (k, v) in [
         ("extracted", miss("extraction_not_run")),
@@ -1276,23 +1804,33 @@ pub fn run_parse_pdf(
     ] {
         arts.insert(k.into(), serde_yaml::Value::Mapping(v));
     }
-    arts.insert("parsed".into(), serde_yaml::Mapping::from_iter([
-        ("file".into(), "parsed/article.json".into()),
-        ("derived_from".into(), "source".into()),
-        ("sha256".into(), sha256_hex(parsed_json.as_bytes()).into()),
-        ("actor".into(), "grobid-structural".into()),
-        ("stats".into(), serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
-            ("sections".into(), parsed.sections.len().into()),
-            ("citations".into(), parsed.citations.len().into()),
-            ("tables".into(), parsed.tables.len().into()),
-            ("formulas".into(), parsed.formulas.len().into()),
-        ]))),
-    ]).into());
+    arts.insert(
+        "parsed".into(),
+        serde_yaml::Mapping::from_iter([
+            ("file".into(), "parsed/article.json".into()),
+            ("derived_from".into(), "source".into()),
+            ("sha256".into(), sha256_hex(parsed_json.as_bytes()).into()),
+            ("actor".into(), "grobid-structural".into()),
+            (
+                "stats".into(),
+                serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
+                    ("sections".into(), parsed.sections.len().into()),
+                    ("citations".into(), parsed.citations.len().into()),
+                    ("tables".into(), parsed.tables.len().into()),
+                    ("formulas".into(), parsed.formulas.len().into()),
+                ])),
+            ),
+        ])
+        .into(),
+    );
     m.insert("artifacts".into(), arts.into());
     std::fs::write(dir.join("manifest.yaml"), serde_yaml::to_string(&m)?)?;
     println!(
         "{paper_id}: parsed — sections={} citations={} tables={} formulas={}",
-        parsed.sections.len(), parsed.citations.len(), parsed.tables.len(), parsed.formulas.len()
+        parsed.sections.len(),
+        parsed.citations.len(),
+        parsed.tables.len(),
+        parsed.formulas.len()
     );
     Ok(())
 }
@@ -1317,9 +1855,7 @@ fn verify_evidence_span(
         }
     }
     // fallback: label occurrence anywhere in canonical text
-    if !e.label.is_empty()
-        && canonical.to_lowercase().contains(&e.label.to_lowercase())
-    {
+    if !e.label.is_empty() && canonical.to_lowercase().contains(&e.label.to_lowercase()) {
         return (
             "verified_label_occurrence",
             canonical
@@ -1342,15 +1878,21 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
         .join("parsed/article.json");
     let raw = std::fs::read_to_string(&parsed_path)
         .map_err(|e| anyhow::anyhow!("parsed unreadable {}: {e}", parsed_path.display()))?;
-    let parsed: serde_json::Value = serde_json::from_str(&raw)
-        .map_err(|e| anyhow::anyhow!("parsed parse: {e}"))?;
+    let parsed: serde_json::Value =
+        serde_json::from_str(&raw).map_err(|e| anyhow::anyhow!("parsed parse: {e}"))?;
 
     let mut pairs: Vec<(String, String)> = Vec::new();
     if let Some(sections) = parsed.get("sections").and_then(|s| s.as_array()) {
         for sec in sections {
             pairs.push((
-                sec.get("title").and_then(|t| t.as_str()).unwrap_or("").to_string(),
-                sec.get("text").and_then(|t| t.as_str()).unwrap_or("").to_string(),
+                sec.get("title")
+                    .and_then(|t| t.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                sec.get("text")
+                    .and_then(|t| t.as_str())
+                    .unwrap_or("")
+                    .to_string(),
             ));
         }
     }
@@ -1361,15 +1903,20 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
     // Dataset section arm + acronym gate type entities correctly.
     if let Some(tables) = parsed.get("tables").and_then(|t| t.as_array()) {
         for (ti, tab) in tables.iter().enumerate() {
-            let Some(cells) = tab.get("cells").and_then(|c| c.as_array()) else { continue };
+            let Some(cells) = tab.get("cells").and_then(|c| c.as_array()) else {
+                continue;
+            };
             let header: Vec<String> = cells
                 .iter()
                 .filter(|c| c.get("row").and_then(|r| r.as_u64()) == Some(0))
-                .map(|c| c.get("text").and_then(|t| t.as_str()).unwrap_or("").to_string())
+                .map(|c| {
+                    c.get("text")
+                        .and_then(|t| t.as_str())
+                        .unwrap_or("")
+                        .to_string()
+                })
                 .collect();
-            let is_dataset_table = header
-                .iter()
-                .any(|h| h.to_lowercase().contains("dataset"));
+            let is_dataset_table = header.iter().any(|h| h.to_lowercase().contains("dataset"));
             let title = if is_dataset_table {
                 format!("Datasets (Table {})", ti + 1)
             } else {
@@ -1377,7 +1924,12 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
             };
             let body: Vec<String> = cells
                 .iter()
-                .map(|c| c.get("text").and_then(|t| t.as_str()).unwrap_or("").to_string())
+                .map(|c| {
+                    c.get("text")
+                        .and_then(|t| t.as_str())
+                        .unwrap_or("")
+                        .to_string()
+                })
                 .filter(|t| !t.trim().is_empty())
                 .collect();
             if !body.is_empty() {
@@ -1390,7 +1942,8 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
     let entities = rt.block_on(async {
         use da_ports::Extractor as _;
         let ex = da_adapters::RuleBasedExtractor::new();
-        ex.extract(&pairs).await
+        ex.extract(&pairs)
+            .await
             .map_err(|e| anyhow::anyhow!("extraction: {e}"))
     })?;
 
@@ -1431,7 +1984,8 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
             let summary_entities = rt.block_on(async {
                 use da_ports::Extractor as _;
                 let ex = da_adapters::RuleBasedExtractor::new();
-                ex.extract(&summary_pairs).await
+                ex.extract(&summary_pairs)
+                    .await
                     .map_err(|e| anyhow::anyhow!("summary extraction: {e}"))
             })?;
             let mut seen: std::collections::HashSet<String> =
@@ -1453,7 +2007,8 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
     let cache_id = extractor.cache_identity();
     let run_id = format!(
         "{}:{}:{}",
-        cache_id.implementation_fingerprint, cache_id.configuration_fingerprint,
+        cache_id.implementation_fingerprint,
+        cache_id.configuration_fingerprint,
         cache_id.output_schema_fingerprint
     );
 
@@ -1507,28 +2062,68 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
     let mut m: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&mp)?)?;
     let sha = sha256_hex(json.as_bytes());
     if let Some(arts) = m.get_mut("artifacts").and_then(|a| a.as_mapping_mut()) {
-        arts.insert("extracted".into(), serde_yaml::Mapping::from_iter([
-            (serde_yaml::Value::from("file"), serde_yaml::Value::from("extracted/entities.json")),
-            (serde_yaml::Value::from("derived_from"), serde_yaml::Value::from("parsed")),
-            (serde_yaml::Value::from("sha256"), serde_yaml::Value::String(sha.clone())),
-            (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rule-based-extractor")),
-            (serde_yaml::Value::from("stats"), serde_yaml::Value::Mapping(
-                serde_yaml::Mapping::from_iter([
-                    (serde_yaml::Value::from("entities"), serde_yaml::Value::from(records.len() as u64)),
-                ]))),
-        ]).into());
-        let already = m.get("lifecycle_events").and_then(|e| e.as_sequence())
-            .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("extracted")))
+        arts.insert(
+            "extracted".into(),
+            serde_yaml::Mapping::from_iter([
+                (
+                    serde_yaml::Value::from("file"),
+                    serde_yaml::Value::from("extracted/entities.json"),
+                ),
+                (
+                    serde_yaml::Value::from("derived_from"),
+                    serde_yaml::Value::from("parsed"),
+                ),
+                (
+                    serde_yaml::Value::from("sha256"),
+                    serde_yaml::Value::String(sha.clone()),
+                ),
+                (
+                    serde_yaml::Value::from("actor"),
+                    serde_yaml::Value::from("rule-based-extractor"),
+                ),
+                (
+                    serde_yaml::Value::from("stats"),
+                    serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([(
+                        serde_yaml::Value::from("entities"),
+                        serde_yaml::Value::from(records.len() as u64),
+                    )])),
+                ),
+            ])
+            .into(),
+        );
+        let already = m
+            .get("lifecycle_events")
+            .and_then(|e| e.as_sequence())
+            .map(|s| {
+                s.iter()
+                    .any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("extracted"))
+            })
             .unwrap_or(false);
         if !already
-            && let Some(events) = m.get_mut("lifecycle_events").and_then(|v| v.as_sequence_mut())
+            && let Some(events) = m
+                .get_mut("lifecycle_events")
+                .and_then(|v| v.as_sequence_mut())
         {
-            events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
-                (serde_yaml::Value::from("stage"), serde_yaml::Value::from("extracted")),
-                (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(chrono_now())),
-                (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rule-based-extractor")),
-                (serde_yaml::Value::from("evidence_sha256"), serde_yaml::Value::String(sha)),
-            ])));
+            events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                [
+                    (
+                        serde_yaml::Value::from("stage"),
+                        serde_yaml::Value::from("extracted"),
+                    ),
+                    (
+                        serde_yaml::Value::from("recorded_at"),
+                        serde_yaml::Value::from(chrono_now()),
+                    ),
+                    (
+                        serde_yaml::Value::from("actor"),
+                        serde_yaml::Value::from("rule-based-extractor"),
+                    ),
+                    (
+                        serde_yaml::Value::from("evidence_sha256"),
+                        serde_yaml::Value::String(sha),
+                    ),
+                ],
+            )));
         }
         // lifecycle = LAST event stage, never a hardcoded stage: a standalone
         // re-run of build-extracted on an already-validated paper must not
@@ -1549,8 +2144,6 @@ pub fn run_build_extracted(paper_id: &str) -> anyhow::Result<()> {
     println!("{paper_id}: extracted — entities={}", records.len());
     Ok(())
 }
-
-
 
 /// Canonical FSM target from a raw operator string (M461).
 /// An HTTP locator is URL-intent; the paper id is the versionless arXiv key.
@@ -1579,10 +2172,8 @@ pub fn normalize_source_target(raw: &str) -> SourceTarget {
 }
 
 fn ensure_catalog_for_url(locator_raw: &str) -> anyhow::Result<()> {
-    let acq =
-        da_adapters::ArxivSourceAcquisition::new("data/sources/arxiv").with_repo_root(".");
-    let uc = da_application::ArticleLoadUseCase::new(&acq)
-        .with_catalog_root("data/sources/arxiv");
+    let acq = da_adapters::ArxivSourceAcquisition::new("data/sources/arxiv").with_repo_root(".");
+    let uc = da_application::ArticleLoadUseCase::new(&acq).with_catalog_root("data/sources/arxiv");
     let policy = da_domain::AcquisitionPolicy {
         allow_network: true,
         include_html: true,
@@ -1628,7 +2219,9 @@ pub fn run_fetch_openalex(args: &[String]) -> anyhow::Result<()> {
         .filter(|a| !matches!(a.as_str(), "pending" | "auto" | "all"))
         .cloned()
         .collect();
-    if args.iter().any(|a| matches!(a.as_str(), "--pending" | "pending" | "auto" | "all"))
+    if args
+        .iter()
+        .any(|a| matches!(a.as_str(), "--pending" | "pending" | "auto" | "all"))
         || ids.is_empty()
     {
         ids = openalex_pending_ids()?;
@@ -1646,14 +2239,19 @@ pub fn run_fetch_openalex(args: &[String]) -> anyhow::Result<()> {
     if !no_purge {
         for e in std::fs::read_dir(cache_dir)? {
             let e = e?;
-            let Ok(text) = std::fs::read_to_string(e.path()) else { continue };
+            let Ok(text) = std::fs::read_to_string(e.path()) else {
+                continue;
+            };
             let Ok(rec) = serde_json::from_str::<serde_json::Value>(&text) else {
                 let _ = std::fs::remove_file(e.path());
                 purged += 1;
                 continue;
             };
             let status = rec.get("http_status").and_then(|s| s.as_u64()).unwrap_or(0);
-            let terminal = rec.get("terminal").and_then(|t| t.as_bool()).unwrap_or(false);
+            let terminal = rec
+                .get("terminal")
+                .and_then(|t| t.as_bool())
+                .unwrap_or(false);
             if terminal && (status == 404 || status == 422) {
                 let _ = std::fs::remove_file(e.path());
                 purged += 1;
@@ -1721,10 +2319,17 @@ pub fn run_fetch_openalex(args: &[String]) -> anyhow::Result<()> {
 /// Cache absent, corrupt, or non-terminal failure → needs a fetch.
 fn openalex_needs_fetch(cache_dir: &std::path::Path, pid: &str) -> bool {
     let cf = cache_dir.join(format!("{pid}.json"));
-    let Ok(text) = std::fs::read_to_string(&cf) else { return true };
-    let Ok(rec) = serde_json::from_str::<serde_json::Value>(&text) else { return true };
+    let Ok(text) = std::fs::read_to_string(&cf) else {
+        return true;
+    };
+    let Ok(rec) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return true;
+    };
     let status = rec.get("http_status").and_then(|s| s.as_u64()).unwrap_or(0);
-    let terminal = rec.get("terminal").and_then(|t| t.as_bool()).unwrap_or(false);
+    let terminal = rec
+        .get("terminal")
+        .and_then(|t| t.as_bool())
+        .unwrap_or(false);
     status != 200 && !terminal
 }
 
@@ -1752,12 +2357,19 @@ pub fn incomplete_pipeline_ids() -> anyhow::Result<Vec<String>> {
         if !dir.join("manifest.yaml").is_file() {
             continue;
         }
-        let Ok(text) = std::fs::read_to_string(dir.join("manifest.yaml")) else { continue };
-        let Ok(m) = serde_yaml::from_str::<serde_yaml::Value>(&text) else { continue };
+        let Ok(text) = std::fs::read_to_string(dir.join("manifest.yaml")) else {
+            continue;
+        };
+        let Ok(m) = serde_yaml::from_str::<serde_yaml::Value>(&text) else {
+            continue;
+        };
         let has_validated = m
             .get("lifecycle_events")
             .and_then(|v| v.as_sequence())
-            .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("validated")))
+            .map(|s| {
+                s.iter()
+                    .any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("validated"))
+            })
             .unwrap_or(false);
         if !has_validated {
             out.push(e.file_name().to_string_lossy().to_string());
@@ -1780,34 +2392,45 @@ pub struct PipelineOutcome {
 /// OpenAlex are shared services designed for concurrent load, manifests are
 /// per-article files (no cross-article races).
 pub fn run_batch(ids: &[String], workers: usize) -> anyhow::Result<()> {
-    let workers = workers.clamp(1, std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4));
-    println!("═══ batch: {} articles × {} workers ═══", ids.len(), workers);
+    let workers = workers.clamp(
+        1,
+        std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(4),
+    );
+    println!(
+        "═══ batch: {} articles × {} workers ═══",
+        ids.len(),
+        workers
+    );
     let stdout_lock = std::sync::Mutex::new(());
     let outcomes = std::sync::Mutex::new(Vec::<PipelineOutcome>::new());
     let next = std::sync::atomic::AtomicUsize::new(0);
     std::thread::scope(|scope| {
         for _ in 0..workers {
-            scope.spawn(|| loop {
-                let i = next.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-                let Some(pid) = ids.get(i) else { break };
-                let out = match run_pipeline_for(pid) {
-                    Ok(o) => o,
-                    Err(e) => PipelineOutcome {
-                        paper_id: pid.clone(),
-                        success: false,
-                        completed: 0,
-                        failure: Some(e.to_string()),
-                    },
-                };
-                {
-                    let _g = stdout_lock.lock().unwrap();
-                    println!(
-                        "  {} {pid} (completed={})",
-                        if out.success { "✓" } else { "✗" },
-                        out.completed
-                    );
+            scope.spawn(|| {
+                loop {
+                    let i = next.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    let Some(pid) = ids.get(i) else { break };
+                    let out = match run_pipeline_for(pid) {
+                        Ok(o) => o,
+                        Err(e) => PipelineOutcome {
+                            paper_id: pid.clone(),
+                            success: false,
+                            completed: 0,
+                            failure: Some(e.to_string()),
+                        },
+                    };
+                    {
+                        let _g = stdout_lock.lock().unwrap();
+                        println!(
+                            "  {} {pid} (completed={})",
+                            if out.success { "✓" } else { "✗" },
+                            out.completed
+                        );
+                    }
+                    outcomes.lock().unwrap().push(out);
                 }
-                outcomes.lock().unwrap().push(out);
             });
         }
     });
@@ -1816,7 +2439,11 @@ pub fn run_batch(ids: &[String], workers: usize) -> anyhow::Result<()> {
     println!();
     println!("batch: {ok}/{} success", outcomes.len());
     for o in outcomes.iter().filter(|o| !o.success) {
-        println!("  ✗ {}: {}", o.paper_id, o.failure.as_deref().unwrap_or("?"));
+        println!(
+            "  ✗ {}: {}",
+            o.paper_id,
+            o.failure.as_deref().unwrap_or("?")
+        );
     }
     if ok < outcomes.len() {
         std::process::exit(1);
@@ -1825,20 +2452,25 @@ pub fn run_batch(ids: &[String], workers: usize) -> anyhow::Result<()> {
 }
 
 fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
-// removed dup import
+    // removed dup import
 
     // load toolchain + FSM state
     let tc_text = std::fs::read_to_string("data/ontology/source_import_tools.yaml")
         .map_err(|e| anyhow::anyhow!("toolchain: {e}"))?;
-    let tc = Toolchain::from_yaml_str(&tc_text)
-        .map_err(|e| anyhow::anyhow!("toolchain: {e}"))?;
+    let tc = Toolchain::from_yaml_str(&tc_text).map_err(|e| anyhow::anyhow!("toolchain: {e}"))?;
     let state = load_fsm_state(paper_id)?;
 
     // Domain routing: resolve which domain profile to use
     let cfg = da_ports::path_config::PathConfig::load();
     let domains = resolve_domain(paper_id, &cfg);
     println!("═══ FSM run: {paper_id} ═══");
-    println!("domain: {:?} | stage: {} | grammar: {} ({})", domains, state.current_stage(), state.grammar_profile, state.object_class());
+    println!(
+        "domain: {:?} | stage: {} | grammar: {} ({})",
+        domains,
+        state.current_stage(),
+        state.grammar_profile,
+        state.object_class()
+    );
     println!();
 
     let plan = state.plan(&tc);
@@ -1852,7 +2484,9 @@ fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
         });
     }
     // ensure manifest exists for stages that write to it
-    let mp = std::path::Path::new("data/processed").join(paper_id).join("manifest.yaml");
+    let mp = std::path::Path::new("data/processed")
+        .join(paper_id)
+        .join("manifest.yaml");
     if !mp.exists() {
         std::fs::create_dir_all(mp.parent().unwrap())?;
         let mut draft = serde_yaml::Mapping::new();
@@ -1869,11 +2503,23 @@ fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
         }
         draft.insert("lifecycle".into(), "raw".into());
         let raw_event = serde_yaml::Mapping::from_iter([
-            (serde_yaml::Value::from("stage"), serde_yaml::Value::from("raw")),
-            (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(chrono_now())),
-            (serde_yaml::Value::from("actor"), serde_yaml::Value::from("source-acquire")),
+            (
+                serde_yaml::Value::from("stage"),
+                serde_yaml::Value::from("raw"),
+            ),
+            (
+                serde_yaml::Value::from("recorded_at"),
+                serde_yaml::Value::from(chrono_now()),
+            ),
+            (
+                serde_yaml::Value::from("actor"),
+                serde_yaml::Value::from("source-acquire"),
+            ),
         ]);
-        draft.insert("lifecycle_events".into(), vec![serde_yaml::Value::Mapping(raw_event)].into());
+        draft.insert(
+            "lifecycle_events".into(),
+            vec![serde_yaml::Value::Mapping(raw_event)].into(),
+        );
         draft.insert("artifacts".into(), serde_yaml::Mapping::new().into());
         std::fs::write(&mp, serde_yaml::to_string(&draft)?)?;
         println!("manifest: created (fresh)");
@@ -1896,7 +2542,14 @@ fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
     let mut failed: Option<String> = None;
 
     for (stage, required) in &plan {
-        println!("── {stage} {}", if *required { "(required)" } else { "(optional)" });
+        println!(
+            "── {stage} {}",
+            if *required {
+                "(required)"
+            } else {
+                "(optional)"
+            }
+        );
         let action_list_owned = tc.rust_actions(stage);
         let Some(action_first) = action_list_owned.first() else {
             println!("   no rust tool for this stage; reference tools:");
@@ -1919,7 +2572,8 @@ fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
         let _ = action_first;
         // parsed-stage: consult grammar_route (fail-open) and pick CLI.
         // page_outline + TOC cache → parse-pdf-toc; else parse-pdf (XY-Cut has no CLI).
-        let mut parsed_actions: Vec<String> = action_list_owned.iter().map(|s| (*s).to_string()).collect();
+        let mut parsed_actions: Vec<String> =
+            action_list_owned.iter().map(|s| (*s).to_string()).collect();
         if *stage == "parsed"
             && let Ok(g) = consult_parse_grammar_cli(paper_id, None, None, None)
         {
@@ -1955,11 +2609,12 @@ fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
         // не из кода — ранее путь scripts/m451_enrich_openalex.py был
         // захардкожен (мета/промпт нарушение, ADR-068)
         let pre_hook = tc.stage(stage).and_then(|s| {
-            s.tools.iter().find_map(|t| t.pre_hook.as_ref().map(|h| (h, t.retry.as_ref())))
+            s.tools
+                .iter()
+                .find_map(|t| t.pre_hook.as_ref().map(|h| (h, t.retry.as_ref())))
         });
         if let Some((hook, _)) = pre_hook {
-            let cache = std::path::Path::new(&hook.cache_dir)
-                .join(format!("{paper_id}.json"));
+            let cache = std::path::Path::new(&hook.cache_dir).join(format!("{paper_id}.json"));
             if !cache.exists() {
                 println!("   [pre] work cache missing — running reference fetcher…");
                 let st = std::process::Command::new(&hook.command)
@@ -1968,7 +2623,10 @@ fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
                 match st {
                     Ok(o) if o.status.success() => println!("   [pre] cache built"),
                     Ok(o) => {
-                        failed = Some(format!("enriched: fetcher failed: {}", String::from_utf8_lossy(&o.stderr)));
+                        failed = Some(format!(
+                            "enriched: fetcher failed: {}",
+                            String::from_utf8_lossy(&o.stderr)
+                        ));
                         break;
                     }
                     Err(e) => {
@@ -2004,13 +2662,20 @@ fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
                     break;
                 }
                 let err_text = match &result {
-                    Ok(o) => format!("{}{}", String::from_utf8_lossy(&o.stdout), String::from_utf8_lossy(&o.stderr)),
+                    Ok(o) => format!(
+                        "{}{}",
+                        String::from_utf8_lossy(&o.stdout),
+                        String::from_utf8_lossy(&o.stderr)
+                    ),
                     Err(e) => e.to_string(),
                 };
                 let max_attempts = retry.max_attempts.max(1);
                 let retryable = attempt < max_attempts
                     && (retry.retry_on.is_empty()
-                        || retry.retry_on.iter().any(|k| err_text.to_lowercase().contains(&k.to_lowercase()))
+                        || retry
+                            .retry_on
+                            .iter()
+                            .any(|k| err_text.to_lowercase().contains(&k.to_lowercase()))
                         || err_text.contains("network error"));
                 if !retryable {
                     break;
@@ -2070,14 +2735,19 @@ fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
             failure: failed,
         });
     }
-    println!("✓ [{paper_id}] run complete — completed={completed} reference-skipped={skipped_reference}");
+    println!(
+        "✓ [{paper_id}] run complete — completed={completed} reference-skipped={skipped_reference}"
+    );
 
     // final status
     let state2 = load_fsm_state(paper_id)?;
     println!();
     println!("final: stage={}", state2.current_stage());
     if let Some((next, required)) = state2.next_stage(&tc) {
-        println!("next:  {next} ({})", if required { "REQUIRED" } else { "optional" });
+        println!(
+            "next:  {next} ({})",
+            if required { "REQUIRED" } else { "optional" }
+        );
     } else {
         println!("next:  pipeline complete");
     }
@@ -2095,7 +2765,9 @@ fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
 /// gaps = SCHEMA entity_types with zero coverage.
 fn update_domain_manifests(paper_id: &str, domains: &[String]) {
     let processed = std::path::Path::new("data/processed");
-    let Ok(rd) = std::fs::read_dir(processed) else { return };
+    let Ok(rd) = std::fs::read_dir(processed) else {
+        return;
+    };
 
     // map paper_id → domain routing for all processed papers with entities
     let cfg = da_ports::path_config::PathConfig::load();
@@ -2107,7 +2779,10 @@ fn update_domain_manifests(paper_id: &str, domains: &[String]) {
         if !e.path().join("extracted/entities.json").is_file() {
             continue;
         }
-        let primary = resolve_domain(&id, &cfg).first().cloned().unwrap_or_default();
+        let primary = resolve_domain(&id, &cfg)
+            .first()
+            .cloned()
+            .unwrap_or_default();
         if primary.is_empty() {
             continue;
         }
@@ -2164,9 +2839,18 @@ fn update_domain_manifests(paper_id: &str, domains: &[String]) {
             ("generated_at".into(), chrono_now().into()),
             ("last_paper".into(), paper_id.into()),
             ("papers_processed".into(), (processed_count as u64).into()),
-            ("entity_coverage".into(), serde_yaml::to_value(&coverage).unwrap_or_default()),
-            ("gaps".into(), serde_yaml::to_value(&gaps).unwrap_or_default()),
-            ("note".into(), "derived cache — recomputed on every build-extracted".into()),
+            (
+                "entity_coverage".into(),
+                serde_yaml::to_value(&coverage).unwrap_or_default(),
+            ),
+            (
+                "gaps".into(),
+                serde_yaml::to_value(&gaps).unwrap_or_default(),
+            ),
+            (
+                "note".into(),
+                "derived cache — recomputed on every build-extracted".into(),
+            ),
         ]);
         let _ = std::fs::write(
             dom_dir.join("MANIFEST.yaml"),
@@ -2181,7 +2865,9 @@ fn resolve_domain(paper_id: &str, cfg: &da_ports::path_config::PathConfig) -> Ve
     /// Walk sources recursively; on the paper's dir read identity.json or
     /// article.json for coarse_topic_code and route via the config table.
     fn find_topic_code(dir: &std::path::Path, paper_id: &str) -> Option<String> {
-        let Ok(rd) = std::fs::read_dir(dir) else { return None };
+        let Ok(rd) = std::fs::read_dir(dir) else {
+            return None;
+        };
         for e in rd.flatten() {
             let p = e.path();
             if !p.is_dir() {
@@ -2245,14 +2931,17 @@ fn detect_domain_from_text(paper_id: &str) -> Vec<String> {
 }
 
 fn load_fsm_state(paper_id: &str) -> anyhow::Result<ImportFsmState> {
-    let mp = std::path::Path::new("data/processed").join(paper_id).join("manifest.yaml");
+    let mp = std::path::Path::new("data/processed")
+        .join(paper_id)
+        .join("manifest.yaml");
     if !mp.exists() {
         // no manifest = fresh acquisition, FSM starts at raw
-        return Ok(ImportFsmState::from_events("arxiv_pdf_dot", &["raw".to_string()]));
+        return Ok(ImportFsmState::from_events(
+            "arxiv_pdf_dot",
+            &["raw".to_string()],
+        ));
     }
-    let m: serde_yaml::Value = serde_yaml::from_str(
-        &std::fs::read_to_string(&mp)?,
-    )?;
+    let m: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&mp)?)?;
     let profile = m
         .get("grammar_profile")
         .and_then(|v| v.as_str())
@@ -2302,28 +2991,45 @@ fn collect_pdfs_recursive(dir: &std::path::Path, out: &mut Vec<String>) {
     }
 }
 
-
 fn stamp_validated_event(paper_id: &str) -> anyhow::Result<()> {
     use std::path::Path;
-    let mp = Path::new("data/processed").join(paper_id).join("manifest.yaml");
+    let mp = Path::new("data/processed")
+        .join(paper_id)
+        .join("manifest.yaml");
     let mut m: serde_yaml::Value = serde_yaml::from_str(
-        &std::fs::read_to_string(&mp)
-            .map_err(|e| anyhow::anyhow!("{}: {e}", mp.display()))?,
+        &std::fs::read_to_string(&mp).map_err(|e| anyhow::anyhow!("{}: {e}", mp.display()))?,
     )?;
     let already = m
         .get("lifecycle_events")
         .and_then(|e| e.as_sequence())
-        .map(|s| s.iter().any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("validated")))
+        .map(|s| {
+            s.iter()
+                .any(|e| e.get("stage").and_then(|x| x.as_str()) == Some("validated"))
+        })
         .unwrap_or(false);
     if already {
         return Ok(());
     }
-    if let Some(events) = m.get_mut("lifecycle_events").and_then(|v| v.as_sequence_mut()) {
-        events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter([
-            (serde_yaml::Value::from("stage"), serde_yaml::Value::from("validated")),
-            (serde_yaml::Value::from("recorded_at"), serde_yaml::Value::from(chrono_now())),
-            (serde_yaml::Value::from("actor"), serde_yaml::Value::from("rust-source-run")),
-        ])));
+    if let Some(events) = m
+        .get_mut("lifecycle_events")
+        .and_then(|v| v.as_sequence_mut())
+    {
+        events.push(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+            [
+                (
+                    serde_yaml::Value::from("stage"),
+                    serde_yaml::Value::from("validated"),
+                ),
+                (
+                    serde_yaml::Value::from("recorded_at"),
+                    serde_yaml::Value::from(chrono_now()),
+                ),
+                (
+                    serde_yaml::Value::from("actor"),
+                    serde_yaml::Value::from("rust-source-run"),
+                ),
+            ],
+        )));
     }
     if let Some(l) = m.get_mut("lifecycle") {
         *l = serde_yaml::Value::from("validated");
@@ -2392,8 +3098,8 @@ mod tests {
     // text; unverifiable entities keep reduced trust (never silently dropped).
     #[test]
     fn evidence_gate_verifies_exact_span() {
-        use da_ports::extractor::ExtractedEntity;
         use da_domain::EntityType;
+        use da_ports::extractor::ExtractedEntity;
         let e = ExtractedEntity {
             label: "ISC".into(),
             entity_type: EntityType::Method,
@@ -2411,8 +3117,8 @@ mod tests {
 
     #[test]
     fn evidence_gate_flags_mismatch_as_unverified() {
-        use da_ports::extractor::ExtractedEntity;
         use da_domain::EntityType;
+        use da_ports::extractor::ExtractedEntity;
         let e = ExtractedEntity {
             label: "GhostMethod".into(),
             entity_type: EntityType::Method,
@@ -2428,8 +3134,8 @@ mod tests {
 
     #[test]
     fn evidence_gate_empty_canonical_is_unverified() {
-        use da_ports::extractor::ExtractedEntity;
         use da_domain::EntityType;
+        use da_ports::extractor::ExtractedEntity;
         let e = ExtractedEntity {
             label: "X".into(),
             entity_type: EntityType::Task,
@@ -2467,7 +3173,11 @@ mod tests {
         let _restore = CwdGuard::new(&tmp);
         let mut out = Vec::new();
         collect_pdfs("data/sources", "2608.88888", &mut out);
-        assert_eq!(out.len(), 1, "legacy top-level pdf must still be found: {out:?}");
+        assert_eq!(
+            out.len(),
+            1,
+            "legacy top-level pdf must still be found: {out:?}"
+        );
     }
 
     /// Restores original cwd on drop.
@@ -2478,7 +3188,7 @@ mod tests {
     impl CwdGuard {
         fn new(tmp: &tempfile::TempDir) -> Self {
             let original = std::env::current_dir().unwrap();
-            std::env::set_current_dir(&tmp).unwrap();
+            std::env::set_current_dir(tmp).unwrap();
             Self { original }
         }
     }
@@ -2493,9 +3203,18 @@ mod tests {
     fn stamp_parse_grammar_writes_profile_route_hash() {
         let mut m = serde_yaml::Mapping::new();
         stamp_parse_grammar(&mut m, "page_outline", "page_outline", "abc123");
-        assert_eq!(m.get("grammar_profile").and_then(|v| v.as_str()), Some("page_outline"));
-        assert_eq!(m.get("grammar_route").and_then(|v| v.as_str()), Some("page_outline"));
-        assert_eq!(m.get("policy_hash").and_then(|v| v.as_str()), Some("abc123"));
+        assert_eq!(
+            m.get("grammar_profile").and_then(|v| v.as_str()),
+            Some("page_outline")
+        );
+        assert_eq!(
+            m.get("grammar_route").and_then(|v| v.as_str()),
+            Some("page_outline")
+        );
+        assert_eq!(
+            m.get("policy_hash").and_then(|v| v.as_str()),
+            Some("abc123")
+        );
     }
 
     #[test]

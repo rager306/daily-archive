@@ -72,7 +72,10 @@ pub fn parse_tei_authors(tei: &str) -> Vec<TeiAuthor> {
                 .filter_map(|f| f.chars().next().map(|c| c.to_string()))
                 .collect();
             let surname = last.clone();
-            let full = [fores.join(" "), surname.clone()].join(" ").trim().to_string();
+            let full = [fores.join(" "), surname.clone()]
+                .join(" ")
+                .trim()
+                .to_string();
             out.push(TeiAuthor {
                 author_key: norm_name(&format!("{initials}{surname}")),
                 full,
@@ -110,8 +113,10 @@ pub fn bind_authors(tei: &[TeiAuthor], oa: &[WorkAuthorship]) -> Vec<EnrichedAut
                     let confirmed = o
                         .display_name
                         .as_deref()
-                        .map(|dn| norm_name(&t.surname).is_empty()
-                            || norm_name(dn).contains(&norm_name(&t.surname)))
+                        .map(|dn| {
+                            norm_name(&t.surname).is_empty()
+                                || norm_name(dn).contains(&norm_name(&t.surname))
+                        })
                         .unwrap_or(false);
                     EnrichedAuthor {
                         position: i,
@@ -173,9 +178,24 @@ mod tests {
     fn positional_binding_confirm_mismatch_only() {
         let tei = parse_tei_authors(TEI);
         let oa = vec![
-            WorkAuthorship { a_id: Some("A1".into()), display_name: Some("Madhu S. Advani".into()), orcid: Some("0-1".into()), institutions: vec![] },
-            WorkAuthorship { a_id: Some("A2".into()), display_name: Some("Completely Different".into()), orcid: None, institutions: vec!["Duke".into()] },
-            WorkAuthorship { a_id: Some("A3".into()), display_name: Some("Extra Person".into()), orcid: None, institutions: vec![] },
+            WorkAuthorship {
+                a_id: Some("A1".into()),
+                display_name: Some("Madhu S. Advani".into()),
+                orcid: Some("0-1".into()),
+                institutions: vec![],
+            },
+            WorkAuthorship {
+                a_id: Some("A2".into()),
+                display_name: Some("Completely Different".into()),
+                orcid: None,
+                institutions: vec!["Duke".into()],
+            },
+            WorkAuthorship {
+                a_id: Some("A3".into()),
+                display_name: Some("Extra Person".into()),
+                orcid: None,
+                institutions: vec![],
+            },
         ];
         let b = bind_authors(&tei, &oa);
         assert_eq!(b.len(), 3);

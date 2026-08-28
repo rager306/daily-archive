@@ -98,7 +98,10 @@ struct Cut {
     gap: f32,
 }
 
-const NO_CUT: Cut = Cut { position: 0.0, gap: 0.0 };
+const NO_CUT: Cut = Cut {
+    position: 0.0,
+    gap: 0.0,
+};
 
 /// Figure-zone pre-mask (XY-Cut++ Phase 2): a compact cluster of ≥3
 /// numeric/short lines with no prose inside its bbox is an axis-label field —
@@ -261,7 +264,10 @@ fn best_horizontal_cut(items: &[LineBox]) -> Cut {
         {
             let gap = l.y0 - pb;
             if gap > largest.gap {
-                largest = Cut { position: (pb + l.y0) / 2.0, gap };
+                largest = Cut {
+                    position: (pb + l.y0) / 2.0,
+                    gap,
+                };
             }
         }
         prev_bottom = Some(match prev_bottom {
@@ -285,10 +291,7 @@ fn best_vertical_cut(items: &[LineBox], cfg: &XyCutConfig) -> Cut {
     // Narrow-element retry: elements narrower than ratio*region-width may
     // bridge an otherwise clean column gap.
     if items.len() >= 3 {
-        let region_w = items
-            .iter()
-            .map(|l| l.x1)
-            .fold(f32::MIN, f32::max)
+        let region_w = items.iter().map(|l| l.x1).fold(f32::MIN, f32::max)
             - items.iter().map(|l| l.x0).fold(f32::MAX, f32::min);
         let narrow_threshold = region_w * cfg.narrow_element_ratio;
         let filtered: Vec<LineBox> = items
@@ -318,7 +321,10 @@ fn vertical_cut_by_edges(items: &[LineBox]) -> Cut {
         {
             let gap = l.x0 - pr;
             if gap > largest.gap {
-                largest = Cut { position: (pr + l.x0) / 2.0, gap };
+                largest = Cut {
+                    position: (pr + l.x0) / 2.0,
+                    gap,
+                };
             }
         }
         prev_right = Some(match prev_right {
@@ -410,7 +416,13 @@ mod tests {
     use super::*;
 
     fn line(x: f32, y: f32, w: f32, text: &str) -> LineBox {
-        LineBox { text: text.to_string(), x0: x, y0: y, x1: x + w, y1: y + 10.0 }
+        LineBox {
+            text: text.to_string(),
+            x0: x,
+            y0: y,
+            x1: x + w,
+            y1: y + 10.0,
+        }
     }
 
     const W: f32 = 576.0;
@@ -431,7 +443,10 @@ mod tests {
         assert!(r.body[0].starts_with("Body first paragraph."));
         assert!(r.body[1].starts_with("Body second line"));
         assert_eq!(r.margin_notes.len(), 2);
-        assert_eq!(r.furniture, vec!["20".to_string(), "(c) 2022 MIT Press".to_string()]);
+        assert_eq!(
+            r.furniture,
+            vec!["20".to_string(), "(c) 2022 MIT Press".to_string()]
+        );
     }
 
     #[test]
@@ -443,7 +458,10 @@ mod tests {
             line(430.0, 260.0, 120.0, "A real margin note about the figure."),
         ];
         let r = split_page(&lines, W, H, &XyCutConfig::default());
-        assert_eq!(r.margin_notes, vec!["A real margin note about the figure.".to_string()]);
+        assert_eq!(
+            r.margin_notes,
+            vec!["A real margin note about the figure.".to_string()]
+        );
         assert_eq!(r.body, vec!["Real body text.".to_string()]);
     }
 
@@ -505,13 +523,23 @@ mod tests {
         // specimen algorithms-for-decision-making p61: compact tick cluster
         // (Z Y 0.13 0.05 X...) must not interleave into body reading order
         let mut lines = vec![
-            line(35.0, 80.0, 500.0, "Body prose above the figure continues here."),
+            line(
+                35.0,
+                80.0,
+                500.0,
+                "Body prose above the figure continues here.",
+            ),
             line(163.0, 278.0, 20.0, "Z"),
             line(200.0, 280.0, 20.0, "Y"),
             line(240.0, 300.0, 30.0, "0.13"),
             line(170.0, 320.0, 30.0, "0.05"),
             line(260.0, 330.0, 20.0, "X"),
-            line(35.0, 400.0, 500.0, "Body prose below the figure resumes normally."),
+            line(
+                35.0,
+                400.0,
+                500.0,
+                "Body prose below the figure resumes normally.",
+            ),
         ];
         let r = split_page(&lines, W, H, &XyCutConfig::default());
         assert_eq!(r.body.len(), 2, "only two prose paragraphs: {:?}", r.body);

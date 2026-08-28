@@ -72,7 +72,6 @@ pub struct StructuralConfig {
     pub section_titles: SectionTitlesConfig,
 }
 
-
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct AcronymDefinitionConfig {
     #[serde(default = "default_true")]
@@ -102,12 +101,24 @@ impl Default for AcronymDefinitionConfig {
     }
 }
 
-fn default_true() -> bool { true }
-fn default_acronym_entity() -> String { "Method".into() }
-fn default_acronym_min() -> usize { 2 }
-fn default_acronym_max() -> usize { 6 }
-fn default_min_words() -> usize { 2 }
-fn default_max_words() -> usize { 5 }
+fn default_true() -> bool {
+    true
+}
+fn default_acronym_entity() -> String {
+    "Method".into()
+}
+fn default_acronym_min() -> usize {
+    2
+}
+fn default_acronym_max() -> usize {
+    6
+}
+fn default_min_words() -> usize {
+    2
+}
+fn default_max_words() -> usize {
+    5
+}
 
 /// Prose benchmark numbers (ADR-069 §2.5): vision papers carry results in
 /// narrative paragraphs without Results sections. Harvest percentages,
@@ -138,8 +149,12 @@ impl Default for ProseBenchmarkConfig {
     }
 }
 
-fn default_prose_max_per_section() -> usize { 8 }
-fn default_prose_global_cap() -> usize { 12 }
+fn default_prose_max_per_section() -> usize {
+    8
+}
+fn default_prose_global_cap() -> usize {
+    12
+}
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ProseNumberPattern {
@@ -204,8 +219,12 @@ impl Default for RecurringTermsConfig {
     }
 }
 
-fn default_recurring_min_occurrences() -> usize { 15 }
-fn default_recurring_min_word_len() -> usize { 4 }
+fn default_recurring_min_occurrences() -> usize {
+    15
+}
+fn default_recurring_min_word_len() -> usize {
+    4
+}
 
 /// Numbered environments (survey spine, ADR-071): "M3. Isolating
 /// centrality." — a closed index of the survey's objects. Fires on section
@@ -239,9 +258,15 @@ impl Default for NumberedEnvironmentsConfig {
     }
 }
 
-fn default_env_prefixes() -> Vec<String> { vec!["M".into()] }
-fn default_env_max_name_len() -> usize { 60 }
-fn default_env_intro_chars() -> usize { 500 }
+fn default_env_prefixes() -> Vec<String> {
+    vec!["M".into()]
+}
+fn default_env_max_name_len() -> usize {
+    60
+}
+fn default_env_intro_chars() -> usize {
+    500
+}
 
 /// YAKE keyphrases (recall layer, ADR-071 companion): statistical
 /// single-document extractor — five features (casing, position, normalized
@@ -290,10 +315,18 @@ impl Default for YakeKeyphrasesConfig {
     }
 }
 
-fn default_yake_top_n() -> usize { 15 }
-fn default_yake_ngrams() -> usize { 3 }
-fn default_yake_min_doc_chars() -> usize { 1000 }
-fn default_yake_top_n_cap() -> usize { 150 }
+fn default_yake_top_n() -> usize {
+    15
+}
+fn default_yake_ngrams() -> usize {
+    3
+}
+fn default_yake_min_doc_chars() -> usize {
+    1000
+}
+fn default_yake_top_n_cap() -> usize {
+    150
+}
 
 /// Section titles as entities (monograph spine): TOC headings level 2+
 /// are authored topic names — the textbook analogue of numbered survey
@@ -338,7 +371,10 @@ pub struct LabelJunkFilters {
 
 impl Default for LabelJunkFilters {
     fn default() -> Self {
-        Self { enabled: true, junk_patterns: Vec::new() }
+        Self {
+            enabled: true,
+            junk_patterns: Vec::new(),
+        }
     }
 }
 
@@ -369,10 +405,17 @@ impl Default for ProposalNounPhraseConfig {
 }
 
 fn default_proposal_triggers() -> Vec<String> {
-    ["we propose", "we introduce", "we present", "we develop", "we describe", "we build"]
-        .into_iter()
-        .map(String::from)
-        .collect()
+    [
+        "we propose",
+        "we introduce",
+        "we present",
+        "we develop",
+        "we describe",
+        "we build",
+    ]
+    .into_iter()
+    .map(String::from)
+    .collect()
 }
 fn default_third_person_triggers() -> Vec<String> {
     ["propose", "proposes", "introduces", "presents"]
@@ -380,7 +423,9 @@ fn default_third_person_triggers() -> Vec<String> {
         .map(String::from)
         .collect()
 }
-fn default_max_phrase_chars() -> usize { 40 }
+fn default_max_phrase_chars() -> usize {
+    40
+}
 
 impl ExtractionConfig {
     /// Load from YAML file.
@@ -436,7 +481,6 @@ pub struct ExtractionCacheIdentity {
     pub configuration_fingerprint: String,
     pub output_schema_fingerprint: String,
 }
-
 
 /// Last `max_words` words of `text` (for acronym-definition phrase check).
 /// Char-boundary-safe: reverse scan counting word starts; never slices on a
@@ -666,7 +710,11 @@ impl RuleBasedExtractor {
     /// phrase's significant words. Catches NEW methods absent from
     /// whitelists: "ingest-time semantic compilation (ISC)" → Method[ISC].
     /// Hyphenated words contribute their first letter ("Ingest-time" → I).
-    fn extract_acronym_definitions(&self, text: &str, entity_type: &EntityType) -> Vec<(usize, usize, String)> {
+    fn extract_acronym_definitions(
+        &self,
+        text: &str,
+        entity_type: &EntityType,
+    ) -> Vec<(usize, usize, String)> {
         let cfg = &self.config.structural.acronym_definitions;
         // Dataset включён для табличных псевдо-секций "Datasets" (ADR-071:
         // Table 2 specimen — "senate-bills (SB)" живёт только в ячейках)
@@ -722,15 +770,19 @@ impl RuleBasedExtractor {
     /// Structural pattern: noun phrase after proposal verbs, lowercase
     /// allowed. "we propose a compiled semantic substrate" → Method.
     /// Articles (a/an/the) are skipped; phrase runs to a stop word.
-    fn extract_proposal_noun_phrases(&self, text: &str, entity_type: &EntityType) -> Vec<(usize, usize, String)> {
+    fn extract_proposal_noun_phrases(
+        &self,
+        text: &str,
+        entity_type: &EntityType,
+    ) -> Vec<(usize, usize, String)> {
         let cfg = &self.config.structural.proposal_noun_phrases;
         if !cfg.enabled || !matches!(entity_type, EntityType::Method | EntityType::Task) {
             return Vec::new();
         }
         let lower = text.to_lowercase();
         const STOP_WORDS: &[&str] = &[
-            "with", "that", "to", "of", "for", "on", "in", "by", "which", "and",
-            "where", "while", "using", "as", "at", "into", "from", "such", "so",
+            "with", "that", "to", "of", "for", "on", "in", "by", "which", "and", "where", "while",
+            "using", "as", "at", "into", "from", "such", "so",
             // articles survive the article-skip when a space precedes them
             // ("we present the substrate" → skip failed on leading space)
             "the", "a", "an", "our", "its",
@@ -745,7 +797,11 @@ impl RuleBasedExtractor {
                 let after = start + pos + trigger.len();
                 // word-boundary guard: "propose" inside "proposes" must not
                 // fire (leaked "s ingest-time semantic compilation" label)
-                if text[after..].chars().next().is_some_and(|c| c.is_alphanumeric()) {
+                if text[after..]
+                    .chars()
+                    .next()
+                    .is_some_and(|c| c.is_alphanumeric())
+                {
                     start = after;
                     continue;
                 }
@@ -757,7 +813,10 @@ impl RuleBasedExtractor {
                 for article in ["a ", "an ", "the ", "our ", "its "] {
                     // get(..n) is None when n is not a char boundary
                     // (multibyte regression: ' µRL framework' rest[..2])
-                    if rest.get(..article.len()).is_some_and(|s| s.eq_ignore_ascii_case(article)) {
+                    if rest
+                        .get(..article.len())
+                        .is_some_and(|s| s.eq_ignore_ascii_case(article))
+                    {
                         cursor += article.len();
                         break;
                     }
@@ -804,7 +863,11 @@ impl RuleBasedExtractor {
     /// Prose benchmark numbers (ADR-069 §2.5): harvest percentages / p-values /
     /// fold-changes / sample sizes from narrative text as Metric candidates.
     /// Vision papers carry results in prose — no Results section exists.
-    fn extract_prose_benchmark_numbers(&self, text: &str, entity_type: &EntityType) -> Vec<(usize, usize, String)> {
+    fn extract_prose_benchmark_numbers(
+        &self,
+        text: &str,
+        entity_type: &EntityType,
+    ) -> Vec<(usize, usize, String)> {
         let cfg = &self.config.structural.prose_benchmark_numbers;
         if !cfg.enabled || !matches!(entity_type, EntityType::Metric) {
             return Vec::new();
@@ -819,9 +882,14 @@ impl RuleBasedExtractor {
                     break;
                 }
                 let Some(m) = caps.get(0) else { continue };
-                let Some(val) = caps.get(1).map(|v| v.as_str()) else { continue };
+                let Some(val) = caps.get(1).map(|v| v.as_str()) else {
+                    continue;
+                };
                 // DATA-driven noise filters (sweep grids, zero/leading-comma)
-                let mut digits: String = val.chars().filter(|c| c.is_ascii_digit() || *c == '.').collect();
+                let mut digits: String = val
+                    .chars()
+                    .filter(|c| c.is_ascii_digit() || *c == '.')
+                    .collect();
                 if pat.strip_leading_zeros {
                     digits = digits.trim_start_matches('0').to_string();
                 }
@@ -945,10 +1013,7 @@ impl RuleBasedExtractor {
     /// YAKE keyphrases (recall layer): whole-document statistical ranking.
     /// Returns (raw_first_occurrence, keyword_lower, score) — raw is used
     /// for evidence-span location, score for ranking (lower = better).
-    fn extract_yake_keyphrases(
-        &self,
-        sections: &[(String, String)],
-    ) -> Vec<(String, String, f64)> {
+    fn extract_yake_keyphrases(&self, sections: &[(String, String)]) -> Vec<(String, String, f64)> {
         let cfg = &self.config.structural.yake_keyphrases;
         if !cfg.enabled || sections.is_empty() {
             return Vec::new();
@@ -982,15 +1047,11 @@ impl RuleBasedExtractor {
             ngrams: cfg.ngrams,
             ..yake_rust::Config::default()
         };
-        let mut items: Vec<(String, String, f64)> = yake_rust::get_n_best(
-            top_n,
-            &text,
-            &yake_rust::StopWords::custom(stop),
-            &yc,
-        )
-        .into_iter()
-        .map(|item| (item.raw, item.keyword, item.score))
-        .collect();
+        let mut items: Vec<(String, String, f64)> =
+            yake_rust::get_n_best(top_n, &text, &yake_rust::StopWords::custom(stop), &yc)
+                .into_iter()
+                .map(|item| (item.raw, item.keyword, item.score))
+                .collect();
         if cfg.require_multiword {
             items.retain(|(raw, _, _)| raw.split_whitespace().count() >= 2);
         }
@@ -1019,8 +1080,11 @@ impl RuleBasedExtractor {
         if !cfg.enabled {
             return Vec::new();
         }
-        let generic: std::collections::HashSet<String> =
-            cfg.generic_headings.iter().map(|g| g.to_lowercase()).collect();
+        let generic: std::collections::HashSet<String> = cfg
+            .generic_headings
+            .iter()
+            .map(|g| g.to_lowercase())
+            .collect();
         let mut out = Vec::new();
         let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
         for (ordinal, (title, _)) in sections.iter().enumerate() {
@@ -1113,11 +1177,13 @@ impl RuleBasedExtractor {
                 return Vec::new();
             }
         }
-        let mut stop: std::collections::HashSet<String> =
-            cfg.generic_stoplist.iter().map(|s| s.to_lowercase()).collect();
+        let mut stop: std::collections::HashSet<String> = cfg
+            .generic_stoplist
+            .iter()
+            .map(|s| s.to_lowercase())
+            .collect();
         stop.extend(cfg.english_stopwords.iter().map(|s| s.to_lowercase()));
-        let mut counts: std::collections::HashMap<String, usize> =
-            std::collections::HashMap::new();
+        let mut counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
         for (title, text) in sections {
             let scan = format!("{title} {text}").to_lowercase();
             for word in scan.split(|c: char| !c.is_alphanumeric()) {
@@ -1669,10 +1735,17 @@ impl Extractor for RuleBasedExtractor {
             // Prose benchmark numbers are Metric-typed (ADR-069 §2.5):
             // vision papers report results in narrative prose — harvest
             // globally, not only in Metric-classified sections.
-            let prose_metrics = self.extract_prose_benchmark_numbers(&scan_text, &EntityType::Metric);
+            let prose_metrics =
+                self.extract_prose_benchmark_numbers(&scan_text, &EntityType::Metric);
             for (char_start, char_end, label) in prose_metrics {
                 let key = (label.to_lowercase(), "metric".to_string());
-                if prose_total >= self.config.structural.prose_benchmark_numbers.global_cap_per_paper {
+                if prose_total
+                    >= self
+                        .config
+                        .structural
+                        .prose_benchmark_numbers
+                        .global_cap_per_paper
+                {
                     break;
                 }
                 if !seen.contains(&key) {
@@ -1822,9 +1895,7 @@ impl Extractor for RuleBasedExtractor {
                 continue;
             }
             let key = (term.to_lowercase(), "method".to_string());
-            if !seen.contains(&key)
-                && !seen.contains(&(term.to_lowercase(), "task".to_string()))
-            {
+            if !seen.contains(&key) && !seen.contains(&(term.to_lowercase(), "task".to_string())) {
                 seen.insert(key);
                 // first occurrence span for evidence
                 let mut placed = false;
@@ -2028,16 +2099,27 @@ mod tests {
             ("Introduction".to_string(), format!("Hypergraph {text}")),
         ];
         let terms = extractor.extract_recurring_terms(&sections);
-        assert!(terms.contains(&"centrality".to_string()), "dominant term must surface: {terms:?}");
+        assert!(
+            terms.contains(&"centrality".to_string()),
+            "dominant term must surface: {terms:?}"
+        );
         // stoplist: structural is vocabulary, not a method
         let text2 = format!("{}{}", "structural ".repeat(30), "centrality ".repeat(20));
         let terms2 =
-            extractor.extract_recurring_terms(&vec![("Scope and Contributions".to_string(), text2)]);
-        assert!(!terms2.contains(&"structural".to_string()), "stoplisted: {terms2:?}");
+            extractor.extract_recurring_terms(&[("Scope and Contributions".to_string(), text2)]);
+        assert!(
+            !terms2.contains(&"structural".to_string()),
+            "stoplisted: {terms2:?}"
+        );
         // genre gate: regular IMRaD paper without survey markers skips the pass
-        let terms3 =
-            extractor.extract_recurring_terms(&vec![("Introduction".to_string(), format!("code {}", "task ".repeat(40)))]);
-        assert!(terms3.is_empty(), "no survey markers → pass must not fire: {terms3:?}");
+        let terms3 = extractor.extract_recurring_terms(&[(
+            "Introduction".to_string(),
+            format!("code {}", "task ".repeat(40)),
+        )]);
+        assert!(
+            terms3.is_empty(),
+            "no survey markers → pass must not fire: {terms3:?}"
+        );
     }
 
     // ── numbered environments (survey spine, specimen 2512.00107) ──
@@ -2048,12 +2130,21 @@ mod tests {
             // title form
             ("M3. Isolating centrality.".to_string(), "some text".into()),
             // inline form: env id + name as first sentence
-            ("On measures".to_string(), "M21. Core-periphery score. Both works proposed...".into()),
+            (
+                "On measures".to_string(),
+                "M21. Core-periphery score. Both works proposed...".into(),
+            ),
         ];
         let envs = extractor.extract_numbered_environments(&sections);
         let names: Vec<&str> = envs.iter().map(|(_, _, n)| n.as_str()).collect();
-        assert!(names.contains(&"Isolating centrality"), "title form: {names:?}");
-        assert!(names.contains(&"Core-periphery score"), "inline form: {names:?}");
+        assert!(
+            names.contains(&"Isolating centrality"),
+            "title form: {names:?}"
+        );
+        assert!(
+            names.contains(&"Core-periphery score"),
+            "inline form: {names:?}"
+        );
     }
 
     // ── table acronym → Dataset (specimen Table 2) ──
@@ -2061,9 +2152,15 @@ mod tests {
     fn test_numbered_environments_bare_title() {
         let extractor = RuleBasedExtractor::new();
         let sections = vec![
-            ("Previous discussion".to_string(), "as noted in M20. Something else here".into()),
+            (
+                "Previous discussion".to_string(),
+                "as noted in M20. Something else here".into(),
+            ),
             // bare env title + name as first sentence (specimen M21)
-            ("M21.".to_string(), "Core-periphery score. Both Tudisco and Higham proposed methods.".into()),
+            (
+                "M21.".to_string(),
+                "Core-periphery score. Both Tudisco and Higham proposed methods.".into(),
+            ),
         ];
         let envs = extractor.extract_numbered_environments(&sections);
         let names: Vec<&str> = envs.iter().map(|(_, _, n)| n.as_str()).collect();
@@ -2079,7 +2176,9 @@ mod tests {
         let text = "senate-bills (SB) . 294 . 29,157 . email-eu (EEU) . 986";
         let cands = extractor.extract_candidates(text, &EntityType::Dataset);
         assert!(
-            cands.iter().any(|(_, _, l)| l == "SB" || l.contains("senate")),
+            cands
+                .iter()
+                .any(|(_, _, l)| l == "SB" || l.contains("senate")),
             "table dataset acronyms must surface in Dataset arm: {cands:?}"
         );
     }
@@ -2107,7 +2206,8 @@ mod tests {
     #[test]
     fn test_prose_sample_size_extracted() {
         let extractor = RuleBasedExtractor::new();
-        let text = "Results are reported on a held-out sample of 500 transcripts and 499 questions.";
+        let text =
+            "Results are reported on a held-out sample of 500 transcripts and 499 questions.";
         let cands = extractor.extract_candidates(text, &EntityType::Metric);
         assert!(
             cands.iter().any(|(_, _, l)| l.starts_with("n_")),
@@ -2118,10 +2218,13 @@ mod tests {
     #[test]
     fn test_acronym_definition_catches_new_method() {
         let extractor = RuleBasedExtractor::new();
-        let text = "Ingest-time semantic compilation (ISC) compiles corpus meaning into validated claims.";
+        let text =
+            "Ingest-time semantic compilation (ISC) compiles corpus meaning into validated claims.";
         let cands = extractor.extract_candidates(text, &EntityType::Method);
         assert!(
-            cands.iter().any(|(_, _, l)| l == "ISC" || l.contains("semantic compilation")),
+            cands
+                .iter()
+                .any(|(_, _, l)| l == "ISC" || l.contains("semantic compilation")),
             "ISC must be discovered via acronym-definition pattern, got: {cands:?}"
         );
     }
@@ -2144,7 +2247,9 @@ mod tests {
         let text = "We propose a compiled semantic substrate with maintenance contracts.";
         let cands = extractor.extract_candidates(text, &EntityType::Method);
         assert!(
-            cands.iter().any(|(_, _, l)| l.to_lowercase().contains("semantic substrate")),
+            cands
+                .iter()
+                .any(|(_, _, l)| l.to_lowercase().contains("semantic substrate")),
             "lowercase noun phrase after 'we propose a' must be caught, got: {cands:?}"
         );
     }

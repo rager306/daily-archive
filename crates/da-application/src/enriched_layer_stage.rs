@@ -3,7 +3,9 @@
 //! reference fetcher cache: artifacts/pipeline_cache/openalex_works/).
 //! ADR-055 lineage: provenance carries endpoint/fetched_at/status/cache_key.
 
-use da_domain::enriched_authors::{bind_authors, parse_tei_authors, EnrichedAuthor, WorkAuthorship};
+use da_domain::enriched_authors::{
+    EnrichedAuthor, WorkAuthorship, bind_authors, parse_tei_authors,
+};
 use da_ports::schema_objects::{SchemaObjectStore, SchemaObjectStoreError};
 
 #[derive(Debug, thiserror::Error)]
@@ -43,8 +45,8 @@ pub fn build_enriched_layer(
     paper_id: &str,
     work_obs_json: &str,
 ) -> Result<EnrichedLayerOutput, EnrichedLayerError> {
-    let obs: WorkObservation = serde_json::from_str(work_obs_json)
-        .map_err(|e| EnrichedLayerError::Work(e.to_string()))?;
+    let obs: WorkObservation =
+        serde_json::from_str(work_obs_json).map_err(|e| EnrichedLayerError::Work(e.to_string()))?;
 
     let raw = store
         .read_raw(paper_id, "parsed/article.json")?
@@ -75,22 +77,28 @@ pub fn build_enriched_layer(
     };
 
     // authorships (slim cache shape: a_id/display_name/orcid/institutions)
-    let authorships: Vec<WorkAuthorship> = serde_json::from_value(
-        work.get("authorships").cloned().unwrap_or_default(),
-    )
-    .map_err(|e| EnrichedLayerError::Work(format!("authorships: {e}")))?;
+    let authorships: Vec<WorkAuthorship> =
+        serde_json::from_value(work.get("authorships").cloned().unwrap_or_default())
+            .map_err(|e| EnrichedLayerError::Work(format!("authorships: {e}")))?;
     let bound: Vec<EnrichedAuthor> = bind_authors(&tei_authors, &authorships);
 
-    let venue = work.get("source").cloned().unwrap_or(serde_json::Value::Null);
-    let topics: Vec<serde_json::Value> = serde_json::from_value(
-        work.get("topics").cloned().unwrap_or_default(),
-    )
-    .unwrap_or_default();
+    let venue = work
+        .get("source")
+        .cloned()
+        .unwrap_or(serde_json::Value::Null);
+    let topics: Vec<serde_json::Value> =
+        serde_json::from_value(work.get("topics").cloned().unwrap_or_default()).unwrap_or_default();
 
     let with_a = bound.iter().filter(|a| a.openalex_a_id.is_some()).count();
     let with_orcid = bound.iter().filter(|a| a.orcid.is_some()).count();
-    let confirmed = bound.iter().filter(|a| a.binding == "position_surname_confirmed").count();
-    let mismatch = bound.iter().filter(|a| a.binding == "position_surname_mismatch").count();
+    let confirmed = bound
+        .iter()
+        .filter(|a| a.binding == "position_surname_confirmed")
+        .count();
+    let mismatch = bound
+        .iter()
+        .filter(|a| a.binding == "position_surname_mismatch")
+        .count();
     let mut prov_full = prov;
     prov_full["work_id"] = work.get("work_id").cloned().unwrap_or_default();
 
@@ -119,13 +127,36 @@ mod tests {
     use std::collections::BTreeMap;
     struct FakeStore(BTreeMap<(String, String), String>);
     impl SchemaObjectStore for FakeStore {
-        fn object_class(&self) -> &str { "article" }
-        fn norm(&self) -> Result<da_domain::schema_invariants::ObjectNorm, SchemaObjectStoreError> { unimplemented!() }
-        fn list_ids(&self) -> Result<Vec<String>, SchemaObjectStoreError> { Ok(vec![]) }
-        fn read_object(&self, _id: &str) -> Result<Option<serde_yaml::Value>, SchemaObjectStoreError> { Ok(None) }
-        fn read_collection(&self, _id: &str, _rel: &str) -> Result<Option<Vec<serde_yaml::Value>>, SchemaObjectStoreError> { Ok(None) }
-        fn file_exists(&self, _id: &str, _rel: &str) -> Result<bool, SchemaObjectStoreError> { Ok(true) }
-        fn file_backed_checks(&self) -> Box<dyn da_domain::schema_invariants::FileBackedChecks + '_> { unimplemented!() }
+        fn object_class(&self) -> &str {
+            "article"
+        }
+        fn norm(&self) -> Result<da_domain::schema_invariants::ObjectNorm, SchemaObjectStoreError> {
+            unimplemented!()
+        }
+        fn list_ids(&self) -> Result<Vec<String>, SchemaObjectStoreError> {
+            Ok(vec![])
+        }
+        fn read_object(
+            &self,
+            _id: &str,
+        ) -> Result<Option<serde_yaml::Value>, SchemaObjectStoreError> {
+            Ok(None)
+        }
+        fn read_collection(
+            &self,
+            _id: &str,
+            _rel: &str,
+        ) -> Result<Option<Vec<serde_yaml::Value>>, SchemaObjectStoreError> {
+            Ok(None)
+        }
+        fn file_exists(&self, _id: &str, _rel: &str) -> Result<bool, SchemaObjectStoreError> {
+            Ok(true)
+        }
+        fn file_backed_checks(
+            &self,
+        ) -> Box<dyn da_domain::schema_invariants::FileBackedChecks + '_> {
+            unimplemented!()
+        }
         fn read_raw(&self, id: &str, rel: &str) -> Result<Option<String>, SchemaObjectStoreError> {
             Ok(self.0.get(&(id.to_string(), rel.to_string())).cloned())
         }

@@ -3,6 +3,7 @@
 //! ADR-037 §2: Adapters implement Ports using infrastructure.
 //! ADR-040 §1: Samyama Graph (Tier 1) + external services.
 
+pub mod agent_memory;
 pub mod agent_read_plane;
 pub mod anthropic_llm;
 pub mod anthropic_multimodal;
@@ -12,15 +13,14 @@ pub mod catalog_html_acquisition;
 pub mod catalog_inventory;
 pub mod catalog_mutation;
 pub mod context_conservation_policy;
-pub mod agent_memory;
-pub mod negative_memory;
 pub mod fd_embedder;
-pub mod fs_schema_objects;
 pub mod figure_quote_policy;
+pub mod fs_schema_objects;
 pub mod grobid_parser;
 pub mod html_parser;
 pub mod http_fetch;
 pub mod memory_pipeline_cache;
+pub mod negative_memory;
 pub use figure_quote_policy::load_figure_quote_policy;
 pub mod model_registry;
 pub mod openai_compatible_llm;

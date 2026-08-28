@@ -120,7 +120,11 @@ pub fn find_heading_anchor_on_page(
                 let off: usize = lines[..start].iter().map(|l| l.len() + 1).sum();
                 let off = off.min(page_text.len());
                 match crate::boundary_agent::classify(&crate::boundary_agent::extract_features(
-                    &lines, start, w, page_no_for_anchor, page_no_for_anchor,
+                    &lines,
+                    start,
+                    w,
+                    page_no_for_anchor,
+                    page_no_for_anchor,
                 )) {
                     crate::boundary_agent::Decision::Accept => {
                         return Some((off, AnchorVerdict::Accepted));
@@ -142,7 +146,10 @@ pub fn find_heading_anchor_on_page(
     }
     // fail-open: ни одного Accept — позиция первого совпадения с вердиктом
     // Rejected (спорный блок попадёт в обе секции; критик разрешит)
-    first_match.map(|(mut off, verdict)| { off = off.min(page_text.len()); (off, verdict) })
+    first_match.map(|(mut off, verdict)| {
+        off = off.min(page_text.len());
+        (off, verdict)
+    })
 }
 
 pub fn build_pdf_toc_sections(
@@ -158,7 +165,11 @@ pub fn build_pdf_toc_sections(
     for (i, e) in toc.iter().enumerate() {
         let next_page = toc.get(i + 1).map(|n| n.page).unwrap_or(total_pages + 1);
         let page_end = e.page.max(next_page.saturating_sub(1).max(e.page));
-        while stack.last().map(|(lvl, _)| *lvl >= e.level).unwrap_or(false) {
+        while stack
+            .last()
+            .map(|(lvl, _)| *lvl >= e.level)
+            .unwrap_or(false)
+        {
             stack.pop();
         }
         let parent = stack.last().map(|(_, id)| id.clone());
@@ -183,13 +194,18 @@ pub fn build_pdf_toc_sections(
                     && next.page >= p
                     && next.page <= page_end
                     && let Some(shared) = pages_text.get(&next.page)
-                    && let Some((off, _verdict)) = find_heading_anchor_on_page(shared, &next.title, next.page)
+                    && let Some((off, _verdict)) =
+                        find_heading_anchor_on_page(shared, &next.title, next.page)
                     && p == next.page
                 {
                     end_cut = off.min(t.len());
                 }
-                let page_slice: &str = if start_cut < end_cut { &t[start_cut..end_cut] } else { "" };
-if !text.is_empty() {
+                let page_slice: &str = if start_cut < end_cut {
+                    &t[start_cut..end_cut]
+                } else {
+                    ""
+                };
+                if !text.is_empty() {
                     text.push('\n');
                 }
                 text.push_str(page_slice);
@@ -202,7 +218,8 @@ if !text.is_empty() {
         if let Some(next) = toc.get(i + 1)
             && next.page == page_end + 1
             && let Some(shared) = pages_text.get(&next.page)
-            && let Some((off, _verdict)) = find_heading_anchor_on_page(shared, &next.title, next.page)
+            && let Some((off, _verdict)) =
+                find_heading_anchor_on_page(shared, &next.title, next.page)
             && off > 0
         {
             let tail = shared[..off].trim();
@@ -248,14 +265,13 @@ mod tests {
     use super::*;
 
     fn furniture() -> TocFurniture {
-        TocFurniture::from_patterns(&[
-            "^Trinity University$".into(),
-            "^Table of Contents$".into(),
-        ])
+        TocFurniture::from_patterns(&["^Trinity University$".into(), "^Table of Contents$".into()])
     }
 
     fn pages(from: u32, to: u32) -> BTreeMap<u32, String> {
-        (from..=to).map(|p| (p, format!("page-{p} body text"))).collect()
+        (from..=to)
+            .map(|p| (p, format!("page-{p} body text")))
+            .collect()
     }
 
     #[test]
@@ -264,11 +280,22 @@ mod tests {
         // её заголовком — anchor-фикс удалял его вовсе (103/267 границ)
         let pages = BTreeMap::from([
             (1u32, "intro text of Q-Learning section".to_string()),
-            (2u32, "tail paragraph with eq (17.10)\n\n17.3\nSarsa\nSarsa body begins.".to_string()),
+            (
+                2u32,
+                "tail paragraph with eq (17.10)\n\n17.3\nSarsa\nSarsa body begins.".to_string(),
+            ),
         ]);
         let toc = vec![
-            TocEntry { level: 3, title: "Q-Learning".into(), page: 1 },
-            TocEntry { level: 3, title: "Sarsa".into(), page: 2 },
+            TocEntry {
+                level: 3,
+                title: "Q-Learning".into(),
+                page: 1,
+            },
+            TocEntry {
+                level: 3,
+                title: "Sarsa".into(),
+                page: 2,
+            },
         ];
         let f = TocFurniture::from_patterns(&[]);
         let s = build_pdf_toc_sections(&toc, &pages, None, 3, "bk", &f);
@@ -290,12 +317,20 @@ mod tests {
     #[test]
     fn margin_notes_attached_structured_not_merged() {
         let pages = BTreeMap::from([(1u32, "body text only".to_string())]);
-        let margins = BTreeMap::from([(1u32, "Algorithm 7.6. Policy iteration caption".to_string())]);
-        let toc = vec![TocEntry { level: 3, title: "Policy Iteration".into(), page: 1 }];
+        let margins =
+            BTreeMap::from([(1u32, "Algorithm 7.6. Policy iteration caption".to_string())]);
+        let toc = vec![TocEntry {
+            level: 3,
+            title: "Policy Iteration".into(),
+            page: 1,
+        }];
         let f = TocFurniture::from_patterns(&[]);
         let s = build_pdf_toc_sections(&toc, &pages, Some(&margins), 2, "bk", &f);
         assert_eq!(s[0].margin_notes, "Algorithm 7.6. Policy iteration caption");
-        assert_eq!(s[0].text, "body text only", "caption stays OUT of body order");
+        assert_eq!(
+            s[0].text, "body text only",
+            "caption stays OUT of body order"
+        );
         assert!(s[0].text.is_empty() || !s[0].text.contains("Algorithm"));
     }
 
@@ -308,13 +343,28 @@ mod tests {
             "iteration 1\niteration 2\nPolicy iteration tends to be expensive\n\n7.4\nPolicy Iteration\nPolicy iteration (algorithm 7.6) is one way to iterate.\nBody of policy iteration.".to_string(),
         )]);
         let toc = vec![
-            TocEntry { level: 2, title: "Modified Policy Iteration".into(), page: 4 },
-            TocEntry { level: 2, title: "Policy Iteration".into(), page: 5 },
-            TocEntry { level: 2, title: "Value Iteration".into(), page: 9 },
+            TocEntry {
+                level: 2,
+                title: "Modified Policy Iteration".into(),
+                page: 4,
+            },
+            TocEntry {
+                level: 2,
+                title: "Policy Iteration".into(),
+                page: 5,
+            },
+            TocEntry {
+                level: 2,
+                title: "Value Iteration".into(),
+                page: 9,
+            },
         ];
         let f = TocFurniture::from_patterns(&[]);
         let sections = build_pdf_toc_sections(&toc, &pages, None, 10, "bk", &f);
-        let pi = sections.iter().find(|s| s.title == "Policy Iteration").unwrap();
+        let pi = sections
+            .iter()
+            .find(|s| s.title == "Policy Iteration")
+            .unwrap();
         assert!(
             !pi.text.contains("tends to be expensive"),
             "хвост предыдущей секции не должен входить: {}",
@@ -334,10 +384,26 @@ mod tests {
     #[test]
     fn ranges_parent_stack_furniture() {
         let toc = vec![
-            TocEntry { level: 1, title: "Trinity University".into(), page: 1 },
-            TocEntry { level: 1, title: "Chapter 1 Real Numbers".into(), page: 10 },
-            TocEntry { level: 2, title: "Section 1.1 System".into(), page: 10 },
-            TocEntry { level: 2, title: "Section 1.2 Induction".into(), page: 19 },
+            TocEntry {
+                level: 1,
+                title: "Trinity University".into(),
+                page: 1,
+            },
+            TocEntry {
+                level: 1,
+                title: "Chapter 1 Real Numbers".into(),
+                page: 10,
+            },
+            TocEntry {
+                level: 2,
+                title: "Section 1.1 System".into(),
+                page: 10,
+            },
+            TocEntry {
+                level: 2,
+                title: "Section 1.2 Induction".into(),
+                page: 19,
+            },
         ];
         let secs = build_pdf_toc_sections(&toc, &pages(1, 30), None, 30, "m", &furniture());
         assert_eq!(secs.len(), 4);
@@ -354,7 +420,11 @@ mod tests {
 
     #[test]
     fn last_entry_runs_to_total() {
-        let toc = vec![TocEntry { level: 1, title: "Tail".into(), page: 25 }];
+        let toc = vec![TocEntry {
+            level: 1,
+            title: "Tail".into(),
+            page: 25,
+        }];
         let secs = build_pdf_toc_sections(&toc, &pages(1, 30), None, 30, "m", &furniture());
         assert_eq!(secs[0].page_end, 30);
     }

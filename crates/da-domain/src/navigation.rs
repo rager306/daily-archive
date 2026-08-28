@@ -102,8 +102,16 @@ impl FurnitureDetectors {
         let mut compiled = Vec::new();
         if let Some(list) = v.get("detectors").and_then(|d| d.as_sequence()) {
             for d in list {
-                let id = d.get("id").and_then(|x| x.as_str()).unwrap_or("").to_string();
-                let role = d.get("role").and_then(|x| x.as_str()).unwrap_or("body").to_string();
+                let id = d
+                    .get("id")
+                    .and_then(|x| x.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let role = d
+                    .get("role")
+                    .and_then(|x| x.as_str())
+                    .unwrap_or("body")
+                    .to_string();
                 let conf = d
                     .get("confidence")
                     .and_then(|x| x.as_str())
@@ -216,28 +224,53 @@ pub fn build_navigation(
     let mut sorted: Vec<&ProjectionSection> = sections.iter().collect();
     sorted.sort_by_key(|s| s.order);
 
-    let by_path: BTreeMap<&str, &ProjectionSection> = sorted
-        .iter()
-        .map(|s| (s.path_id.as_str(), *s))
-        .collect();
+    let by_path: BTreeMap<&str, &ProjectionSection> =
+        sorted.iter().map(|s| (s.path_id.as_str(), *s)).collect();
 
     let mut nodes: Vec<NavNode> = sorted
         .iter()
         .enumerate()
         .map(|(i, s)| {
             let (role, conf) = detectors.classify(&s.title, &s.path_id);
-            let parent = parent_path(&s.path_id)
-                .and_then(|pp| by_path.get(pp).copied());
+            let parent = parent_path(&s.path_id).and_then(|pp| by_path.get(pp).copied());
             let ordinal = i;
-            let entity_labels = cross_layer.entities_by_ordinal.get(&ordinal).cloned().unwrap_or_default();
+            let entity_labels = cross_layer
+                .entities_by_ordinal
+                .get(&ordinal)
+                .cloned()
+                .unwrap_or_default();
             let entity_labels_len = entity_labels.len();
-            let fig_refs = cross_layer.figures_by_path.get(&s.path_id).cloned().unwrap_or_default();
-            let tab_refs = cross_layer.tables_by_path.get(&s.path_id).cloned().unwrap_or_default();
-            let eq_refs = cross_layer.equations_by_path.get(&s.path_id).cloned().unwrap_or_default();
-            let cite_count = cross_layer.citation_anchors_by_path.get(&s.path_id).copied().unwrap_or(0);
-            let density = if s.char_count > 0 { cite_count as f64 / s.char_count as f64 } else { 0.0 };
+            let fig_refs = cross_layer
+                .figures_by_path
+                .get(&s.path_id)
+                .cloned()
+                .unwrap_or_default();
+            let tab_refs = cross_layer
+                .tables_by_path
+                .get(&s.path_id)
+                .cloned()
+                .unwrap_or_default();
+            let eq_refs = cross_layer
+                .equations_by_path
+                .get(&s.path_id)
+                .cloned()
+                .unwrap_or_default();
+            let cite_count = cross_layer
+                .citation_anchors_by_path
+                .get(&s.path_id)
+                .copied()
+                .unwrap_or(0);
+            let density = if s.char_count > 0 {
+                cite_count as f64 / s.char_count as f64
+            } else {
+                0.0
+            };
             let preview: String = {
-                let full = cross_layer.section_texts.get(&ordinal).map(String::as_str).unwrap_or("");
+                let full = cross_layer
+                    .section_texts
+                    .get(&ordinal)
+                    .map(String::as_str)
+                    .unwrap_or("");
                 full.chars().take(200).collect()
             };
 
@@ -300,7 +333,10 @@ pub fn tree_cost(nodes: &[NavNode], routing_cost: u64) -> u64 {
     let mut children: Map<&str, Vec<&str>> = Map::new();
     for n in nodes {
         if let Some(p) = &n.parent_section_id {
-            children.entry(p.as_str()).or_default().push(n.section_id.as_str());
+            children
+                .entry(p.as_str())
+                .or_default()
+                .push(n.section_id.as_str());
         }
     }
     fn cost(id: &str, d: u64, r: u64, by: &Map<&str, &NavNode>, ch: &Map<&str, Vec<&str>>) -> u64 {
@@ -322,7 +358,10 @@ pub fn tree_cost(nodes: &[NavNode], routing_cost: u64) -> u64 {
                 if residual > 0 {
                     branches.push((d + 1) * r + residual);
                 }
-                branches.into_iter().max().unwrap_or(d * r + node.char_count)
+                branches
+                    .into_iter()
+                    .max()
+                    .unwrap_or(d * r + node.char_count)
             }
         }
     }
@@ -375,9 +414,17 @@ pub fn stats(nodes: &[NavNode], tree_cost: u64) -> NavigationStats {
     let furniture = nodes.iter().filter(|n| n.role == "furniture").count();
     NavigationStats {
         nodes: nodes.len(),
-        roots: nodes.iter().filter(|n| n.parent_section_id.is_none()).count(),
+        roots: nodes
+            .iter()
+            .filter(|n| n.parent_section_id.is_none())
+            .count(),
         max_depth: nodes.iter().map(|n| n.depth).max().unwrap_or(0),
-        path_dupes: nodes.len() - nodes.iter().map(|n| n.path_id.as_str()).collect::<std::collections::BTreeSet<_>>().len(),
+        path_dupes: nodes.len()
+            - nodes
+                .iter()
+                .map(|n| n.path_id.as_str())
+                .collect::<std::collections::BTreeSet<_>>()
+                .len(),
         furniture,
         furniture_share: (furniture as f64) / nodes.len().max(1) as f64,
         tree_cost,
@@ -424,10 +471,22 @@ mod tests {
     #[test]
     fn furniture_classification() {
         let d = det();
-        assert_eq!(d.classify("Under review.", "1"), ("furniture".into(), "deterministic".into()));
-        assert_eq!(d.classify("Figure 3 .", "2"), ("furniture".into(), "deterministic".into()));
-        assert_eq!(d.classify("Introduction", "1"), ("body".into(), "heuristic".into()));
-        assert_eq!(d.classify("anything", "2."), ("header_metadata".into(), "deterministic".into()));
+        assert_eq!(
+            d.classify("Under review.", "1"),
+            ("furniture".into(), "deterministic".into())
+        );
+        assert_eq!(
+            d.classify("Figure 3 .", "2"),
+            ("furniture".into(), "deterministic".into())
+        );
+        assert_eq!(
+            d.classify("Introduction", "1"),
+            ("body".into(), "heuristic".into())
+        );
+        assert_eq!(
+            d.classify("anything", "2."),
+            ("header_metadata".into(), "deterministic".into())
+        );
     }
 
     #[test]
@@ -439,7 +498,6 @@ mod tests {
             sec("c", "2", 2, "Results", 300),
         ];
         let empty_types = StructuralTypeDetectors { compiled: vec![] };
-        let empty_cross = CrossLayerInputs::default();
         let empty_cross = CrossLayerInputs::default();
         let nav = build_navigation(&secs, &d, &empty_types, &empty_cross);
         assert_eq!(nav.len(), 3);

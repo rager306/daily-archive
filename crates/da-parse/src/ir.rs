@@ -29,7 +29,13 @@ pub struct TeiParseIr {
 
 impl GrobidParser {
     /// Lift raw TEI into this-cut IR. Does not call Java.
-    pub(crate) fn lift_tei(
+    ///
+    /// `pub` since M464-z84in2 S01/T03: `parse.stage.lift_tei` is a recorded
+    /// compatibility stage (data/parse/api_compatibility_ledger.yaml) and the
+    /// parse-compat baseline emitter is its first sanctioned out-of-crate
+    /// consumer. Semantics, determinism and the intentional-absence list are
+    /// unchanged (compatibility obligation stays in force).
+    pub fn lift_tei(
         tei_xml: String,
         paper_id: impl Into<String>,
         pdf_hash: impl Into<String>,

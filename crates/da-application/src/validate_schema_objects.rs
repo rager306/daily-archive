@@ -6,7 +6,7 @@
 //! schema's machine-readable invariant declarations.
 
 use da_domain::schema_invariants::{
-    validate_file_backed, validate_object, ObjectNorm, SchemaViolation,
+    ObjectNorm, SchemaViolation, validate_file_backed, validate_object,
 };
 use da_ports::schema_objects::{SchemaObjectStore, SchemaObjectStoreError};
 
@@ -63,7 +63,9 @@ pub fn validate_schema_objects(
             continue;
         };
         report.checked += 1;
-        report.violations.extend(validate_object(id, &object, &norm));
+        report
+            .violations
+            .extend(validate_object(id, &object, &norm));
         // file-backed patterns through the bridge in the adapter layer:
         // the use case cannot construct it (no dependency on adapters),
         // so expose it via the store itself.
@@ -116,7 +118,11 @@ mod tests {
         fn file_exists(&self, _id: &str, _rel: &str) -> Result<bool, SchemaObjectStoreError> {
             Ok(true)
         }
-        fn read_raw(&self, _id: &str, _rel: &str) -> Result<Option<String>, SchemaObjectStoreError> {
+        fn read_raw(
+            &self,
+            _id: &str,
+            _rel: &str,
+        ) -> Result<Option<String>, SchemaObjectStoreError> {
             Ok(None)
         }
         fn file_backed_checks(&self) -> Box<dyn FileBackedChecks + '_> {
@@ -138,7 +144,6 @@ mod tests {
         }
     }
 
-
     fn obj(yaml: &str) -> serde_yaml::Value {
         serde_yaml::from_str(yaml).unwrap()
     }
@@ -146,9 +151,12 @@ mod tests {
     #[test]
     fn clean_objects_report_clean() {
         let store = FakeStore {
-            objects: BTreeMap::from([
-                ("a1".into(), obj("lifecycle: parsed\nlifecycle_events:\n  - {stage: parsed, recorded_at: '1', actor: t}\n")),
-            ]),
+            objects: BTreeMap::from([(
+                "a1".into(),
+                obj(
+                    "lifecycle: parsed\nlifecycle_events:\n  - {stage: parsed, recorded_at: '1', actor: t}\n",
+                ),
+            )]),
         };
         let report = validate_schema_objects(&store, None).unwrap();
         assert_eq!(report.checked, 1);
@@ -160,8 +168,18 @@ mod tests {
     fn hand_set_state_is_reported_per_object() {
         let store = FakeStore {
             objects: BTreeMap::from([
-                ("a1".into(), obj("lifecycle: parsed\nlifecycle_events:\n  - {stage: parsed, recorded_at: '1', actor: t}\n")),
-                ("bad".into(), obj("lifecycle: validated\nlifecycle_events:\n  - {stage: parsed, recorded_at: '1', actor: t}\n")),
+                (
+                    "a1".into(),
+                    obj(
+                        "lifecycle: parsed\nlifecycle_events:\n  - {stage: parsed, recorded_at: '1', actor: t}\n",
+                    ),
+                ),
+                (
+                    "bad".into(),
+                    obj(
+                        "lifecycle: validated\nlifecycle_events:\n  - {stage: parsed, recorded_at: '1', actor: t}\n",
+                    ),
+                ),
             ]),
         };
         let report = validate_schema_objects(&store, None).unwrap();

@@ -531,7 +531,7 @@ async fn main() -> Result<()> {
                 let n = done.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
                 if n.is_multiple_of(10) || n == total {
                     let elapsed = started.elapsed().as_secs();
-                    let rate = if elapsed > 0 { n as u64 / elapsed } else { 0 };
+                    let rate = (n as u64).checked_div(elapsed).unwrap_or(0);
                     println!(
                         "progress {n}/{total} failed={} rate={rate}/s elapsed={elapsed}s",
                         failures.load(std::sync::atomic::Ordering::SeqCst)

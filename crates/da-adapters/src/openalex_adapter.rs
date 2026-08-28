@@ -195,7 +195,10 @@ impl SlimWork {
 /// One OpenAlex work batch filter expression: `doi:A|doi:B|…` (ADR-073
 /// citracer batch_enrich parity — 50 DOIs per request).
 pub fn batch_doi_filter(dois: &[String]) -> String {
-    dois.iter().map(|d| format!("doi:{d}")).collect::<Vec<_>>().join("|")
+    dois.iter()
+        .map(|d| format!("doi:{d}"))
+        .collect::<Vec<_>>()
+        .join("|")
 }
 
 impl OpenAlexHttpAdapter {
@@ -696,12 +699,21 @@ mod openalex_probe {
         let r = a
             .client
             .get(format!("{base}/works"))
-            .query(&[("filter", format!("doi:{indexed}").as_str()), ("per_page", "50")])
+            .query(&[
+                ("filter", format!("doi:{indexed}").as_str()),
+                ("per_page", "50"),
+            ])
             .send()
             .await
             .unwrap();
-        let n = r.json::<serde_json::Value>().await.unwrap()
-            .get("results").and_then(|x| x.as_array()).map(|a| a.len()).unwrap_or(0);
+        let n = r
+            .json::<serde_json::Value>()
+            .await
+            .unwrap()
+            .get("results")
+            .and_then(|x| x.as_array())
+            .map(|a| a.len())
+            .unwrap_or(0);
         println!("filter single    -> 200, results={n}");
         // 3) filter pipe two indexed
         let f = format!("doi:{indexed}|doi:10.48550/arxiv.2402.18362");

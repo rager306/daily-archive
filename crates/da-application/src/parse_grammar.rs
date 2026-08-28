@@ -26,8 +26,8 @@ pub fn resolve_parse_grammar(
     host: Option<&dyn FsmPolicyPort>,
     features: &ArticleFeatures,
 ) -> FsmPolicyResult<ParseGrammarDecision> {
-    let registry = PolicyRegistry::from_yaml_str(yaml)
-        .map_err(|e| FsmPolicyError::Load(e.to_string()))?;
+    let registry =
+        PolicyRegistry::from_yaml_str(yaml).map_err(|e| FsmPolicyError::Load(e.to_string()))?;
     let default = registry
         .default_grammar_profile()
         .unwrap_or("arxiv_pdf_dot")
@@ -115,14 +115,21 @@ decision_points:
             _point: DecisionPoint,
             _features: &ArticleFeatures,
         ) -> FsmPolicyResult<PolicyDecision> {
-            Ok(PolicyDecision::admission(PolicySource::Native, Admission::Accept))
+            Ok(PolicyDecision::admission(
+                PolicySource::Native,
+                Admission::Accept,
+            ))
         }
     }
 
     #[test]
     fn page_outline_maps_to_page_outline_profile() {
-        let d = resolve_parse_grammar(YAML, Some(&FixedHost(GrammarRoute::PageOutline)), &feat(1, 0, 1.0))
-            .unwrap();
+        let d = resolve_parse_grammar(
+            YAML,
+            Some(&FixedHost(GrammarRoute::PageOutline)),
+            &feat(1, 0, 1.0),
+        )
+        .unwrap();
         assert_eq!(d.grammar_profile, "page_outline");
         assert_eq!(d.route, GrammarRoute::PageOutline);
         assert_eq!(d.policy_hash, "deadbeef");
@@ -142,8 +149,12 @@ decision_points:
 
     #[test]
     fn xy_cut_stamps_intent_keeps_arxiv_pdf_dot_path() {
-        let d = resolve_parse_grammar(YAML, Some(&FixedHost(GrammarRoute::XyCut)), &feat(1, 0, 1.0))
-            .unwrap();
+        let d = resolve_parse_grammar(
+            YAML,
+            Some(&FixedHost(GrammarRoute::XyCut)),
+            &feat(1, 0, 1.0),
+        )
+        .unwrap();
         assert_eq!(d.grammar_profile, "arxiv_pdf_dot");
         assert_eq!(d.route, GrammarRoute::XyCut);
     }

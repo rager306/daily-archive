@@ -18,7 +18,7 @@ pub enum Verdict {
 /// What the critic says about one low-confidence pair.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CriticVerdict {
-    pub id: String,          // article or pair id
+    pub id: String, // article or pair id
     pub verdict: Verdict,
     pub reason: String,
     /// failure pattern ref (agent_failure_patterns.yaml)
@@ -65,10 +65,17 @@ pub fn route_repair<'a>(
         return None;
     }
     // find the trigger matching the pattern or the first generic one
-    triggers.iter().find(|t| {
-        verdict.failure_pattern.as_deref().map(|p| t.note.contains(p)).unwrap_or(false)
-            || t.note.is_empty()
-    }).or_else(|| triggers.first())
+    triggers
+        .iter()
+        .find(|t| {
+            verdict
+                .failure_pattern
+                .as_deref()
+                .map(|p| t.note.contains(p))
+                .unwrap_or(false)
+                || t.note.is_empty()
+        })
+        .or_else(|| triggers.first())
 }
 
 /// Decide whether one more repair attempt is allowed (max_repair_attempts
@@ -106,8 +113,16 @@ mod tests {
 
     fn triggers() -> Vec<RepairAction> {
         vec![
-            RepairAction { stage: "enriched".into(), action: "rebuild_binding".into(), note: "surname_mismatch".into() },
-            RepairAction { stage: "summaries".into(), action: "regenerate".into(), note: "grounding < alarm".into() },
+            RepairAction {
+                stage: "enriched".into(),
+                action: "rebuild_binding".into(),
+                note: "surname_mismatch".into(),
+            },
+            RepairAction {
+                stage: "summaries".into(),
+                action: "regenerate".into(),
+                note: "grounding < alarm".into(),
+            },
         ]
     }
 

@@ -24,7 +24,10 @@ pub struct FsSchemaObjectStore {
 impl FsSchemaObjectStore {
     /// Bind from the loaded PathConfig. Fails for unregistered classes
     /// (a typo must be loud, not silently empty).
-    pub fn from_path_config(config: &PathConfig, class: &str) -> Result<Self, SchemaObjectStoreError> {
+    pub fn from_path_config(
+        config: &PathConfig,
+        class: &str,
+    ) -> Result<Self, SchemaObjectStoreError> {
         let binding = config
             .schema_object(class)
             .ok_or_else(|| SchemaObjectStoreError::UnknownClass(class.to_string()))?;
@@ -53,15 +56,18 @@ impl SchemaObjectStore for FsSchemaObjectStore {
     }
 
     fn norm(&self) -> Result<ObjectNorm, SchemaObjectStoreError> {
-        let text = std::fs::read_to_string(&self.norm_path)
-            .map_err(|e| SchemaObjectStoreError::Norm(format!("{}: {e}", self.norm_path.display())))?;
-        ObjectNorm::from_yaml_str(&text)
-            .map_err(|e| SchemaObjectStoreError::Norm(e.to_string()))
+        let text = std::fs::read_to_string(&self.norm_path).map_err(|e| {
+            SchemaObjectStoreError::Norm(format!("{}: {e}", self.norm_path.display()))
+        })?;
+        ObjectNorm::from_yaml_str(&text).map_err(|e| SchemaObjectStoreError::Norm(e.to_string()))
     }
 
     fn list_ids(&self) -> Result<Vec<String>, SchemaObjectStoreError> {
         if !self.root.is_dir() {
-            return Err(SchemaObjectStoreError::Io(format!("root {} missing", self.root.display())));
+            return Err(SchemaObjectStoreError::Io(format!(
+                "root {} missing",
+                self.root.display()
+            )));
         }
         let mut ids: Vec<String> = std::fs::read_dir(&self.root)
             .map_err(|e| SchemaObjectStoreError::Io(e.to_string()))?
@@ -77,10 +83,7 @@ impl SchemaObjectStore for FsSchemaObjectStore {
         Ok(ids)
     }
 
-    fn read_object(
-        &self,
-        id: &str,
-    ) -> Result<Option<serde_yaml::Value>, SchemaObjectStoreError> {
+    fn read_object(&self, id: &str) -> Result<Option<serde_yaml::Value>, SchemaObjectStoreError> {
         let path = self.object_dir(id).join(&self.manifest);
         if !path.is_file() {
             return Ok(None);
@@ -106,8 +109,8 @@ impl SchemaObjectStore for FsSchemaObjectStore {
         // collections on disk are JSON arrays; normalize into YAML values
         let json: serde_json::Value = serde_json::from_str(&text)
             .map_err(|e| SchemaObjectStoreError::Io(format!("{}: {e}", path.display())))?;
-        let yaml_text = serde_yaml::to_string(&json)
-            .map_err(|e| SchemaObjectStoreError::Io(e.to_string()))?;
+        let yaml_text =
+            serde_yaml::to_string(&json).map_err(|e| SchemaObjectStoreError::Io(e.to_string()))?;
         let records: Vec<serde_yaml::Value> = serde_yaml::from_str(&yaml_text)
             .map_err(|e| SchemaObjectStoreError::Io(e.to_string()))?;
         Ok(Some(records))
@@ -152,11 +155,15 @@ impl<S: SchemaObjectStore> FileBackedChecks for StoreBackedChecks<'_, S> {
             .get("file")
             .and_then(|v| v.as_str())
             .ok_or_else(|| "collection_records: no `file` param".to_string())?;
-        self.0.read_collection(object_id, rel).map_err(|e| e.to_string())
+        self.0
+            .read_collection(object_id, rel)
+            .map_err(|e| e.to_string())
     }
 
     fn artifact_exists(&self, object_id: &str, rel: &str) -> Result<bool, String> {
-        self.0.file_exists(object_id, rel).map_err(|e| e.to_string())
+        self.0
+            .file_exists(object_id, rel)
+            .map_err(|e| e.to_string())
     }
 }
 
@@ -205,7 +212,11 @@ mod tests {
         let obj = store.read_object("2501.00001").unwrap().unwrap();
         assert_eq!(obj.get("lifecycle").unwrap().as_str(), Some("parsed"));
 
-        assert!(store.file_exists("2501.00001", "parsed/article.json").unwrap());
+        assert!(
+            store
+                .file_exists("2501.00001", "parsed/article.json")
+                .unwrap()
+        );
         assert!(!store.file_exists("2501.00001", "parsed/nope.json").unwrap());
     }
 
@@ -236,15 +247,19 @@ mod tests {
 
         let decl = InvariantDeclaration {
             pattern: "collection_records".into(),
-            params: [
-                ("file".to_string(), serde_yaml::Value::from("extracted/entities.json")),
-            ]
+            params: [(
+                "file".to_string(),
+                serde_yaml::Value::from("extracted/entities.json"),
+            )]
             .into_iter()
             .collect(),
         };
         let io = StoreBackedChecks::new(&store);
         let records = io.collection_records("2501.00001", &decl).unwrap().unwrap();
         assert_eq!(records.len(), 1);
-        assert!(io.artifact_exists("2501.00001", "parsed/article.json").unwrap());
+        assert!(
+            io.artifact_exists("2501.00001", "parsed/article.json")
+                .unwrap()
+        );
     }
 }

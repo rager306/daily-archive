@@ -21,8 +21,8 @@ impl NativeFallbackPolicy {
     }
 
     pub fn from_yaml(yaml: &str) -> Result<Self, FsmPolicyError> {
-        let registry = PolicyRegistry::from_yaml_str(yaml)
-            .map_err(|e| FsmPolicyError::Load(e.to_string()))?;
+        let registry =
+            PolicyRegistry::from_yaml_str(yaml).map_err(|e| FsmPolicyError::Load(e.to_string()))?;
         Ok(Self { registry })
     }
 

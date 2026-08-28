@@ -18,18 +18,35 @@ pub struct Route {
 
 /// Match a raw link/id against the DATA routing table (ordered).
 pub fn route(raw: &str, routing_yaml: &str) -> anyhow::Result<Option<Route>> {
-    let v: Value = serde_yaml::from_str(routing_yaml)
-        .map_err(|e| anyhow::anyhow!("routing YAML: {e}"))?;
-    let Some(rules) = v.get("acquisition_routing").and_then(|r| r.get("rules")).and_then(|r| r.as_sequence()) else {
+    let v: Value =
+        serde_yaml::from_str(routing_yaml).map_err(|e| anyhow::anyhow!("routing YAML: {e}"))?;
+    let Some(rules) = v
+        .get("acquisition_routing")
+        .and_then(|r| r.get("rules"))
+        .and_then(|r| r.as_sequence())
+    else {
         return Ok(None);
     };
     for rule in rules {
-        let Some(pat) = rule.get("pattern").and_then(|p| p.as_str()) else { continue };
+        let Some(pat) = rule.get("pattern").and_then(|p| p.as_str()) else {
+            continue;
+        };
         let Ok(re) = Regex::new(pat) else { continue };
         if let Some(caps) = re.captures(raw) {
-            let kind = rule.get("kind").and_then(|k| k.as_str()).unwrap_or("").to_string();
-            let handler = rule.get("handler").and_then(|h| h.as_str()).unwrap_or("").to_string();
-            let norm = rule.get("id_normalize").and_then(|n| n.as_str()).unwrap_or("none");
+            let kind = rule
+                .get("kind")
+                .and_then(|k| k.as_str())
+                .unwrap_or("")
+                .to_string();
+            let handler = rule
+                .get("handler")
+                .and_then(|h| h.as_str())
+                .unwrap_or("")
+                .to_string();
+            let norm = rule
+                .get("id_normalize")
+                .and_then(|n| n.as_str())
+                .unwrap_or("none");
             let id = match rule.get("id_group").and_then(|g| g.as_u64()) {
                 Some(g) if g > 0 => caps
                     .get(g as usize)
@@ -64,7 +81,10 @@ pub fn acquire(raw: &str, repo: &Path) -> anyhow::Result<()> {
     let Some(route) = route(raw, &routing)? else {
         anyhow::bail!("no acquisition route matches {raw:?} (source_codes.yaml)");
     };
-    println!("route: kind={} id={} handler={}", route.kind, route.id, route.handler);
+    println!(
+        "route: kind={} id={} handler={}",
+        route.kind, route.id, route.handler
+    );
 
     match route.handler.as_str() {
         "arxiv_catalog" => {
@@ -80,7 +100,10 @@ pub fn acquire(raw: &str, repo: &Path) -> anyhow::Result<()> {
             if !status.success() {
                 anyhow::bail!("acquire-arxiv failed for {}", route.id);
             }
-            println!("next: da source status {} ; da source plan {}", route.id, route.id);
+            println!(
+                "next: da source status {} ; da source plan {}",
+                route.id, route.id
+            );
             Ok(())
         }
         "doi_mirror" => acquire_doi(&route.id, repo),
@@ -125,11 +148,15 @@ fn acquire_doi(doi: &str, repo: &Path) -> anyhow::Result<()> {
             .await
             .map_err(|e| anyhow::anyhow!("openalex body: {e}"))
     })?;
-    let body: serde_json::Value = serde_json::from_str(&resp)
-        .map_err(|e| anyhow::anyhow!("openalex decode: {e}"))?;
+    let body: serde_json::Value =
+        serde_json::from_str(&resp).map_err(|e| anyhow::anyhow!("openalex decode: {e}"))?;
     let pdf_url = best_pdf_url(&body)
         .ok_or_else(|| anyhow::anyhow!("no open-access pdf_url in OpenAlex for {doi}"))?;
-    let title = body.get("title").and_then(|t| t.as_str()).unwrap_or("").to_string();
+    let title = body
+        .get("title")
+        .and_then(|t| t.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let dir_safe = doi.replace('/', "-");
     let src_dir = repo.join(format!("data/sources/doi/{dir_safe}/source"));
@@ -156,7 +183,10 @@ fn acquire_doi(doi: &str, repo: &Path) -> anyhow::Result<()> {
         repo.join(format!("data/sources/doi/{dir_safe}/identity.json")),
         serde_json::to_string_pretty(&ident)?,
     )?;
-    println!("acquired: data/sources/doi/{dir_safe}/ ({} bytes)", bytes.len());
+    println!(
+        "acquired: data/sources/doi/{dir_safe}/ ({} bytes)",
+        bytes.len()
+    );
     println!("next: da source run {dir_safe}");
     Ok(())
 }
@@ -169,7 +199,9 @@ fn doi_base() -> String {
 }
 
 fn best_pdf_url(work: &serde_json::Value) -> Option<String> {
-    let best = work.pointer("/best_oa_location/pdf_url").and_then(|u| u.as_str());
+    let best = work
+        .pointer("/best_oa_location/pdf_url")
+        .and_then(|u| u.as_str());
     if best.is_some() {
         return best.map(String::from);
     }

@@ -12,5 +12,8 @@ pub enum NegativeMemoryError {
 
 pub trait NegativeMemoryPort: Send + Sync {
     fn append(&mut self, rec: &NegativeMemoryRecord) -> Result<(), NegativeMemoryError>;
-    fn list_for_paper(&self, paper_id: &str) -> Result<Vec<NegativeMemoryRecord>, NegativeMemoryError>;
+    fn list_for_paper(
+        &self,
+        paper_id: &str,
+    ) -> Result<Vec<NegativeMemoryRecord>, NegativeMemoryError>;
 }

@@ -4,9 +4,8 @@
 //! These traits define the boundaries between our application and external systems.
 
 pub mod acquisition;
-pub mod agent_read_plane;
 pub mod agent_memory;
-pub mod negative_memory;
+pub mod agent_read_plane;
 pub mod algorithms;
 pub mod assurance;
 pub mod cache_payload;
@@ -20,12 +19,13 @@ pub mod fsm_policy;
 pub mod graph_store;
 pub mod llm_client;
 pub mod multimodal_llm;
+pub mod negative_memory;
 pub mod openalex;
 pub mod parser;
 pub mod path_config;
-pub mod schema_objects;
 pub mod paths;
 pub mod region_text;
+pub mod schema_objects;
 pub use region_text::{RegionTextOutcome, RegionTextPort};
 pub mod pipeline_cache;
 pub mod pipeline_stage;

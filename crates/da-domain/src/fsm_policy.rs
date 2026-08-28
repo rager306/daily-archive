@@ -414,7 +414,10 @@ decision_points:
       grobid_structural: arxiv_pdf_dot
 "#;
         let reg = PolicyRegistry::from_yaml_str(yaml).unwrap();
-        assert_eq!(reg.profile_for(GrammarRoute::PageOutline), Some("page_outline"));
+        assert_eq!(
+            reg.profile_for(GrammarRoute::PageOutline),
+            Some("page_outline")
+        );
         assert_eq!(reg.profile_for(GrammarRoute::XyCut), Some("arxiv_pdf_dot"));
         assert_eq!(reg.default_grammar_profile(), Some("arxiv_pdf_dot"));
     }
@@ -422,7 +425,10 @@ decision_points:
     #[test]
     fn unknown_decision_point_rejected() {
         assert!(DecisionPoint::parse("invented_route").is_none());
-        assert_eq!(DecisionPoint::parse("grammar_route"), Some(DecisionPoint::GrammarRoute));
+        assert_eq!(
+            DecisionPoint::parse("grammar_route"),
+            Some(DecisionPoint::GrammarRoute)
+        );
     }
 
     #[test]

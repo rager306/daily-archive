@@ -20,7 +20,9 @@ pub fn consult_with_fallback(
         match h.consult(point, features) {
             Ok(d) => return Ok(d),
             Err(FsmPolicyError::UnknownPoint(_)) => {}
-            Err(FsmPolicyError::Load(_) | FsmPolicyError::Instantiate(_) | FsmPolicyError::Io(_)) => {
+            Err(
+                FsmPolicyError::Load(_) | FsmPolicyError::Instantiate(_) | FsmPolicyError::Io(_),
+            ) => {
                 // fail-open to native; trap/invalid-code stay errors
             }
             Err(e) => return Err(e),

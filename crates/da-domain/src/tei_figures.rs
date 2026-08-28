@@ -44,13 +44,17 @@ fn unescape(s: &str) -> String {
 
 fn strip_tags(s: &str) -> String {
     let re = Regex::new(r"<[^>]+>").expect("static");
-    unescape(&re.replace_all(s, " ")).split_whitespace().collect::<Vec<_>>().join(" ")
+    unescape(&re.replace_all(s, " "))
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// Parse untyped TEI figures + in-text refs.
 pub fn parse_tei_figures(tei: &str) -> Result<(Vec<TeiFigure>, TeiFiguresStats), TeiFiguresError> {
     // in-text refs: <ref type="figure" target="#fig_N">
-    let refs_re = Regex::new(r##"<ref type="figure" target="#([^"]+)"##).map_err(|e| TeiFiguresError::Regex(e.to_string()))?;
+    let refs_re = Regex::new(r##"<ref type="figure" target="#([^"]+)"##)
+        .map_err(|e| TeiFiguresError::Regex(e.to_string()))?;
     let mut refs: BTreeMap<String, usize> = BTreeMap::new();
     for cap in refs_re.captures_iter(tei) {
         let fid = cap[1].to_string();
@@ -61,9 +65,12 @@ pub fn parse_tei_figures(tei: &str) -> Result<(Vec<TeiFigure>, TeiFiguresStats),
     // rust regex has no lookahead, so filtering is post-match
     let fig_re = Regex::new(r##"(?s)<figure([^>]*)>(.*?)</figure>"##)
         .map_err(|e| TeiFiguresError::Regex(e.to_string()))?;
-    let id_re = Regex::new(r##"xml:id="([^"]+)""##).map_err(|e| TeiFiguresError::Regex(e.to_string()))?;
-    let cap_re = Regex::new(r"(?s)<figDesc>(.*?)</figDesc>").map_err(|e| TeiFiguresError::Regex(e.to_string()))?;
-    let label_re = Regex::new(r"<label>([^<]*)</label>").map_err(|e| TeiFiguresError::Regex(e.to_string()))?;
+    let id_re =
+        Regex::new(r##"xml:id="([^"]+)""##).map_err(|e| TeiFiguresError::Regex(e.to_string()))?;
+    let cap_re = Regex::new(r"(?s)<figDesc>(.*?)</figDesc>")
+        .map_err(|e| TeiFiguresError::Regex(e.to_string()))?;
+    let label_re =
+        Regex::new(r"<label>([^<]*)</label>").map_err(|e| TeiFiguresError::Regex(e.to_string()))?;
 
     let mut out = Vec::new();
     for cap in fig_re.captures_iter(tei) {
@@ -71,12 +78,12 @@ pub fn parse_tei_figures(tei: &str) -> Result<(Vec<TeiFigure>, TeiFiguresStats),
         if attrs.contains("type=") {
             continue; // typed=table -> tables layer
         }
-        let Some(id_cap) = id_re.captures(&attrs) else { continue };
+        let Some(id_cap) = id_re.captures(&attrs) else {
+            continue;
+        };
         let figure_id = id_cap[1].to_string();
         let body = cap[2].to_string();
-        let caption = cap_re
-            .captures(&body)
-            .map(|c| strip_tags(&c[1]));
+        let caption = cap_re.captures(&body).map(|c| strip_tags(&c[1]));
         let label = label_re
             .captures(&body)
             .map(|c| c[1].trim().to_string())
@@ -126,7 +133,10 @@ mod tests {
         assert_eq!(figs[0].ref_count, 2);
         assert_eq!(figs[1].ref_count, 1);
         assert!(!figs[1].has_graphic);
-        assert_eq!(figs[1].caption.as_deref(), Some("Learning dynamics & curves."));
+        assert_eq!(
+            figs[1].caption.as_deref(),
+            Some("Learning dynamics & curves.")
+        );
         assert_eq!(stats.count, 2);
         assert_eq!(stats.with_caption, 2);
         assert_eq!(stats.with_graphic, 1);

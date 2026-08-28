@@ -140,16 +140,16 @@ pub fn operator_banners(
     preload: Option<&SnapshotPreloadInfo>,
 ) -> Vec<String> {
     let mut lines = vec![
-        format!("daily-archive serve-graph — read-only RESP plane (kg-storage ReadOnlyServer)"),
+        "daily-archive serve-graph — read-only RESP plane (kg-storage ReadOnlyServer)".to_string(),
         format!("  bind:            {host}:{port}"),
-        format!("  persistence:     NONE (in-memory SamyamaGraphStore, no data path)"),
-        format!("  rocksdb:         not used"),
-        format!("  import_eligible: false (D127 locked)"),
-        format!("  data plane:      read-only — GRAPH.QUERY/DELETE/LIST, INDEX.*, VECTOR.*,"),
-        format!("                   IMPORT/SNAPSHOT.*, ADMIN.* rejected before touching store"),
-        format!("  identity:        DA.IDENTITY = deterministic SnapshotIdentity JSON"),
-        format!("                   (SHA-256 of exported graph bytes, tenant, counts)"),
-        format!("  remote client:   scalar read plane available; HOT writes unsupported"),
+        "  persistence:     NONE (in-memory SamyamaGraphStore, no data path)".to_string(),
+        "  rocksdb:         not used".to_string(),
+        "  import_eligible: false (D127 locked)".to_string(),
+        "  data plane:      read-only — GRAPH.QUERY/DELETE/LIST, INDEX.*, VECTOR.*,".to_string(),
+        "                   IMPORT/SNAPSHOT.*, ADMIN.* rejected before touching store".to_string(),
+        "  identity:        DA.IDENTITY = deterministic SnapshotIdentity JSON".to_string(),
+        "                   (SHA-256 of exported graph bytes, tenant, counts)".to_string(),
+        "  remote client:   scalar read plane available; HOT writes unsupported".to_string(),
     ];
     match preload {
         Some(p) => {

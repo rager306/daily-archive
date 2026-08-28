@@ -6,7 +6,7 @@ use crate::{FigureAnalysisUseCase, FigureAnalysisUseCaseError};
 use async_trait::async_trait;
 use da_domain::FigureSemanticContext;
 use da_domain::figure_analysis::FigureQuotePolicy;
-use da_domain::negative_memory::{admit_claim, AdmitKey};
+use da_domain::negative_memory::{AdmitKey, admit_claim};
 use da_ports::multimodal_llm::{
     ModelWireProtocol, MultimodalImage, MultimodalLlmError, MultimodalLlmPort,
 };
@@ -234,30 +234,31 @@ impl PipelineStageExecutor for FigureAnalysisStage {
         if let Some(store) = &self.negatives
             && let Some(paper_id) = context.canonical_id.as_deref()
         {
-                let recs = store.list_for_paper(paper_id).map_err(|error| {
-                    StageExecutionError::Terminal {
+            let recs =
+                store
+                    .list_for_paper(paper_id)
+                    .map_err(|error| StageExecutionError::Terminal {
                         error_class: "negative_memory_io".into(),
                         message: error.to_string(),
-                    }
-                })?;
-                let decision = admit_claim(
-                    AdmitKey {
-                        paper_id,
-                        stage: "figure_analysis",
-                        pattern: None,
-                    },
-                    &recs,
-                );
-                if let da_domain::negative_memory::AdmitDecision::BlockedExhausted {
-                    record_id,
-                    reason,
-                } = decision
-                {
-                    return Err(StageExecutionError::Terminal {
-                        error_class: "negative_blocked".into(),
-                        message: format!("record={record_id} {reason}"),
-                    });
-                }
+                    })?;
+            let decision = admit_claim(
+                AdmitKey {
+                    paper_id,
+                    stage: "figure_analysis",
+                    pattern: None,
+                },
+                &recs,
+            );
+            if let da_domain::negative_memory::AdmitDecision::BlockedExhausted {
+                record_id,
+                reason,
+            } = decision
+            {
+                return Err(StageExecutionError::Terminal {
+                    error_class: "negative_blocked".into(),
+                    message: format!("record={record_id} {reason}"),
+                });
+            }
         }
         let analysis = FigureAnalysisUseCase::new(self.model.clone())
             .analyze(self.image.clone(), &context)
@@ -381,8 +382,9 @@ mod tests {
         );
 
         // Json parse error → Retryable
-        let err: FigureAnalysisUseCaseError =
-            serde_json::from_str::<serde_json::Value>("{bad").unwrap_err().into();
+        let err: FigureAnalysisUseCaseError = serde_json::from_str::<serde_json::Value>("{bad")
+            .unwrap_err()
+            .into();
         let mapped = map_error(err, "60s");
         assert!(
             matches!(mapped, StageExecutionError::Retryable { .. }),
@@ -401,8 +403,6 @@ mod tests {
         );
     }
 
-
-    use super::*;
     use async_trait::async_trait;
     use da_domain::{
         BoundingBox72Dpi, FigureReferenceExcerpt, FigureSectionContext, FigureSectionRelation,
@@ -797,7 +797,10 @@ mod tests {
         };
         let err = stage.execute(req).await.unwrap_err();
         match err {
-            StageExecutionError::Terminal { error_class, message } => {
+            StageExecutionError::Terminal {
+                error_class,
+                message,
+            } => {
                 assert_eq!(error_class, "negative_blocked");
                 assert!(message.contains("blocked_exhausted"), "{message}");
             }

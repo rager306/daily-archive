@@ -2,7 +2,7 @@
 //! page texts, reference extractor) -> parsed/article.json + projection
 //! for page_outline grammars.
 
-use da_domain::pdf_toc::{build_pdf_toc_sections, TocEntry, TocFurniture};
+use da_domain::pdf_toc::{TocEntry, TocFurniture, build_pdf_toc_sections};
 use serde_json::json;
 use std::collections::BTreeMap;
 
@@ -59,11 +59,20 @@ pub fn build_pdf_toc_stage(
         object_id,
         &furniture,
     );
-    let body: String = sections.iter().map(|s| s.text.as_str()).collect::<Vec<_>>().join("\n\n");
+    let body: String = sections
+        .iter()
+        .map(|s| s.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\n\n");
     let title = obs
         .title
         .clone()
-        .or_else(|| sections.iter().find(|s| !s.is_furniture).map(|s| s.title.clone()))
+        .or_else(|| {
+            sections
+                .iter()
+                .find(|s| !s.is_furniture)
+                .map(|s| s.title.clone())
+        })
         .unwrap_or_else(|| object_id.to_string());
 
     let parsed = json!({

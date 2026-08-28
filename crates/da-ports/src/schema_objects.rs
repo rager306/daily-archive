@@ -29,10 +29,7 @@ pub trait SchemaObjectStore: Send + Sync {
     fn list_ids(&self) -> Result<Vec<String>, SchemaObjectStoreError>;
 
     /// One manifest as raw YAML value (validator is schema-driven).
-    fn read_object(
-        &self,
-        id: &str,
-    ) -> Result<Option<serde_yaml::Value>, SchemaObjectStoreError>;
+    fn read_object(&self, id: &str) -> Result<Option<serde_yaml::Value>, SchemaObjectStoreError>;
 
     /// A collection file (JSON array of records) as YAML values.
     fn read_collection(

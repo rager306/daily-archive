@@ -477,7 +477,17 @@ fn main() {
     });
 
     match cli.command {
-        Commands::Source { action, paper_id, dry_run, html, pdf, pages, bookmarks, quality, domain } => {
+        Commands::Source {
+            action,
+            paper_id,
+            dry_run,
+            html,
+            pdf,
+            pages,
+            bookmarks,
+            quality,
+            domain,
+        } => {
             use da_cli::source_cli;
             let r = match action.as_str() {
                 "run" => da_cli::source_cli::run_source_run(&paper_id),
@@ -487,7 +497,12 @@ fn main() {
                     let ids: Vec<String> = if paper_id == "auto" {
                         da_cli::source_cli::incomplete_pipeline_ids().unwrap_or_default()
                     } else {
-                        paper_id.split(',').map(str::trim).filter(|s| !s.is_empty()).map(String::from).collect()
+                        paper_id
+                            .split(',')
+                            .map(str::trim)
+                            .filter(|s| !s.is_empty())
+                            .map(String::from)
+                            .collect()
                     };
                     if ids.is_empty() {
                         println!("run-batch: nothing to do");
@@ -496,9 +511,7 @@ fn main() {
                         da_cli::source_cli::run_batch(&ids, 8)
                     }
                 }
-                "acquire" => {
-                    da_cli::source_acquire::acquire(&paper_id, std::path::Path::new("."))
-                }
+                "acquire" => da_cli::source_acquire::acquire(&paper_id, std::path::Path::new(".")),
                 "status" => source_cli::run_status(&paper_id),
                 "plan" => source_cli::run_plan(&paper_id),
                 "import" => source_cli::run_import(&paper_id, dry_run),
@@ -506,13 +519,21 @@ fn main() {
                 "build-structural" => source_cli::run_build_structural(&paper_id),
                 "build-figures" => source_cli::run_build_figures(&paper_id),
                 "build-figures-tei" => source_cli::run_build_figures_tei(&paper_id),
-                                "parse-html" => source_cli::run_parse_html(&paper_id, html.as_deref()),
-                "parse-pdf" => source_cli::run_parse_pdf(&paper_id, pdf.as_deref(), pages, bookmarks, quality),
+                "parse-html" => source_cli::run_parse_html(&paper_id, html.as_deref()),
+                "parse-pdf" => {
+                    source_cli::run_parse_pdf(&paper_id, pdf.as_deref(), pages, bookmarks, quality)
+                }
                 "parse-pdf-toc" => source_cli::run_parse_pdf_toc(&paper_id),
                 "enrich-layer" => source_cli::run_enrich_layer(&paper_id),
                 "audit-fidelity" => source_cli::run_audit_fidelity(&paper_id),
                 "sona-analyze" => da_cli::background_tasks::run_sona_analyze(&paper_id),
-                "sona-policy" => da_cli::background_tasks::run_sona_policy(&paper_id, pages, bookmarks, quality, domain.as_deref()),
+                "sona-policy" => da_cli::background_tasks::run_sona_policy(
+                    &paper_id,
+                    pages,
+                    bookmarks,
+                    quality,
+                    domain.as_deref(),
+                ),
                 "critic-repair" => da_cli::background_tasks::run_critic_repair_cli(&paper_id),
                 "memory-admit" => da_cli::background_tasks::run_memory_admit(&paper_id),
                 "background-run" => {
@@ -528,13 +549,21 @@ fn main() {
                 }
                 "fetch-openalex" => {
                     let mut args: Vec<String> = vec![paper_id.clone()];
-                    args.extend(std::env::args().skip(4).collect::<Vec<_>>().into_iter().filter(|a| a.starts_with("--")));
+                    args.extend(
+                        std::env::args()
+                            .skip(4)
+                            .collect::<Vec<_>>()
+                            .into_iter()
+                            .filter(|a| a.starts_with("--")),
+                    );
                     source_cli::run_fetch_openalex(&args)
                 }
-                                "build-extracted" => source_cli::run_build_extracted(&paper_id),
+                "build-extracted" => source_cli::run_build_extracted(&paper_id),
                 "build-summary" => source_cli::run_build_summary(&paper_id),
                 "eval-frozen" => source_cli::run_eval_frozen(),
-                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei|parse-html|parse-pdf-toc|enrich-layer|build-extracted|build-summary|run|acquire|sona-analyze|sona-policy|critic-repair|memory-admit)")),
+                other => Err(anyhow::anyhow!(
+                    "unknown source action {other:?} (status|plan|import|build-navigation|build-structural|build-figures|build-figures-tei|parse-html|parse-pdf-toc|enrich-layer|build-extracted|build-summary|run|acquire|sona-analyze|sona-policy|critic-repair|memory-admit)"
+                )),
             };
             if let Err(e) = r {
                 eprintln!("da source: {e}");
@@ -554,16 +583,17 @@ fn main() {
                     std::process::exit(2);
                 }
             };
-            let only: Option<Vec<String>> =
-                if ids.is_empty() { None } else { Some(ids.clone()) };
+            let only: Option<Vec<String>> = if ids.is_empty() {
+                None
+            } else {
+                Some(ids.clone())
+            };
             match validate_schema_objects(&store, only.as_deref()) {
                 Ok(report) => {
                     for v in &report.violations {
                         println!(
                             "  [{}] {}: {} ({})",
-                            format_args!("{:?}", v.kind)
-                                .to_string()
-                                .to_lowercase(),
+                            format_args!("{:?}", v.kind).to_string().to_lowercase(),
                             v.object_id,
                             v.evidence,
                             v.pattern
@@ -1005,8 +1035,8 @@ fn require_fd_api_key_for_ingest() {
 
 async fn ingest_pdf(pdf_path: &str, paper_id: &str, enable_import: bool) {
     use da_adapters::FdApiEmbedder;
-    use da_parse::GrobidParser;
     use da_application::IngestUseCase;
+    use da_parse::GrobidParser;
     use std::sync::Arc;
 
     require_fd_api_key_for_ingest();
@@ -1110,8 +1140,8 @@ async fn batch_ingest(
     enable_import: bool,
 ) {
     use da_adapters::FdApiEmbedder;
-    use da_parse::GrobidParser;
     use da_application::{IngestUseCase, batch_ingest_pdfs_with_context};
+    use da_parse::GrobidParser;
     use std::sync::Arc;
 
     let id_list = match batch_ids::resolve_batch_ids(ids, ids_file) {
@@ -1537,11 +1567,11 @@ async fn query_graph(
     println!("Query kind: {kind}");
     println!("Cypher: {cypher}");
 
-    if graph_query::operator_query_needs_admit(kind) {
-        if let Err(error) = graph_query::admit_operator_read_from_env(id) {
-            eprintln!("{error}");
-            std::process::exit(error.exit_code());
-        }
+    if graph_query::operator_query_needs_admit(kind)
+        && let Err(error) = graph_query::admit_operator_read_from_env(id)
+    {
+        eprintln!("{error}");
+        std::process::exit(error.exit_code());
     }
 
     // Embedded: SamyamaGraphStore (WARM path). Remote: RESP read plane.
@@ -1662,7 +1692,6 @@ async fn summarize_paper(
     snapshot: Option<&std::path::Path>,
     output_snapshot: Option<&std::path::Path>,
 ) {
-    use da_parse::GrobidParser;
     use da_adapters::{
         model_registry::{load_model_registry, validate_prompt_model_bindings},
         openai_compatible_llm::OpenAiCompatibleLlmClient,
@@ -1670,6 +1699,7 @@ async fn summarize_paper(
         prompt_task_registry::load_prompt_task_registry,
     };
     use da_application::SummaryUseCase;
+    use da_parse::GrobidParser;
     use da_ports::graph_store::DirectGraphStore;
     use da_ports::parser::ParserPort;
     use std::sync::Arc;

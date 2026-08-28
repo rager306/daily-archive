@@ -28,7 +28,10 @@ pub fn compute_cross_layer(
     ) {
         (Ok(Some(sum)), Ok(Some(parsed))) => {
             let tldr = sum.get("tldr").and_then(|v| v.as_str()).unwrap_or("");
-            let body = parsed.get("body_text").and_then(|v| v.as_str()).unwrap_or("");
+            let body = parsed
+                .get("body_text")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
             if tldr.is_empty() || body.is_empty() {
                 None
             } else {
@@ -57,7 +60,12 @@ pub fn compute_cross_layer(
             } else {
                 let eq_text = eqs
                     .as_array()
-                    .map(|a| a.iter().map(|e| e.to_string()).collect::<Vec<_>>().join(" "))
+                    .map(|a| {
+                        a.iter()
+                            .map(|e| e.to_string())
+                            .collect::<Vec<_>>()
+                            .join(" ")
+                    })
                     .unwrap_or_default()
                     .to_lowercase();
                 let hit = labels
@@ -82,9 +90,9 @@ fn read_json(
     rel: &str,
 ) -> Result<Option<serde_json::Value>, SchemaObjectStoreError> {
     match store.read_raw(id, rel)? {
-        Some(text) => serde_json::from_str(&text).map(Some).map_err(|e| {
-            SchemaObjectStoreError::Io(format!("{id}/{rel}: {e}"))
-        }),
+        Some(text) => serde_json::from_str(&text)
+            .map(Some)
+            .map_err(|e| SchemaObjectStoreError::Io(format!("{id}/{rel}: {e}"))),
         None => Ok(None),
     }
 }
@@ -96,13 +104,36 @@ mod tests {
 
     struct FakeStore(BTreeMap<(String, String), String>);
     impl SchemaObjectStore for FakeStore {
-        fn object_class(&self) -> &str { "article" }
-        fn norm(&self) -> Result<da_domain::schema_invariants::ObjectNorm, SchemaObjectStoreError> { unimplemented!() }
-        fn list_ids(&self) -> Result<Vec<String>, SchemaObjectStoreError> { Ok(vec![]) }
-        fn read_object(&self, _id: &str) -> Result<Option<serde_yaml::Value>, SchemaObjectStoreError> { Ok(None) }
-        fn read_collection(&self, _id: &str, _rel: &str) -> Result<Option<Vec<serde_yaml::Value>>, SchemaObjectStoreError> { Ok(None) }
-        fn file_exists(&self, _id: &str, _rel: &str) -> Result<bool, SchemaObjectStoreError> { Ok(true) }
-        fn file_backed_checks(&self) -> Box<dyn da_domain::schema_invariants::FileBackedChecks + '_> { unimplemented!() }
+        fn object_class(&self) -> &str {
+            "article"
+        }
+        fn norm(&self) -> Result<da_domain::schema_invariants::ObjectNorm, SchemaObjectStoreError> {
+            unimplemented!()
+        }
+        fn list_ids(&self) -> Result<Vec<String>, SchemaObjectStoreError> {
+            Ok(vec![])
+        }
+        fn read_object(
+            &self,
+            _id: &str,
+        ) -> Result<Option<serde_yaml::Value>, SchemaObjectStoreError> {
+            Ok(None)
+        }
+        fn read_collection(
+            &self,
+            _id: &str,
+            _rel: &str,
+        ) -> Result<Option<Vec<serde_yaml::Value>>, SchemaObjectStoreError> {
+            Ok(None)
+        }
+        fn file_exists(&self, _id: &str, _rel: &str) -> Result<bool, SchemaObjectStoreError> {
+            Ok(true)
+        }
+        fn file_backed_checks(
+            &self,
+        ) -> Box<dyn da_domain::schema_invariants::FileBackedChecks + '_> {
+            unimplemented!()
+        }
         fn read_raw(&self, id: &str, rel: &str) -> Result<Option<String>, SchemaObjectStoreError> {
             Ok(self.0.get(&(id.to_string(), rel.to_string())).cloned())
         }
@@ -114,12 +145,19 @@ mod tests {
         let mut files = BTreeMap::new();
         files.insert(("p".to_string(), "summaries/abstract.json".to_string()),
             r#"{"tldr":"Exact ODEs govern teacher-student learning; compositional generalization is fast after pre-training."}"#.to_string());
-        files.insert(("p".to_string(), "parsed/article.json".to_string()),
-            format!(r#"{{"body_text":{}}}"#, serde_json::to_string(body).unwrap()));
+        files.insert(
+            ("p".to_string(), "parsed/article.json".to_string()),
+            format!(
+                r#"{{"body_text":{}}}"#,
+                serde_json::to_string(body).unwrap()
+            ),
+        );
         files.insert(("p".to_string(), "extracted/entities.json".to_string()),
             r#"[{"label":"teacher-student"},{"label":"compositional generalization"},{"label":"nonexistent"}]"#.to_string());
-        files.insert(("p".to_string(), "equations/index.json".to_string()),
-            r#"[{"representation":{"plain_text":"teacher-student framework ODE"}}]"#.to_string());
+        files.insert(
+            ("p".to_string(), "equations/index.json".to_string()),
+            r#"[{"representation":{"plain_text":"teacher-student framework ODE"}}]"#.to_string(),
+        );
         let store = FakeStore(files);
         let out = compute_cross_layer(&store, "p").unwrap();
         let g = out.summary_parsed_grounding.unwrap();

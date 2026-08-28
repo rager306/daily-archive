@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 /// record-only, no learning).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TrajectoryRecord {
-    pub task_id: String,        // e.g. "article_summary"
+    pub task_id: String, // e.g. "article_summary"
     pub paper_id: String,
     pub model: String,
     pub prompt_sha256: String,

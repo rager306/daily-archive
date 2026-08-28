@@ -32,7 +32,9 @@ pub fn parse_html_headings(html: &str, object_id: &str) -> Vec<HtmlSection> {
     let mut sections = Vec::new();
     let mut stack: Vec<(u8, String)> = Vec::new();
     for (i, m) in matches.iter().enumerate() {
-        let caps = head_re.captures(&html[m.start()..m.end()]).expect("matched");
+        let caps = head_re
+            .captures(&html[m.start()..m.end()])
+            .expect("matched");
         if caps[1] != caps[3] {
             continue; // mismatched open/close level
         }

@@ -80,7 +80,10 @@ impl StructuralDetectors {
                 kinds.push((kind.to_string(), re, def_src));
             }
         }
-        Ok(Self { kinds, numbering: numbering_pat })
+        Ok(Self {
+            kinds,
+            numbering: numbering_pat,
+        })
     }
 
     /// Detect elements in one section's text (line-anchored, as the
@@ -103,7 +106,11 @@ impl StructuralDetectors {
                         section_id: section_id.to_string(),
                         page,
                         kind: kind.clone(),
-                        numbering: self.numbering.as_ref().and_then(|n| n.find(ls)).map(|m| m.as_str().to_string()),
+                        numbering: self
+                            .numbering
+                            .as_ref()
+                            .and_then(|n| n.find(ls))
+                            .map(|m| m.as_str().to_string()),
                         statement_chars: ls.chars().count(),
                         definition_source: *def_src,
                     });
@@ -178,8 +185,18 @@ mod tests {
     fn detect_all_skips_furniture() {
         let d = StructuralDetectors::from_yaml_str(YAML).unwrap();
         let secs = vec![
-            SectionInput { section_id: "a".into(), page_start: None, text: "Theorem 2.2. X".into(), is_furniture: false },
-            SectionInput { section_id: "b".into(), page_start: None, text: "Theorem 9.9. Y".into(), is_furniture: true },
+            SectionInput {
+                section_id: "a".into(),
+                page_start: None,
+                text: "Theorem 2.2. X".into(),
+                is_furniture: false,
+            },
+            SectionInput {
+                section_id: "b".into(),
+                page_start: None,
+                text: "Theorem 9.9. Y".into(),
+                is_furniture: true,
+            },
         ];
         let els = detect_all(&d, &secs);
         assert_eq!(els.len(), 1);

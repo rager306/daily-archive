@@ -55,13 +55,24 @@ pub struct RetryPolicy {
     pub retry_on: Vec<String>,
 }
 
-fn default_retry_attempts() -> u32 { 2 }
-fn default_retry_backoff() -> u64 { 400 }
-fn default_retry_factor() -> f32 { 2.0 }
+fn default_retry_attempts() -> u32 {
+    2
+}
+fn default_retry_backoff() -> u64 {
+    400
+}
+fn default_retry_factor() -> f32 {
+    2.0
+}
 
 impl Default for RetryPolicy {
     fn default() -> Self {
-        Self { max_attempts: default_retry_attempts(), backoff_ms: default_retry_backoff(), factor: default_retry_factor(), retry_on: Vec::new() }
+        Self {
+            max_attempts: default_retry_attempts(),
+            backoff_ms: default_retry_backoff(),
+            factor: default_retry_factor(),
+            retry_on: Vec::new(),
+        }
     }
 }
 
@@ -185,7 +196,9 @@ impl ImportFsmState {
     pub fn current_stage(&self) -> &str {
         let mut best = 0;
         for r in &self.reached {
-            if let Some(i) = STAGE_ORDER.iter().position(|s| s == r) && i > best {
+            if let Some(i) = STAGE_ORDER.iter().position(|s| s == r)
+                && i > best
+            {
                 best = i;
             }
         }
@@ -207,7 +220,8 @@ impl ImportFsmState {
         tc.stage(stage)
             .map(|s| {
                 s.optional_for.iter().any(|g| g == class)
-                    || tc.guards
+                    || tc
+                        .guards
                         .grammar_optional_stages
                         .get(class)
                         .map(|stages| stages.iter().any(|x| x == stage))
@@ -270,7 +284,12 @@ mod tests {
     fn derives_current_stage_from_events() {
         let s = ImportFsmState::from_events(
             "arxiv_pdf_dot",
-            &["raw".into(), "parsed".into(), "structured".into(), "extracted".into()],
+            &[
+                "raw".into(),
+                "parsed".into(),
+                "structured".into(),
+                "extracted".into(),
+            ],
         );
         assert_eq!(s.current_stage(), "extracted");
         // raw counts as registered-reached in the manifest event stream
@@ -282,11 +301,15 @@ mod tests {
     fn article_requires_extracted_chapter_skips() {
         let t = tc();
         let art = ImportFsmState::from_events(
-            "arxiv_pdf_dot", &["raw".into(), "parsed".into(), "structured".into()],
+            "arxiv_pdf_dot",
+            &["raw".into(), "parsed".into(), "structured".into()],
         );
         assert_eq!(art.next_stage(&t), Some(("extracted", true)));
 
-        let ch = ImportFsmState::from_events("html_headings", &["raw".into(), "parsed".into(), "structured".into()]);
+        let ch = ImportFsmState::from_events(
+            "html_headings",
+            &["raw".into(), "parsed".into(), "structured".into()],
+        );
         assert_eq!(ch.next_stage(&t), Some(("extracted", false)));
     }
 
@@ -295,7 +318,13 @@ mod tests {
         let t = tc();
         let s = ImportFsmState::from_events(
             "arxiv_pdf_dot",
-            &["raw".into(), "parsed".into(), "structured".into(), "extracted".into(), "enriched".into()],
+            &[
+                "raw".into(),
+                "parsed".into(),
+                "structured".into(),
+                "extracted".into(),
+                "enriched".into(),
+            ],
         );
         assert_eq!(s.next_stage(&t), Some(("summarized", false)));
         let plan = s.plan(&t);
@@ -308,7 +337,12 @@ mod tests {
         // M450-migrated articles: first recorded event is `parsed`
         let s = ImportFsmState::from_events(
             "arxiv_pdf_dot",
-            &["parsed".into(), "structured".into(), "extracted".into(), "enriched".into()],
+            &[
+                "parsed".into(),
+                "structured".into(),
+                "extracted".into(),
+                "enriched".into(),
+            ],
         );
         assert_eq!(s.next_stage(&t), Some(("summarized", false)));
     }
@@ -318,8 +352,15 @@ mod tests {
         let t = tc();
         let s = ImportFsmState::from_events(
             "arxiv_pdf_dot",
-            &["raw".into(), "parsed".into(), "structured".into(), "extracted".into(),
-              "enriched".into(), "summarized".into(), "validated".into()],
+            &[
+                "raw".into(),
+                "parsed".into(),
+                "structured".into(),
+                "extracted".into(),
+                "enriched".into(),
+                "summarized".into(),
+                "validated".into(),
+            ],
         );
         assert!(s.next_stage(&t).is_none());
         assert!(s.plan(&t).is_empty());

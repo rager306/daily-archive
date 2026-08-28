@@ -88,10 +88,7 @@ pub fn build_reasoning_bank(
 
 /// Human-readable summary of extracted patterns.
 pub fn summarize_patterns(patterns: &[LearnedPattern]) -> String {
-    let mut out = format!(
-        "{} patterns extracted:\n",
-        patterns.len()
-    );
+    let mut out = format!("{} patterns extracted:\n", patterns.len());
     for p in patterns {
         out.push_str(&format!(
             "  cluster size={} avg_quality={:.2} accesses={}\n",
@@ -132,6 +129,9 @@ mod tests {
             })
             .collect();
         let patterns = build_reasoning_bank(&trajs, 8, 2);
-        assert!(!patterns.is_empty(), "patterns must be extracted from clustered trajectories");
+        assert!(
+            !patterns.is_empty(),
+            "patterns must be extracted from clustered trajectories"
+        );
     }
 }

@@ -48,11 +48,17 @@ impl CvGroup {
 /// ordered by average size ascending (small → large), mirroring pdf-craft's
 /// heading-level assignment where smaller groups of LARGER heights mean
 /// higher levels — caller reverses as needed.
-pub fn split_by_cv(payload_items: &[(f32, usize)], max_cv: f32, max_groups: usize) -> Vec<Vec<usize>> {
+pub fn split_by_cv(
+    payload_items: &[(f32, usize)],
+    max_cv: f32,
+    max_groups: usize,
+) -> Vec<Vec<usize>> {
     if payload_items.len() <= 2 {
         return vec![payload_items.iter().map(|(_, p)| *p).collect()];
     }
-    let mut groups: Vec<CvGroup> = vec![CvGroup { items: payload_items.to_vec() }];
+    let mut groups: Vec<CvGroup> = vec![CvGroup {
+        items: payload_items.to_vec(),
+    }];
 
     while groups.len() < max_groups {
         // find group with max cv above threshold
@@ -90,8 +96,10 @@ pub fn split_by_cv(payload_items: &[(f32, usize)], max_cv: f32, max_groups: usiz
         groups.insert(idx + 1, CvGroup { items: right });
     }
 
-    let mut ordered: Vec<(f32, Vec<usize>)> =
-        groups.into_iter().map(|g| (g.avg_size(), g.items.into_iter().map(|(_, p)| p).collect())).collect();
+    let mut ordered: Vec<(f32, Vec<usize>)> = groups
+        .into_iter()
+        .map(|g| (g.avg_size(), g.items.into_iter().map(|(_, p)| p).collect()))
+        .collect();
     ordered.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
     ordered.into_iter().map(|(_, payloads)| payloads).collect()
 }
@@ -117,9 +125,7 @@ pub fn find_toc_pages(
     page_bodies: &BTreeMapU32String,
     total_pages: u32,
 ) -> Vec<TocPageCandidate> {
-    let total_of = |t: &str| -> u32 {
-        page_bodies.values().map(|b| count_occurrences(b, t)).sum()
-    };
+    let total_of = |t: &str| -> u32 { page_bodies.values().map(|b| count_occurrences(b, t)).sum() };
     let mut totals: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
     let mut scores: std::collections::HashMap<u32, f32> = std::collections::HashMap::new();
 
@@ -224,7 +230,10 @@ pub type BTreeMapU32String = std::collections::BTreeMap<u32, String>;
 /// descending (bigger font → higher level).
 ///
 /// Returns payload → level (1-based).
-pub fn assign_heading_levels(height_payloads: &[(f32, usize)], max_levels: usize) -> std::collections::HashMap<usize, usize> {
+pub fn assign_heading_levels(
+    height_payloads: &[(f32, usize)],
+    max_levels: usize,
+) -> std::collections::HashMap<usize, usize> {
     /// pdf-craft toc/config.py: MAX_TITLE_CV = 0.025 — very strict, so
     /// heading-height clusters stay tight and levels track real size bands
     const MAX_TITLE_CV: f32 = 0.025;
@@ -248,8 +257,7 @@ mod tests {
     #[test]
     fn cv_split_separates_distinct_size_clusters() {
         // heading heights: two clusters {30, 28} and {12, 11}
-        let items: Vec<(f32, usize)> =
-            vec![(30.0, 0), (28.0, 1), (12.0, 2), (11.0, 3)];
+        let items: Vec<(f32, usize)> = vec![(30.0, 0), (28.0, 1), (12.0, 2), (11.0, 3)];
         let groups = split_by_cv(&items, 0.35, 5);
         assert_eq!(groups.len(), 2, "two clear clusters must split: {groups:?}");
         let mut small = groups[0].clone();
@@ -269,8 +277,14 @@ mod tests {
 
     #[test]
     fn heading_levels_biggest_font_is_level_one() {
-        let items: Vec<(f32, usize)> =
-            vec![(30.0, 0), (29.0, 1), (15.0, 2), (14.0, 3), (9.0, 4), (9.2, 5)];
+        let items: Vec<(f32, usize)> = vec![
+            (30.0, 0),
+            (29.0, 1),
+            (15.0, 2),
+            (14.0, 3),
+            (9.0, 4),
+            (9.2, 5),
+        ];
         let m = assign_heading_levels(&items, 5);
         assert_eq!(m[&0], 1, "{m:?}");
         assert_eq!(m[&1], 1);
@@ -298,7 +312,8 @@ mod tests {
         );
         bodies.insert(
             130,
-            "7.4 policy iteration. policy iteration is one way to compute an optimal policy.".into(),
+            "7.4 policy iteration. policy iteration is one way to compute an optimal policy."
+                .into(),
         );
         (titles, bodies)
     }

@@ -157,7 +157,13 @@ mod tests {
 
     #[test]
     fn exhausted_reject_is_denied() {
-        let records = [rec("n1", "2507.19457", "figure_analysis", Some("schema violation"), true)];
+        let records = [rec(
+            "n1",
+            "2507.19457",
+            "figure_analysis",
+            Some("schema violation"),
+            true,
+        )];
         let d = admit_claim(
             AdmitKey {
                 paper_id: "2507.19457",
@@ -175,7 +181,13 @@ mod tests {
 
     #[test]
     fn different_paper_is_allowed() {
-        let records = [rec("n1", "2507.19457", "figure_analysis", Some("schema violation"), true)];
+        let records = [rec(
+            "n1",
+            "2507.19457",
+            "figure_analysis",
+            Some("schema violation"),
+            true,
+        )];
         let d = admit_claim(
             AdmitKey {
                 paper_id: "2608.14905",
@@ -189,7 +201,13 @@ mod tests {
 
     #[test]
     fn different_stage_is_allowed() {
-        let records = [rec("n1", "2507.19457", "figure_analysis", Some("schema violation"), true)];
+        let records = [rec(
+            "n1",
+            "2507.19457",
+            "figure_analysis",
+            Some("schema violation"),
+            true,
+        )];
         let d = admit_claim(
             AdmitKey {
                 paper_id: "2507.19457",
@@ -203,7 +221,13 @@ mod tests {
 
     #[test]
     fn resolved_repair_does_not_block() {
-        let records = [rec("n1", "2507.19457", "figure_analysis", Some("schema violation"), false)];
+        let records = [rec(
+            "n1",
+            "2507.19457",
+            "figure_analysis",
+            Some("schema violation"),
+            false,
+        )];
         let d = admit_claim(
             AdmitKey {
                 paper_id: "2507.19457",

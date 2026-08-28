@@ -68,7 +68,9 @@ impl PathConfig {
                     && let Some(classes) = val.as_mapping()
                 {
                     for (class, binding) in classes {
-                        let Some(class) = class.as_str() else { continue };
+                        let Some(class) = class.as_str() else {
+                            continue;
+                        };
                         let (Some(root), Some(manifest), Some(norm)) = (
                             binding.get("root").and_then(|v| v.as_str()),
                             binding.get("manifest").and_then(|v| v.as_str()),
@@ -91,7 +93,10 @@ impl PathConfig {
         // domain_routing: coarse_topic_code → Vec<domain> (multi-domain)
         let mut domain_routing: BTreeMap<String, Vec<String>> = BTreeMap::new();
         if let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(text)
-            && let Some(dr) = value.get("paths").and_then(|p| p.get("domain_routing")).and_then(|d| d.as_mapping())
+            && let Some(dr) = value
+                .get("paths")
+                .and_then(|p| p.get("domain_routing"))
+                .and_then(|d| d.as_mapping())
         {
             for (code, domain) in dr {
                 if let Some(k) = code.as_str() {
@@ -110,7 +115,11 @@ impl PathConfig {
             }
         }
 
-        Self { paths, schema_objects, domain_routing }
+        Self {
+            paths,
+            schema_objects,
+            domain_routing,
+        }
     }
 
     /// Binding for one schema-manifest object class (e.g. "article").
@@ -281,7 +290,11 @@ mod tests {
             "paths:\n  domain_routing:\n    cs-cl: computer_science\n    cs-ai: computer_science\n    math-ho: mathematics\n",
         );
         let domains = config.domains();
-        assert_eq!(domains.len(), 2, "computer_science counted once: {domains:?}");
+        assert_eq!(
+            domains.len(),
+            2,
+            "computer_science counted once: {domains:?}"
+        );
         assert!(domains.contains(&"computer_science".to_string()));
         assert!(domains.contains(&"mathematics".to_string()));
     }

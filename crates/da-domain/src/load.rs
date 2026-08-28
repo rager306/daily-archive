@@ -641,8 +641,14 @@ mod tests {
             );
         }
         // валидные id не задеты
-        assert_eq!(try_normalize_arxiv_id("2507.19457"), Some("2507.19457".into()));
-        assert_eq!(try_normalize_arxiv_id("hep-th/9901001"), Some("hep-th/9901001".into()));
+        assert_eq!(
+            try_normalize_arxiv_id("2507.19457"),
+            Some("2507.19457".into())
+        );
+        assert_eq!(
+            try_normalize_arxiv_id("hep-th/9901001"),
+            Some("hep-th/9901001".into())
+        );
         // мусор без id внутри — по-прежнему None
         assert_eq!(try_normalize_arxiv_id("[cs.LG]"), None);
     }
@@ -650,7 +656,9 @@ mod tests {
     #[test]
     fn locator_implies_network_only_for_http() {
         assert!(locator_implies_network("https://arxiv.org/abs/2608.22118"));
-        assert!(locator_implies_network("http://arxiv.org/pdf/2608.22118.pdf"));
+        assert!(locator_implies_network(
+            "http://arxiv.org/pdf/2608.22118.pdf"
+        ));
         assert!(!locator_implies_network("2608.22118"));
         assert!(!locator_implies_network("arxiv:2608.22118"));
         assert!(!locator_implies_network("catalog:arxiv/cs-cl/2608.22118"));

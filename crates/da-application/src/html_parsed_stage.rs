@@ -45,8 +45,8 @@ pub fn build_html_parsed(html: &str, object_id: &str) -> Result<HtmlParsedOutput
         "formula_missingness": "no_formula_elements",
         "pdf_hash": sha,
     });
-    let parsed_json = serde_json::to_string_pretty(&parsed)
-        .map_err(|e| HtmlParsedError::Parse(e.to_string()))?;
+    let parsed_json =
+        serde_json::to_string_pretty(&parsed).map_err(|e| HtmlParsedError::Parse(e.to_string()))?;
 
     let proj = json!({
         "paper_id": object_id,
@@ -55,8 +55,8 @@ pub fn build_html_parsed(html: &str, object_id: &str) -> Result<HtmlParsedOutput
             "level": s.level, "title": s.title, "char_count": s.char_count,
         })).collect::<Vec<_>>(),
     });
-    let projection_json = serde_json::to_string_pretty(&proj)
-        .map_err(|e| HtmlParsedError::Parse(e.to_string()))?;
+    let projection_json =
+        serde_json::to_string_pretty(&proj).map_err(|e| HtmlParsedError::Parse(e.to_string()))?;
     Ok(HtmlParsedOutput {
         object_id: object_id.to_string(),
         parsed_json,

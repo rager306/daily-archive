@@ -6,9 +6,9 @@
 
 use da_domain::agent_manifest::AgentManifest;
 use da_domain::critic_repair::{
-    can_repair, repair_outcome, route_repair, CriticVerdict, RepairOutcome, Verdict,
+    CriticVerdict, RepairOutcome, Verdict, can_repair, repair_outcome, route_repair,
 };
-use da_domain::negative_memory::{record_from_exhausted, NegativeMemoryRecord};
+use da_domain::negative_memory::{NegativeMemoryRecord, record_from_exhausted};
 use da_ports::negative_memory::{NegativeMemoryError, NegativeMemoryPort};
 
 #[derive(Debug, thiserror::Error)]

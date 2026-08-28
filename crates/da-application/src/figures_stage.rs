@@ -5,7 +5,7 @@
 //! join, stats and index assembly are pure Rust.
 
 use da_domain::figure_geometry::{
-    match_figures, stats, CaptionRect, FigureRecord, FigureStats, ImageObs, SectionRange,
+    CaptionRect, FigureRecord, FigureStats, ImageObs, SectionRange, match_figures, stats,
 };
 use da_ports::schema_objects::{SchemaObjectStore, SchemaObjectStoreError};
 
@@ -75,7 +75,11 @@ pub fn build_figures_stage(
                     .unwrap_or_else(|| format!("{paper_id}:{i}")),
                 page_start: ps,
                 page_end: pe,
-                title: s.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                title: s
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
                 is_furniture: false,
             });
         }
@@ -92,7 +96,12 @@ pub fn build_figures_stage(
         }
     }
 
-    let total_images = obs.images.iter().map(|i| i.xref).collect::<std::collections::HashSet<_>>().len();
+    let total_images = obs
+        .images
+        .iter()
+        .map(|i| i.xref)
+        .collect::<std::collections::HashSet<_>>()
+        .len();
     let st = stats(&obs.captions, &records, total_images);
     let index_json = serde_json::to_string_pretty(&records)
         .map_err(|e| FiguresStageError::Observations(format!("serialize: {e}")))?;
@@ -139,13 +148,36 @@ mod tests {
 
     struct FakeStore(BTreeMap<(String, String), String>);
     impl SchemaObjectStore for FakeStore {
-        fn object_class(&self) -> &str { "article" }
-        fn norm(&self) -> Result<da_domain::schema_invariants::ObjectNorm, SchemaObjectStoreError> { unimplemented!() }
-        fn list_ids(&self) -> Result<Vec<String>, SchemaObjectStoreError> { Ok(vec![]) }
-        fn read_object(&self, _id: &str) -> Result<Option<serde_yaml::Value>, SchemaObjectStoreError> { Ok(None) }
-        fn read_collection(&self, _id: &str, _rel: &str) -> Result<Option<Vec<serde_yaml::Value>>, SchemaObjectStoreError> { Ok(None) }
-        fn file_exists(&self, _id: &str, _rel: &str) -> Result<bool, SchemaObjectStoreError> { Ok(true) }
-        fn file_backed_checks(&self) -> Box<dyn da_domain::schema_invariants::FileBackedChecks + '_> { unimplemented!() }
+        fn object_class(&self) -> &str {
+            "article"
+        }
+        fn norm(&self) -> Result<da_domain::schema_invariants::ObjectNorm, SchemaObjectStoreError> {
+            unimplemented!()
+        }
+        fn list_ids(&self) -> Result<Vec<String>, SchemaObjectStoreError> {
+            Ok(vec![])
+        }
+        fn read_object(
+            &self,
+            _id: &str,
+        ) -> Result<Option<serde_yaml::Value>, SchemaObjectStoreError> {
+            Ok(None)
+        }
+        fn read_collection(
+            &self,
+            _id: &str,
+            _rel: &str,
+        ) -> Result<Option<Vec<serde_yaml::Value>>, SchemaObjectStoreError> {
+            Ok(None)
+        }
+        fn file_exists(&self, _id: &str, _rel: &str) -> Result<bool, SchemaObjectStoreError> {
+            Ok(true)
+        }
+        fn file_backed_checks(
+            &self,
+        ) -> Box<dyn da_domain::schema_invariants::FileBackedChecks + '_> {
+            unimplemented!()
+        }
         fn read_raw(&self, id: &str, rel: &str) -> Result<Option<String>, SchemaObjectStoreError> {
             Ok(self.0.get(&(id.to_string(), rel.to_string())).cloned())
         }
@@ -162,7 +194,10 @@ mod tests {
         let store = FakeStore(BTreeMap::new());
         let out = build_figures_stage(&store, "m", obs.to_string().as_str()).unwrap();
         assert_eq!(out.records.len(), 1);
-        assert_eq!(out.records[0].image_file.as_deref(), Some("figures/assets/fig-1_1.png"));
+        assert_eq!(
+            out.records[0].image_file.as_deref(),
+            Some("figures/assets/fig-1_1.png")
+        );
         assert_eq!(out.records[0].section_id.as_deref(), Some("s1"));
         assert_eq!(out.stats.figures_indexed, 1);
         assert_eq!(out.stats.with_image_file, 1);

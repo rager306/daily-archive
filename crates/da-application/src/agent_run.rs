@@ -57,10 +57,10 @@ use std::sync::Arc;
 use da_domain::{
     AgentAdmissionDecision, AgentAdmissionError, AgentBudget, AgentClaim, AgentFailureCode,
     AgentState, ContentDigest, ContextBundle, ContextFreeze, GraphIdentity, agent_verify_identity,
-    negative_memory::{admit_retrieval, AdmitDecision},
+    negative_memory::{AdmitDecision, admit_retrieval},
 };
-use da_ports::{AgentReadPlane, AgentSynthesizer};
 use da_ports::negative_memory::NegativeMemoryPort;
+use da_ports::{AgentReadPlane, AgentSynthesizer};
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 
@@ -1768,10 +1768,8 @@ mod tests {
         fn list_for_paper(
             &self,
             paper_id: &str,
-        ) -> Result<
-            Vec<da_domain::negative_memory::NegativeMemoryRecord>,
-            NegativeMemoryError,
-        > {
+        ) -> Result<Vec<da_domain::negative_memory::NegativeMemoryRecord>, NegativeMemoryError>
+        {
             Ok(self
                 .0
                 .iter()

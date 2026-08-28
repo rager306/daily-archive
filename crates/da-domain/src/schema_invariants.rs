@@ -104,8 +104,8 @@ impl ObjectNorm {
     /// knows how to extract (`lifecycle_order`, `layers[].id`); other
     /// object types extend [`ObjectNorm::register_vocabulary`].
     pub fn from_yaml_str(yaml: &str) -> Result<Self, ObjectNormError> {
-        let v: serde_yaml::Value = serde_yaml::from_str(yaml)
-            .map_err(|e| ObjectNormError::Parse(e.to_string()))?;
+        let v: serde_yaml::Value =
+            serde_yaml::from_str(yaml).map_err(|e| ObjectNormError::Parse(e.to_string()))?;
         let mut norm = Self::default();
 
         if let Some(order) = v.get("lifecycle_order") {
@@ -184,7 +184,9 @@ pub fn validate_object(
             "graph_edges_known" => graph_edges_known(object_id, object, decl, norm, &mut out),
             "cross_layer_stat_eq" => cross_layer_stat_eq(object_id, object, decl, &mut out),
             "node_ref_integrity" => node_ref_integrity(object_id, object, decl, &mut out),
-            "list_symmetric_next_prev" => list_symmetric_next_prev(object_id, object, decl, &mut out),
+            "list_symmetric_next_prev" => {
+                list_symmetric_next_prev(object_id, object, decl, &mut out)
+            }
             // file-backed: skipped here, run via FileBackedChecks
             "collection_records" => {}
             other => out.push(SchemaViolation {
@@ -257,10 +259,8 @@ pub fn validate_file_backed(
                 };
                 match io.collection_records(object_id, &{
                     let mut d = decl.clone();
-                    d.params.insert(
-                        "file".to_string(),
-                        serde_yaml::Value::from(file),
-                    );
+                    d.params
+                        .insert("file".to_string(), serde_yaml::Value::from(file));
                     d
                 }) {
                     Ok(Some(nodes)) if !nodes.is_empty() => {
@@ -276,18 +276,10 @@ pub fn validate_file_backed(
                         );
                         let wrapped = serde_yaml::Value::Mapping(wrapped);
                         match decl.pattern.as_str() {
-                            "node_ref_integrity" => node_ref_integrity(
-                                object_id,
-                                &wrapped,
-                                decl,
-                                &mut out,
-                            ),
-                            _ => list_symmetric_next_prev(
-                                object_id,
-                                &wrapped,
-                                decl,
-                                &mut out,
-                            ),
+                            "node_ref_integrity" => {
+                                node_ref_integrity(object_id, &wrapped, decl, &mut out)
+                            }
+                            _ => list_symmetric_next_prev(object_id, &wrapped, decl, &mut out),
                         }
                     }
                     Ok(_) => out.push(SchemaViolation {
@@ -320,10 +312,9 @@ fn node_ref_integrity(
     decl: &InvariantDeclaration,
     out: &mut Vec<SchemaViolation>,
 ) {
-    let (Some(list_field), Some(id_field)) = (
-        param_str(decl, "list_field"),
-        param_str(decl, "id_field"),
-    ) else {
+    let (Some(list_field), Some(id_field)) =
+        (param_str(decl, "list_field"), param_str(decl, "id_field"))
+    else {
         out.push(bad_params(id, &decl.pattern));
         return;
     };
@@ -360,10 +351,9 @@ fn list_symmetric_next_prev(
     decl: &InvariantDeclaration,
     out: &mut Vec<SchemaViolation>,
 ) {
-    let (Some(list_field), Some(id_field)) = (
-        param_str(decl, "list_field"),
-        param_str(decl, "id_field"),
-    ) else {
+    let (Some(list_field), Some(id_field)) =
+        (param_str(decl, "list_field"), param_str(decl, "id_field"))
+    else {
         out.push(bad_params(id, &decl.pattern));
         return;
     };
@@ -719,7 +709,11 @@ mod tests {
             n.vocabulary("lifecycle_order").unwrap(),
             &["raw", "parsed", "structured", "extracted"]
         );
-        assert!(n.vocabulary("layers").unwrap().contains(&"context".to_string()));
+        assert!(
+            n.vocabulary("layers")
+                .unwrap()
+                .contains(&"context".to_string())
+        );
         assert_eq!(n.invariants.len(), 5);
     }
 
@@ -733,7 +727,9 @@ mod tests {
 
     #[test]
     fn derived_state_mismatch_detected() {
-        let o = obj("lifecycle: validated\nlifecycle_events:\n  - {stage: parsed, recorded_at: '01'}\n");
+        let o = obj(
+            "lifecycle: validated\nlifecycle_events:\n  - {stage: parsed, recorded_at: '01'}\n",
+        );
         let vs = validate_object("p2", &o, &norm());
         assert_eq!(vs[0].kind, ViolationKind::DerivedStateMismatch);
     }
@@ -750,7 +746,10 @@ mod tests {
             "lifecycle: structured\nlifecycle_events:\n  - {stage: parsed, recorded_at: '03'}\n  - {stage: structured, recorded_at: '01'}\n",
         );
         let vs = validate_object("p3", &o, &norm());
-        assert!(vs.iter().any(|v| v.kind == ViolationKind::TimestampNotMonotonic));
+        assert!(
+            vs.iter()
+                .any(|v| v.kind == ViolationKind::TimestampNotMonotonic)
+        );
     }
 
     #[test]
@@ -761,8 +760,14 @@ mod tests {
         let vs = validate_object("p4", &o, &norm());
         // stage not in lifecycle_order; derived_state PASSES because
         // lifecycle matches the (invalid) last event — enum catches it.
-        assert!(vs.iter().any(|v| v.kind == ViolationKind::ValueNotInVocabulary));
-        assert!(!vs.iter().any(|v| v.kind == ViolationKind::DerivedStateMismatch));
+        assert!(
+            vs.iter()
+                .any(|v| v.kind == ViolationKind::ValueNotInVocabulary)
+        );
+        assert!(
+            !vs.iter()
+                .any(|v| v.kind == ViolationKind::DerivedStateMismatch)
+        );
     }
 
     #[test]
@@ -782,7 +787,10 @@ mod tests {
             "lifecycle: structured\nlifecycle_events:\n  - {stage: structured, recorded_at: '01'}\nartifacts:\n  parsed: {derived_from: [source], stats: {sections: 3}}\n  context: {derived_from: [parsed], stats: {ast_nodes: 9}}\n",
         );
         let vs = validate_object("p6", &o, &norm());
-        assert!(vs.iter().any(|v| v.kind == ViolationKind::CrossLayerStatMismatch));
+        assert!(
+            vs.iter()
+                .any(|v| v.kind == ViolationKind::CrossLayerStatMismatch)
+        );
     }
 
     struct FakeIo {
@@ -854,7 +862,8 @@ mod tests {
 
     #[test]
     fn unknown_pattern_reported_loudly() {
-        let norm = ObjectNorm::from_yaml_str("invariants:\n  - pattern: quantum_entangle\n").unwrap();
+        let norm =
+            ObjectNorm::from_yaml_str("invariants:\n  - pattern: quantum_entangle\n").unwrap();
         let vs = validate_object("p8", &serde_yaml::Value::Null, &norm);
         assert_eq!(vs[0].kind, ViolationKind::UnknownPattern);
     }

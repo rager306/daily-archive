@@ -152,11 +152,9 @@ pub fn admit_operator_read(
 ) -> Result<(), GraphQueryCliError> {
     match da_domain::negative_memory::admit_retrieval(paper_id, records) {
         da_domain::negative_memory::AdmitDecision::Allowed { .. } => Ok(()),
-        da_domain::negative_memory::AdmitDecision::BlockedExhausted { record_id, reason } => {
-            Err(GraphQueryCliError::Runtime(format!(
-                "negative_blocked: record={record_id} {reason}"
-            )))
-        }
+        da_domain::negative_memory::AdmitDecision::BlockedExhausted { record_id, reason } => Err(
+            GraphQueryCliError::Runtime(format!("negative_blocked: record={record_id} {reason}")),
+        ),
     }
 }
 
@@ -326,7 +324,7 @@ mod tests {
             None,
             "t".into(),
         );
-        assert!(admit_operator_read("", &[rec.clone()]).is_ok());
+        assert!(admit_operator_read("", std::slice::from_ref(&rec)).is_ok());
         assert!(admit_operator_read("   ", &[rec]).is_ok());
     }
 
@@ -355,7 +353,10 @@ mod tests {
         assert!(operator_query_needs_admit("by-arxiv"));
         assert!(operator_query_needs_admit("by-vid"));
         for kind in ["count", "orphans", "without-evidence", "citation-hops"] {
-            assert!(!operator_query_needs_admit(kind), "{kind} must stay ungated");
+            assert!(
+                !operator_query_needs_admit(kind),
+                "{kind} must stay ungated"
+            );
         }
     }
 
@@ -363,10 +364,7 @@ mod tests {
     fn paper_id_for_operator_read_prefers_explicit() {
         let prior = std::env::var("DA_RETRIEVAL_PAPER_ID").ok();
         unsafe { std::env::set_var("DA_RETRIEVAL_PAPER_ID", "from-env") };
-        assert_eq!(
-            paper_id_for_operator_read(Some("explicit")),
-            "explicit"
-        );
+        assert_eq!(paper_id_for_operator_read(Some("explicit")), "explicit");
         assert_eq!(paper_id_for_operator_read(None), "from-env");
         unsafe {
             match prior {

@@ -63,13 +63,11 @@ pub fn match_figures(
             .iter()
             .filter(|im| im.page == cap.page && !used.contains(&im.xref))
             .collect();
-        let best = candidates
-            .iter()
-            .min_by(|a, b| {
-                let da = ((a.bbox[1] + a.bbox[3]) / 2.0 - cap_y).abs();
-                let db = ((b.bbox[1] + b.bbox[3]) / 2.0 - cap_y).abs();
-                da.partial_cmp(&db).unwrap_or(std::cmp::Ordering::Equal)
-            });
+        let best = candidates.iter().min_by(|a, b| {
+            let da = ((a.bbox[1] + a.bbox[3]) / 2.0 - cap_y).abs();
+            let db = ((b.bbox[1] + b.bbox[3]) / 2.0 - cap_y).abs();
+            da.partial_cmp(&db).unwrap_or(std::cmp::Ordering::Equal)
+        });
         let Some(im) = best else { continue };
         used.insert(im.xref);
         let section = sections
@@ -116,15 +114,27 @@ mod tests {
     use super::*;
 
     fn cap(label: &str, page: u32, y0: f64, y1: f64) -> CaptionRect {
-        CaptionRect { label: label.into(), page, y0, y1 }
+        CaptionRect {
+            label: label.into(),
+            page,
+            y0,
+            y1,
+        }
     }
     fn img(xref: u64, page: u32, y: f64) -> ImageObs {
-        ImageObs { xref, page, bbox: [0.0, y, 100.0, y + 50.0] }
+        ImageObs {
+            xref,
+            page,
+            bbox: [0.0, y, 100.0, y + 50.0],
+        }
     }
 
     #[test]
     fn nearest_vertical_match() {
-        let caps = [cap("Figure 1.1", 5, 200.0, 210.0), cap("Figure 1.2", 5, 600.0, 610.0)];
+        let caps = [
+            cap("Figure 1.1", 5, 200.0, 210.0),
+            cap("Figure 1.2", 5, 600.0, 610.0),
+        ];
         let imgs = [img(10, 5, 300.0), img(11, 5, 100.0), img(12, 6, 100.0)];
         let recs = match_figures(&caps, &imgs, &[]);
         assert_eq!(recs.len(), 2);
@@ -149,8 +159,20 @@ mod tests {
         let caps = [cap("Figure 3.1", 20, 50.0, 60.0)];
         let imgs = [img(1, 20, 40.0)];
         let sections = [
-            SectionRange { section_id: "cover".into(), page_start: 1, page_end: 25, title: "Trinity University".into(), is_furniture: true },
-            SectionRange { section_id: "s2".into(), page_start: 18, page_end: 30, title: "Chapter 2".into(), is_furniture: false },
+            SectionRange {
+                section_id: "cover".into(),
+                page_start: 1,
+                page_end: 25,
+                title: "Trinity University".into(),
+                is_furniture: true,
+            },
+            SectionRange {
+                section_id: "s2".into(),
+                page_start: 18,
+                page_end: 30,
+                title: "Chapter 2".into(),
+                is_furniture: false,
+            },
         ];
         let recs = match_figures(&caps, &imgs, &sections);
         assert_eq!(recs[0].section_id.as_deref(), Some("s2"));

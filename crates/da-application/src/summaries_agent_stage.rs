@@ -4,11 +4,11 @@
 //! ADR-055 lineage: model/binding/prompt_sha in provenance.
 
 use da_domain::agent_manifest::AgentManifest;
+use da_domain::negative_memory::{AdmitKey, admit_claim};
 use da_domain::summaries_llm::{
-    build_user_message, compile_injection_policy, extract_json, grounding_score, scrub_injection,
-    SummarySectionInput,
+    SummarySectionInput, build_user_message, compile_injection_policy, extract_json,
+    grounding_score, scrub_injection,
 };
-use da_domain::negative_memory::{admit_claim, AdmitKey};
 use da_ports::agent_memory::{AgentMemory, ArticleFeatures, ConstructionTrace, TrajectoryRecord};
 use da_ports::llm_client::{ChatMessage, ChatOptions, LLMClient};
 use da_ports::negative_memory::NegativeMemoryPort;
@@ -61,7 +61,17 @@ pub struct AgentRunContext<'a> {
 pub async fn run_summaries_agent(
     ctx: AgentRunContext<'_>,
 ) -> Result<SummariesAgentOutput, SummariesAgentError> {
-    let AgentRunContext { store, memory, llm, manifest, model_name, system_prompt, injection_policy_yaml, paper_id, negatives } = ctx;
+    let AgentRunContext {
+        store,
+        memory,
+        llm,
+        manifest,
+        model_name,
+        system_prompt,
+        injection_policy_yaml,
+        paper_id,
+        negatives,
+    } = ctx;
     manifest.check_locks().map_err(SummariesAgentError::Agent)?;
     if !manifest.identity.enabled {
         return Err(SummariesAgentError::Agent(format!(
@@ -103,10 +113,9 @@ pub async fn run_summaries_agent(
         .get("abstract_text")
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    let sections: Vec<SummarySectionInput> = serde_json::from_value(
-        parsed.get("sections").cloned().unwrap_or_default(),
-    )
-    .map_err(|e| SummariesAgentError::NoParsed(format!("{paper_id}: sections: {e}")))?;
+    let sections: Vec<SummarySectionInput> =
+        serde_json::from_value(parsed.get("sections").cloned().unwrap_or_default())
+            .map_err(|e| SummariesAgentError::NoParsed(format!("{paper_id}: sections: {e}")))?;
     let max_chars = manifest
         .prompt
         .inputs
@@ -124,8 +133,14 @@ pub async fn run_summaries_agent(
     let resp = llm
         .chat(
             &[
-                ChatMessage { role: "system".into(), content: system_prompt.to_string() },
-                ChatMessage { role: "user".into(), content: user_clean },
+                ChatMessage {
+                    role: "system".into(),
+                    content: system_prompt.to_string(),
+                },
+                ChatMessage {
+                    role: "user".into(),
+                    content: user_clean,
+                },
             ],
             &ChatOptions {
                 model: model_name.to_string(),
@@ -166,33 +181,53 @@ pub async fn run_summaries_agent(
         obj.get("tldr").and_then(|v| v.as_str()).unwrap_or(""),
         obj.get("methods").and_then(|v| v.as_str()).unwrap_or(""),
         obj.get("results").and_then(|v| v.as_str()).unwrap_or(""),
-        obj.get("limitations").and_then(|v| v.as_str()).unwrap_or(""),
+        obj.get("limitations")
+            .and_then(|v| v.as_str())
+            .unwrap_or(""),
         &obj.get("contributions")
             .and_then(|v| v.as_array())
-            .map(|a| a.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join(" "))
+            .map(|a| {
+                a.iter()
+                    .filter_map(|x| x.as_str())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            })
             .unwrap_or_default(),
-    ].join(" ");
+    ]
+    .join(" ");
     let grounding = (grounding_score(&summary_text, &user) * 1000.0).round() / 1000.0;
 
     let body_chars: usize = sections.iter().map(|s| s.text.len()).sum();
-    let formulas = parsed.get("formulas").and_then(|v| v.as_array()).map(|a| a.len()).unwrap_or(0);
+    let formulas = parsed
+        .get("formulas")
+        .and_then(|v| v.as_array())
+        .map(|a| a.len())
+        .unwrap_or(0);
     let furniture_share = store
         .read_raw(paper_id, "quality_signals.json")
         .ok()
         .flatten()
         .and_then(|q| serde_json::from_str::<serde_json::Value>(&q).ok())
-        .and_then(|q| q.as_array().and_then(|arr| {
-            arr.iter()
-                .find(|s| s.get("signal_id").and_then(|v| v.as_str()) == Some("furniture_share"))
-                .and_then(|s| s.get("value"))
-                .and_then(|v| v.as_f64())
-        }))
+        .and_then(|q| {
+            q.as_array().and_then(|arr| {
+                arr.iter()
+                    .find(|s| {
+                        s.get("signal_id").and_then(|v| v.as_str()) == Some("furniture_share")
+                    })
+                    .and_then(|s| s.get("value"))
+                    .and_then(|v| v.as_f64())
+            })
+        })
         .unwrap_or(0.0);
     let grammar = store
         .read_object(paper_id)
         .ok()
         .flatten()
-        .and_then(|m| m.get("grammar_profile").and_then(|v| v.as_str()).map(str::to_string))
+        .and_then(|m| {
+            m.get("grammar_profile")
+                .and_then(|v| v.as_str())
+                .map(str::to_string)
+        })
         .unwrap_or_else(|| "arxiv_pdf_dot".to_string());
 
     // PageIndex navigation features (structural profile for routing)
@@ -204,22 +239,32 @@ pub async fn run_summaries_agent(
         .and_then(|nav| {
             let arr = nav.as_array()?;
             let max_depth = arr.iter().filter_map(|n| n.get("depth")?.as_u64()).max()? as usize;
-            let body_nodes = arr.iter().filter(|n| n.get("role").and_then(|r| r.as_str()) == Some("body")).count();
-            let branching = arr.iter().filter(|n| {
-                n.get("children_section_ids").and_then(|c| c.as_array()).map(|a| !a.is_empty()).unwrap_or(false)
-            }).count();
-            let titles: Vec<String> = arr.iter()
+            let body_nodes = arr
+                .iter()
+                .filter(|n| n.get("role").and_then(|r| r.as_str()) == Some("body"))
+                .count();
+            let branching = arr
+                .iter()
+                .filter(|n| {
+                    n.get("children_section_ids")
+                        .and_then(|c| c.as_array())
+                        .map(|a| !a.is_empty())
+                        .unwrap_or(false)
+                })
+                .count();
+            let titles: Vec<String> = arr
+                .iter()
                 .filter(|n| n.get("role").and_then(|r| r.as_str()) == Some("body"))
                 .filter_map(|n| n.get("title").and_then(|t| t.as_str()))
                 .map(str::to_string)
                 .collect();
             Some((Some(max_depth), Some(body_nodes), Some(branching), titles))
         });
-    let (nav_depth, nav_body, nav_branch, nav_titles) = nav_features
-        .unwrap_or((None, None, None, vec![]));
+    let (nav_depth, nav_body, nav_branch, nav_titles) =
+        nav_features.unwrap_or((None, None, None, vec![]));
 
     // trajectory into the CVF memory (record-only, W1)
-        let output_fields: std::collections::BTreeMap<String, usize> = obj
+    let output_fields: std::collections::BTreeMap<String, usize> = obj
         .as_object()
         .map(|map| {
             map.iter()
@@ -292,13 +337,36 @@ mod tests {
 
     struct FakeStore(BTreeMap<(String, String), String>);
     impl SchemaObjectStore for FakeStore {
-        fn object_class(&self) -> &str { "article" }
-        fn norm(&self) -> Result<da_domain::schema_invariants::ObjectNorm, SchemaObjectStoreError> { unimplemented!() }
-        fn list_ids(&self) -> Result<Vec<String>, SchemaObjectStoreError> { Ok(vec![]) }
-        fn read_object(&self, _id: &str) -> Result<Option<serde_yaml::Value>, SchemaObjectStoreError> { Ok(None) }
-        fn read_collection(&self, _id: &str, _rel: &str) -> Result<Option<Vec<serde_yaml::Value>>, SchemaObjectStoreError> { Ok(None) }
-        fn file_exists(&self, _id: &str, _rel: &str) -> Result<bool, SchemaObjectStoreError> { Ok(true) }
-        fn file_backed_checks(&self) -> Box<dyn da_domain::schema_invariants::FileBackedChecks + '_> { unimplemented!() }
+        fn object_class(&self) -> &str {
+            "article"
+        }
+        fn norm(&self) -> Result<da_domain::schema_invariants::ObjectNorm, SchemaObjectStoreError> {
+            unimplemented!()
+        }
+        fn list_ids(&self) -> Result<Vec<String>, SchemaObjectStoreError> {
+            Ok(vec![])
+        }
+        fn read_object(
+            &self,
+            _id: &str,
+        ) -> Result<Option<serde_yaml::Value>, SchemaObjectStoreError> {
+            Ok(None)
+        }
+        fn read_collection(
+            &self,
+            _id: &str,
+            _rel: &str,
+        ) -> Result<Option<Vec<serde_yaml::Value>>, SchemaObjectStoreError> {
+            Ok(None)
+        }
+        fn file_exists(&self, _id: &str, _rel: &str) -> Result<bool, SchemaObjectStoreError> {
+            Ok(true)
+        }
+        fn file_backed_checks(
+            &self,
+        ) -> Box<dyn da_domain::schema_invariants::FileBackedChecks + '_> {
+            unimplemented!()
+        }
         fn read_raw(&self, id: &str, rel: &str) -> Result<Option<String>, SchemaObjectStoreError> {
             Ok(self.0.get(&(id.to_string(), rel.to_string())).cloned())
         }
@@ -307,15 +375,27 @@ mod tests {
     struct FakeLlm;
     #[async_trait::async_trait]
     impl LLMClient for FakeLlm {
-        fn provider_id(&self) -> &str { "fake" }
-        fn can_make_request(&self) -> bool { true }
-        async fn chat(&self, _m: &[ChatMessage], _o: &ChatOptions) -> LLMResult<da_ports::llm_client::ChatResponse> {
+        fn provider_id(&self) -> &str {
+            "fake"
+        }
+        fn can_make_request(&self) -> bool {
+            true
+        }
+        async fn chat(
+            &self,
+            _m: &[ChatMessage],
+            _o: &ChatOptions,
+        ) -> LLMResult<da_ports::llm_client::ChatResponse> {
             Ok(da_ports::llm_client::ChatResponse {
                 text: r#"{"tldr":"core claim","contributions":["c1","c2"],"methods":"m","results":"r","limitations":"l"}"#.into(),
                 ok: true, error: None, tokens_in: Some(10), tokens_out: Some(20),
             })
         }
-        async fn extract_structured(&self, _t: &str, _v: &serde_json::Value) -> LLMResult<serde_json::Value> {
+        async fn extract_structured(
+            &self,
+            _t: &str,
+            _v: &serde_json::Value,
+        ) -> LLMResult<serde_json::Value> {
             Err(LLMError::LLM("unused".into()))
         }
     }
@@ -326,9 +406,19 @@ mod tests {
             self.0 = Some(r.clone());
             Ok(1)
         }
-        fn verify(&self) -> bool { true }
-        fn persist(&self) -> Result<(), AgentMemoryError> { Ok(()) }
-        fn stats(&self) -> MemoryStats { MemoryStats { epochs: 1, trajectories: 1, last_epoch_in_ms: Some(1) } }
+        fn verify(&self) -> bool {
+            true
+        }
+        fn persist(&self) -> Result<(), AgentMemoryError> {
+            Ok(())
+        }
+        fn stats(&self) -> MemoryStats {
+            MemoryStats {
+                epochs: 1,
+                trajectories: 1,
+                last_epoch_in_ms: Some(1),
+            }
+        }
     }
 
     const MANIFEST: &str = "schema_version: agent-manifest.v1\nagent_id: summarizer\nagent_version: 1.0.0\nidentity: {role: summarizer, enabled: true}\nmodel: {generate_binding: paper-summary-generate-default}\nprompt: {system_file: data/prompts/summarizer/system.v1.md, inputs: {max_body_chars: 24000}}\nmemory: {backend: cvf, trajectory: true}\noptimization: {optimizer_enabled: false, candidate_slots: []}\nguardrails: {injection_policy: p, max_output_tokens: 4000, rate_limit_per_min: 12}\n";
@@ -337,13 +427,17 @@ mod tests {
     async fn agent_stage_end_to_end_fake() {
         let store = FakeStore(BTreeMap::from([(
             ("p".into(), "parsed/article.json".into()),
-            r#"{"title":"T","abstract_text":"A","sections":[{"title":"S","text":"body"}]}"#.to_string(),
+            r#"{"title":"T","abstract_text":"A","sections":[{"title":"S","text":"body"}]}"#
+                .to_string(),
         )]));
         let mut mem = FakeMemory(None);
         let llm = FakeLlm;
         let m = AgentManifest::from_yaml_str(MANIFEST).unwrap();
         let out = run_summaries_agent(AgentRunContext {
-            store: &store, memory: &mut mem, llm: &llm, manifest: &m,
+            store: &store,
+            memory: &mut mem,
+            llm: &llm,
+            manifest: &m,
             model_name: "agnes-ai/agnes-2.5-flash",
             system_prompt: "system prompt v1",
             injection_policy_yaml: "scrub_patterns: []\n",
@@ -356,12 +450,18 @@ mod tests {
         assert_eq!(out.epoch, Some(1));
         let rec = mem.0.as_ref().expect("trajectory recorded");
         assert!(rec.grounding_hint.is_some(), "grounding in trajectory");
-        let f = rec.article_features.as_ref().expect("features in trajectory");
+        let f = rec
+            .article_features
+            .as_ref()
+            .expect("features in trajectory");
         assert_eq!(f.grammar, "arxiv_pdf_dot");
         assert!(out.grounding >= 0.0);
         let node: serde_json::Value = serde_json::from_str(&out.summary_node_json).unwrap();
         assert_eq!(node["provenance"]["agent"], "summarizer");
-        assert_eq!(node["provenance"]["binding"], "paper-summary-generate-default");
+        assert_eq!(
+            node["provenance"]["binding"],
+            "paper-summary-generate-default"
+        );
         assert_eq!(node["tldr"], "core claim");
     }
 
@@ -377,21 +477,41 @@ mod tests {
         fn list_for_paper(
             &self,
             paper_id: &str,
-        ) -> Result<Vec<da_domain::negative_memory::NegativeMemoryRecord>, da_ports::negative_memory::NegativeMemoryError> {
-            Ok(self.0.iter().filter(|r| r.paper_id == paper_id).cloned().collect())
+        ) -> Result<
+            Vec<da_domain::negative_memory::NegativeMemoryRecord>,
+            da_ports::negative_memory::NegativeMemoryError,
+        > {
+            Ok(self
+                .0
+                .iter()
+                .filter(|r| r.paper_id == paper_id)
+                .cloned()
+                .collect())
         }
     }
 
     struct SpyLlm(std::sync::atomic::AtomicBool);
     #[async_trait::async_trait]
     impl LLMClient for SpyLlm {
-        fn provider_id(&self) -> &str { "spy" }
-        fn can_make_request(&self) -> bool { true }
-        async fn chat(&self, _m: &[ChatMessage], _o: &ChatOptions) -> LLMResult<da_ports::llm_client::ChatResponse> {
+        fn provider_id(&self) -> &str {
+            "spy"
+        }
+        fn can_make_request(&self) -> bool {
+            true
+        }
+        async fn chat(
+            &self,
+            _m: &[ChatMessage],
+            _o: &ChatOptions,
+        ) -> LLMResult<da_ports::llm_client::ChatResponse> {
             self.0.store(true, std::sync::atomic::Ordering::SeqCst);
             Err(LLMError::LLM("must not be called".into()))
         }
-        async fn extract_structured(&self, _t: &str, _v: &serde_json::Value) -> LLMResult<serde_json::Value> {
+        async fn extract_structured(
+            &self,
+            _t: &str,
+            _v: &serde_json::Value,
+        ) -> LLMResult<serde_json::Value> {
             Err(LLMError::LLM("unused".into()))
         }
     }
@@ -400,7 +520,8 @@ mod tests {
     async fn blocked_negative_skips_llm() {
         let store = FakeStore(BTreeMap::from([(
             ("p".into(), "parsed/article.json".into()),
-            r#"{"title":"T","abstract_text":"A","sections":[{"title":"S","text":"body"}]}"#.to_string(),
+            r#"{"title":"T","abstract_text":"A","sections":[{"title":"S","text":"body"}]}"#
+                .to_string(),
         )]));
         let mut mem = FakeMemory(None);
         let llm = SpyLlm(std::sync::atomic::AtomicBool::new(false));
@@ -415,7 +536,10 @@ mod tests {
         );
         let neg = FakeNeg(vec![rec]);
         let err = run_summaries_agent(AgentRunContext {
-            store: &store, memory: &mut mem, llm: &llm, manifest: &m,
+            store: &store,
+            memory: &mut mem,
+            llm: &llm,
+            manifest: &m,
             model_name: "agnes-ai/agnes-2.5-flash",
             system_prompt: "system prompt v1",
             injection_policy_yaml: "scrub_patterns: []\n",
