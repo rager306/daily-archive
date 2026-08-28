@@ -3,14 +3,25 @@
 //! This crate owns Java GROBID HTTP, this-cut TEI IR, and the `ParserPort`
 //! projector onto `da_ports::parser::ParsedArticle`. HTML parse, PDF
 //! classification, and XY-Cut stay in `da-adapters`.
+//!
+//! Since M464-z84in2 S02 the transport is behind the provider-neutral
+//! `ParseBackend` seam (`TeiEnvelope` in, exact backend/profile identity out),
+//! so cached-TEI replay and the GROBID HTTP path share one contract (R105).
 
+mod backend;
+mod envelope;
 mod http;
 mod ir;
 mod lift;
 mod profile;
 mod projector;
 
-pub use http::GrobidParser;
+pub use backend::{
+    CACHED_TEI_BACKEND_ID, CachedTeiBackend, GROBID_HTTP_BACKEND_ID, ParseBackend,
+    ParseBackendRequest,
+};
+pub use envelope::{TeiEnvelope, TeiIdentity};
+pub use http::{GrobidHttpBackend, GrobidParser};
 pub use ir::TeiParseIr;
 pub use profile::GrobidProfile;
 

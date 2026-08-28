@@ -1,33 +1,48 @@
-//! Java GROBID HTTP client (`processFulltextDocument` / `isalive`).
+//! Java GROBID HTTP transport backend + `GrobidParser` compatibility facade.
+//!
+//! Since M464-z84in2 S02/T01 the transport is exposed through the
+//! provider-neutral [`ParseBackend`] seam ([`GrobidHttpBackend`]); the
+//! historical [`GrobidParser`] stays as a compatibility facade delegating to
+//! it, so existing `Arc<dyn ParserPort>` callers, the `grobid_parse` lifecycle
+//! span, external `ParserError` mapping and cache identities are unchanged
+//! (R105). Typed 204/503/timeout semantics remain slice S04 scope.
 
+use crate::backend::{ParseBackend, ParseBackendRequest};
+use crate::envelope::{TeiEnvelope, TeiIdentity};
 use crate::profile::GrobidProfile;
+use async_trait::async_trait;
 use da_ports::parser::{ParseResult, ParserError};
 
 pub(crate) const DEFAULT_GROBID_URL: &str = "http://127.0.0.1:8070";
 
-/// GROBID HTTP adapter for PDF → scholarly structure (TEI XML).
-#[derive(Clone)]
-pub struct GrobidParser {
+const DEFAULT_TIMEOUT_SECS: u64 = 120;
+
+/// Provider-neutral view of the Java GROBID HTTP transport (R105).
+///
+/// Owns exactly the transport concern: endpoint URL, HTTP client and the
+/// effective-input [`GrobidProfile`] that tunes the REST dialect. Lifting and
+/// projection do not live here.
+#[derive(Clone, Debug)]
+pub struct GrobidHttpBackend {
     url: String,
     client: reqwest::Client,
     profile: GrobidProfile,
 }
 
-impl GrobidParser {
+impl GrobidHttpBackend {
+    /// Build the backend against `url` (default `DEFAULT_GROBID_URL`) with
+    /// the rich profile and the bounded interactive timeout.
     pub fn new(url: Option<&str>) -> Self {
         Self {
             url: url.unwrap_or(DEFAULT_GROBID_URL).to_string(),
-            client: reqwest::Client::builder()
-                .timeout(std::time::Duration::from_secs(120))
-                .build()
-                .expect("reqwest client"),
+            client: build_client(std::time::Duration::from_secs(DEFAULT_TIMEOUT_SECS)),
             profile: GrobidProfile::rich(),
         }
     }
 
-    pub fn from_env() -> Self {
-        let url = std::env::var("GROBID_URL").unwrap_or_else(|_| DEFAULT_GROBID_URL.to_string());
-        Self::new(Some(&url))
+    pub fn with_profile(mut self, profile: GrobidProfile) -> Self {
+        self.profile = profile;
+        self
     }
 
     /// Override the bounded HTTP request timeout for batch profiles.
@@ -35,9 +50,10 @@ impl GrobidParser {
     /// Full citation/header consolidation can legitimately exceed the 120s
     /// interactive default while Crossref applies rate-limit backoff. The
     /// caller should record this operational policy in its run report. It does
-    /// not alter successful TEI semantics and therefore is not a content-key input.
-    pub fn with_profile(mut self, profile: GrobidProfile) -> Self {
-        self.profile = profile;
+    /// not alter successful TEI semantics and therefore is not a content-key
+    /// input (and not part of [`Self::identity`]).
+    pub fn with_timeout(mut self, timeout: std::time::Duration) -> Self {
+        self.client = build_client(timeout);
         self
     }
 
@@ -45,12 +61,15 @@ impl GrobidParser {
         self.profile
     }
 
-    pub fn with_timeout(mut self, timeout: std::time::Duration) -> Self {
-        self.client = reqwest::Client::builder()
-            .timeout(timeout)
-            .build()
-            .expect("reqwest client");
-        self
+    /// Endpoint base URL (diagnostics only; never part of identity).
+    pub fn url(&self) -> &str {
+        &self.url
+    }
+
+    /// Exact backend/profile identity stamped on every envelope. Deliberately
+    /// independent of transport tuning (timeout, pools).
+    pub fn identity(&self) -> TeiIdentity {
+        TeiIdentity::grobid_http(self.profile)
     }
 
     /// Check if GROBID is alive.
@@ -148,5 +167,86 @@ impl GrobidParser {
         );
 
         Ok(tei_xml)
+    }
+}
+
+fn build_client(timeout: std::time::Duration) -> reqwest::Client {
+    reqwest::Client::builder()
+        .timeout(timeout)
+        .build()
+        .expect("reqwest client")
+}
+
+#[async_trait]
+impl ParseBackend for GrobidHttpBackend {
+    async fn fetch_tei(&self, request: ParseBackendRequest) -> ParseResult<TeiEnvelope> {
+        let paper_id = request.paper_id().to_string();
+        let tei_xml = self.process_fulltext(request.pdf_bytes()).await?;
+        let identity = self.identity();
+        // Sizes and identity only — raw TEI/PDF never reaches logs.
+        tracing::debug!(
+            api = "grobid",
+            backend = %identity.backend_id(),
+            profile = %identity.profile_fingerprint(),
+            paper_id = %paper_id,
+            tei_size = tei_xml.len(),
+            "parse backend produced TEI envelope"
+        );
+        Ok(TeiEnvelope::new(tei_xml.into_bytes(), identity))
+    }
+}
+
+/// GROBID HTTP adapter for PDF → scholarly structure (TEI XML).
+///
+/// Compatibility facade: same constructors, builder methods, `is_alive` and
+/// `process_fulltext` semantics as before the seam extraction; all of them
+/// delegate to [`GrobidHttpBackend`]. The `impl ParserPort` in
+/// `crate::projector` is untouched.
+#[derive(Clone, Debug)]
+pub struct GrobidParser {
+    transport: GrobidHttpBackend,
+}
+
+impl GrobidParser {
+    pub fn new(url: Option<&str>) -> Self {
+        Self {
+            transport: GrobidHttpBackend::new(url),
+        }
+    }
+
+    pub fn from_env() -> Self {
+        let url = std::env::var("GROBID_URL").unwrap_or_else(|_| DEFAULT_GROBID_URL.to_string());
+        Self::new(Some(&url))
+    }
+
+    pub fn with_profile(mut self, profile: GrobidProfile) -> Self {
+        self.transport = self.transport.with_profile(profile);
+        self
+    }
+
+    pub fn profile(&self) -> GrobidProfile {
+        self.transport.profile()
+    }
+
+    /// Override the bounded HTTP request timeout for batch profiles.
+    ///
+    /// Full citation/header consolidation can legitimately exceed the 120s
+    /// interactive default while Crossref applies rate-limit backoff. The
+    /// caller should record this operational policy in its run report. It does
+    /// not alter successful TEI semantics and therefore is not a content-key input.
+    pub fn with_timeout(mut self, timeout: std::time::Duration) -> Self {
+        self.transport = self.transport.with_timeout(timeout);
+        self
+    }
+
+    /// Check if GROBID is alive.
+    pub async fn is_alive(&self) -> bool {
+        self.transport.is_alive().await
+    }
+
+    /// Process PDF via GROBID full-text endpoint → TEI XML
+    /// (delegates to [`GrobidHttpBackend::process_fulltext`]).
+    pub(crate) async fn process_fulltext(&self, pdf_bytes: &[u8]) -> ParseResult<String> {
+        self.transport.process_fulltext(pdf_bytes).await
     }
 }
