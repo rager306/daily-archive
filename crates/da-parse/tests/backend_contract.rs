@@ -20,8 +20,10 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use da_parse::{
-    CACHED_TEI_BACKEND_ID, CachedTeiBackend, FailureCode, FailurePhase, GROBID_HTTP_BACKEND_ID,
-    GrobidHttpBackend, GrobidProfile, ParseBackend, ParseBackendRequest, TeiEnvelope,
+    CACHED_TEI_BACKEND_ID, CachedTeiBackend, Consolidation, CoordinateFamily, CoordinateSet,
+    FailureCode, FailurePhase, FulltextDialectV1, GROBID_HTTP_BACKEND_ID, GrobidHttpBackend,
+    GrobidProfile, LimitKind, PageWindow, ParseBackend, ParseBackendRequest, RetryAfter,
+    TeiEnvelope,
 };
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -51,8 +53,12 @@ struct RecordedRequest {
 enum ResponsePlan {
     /// `200 OK` with an `application/xml` body.
     Xml(Vec<u8>),
-    /// Non-success status with a reason phrase.
+    /// Status with a reason phrase and no extra headers.
     Status(u16, &'static str),
+    /// Status plus explicit response headers (Retry-After contract).
+    StatusWithHeaders(u16, &'static str, Vec<(&'static str, &'static str)>),
+    /// Delay the successful response head to trigger the client timeout.
+    Delayed(Vec<u8>, Duration),
 }
 
 type RequestLog = Arc<Mutex<Vec<RecordedRequest>>>;
@@ -80,15 +86,27 @@ async fn serve_connection(mut stream: tokio::net::TcpStream, plan: ResponsePlan,
         return;
     };
     log.lock().expect("request log lock").push(request);
-    let (status, reason, body) = match plan {
-        ResponsePlan::Xml(body) => (200u16, "OK", body),
-        ResponsePlan::Status(code, reason) => (code, reason, Vec::new()),
+    let (status, reason, headers, body, delay) = match plan {
+        ResponsePlan::Xml(body) => (200u16, "OK", Vec::new(), body, None),
+        ResponsePlan::Status(code, reason) => (code, reason, Vec::new(), Vec::new(), None),
+        ResponsePlan::StatusWithHeaders(code, reason, headers) => {
+            (code, reason, headers, Vec::new(), None)
+        }
+        ResponsePlan::Delayed(body, delay) => (200u16, "OK", Vec::new(), body, Some(delay)),
     };
-    let mut response = format!(
-        "HTTP/1.1 {status} {reason}\r\nContent-Type: application/xml; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+    if let Some(delay) = delay {
+        tokio::time::sleep(delay).await;
+    }
+    let mut head =
+        format!("HTTP/1.1 {status} {reason}\r\nContent-Type: application/xml; charset=utf-8\r\n");
+    for (name, value) in headers {
+        head.push_str(&format!("{name}: {value}\r\n"));
+    }
+    head.push_str(&format!(
+        "Content-Length: {}\r\nConnection: close\r\n\r\n",
         body.len()
-    )
-    .into_bytes();
+    ));
+    let mut response = head.into_bytes();
     response.extend_from_slice(&body);
     let _ = stream.write_all(&response).await;
     let _ = stream.shutdown().await;
@@ -312,7 +330,12 @@ async fn http_backend_structural_profile_sends_bounded_dialect() {
     let (addr, log) = spawn_grobid_stub(ResponsePlan::Xml(TEI_FIXTURE.as_bytes().to_vec())).await;
     let backend = http_backend(addr, GrobidProfile::structural());
 
-    let envelope = backend.fetch_tei(request_fixture()).await.expect("fetch");
+    let request = ParseBackendRequest::from_legacy_profile(
+        &GrobidProfile::structural(),
+        "contract-paper",
+        PDF_FIXTURE.to_vec(),
+    );
+    let envelope = backend.fetch_tei(request).await.expect("fetch");
     assert_eq!(envelope.raw_tei(), TEI_FIXTURE.as_bytes());
 
     let requests = log.lock().expect("request log lock");
@@ -437,6 +460,178 @@ async fn http_backend_carries_empty_tei_verbatim_until_typed() {
         envelope.identity().profile_fingerprint(),
         GrobidProfile::rich().configuration_fingerprint()
     );
+}
+
+#[tokio::test]
+async fn http_backend_projects_the_full_v1_java_wire_dialect() {
+    let (addr, log) = spawn_grobid_stub(ResponsePlan::Xml(TEI_FIXTURE.as_bytes().to_vec())).await;
+    let backend = http_backend(addr, GrobidProfile::rich());
+    let dialect = FulltextDialectV1::from_parts(
+        Consolidation::try_new(2, 1, 1).expect("sanctioned modes"),
+        CoordinateSet::from_families([CoordinateFamily::Figure, CoordinateFamily::Note]),
+    )
+    .with_raw_citations(true)
+    .with_raw_affiliations(true)
+    .with_segment_sentences(true)
+    .with_emit_ids(true)
+    .with_page_window(Some(PageWindow::try_new(2, 5).expect("valid pages")));
+    let request = ParseBackendRequest::with_dialect("extended", PDF_FIXTURE.to_vec(), dialect);
+
+    let envelope = backend.fetch_tei(request).await.expect("extended fetch");
+    assert_eq!(envelope.raw_tei(), TEI_FIXTURE.as_bytes());
+    let requests = log.lock().expect("request log lock");
+    assert_eq!(requests.len(), 1, "no hidden retry");
+    let fields = multipart_fields(&requests[0].content_type, &requests[0].body);
+    let field = |name: &str| {
+        fields
+            .iter()
+            .find(|(n, _)| n == name)
+            .map(|(_, v)| v.as_str())
+    };
+    for (name, expected) in [
+        ("consolidateHeader", "2"),
+        ("consolidateCitations", "1"),
+        ("consolidateFunders", "1"),
+        ("includeRawCitations", "1"),
+        ("includeRawAffiliations", "1"),
+        ("segmentSentences", "1"),
+        ("generateIDs", "1"),
+        ("start", "2"),
+        ("end", "5"),
+        ("teiCoordinates", "[\"figure\",\"note\"]"),
+    ] {
+        assert_eq!(field(name), Some(expected), "Java GROBID field {name}");
+    }
+}
+
+#[tokio::test]
+async fn http_backend_carries_non_utf8_success_bytes_verbatim() {
+    let bytes = b"<TEI>\xff\xfe raw</TEI>".to_vec();
+    let (addr, log) = spawn_grobid_stub(ResponsePlan::Xml(bytes.clone())).await;
+    let envelope = http_backend(addr, GrobidProfile::rich())
+        .fetch_tei(request_fixture())
+        .await
+        .expect("non-UTF-8 success");
+    assert_eq!(envelope.raw_tei(), bytes);
+    assert_eq!(log.lock().expect("request log lock").len(), 1);
+}
+
+#[tokio::test]
+async fn http_backend_maps_204_400_and_413_to_typed_failures() {
+    for (status, reason, code, limit) in [
+        (204, "No Content", FailureCode::NoContent, None),
+        (400, "Bad Request", FailureCode::InvalidRequest, None),
+        (
+            413,
+            "Payload Too Large",
+            FailureCode::LimitExceeded,
+            Some(LimitKind::RequestBytes),
+        ),
+    ] {
+        let (addr, log) = spawn_grobid_stub(ResponsePlan::Status(status, reason)).await;
+        let err = http_backend(addr, GrobidProfile::rich())
+            .fetch_tei(request_fixture())
+            .await
+            .expect_err("typed status failure");
+        assert_eq!(err.code(), code, "status {status}");
+        assert_eq!(err.status(), Some(status), "status {status}");
+        assert_eq!(err.enforced_limit(), limit, "status {status}");
+        assert_eq!(log.lock().expect("request log lock").len(), 1, "no retry");
+    }
+}
+
+#[tokio::test]
+async fn http_backend_maps_503_retry_after_without_retrying() {
+    for (headers, expected) in [
+        (vec![("Retry-After", "42")], Some(RetryAfter::Seconds(42))),
+        (
+            vec![("Retry-After", "Wed, 21 Oct 2026 07:28:00 GMT")],
+            Some(RetryAfter::Unparsable),
+        ),
+        (Vec::new(), None),
+    ] {
+        let plan = ResponsePlan::StatusWithHeaders(503, "Service Unavailable", headers);
+        let (addr, log) = spawn_grobid_stub(plan).await;
+        let err = http_backend(addr, GrobidProfile::rich())
+            .fetch_tei(request_fixture())
+            .await
+            .expect_err("503 is typed busy");
+        assert_eq!(err.code(), FailureCode::Busy);
+        assert_eq!(err.status(), Some(503));
+        assert_eq!(err.retry_after(), expected);
+        assert_eq!(
+            log.lock().expect("request log lock").len(),
+            1,
+            "honest no-retry 503"
+        );
+    }
+}
+
+#[tokio::test]
+async fn http_backend_maps_delayed_response_to_distinct_timeout() {
+    let plan = ResponsePlan::Delayed(TEI_FIXTURE.as_bytes().to_vec(), Duration::from_millis(250));
+    let (addr, log) = spawn_grobid_stub(plan).await;
+    let backend = http_backend(addr, GrobidProfile::rich()).with_timeout(Duration::from_millis(30));
+    let err = backend
+        .fetch_tei(request_fixture())
+        .await
+        .expect_err("delayed response must time out");
+    assert_eq!(err.code(), FailureCode::Timeout);
+    assert_eq!(err.phase(), FailurePhase::AwaitResponse);
+    assert_eq!(
+        log.lock().expect("request log lock").len(),
+        1,
+        "no timeout retry"
+    );
+}
+
+#[tokio::test]
+async fn opt_in_request_and_response_limits_are_inclusive_and_identity_free() {
+    let (addr, log) = spawn_grobid_stub(ResponsePlan::Xml(TEI_FIXTURE.as_bytes().to_vec())).await;
+    let base = http_backend(addr, GrobidProfile::rich());
+    let bounded = http_backend(addr, GrobidProfile::rich())
+        .with_request_byte_limit(PDF_FIXTURE.len())
+        .with_response_byte_limit(TEI_FIXTURE.len());
+    assert_eq!(
+        base.identity(),
+        bounded.identity(),
+        "limits never enter identity"
+    );
+    let envelope = bounded
+        .fetch_tei(request_fixture())
+        .await
+        .expect("inclusive limits");
+    assert_eq!(envelope.raw_tei(), TEI_FIXTURE.as_bytes());
+    assert_eq!(log.lock().expect("request log lock").len(), 1);
+
+    let before = log.lock().expect("request log lock").len();
+    let request_err = http_backend(addr, GrobidProfile::rich())
+        .with_request_byte_limit(PDF_FIXTURE.len() - 1)
+        .fetch_tei(request_fixture())
+        .await
+        .expect_err("limit+1 request");
+    assert_eq!(request_err.code(), FailureCode::LimitExceeded);
+    assert_eq!(request_err.enforced_limit(), Some(LimitKind::RequestBytes));
+    assert_eq!(request_err.status(), None);
+    assert_eq!(
+        log.lock().expect("request log lock").len(),
+        before,
+        "pre-wire rejection"
+    );
+
+    let response_err = http_backend(addr, GrobidProfile::rich())
+        .with_response_byte_limit(TEI_FIXTURE.len() - 1)
+        .fetch_tei(request_fixture())
+        .await
+        .expect_err("limit+1 response");
+    assert_eq!(response_err.code(), FailureCode::LimitExceeded);
+    assert_eq!(
+        response_err.enforced_limit(),
+        Some(LimitKind::ResponseBytes)
+    );
+    assert_eq!(response_err.phase(), FailurePhase::ReadBody);
+    assert_eq!(response_err.status(), None);
+    assert_eq!(log.lock().expect("request log lock").len(), before + 1);
 }
 
 // ---------------------------------------------------------------------------

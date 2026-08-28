@@ -1,7 +1,7 @@
 //! Provider-neutral parse transport seam: the typed request, the backend
 //! trait and the deterministic cached-TEI backend (R105, M464-z84in2
 //! S02/T01; S04/T01 adds the versioned request dialect and the typed failure
-//! vocabulary).
+//! vocabulary; S04/T02 adds backend-profile-aware default requests).
 //!
 //! Since S04/T01 [`ParseBackendRequest`] carries the serde-versioned V1
 //! fulltext dialect ([`crate::transport::FulltextDialectV1`]) next to the
@@ -94,6 +94,12 @@ pub trait ParseBackend: Send + Sync {
         &self,
         request: ParseBackendRequest,
     ) -> Result<TeiEnvelope, ParseBackendFailure>;
+
+    /// Build the request paired with this backend's default effective-input
+    /// profile. The request dialect remains the sole wire projector.
+    fn default_request(&self, paper_id: &str, pdf_bytes: Vec<u8>) -> ParseBackendRequest {
+        ParseBackendRequest::new(paper_id, pdf_bytes)
+    }
 }
 
 /// Deterministic cached-TEI backend: serves already-available bytes with no

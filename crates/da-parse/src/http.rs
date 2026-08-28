@@ -6,8 +6,13 @@
 //! it, so existing `Arc<dyn ParserPort>` callers, the `grobid_parse` lifecycle
 //! span, external `ParserError` mapping and cache identities are unchanged
 //! (R105). Since S04/T01 the backend seam carries the closed typed failure
-//! vocabulary ([`ParseBackendFailure`]); the wire-level per-branch 204/503/
-//! timeout/limit stub proofs land in slice S04/T02.
+//! vocabulary ([`ParseBackendFailure`]). Since S04/T02 the multipart form is
+//! the **sole projector** of the typed V1 request dialect, successful bodies
+//! are carried as verbatim bytes (any encoding), every wire outcome (200 /
+//! 204 / 503 + `Retry-After` / 400 / 413 / other 5xx / timeout / opt-in byte
+//! bounds) is a typed failure branch proven by the stub contract suite, and
+//! opt-in client-enforced byte bounds exist as transport tuning that never
+//! enters identity.
 //!
 //! Since S02/T03 the facade's `impl ParserPort` lives in [`crate::parser`] and
 //! drives the full backend→envelope→lift→project composition through
@@ -24,26 +29,42 @@ pub(crate) const DEFAULT_GROBID_URL: &str = "http://127.0.0.1:8070";
 
 const DEFAULT_TIMEOUT_SECS: u64 = 120;
 
+/// Opt-in client-enforced byte bounds for one fulltext exchange.
+///
+/// Pure transport tuning: never part of [`GrobidHttpBackend::identity`] and
+/// never a request field. The default is unbounded in both directions —
+/// exactly the S02 compatibility behavior; a bound only acts once it is
+/// explicitly configured, and then maps onto the typed
+/// [`FailureCode::LimitExceeded`] with [`LimitKind::RequestBytes`] /
+/// [`LimitKind::ResponseBytes`] and no provider status.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+struct ByteLimits {
+    request: Option<usize>,
+    response: Option<usize>,
+}
+
 /// Provider-neutral view of the Java GROBID HTTP transport (R105).
 ///
-/// Owns exactly the transport concern: endpoint URL, HTTP client and the
-/// effective-input [`GrobidProfile`] that tunes the REST dialect. Lifting and
-/// projection do not live here.
+/// Owns exactly the transport concern: endpoint URL, HTTP client, the
+/// effective-input [`GrobidProfile`] that pairs with its requests, and the
+/// opt-in byte bounds. Lifting and projection do not live here.
 #[derive(Clone, Debug)]
 pub struct GrobidHttpBackend {
     url: String,
     client: reqwest::Client,
     profile: GrobidProfile,
+    limits: ByteLimits,
 }
 
 impl GrobidHttpBackend {
     /// Build the backend against `url` (default `DEFAULT_GROBID_URL`) with
-    /// the rich profile and the bounded interactive timeout.
+    /// the rich profile, the bounded interactive timeout and no byte bounds.
     pub fn new(url: Option<&str>) -> Self {
         Self {
             url: url.unwrap_or(DEFAULT_GROBID_URL).to_string(),
             client: build_client(std::time::Duration::from_secs(DEFAULT_TIMEOUT_SECS)),
             profile: GrobidProfile::rich(),
+            limits: ByteLimits::default(),
         }
     }
 
@@ -64,6 +85,31 @@ impl GrobidHttpBackend {
         self
     }
 
+    /// Opt-in bound on the outbound request payload (the PDF part of the
+    /// multipart form).
+    ///
+    /// A breach fails fast with a typed, client-enforced
+    /// [`FailureCode::LimitExceeded`] ([`LimitKind::RequestBytes`], no HTTP
+    /// status) **before any wire bytes exist** — exactly zero HTTP requests.
+    /// Transport tuning only: never part of [`Self::identity`], unset by
+    /// default (the S02 compatibility behavior).
+    pub fn with_request_byte_limit(mut self, max_bytes: usize) -> Self {
+        self.limits.request = Some(max_bytes);
+        self
+    }
+
+    /// Opt-in bound on the inbound TEI response body.
+    ///
+    /// The body is streamed; as soon as more than `max_bytes` arrive, the
+    /// fetch fails with a typed, client-enforced
+    /// [`FailureCode::LimitExceeded`] ([`LimitKind::ResponseBytes`], no HTTP
+    /// status) instead of buffering an unbounded payload. Transport tuning
+    /// only: never part of [`Self::identity`], unset by default.
+    pub fn with_response_byte_limit(mut self, max_bytes: usize) -> Self {
+        self.limits.response = Some(max_bytes);
+        self
+    }
+
     pub fn profile(&self) -> GrobidProfile {
         self.profile
     }
@@ -74,7 +120,7 @@ impl GrobidHttpBackend {
     }
 
     /// Exact backend/profile identity stamped on every envelope. Deliberately
-    /// independent of transport tuning (timeout, pools).
+    /// independent of transport tuning (timeout, pools, byte bounds).
     pub fn identity(&self) -> TeiIdentity {
         TeiIdentity::grobid_http(self.profile)
     }
@@ -88,47 +134,97 @@ impl GrobidHttpBackend {
         }
     }
 
-    /// Process PDF via GROBID full-text endpoint → TEI XML.
+    /// Project a typed [`ParseBackendRequest`] onto the Java GROBID fulltext
+    /// wire and run exactly one `POST /api/processFulltextDocument` exchange
+    /// (R105/R107).
     ///
-    /// Sends consolidation + coordinate parameters for richer extraction:
-    /// - `consolidateCitations=1`: enrich references via Crossref/biblio-glutton
-    ///   (adds DOI, venue, publisher, normalized author names). Critical for
-    ///   ADR-053 Layer F cross-paper edges (predecessor_of, superseded_by).
-    /// - `consolidateHeader=1`: enrich paper header (title, authors, DOI, abstract)
-    ///   via Crossref. Improves author disambiguation (Layer G) and DOI coverage.
-    /// - `teiCoordinates=["figure","table","note","formula"]`: add PDF
-    ///   coordinates for figures, tables, footnotes, and formulas (M400 S03
-    ///   T01 adds `formula` so GROBID emits `coords` on `<formula>` elements).
-    ///   Enables Layer I figure image cropping and provenance tracking.
+    /// The multipart form is the **sole projector** of the request's V1
+    /// dialect: every sanctioned field keeps its exact Java GROBID name and
+    /// enum value, and extended V1 fields are appended only when the dialect
+    /// actually enables them (omitted equals the GROBID default), so
+    /// legacy-equivalent dialects render exactly the S02 wire form — `input`,
+    /// `consolidateCitations`, `consolidateHeader`, `teiCoordinates` and
+    /// nothing else (D204 byte-compatible).
     ///
-    /// These parameters are GROBID 0.9.0 REST API options (see GROBID docs).
-    /// They add ~2-5s per paper for Crossref lookups; acceptable for batch ingest.
+    /// Successful bodies are carried as verbatim bytes: no lossy text
+    /// decoding, non-UTF-8 bytes survive. Outcomes are closed and typed:
+    /// `200` → bytes, `204` → no content, `503` → busy with bounded
+    /// `Retry-After` metadata, `400` → invalid request, `413` / opt-in byte
+    /// bounds → limit, other `5xx` → conversion (Java processing/conversion
+    /// failure), anything else → invalid response. There is no internal
+    /// retry, the error body is never read, and no payload ever enters an
+    /// error or a log.
     pub(crate) async fn process_fulltext(
         &self,
-        pdf_bytes: &[u8],
-    ) -> Result<String, ParseBackendFailure> {
+        request: &ParseBackendRequest,
+    ) -> Result<Vec<u8>, ParseBackendFailure> {
         let url = format!("{}/api/processFulltextDocument", self.url);
-        let part = reqwest::multipart::Part::bytes(pdf_bytes.to_vec())
+
+        // Opt-in client-enforced request bound: checked before the multipart
+        // form even exists, so a breach produces exactly zero wire requests.
+        if let Some(max_bytes) = self.limits.request
+            && request.pdf_bytes().len() > max_bytes
+        {
+            tracing::warn!(
+                api = "grobid",
+                endpoint = %url,
+                enforced_limit = "request_bytes",
+                "GROBID processFulltextDocument: request exceeded the opt-in byte bound"
+            );
+            return Err(ParseBackendFailure::limit(LimitKind::RequestBytes, None));
+        }
+
+        let part = reqwest::multipart::Part::bytes(request.pdf_bytes().to_vec())
             .file_name("paper.pdf")
             .mime_str("application/pdf")
             .map_err(|_| ParseBackendFailure::conversion(FailurePhase::MultipartEncode, None))?;
 
-        // Wire dialect: identical field names and enum values to the S02
-        // request (D204 byte-compatible); the typed consolidation levels
-        // render the same `"0"`/`"1"` wire strings for the legacy presets.
-        // S04/T02 makes this multipart the sole projector of the typed
-        // request dialect.
-        let consolidation = self.profile.consolidation();
-        let form = reqwest::multipart::Form::new()
+        // Sole dialect projection: identical field names and enum values to
+        // the S02 request (D204 byte-compatible); the typed consolidation
+        // levels render the same `"0"`/`"1"` wire strings for the legacy
+        // presets. Field semantics:
+        // - `consolidateCitations`: enrich references via Crossref/biblio-glutton
+        //   (ADR-053 Layer F cross-paper edges).
+        // - `consolidateHeader`: enrich paper header (title, authors, DOI,
+        //   abstract) — author disambiguation (Layer G), DOI coverage.
+        // - `teiCoordinates`: PDF coordinates for figures, tables, footnotes
+        //   and formulas (Layer I cropping + provenance).
+        let dialect = request.dialect();
+        let consolidation = dialect.consolidation();
+        let mut form = reqwest::multipart::Form::new()
             .part("input", part)
             .text(
                 "consolidateCitations",
                 consolidation.citations().to_string(),
             )
             .text("consolidateHeader", consolidation.header().to_string())
-            .text("teiCoordinates", GrobidProfile::tei_coordinates_json());
+            .text("teiCoordinates", dialect.coordinates().json_value());
 
-        let resp = self
+        // Extended V1 fields are appended only when the dialect actually
+        // enables them — omitted fields equal the GROBID defaults, which
+        // keeps legacy-equivalent requests byte-identical to S02.
+        if consolidation.funders().value() != 0 {
+            form = form.text("consolidateFunders", consolidation.funders().to_string());
+        }
+        if dialect.raw_citations() {
+            form = form.text("includeRawCitations", "1");
+        }
+        if dialect.raw_affiliations() {
+            form = form.text("includeRawAffiliations", "1");
+        }
+        if dialect.segment_sentences() {
+            form = form.text("segmentSentences", "1");
+        }
+        if dialect.emit_ids() {
+            form = form.text("generateIDs", "1");
+        }
+        if let Some(window) = dialect.page_window() {
+            form = form
+                .text("start", window.start().to_string())
+                .text("end", window.end().to_string());
+        }
+
+        let mut resp = self
             .client
             .post(&url)
             .multipart(form)
@@ -162,6 +258,9 @@ impl GrobidHttpBackend {
             );
             // Closed typed classification; the raw error body is never read.
             return Err(match status.as_u16() {
+                // Honest backpressure: typed busy, no internal retry, bounded
+                // parsed Retry-After metadata (valid seconds / honest
+                // Unparsable / absent).
                 503 => ParseBackendFailure::busy(
                     503,
                     resp.headers()
@@ -171,6 +270,7 @@ impl GrobidHttpBackend {
                 ),
                 400 => ParseBackendFailure::invalid_request(400),
                 413 => ParseBackendFailure::limit(LimitKind::RequestBytes, Some(413)),
+                // Java 5xx processing/conversion failures.
                 s if (500..600).contains(&s) => {
                     ParseBackendFailure::conversion(FailurePhase::AwaitResponse, Some(s))
                 }
@@ -178,23 +278,76 @@ impl GrobidHttpBackend {
             });
         }
 
-        let tei_xml = resp.text().await.map_err(|e| {
-            tracing::warn!(
-                api = "grobid",
-                error = %e,
-                "GROBID processFulltextDocument: failed to read response body"
-            );
-            ParseBackendFailure::conversion(FailurePhase::ReadBody, Some(status.as_u16()))
-        })?;
+        // Success is exactly 200: 204 is a typed absence (no TEI was
+        // produced), and no other 2xx belongs to the Java GROBID fulltext
+        // contract.
+        match status.as_u16() {
+            200 => {}
+            204 => {
+                tracing::warn!(
+                    api = "grobid",
+                    endpoint = %url,
+                    status = 204,
+                    "GROBID processFulltextDocument returned no content"
+                );
+                return Err(ParseBackendFailure::no_content());
+            }
+            s => {
+                tracing::warn!(
+                    api = "grobid",
+                    endpoint = %url,
+                    status = s,
+                    "GROBID processFulltextDocument returned an uninterpretable success status"
+                );
+                return Err(ParseBackendFailure::invalid_response(
+                    FailurePhase::AwaitResponse,
+                    Some(s),
+                ));
+            }
+        }
+
+        // Success bodies are read as raw streamed bytes: the opt-in response
+        // bound is enforced mid-stream, and any encoding — including
+        // non-UTF-8 — survives verbatim (no lossy text decoding).
+        let mut body: Vec<u8> = Vec::new();
+        loop {
+            let Some(chunk) = resp.chunk().await.map_err(|e| {
+                tracing::warn!(
+                    api = "grobid",
+                    error = %e,
+                    "GROBID processFulltextDocument: failed to read response body"
+                );
+                if e.is_timeout() {
+                    ParseBackendFailure::timeout(FailurePhase::ReadBody)
+                } else {
+                    ParseBackendFailure::conversion(FailurePhase::ReadBody, Some(200))
+                }
+            })?
+            else {
+                break;
+            };
+            body.extend_from_slice(&chunk);
+            if let Some(max_bytes) = self.limits.response
+                && body.len() > max_bytes
+            {
+                tracing::warn!(
+                    api = "grobid",
+                    endpoint = %url,
+                    enforced_limit = "response_bytes",
+                    "GROBID processFulltextDocument: response exceeded the opt-in byte bound"
+                );
+                return Err(ParseBackendFailure::limit(LimitKind::ResponseBytes, None));
+            }
+        }
 
         tracing::debug!(
             api = "grobid",
             endpoint = %url,
-            tei_size = tei_xml.len(),
+            tei_size = body.len(),
             "GROBID processFulltextDocument: TEI XML received"
         );
 
-        Ok(tei_xml)
+        Ok(body)
     }
 }
 
@@ -207,12 +360,19 @@ fn build_client(timeout: std::time::Duration) -> reqwest::Client {
 
 #[async_trait]
 impl ParseBackend for GrobidHttpBackend {
+    fn default_request(&self, paper_id: &str, pdf_bytes: Vec<u8>) -> ParseBackendRequest {
+        // The request dialect is the sole wire projector, so the HTTP backend
+        // builds requests reproducing its own profile: a structural-profile
+        // facade must never silently send a rich wire request.
+        ParseBackendRequest::from_legacy_profile(&self.profile, paper_id, pdf_bytes)
+    }
+
     async fn fetch_tei(
         &self,
         request: ParseBackendRequest,
     ) -> Result<TeiEnvelope, ParseBackendFailure> {
         let paper_id = request.paper_id().to_string();
-        let tei_xml = self.process_fulltext(request.pdf_bytes()).await?;
+        let tei_bytes = self.process_fulltext(&request).await?;
         let identity = self.identity();
         // Sizes and identity only — raw TEI/PDF never reaches logs.
         tracing::debug!(
@@ -220,10 +380,10 @@ impl ParseBackend for GrobidHttpBackend {
             backend = %identity.backend_id(),
             profile = %identity.profile_fingerprint(),
             paper_id = %paper_id,
-            tei_size = tei_xml.len(),
+            tei_size = tei_bytes.len(),
             "parse backend produced TEI envelope"
         );
-        Ok(TeiEnvelope::new(tei_xml.into_bytes(), identity))
+        Ok(TeiEnvelope::new(tei_bytes, identity))
     }
 }
 

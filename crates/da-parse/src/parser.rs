@@ -15,7 +15,7 @@
 //! external `ParserError` mapping are unchanged for existing
 //! `Arc<dyn ParserPort>` callers.
 
-use crate::backend::{ParseBackend, ParseBackendRequest};
+use crate::backend::ParseBackend;
 use crate::envelope::TeiEnvelope;
 use crate::http::GrobidParser;
 use crate::lift::TeiLifter;
@@ -86,9 +86,8 @@ impl<B: ParseBackend> ScholarlyParser<B> {
         paper_id: &str,
         pdf_bytes: impl Into<Vec<u8>>,
     ) -> Result<TeiEnvelope, ParseBackendFailure> {
-        self.backend
-            .fetch_tei(ParseBackendRequest::new(paper_id, pdf_bytes))
-            .await
+        let request = self.backend.default_request(paper_id, pdf_bytes.into());
+        self.backend.fetch_tei(request).await
     }
 
     /// Pure stage: lift the envelope's verbatim TEI and project the
