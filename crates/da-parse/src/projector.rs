@@ -2,6 +2,7 @@
 
 use crate::http::GrobidParser;
 use crate::ir::TeiParseIr;
+use crate::lift::TeiLifter;
 use async_trait::async_trait;
 use da_ports::parser::{ParseResult, ParsedArticle, ParserError, ParserPort};
 
@@ -44,7 +45,7 @@ impl ParserPort for GrobidParser {
             .map_err(|e| ParserError::ParseFailed(format!("read PDF: {e}")))?;
 
         let pdf_size = pdf_bytes.len();
-        let pdf_hash = Self::pdf_hash(&pdf_bytes);
+        let pdf_hash = TeiLifter::pdf_hash(&pdf_bytes);
         tracing::debug!(
             paper_id,
             pdf_size,

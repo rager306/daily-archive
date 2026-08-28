@@ -69,7 +69,7 @@ fn tei_coordinates_json_matches_fingerprint_and_includes_formula() {
 #[test]
 fn test_extract_title() {
     let tei = r#"<TEI><teiHeader><fileDesc><titleStmt><title>Seq2Seq Models</title></titleStmt></fileDesc></teiHeader></TEI>"#;
-    assert_eq!(GrobidParser::extract_title(tei), "Seq2Seq Models");
+    assert_eq!(TeiLifter::extract_title(tei), "Seq2Seq Models");
 }
 
 #[test]
@@ -77,7 +77,7 @@ fn test_extract_title_with_attributes() {
     // GROBID TEI uses attributes: <title level="a" type="main">
     let tei = r#"<title level="a" type="main">A Joint Model of Language and Perception</title>"#;
     assert_eq!(
-        GrobidParser::extract_title(tei),
+        TeiLifter::extract_title(tei),
         "A Joint Model of Language and Perception"
     );
 }
@@ -85,13 +85,13 @@ fn test_extract_title_with_attributes() {
 #[test]
 fn test_strip_xml_tags() {
     let s = "<p>Hello <ref>world</ref></p>";
-    assert_eq!(GrobidParser::strip_xml_tags(s), "Hello world");
+    assert_eq!(TeiLifter::strip_xml_tags(s), "Hello world");
 }
 
 #[test]
 fn test_pdf_hash() {
     let bytes = b"test pdf content";
-    let hash = GrobidParser::pdf_hash(bytes);
+    let hash = TeiLifter::pdf_hash(bytes);
     assert_eq!(hash.len(), 64);
 }
 
@@ -101,7 +101,7 @@ fn test_extract_sections() {
             <div><head n="1">INTRODUCTION</head><p>Intro text here.</p></div>
             <div><head n="2">Methods</head><p>Method details.</p></div>
         </body></text></TEI>"#;
-    let sections = GrobidParser::extract_sections(tei);
+    let sections = TeiLifter::extract_sections(tei);
     assert_eq!(sections.len(), 2);
     assert_eq!(sections[0].title, "INTRODUCTION");
     assert_eq!(sections[0].level, 1);
@@ -113,7 +113,7 @@ fn test_extract_sections() {
 #[test]
 fn test_extract_sections_no_body() {
     let tei = r#"<TEI><teiHeader><title>No body</title></teiHeader></TEI>"#;
-    let sections = GrobidParser::extract_sections(tei);
+    let sections = TeiLifter::extract_sections(tei);
     assert!(sections.is_empty());
 }
 
@@ -125,7 +125,7 @@ fn test_extract_citations() {
             <biblStruct><analytic><title level="a" type="main">Second Citation</title></analytic>
             <idno type="arXiv">arXiv:2001.00002v1</idno></biblStruct>
         </listBibl></div></back></text></TEI>"#;
-    let citations = GrobidParser::extract_citations(tei);
+    let citations = TeiLifter::extract_citations(tei);
     assert_eq!(citations.len(), 2);
     assert_eq!(citations[0].title.as_deref(), Some("First Citation"));
     assert_eq!(citations[0].doi.as_deref(), Some("10.1000/cite.1"));
@@ -136,7 +136,7 @@ fn test_extract_citations() {
 #[test]
 fn test_extract_citations_no_back() {
     let tei = r#"<TEI><text><body><p>no refs</p></body></text></TEI>"#;
-    let citations = GrobidParser::extract_citations(tei);
+    let citations = TeiLifter::extract_citations(tei);
     assert!(citations.is_empty());
 }
 
@@ -148,7 +148,7 @@ fn test_extract_citations_with_attributes() {
             <title level="a" type="main">Cited With Attrs</title></analytic>
             <idno type="DOI">10.2000/x</idno></biblStruct>
         </listBibl></div></back></text></TEI>"#;
-    let citations = GrobidParser::extract_citations(tei);
+    let citations = TeiLifter::extract_citations(tei);
     assert_eq!(citations.len(), 1);
     assert_eq!(citations[0].title.as_deref(), Some("Cited With Attrs"));
     assert_eq!(citations[0].doi.as_deref(), Some("10.2000/x"));
@@ -167,7 +167,7 @@ fn test_extract_citations_in_text_anchors_flat() {
     let tei = r##"<TEI><text><body><head n="1">Intro</head><p>Alpha <ref type="bibr" target="#b0">[1]</ref> Beta</p></body><back><div type="references"><listBibl>
 <biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic><idno type="DOI">10.1000/cite.1</idno></biblStruct>
 </listBibl></div></back></text></TEI>"##;
-    let citations = GrobidParser::extract_citations(tei);
+    let citations = TeiLifter::extract_citations(tei);
     assert_eq!(citations.len(), 1);
     assert_eq!(citations[0].anchors.len(), 1, "one in-text anchor attached");
     let anchor = &citations[0].anchors[0];
@@ -189,7 +189,7 @@ fn test_extract_citations_anchors_nested_div_multi_span() {
 <biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
 <biblStruct xml:id="b1"><analytic><title level="a" type="main">Jones 2020</title></analytic></biblStruct>
 </listBibl></div></back></text></TEI>"##;
-    let citations = GrobidParser::extract_citations(tei);
+    let citations = TeiLifter::extract_citations(tei);
     assert_eq!(citations.len(), 2);
     assert!(citations[0].anchors.is_empty(), "b0 has no in-text refs");
     let anchors = &citations[1].anchors;
@@ -210,7 +210,7 @@ fn test_extract_citations_no_in_text_refs_anchors_empty() {
     let tei = r##"<TEI><text><body><head n="1">Intro</head><p>plain text</p></body><back><div type="references"><listBibl>
 <biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
 </listBibl></div></back></text></TEI>"##;
-    let citations = GrobidParser::extract_citations(tei);
+    let citations = TeiLifter::extract_citations(tei);
     assert_eq!(citations.len(), 1);
     assert!(citations[0].anchors.is_empty());
 }
@@ -223,7 +223,7 @@ fn test_extract_citations_ref_outside_section_path_unresolved() {
     let tei = r##"<TEI><text><body><p>Preamble <ref type="bibr" target="#b0">[1]</ref></p><head n="1">Intro</head><p>Body</p></body><back><div type="references"><listBibl>
 <biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
 </listBibl></div></back></text></TEI>"##;
-    let citations = GrobidParser::extract_citations(tei);
+    let citations = TeiLifter::extract_citations(tei);
     assert_eq!(citations.len(), 1);
     assert_eq!(citations[0].anchors.len(), 1);
     let anchor = &citations[0].anchors[0];
@@ -243,7 +243,7 @@ fn test_extract_citations_ref_without_target_skipped() {
     let tei = r##"<TEI><text><body><head n="1">Intro</head><p>A <ref type="bibr">(no target)</ref> B <ref type="bibr" target="#b0">[1]</ref></p></body><back><div type="references"><listBibl>
 <biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
 </listBibl></div></back></text></TEI>"##;
-    let citations = GrobidParser::extract_citations(tei);
+    let citations = TeiLifter::extract_citations(tei);
     assert_eq!(citations.len(), 1);
     assert_eq!(
         citations[0].anchors.len(),
@@ -259,7 +259,7 @@ fn test_extract_citations_ignores_non_bibr_refs() {
     let tei = r##"<TEI><text><body><head n="1">Intro</head><p>See <ref type="note" target="#n1">footnote</ref> and <ref type="bibr" target="#b0">[1]</ref></p></body><back><div type="references"><listBibl>
 <biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
 </listBibl></div></back></text></TEI>"##;
-    let citations = GrobidParser::extract_citations(tei);
+    let citations = TeiLifter::extract_citations(tei);
     assert_eq!(citations.len(), 1);
     assert_eq!(citations[0].anchors.len(), 1);
     assert_eq!(citations[0].anchors[0].quote, "[1]");
@@ -272,7 +272,7 @@ fn test_extract_citations_ordinal_fallback_without_xml_id() {
     let tei = r##"<TEI><text><body><head n="1">Intro</head><p>See <ref type="bibr" target="#b0">[1]</ref></p></body><back><div type="references"><listBibl>
 <biblStruct><analytic><title level="a" type="main">NoId</title></analytic></biblStruct>
 </listBibl></div></back></text></TEI>"##;
-    let citations = GrobidParser::extract_citations(tei);
+    let citations = TeiLifter::extract_citations(tei);
     assert_eq!(citations.len(), 1);
     assert_eq!(citations[0].anchors.len(), 1);
     assert_eq!(citations[0].anchors[0].ref_id, "b0");
@@ -289,8 +289,8 @@ fn test_extract_citations_flat_numbering_restart_paths() {
     let tei = r##"<TEI><text><body><head n="1">Intro</head><p>See <ref type="bibr" target="#b0">[1]</ref></p><head n="2">Methods</head><p>X</p><head n="1">Appendix</head><p>See <ref type="bibr" target="#b0">[1]</ref> again</p></body><back><div type="references"><listBibl>
 <biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
 </listBibl></div></back></text></TEI>"##;
-    let sections = GrobidParser::extract_sections(tei);
-    let citations = GrobidParser::extract_citations(tei);
+    let sections = TeiLifter::extract_sections(tei);
+    let citations = TeiLifter::extract_citations(tei);
     // Section paths: "1", "2", then the appendix restart becomes "1~2".
     let paths: Vec<&str> = sections
         .iter()
@@ -342,7 +342,7 @@ fn test_extract_citations_anchor_in_top_level_gap_path_unresolved() {
     let tei = r##"<TEI><text><body><div n="1"><head>Intro</head><p>Alpha</p><div n="1.1"><head>Sub</head><p>x</p></div></div><p>Between <ref type="bibr" target="#b0">[1]</ref></p><div n="2"><head>Methods</head><p>Beta</p></div></body><back><div type="references"><listBibl>
 <biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
 </listBibl></div></back></text></TEI>"##;
-    let citations = GrobidParser::extract_citations(tei);
+    let citations = TeiLifter::extract_citations(tei);
     assert_eq!(citations.len(), 1);
     assert_eq!(citations[0].anchors.len(), 1);
     assert!(
@@ -354,9 +354,9 @@ fn test_extract_citations_anchor_in_top_level_gap_path_unresolved() {
 
 #[test]
 fn test_extract_head_level() {
-    assert_eq!(GrobidParser::extract_head_level(r#"<head n="3">"#), 3);
-    assert_eq!(GrobidParser::extract_head_level("<head>"), 1);
-    assert_eq!(GrobidParser::extract_head_level(r#"<head n="abc">"#), 1);
+    assert_eq!(TeiLifter::extract_head_level(r#"<head n="3">"#), 3);
+    assert_eq!(TeiLifter::extract_head_level("<head>"), 1);
+    assert_eq!(TeiLifter::extract_head_level(r#"<head n="abc">"#), 1);
 }
 
 // ─── ADR-053 Layer A T02: recursive TEI div walk for path_id ───
@@ -380,7 +380,7 @@ const NESTED_DIV_TEI: &str = r#"<body>
 
 #[test]
 fn test_extract_sections_nested_div_path_id_populated() {
-    let sections = GrobidParser::extract_sections(NESTED_DIV_TEI);
+    let sections = TeiLifter::extract_sections(NESTED_DIV_TEI);
     let path_ids: Vec<&str> = sections
         .iter()
         .filter_map(|s| s.path_id.as_deref())
@@ -408,7 +408,7 @@ fn test_duplicate_div_numbers_receive_deterministic_unique_paths() {
           </div>
           <div n="1"><head>Appendix B</head><p>Second appendix.</p></div>
         </body>"#;
-    let sections = GrobidParser::extract_sections(tei);
+    let sections = TeiLifter::extract_sections(tei);
     let paths: Vec<_> = sections
         .iter()
         .map(|section| section.path_id.as_deref().unwrap())
@@ -421,7 +421,7 @@ fn test_duplicate_div_numbers_receive_deterministic_unique_paths() {
 
 #[test]
 fn test_extract_sections_nested_div_parent_section_id() {
-    let sections = GrobidParser::extract_sections(NESTED_DIV_TEI);
+    let sections = TeiLifter::extract_sections(NESTED_DIV_TEI);
     // Section 2.1.1 parent should be section 2.1
     let encoder = sections
         .iter()
@@ -445,7 +445,7 @@ fn test_extract_sections_nested_div_parent_section_id() {
 
 #[test]
 fn test_extract_sections_nested_div_order_in_parent() {
-    let sections = GrobidParser::extract_sections(NESTED_DIV_TEI);
+    let sections = TeiLifter::extract_sections(NESTED_DIV_TEI);
     // Section 1.1 has order 0, section 1.2 has order 1 in parent 1.
     let bg = sections
         .iter()
@@ -467,7 +467,7 @@ fn test_extract_sections_nested_div_order_in_parent() {
 
 #[test]
 fn test_extract_sections_nested_div_section_id_stable() {
-    let sections = GrobidParser::extract_sections(NESTED_DIV_TEI);
+    let sections = TeiLifter::extract_sections(NESTED_DIV_TEI);
     // Every section must have a section_id of form "sec-<path_id>".
     for s in &sections {
         let sid = s
@@ -485,7 +485,7 @@ fn test_extract_sections_nested_div_section_id_stable() {
 
 #[test]
 fn test_extract_sections_nested_div_depth_matches_level() {
-    let sections = GrobidParser::extract_sections(NESTED_DIV_TEI);
+    let sections = TeiLifter::extract_sections(NESTED_DIV_TEI);
     // depth (0-based) for section 2.1.1 is 2; level (1-based) is 3.
     let encoder = sections
         .iter()
@@ -513,7 +513,7 @@ fn test_flat_numbering_restart_preserves_unique_tree_identity() {
           <head n="1.1">Appendix Detail</head><p>Detail.</p>
           <head n="1.1">Appendix Detail Two</head><p>Detail two.</p>
         </body>"#;
-    let sections = GrobidParser::extract_sections(tei);
+    let sections = TeiLifter::extract_sections(tei);
     let paths: Vec<_> = sections
         .iter()
         .map(|section| section.path_id.as_deref().unwrap())
@@ -533,7 +533,7 @@ fn test_extract_sections_flat_legacy_tei_still_works() {
           <head n="1">Intro</head><p>Intro text.</p>
           <head n="2">Methods</head><p>Methods text.</p>
         </body>"#;
-    let sections = GrobidParser::extract_sections(tei);
+    let sections = TeiLifter::extract_sections(tei);
     assert_eq!(sections.len(), 2, "flat TEI yields 2 sections");
     // path_id is now populated from n attribute (MEM654).
     assert_eq!(sections[0].path_id.as_deref(), Some("1"));
@@ -549,7 +549,7 @@ fn test_extract_sections_flat_legacy_tei_still_works() {
 #[test]
 fn test_extract_tables_flat_section_resolved() {
     let tei = r##"<TEI><text><body><head n="1">Results</head><p>Benchmarks.</p><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><table><row><cell>Model</cell><cell>Score</cell></row><row><cell>GEPA</cell><cell>54.85</cell></row></table></figure></body></text></TEI>"##;
-    let (tables, missingness) = GrobidParser::extract_tables(tei);
+    let (tables, missingness) = TeiLifter::extract_tables(tei);
     assert_eq!(
         missingness, None,
         "tables found → no article-level missingness"
@@ -573,7 +573,7 @@ fn test_extract_tables_flat_section_resolved() {
         assert_eq!(cell.digest.len(), 64);
     }
     // Spans must land on the section's stripped text.
-    let sections = GrobidParser::extract_sections(tei);
+    let sections = TeiLifter::extract_sections(tei);
     let sec = &sections[0];
     assert_eq!(sec.path_id.as_deref(), Some("1"));
     for cell in &table.cells {
@@ -595,14 +595,14 @@ fn test_extract_tables_flat_section_resolved() {
 #[test]
 fn test_extract_tables_nested_section_mapping_and_spans() {
     let tei = r##"<TEI><text><body><div n="1"><head>Introduction</head><p>Intro text.</p><figure type="table" xml:id="tab_0"><head>Table 1 :</head><table><row><cell>h1</cell><cell>h2</cell></row><row><cell>42</cell><cell>7</cell></row></table></figure><div n="1.1"><head>Setup</head><p>Setup text.</p></div></div></body></text></TEI>"##;
-    let (tables, _) = GrobidParser::extract_tables(tei);
+    let (tables, _) = TeiLifter::extract_tables(tei);
     assert_eq!(tables.len(), 1);
     let table = &tables[0];
     assert_eq!(table.section_path_id.as_deref(), Some("1"));
     assert_eq!(table.section_ordinal, Some(0));
     assert_eq!(table.caption, "Table 1 :");
     assert_eq!(table.cells.len(), 4);
-    let sections = GrobidParser::extract_sections(tei);
+    let sections = TeiLifter::extract_sections(tei);
     let sec = sections
         .iter()
         .find(|s| s.path_id.as_deref() == Some("1"))
@@ -622,8 +622,8 @@ fn test_extract_tables_nested_section_mapping_and_spans() {
 #[test]
 fn test_extract_tables_caption_head_creates_consistent_section() {
     let tei = r##"<TEI><text><body><head n="1">Results</head><p>Benchmarks.</p><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><table><row><cell>a</cell></row></table></figure></body></text></TEI>"##;
-    let (tables, _) = GrobidParser::extract_tables(tei);
-    let sections = GrobidParser::extract_sections(tei);
+    let (tables, _) = TeiLifter::extract_tables(tei);
+    let sections = TeiLifter::extract_sections(tei);
     assert_eq!(sections.len(), 2, "caption head is a flat section boundary");
     assert_eq!(sections[1].title, "Table 1 :");
     let section_paths: std::collections::HashSet<&str> = sections
@@ -654,7 +654,7 @@ fn test_extract_tables_caption_head_creates_consistent_section() {
 #[test]
 fn test_extract_tables_gap_table_path_unresolved() {
     let tei = r##"<TEI><text><body><div n="1"><head>Intro</head><p>Alpha</p><div n="1.1"><head>Sub</head><p>x</p></div></div><figure type="table" xml:id="tab_0"><table><row><cell>gap</cell></row></table></figure><div n="2"><head>Methods</head><p>Beta</p></div></body></text></TEI>"##;
-    let (tables, _) = GrobidParser::extract_tables(tei);
+    let (tables, _) = TeiLifter::extract_tables(tei);
     assert_eq!(tables.len(), 1);
     let table = &tables[0];
     assert!(
@@ -676,13 +676,13 @@ fn test_extract_tables_gap_table_path_unresolved() {
 fn test_extract_tables_no_tables_typed_missingness() {
     let tei =
         r##"<TEI><text><body><head n="1">Intro</head><p>No tables here.</p></body></text></TEI>"##;
-    let (tables, missingness) = GrobidParser::extract_tables(tei);
+    let (tables, missingness) = TeiLifter::extract_tables(tei);
     assert!(tables.is_empty());
     assert_eq!(missingness, Some(TableMissingReason::NoTableElements));
 
     // No body at all → also typed missingness, not a crash.
     let header_only = r##"<TEI><teiHeader><title>No body</title></teiHeader></TEI>"##;
-    let (tables, missingness) = GrobidParser::extract_tables(header_only);
+    let (tables, missingness) = TeiLifter::extract_tables(header_only);
     assert!(tables.is_empty());
     assert_eq!(missingness, Some(TableMissingReason::NoTableElements));
 }
@@ -692,7 +692,7 @@ fn test_extract_tables_no_tables_typed_missingness() {
 #[test]
 fn test_extract_tables_malformed_zero_rows() {
     let tei = r##"<TEI><text><body><head n="1">Intro</head><figure type="table" xml:id="tab_0"><table></table></figure></body></text></TEI>"##;
-    let (tables, article_missingness) = GrobidParser::extract_tables(tei);
+    let (tables, article_missingness) = TeiLifter::extract_tables(tei);
     assert_eq!(tables.len(), 1);
     assert_eq!(article_missingness, None, "a <table> element was found");
     let table = &tables[0];
@@ -704,7 +704,7 @@ fn test_extract_tables_malformed_zero_rows() {
 
     // Rows present but no cells.
     let tei = r##"<TEI><text><body><head n="1">Intro</head><figure type="table" xml:id="tab_0"><table><row></row></table></figure></body></text></TEI>"##;
-    let (tables, _) = GrobidParser::extract_tables(tei);
+    let (tables, _) = TeiLifter::extract_tables(tei);
     assert_eq!(
         tables[0].missingness,
         Some(TableMissingReason::Malformed(
@@ -718,7 +718,7 @@ fn test_extract_tables_malformed_zero_rows() {
 #[test]
 fn test_extract_tables_colspan_column_accounting_and_empty_cells() {
     let tei = r##"<TEI><text><body><head n="1">Results</head><figure type="table" xml:id="tab_0"><table><row><cell cols="2">span</cell><cell>b</cell></row><row><cell>x</cell><cell></cell><cell>z</cell></row></table></figure></body></text></TEI>"##;
-    let (tables, _) = GrobidParser::extract_tables(tei);
+    let (tables, _) = TeiLifter::extract_tables(tei);
     let table = &tables[0];
     assert_eq!(table.cells.len(), 5);
     let c0 = &table.cells[0];
@@ -745,10 +745,10 @@ fn test_extract_tables_colspan_column_accounting_and_empty_cells() {
 #[test]
 fn test_extract_tables_cell_nested_tags_span() {
     let tei = r##"<TEI><text><body><head n="1">Results</head><figure type="table" xml:id="tab_0"><table><row><cell>See <ref type="bibr" target="#b1">[1]</ref> now</cell></row></table></figure></body></text></TEI>"##;
-    let (tables, _) = GrobidParser::extract_tables(tei);
+    let (tables, _) = TeiLifter::extract_tables(tei);
     let cell = &tables[0].cells[0];
     assert_eq!(cell.text, "See [1] now");
-    let sections = GrobidParser::extract_sections(tei);
+    let sections = TeiLifter::extract_sections(tei);
     let sec = &sections[0];
     let span = cell.span.expect("span present");
     let slice = &sec.text[span.start as usize..span.end as usize];
@@ -761,9 +761,9 @@ fn test_extract_tables_cell_nested_tags_span() {
 fn test_extract_tables_digest_determinism() {
     let tei_a = r##"<TEI><text><body><head n="1">Results</head><figure type="table" xml:id="tab_0"><table><row><cell>GEPA</cell><cell>54.85</cell></row></table></figure></body></text></TEI>"##;
     let tei_b = r##"<TEI><text><body><head n="1">Results</head><figure type="table" xml:id="tab_0"><table><row><cell>GEPA</cell><cell>55.00</cell></row></table></figure></body></text></TEI>"##;
-    let (tables_a, _) = GrobidParser::extract_tables(tei_a);
-    let (tables_a2, _) = GrobidParser::extract_tables(tei_a);
-    let (tables_b, _) = GrobidParser::extract_tables(tei_b);
+    let (tables_a, _) = TeiLifter::extract_tables(tei_a);
+    let (tables_a2, _) = TeiLifter::extract_tables(tei_a);
+    let (tables_b, _) = TeiLifter::extract_tables(tei_b);
     assert_eq!(tables_a, tables_a2, "identical TEI → identical tables");
     assert_eq!(tables_a[0].source_digest, tables_a2[0].source_digest);
     assert_ne!(
@@ -778,7 +778,7 @@ fn test_extract_tables_digest_determinism() {
 #[test]
 fn test_extract_tables_ordinal_fallback_without_xml_id() {
     let tei = r##"<TEI><text><body><head n="1">Results</head><figure type="table"><table><row><cell>a</cell></row></table></figure><figure type="table"><table><row><cell>b</cell></row></table></figure></body></text></TEI>"##;
-    let (tables, _) = GrobidParser::extract_tables(tei);
+    let (tables, _) = TeiLifter::extract_tables(tei);
     assert_eq!(tables.len(), 2);
     assert_eq!(tables[0].table_id, "table-1");
     assert_eq!(tables[1].table_id, "table-2");
@@ -790,7 +790,7 @@ fn test_extract_tables_ordinal_fallback_without_xml_id() {
 #[test]
 fn test_extract_tables_coordinates_preserved() {
     let tei = r##"<TEI><text><body><head n="1">Results</head><figure type="table" xml:id="tab_0" coords="50,100,550,300;1"><table><row><cell coords="60,110,120,130;1">a</cell></row></table></figure></body></text></TEI>"##;
-    let (tables, _) = GrobidParser::extract_tables(tei);
+    let (tables, _) = TeiLifter::extract_tables(tei);
     let table = &tables[0];
     assert_eq!(table.coordinates.as_deref(), Some("50,100,550,300;1"));
     assert_eq!(
@@ -811,7 +811,7 @@ fn test_extract_tables_coordinates_preserved() {
 #[test]
 fn test_extract_formulas_flat_section_resolved() {
     let tei = r##"<TEI><text><body><head n="1">Results</head><p>We optimize <formula xml:id="formula_0" coords="90,120,428,140;1">E = mc2<label>(1)</label></formula>.</p></body></text></TEI>"##;
-    let (formulas, missingness) = GrobidParser::extract_formulas(tei);
+    let (formulas, missingness) = TeiLifter::extract_formulas(tei);
     assert_eq!(
         missingness, None,
         "formula found → no article-level missingness"
@@ -831,7 +831,7 @@ fn test_extract_formulas_flat_section_resolved() {
     assert_eq!(formula.missingness, None);
     assert_eq!(formula.source_digest.len(), 64);
     // Spans must land on the section's stripped text.
-    let sections = GrobidParser::extract_sections(tei);
+    let sections = TeiLifter::extract_sections(tei);
     let sec = &sections[0];
     assert_eq!(sec.path_id.as_deref(), Some("1"));
     let span = formula.span.expect("resolved formula carries a span");
@@ -846,7 +846,7 @@ fn test_extract_formulas_flat_section_resolved() {
 #[test]
 fn test_extract_formulas_mathml_representation() {
     let tei = r##"<TEI><text><body><head n="1">Results</head><p><formula xml:id="formula_0"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>x</mi><mo>=</mo><mn>1</mn></math><label>(2)</label></formula></p></body></text></TEI>"##;
-    let (formulas, _) = GrobidParser::extract_formulas(tei);
+    let (formulas, _) = TeiLifter::extract_formulas(tei);
     assert_eq!(formulas.len(), 1);
     let formula = &formulas[0];
     assert_eq!(
@@ -860,7 +860,7 @@ fn test_extract_formulas_mathml_representation() {
     assert_eq!(formula.missingness, None);
     // The span covers the MathML text nodes plus the label in the
     // section's stripped text ("x=1(2)").
-    let sections = GrobidParser::extract_sections(tei);
+    let sections = TeiLifter::extract_sections(tei);
     let span = formula.span.expect("span present");
     let slice = &sections[0].text[span.start as usize..span.end as usize];
     assert_eq!(slice.trim(), "x=1(2)");
@@ -871,7 +871,7 @@ fn test_extract_formulas_mathml_representation() {
 #[test]
 fn test_extract_formulas_texmath_representation() {
     let tei = r##"<TEI><text><body><head n="1">Results</head><p><formula xml:id="formula_0"><texMath>x = \gamma</texMath></formula></p></body></text></TEI>"##;
-    let (formulas, _) = GrobidParser::extract_formulas(tei);
+    let (formulas, _) = TeiLifter::extract_formulas(tei);
     assert_eq!(formulas.len(), 1);
     assert_eq!(
         formulas[0].representation,
@@ -885,12 +885,12 @@ fn test_extract_formulas_texmath_representation() {
 #[test]
 fn test_extract_formulas_nested_section_mapping_and_spans() {
     let tei = r##"<TEI><text><body><div n="1"><head>Introduction</head><p>Equation <formula xml:id="formula_0">y = mx + b</formula> here.</p><div n="1.1"><head>Setup</head><p>x</p></div></div></body></text></TEI>"##;
-    let (formulas, _) = GrobidParser::extract_formulas(tei);
+    let (formulas, _) = TeiLifter::extract_formulas(tei);
     assert_eq!(formulas.len(), 1);
     let formula = &formulas[0];
     assert_eq!(formula.section_path_id.as_deref(), Some("1"));
     assert_eq!(formula.section_ordinal, Some(0));
-    let sections = GrobidParser::extract_sections(tei);
+    let sections = TeiLifter::extract_sections(tei);
     let sec = sections
         .iter()
         .find(|s| s.path_id.as_deref() == Some("1"))
@@ -908,7 +908,7 @@ fn test_extract_formulas_nested_section_mapping_and_spans() {
 #[test]
 fn test_extract_formulas_gap_path_unresolved() {
     let tei = r##"<TEI><text><body><div n="1"><head>Intro</head><p>Alpha</p><div n="1.1"><head>Sub</head><p>x</p></div></div><p>Gap formula <formula xml:id="formula_0">gap</formula> here.</p><div n="2"><head>Methods</head><p>Beta</p></div></body></text></TEI>"##;
-    let (formulas, _) = GrobidParser::extract_formulas(tei);
+    let (formulas, _) = TeiLifter::extract_formulas(tei);
     assert_eq!(formulas.len(), 1);
     let formula = &formulas[0];
     assert!(
@@ -932,13 +932,13 @@ fn test_extract_formulas_gap_path_unresolved() {
 #[test]
 fn test_extract_formulas_no_formulas_typed_missingness() {
     let tei = r##"<TEI><text><body><head n="1">Intro</head><p>No formulas here.</p></body></text></TEI>"##;
-    let (formulas, missingness) = GrobidParser::extract_formulas(tei);
+    let (formulas, missingness) = TeiLifter::extract_formulas(tei);
     assert!(formulas.is_empty());
     assert_eq!(missingness, Some(FormulaMissingReason::NoFormulaElements));
 
     // No body at all → also typed missingness, not a crash.
     let header_only = r##"<TEI><teiHeader><title>No body</title></teiHeader></TEI>"##;
-    let (formulas, missingness) = GrobidParser::extract_formulas(header_only);
+    let (formulas, missingness) = TeiLifter::extract_formulas(header_only);
     assert!(formulas.is_empty());
     assert_eq!(missingness, Some(FormulaMissingReason::NoFormulaElements));
 }
@@ -950,7 +950,7 @@ fn test_extract_formulas_no_formulas_typed_missingness() {
 #[test]
 fn test_extract_formulas_malformed_empty() {
     let tei = r##"<TEI><text><body><head n="1">Intro</head><p><formula xml:id="formula_0"></formula></p></body></text></TEI>"##;
-    let (formulas, article_missingness) = GrobidParser::extract_formulas(tei);
+    let (formulas, article_missingness) = TeiLifter::extract_formulas(tei);
     assert_eq!(formulas.len(), 1);
     assert_eq!(article_missingness, None, "a <formula> element was found");
     let formula = &formulas[0];
@@ -967,7 +967,7 @@ fn test_extract_formulas_malformed_empty() {
 
     // Unclosed <math> is fail-closed malformed too.
     let tei = r##"<TEI><text><body><head n="1">Intro</head><p><formula xml:id="formula_0"><math><mi>x</mi></formula></p></body></text></TEI>"##;
-    let (formulas, _) = GrobidParser::extract_formulas(tei);
+    let (formulas, _) = TeiLifter::extract_formulas(tei);
     assert_eq!(
         formulas[0].missingness,
         Some(FormulaMissingReason::Malformed(
@@ -982,9 +982,9 @@ fn test_extract_formulas_malformed_empty() {
 fn test_extract_formulas_digest_determinism() {
     let tei_a = r##"<TEI><text><body><head n="1">Results</head><p><formula xml:id="formula_0">E = mc2</formula></p></body></text></TEI>"##;
     let tei_b = r##"<TEI><text><body><head n="1">Results</head><p><formula xml:id="formula_0">E = mc2!</formula></p></body></text></TEI>"##;
-    let (formulas_a, _) = GrobidParser::extract_formulas(tei_a);
-    let (formulas_a2, _) = GrobidParser::extract_formulas(tei_a);
-    let (formulas_b, _) = GrobidParser::extract_formulas(tei_b);
+    let (formulas_a, _) = TeiLifter::extract_formulas(tei_a);
+    let (formulas_a2, _) = TeiLifter::extract_formulas(tei_a);
+    let (formulas_b, _) = TeiLifter::extract_formulas(tei_b);
     assert_eq!(
         formulas_a, formulas_a2,
         "identical TEI → identical formulas"
@@ -1001,7 +1001,7 @@ fn test_extract_formulas_digest_determinism() {
 #[test]
 fn test_extract_formulas_ordinal_fallback_without_xml_id() {
     let tei = r##"<TEI><text><body><head n="1">Results</head><p><formula>a</formula> <formula>b</formula></p></body></text></TEI>"##;
-    let (formulas, _) = GrobidParser::extract_formulas(tei);
+    let (formulas, _) = TeiLifter::extract_formulas(tei);
     assert_eq!(formulas.len(), 2);
     assert_eq!(formulas[0].formula_id, "formula-1");
     assert_eq!(formulas[1].formula_id, "formula-2");
@@ -1013,7 +1013,7 @@ fn test_extract_formulas_ordinal_fallback_without_xml_id() {
 #[test]
 fn test_extract_formulas_coordinates_preserved() {
     let tei = r##"<TEI><text><body><head n="1">Results</head><p><formula xml:id="formula_0" coords="90,120,428,140;1">a</formula></p></body></text></TEI>"##;
-    let (formulas, _) = GrobidParser::extract_formulas(tei);
+    let (formulas, _) = TeiLifter::extract_formulas(tei);
     let formula = &formulas[0];
     assert_eq!(formula.coordinates.as_deref(), Some("90,120,428,140;1"));
     assert_eq!(formula.formula_id, "formula_0");

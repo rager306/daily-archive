@@ -7,9 +7,10 @@ const HUB_SHA: &str = "985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b
 const RLM_SHA: &str = "e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3";
 const RECA_SHA: &str = "dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040";
 
-/// Load a tracked preserved TEI fixture. Missing, empty or checksum-mismatched
-/// files FAIL VISIBLY — silent skip is the regression class S01/T02 removes.
-fn load_preserved_tei(file_name: &str, expected_sha256: &str) -> String {
+/// Load a tracked preserved TEI fixture as raw bytes. Missing, empty or
+/// checksum-mismatched files FAIL VISIBLY — silent skip is the regression
+/// class S01/T02 removes.
+fn load_preserved_tei_bytes(file_name: &str, expected_sha256: &str) -> Vec<u8> {
     let path = format!("{PRESERVED_DIR}/{file_name}");
     let bytes = std::fs::read(&path).unwrap_or_else(|e| {
         panic!("missing preserved TEI fixture `{path}`: {e} (silent skip is forbidden)")
@@ -20,7 +21,14 @@ fn load_preserved_tei(file_name: &str, expected_sha256: &str) -> String {
         actual, expected_sha256,
         "preserved TEI fixture `{path}` sha256 mismatch"
     );
-    String::from_utf8(bytes).unwrap_or_else(|e| panic!("fixture `{path}` is not UTF-8: {e}"))
+    bytes
+}
+
+/// Load a tracked preserved TEI fixture as a UTF-8 string (compatibility
+/// surface). Byte-level parity tests use [`load_preserved_tei_bytes`].
+fn load_preserved_tei(file_name: &str, expected_sha256: &str) -> String {
+    let bytes = load_preserved_tei_bytes(file_name, expected_sha256);
+    String::from_utf8(bytes).unwrap_or_else(|e| panic!("fixture `{file_name}` is not UTF-8: {e}"))
 }
 
 fn tei_header(tei: &str) -> &str {
@@ -34,8 +42,8 @@ fn tei_header(tei: &str) -> &str {
 #[test]
 fn test_real_grobid_tei_gepa_hub_bibliography_2507_19457() {
     let tei = load_preserved_tei("hub_2507.19457.tei.xml", HUB_SHA);
-    let sections = GrobidParser::extract_sections(&tei);
-    let citations = GrobidParser::extract_citations(&tei);
+    let sections = TeiLifter::extract_sections(&tei);
+    let citations = TeiLifter::extract_citations(&tei);
     println!(
         "GEPA hub TEI 2507.19457: {} sections, {} citations",
         sections.len(),
@@ -149,7 +157,7 @@ fn test_real_grobid_tei_gepa_hub_bibliography_2507_19457() {
 #[test]
 fn test_real_grobid_tei_large_bibliography_2605_26525() {
     let tei = load_preserved_tei("reca_2605.26525v1.tei.xml", RECA_SHA);
-    let citations = GrobidParser::extract_citations(&tei);
+    let citations = TeiLifter::extract_citations(&tei);
     println!("2605.26525v1 TEI: {} citations", citations.len());
     assert!(
         citations.len() >= 70,
@@ -166,8 +174,8 @@ fn test_real_grobid_tei_large_bibliography_2605_26525() {
 #[test]
 fn test_real_grobid_tei_tables_2507_19457() {
     let tei = load_preserved_tei("hub_2507.19457.tei.xml", HUB_SHA);
-    let (tables, missingness) = GrobidParser::extract_tables(&tei);
-    let (tables_again, _) = GrobidParser::extract_tables(&tei);
+    let (tables, missingness) = TeiLifter::extract_tables(&tei);
+    let (tables_again, _) = TeiLifter::extract_tables(&tei);
     assert_eq!(
         tables, tables_again,
         "table extraction must be deterministic across runs"
@@ -199,7 +207,7 @@ fn test_real_grobid_tei_tables_2507_19457() {
     }
     // Section identity consistency: every resolved path exists among the
     // section extractor's paths and the ordinal points at that section.
-    let sections = GrobidParser::extract_sections(&tei);
+    let sections = TeiLifter::extract_sections(&tei);
     let section_paths: std::collections::HashSet<&str> = sections
         .iter()
         .filter_map(|s| s.path_id.as_deref())
@@ -240,8 +248,8 @@ fn test_real_grobid_tei_tables_2507_19457() {
 #[test]
 fn test_real_grobid_tei_formulas_2507_19457() {
     let tei = load_preserved_tei("hub_2507.19457.tei.xml", HUB_SHA);
-    let (formulas, missingness) = GrobidParser::extract_formulas(&tei);
-    let (formulas_again, _) = GrobidParser::extract_formulas(&tei);
+    let (formulas, missingness) = TeiLifter::extract_formulas(&tei);
+    let (formulas_again, _) = TeiLifter::extract_formulas(&tei);
     assert_eq!(
         formulas, formulas_again,
         "formula extraction must be deterministic across runs"
@@ -288,7 +296,7 @@ fn test_real_grobid_tei_formulas_2507_19457() {
     }
     // Section identity consistency: every resolved path exists among the
     // section extractor's paths and the ordinal points at that section.
-    let sections = GrobidParser::extract_sections(&tei);
+    let sections = TeiLifter::extract_sections(&tei);
     let section_paths: std::collections::HashSet<&str> = sections
         .iter()
         .filter_map(|s| s.path_id.as_deref())
@@ -364,7 +372,7 @@ fn test_preserved_tei_bytes_cover_authors_idno_and_figures() {
 #[test]
 fn test_hub_restarted_numbering_yields_unique_path_ids() {
     let tei = load_preserved_tei("hub_2507.19457.tei.xml", HUB_SHA);
-    let sections = GrobidParser::extract_sections(&tei);
+    let sections = TeiLifter::extract_sections(&tei);
     let mut paths = std::collections::HashSet::new();
     let mut suffixed = 0usize;
     for s in &sections {
@@ -427,11 +435,213 @@ fn test_preserved_tei_bytes_cover_graphic_coordinates() {
         );
         println!("{name} coords={coords} graphics={graphic_coords}");
     }
-    let (formulas, _) = GrobidParser::extract_formulas(&reca);
-    let (tables, _) = GrobidParser::extract_tables(&reca);
+    let (formulas, _) = TeiLifter::extract_formulas(&reca);
+    let (tables, _) = TeiLifter::extract_tables(&reca);
     assert!(
         formulas.iter().all(|f| f.coordinates.is_none())
             && tables.iter().all(|t| t.coordinates.is_none()),
         "this probe stamps coords on <graphic>, not on lifted formula/table elements"
     );
+}
+
+/// S02/T02: the provider-neutral [`TeiLifter`] envelope path must reproduce
+/// the compatibility path exactly on all three checksum-bound S01 fixtures:
+/// raw TEI SHA/bytes preserved, serialized `TeiParseIr` byte-equal,
+/// projected `ParsedArticle` byte-equal, and two offline replays byte-equal.
+/// Envelope identity (backend id / profile fingerprint) is provenance only
+/// and never changes lift output.
+#[test]
+fn tei_lifter_envelope_parity_with_compatibility_path_on_all_preserved_fixtures() {
+    for (name, file, sha, paper_id) in [
+        ("hub", "hub_2507.19457.tei.xml", HUB_SHA, "2507.19457"),
+        ("rlm", "rlm_2512.24601.tei.xml", RLM_SHA, "2512.24601"),
+        (
+            "reca",
+            "reca_2605.26525v1.tei.xml",
+            RECA_SHA,
+            "2605.26525v1",
+        ),
+    ] {
+        let bytes = load_preserved_tei_bytes(file, sha);
+
+        // Compatibility path (recorded `parse.stage.lift_tei` surface).
+        let compat = GrobidParser::lift_tei(
+            std::str::from_utf8(&bytes)
+                .expect("fixture utf-8")
+                .to_string(),
+            paper_id,
+            "fixture-pdf-hash",
+        );
+
+        // Provider-neutral envelope path (pure: no HTTP, no filesystem,
+        // no runtime infrastructure).
+        let envelope = TeiEnvelope::new(
+            bytes.clone(),
+            TeiIdentity::cached_tei(GrobidProfile::rich()),
+        );
+        // Raw TEI bytes preserved: the envelope carries exactly the fixture
+        // bytes (checksum-bound), unmodified by the lift path.
+        assert_eq!(
+            hex::encode(Sha256::digest(envelope.raw_tei())),
+            sha,
+            "{name}: envelope must carry the fixture bytes verbatim"
+        );
+
+        let ir_new = TeiLifter::new().lift(&envelope, paper_id, "fixture-pdf-hash");
+        assert_eq!(
+            ir_new.tei_xml.as_bytes(),
+            bytes.as_slice(),
+            "{name}: lifted IR must embed the raw TEI bytes verbatim"
+        );
+
+        // Serialized IR parity, byte for byte.
+        let compat_json = serde_json::to_vec(&compat).expect("serialize compat IR");
+        let new_json = serde_json::to_vec(&ir_new).expect("serialize envelope IR");
+        assert_eq!(
+            compat_json, new_json,
+            "{name}: serialized TeiParseIr diverges between envelope and compatibility paths"
+        );
+
+        // Projected ParsedArticle parity, byte for byte.
+        let compat_article = GrobidParser::project_article(compat);
+        let new_article = GrobidParser::project_article(ir_new);
+        assert_eq!(
+            serde_json::to_vec(&compat_article).expect("serialize compat article"),
+            serde_json::to_vec(&new_article).expect("serialize envelope article"),
+            "{name}: projected ParsedArticle diverges between paths"
+        );
+
+        // Two offline replays are byte-equal (determinism of the pure lift).
+        let replay_json = serde_json::to_vec(&TeiLifter::new().lift(
+            &TeiEnvelope::new(
+                bytes.clone(),
+                TeiIdentity::cached_tei(GrobidProfile::rich()),
+            ),
+            paper_id,
+            "fixture-pdf-hash",
+        ))
+        .expect("serialize replay IR");
+        assert_eq!(
+            replay_json, new_json,
+            "{name}: two envelope-path replays must be byte-equal"
+        );
+
+        // Identity independence: a different backend id and profile
+        // fingerprint (provenance) must not change the lift output.
+        let http_identity_ir = TeiLifter::new().lift(
+            &TeiEnvelope::new(
+                bytes.clone(),
+                TeiIdentity::grobid_http(GrobidProfile::structural()),
+            ),
+            paper_id,
+            "fixture-pdf-hash",
+        );
+        assert_eq!(
+            serde_json::to_vec(&http_identity_ir).expect("serialize http-identity IR"),
+            new_json,
+            "{name}: lift output must not depend on envelope identity"
+        );
+
+        println!(
+            "{name}: parity OK — ir={} bytes, article={} bytes, sections={}, citations={}",
+            new_json.len(),
+            serde_json::to_vec(&new_article).unwrap().len(),
+            new_article.sections.len(),
+            new_article.citations.len()
+        );
+    }
+}
+
+/// S02/T02: cached-TEI backend → envelope → pure lift is byte-equal to the
+/// compatibility lift without any HTTP or runtime infrastructure (offline
+/// replay of preserved S01 bytes through the R105 seam).
+#[tokio::test]
+async fn tei_lifter_via_cached_backend_replay_is_byte_equal_to_compatibility_path() {
+    let bytes = load_preserved_tei_bytes("hub_2507.19457.tei.xml", HUB_SHA);
+    let compat = GrobidParser::lift_tei(
+        std::str::from_utf8(&bytes)
+            .expect("fixture utf-8")
+            .to_string(),
+        "2507.19457",
+        "fixture-pdf-hash",
+    );
+
+    let backend = CachedTeiBackend::new(bytes, GrobidProfile::rich());
+    // The request carries unrelated source bytes: a cached replay serves
+    // already-available TEI and never transports the PDF.
+    let envelope = backend
+        .fetch_tei(ParseBackendRequest::new(
+            "2507.19457",
+            b"unused-pdf-bytes".to_vec(),
+        ))
+        .await
+        .expect("cached backend is infallible");
+    let ir = TeiLifter::new().lift(&envelope, "2507.19457", "fixture-pdf-hash");
+
+    assert_eq!(
+        serde_json::to_vec(&ir).expect("serialize replay IR"),
+        serde_json::to_vec(&compat).expect("serialize compat IR"),
+        "cached-backend replay must be byte-equal to the compatibility lift"
+    );
+}
+
+/// S02/T02: each fixture's genuine structural bytes drive its lift. The
+/// three checksum-bound fixtures produce pairwise-distinct serialized IRs,
+/// so the parity suite cannot pass by substituting the rich hub fixture
+/// for the other two.
+#[test]
+fn tei_lifter_lifts_each_fixtures_genuine_bytes_not_a_substituted_rich_fixture() {
+    let mut jsons = Vec::new();
+    for (file, sha, paper_id) in [
+        ("hub_2507.19457.tei.xml", HUB_SHA, "2507.19457"),
+        ("rlm_2512.24601.tei.xml", RLM_SHA, "2512.24601"),
+        ("reca_2605.26525v1.tei.xml", RECA_SHA, "2605.26525v1"),
+    ] {
+        let bytes = load_preserved_tei_bytes(file, sha);
+        let envelope = TeiEnvelope::new(bytes, TeiIdentity::cached_tei(GrobidProfile::rich()));
+        let ir = TeiLifter::new().lift(&envelope, paper_id, "fixture-pdf-hash");
+        jsons.push(serde_json::to_vec(&ir).expect("serialize IR"));
+    }
+    assert_ne!(jsons[0], jsons[1], "hub and rlm lifts must differ");
+    assert_ne!(jsons[0], jsons[2], "hub and reca lifts must differ");
+    assert_ne!(jsons[1], jsons[2], "rlm and reca lifts must differ");
+}
+
+/// S02/T02: empty, malformed and non-UTF-8 TEI bytes through the envelope
+/// path stay total and non-panicking and observe exactly the compatibility
+/// behavior — there is one code path behind both entries, and nothing is
+/// silently skipped (typed missingness keeps the absence honest).
+#[test]
+fn tei_lifter_empty_and_malformed_envelopes_match_compatibility_behavior() {
+    for (name, bytes) in [
+        ("empty", Vec::new()),
+        ("malformed", b"<TEI><text><body><div broken".to_vec()),
+        ("non-utf8", vec![0xFF, 0xFE, 0x00, b'<']),
+    ] {
+        let envelope = TeiEnvelope::new(
+            bytes.clone(),
+            TeiIdentity::cached_tei(GrobidProfile::rich()),
+        );
+        // Must not panic.
+        let ir = TeiLifter::new().lift(&envelope, "p", "h");
+        let compat = GrobidParser::lift_tei(String::from_utf8_lossy(&bytes).into_owned(), "p", "h");
+        assert_eq!(
+            serde_json::to_vec(&ir).expect("serialize envelope IR"),
+            serde_json::to_vec(&compat).expect("serialize compat IR"),
+            "{name}: envelope path must match compatibility path on degraded input"
+        );
+        let article = GrobidParser::project_article(ir);
+        assert_eq!(article.paper_id, "p", "{name}");
+        assert_eq!(article.pdf_hash, "h", "{name}");
+    }
+
+    // Empty TEI pins (mirrors tests.rs empty_tei_projects_success_with_tei_xml_present,
+    // now on the envelope path).
+    let empty = TeiEnvelope::new(Vec::new(), TeiIdentity::cached_tei(GrobidProfile::rich()));
+    let article = GrobidParser::project_article(TeiLifter::new().lift(&empty, "p", "h"));
+    assert_eq!(article.tei_xml.as_deref(), Some(""));
+    assert!(article.title.is_empty());
+    assert!(article.body_text.is_empty());
+    assert!(article.sections.is_empty());
+    assert!(article.citations.is_empty());
 }

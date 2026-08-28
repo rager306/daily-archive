@@ -1,6 +1,14 @@
 //! TEI lift: title/body, sections, citations, tables, formulas.
+//!
+//! Since M464-z84in2 S02/T02 the single lift algorithm is owned by the
+//! provider-neutral [`TeiLifter`]: a [`TeiEnvelope`] (verbatim raw TEI bytes
+//! plus exact backend/profile identity) plus logical `paper_id`/`pdf_hash`
+//! in, this-cut [`TeiParseIr`](crate::ir::TeiParseIr) out. It needs no HTTP,
+//! no filesystem and no runtime infrastructure. The
+//! [`GrobidParser::lift_tei`](crate::GrobidParser) compatibility stage is a
+//! thin delegate onto the same code — the algorithm is not duplicated.
 
-use super::GrobidParser;
+use super::envelope::TeiEnvelope;
 use da_ports::parser::{
     CharSpan, ExtractedFormula, ExtractedTable, FormulaMissingReason, FormulaRepresentation,
     TableCell, TableMissingReason,
@@ -44,7 +52,80 @@ struct SectionParseContext<'a> {
     ordinal_by_path: &'a HashMap<String, usize>,
 }
 
-impl GrobidParser {
+/// Provider-neutral pure TEI lifter (R105): `TeiEnvelope` in, this-cut
+/// `TeiParseIr` out.
+///
+/// Owns the single `lift_tei` algorithm and every extract helper
+/// (sections, citations, tables, formulas). Stateless: identical input
+/// bytes always produce an identical IR, so offline cached-TEI replay is
+/// byte-equal across replays. Empty and malformed XML stay total and
+/// non-panicking (typed missingness instead of errors) exactly as on the
+/// compatibility path — there is exactly one code path behind both
+/// entries.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TeiLifter;
+
+impl TeiLifter {
+    /// Build the stateless lifter.
+    pub fn new() -> Self {
+        Self
+    }
+
+    /// Lift the verbatim raw TEI carried by `envelope` into this-cut IR.
+    ///
+    /// Pure: no HTTP, no filesystem, no runtime infrastructure. Bytes are
+    /// decoded lossily only when they are not valid UTF-8 (total,
+    /// non-panicking); every real GROBID TEI payload and every preserved
+    /// fixture is valid UTF-8 and decodes byte-identically to the
+    /// compatibility path. Envelope identity (backend id / profile
+    /// fingerprint) is provenance metadata and never changes lift output.
+    pub fn lift(
+        &self,
+        envelope: &TeiEnvelope,
+        paper_id: impl Into<String>,
+        pdf_hash: impl Into<String>,
+    ) -> crate::ir::TeiParseIr {
+        let tei_xml = String::from_utf8_lossy(envelope.raw_tei()).into_owned();
+        Self::lift_tei(tei_xml, paper_id, pdf_hash)
+    }
+
+    /// Lift raw TEI into this-cut IR. Does not call Java.
+    ///
+    /// Single algorithm owner since M464-z84in2 S02/T02: the
+    /// `parse.stage.lift_tei` compatibility stage
+    /// (`GrobidParser::lift_tei`, recorded in
+    /// data/parse/api_compatibility_ledger.yaml) delegates here, as does the
+    /// envelope entry [`TeiLifter::lift`]. Semantics, determinism and the
+    /// intentional-absence list are unchanged (compatibility obligation
+    /// stays in force).
+    pub fn lift_tei(
+        tei_xml: String,
+        paper_id: impl Into<String>,
+        pdf_hash: impl Into<String>,
+    ) -> crate::ir::TeiParseIr {
+        let title = Self::extract_title(&tei_xml);
+        let abstract_text = Self::extract_abstract(&tei_xml);
+        let body_text = Self::extract_body(&tei_xml);
+        let sections = Self::extract_sections(&tei_xml);
+        let citations = Self::extract_citations(&tei_xml);
+        let (tables, table_missingness) = Self::extract_tables(&tei_xml);
+        let (formulas, formula_missingness) = Self::extract_formulas(&tei_xml);
+        crate::ir::TeiParseIr {
+            tei_xml,
+            paper_id: paper_id.into(),
+            title,
+            abstract_text,
+            body_text,
+            sections,
+            citations,
+            tables,
+            table_missingness,
+            formulas,
+            formula_missingness,
+            pdf_hash: pdf_hash.into(),
+        }
+    }
+
     /// Extract title from TEI XML.
     /// Handles both `<title>Text</title>` and `<title level="a" type="main">Text</title>`.
     pub(crate) fn extract_title(tei: &str) -> String {

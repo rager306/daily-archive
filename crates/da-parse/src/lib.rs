@@ -23,6 +23,7 @@ pub use backend::{
 pub use envelope::{TeiEnvelope, TeiIdentity};
 pub use http::{GrobidHttpBackend, GrobidParser};
 pub use ir::TeiParseIr;
+pub use lift::TeiLifter;
 pub use profile::GrobidProfile;
 
 #[cfg(test)]
