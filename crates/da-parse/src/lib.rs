@@ -13,7 +13,10 @@
 //! S04/T01 the request carries the serde-versioned V1 fulltext dialect and
 //! the transport returns the closed typed [`ParseBackendFailure`] vocabulary
 //! (R107); the compatibility `ParserError` mapping stays exactly once at the
-//! facade boundary.
+//! facade boundary. Since S05/T01 the same seam covers the closed header
+//! and references operations: versioned per-endpoint request dialects and
+//! endpoint result identities distinguish every operation and effective
+//! request without touching the fulltext facade or the D204 pins (R113).
 
 mod backend;
 mod conservation;
@@ -35,7 +38,7 @@ pub use conservation::{
     ConservationIdentity, ConservationInventory, ConservationObservation, ConservationReasonCode,
     ConservationVerdict, FamilyDeltaCounts,
 };
-pub use envelope::{TeiEnvelope, TeiIdentity};
+pub use envelope::{TeiEnvelope, TeiIdentity, TeiResultIdentity};
 pub use http::{GrobidHttpBackend, GrobidParser};
 pub use ir::TeiParseIr;
 pub use lift::TeiLifter;
@@ -44,9 +47,11 @@ pub use profile::GrobidProfile;
 pub use transport::{
     CitationsConsolidation, Consolidation, CoordinateFamily, CoordinateSet,
     FULLTEXT_REQUEST_SCHEMA_VERSION, FailureCode, FailurePhase, FulltextDialectV1,
-    FulltextRequestVersioned, FundersConsolidation, HeaderConsolidation, InvalidConsolidation,
+    FulltextRequestVersioned, FundersConsolidation, HEADER_REQUEST_SCHEMA_VERSION,
+    HeaderConsolidation, HeaderDialectV1, HeaderRequestVersioned, InvalidConsolidation,
     InvalidPageWindow, LimitKind, PARSE_FAILURE_SCHEMA_VERSION, PageWindow, ParseBackendFailure,
-    RetryAfter,
+    ParseEndpoint, ParseResultKind, REFERENCES_REQUEST_SCHEMA_VERSION, ReferencesDialectV1,
+    ReferencesRequestVersioned, RetryAfter,
 };
 
 #[cfg(test)]

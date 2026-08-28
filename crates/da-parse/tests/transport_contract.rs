@@ -24,8 +24,11 @@
 use da_parse::{
     CachedTeiBackend, Consolidation, CoordinateFamily, CoordinateSet,
     FULLTEXT_REQUEST_SCHEMA_VERSION, FailureCode, FailurePhase, FulltextDialectV1,
-    FulltextRequestVersioned, GrobidProfile, LimitKind, PARSE_FAILURE_SCHEMA_VERSION, PageWindow,
-    ParseBackend, ParseBackendFailure, ParseBackendRequest, RetryAfter,
+    FulltextRequestVersioned, GrobidProfile, HEADER_REQUEST_SCHEMA_VERSION, HeaderDialectV1,
+    HeaderRequestVersioned, LimitKind, PARSE_FAILURE_SCHEMA_VERSION, PageWindow, ParseBackend,
+    ParseBackendFailure, ParseBackendRequest, ParseEndpoint, ParseResultKind,
+    REFERENCES_REQUEST_SCHEMA_VERSION, ReferencesDialectV1, ReferencesRequestVersioned, RetryAfter,
+    TeiIdentity, TeiResultIdentity,
 };
 use da_ports::parser::ParserError;
 
@@ -571,4 +574,454 @@ async fn cached_backend_stays_a_deterministic_success_under_the_typed_trait() {
     assert_eq!(first, second, "deterministic success");
     assert_eq!(first.raw_tei(), TEI_FIXTURE.as_bytes());
     assert_eq!(first.identity().backend_id(), "cached-tei");
+}
+
+// ---------------------------------------------------------------------------
+// S05/T01: closed endpoint/result vocabulary, header/references dialects,
+// endpoint result identities
+// ---------------------------------------------------------------------------
+
+#[test]
+fn endpoint_vocabulary_is_closed_with_exact_static_routes_and_result_kinds() {
+    let cases = [
+        (
+            ParseEndpoint::Fulltext,
+            "fulltext",
+            "/api/processFulltextDocument",
+            ParseResultKind::FullDocument,
+        ),
+        (
+            ParseEndpoint::Header,
+            "header",
+            "/api/processHeaderDocument",
+            ParseResultKind::Header,
+        ),
+        (
+            ParseEndpoint::References,
+            "references",
+            "/api/processReferences",
+            ParseResultKind::ListBibl,
+        ),
+    ];
+    for (endpoint, name, path, result_kind) in cases {
+        assert_eq!(endpoint.as_str(), name);
+        assert_eq!(endpoint.static_path(), path, "{name}: closed static route");
+        assert_eq!(endpoint.result_kind(), result_kind);
+        let wire = serde_json::to_string(&endpoint).expect("endpoint serializes");
+        assert_eq!(wire, format!("\"{name}\""), "stable snake_case wire form");
+        let back: ParseEndpoint = serde_json::from_str(&wire).expect("endpoint roundtrips");
+        assert_eq!(back, endpoint);
+    }
+    assert_eq!(
+        serde_json::to_string(&ParseResultKind::ListBibl).expect("result kind serializes"),
+        "\"list_bibl\""
+    );
+    assert!(
+        serde_json::from_str::<ParseEndpoint>("\"abstract\"").is_err(),
+        "invented endpoints must be rejected (closed vocabulary)"
+    );
+    assert!(
+        serde_json::from_str::<ParseResultKind>("\"bibtex\"").is_err(),
+        "invented result kinds must be rejected (closed vocabulary)"
+    );
+}
+
+#[test]
+fn header_and_references_envelopes_roundtrip_and_reject_unknown_versions_and_fields() {
+    let header = HeaderDialectV1::legacy_rich();
+    let header_wire =
+        serde_json::to_string(&HeaderRequestVersioned::v1(header)).expect("serialize");
+    assert!(
+        header_wire.contains(r#""version":"v1""#),
+        "explicit V1 discriminant on the wire: {header_wire}"
+    );
+    assert!(header_wire.contains(r#""consolidate_header":1"#));
+    assert!(header_wire.contains(r#""include_raw_affiliations":false"#));
+    let round: HeaderRequestVersioned = serde_json::from_str(&header_wire).expect("deserialize");
+    assert_eq!(round.version_label(), "v1");
+    assert_eq!(*round.dialect(), header, "lossless roundtrip");
+
+    let references = serde_json::to_string(&ReferencesRequestVersioned::v1(
+        ReferencesDialectV1::legacy_structural(),
+    ))
+    .expect("serialize");
+    let round_refs: ReferencesRequestVersioned =
+        serde_json::from_str(&references).expect("deserialize");
+    assert_eq!(
+        *round_refs.dialect(),
+        ReferencesDialectV1::legacy_structural()
+    );
+    assert_eq!(HEADER_REQUEST_SCHEMA_VERSION, 1);
+    assert_eq!(REFERENCES_REQUEST_SCHEMA_VERSION, 1);
+
+    // Unknown versions are rejected exactly like the fulltext envelope.
+    for wire in [
+        r#"{"version":"v9","consolidate_header":1,"include_raw_affiliations":false}"#,
+        r#"{"version":"v9","consolidate_citations":1,"include_raw_citations":false}"#,
+    ] {
+        assert!(
+            serde_json::from_str::<HeaderRequestVersioned>(wire).is_err(),
+            "unknown version must fail on header: {wire}"
+        );
+        assert!(
+            serde_json::from_str::<ReferencesRequestVersioned>(wire).is_err(),
+            "unknown version must fail on references: {wire}"
+        );
+    }
+    assert!(
+        serde_json::from_str::<HeaderRequestVersioned>(r#"{"consolidate_header":1}"#).is_err(),
+        "missing version discriminant is not a valid envelope"
+    );
+
+    // Unknown AND foreign fields are rejected: header knobs cannot ride the
+    // references dialect and vice versa; fulltext-only knobs, invented knobs
+    // and infrastructure tuning have no field anywhere.
+    let header_foreign = [
+        "include_raw_citations",
+        "consolidate_citations",
+        "segment_sentences",
+        "emit_ids",
+        "page_window",
+        "coordinates",
+        "brand_new_knob",
+        "base_url",
+        "timeout_ms",
+        "request_byte_limit",
+    ];
+    for field in header_foreign {
+        let wire = format!(
+            r#"{{"version":"v1","consolidate_header":1,"include_raw_affiliations":false,"{field}":true}}"#
+        );
+        assert!(
+            serde_json::from_str::<HeaderRequestVersioned>(&wire).is_err(),
+            "header dialect must reject foreign/unknown field `{field}`"
+        );
+    }
+    let references_foreign = [
+        "include_raw_affiliations",
+        "consolidate_header",
+        "segment_sentences",
+        "emit_ids",
+        "page_window",
+        "coordinates",
+        "brand_new_knob",
+        "base_url",
+        "timeout_ms",
+        "response_byte_limit",
+    ];
+    for field in references_foreign {
+        let wire = format!(
+            r#"{{"version":"v1","consolidate_citations":1,"include_raw_citations":false,"{field}":true}}"#
+        );
+        assert!(
+            serde_json::from_str::<ReferencesRequestVersioned>(&wire).is_err(),
+            "references dialect must reject foreign/unknown field `{field}`"
+        );
+    }
+
+    // Closed shapes: required controls cannot be omitted.
+    assert!(
+        serde_json::from_str::<HeaderRequestVersioned>(
+            r#"{"version":"v1","consolidate_header":1}"#
+        )
+        .is_err(),
+        "include_raw_affiliations is a required V1 control"
+    );
+    assert!(
+        serde_json::from_str::<HeaderRequestVersioned>(
+            r#"{"version":"v1","include_raw_affiliations":false}"#
+        )
+        .is_err(),
+        "consolidate_header is a required V1 control"
+    );
+}
+
+#[test]
+fn header_and_references_consolidation_stays_inside_sanctioned_ranges() {
+    let bad_header = serde_json::from_str::<HeaderRequestVersioned>(
+        r#"{"version":"v1","consolidate_header":3,"include_raw_affiliations":false}"#,
+    );
+    assert!(bad_header.is_err(), "header level 3 is outside 0..3");
+    let bad_references = serde_json::from_str::<ReferencesRequestVersioned>(
+        r#"{"version":"v1","consolidate_citations":2,"include_raw_citations":false}"#,
+    );
+    assert!(bad_references.is_err(), "citations level 2 is outside 0..2");
+
+    for header in 0..3u8 {
+        let wire = format!(
+            r#"{{"version":"v1","consolidate_header":{header},"include_raw_affiliations":false}}"#
+        );
+        assert!(
+            serde_json::from_str::<HeaderRequestVersioned>(&wire).is_ok(),
+            "sanctioned header level {header} must deserialize"
+        );
+    }
+    for citations in 0..2u8 {
+        let wire = format!(
+            r#"{{"version":"v1","consolidate_citations":{citations},"include_raw_citations":false}}"#
+        );
+        assert!(
+            serde_json::from_str::<ReferencesRequestVersioned>(&wire).is_ok(),
+            "sanctioned citations level {citations} must deserialize"
+        );
+    }
+}
+
+#[test]
+fn legacy_profiles_map_only_onto_their_consolidation_axis() {
+    let rich_header = HeaderDialectV1::from_legacy_profile(&GrobidProfile::rich());
+    assert_eq!(rich_header.consolidate_header().value(), 1);
+    assert!(!rich_header.include_raw_affiliations());
+    let structural_header = HeaderDialectV1::from_legacy_profile(&GrobidProfile::structural());
+    assert_eq!(structural_header.consolidate_header().value(), 0);
+    assert_eq!(rich_header, HeaderDialectV1::legacy_rich());
+    assert_eq!(structural_header, HeaderDialectV1::legacy_structural());
+
+    let rich_references = ReferencesDialectV1::from_legacy_profile(&GrobidProfile::rich());
+    assert_eq!(rich_references.consolidate_citations().value(), 1);
+    assert!(!rich_references.include_raw_citations());
+    let structural_references =
+        ReferencesDialectV1::from_legacy_profile(&GrobidProfile::structural());
+    assert_eq!(structural_references.consolidate_citations().value(), 0);
+    assert_eq!(rich_references, ReferencesDialectV1::legacy_rich());
+    assert_eq!(
+        structural_references,
+        ReferencesDialectV1::legacy_structural()
+    );
+}
+
+#[test]
+fn endpoint_requests_are_constructed_through_the_existing_seam() {
+    let header_bytes = b"%PDF header proxy".to_vec();
+    let header = ParseBackendRequest::header(
+        "header-paper",
+        header_bytes.clone(),
+        HeaderDialectV1::legacy_rich(),
+    );
+    assert_eq!(header.endpoint(), ParseEndpoint::Header);
+    assert_eq!(header.paper_id(), "header-paper");
+    assert_eq!(header.pdf_bytes(), &header_bytes);
+    assert_eq!(
+        header.header_dialect(),
+        Some(HeaderDialectV1::legacy_rich())
+    );
+    assert_eq!(header.references_dialect(), None);
+
+    let references = ParseBackendRequest::references_from_legacy_profile(
+        &GrobidProfile::structural(),
+        "references-paper",
+        Vec::new(),
+    );
+    assert_eq!(references.endpoint(), ParseEndpoint::References);
+    assert_eq!(
+        references.references_dialect(),
+        Some(ReferencesDialectV1::legacy_structural())
+    );
+    assert_eq!(references.header_dialect(), None);
+
+    // Trait seam: backends hand out closed operation requests too.
+    let cached = CachedTeiBackend::new(TEI_FIXTURE, GrobidProfile::rich());
+    let via_trait = cached.default_header_request("via-trait", Vec::new());
+    assert_eq!(via_trait.endpoint(), ParseEndpoint::Header);
+    let via_trait_refs = cached.default_references_request("via-trait", Vec::new());
+    assert_eq!(via_trait_refs.endpoint(), ParseEndpoint::References);
+
+    // Legacy fulltext constructors keep their exact surface.
+    let legacy = ParseBackendRequest::from_legacy_profile(
+        &GrobidProfile::structural(),
+        "p",
+        PDF_FIXTURE.to_vec(),
+    );
+    assert_eq!(legacy.endpoint(), ParseEndpoint::Fulltext);
+    assert_eq!(legacy.header_dialect(), None);
+    assert_eq!(legacy.references_dialect(), None);
+    assert_eq!(legacy.dialect(), &FulltextDialectV1::legacy_structural());
+    assert_eq!(legacy.pdf_bytes(), PDF_FIXTURE);
+
+    // Redaction: source bytes never render through Debug (S05 redaction floor).
+    let rendered = format!("{legacy:?}");
+    assert!(
+        !rendered.contains("%PDF"),
+        "request Debug must not carry source bytes: {rendered}"
+    );
+    assert!(rendered.contains("pdf_bytes_len"));
+}
+
+#[test]
+fn result_identities_are_pairwise_distinct_for_one_profile() {
+    for profile in [GrobidProfile::rich(), GrobidProfile::structural()] {
+        let fulltext = ParseBackendRequest::new("p", PDF_FIXTURE.to_vec()).result_identity();
+        let header = ParseBackendRequest::header_from_legacy_profile(&profile, "p", Vec::new())
+            .result_identity();
+        let references =
+            ParseBackendRequest::references_from_legacy_profile(&profile, "p", Vec::new())
+                .result_identity();
+
+        assert_eq!(fulltext.endpoint(), ParseEndpoint::Fulltext);
+        assert_eq!(header.endpoint(), ParseEndpoint::Header);
+        assert_eq!(references.endpoint(), ParseEndpoint::References);
+        assert_ne!(fulltext, header);
+        assert_ne!(header, references);
+        assert_ne!(fulltext, references);
+        let (f, h, r) = (
+            fulltext.canonical(),
+            header.canonical(),
+            references.canonical(),
+        );
+        assert_ne!(f, h);
+        assert_ne!(h, r);
+        assert_ne!(f, r);
+
+        // Deterministic under repetition.
+        assert_eq!(
+            ParseBackendRequest::header_from_legacy_profile(&profile, "again", Vec::new())
+                .result_identity(),
+            header
+        );
+        assert_eq!(
+            ParseBackendRequest::references_from_legacy_profile(&profile, "again", Vec::new())
+                .result_identity(),
+            references
+        );
+    }
+
+    // Stamped envelope identities stay separated across endpoints for one
+    // profile.
+    let base = TeiIdentity::grobid_http(GrobidProfile::rich());
+    let stamped = [
+        base.clone()
+            .with_result(TeiResultIdentity::fulltext(FulltextDialectV1::legacy_rich())),
+        base.clone()
+            .with_result(TeiResultIdentity::header(HeaderDialectV1::legacy_rich())),
+        base.clone().with_result(TeiResultIdentity::references(
+            ReferencesDialectV1::legacy_rich(),
+        )),
+    ];
+    assert_ne!(stamped[0], stamped[1]);
+    assert_ne!(stamped[1], stamped[2]);
+    assert_ne!(stamped[0], stamped[2]);
+}
+
+#[test]
+fn raw_switches_rotate_only_their_own_identity() {
+    let header_off = HeaderDialectV1::legacy_rich();
+    let header_on = header_off.with_include_raw_affiliations(true);
+    assert_ne!(
+        header_off.canonical_identity(),
+        header_on.canonical_identity()
+    );
+    assert!(
+        header_off
+            .canonical_identity()
+            .contains("rawAffiliations=0")
+    );
+    assert!(header_on.canonical_identity().contains("rawAffiliations=1"));
+
+    let references_off = ReferencesDialectV1::legacy_rich();
+    let references_on = references_off.with_include_raw_citations(true);
+    assert_ne!(
+        references_off.canonical_identity(),
+        references_on.canonical_identity()
+    );
+    assert!(
+        references_off
+            .canonical_identity()
+            .contains("rawCitations=0")
+    );
+    assert!(
+        references_on
+            .canonical_identity()
+            .contains("rawCitations=1")
+    );
+
+    // Versioned namespaces never collide with each other or with the legacy
+    // D204 fingerprints.
+    assert_ne!(
+        header_off.canonical_identity(),
+        references_off.canonical_identity()
+    );
+    assert_ne!(header_off.canonical_identity(), RICH_FP);
+    assert_ne!(references_on.canonical_identity(), STRUCTURAL_FP);
+}
+
+#[test]
+fn endpoint_result_identities_exclude_infrastructure_tuning_and_locations() {
+    let identities = [
+        TeiResultIdentity::fulltext(FulltextDialectV1::legacy_rich()).canonical(),
+        TeiResultIdentity::header(HeaderDialectV1::legacy_rich()).canonical(),
+        TeiResultIdentity::header(
+            HeaderDialectV1::legacy_structural().with_include_raw_affiliations(true),
+        )
+        .canonical(),
+        TeiResultIdentity::references(ReferencesDialectV1::legacy_rich()).canonical(),
+        TeiResultIdentity::references(
+            ReferencesDialectV1::legacy_structural().with_include_raw_citations(true),
+        )
+        .canonical(),
+    ];
+    for identity in &identities {
+        for forbidden in [
+            "http", "://", "timeout", "limit", "path", "cache", "url", "dir",
+        ] {
+            assert!(
+                !identity.to_lowercase().contains(forbidden),
+                "identity `{identity}` must never carry infrastructure tuning or locations (`{forbidden}`)"
+            );
+        }
+    }
+
+    // Stamping keeps exactly the provenance fields; tuning has no input
+    // channel at all.
+    let header_result = TeiResultIdentity::header(HeaderDialectV1::legacy_rich());
+    let stamped =
+        TeiIdentity::grobid_http(GrobidProfile::rich()).with_result(header_result.clone());
+    assert_eq!(stamped.backend_id(), "grobid-http");
+    assert_eq!(stamped.profile_fingerprint(), RICH_FP);
+    assert_eq!(stamped.result(), Some(&header_result));
+}
+
+#[test]
+fn pre_s05_identity_pins_stay_untouched_and_result_stamping_is_additive() {
+    // The S02/S04 identity constructors keep their exact shape.
+    let http = TeiIdentity::grobid_http(GrobidProfile::rich());
+    assert_eq!(http.backend_id(), "grobid-http");
+    assert_eq!(http.profile_fingerprint(), RICH_FP);
+    assert!(
+        http.result().is_none(),
+        "pre-S05 identities own no result component"
+    );
+    let cached = TeiIdentity::cached_tei(GrobidProfile::structural());
+    assert!(cached.result().is_none());
+    assert_ne!(http, cached);
+
+    // Result stamping is purely additive.
+    let header_result = TeiResultIdentity::header(HeaderDialectV1::legacy_rich());
+    let stamped = http.clone().with_result(header_result.clone());
+    assert_eq!(stamped.backend_id(), http.backend_id());
+    assert_eq!(stamped.profile_fingerprint(), http.profile_fingerprint());
+    assert_eq!(stamped.result(), Some(&header_result));
+    assert_ne!(stamped, http, "result stamping distinguishes the operation");
+
+    // Fulltext result identity: legacy-equivalent dialects carry no extended
+    // fulltext dialect identity (the D204 fingerprint stays their only key)
+    // but still distinguish the fulltext operation.
+    let legacy_fulltext = TeiResultIdentity::fulltext(FulltextDialectV1::legacy_rich());
+    assert_eq!(
+        legacy_fulltext.schema_version(),
+        FULLTEXT_REQUEST_SCHEMA_VERSION
+    );
+    assert_eq!(legacy_fulltext.dialect_identity(), "legacy-equivalent");
+    assert_eq!(
+        legacy_fulltext.canonical(),
+        "endpoint=fulltext;schema=v1;legacy-equivalent"
+    );
+    let extended_fulltext =
+        TeiResultIdentity::fulltext(FulltextDialectV1::legacy_rich().with_segment_sentences(true));
+    assert!(
+        extended_fulltext
+            .dialect_identity()
+            .starts_with("fulltext=v1;"),
+        "extended fulltext dialects keep their versioned namespace"
+    );
+    assert_ne!(legacy_fulltext, extended_fulltext);
 }

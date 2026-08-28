@@ -39,8 +39,9 @@ use std::path::{Path, PathBuf};
 
 use da_parse::{
     CachedTeiBackend, Consolidation, CoordinateFamily, CoordinateSet, FulltextDialectV1,
-    FulltextRequestVersioned, GROBID_HTTP_BACKEND_ID, GrobidHttpBackend, GrobidProfile, PageWindow,
-    ScholarlyParser, TeiEnvelope, TeiIdentity, TeiLifter,
+    FulltextRequestVersioned, GROBID_HTTP_BACKEND_ID, GrobidHttpBackend, GrobidProfile,
+    HeaderDialectV1, PageWindow, ParseBackendRequest, ReferencesDialectV1, ScholarlyParser,
+    TeiEnvelope, TeiIdentity, TeiLifter, TeiResultIdentity,
 };
 use da_ports::parser::ParsedArticle;
 use serde_json::json;
@@ -835,4 +836,79 @@ fn transport_tuning_stays_excluded_from_envelope_identity() {
         .with_request_byte_limit(1024);
     assert_eq!(structural.identity().profile_fingerprint(), STRUCTURAL_FP);
     assert_ne!(structural.identity(), base.identity());
+}
+
+// ---------------------------------------------------------------------------
+// S05/T01: endpoint result identity guards
+// ---------------------------------------------------------------------------
+
+/// The S05 endpoint result identities are deterministic, pairwise distinct
+/// per profile, free of transport tuning/locations, and stamp on top of the
+/// unchanged D204 identity without rotating any pre-S05 pin.
+#[test]
+fn s05_endpoint_result_identities_are_distinct_deterministic_and_free_of_tuning() {
+    for profile in [GrobidProfile::rich(), GrobidProfile::structural()] {
+        let fulltext = ParseBackendRequest::new("s05", Vec::new()).result_identity();
+        let header = ParseBackendRequest::header_from_legacy_profile(&profile, "s05", Vec::new())
+            .result_identity();
+        let references =
+            ParseBackendRequest::references_from_legacy_profile(&profile, "s05", Vec::new())
+                .result_identity();
+
+        // Pairwise distinct per profile; deterministic under repetition.
+        assert_ne!(fulltext, header);
+        assert_ne!(header, references);
+        assert_ne!(fulltext, references);
+        assert_eq!(
+            ParseBackendRequest::header_from_legacy_profile(&profile, "again", Vec::new())
+                .result_identity(),
+            header
+        );
+        assert_eq!(
+            ParseBackendRequest::references_from_legacy_profile(&profile, "again", Vec::new())
+                .result_identity(),
+            references
+        );
+
+        // The effective request is distinguishable: raw switches move only
+        // their own endpoint identity.
+        let raw_header = TeiResultIdentity::header(
+            HeaderDialectV1::from_legacy_profile(&profile).with_include_raw_affiliations(true),
+        );
+        assert_ne!(raw_header, header);
+        let raw_references = TeiResultIdentity::references(
+            ReferencesDialectV1::from_legacy_profile(&profile).with_include_raw_citations(true),
+        );
+        assert_ne!(raw_references, references);
+
+        for identity in [
+            fulltext.canonical(),
+            header.canonical(),
+            references.canonical(),
+            raw_header.canonical(),
+            raw_references.canonical(),
+        ] {
+            for forbidden in ["http", "://", "timeout", "limit", "path", "cache", "url"] {
+                assert!(
+                    !identity.to_lowercase().contains(forbidden),
+                    "identity `{identity}` must stay free of `{forbidden}`"
+                );
+            }
+        }
+    }
+
+    // Stamping is additive over the byte-stable D204 fingerprints.
+    for profile in [GrobidProfile::rich(), GrobidProfile::structural()] {
+        let fingerprint = profile.configuration_fingerprint();
+        let stamped = TeiIdentity::grobid_http(profile).with_result(TeiResultIdentity::header(
+            HeaderDialectV1::from_legacy_profile(&profile),
+        ));
+        assert_eq!(stamped.backend_id(), GROBID_HTTP_BACKEND_ID);
+        assert_eq!(stamped.profile_fingerprint(), fingerprint);
+        assert!(stamped.result().is_some());
+        assert_ne!(stamped, TeiIdentity::grobid_http(profile));
+        // ...and the pre-S05 constructors keep owning no result component.
+        assert!(TeiIdentity::grobid_http(profile).result().is_none());
+        assert!(TeiIdentity::cached_tei(profile).result().is_none());
+    }
 }

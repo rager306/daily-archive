@@ -18,11 +18,25 @@
 //! drives the full backend→envelope→lift→project composition through
 //! [`crate::parser::ScholarlyParser`]; filesystem/env/HTTP stay in this shell
 //! only.
+//!
+//! Since S05/T02 all three closed endpoints (fulltext, header, references)
+//! share ONE endpoint-neutral one-shot multipart exchange: exactly one `POST`
+//! to the endpoint's static Java route and exactly one streamed response
+//! read, classified by the one shared typed-outcome ladder. Each endpoint
+//! projects its own closed dialect — the header/references allowlists never
+//! emit `teiCoordinates` or a foreign knob — route selection is the static
+//! closed [`ParseEndpoint`] mapping (never a caller-controlled URL), and
+//! proxy successes return the partial header/listBibl TEI directly as a
+//! verbatim [`TeiEnvelope`] stamped with the S05 endpoint result identity
+//! (no lifter, no projection, no `ParserPort`). Logs stay redacted: logical
+//! endpoints, sizes and typed codes only — never a base URL, payload or
+//! response body (reqwest error text embeds URLs, so only typed code/phase
+//! metadata is ever logged).
 
 use crate::backend::{ParseBackend, ParseBackendRequest};
 use crate::envelope::{TeiEnvelope, TeiIdentity};
 use crate::profile::GrobidProfile;
-use crate::transport::{FailurePhase, LimitKind, ParseBackendFailure, RetryAfter};
+use crate::transport::{FailurePhase, LimitKind, ParseBackendFailure, ParseEndpoint, RetryAfter};
 use async_trait::async_trait;
 
 pub(crate) const DEFAULT_GROBID_URL: &str = "http://127.0.0.1:8070";
@@ -134,65 +148,34 @@ impl GrobidHttpBackend {
         }
     }
 
-    /// Project a typed [`ParseBackendRequest`] onto the Java GROBID fulltext
-    /// wire and run exactly one `POST /api/processFulltextDocument` exchange
-    /// (R105/R107).
-    ///
-    /// The multipart form is the **sole projector** of the request's V1
-    /// dialect: every sanctioned field keeps its exact Java GROBID name and
-    /// enum value, and extended V1 fields are appended only when the dialect
-    /// actually enables them (omitted equals the GROBID default), so
-    /// legacy-equivalent dialects render exactly the S02 wire form — `input`,
-    /// `consolidateCitations`, `consolidateHeader`, `teiCoordinates` and
-    /// nothing else (D204 byte-compatible).
-    ///
-    /// Successful bodies are carried as verbatim bytes: no lossy text
-    /// decoding, non-UTF-8 bytes survive. Outcomes are closed and typed:
-    /// `200` → bytes, `204` → no content, `503` → busy with bounded
-    /// `Retry-After` metadata, `400` → invalid request, `413` / opt-in byte
-    /// bounds → limit, other `5xx` → conversion (Java processing/conversion
-    /// failure), anything else → invalid response. There is no internal
-    /// retry, the error body is never read, and no payload ever enters an
-    /// error or a log.
-    pub(crate) async fn process_fulltext(
-        &self,
-        request: &ParseBackendRequest,
-    ) -> Result<Vec<u8>, ParseBackendFailure> {
-        let url = format!("{}/api/processFulltextDocument", self.url);
-
-        // Opt-in client-enforced request bound: checked before the multipart
-        // form even exists, so a breach produces exactly zero wire requests.
-        if let Some(max_bytes) = self.limits.request
-            && request.pdf_bytes().len() > max_bytes
-        {
-            tracing::warn!(
-                api = "grobid",
-                endpoint = %url,
-                enforced_limit = "request_bytes",
-                "GROBID processFulltextDocument: request exceeded the opt-in byte bound"
-            );
-            return Err(ParseBackendFailure::limit(LimitKind::RequestBytes, None));
-        }
-
-        let part = reqwest::multipart::Part::bytes(request.pdf_bytes().to_vec())
+    /// The shared multipart `input` part (S05/T02): the source PDF bytes
+    /// under the stable upload filename, identical for every endpoint.
+    fn input_part(pdf_bytes: &[u8]) -> Result<reqwest::multipart::Part, ParseBackendFailure> {
+        reqwest::multipart::Part::bytes(pdf_bytes.to_vec())
             .file_name("paper.pdf")
             .mime_str("application/pdf")
-            .map_err(|_| ParseBackendFailure::conversion(FailurePhase::MultipartEncode, None))?;
+            .map_err(|_| ParseBackendFailure::conversion(FailurePhase::MultipartEncode, None))
+    }
 
-        // Sole dialect projection: identical field names and enum values to
-        // the S02 request (D204 byte-compatible); the typed consolidation
-        // levels render the same `"0"`/`"1"` wire strings for the legacy
-        // presets. Field semantics:
-        // - `consolidateCitations`: enrich references via Crossref/biblio-glutton
-        //   (ADR-053 Layer F cross-paper edges).
-        // - `consolidateHeader`: enrich paper header (title, authors, DOI,
-        //   abstract) — author disambiguation (Layer G), DOI coverage.
-        // - `teiCoordinates`: PDF coordinates for figures, tables, footnotes
-        //   and formulas (Layer I cropping + provenance).
+    /// Closed fulltext projector (S02/S04 wire form, D204 byte-compatible):
+    /// the **sole projector** of the request's V1 fulltext dialect.
+    ///
+    /// Identical field names and enum values to the S02 request; the typed
+    /// consolidation levels render the same `"0"`/`"1"` wire strings for the
+    /// legacy presets. Field semantics:
+    /// - `consolidateCitations`: enrich references via Crossref/biblio-glutton
+    ///   (ADR-053 Layer F cross-paper edges).
+    /// - `consolidateHeader`: enrich paper header (title, authors, DOI,
+    ///   abstract) — author disambiguation (Layer G), DOI coverage.
+    /// - `teiCoordinates`: PDF coordinates for figures, tables, footnotes
+    ///   and formulas (Layer I cropping + provenance).
+    fn fulltext_form(
+        request: &ParseBackendRequest,
+    ) -> Result<reqwest::multipart::Form, ParseBackendFailure> {
         let dialect = request.dialect();
         let consolidation = dialect.consolidation();
         let mut form = reqwest::multipart::Form::new()
-            .part("input", part)
+            .part("input", Self::input_part(request.pdf_bytes())?)
             .text(
                 "consolidateCitations",
                 consolidation.citations().to_string(),
@@ -223,6 +206,88 @@ impl GrobidHttpBackend {
                 .text("start", window.start().to_string())
                 .text("end", window.end().to_string());
         }
+        Ok(form)
+    }
+
+    /// Closed header projector (S05/T02): the multipart allowlist is exactly
+    /// `input`, `consolidateHeader` and the optional `includeRawAffiliations`
+    /// switch — never `teiCoordinates` and never a fulltext or references
+    /// knob (R113).
+    fn header_form(
+        request: &ParseBackendRequest,
+    ) -> Result<reqwest::multipart::Form, ParseBackendFailure> {
+        let dialect = request
+            .header_dialect()
+            .expect("header requests carry a header dialect");
+        let mut form = reqwest::multipart::Form::new()
+            .part("input", Self::input_part(request.pdf_bytes())?)
+            .text(
+                "consolidateHeader",
+                dialect.consolidate_header().to_string(),
+            );
+        if dialect.include_raw_affiliations() {
+            form = form.text("includeRawAffiliations", "1");
+        }
+        Ok(form)
+    }
+
+    /// Closed references projector (S05/T02): the multipart allowlist is
+    /// exactly `input`, `consolidateCitations` and the optional
+    /// `includeRawCitations` switch — never `teiCoordinates` and never a
+    /// fulltext or header knob (R113).
+    fn references_form(
+        request: &ParseBackendRequest,
+    ) -> Result<reqwest::multipart::Form, ParseBackendFailure> {
+        let dialect = request
+            .references_dialect()
+            .expect("references requests carry a references dialect");
+        let mut form = reqwest::multipart::Form::new()
+            .part("input", Self::input_part(request.pdf_bytes())?)
+            .text(
+                "consolidateCitations",
+                dialect.consolidate_citations().to_string(),
+            );
+        if dialect.include_raw_citations() {
+            form = form.text("includeRawCitations", "1");
+        }
+        Ok(form)
+    }
+
+    /// One endpoint-neutral one-shot multipart exchange (S05/T02): exactly
+    /// one `POST` to `endpoint`'s static Java GROBID route and exactly one
+    /// streamed response read, classified by the one shared typed-outcome
+    /// ladder. No retry, no queue, no concurrency policy — one operation is
+    /// one PDF upload and one response stream (S06 owns any load policy).
+    ///
+    /// Outcomes are closed and typed: `200` → bytes, `204` → no content,
+    /// `503` → busy with bounded `Retry-After` metadata, `400` → invalid
+    /// request, `413` / opt-in byte bounds → limit, other `5xx` → conversion
+    /// (Java processing/conversion failure), anything else → invalid
+    /// response. There is no internal retry and the error body is never
+    /// read. Logs stay redacted: the logical endpoint, sizes and typed
+    /// code/phase metadata only — never a URL, payload or response body
+    /// (reqwest error text embeds URLs, so it is never logged).
+    async fn exchange_once(
+        &self,
+        endpoint: ParseEndpoint,
+        pdf_len: usize,
+        form: reqwest::multipart::Form,
+    ) -> Result<Vec<u8>, ParseBackendFailure> {
+        let url = format!("{}{}", self.url, endpoint.static_path());
+
+        // Opt-in client-enforced request bound: checked before any wire
+        // bytes exist, so a breach produces exactly zero HTTP requests.
+        if let Some(max_bytes) = self.limits.request
+            && pdf_len > max_bytes
+        {
+            tracing::warn!(
+                api = "grobid",
+                endpoint = %endpoint,
+                enforced_limit = "request_bytes",
+                "GROBID request exceeded the opt-in byte bound before any wire request"
+            );
+            return Err(ParseBackendFailure::limit(LimitKind::RequestBytes, None));
+        }
 
         let mut resp = self
             .client
@@ -231,33 +296,29 @@ impl GrobidHttpBackend {
             .send()
             .await
             .map_err(|e| {
-                tracing::warn!(
-                    api = "grobid",
-                    endpoint = %url,
-                    error = %e,
-                    "GROBID processFulltextDocument network error"
-                );
                 // Honest typed classification (timeout is distinct from
                 // connect/DNS/other transport I/O). No internal retry.
-                if e.is_timeout() {
+                let failure = if e.is_timeout() {
                     ParseBackendFailure::timeout(FailurePhase::AwaitResponse)
                 } else if e.is_connect() {
                     ParseBackendFailure::transport(FailurePhase::Connect)
                 } else {
                     ParseBackendFailure::transport(FailurePhase::Send)
-                }
+                };
+                tracing::warn!(
+                    api = "grobid",
+                    endpoint = %endpoint,
+                    code = %failure.code(),
+                    phase = %failure.phase(),
+                    "GROBID exchange network error (single attempt, no retry)"
+                );
+                failure
             })?;
 
         let status = resp.status();
         if !status.is_success() {
-            tracing::warn!(
-                api = "grobid",
-                endpoint = %url,
-                status = %status,
-                "GROBID processFulltextDocument non-success HTTP status"
-            );
             // Closed typed classification; the raw error body is never read.
-            return Err(match status.as_u16() {
+            let failure = match status.as_u16() {
                 // Honest backpressure: typed busy, no internal retry, bounded
                 // parsed Retry-After metadata (valid seconds / honest
                 // Unparsable / absent).
@@ -275,29 +336,36 @@ impl GrobidHttpBackend {
                     ParseBackendFailure::conversion(FailurePhase::AwaitResponse, Some(s))
                 }
                 s => ParseBackendFailure::invalid_response(FailurePhase::AwaitResponse, Some(s)),
-            });
+            };
+            tracing::warn!(
+                api = "grobid",
+                endpoint = %endpoint,
+                status = status.as_u16(),
+                code = %failure.code(),
+                "GROBID non-success HTTP status (single attempt, no retry)"
+            );
+            return Err(failure);
         }
 
         // Success is exactly 200: 204 is a typed absence (no TEI was
-        // produced), and no other 2xx belongs to the Java GROBID fulltext
-        // contract.
+        // produced), and no other 2xx belongs to the Java GROBID contract.
         match status.as_u16() {
             200 => {}
             204 => {
                 tracing::warn!(
                     api = "grobid",
-                    endpoint = %url,
+                    endpoint = %endpoint,
                     status = 204,
-                    "GROBID processFulltextDocument returned no content"
+                    "GROBID returned no content"
                 );
                 return Err(ParseBackendFailure::no_content());
             }
             s => {
                 tracing::warn!(
                     api = "grobid",
-                    endpoint = %url,
+                    endpoint = %endpoint,
                     status = s,
-                    "GROBID processFulltextDocument returned an uninterpretable success status"
+                    "GROBID returned an uninterpretable success status"
                 );
                 return Err(ParseBackendFailure::invalid_response(
                     FailurePhase::AwaitResponse,
@@ -312,16 +380,19 @@ impl GrobidHttpBackend {
         let mut body: Vec<u8> = Vec::new();
         loop {
             let Some(chunk) = resp.chunk().await.map_err(|e| {
-                tracing::warn!(
-                    api = "grobid",
-                    error = %e,
-                    "GROBID processFulltextDocument: failed to read response body"
-                );
-                if e.is_timeout() {
+                let failure = if e.is_timeout() {
                     ParseBackendFailure::timeout(FailurePhase::ReadBody)
                 } else {
                     ParseBackendFailure::conversion(FailurePhase::ReadBody, Some(200))
-                }
+                };
+                tracing::warn!(
+                    api = "grobid",
+                    endpoint = %endpoint,
+                    code = %failure.code(),
+                    phase = %failure.phase(),
+                    "GROBID response body read failed (single attempt, no retry)"
+                );
+                failure
             })?
             else {
                 break;
@@ -332,22 +403,56 @@ impl GrobidHttpBackend {
             {
                 tracing::warn!(
                     api = "grobid",
-                    endpoint = %url,
+                    endpoint = %endpoint,
                     enforced_limit = "response_bytes",
-                    "GROBID processFulltextDocument: response exceeded the opt-in byte bound"
+                    "GROBID response exceeded the opt-in byte bound"
                 );
                 return Err(ParseBackendFailure::limit(LimitKind::ResponseBytes, None));
             }
         }
 
+        // Endpoint-aware success signal: logical endpoint + size only.
         tracing::debug!(
             api = "grobid",
-            endpoint = %url,
+            endpoint = %endpoint,
             tei_size = body.len(),
-            "GROBID processFulltextDocument: TEI XML received"
+            "GROBID TEI received"
         );
 
         Ok(body)
+    }
+
+    /// Run the closed fulltext operation (R105/R107): exactly one
+    /// `POST /api/processFulltextDocument` with the fulltext allowlist.
+    pub(crate) async fn process_fulltext(
+        &self,
+        request: &ParseBackendRequest,
+    ) -> Result<Vec<u8>, ParseBackendFailure> {
+        let form = Self::fulltext_form(request)?;
+        self.exchange_once(ParseEndpoint::Fulltext, request.pdf_bytes().len(), form)
+            .await
+    }
+
+    /// Run the closed header operation (S05/T02): exactly one
+    /// `POST /api/processHeaderDocument` with the header allowlist.
+    pub(crate) async fn process_header(
+        &self,
+        request: &ParseBackendRequest,
+    ) -> Result<Vec<u8>, ParseBackendFailure> {
+        let form = Self::header_form(request)?;
+        self.exchange_once(ParseEndpoint::Header, request.pdf_bytes().len(), form)
+            .await
+    }
+
+    /// Run the closed references operation (S05/T02): exactly one
+    /// `POST /api/processReferences` with the references allowlist.
+    pub(crate) async fn process_references(
+        &self,
+        request: &ParseBackendRequest,
+    ) -> Result<Vec<u8>, ParseBackendFailure> {
+        let form = Self::references_form(request)?;
+        self.exchange_once(ParseEndpoint::References, request.pdf_bytes().len(), form)
+            .await
     }
 }
 
@@ -367,18 +472,58 @@ impl ParseBackend for GrobidHttpBackend {
         ParseBackendRequest::from_legacy_profile(&self.profile, paper_id, pdf_bytes)
     }
 
+    fn default_header_request(&self, paper_id: &str, pdf_bytes: Vec<u8>) -> ParseBackendRequest {
+        // Same rule as `default_request`, mapped onto the header axis only:
+        // this backend's consolidateHeader level, raw switches off.
+        ParseBackendRequest::header_from_legacy_profile(&self.profile, paper_id, pdf_bytes)
+    }
+
+    fn default_references_request(
+        &self,
+        paper_id: &str,
+        pdf_bytes: Vec<u8>,
+    ) -> ParseBackendRequest {
+        // Same rule as `default_request`, mapped onto the citations axis
+        // only: this backend's consolidateCitations level, raw switches off.
+        ParseBackendRequest::references_from_legacy_profile(&self.profile, paper_id, pdf_bytes)
+    }
+
     async fn fetch_tei(
         &self,
         request: ParseBackendRequest,
     ) -> Result<TeiEnvelope, ParseBackendFailure> {
         let paper_id = request.paper_id().to_string();
-        let tei_bytes = self.process_fulltext(&request).await?;
-        let identity = self.identity();
+        // One closed operation per fetch_tei, routed ONLY through the static
+        // closed endpoint mapping (no caller-controlled route or URL).
+        // Proxy successes return the partial header/listBibl TEI directly as
+        // a TeiEnvelope: no TeiLifter, no ParsedArticle projection, no
+        // ParserPort involvement on this seam.
+        let (tei_bytes, result) = match request.endpoint() {
+            ParseEndpoint::Fulltext => (self.process_fulltext(&request).await?, None),
+            ParseEndpoint::Header => (
+                self.process_header(&request).await?,
+                Some(request.result_identity()),
+            ),
+            ParseEndpoint::References => (
+                self.process_references(&request).await?,
+                Some(request.result_identity()),
+            ),
+        };
+        // S05/T02: header/references envelopes carry the endpoint/profile/
+        // result identity; the fulltext stamp keeps its pre-S05 shape
+        // (legacy-equivalent fulltext rides the D204 profile fingerprint),
+        // so every pre-S05 identity pin stays byte-identical.
+        let identity = match result {
+            Some(result) => self.identity().with_result(result),
+            None => self.identity(),
+        };
         // Sizes and identity only — raw TEI/PDF never reaches logs.
         tracing::debug!(
             api = "grobid",
             backend = %identity.backend_id(),
             profile = %identity.profile_fingerprint(),
+            endpoint = %request.endpoint(),
+            result_kind = %request.endpoint().result_kind(),
             paper_id = %paper_id,
             tei_size = tei_bytes.len(),
             "parse backend produced TEI envelope"

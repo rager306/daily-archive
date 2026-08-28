@@ -1,8 +1,8 @@
-//! Versioned provider-neutral fulltext request vocabulary and the closed
-//! typed failure vocabulary for the parse transport seam
-//! (M464-z84in2 S04/T01, R107).
+//! Versioned provider-neutral request vocabulary and the closed typed
+//! failure vocabulary for the parse transport seam (M464-z84in2 S04/T01 and
+//! S05/T01, R107/R113).
 //!
-//! Two contracts live here:
+//! Three contracts live here:
 //!
 //! 1. [`FulltextRequestVersioned`] — a serde-versioned request envelope whose
 //!    V1 dialect ([`FulltextDialectV1`]) expresses, without loss, the Java
@@ -17,6 +17,13 @@
 //!    / limit / retry metadata. Raw PDF/TEI bytes, response bodies, URL
 //!    queries, env values and physical paths have no field to live in, and
 //!    `Display`/`Debug` are deterministic redactions of that metadata only.
+//! 3. [`ParseEndpoint`] / [`ParseResultKind`] — the closed provider-neutral
+//!    endpoint and result-kind vocabulary (S05/T01) plus the versioned V1
+//!    request dialects of the header ([`HeaderDialectV1`]) and references
+//!    ([`ReferencesDialectV1`]) operations: only output-affecting controls,
+//!    `deny_unknown_fields` payloads, and deterministic per-endpoint
+//!    canonical identities. Endpoint knobs cannot cross endpoints because
+//!    each operation owns its own dialect type.
 //!
 //! Transport tuning (timeout, opt-in request/response limits) is deliberately
 //! absent from the request vocabulary: it never belongs to content identity
@@ -29,6 +36,7 @@
 
 use std::fmt;
 
+use crate::profile::GrobidProfile;
 use da_ports::parser::ParserError;
 use serde::de::{self, Deserializer};
 use serde::ser::SerializeStruct;
@@ -39,6 +47,12 @@ pub const FULLTEXT_REQUEST_SCHEMA_VERSION: u8 = 1;
 
 /// Stable schema version of the typed failure vocabulary.
 pub const PARSE_FAILURE_SCHEMA_VERSION: u32 = 1;
+
+/// Stable schema version of the header request dialect (S05/T01).
+pub const HEADER_REQUEST_SCHEMA_VERSION: u8 = 1;
+
+/// Stable schema version of the references request dialect (S05/T01).
+pub const REFERENCES_REQUEST_SCHEMA_VERSION: u8 = 1;
 
 // ---------------------------------------------------------------------------
 // Typed consolidation levels (sanctioned GROBID consolidation domains)
@@ -623,6 +637,320 @@ impl FulltextRequestVersioned {
 
     /// Consume the envelope, returning the dialect.
     pub fn into_dialect(self) -> FulltextDialectV1 {
+        match self {
+            Self::V1(dialect) => dialect,
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Closed endpoint / result-kind vocabulary and header/references request
+// dialects (S05/T01)
+// ---------------------------------------------------------------------------
+
+/// Closed provider-neutral logical endpoint vocabulary of the parse
+/// transport. One variant per sanctioned scholarly Java GROBID operation;
+/// the set is exhaustive by design — callers can neither invent endpoints
+/// nor inject routes (R113).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ParseEndpoint {
+    /// Full-document fulltext extraction.
+    Fulltext,
+    /// Bibliographic header extraction.
+    Header,
+    /// Bibliography (`listBibl`) extraction.
+    References,
+}
+
+impl ParseEndpoint {
+    /// Stable snake_case name (identical to the serde wire form).
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Fulltext => "fulltext",
+            Self::Header => "header",
+            Self::References => "references",
+        }
+    }
+
+    /// Exact static Java GROBID route of this endpoint. The mapping is
+    /// closed and static: a caller-controlled route or URL has no input
+    /// channel (R113).
+    pub const fn static_path(self) -> &'static str {
+        match self {
+            Self::Fulltext => "/api/processFulltextDocument",
+            Self::Header => "/api/processHeaderDocument",
+            Self::References => "/api/processReferences",
+        }
+    }
+
+    /// The closed TEI result kind this endpoint produces.
+    pub const fn result_kind(self) -> ParseResultKind {
+        match self {
+            Self::Fulltext => ParseResultKind::FullDocument,
+            Self::Header => ParseResultKind::Header,
+            Self::References => ParseResultKind::ListBibl,
+        }
+    }
+}
+
+impl fmt::Display for ParseEndpoint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+/// Closed TEI result-kind vocabulary: the TEI shape a sanctioned endpoint
+/// returns. The endpoint→result-kind mapping is total and static — partial
+/// results are never free-form.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ParseResultKind {
+    /// Full `<TEI>` document (fulltext endpoint).
+    FullDocument,
+    /// Partial TEI: the bibliographic header (header endpoint).
+    Header,
+    /// Partial TEI: the bibliography `<listBibl>` (references endpoint).
+    ListBibl,
+}
+
+impl ParseResultKind {
+    /// Stable snake_case name (identical to the serde wire form).
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::FullDocument => "full_document",
+            Self::Header => "header",
+            Self::ListBibl => "list_bibl",
+        }
+    }
+}
+
+impl fmt::Display for ParseResultKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+/// V1 header request dialect: the closed, output-affecting control set of
+/// the header endpoint — `consolidateHeader` inside its sanctioned range
+/// plus the `includeRawAffiliations` switch. Fulltext-only controls
+/// (coordinates, pages, sentences, IDs), references-only controls and
+/// transport tuning have no field and cannot cross endpoints.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HeaderDialectV1 {
+    consolidate_header: HeaderConsolidation,
+    include_raw_affiliations: bool,
+}
+
+impl HeaderDialectV1 {
+    /// Build from a validated consolidation level and the raw-affiliations
+    /// switch.
+    pub const fn new(
+        consolidate_header: HeaderConsolidation,
+        include_raw_affiliations: bool,
+    ) -> Self {
+        Self {
+            consolidate_header,
+            include_raw_affiliations,
+        }
+    }
+
+    /// Legacy profile mapped onto the header axis ONLY: the profile's
+    /// `consolidateHeader` level; raw affiliations off (legacy profiles own
+    /// no raw switches).
+    pub fn from_legacy_profile(profile: &GrobidProfile) -> Self {
+        Self::new(profile.consolidation().header(), false)
+    }
+
+    /// Rich-equivalent header dialect (`consolidateHeader=1`).
+    pub fn legacy_rich() -> Self {
+        Self::new(
+            HeaderConsolidation::new(1).expect("1 is inside the sanctioned header range"),
+            false,
+        )
+    }
+
+    /// Structural-equivalent header dialect (`consolidateHeader=0`).
+    pub fn legacy_structural() -> Self {
+        Self::new(
+            HeaderConsolidation::new(0).expect("0 is inside the sanctioned header range"),
+            false,
+        )
+    }
+
+    /// The `consolidateHeader` level.
+    pub const fn consolidate_header(self) -> HeaderConsolidation {
+        self.consolidate_header
+    }
+
+    /// The `includeRawAffiliations` switch.
+    pub const fn include_raw_affiliations(self) -> bool {
+        self.include_raw_affiliations
+    }
+
+    /// Flip the `includeRawAffiliations` switch.
+    pub fn with_include_raw_affiliations(mut self, on: bool) -> Self {
+        self.include_raw_affiliations = on;
+        self
+    }
+
+    /// Versioned canonical identity of the effective header request —
+    /// deterministic and collision-free against every other endpoint
+    /// namespace (`fulltext=v1;…`, `references=v1;…`) and every legacy D204
+    /// fingerprint. Transport tuning and locations have no representation.
+    pub fn canonical_identity(self) -> String {
+        format!(
+            "header=v1;consolidateHeader={};rawAffiliations={}",
+            self.consolidate_header.value(),
+            u8::from(self.include_raw_affiliations),
+        )
+    }
+}
+
+/// V1 references request dialect: the closed, output-affecting control set
+/// of the references endpoint — `consolidateCitations` inside its
+/// sanctioned range plus the `includeRawCitations` switch. Fulltext- and
+/// header-only controls and transport tuning have no field.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReferencesDialectV1 {
+    consolidate_citations: CitationsConsolidation,
+    include_raw_citations: bool,
+}
+
+impl ReferencesDialectV1 {
+    /// Build from a validated consolidation level and the raw-citations
+    /// switch.
+    pub const fn new(
+        consolidate_citations: CitationsConsolidation,
+        include_raw_citations: bool,
+    ) -> Self {
+        Self {
+            consolidate_citations,
+            include_raw_citations,
+        }
+    }
+
+    /// Legacy profile mapped onto the citations axis ONLY: the profile's
+    /// `consolidateCitations` level; raw citations off (legacy profiles own
+    /// no raw switches).
+    pub fn from_legacy_profile(profile: &GrobidProfile) -> Self {
+        Self::new(profile.consolidation().citations(), false)
+    }
+
+    /// Rich-equivalent references dialect (`consolidateCitations=1`).
+    pub fn legacy_rich() -> Self {
+        Self::new(
+            CitationsConsolidation::new(1).expect("1 is inside the sanctioned citations range"),
+            false,
+        )
+    }
+
+    /// Structural-equivalent references dialect (`consolidateCitations=0`).
+    pub fn legacy_structural() -> Self {
+        Self::new(
+            CitationsConsolidation::new(0).expect("0 is inside the sanctioned citations range"),
+            false,
+        )
+    }
+
+    /// The `consolidateCitations` level.
+    pub const fn consolidate_citations(self) -> CitationsConsolidation {
+        self.consolidate_citations
+    }
+
+    /// The `includeRawCitations` switch.
+    pub const fn include_raw_citations(self) -> bool {
+        self.include_raw_citations
+    }
+
+    /// Flip the `includeRawCitations` switch.
+    pub fn with_include_raw_citations(mut self, on: bool) -> Self {
+        self.include_raw_citations = on;
+        self
+    }
+
+    /// Versioned canonical identity of the effective references request
+    /// (same namespace rules as [`HeaderDialectV1::canonical_identity`]).
+    pub fn canonical_identity(self) -> String {
+        format!(
+            "references=v1;consolidateCitations={};rawCitations={}",
+            self.consolidate_citations.value(),
+            u8::from(self.include_raw_citations),
+        )
+    }
+}
+
+/// Versioned header request envelope: the `V1` discriminant is explicit on
+/// the wire (`{"version":"v1",...}`); unknown versions, unknown fields and
+/// foreign knobs are rejected at deserialization.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "version", rename_all = "lowercase")]
+pub enum HeaderRequestVersioned {
+    /// V1: the Java GROBID header dialect, expressed losslessly.
+    V1(HeaderDialectV1),
+}
+
+impl HeaderRequestVersioned {
+    /// Wrap a V1 header dialect.
+    pub fn v1(dialect: HeaderDialectV1) -> Self {
+        Self::V1(dialect)
+    }
+
+    /// Explicit version label of this envelope.
+    pub fn version_label(&self) -> &'static str {
+        match self {
+            Self::V1(_) => "v1",
+        }
+    }
+
+    /// The carried header dialect.
+    pub fn dialect(&self) -> &HeaderDialectV1 {
+        match self {
+            Self::V1(dialect) => dialect,
+        }
+    }
+
+    /// Consume the envelope, returning the header dialect.
+    pub fn into_dialect(self) -> HeaderDialectV1 {
+        match self {
+            Self::V1(dialect) => dialect,
+        }
+    }
+}
+
+/// Versioned references request envelope (same evolution seam as the
+/// fulltext and header envelopes).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "version", rename_all = "lowercase")]
+pub enum ReferencesRequestVersioned {
+    /// V1: the Java GROBID references dialect, expressed losslessly.
+    V1(ReferencesDialectV1),
+}
+
+impl ReferencesRequestVersioned {
+    /// Wrap a V1 references dialect.
+    pub fn v1(dialect: ReferencesDialectV1) -> Self {
+        Self::V1(dialect)
+    }
+
+    /// Explicit version label of this envelope.
+    pub fn version_label(&self) -> &'static str {
+        match self {
+            Self::V1(_) => "v1",
+        }
+    }
+
+    /// The carried references dialect.
+    pub fn dialect(&self) -> &ReferencesDialectV1 {
+        match self {
+            Self::V1(dialect) => dialect,
+        }
+    }
+
+    /// Consume the envelope, returning the references dialect.
+    pub fn into_dialect(self) -> ReferencesDialectV1 {
         match self {
             Self::V1(dialect) => dialect,
         }
