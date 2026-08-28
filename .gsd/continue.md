@@ -2,10 +2,37 @@
 
 ## Active direction (M464-z84in2): staged native scholarly parse platform
 
-Branch `feat/da-parse`. Canonical DB: M464 active, 19 small slices. S01
-`API ledger and binding fixtures` is pending with 3 tasks: T01 DATA contracts,
-T02 tracked non-skipping TEI fixtures, T03 Java/direct-TEI baseline reports.
-S02-S19 remain sketches and auto refines them incrementally.
+Branch `feat/da-parse` HEAD `174e1b7a7`. Canonical DB: M464 active, 19 slices.
+S01 still **pending in GSD** (3/3 tasks pending) even though T01+T02 are
+committed and green. S02-S19 remain sketches.
+
+### Shipped this session (2026-08-28, code not GSD-sealed)
+
+- T01 `54a470379`: `data/parse/api_compatibility_ledger.yaml` +
+  `regression_cases.yaml` + `crates/da-parse/tests/data_contracts.rs`.
+  Offline gate: **22 passed**. D296: no parallel `data/scholarly_parse`.
+- T02 `174e1b7a7`: three preserved rich TEI fixtures under
+  `crates/da-parse/tests/fixtures/preserved/` with `provenance.yaml` and
+  sha256. `real_tei_tests` no longer silent-skips (9 passed). Structural
+  companion stays **pending** — no structural-profile bytes exist; T03 owns
+  that bind. Authors/idno/figures/coords pinned on fixture bytes; this-cut
+  IR still omits those families.
+
+### Lifecycle blocker (do not re-diagnose)
+
+`gsd_task_complete` T01 → no running Attempt. Latest Attempt
+`a1b5b96e-175a-45df-a2f0-5a3820bbd0f7` settled failed
+(`failureClass=lifecycle-progression`). Recovery
+`00a7d3ad-462a-43cc-837e-76f2272593f7` already resumed (guard rejects
+second resume). 28 Aug 04:58 auto pause: SUMMARY-vs-pending drift; SUMMARY
+now quarantined at
+`.gsd/quarantine/projections/2026-08-28T05-03-35-672Z/`. Live tree has
+`S01-T01-RECOVERY-BLOCKER.md` only.
+
+**Unblock:** `/gsd auto M464-z84in2` after TUI restart (MEM953). If auto
+still sees drift, `/gsd rebuild markdown` then auto. Do not invent Attempt
+rows. Manual skip-delivered is for slice closeout, not while T03 is open.
+
 
 **Architecture locked for execution:** ADR-075 accepted; D294 opens active
 SONA/MicroLoRA/EWC++/ruVLLM training while auto-promote stays forbidden. D295:
@@ -76,8 +103,11 @@ Shipped (commit HEAD):
 
 ## Next actions
 1. Restart the current pi/GSD TUI so it loads the patched `milestone-ids.js`.
-2. Run `/gsd auto M464-z84in2`. Auto must mint the canonical Attempt and begin
-   M464/S01/T01; do not use bare `M464`.
+2. Run `/gsd auto M464-z84in2` (never bare `M464`) so auto mints the Attempt
+   and can seal T01/T02. If SUMMARY-vs-pending drift returns: `/gsd rebuild markdown`.
+3. Code next: T03 Java/direct TEI baseline reports (`parse_compat_baseline`,
+   `artifacts/parse_compat/`). Optionally mint structural-profile TEI there.
+4. Do not pull S02 contracts into S01.
 3. Keep S01 small: first DATA compatibility/regression ledger, then fixtures,
    then baseline reports. Do not pull S02 contracts into T01.
 4. Preserve existing cache identities. Batch/cache modes arrive in S06.

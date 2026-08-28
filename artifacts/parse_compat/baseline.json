@@ -1,0 +1,304 @@
+{
+  "schema_version": "parse-compat-baseline.v1",
+  "contract_id": "parse-comparison",
+  "corpus_classes": {
+    "entity_f1_supporting": "not_used_as_parse_proof (supporting evidence only)",
+    "layout_omnidocbench": "not_added — later slices",
+    "location": "crates/da-parse/tests/fixtures/",
+    "publisher_acceptance": "not_added — later slices; never fetched or executed by this command",
+    "used": "fast_local_fixtures"
+  },
+  "report_identity": {
+    "source_hash": "sha256:d0b2c6c7e3b4af551b1e804705b6424cd1c367832516beb383d9c3cb5ade4c49",
+    "backend_id": "da-parse-direct-tei",
+    "backend_version": "0.1.0",
+    "backend_version_basis": "workspace Cargo.toml [workspace.package].version (da-parse builds from this source tree; no deployed backend version)",
+    "profile_fingerprint": "profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula",
+    "request_fields": [
+      "mode=direct_tei_offline",
+      "stage=parse.stage.lift_tei(tei_xml,paper_id,pdf_hash)",
+      "stage=parse.stage.project_article(ir)",
+      "http_request=none; Java multipart fields are bound only under java_grobid evidence"
+    ],
+    "output_hash": "sha256:90484527edcf0f853ec25da84caef9ccec06840f5cd5d22068a7ff1cc34a0a3f",
+    "corpus_id": "fast_local_fixtures",
+    "corpus_hash": "sha256:8e142e918a2c16ecdafabd9240e5095fe2cb44d9f3539597dc9faf589cf33f87",
+    "corpus_n": 3,
+    "same_n": true,
+    "same_n_meaning": "all executed bound cases and (when selected) java observations bind the identical tracked fixture set; no candidate comparison exists yet",
+    "fixture_ids": [
+      "reg.tei.hub-bibliography-2507.19457",
+      "reg.tei.reca-bibliography-2605.26525",
+      "reg.tei.rlm-2512.24601"
+    ],
+    "family_counts": {
+      "citations": 207,
+      "formulas": 38,
+      "sections": 264,
+      "tables": 8
+    },
+    "current_lifted_counts": {
+      "abstract_present": 3,
+      "body_chars": 481460,
+      "citation_anchors": 216,
+      "citations": 207,
+      "formula_representations": 38,
+      "formulas": 38,
+      "sections": 264,
+      "sections_with_path_id": 264,
+      "table_cells": 930,
+      "tables": 8,
+      "title_present": 3
+    },
+    "promotion_state": "candidate",
+    "rollback_target": "java-grobid-http@0.9.0-crf",
+    "known_hard_regressions": [
+      {
+        "id": "lost_references_or_links",
+        "description": "References, citation links or callouts disappear",
+        "status": "monitored",
+        "evidence": "monitored — per-case citation/anchor counts are bound in this report; behavioral floors enforced by crates/da-parse real_tei_tests"
+      },
+      {
+        "id": "changed_reading_order",
+        "description": "Section or token reading order changes",
+        "status": "monitored",
+        "evidence": "monitored — per-case section/path_id counts are bound in this report; behavioral floors enforced by crates/da-parse real_tei_tests"
+      },
+      {
+        "id": "lost_figures_tables_formulas",
+        "description": "Figures, tables or formulas are dropped",
+        "status": "monitored",
+        "evidence": "monitored — per-case table/cell/formula counts are bound in this report; behavioral floors enforced by crates/da-parse real_tei_tests"
+      },
+      {
+        "id": "invented_revision",
+        "description": "Article revision or idno is invented or rewritten",
+        "status": "not_applicable_this_cut",
+        "evidence": "this-cut IR intentionally omits authors/idno/revision lifting (ledger parse.stage.lift_tei intentional-absence list)"
+      },
+      {
+        "id": "nondeterministic_output",
+        "description": "Output hash changes across replay or worker counts",
+        "status": "pass",
+        "evidence": "sha256 output identity computed twice per executed case in-process; identical digests required"
+      },
+      {
+        "id": "panic",
+        "description": "Parser panics instead of typed BackendError",
+        "status": "pass",
+        "evidence": "lift/project path is total string processing; failures surface as typed errors, no panic observed during this run"
+      },
+      {
+        "id": "dropped_parser_work",
+        "description": "Parser tasks are dropped instead of backpressured",
+        "status": "not_applicable_offline",
+        "evidence": "single-process in-memory run; no parser task queue involved"
+      },
+      {
+        "id": "incorrect_cache_reuse",
+        "description": "Cache hit across distinct profile/request fingerprints",
+        "status": "not_applicable_offline",
+        "evidence": "direct-TEI path performs no cache reads or writes; profile fingerprint equality is asserted against the live GrobidProfile identity"
+      },
+      {
+        "id": "train_eval_contamination",
+        "description": "Train and eval corpora overlap",
+        "status": "not_applicable",
+        "evidence": "no training or evaluation corpus is touched by this report"
+      },
+      {
+        "id": "self_promotion",
+        "description": "Candidate promotes itself without explicit receipt",
+        "status": "pass",
+        "evidence": "promotion_state is reported verbatim from the comparison contract default (candidate); no promotion receipt is minted"
+      },
+      {
+        "id": "silent_skip_missing_tei_fixture",
+        "description": "Missing or changed TEI fixture is skipped instead of failing",
+        "status": "pass",
+        "evidence": "no skip path exists: missing/empty/checksum-mismatch fixtures abort with typed errors ([missing-fixture-file]/[empty-fixture-file]/[fixture-sha256-mismatch])"
+      },
+      {
+        "id": "per_case_counts.reg.tei.hub-bibliography-2507.19457",
+        "description": "aggregate-counts-only observation row (no raw content)",
+        "status": "observed",
+        "evidence": "sections=85 citations=80 tables=3 formulas=24 output_hash=sha256:f621bc87809a930caf39816aace46cd52d71c4a2e6e88b7f7fbeaa8bca45b397"
+      },
+      {
+        "id": "per_case_counts.reg.tei.rlm-2512.24601",
+        "description": "aggregate-counts-only observation row (no raw content)",
+        "status": "observed",
+        "evidence": "sections=63 citations=49 tables=2 formulas=2 output_hash=sha256:e06c45fe8dc50677b7a08128790977152891a8e1dd7aac624f5795023b9b2d81"
+      },
+      {
+        "id": "per_case_counts.reg.tei.reca-bibliography-2605.26525",
+        "description": "aggregate-counts-only observation row (no raw content)",
+        "status": "observed",
+        "evidence": "sections=116 citations=78 tables=3 formulas=12 output_hash=sha256:55325dfad7f9a56624ba8eb964a038f5ec0f8fc0b5405a26cc586032ba42b2d2"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "case_id": "reg.tei.hub-bibliography-2507.19457",
+      "binding_status": "bound",
+      "source_path": "crates/da-parse/tests/fixtures/preserved/hub_2507.19457.tei.xml",
+      "source_sha256": "985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b79e7ec4",
+      "provenance_fixture_id": "hub_2507.19457",
+      "provenance_paper_id": "2507.19457",
+      "provenance_backend": "java-grobid-crf",
+      "grobid_profile": "rich",
+      "profile_fingerprint": "profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula",
+      "stages": [
+        "tei_lift_ir",
+        "ir_project_article"
+      ],
+      "stage_execution_mode": "offline_local",
+      "ledger_bindings": [
+        "rest.processFulltextDocument",
+        "dialect.teiCoordinates",
+        "parse.entrypoint.grobid_parser.parse_pdf",
+        "parse.endpoint.process_fulltext_document",
+        "parse.stage.lift_tei",
+        "parse.stage.project_article",
+        "parse.profile.rich"
+      ],
+      "obligation_acknowledged": true,
+      "family_counts": {
+        "citations": 80,
+        "formulas": 24,
+        "sections": 85,
+        "tables": 3
+      },
+      "lifted_counts": {
+        "abstract_present": 1,
+        "body_chars": 228346,
+        "citation_anchors": 87,
+        "citations": 80,
+        "formula_representations": 24,
+        "formulas": 24,
+        "sections": 85,
+        "sections_with_path_id": 85,
+        "table_cells": 288,
+        "tables": 3,
+        "title_present": 1
+      },
+      "output_hash": "sha256:f621bc87809a930caf39816aace46cd52d71c4a2e6e88b7f7fbeaa8bca45b397",
+      "outcome": "parse_ok"
+    },
+    {
+      "case_id": "reg.tei.rlm-2512.24601",
+      "binding_status": "bound",
+      "source_path": "crates/da-parse/tests/fixtures/preserved/rlm_2512.24601.tei.xml",
+      "source_sha256": "e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3",
+      "provenance_fixture_id": "rlm_2512.24601",
+      "provenance_paper_id": "2512.24601",
+      "provenance_backend": "java-grobid-crf",
+      "grobid_profile": "rich",
+      "profile_fingerprint": "profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula",
+      "stages": [
+        "tei_lift_ir",
+        "ir_project_article"
+      ],
+      "stage_execution_mode": "offline_local",
+      "ledger_bindings": [
+        "rest.processFulltextDocument",
+        "dialect.teiCoordinates",
+        "parse.stage.lift_tei",
+        "parse.stage.project_article",
+        "parse.profile.rich"
+      ],
+      "obligation_acknowledged": true,
+      "family_counts": {
+        "citations": 49,
+        "formulas": 2,
+        "sections": 63,
+        "tables": 2
+      },
+      "lifted_counts": {
+        "abstract_present": 1,
+        "body_chars": 103081,
+        "citation_anchors": 70,
+        "citations": 49,
+        "formula_representations": 2,
+        "formulas": 2,
+        "sections": 63,
+        "sections_with_path_id": 63,
+        "table_cells": 176,
+        "tables": 2,
+        "title_present": 1
+      },
+      "output_hash": "sha256:e06c45fe8dc50677b7a08128790977152891a8e1dd7aac624f5795023b9b2d81",
+      "outcome": "parse_ok"
+    },
+    {
+      "case_id": "reg.tei.reca-bibliography-2605.26525",
+      "binding_status": "bound",
+      "source_path": "crates/da-parse/tests/fixtures/preserved/reca_2605.26525v1.tei.xml",
+      "source_sha256": "dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040",
+      "provenance_fixture_id": "reca_2605.26525v1",
+      "provenance_paper_id": "2605.26525v1",
+      "provenance_backend": "java-grobid-crf",
+      "grobid_profile": "rich",
+      "profile_fingerprint": "profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula",
+      "stages": [
+        "tei_lift_ir",
+        "ir_project_article"
+      ],
+      "stage_execution_mode": "offline_local",
+      "ledger_bindings": [
+        "rest.processFulltextDocument",
+        "dialect.teiCoordinates",
+        "parse.stage.lift_tei",
+        "parse.stage.project_article",
+        "parse.profile.rich"
+      ],
+      "obligation_acknowledged": true,
+      "family_counts": {
+        "citations": 78,
+        "formulas": 12,
+        "sections": 116,
+        "tables": 3
+      },
+      "lifted_counts": {
+        "abstract_present": 1,
+        "body_chars": 150033,
+        "citation_anchors": 59,
+        "citations": 78,
+        "formula_representations": 12,
+        "formulas": 12,
+        "sections": 116,
+        "sections_with_path_id": 116,
+        "table_cells": 466,
+        "tables": 3,
+        "title_present": 1
+      },
+      "output_hash": "sha256:55325dfad7f9a56624ba8eb964a038f5ec0f8fc0b5405a26cc586032ba42b2d2",
+      "outcome": "parse_ok"
+    }
+  ],
+  "pending_cases": [
+    {
+      "case_id": "reg.tei.compact-hub-structural-identity",
+      "binding_owner_task": "S01/T03",
+      "expected_profile_fingerprint": "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note,formula",
+      "status": "not_observed",
+      "typed_absence": true,
+      "reason": "No preserved structural-profile TEI exists in the working tree. Inventing one by copying rich bytes would violate D204 cache-key separation. Binding owner remains S01/T03 (Java/direct TEI baseline) which can mint structural bytes against a live GROBID or record a typed absence. Byte-distinct from the rich case by definition — differing consolidation histories produce different TEI bytes, never one shared artifact. T03 owns the bind (Java/direct TEI baseline) or a typed absence."
+    }
+  ],
+  "java_grobid": {
+    "selected": false,
+    "status": "not_observed",
+    "reason": "java mode not selected; the default direct-TEI run never contacts GROBID (no version, request, latency or output values exist to report)"
+  },
+  "policy_locks": {
+    "import_eligible": false,
+    "dspy_enabled": false,
+    "graph_mutation": "forbidden",
+    "llm_promotion": "forbidden",
+    "free_label_invention": "forbidden",
+    "sidecar_status": "candidate_evidence_only"
+  }
+}
