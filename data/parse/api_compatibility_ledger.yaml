@@ -1,0 +1,146 @@
+# API compatibility OBSERVATION ledger — scholarly parse plane
+# (M464-z84in2 / S01 / T01).
+#
+# RELATIONSHIP TO THE REGISTRY OF RECORD: the canonical GROBID compatibility
+# ledger required by R113/R117 is `data/parse/grobid_compatibility.yaml`
+# (generic-reader contract in data/parse/SCHEMA.yaml). THIS document is its
+# observation input for T03's baseline promotion: it records ONLY currently
+# observable facts of the crates/da-parse surface (ADR-075 staged native Rust
+# platform) plus the compatibility obligations that later tasks must preserve.
+# It is not a second ledger of record and introduces no competing states.
+#
+# Every entry states visibility; internal load-bearing behavior is marked
+# `internal_observable`. Changing an obligation requires bumping
+# `ledger_version` here and coordinating the same fact into
+# grobid_compatibility.yaml within the slice wave.
+ledger_version: 1
+scope_note: >-
+  Covers the public exports of crates/da-parse plus its implementing
+  da_ports::parser::ParserPort contract. HTML parsing, PDF classification and
+  XY-Cut live in da-adapters (see crates/da-parse/src/lib.rs crate docs) and
+  are out of scope here. Registry-of-record cross-references used by
+  regression_cases.yaml: rest.processFulltextDocument, dialect.teiCoordinates,
+  stage.tei_lift.
+policy_locks:
+  import_eligible: false
+  dspy_enabled: false
+  graph_mutation: forbidden
+  llm_promotion: forbidden
+  free_label_invention: forbidden
+  sidecar_status: candidate_evidence_only
+entries:
+  - id: parse.entrypoint.grobid_parser.parse_pdf
+    kind: entrypoint
+    owner_crate: da-parse
+    visibility: public_trait_impl
+    stability: stable
+    entry_point: da_ports::parser::ParserPort::parse_pdf
+    implemented_by: da_parse::GrobidParser
+    port_trait: da_ports::parser::ParserPort
+    request_shape: 'parse_pdf(&self, pdf_path: &str, paper_id: &str)'
+    input_kind: pdf_file_path_string
+    result_shape: 'ParseResult<ParsedArticle> = Result<ParsedArticle, ParserError>'
+    error_shapes:
+      - 'ParseFailed(String) — local PDF read failure (tokio::fs::read)'
+      - 'Unavailable(String) — GROBID network/transport failure (fail-closed)'
+      - 'ParseFailed("GROBID HTTP {status}") — non-success GROBID HTTP status'
+      - 'ParseFailed(String) — response body read failure'
+    async_behavior: async_trait method; tracing span name grobid_parse carrying paper_id
+    notes:
+      - Trait default parse_html stays ParserError::Unavailable on this path — there is no silent HTML fallback.
+      - ParsedArticle keeps tei_xml = Some(raw TEI); layout_json and page_text_missingness stay None until a classifier stamps them later.
+    compatibility_obligation: Signature, error mapping (fail-closed Unavailable on transport loss) and the ParsedArticle projection shape must be preserved by all later native/direct-parser work in this slice.
+  - id: parse.constructor.grobid_parser
+    kind: constructor
+    owner_crate: da-parse
+    visibility: public_fn
+    stability: stable
+    entry_point: da_parse::GrobidParser::{new, from_env, with_profile, with_timeout, profile}
+    request_shape: 'new(url: Option<&str>) | from_env() -> GrobidParser'
+    notes:
+      - Base URL resolution order explicit argument -> env GROBID_URL -> crate default http://127.0.0.1:8070 (DEFAULT_GROBID_URL, pub(crate)).
+      - Default reqwest client timeout is 120s; with_timeout(Duration) overrides it operationally without changing successful TEI semantics.
+      - Default profile is GrobidProfile::rich().
+    compatibility_obligation: URL/env resolution order, the interactive 120s default and builder chaining are observable behavior; the HTTP timeout override must NEVER become an input of stage cache/content keys.
+  - id: parse.probe.is_alive
+    kind: probe
+    owner_crate: da-parse
+    visibility: public_fn
+    stability: stable
+    entry_point: da_parse::GrobidParser::is_alive
+    http_endpoint: /api/isalive
+    http_method: GET
+    result_shape: 'async fn is_alive(&self) -> bool'
+    notes:
+      - Returns true only on success-status responses; any transport error yields false.
+      - Never panics, performs no retries.
+    compatibility_obligation: Boolean-only liveness contract (true on success status, false on any failure, no panic) must hold; callers may treat false as service-unavailable.
+  - id: parse.endpoint.process_fulltext_document
+    kind: endpoint
+    owner_crate: da-parse
+    visibility: internal_observable
+    stability: internal_observable
+    entry_point: da_parse::GrobidParser::process_fulltext (pub(crate); reached through ParserPort::parse_pdf)
+    http_endpoint: /api/processFulltextDocument
+    http_method: POST
+    request_fields:
+      - 'input — multipart file part named paper.pdf with mime application/pdf'
+      - 'consolidateCitations — text field, "1" or "0"'
+      - 'consolidateHeader — text field, "1" or "0"'
+      - 'teiCoordinates — text field holding the JSON array string ["figure","table","note","formula"]'
+    result_shape: 'ParseResult<String> — raw TEI XML response body'
+    error_shapes:
+      - 'ParseFailed(String) — multipart form construction failure'
+      - 'Unavailable(String) — send/transport failure'
+      - 'ParseFailed("GROBID HTTP {status}") — non-success status'
+      - 'ParseFailed(String) — body read failure'
+    compatibility_obligation: The four multipart field names/values ARE the wire contract with Java GROBID; any change rotates the parse-stage cache identity (D204) and must bump ledger_version in the same commit.
+  - id: parse.stage.lift_tei
+    kind: lift_stage
+    owner_crate: da-parse
+    visibility: internal_observable
+    stability: stable
+    entry_point: da_parse::GrobidParser::lift_tei
+    request_shape: 'lift_tei(tei_xml: String, paper_id, pdf_hash) -> TeiParseIr'
+    result_shape: TeiParseIr (pub struct — tei_xml, paper_id, title, abstract_text, body_text, sections, citations, tables, table_missingness, formulas, formula_missingness, pdf_hash)
+    notes:
+      - Pure local transformation; does NOT call Java GROBID or the network.
+      - Extraction coverage this cut — title, abstract, body text, sections (nested div walk with flat head scan fallback and lexical path collision resolution), citations with in-text ref anchors resolved against back-matter xml:id, tables, formulas.
+      - Intentional absences this cut — author lists, article-level idno and non-table figures are NOT parsed; TeiParseIr carries no fields for them.
+    compatibility_obligation: Lift determinism over unchanged TEI bytes is fixed; the intentional-absence list may only shrink behind a compatibility-note commit, never silently grow content.
+  - id: parse.stage.project_article
+    kind: project_stage
+    owner_crate: da-parse
+    visibility: internal_observable
+    stability: stable
+    entry_point: da_parse::GrobidParser::project_article
+    request_shape: 'project_article(ir: TeiParseIr) -> ParsedArticle'
+    result_shape: da_ports::parser::ParsedArticle
+    notes:
+      - Pure projection onto the ports type; layout_json stays None and page_text_missingness stays None on the GROBID path because a classifier stamps them later.
+      - Section navigation identity — path_id, parent_section_id, order_in_parent, section_id sec-{path_id} — is produced by the section extractors consumed here.
+    compatibility_obligation: Projection must remain total and allocation-safe over any TeiParseIr and preserve the ports ParsedArticle field semantics consumed downstream by ingest.
+  - id: parse.profile.rich
+    kind: profile_contract
+    owner_crate: da-parse
+    visibility: public_fn
+    stability: stable
+    entry_point: da_parse::GrobidProfile::rich
+    profile_name: rich
+    configuration_fingerprint: 'profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula'
+    notes:
+      - Citation/header consolidation is Crossref-dependent — typically +2–5s per paper and can take minutes under rate-limit backoff.
+      - This is the constructor default profile (legacy pilot behavior).
+    compatibility_obligation: The exact configuration_fingerprint string is a durable cache-key component (D204); mixed consolidation policies report name "custom" and must never reuse this identity.
+  - id: parse.profile.structural
+    kind: profile_contract
+    owner_crate: da-parse
+    visibility: public_fn
+    stability: stable
+    entry_point: da_parse::GrobidProfile::structural
+    profile_name: structural
+    configuration_fingerprint: 'profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note,formula'
+    notes:
+      - Consolidation flags are zero so header/bibliography enrichment runs later through the cached OpenAlex/Crossref stage — Crossref-independent and the managed scalable default (D204).
+      - Coordinate groups stay enabled including formula coords added by M400 S03 T01.
+    compatibility_obligation: The exact configuration_fingerprint string is a durable cache-key component (D204); structural requests must never share cache entries with rich or custom policies.
