@@ -125,7 +125,12 @@ impl ConservationFamily {
     pub fn is_unsupported_this_cut(self) -> bool {
         matches!(
             self,
-            Self::Author | Self::ArticleIdno | Self::Link | Self::CrossReference | Self::Note | Self::Figure
+            Self::Author
+                | Self::ArticleIdno
+                | Self::Link
+                | Self::CrossReference
+                | Self::Note
+                | Self::Figure
         )
     }
 }
@@ -255,7 +260,10 @@ impl ConservationInventory {
         let ordinal = self.count(observation.family) as u32;
         let mut observation = observation;
         observation.ordinal = ordinal;
-        self.families.entry(observation.family).or_default().push(observation);
+        self.families
+            .entry(observation.family)
+            .or_default()
+            .push(observation);
     }
 }
 
@@ -456,9 +464,18 @@ impl ConservationEngine {
         families.sort_unstable();
         families.dedup();
 
-        for family in families {
-            let src = source.families.get(&family).map(Vec::as_slice).unwrap_or(&[]);
-            let cand = candidate.families.get(&family).map(Vec::as_slice).unwrap_or(&[]);
+        for family in &families {
+            let family = *family;
+            let src = source
+                .families
+                .get(&family)
+                .map(Vec::as_slice)
+                .unwrap_or(&[]);
+            let cand = candidate
+                .families
+                .get(&family)
+                .map(Vec::as_slice)
+                .unwrap_or(&[]);
             let (clean, malformed): (Vec<&ConservationObservation>, Vec<&ConservationObservation>) =
                 src.iter().partition(|o| !o.malformed);
             for obs in malformed {
@@ -525,7 +542,11 @@ impl ConservationEngine {
         for family in &families {
             let src = source.count(*family) as u32;
             let cand = candidate.count(*family) as u32;
-            let mut counts = FamilyDeltaCounts { source: src, candidate: cand, ..Default::default() };
+            let mut counts = FamilyDeltaCounts {
+                source: src,
+                candidate: cand,
+                ..Default::default()
+            };
             for entry in entries.iter().filter(|e| e.family == *family) {
                 match entry.reason {
                     ConservationReasonCode::Retained => counts.retained += 1,
@@ -538,7 +559,10 @@ impl ConservationEngine {
             family_counts.insert(*family, counts);
         }
 
-        let verdict = if entries.iter().any(|e| e.reason == ConservationReasonCode::MalformedSource) {
+        let verdict = if entries
+            .iter()
+            .any(|e| e.reason == ConservationReasonCode::MalformedSource)
+        {
             ConservationVerdict::MalformedSource
         } else if entries.iter().any(|e| e.reason.is_loss()) {
             ConservationVerdict::LossDetected
@@ -556,7 +580,13 @@ impl ConservationEngine {
 
         let delta_digest = digest_delta(&identity, &verdict, &family_counts, &entries);
 
-        ConservationDelta { identity, verdict, family_counts, entries, delta_digest }
+        ConservationDelta {
+            identity,
+            verdict,
+            family_counts,
+            entries,
+            delta_digest,
+        }
     }
 }
 
@@ -583,7 +613,11 @@ fn compare_presence(
             digest: src[0].digest.clone(),
         });
     } else if src.len() != cand.len() {
-        entries.push(count_mismatch_entry(family, src.len() as u32, cand.len() as u32));
+        entries.push(count_mismatch_entry(
+            family,
+            src.len() as u32,
+            cand.len() as u32,
+        ));
     }
 }
 
@@ -613,7 +647,11 @@ fn compare_ordinal_aligned(
         }
     }
     if src.len() != cand.len() {
-        entries.push(count_mismatch_entry(family, src.len() as u32, cand.len() as u32));
+        entries.push(count_mismatch_entry(
+            family,
+            src.len() as u32,
+            cand.len() as u32,
+        ));
     }
 }
 
@@ -675,7 +713,11 @@ fn compare_digest_aligned(
         });
     }
     if src.len() != cand.len() {
-        entries.push(count_mismatch_entry(family, src.len() as u32, cand.len() as u32));
+        entries.push(count_mismatch_entry(
+            family,
+            src.len() as u32,
+            cand.len() as u32,
+        ));
     }
 }
 
@@ -780,7 +822,12 @@ fn retained_entry(
     obs: &ConservationObservation,
     candidate_ordinal: Option<u32>,
 ) -> ConservationEntry {
-    retained_entry_at(family, obs, obs.ordinal, candidate_ordinal.unwrap_or(obs.ordinal))
+    retained_entry_at(
+        family,
+        obs,
+        obs.ordinal,
+        candidate_ordinal.unwrap_or(obs.ordinal),
+    )
 }
 
 fn retained_entry_at(
@@ -802,7 +849,11 @@ fn retained_entry_at(
     }
 }
 
-fn count_mismatch_entry(family: ConservationFamily, expected: u32, observed: u32) -> ConservationEntry {
+fn count_mismatch_entry(
+    family: ConservationFamily,
+    expected: u32,
+    observed: u32,
+) -> ConservationEntry {
     ConservationEntry {
         family,
         reason: ConservationReasonCode::CountMismatch,
@@ -826,12 +877,27 @@ fn observation(
     // raw_len is threaded through the scanner; this helper is used by the
     // candidate side (no range). Source-side observations construct directly.
     let byte_range = byte_range.map(|(s, e)| ByteRange::new(s, e, usize::MAX));
-    ConservationObservation { family, ordinal: 0, byte_range, digest, owner_family: owner, malformed }
+    ConservationObservation {
+        family,
+        ordinal: 0,
+        byte_range,
+        digest,
+        owner_family: owner,
+        malformed,
+    }
 }
 
 fn sort_entries(entries: &mut [ConservationEntry]) {
     entries.sort_by(|a, b| {
-        (a.family, a.reason, a.source_ordinal, a.candidate_ordinal, a.byte_range, a.structure_key.as_ref(), a.digest.as_str())
+        (
+            a.family,
+            a.reason,
+            a.source_ordinal,
+            a.candidate_ordinal,
+            a.byte_range,
+            a.structure_key.as_ref(),
+            a.digest.as_str(),
+        )
             .cmp(&(
                 b.family,
                 b.reason,
@@ -867,7 +933,14 @@ fn digest_delta(
     buf.push(0);
     for (family, counts) in family_counts {
         buf.extend_from_slice(family.as_str().as_bytes());
-        for v in [counts.source, counts.candidate, counts.retained, counts.unsupported, counts.lost, counts.malformed] {
+        for v in [
+            counts.source,
+            counts.candidate,
+            counts.retained,
+            counts.unsupported,
+            counts.lost,
+            counts.malformed,
+        ] {
             buf.extend_from_slice(&v.to_le_bytes());
         }
         buf.push(1);
@@ -1005,7 +1078,7 @@ fn scan_tag_tokens(bytes: &[u8]) -> Vec<TagTok> {
         if closed && kind == TagKind::Open && j > name_start && bytes[j - 1] == b'/' {
             kind = TagKind::SelfClose;
         }
-        let attrs_end = if closed { j } else { j };
+        let attrs_end = j;
         out.push(TagTok {
             start,
             end: end_excl,
@@ -1023,7 +1096,10 @@ fn scan_tag_tokens(bytes: &[u8]) -> Vec<TagTok> {
 }
 
 fn find_byte(bytes: &[u8], from: usize, needle: u8) -> Option<usize> {
-    bytes[from..].iter().position(|&b| b == needle).map(|p| from + p)
+    bytes[from..]
+        .iter()
+        .position(|&b| b == needle)
+        .map(|p| from + p)
 }
 
 fn find_sub(bytes: &[u8], from: usize, needle: &[u8]) -> Option<usize> {
@@ -1065,7 +1141,9 @@ fn match_elements(tokens: &[TagTok], raw: &[u8]) -> Vec<Elem> {
     let mut elements: Vec<Elem> = Vec::new();
     let mut stack: Vec<usize> = Vec::new();
     for (ti, tok) in tokens.iter().enumerate() {
-        let inside_bibl = stack.iter().any(|&si| tok_name(raw, &tokens[si]) == "biblStruct");
+        let inside_bibl = stack
+            .iter()
+            .any(|&si| tok_name(raw, &tokens[si]) == "biblStruct");
         match tok.kind {
             TagKind::Open => stack.push(ti),
             TagKind::SelfClose => elements.push(Elem {
@@ -1078,7 +1156,11 @@ fn match_elements(tokens: &[TagTok], raw: &[u8]) -> Vec<Elem> {
             }),
             TagKind::Close => {
                 let close_name = tok_name(raw, tok);
-                let match_pos = stack.iter().rev().find(|&&si| tok_name(tokens[si]) == close_name).copied();
+                let match_pos = stack
+                    .iter()
+                    .rev()
+                    .find(|&&si| tok_name(raw, &tokens[si]) == close_name)
+                    .copied();
                 match match_pos {
                     Some(open_ti) => {
                         while let Some(&ui) = stack.last() {
@@ -1155,12 +1237,11 @@ fn attr_value(attrs: &str, name: &str) -> Option<String> {
                 while j < bytes.len() && bytes[j].is_ascii_whitespace() {
                     j += 1;
                 }
-                if let Some(&q) = bytes.get(j) {
-                    if q == b'"' || q == b'\'' {
-                        if let Some(end) = find_byte(bytes, j + 1, q) {
-                            return Some(String::from_utf8_lossy(&bytes[j + 1..end]).into_owned());
-                        }
-                    }
+                if let Some(&q) = bytes.get(j)
+                    && (q == b'"' || q == b'\'')
+                    && let Some(end) = find_byte(bytes, j + 1, q)
+                {
+                    return Some(String::from_utf8_lossy(&bytes[j + 1..end]).into_owned());
                 }
             }
         }
@@ -1206,7 +1287,7 @@ fn scan_source(raw: &[u8]) -> ConservationInventory {
     let mut abstract_seen = false;
 
     for elem in &elements {
-        let region_header = body_start.map_or(true, |bs| elem.span.0 < bs);
+        let region_header = body_start.is_none_or(|bs| elem.span.0 < bs);
         let family = classify_element(elem, region_header, &mut title_seen, &mut abstract_seen);
 
         // Coordinate observations: any element carrying a coords attribute.
@@ -1228,7 +1309,11 @@ fn scan_source(raw: &[u8]) -> ConservationInventory {
         inv.push(ConservationObservation {
             family,
             ordinal: 0,
-            byte_range: Some(ByteRange::new(elem.span.0, elem.span.1.min(raw_len), raw_len)),
+            byte_range: Some(ByteRange::new(
+                elem.span.0,
+                elem.span.1.min(raw_len),
+                raw_len,
+            )),
             digest,
             owner_family: None,
             malformed: elem.malformed,
@@ -1270,8 +1355,12 @@ fn classify_element(
             *abstract_seen = true;
             Some(ConservationFamily::Abstract)
         }
-        "persName" if region_header && !elem.inside_bibl => Some(ConservationFamily::Author),
-        "idno" if region_header && !elem.inside_bibl => Some(ConservationFamily::ArticleIdno),
+        // GROBID header authors/idnos live inside <sourceDesc><biblStruct>:
+        // the header-region guard alone decides Author/ArticleIdno (the
+        // manifest pins header authors by TEI bytes); bibliography persName
+        // in the body stays unclassified because it is not in the header.
+        "persName" if region_header => Some(ConservationFamily::Author),
+        "idno" if region_header => Some(ConservationFamily::ArticleIdno),
         // Mirrors the flat-scan lifter semantics: every `<head>` in the body
         // is a section-window boundary (caption heads included).
         "head" if body => Some(ConservationFamily::Section),
@@ -1284,7 +1373,10 @@ fn classify_element(
             }
         }
         "xref" if body && !elem.inside_bibl => Some(ConservationFamily::CrossReference),
-        "ptr" if body && !elem.inside_bibl => Some(ConservationFamily::Link),
+        // GROBID emits link <ptr> elements inside <biblStruct> (relatedItem
+        // URLs) — they are the document's observed link family; the header
+        // region stays out of scope via the body guard.
+        "ptr" if body => Some(ConservationFamily::Link),
         "note" if body && !elem.inside_bibl => Some(ConservationFamily::Note),
         "figure" if body => {
             if attr_value(&elem.attrs, "type").as_deref() == Some("table") {
@@ -1345,8 +1437,13 @@ fn element_identity(family: ConservationFamily, elem: &Elem, raw: &[u8]) -> Stri
             // Content between open tag end and `</head>` start. The element
             // span ends at the close tag; the close tag is 7 bytes
             // (`</head>`), bounded defensively.
-            let end = elem.span.1.saturating_sub("</head>".len()).max(elem.open_tag_end);
-            let content = strip_tags_bytes(&raw[elem.open_tag_end.min(raw.len())..end.min(raw.len())]);
+            let end = elem
+                .span
+                .1
+                .saturating_sub("</head>".len())
+                .max(elem.open_tag_end);
+            let content =
+                strip_tags_bytes(&raw[elem.open_tag_end.min(raw.len())..end.min(raw.len())]);
             sha256_hex(content.as_bytes())
         }
         ConservationFamily::CitationAnchor => {
@@ -1355,7 +1452,9 @@ fn element_identity(family: ConservationFamily, elem: &Elem, raw: &[u8]) -> Stri
                 .unwrap_or_default();
             sha256_hex(target.as_bytes())
         }
-        ConservationFamily::CitationEntry | ConservationFamily::Table | ConservationFamily::Formula => {
+        ConservationFamily::CitationEntry
+        | ConservationFamily::Table
+        | ConservationFamily::Formula => {
             // Identity: xml:id when present, else the deterministic ordinal
             // key is filled in by the ordinal assignment (digest stays over
             // the element id bytes; fallback rows are distinguished by
@@ -1364,8 +1463,13 @@ fn element_identity(family: ConservationFamily, elem: &Elem, raw: &[u8]) -> Stri
             sha256_hex(id.as_bytes())
         }
         ConservationFamily::TableCell => {
-            let end = elem.span.1.saturating_sub("</cell>".len()).max(elem.open_tag_end);
-            let content = strip_tags_bytes(&raw[elem.open_tag_end.min(raw.len())..end.min(raw.len())]);
+            let end = elem
+                .span
+                .1
+                .saturating_sub("</cell>".len())
+                .max(elem.open_tag_end);
+            let content =
+                strip_tags_bytes(&raw[elem.open_tag_end.min(raw.len())..end.min(raw.len())]);
             sha256_hex(content.trim().as_bytes())
         }
         ConservationFamily::Title
@@ -1380,5 +1484,74 @@ fn element_identity(family: ConservationFamily, elem: &Elem, raw: &[u8]) -> Stri
         | ConservationFamily::Malformed => {
             sha256_hex(&raw[elem.span.0.min(raw.len())..elem.span.1.min(raw.len())])
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{TeiIdentity, TeiLifter};
+
+    const TEI: &str = r#"<TEI><teiHeader><fileDesc><titleStmt><title>Paper title</title><author><persName>Ada</persName></author></titleStmt></fileDesc><profileDesc><abstract>Summary</abstract></profileDesc></teiHeader><text><body><div><head>Introduction</head><p>Body</p></div><div><head>Methods</head><p>More</p></div></body></text></TEI>"#;
+
+    fn fixture() -> (TeiEnvelope, TeiParseIr) {
+        let envelope = TeiEnvelope::new(
+            TEI.as_bytes().to_vec(),
+            TeiIdentity::new("cached-tei", "profile=test"),
+        );
+        let ir = TeiLifter::new().lift(&envelope, "paper-1", "pdf-hash");
+        (envelope, ir)
+    }
+
+    #[test]
+    fn byte_range_clamps_to_valid_half_open_bounds() {
+        assert_eq!(ByteRange::new(9, 2, 5), ByteRange { start: 2, end: 2 });
+        assert!(ByteRange::new(9, 2, 5).is_valid(5));
+    }
+
+    #[test]
+    fn matching_lift_is_conserved_and_keeps_intentional_gaps_typed() {
+        let (envelope, ir) = fixture();
+        let delta = ConservationEngine::new().compare(&envelope, &ir);
+
+        assert_eq!(delta.verdict, ConservationVerdict::Conserved);
+        assert!(delta.entries.iter().any(|entry| {
+            entry.family == ConservationFamily::Author
+                && entry.reason == ConservationReasonCode::UnsupportedThisCut
+        }));
+        assert!(delta.entries.iter().all(|entry| {
+            entry
+                .byte_range
+                .is_none_or(|range| range.is_valid(envelope.raw_tei().len()))
+        }));
+    }
+
+    #[test]
+    fn missing_section_is_reported_as_typed_loss() {
+        let (envelope, mut ir) = fixture();
+        ir.sections.pop();
+        let delta = ConservationEngine::new().compare(&envelope, &ir);
+
+        assert_eq!(delta.verdict, ConservationVerdict::LossDetected);
+        assert!(delta.entries.iter().any(|entry| {
+            entry.family == ConservationFamily::Section
+                && entry.reason == ConservationReasonCode::ObservedButMissing
+                && entry.source_ordinal == Some(1)
+        }));
+    }
+
+    #[test]
+    fn replay_has_stable_order_and_byte_identical_serialization() {
+        let (envelope, ir) = fixture();
+        let engine = ConservationEngine::new();
+        let first = engine.compare(&envelope, &ir);
+        let second = engine.compare(&envelope, &ir);
+
+        assert_eq!(first, second);
+        assert_eq!(
+            serde_json::to_vec(&first).expect("delta serializes"),
+            serde_json::to_vec(&second).expect("replayed delta serializes")
+        );
+        assert!(first.entries.windows(2).all(|pair| pair[0] <= pair[1]));
     }
 }

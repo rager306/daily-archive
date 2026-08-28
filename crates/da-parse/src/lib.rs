@@ -12,6 +12,7 @@
 //! compatibility facade for existing `Arc<dyn ParserPort>` callers.
 
 mod backend;
+mod conservation;
 mod envelope;
 mod http;
 mod ir;
@@ -23,6 +24,11 @@ mod projector;
 pub use backend::{
     CACHED_TEI_BACKEND_ID, CachedTeiBackend, GROBID_HTTP_BACKEND_ID, ParseBackend,
     ParseBackendRequest,
+};
+pub use conservation::{
+    ByteRange, ConservationDelta, ConservationEngine, ConservationEntry, ConservationFamily,
+    ConservationIdentity, ConservationInventory, ConservationObservation, ConservationReasonCode,
+    ConservationVerdict, FamilyDeltaCounts,
 };
 pub use envelope::{TeiEnvelope, TeiIdentity};
 pub use http::{GrobidHttpBackend, GrobidParser};
