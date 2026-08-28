@@ -35,11 +35,19 @@ defaults:
       consolidateCitations: 0
       teiCoordinates: [figure, table, note, formula]
   current_request_dialect:
-    # da-parse GrobidProfile currently maps two bools onto 0|1, not the
-    # official 0|1|2(|3) consolidation dialect. S04 types the full dialect.
-    consolidateHeader: bool-as-0-1
-    consolidateCitations: bool-as-0-1
+    # Since S04 the wire request is the serde-versioned FulltextRequestV1
+    # dialect (schema version 1): typed consolidation modes (header 0..=2,
+    # citations/funders 0..=1), typed CoordinateSet, raw/sentence/ID switches
+    # and a validated inclusive page window. Legacy rich/structural presets
+    # project byte-identically to the S02 wire contract (D204 fingerprints
+    # pinned by tests/cache_identity.rs).
+    request_envelope: FulltextRequestVersioned-v1
+    consolidateHeader: typed-mode-0..=2-legacy-presets-0-or-1
+    consolidateCitations: typed-mode-0..=1
+    consolidateFunders: typed-mode-0..=1
+    teiCoordinates: typed-CoordinateSet-deduped-canonical-order
     teiCoordinates_constant: figure,table,note,formula
+    failure_vocabulary: ParseBackendFailure-schema-v1-closed-8-codes
   known_hard_regressions_until_t02:
   - silent_skip_missing_tei_fixture
   configuration_keys_documented_not_owned:
@@ -168,18 +176,26 @@ capabilities:
       - {name: generateIDs, required: false, type: enum, values: [0, 1]}
       - {name: start, required: false, type: int, meaning: first_page}
       - {name: end, required: false, type: int, meaning: last_page}
-      response_format: application/xml TEI (200); 204 empty; 400 invalid; 503 busy
-      busy_semantics: honest_503_not_internal_retry
+      response_format: application/xml TEI (200); 204 empty; 400 invalid; 413 too large; 503 busy; client timeout/transport typed separately
+      busy_semantics: honest_503_not_internal_retry; bounded_retry_after_metadata
     implementation:
       crate: da-parse
-      surface: crates/da-parse/src/http.rs GrobidParser::parse_pdf
+      surface: crates/da-parse/src/http.rs GrobidHttpBackend::process_fulltext (reached through ParserPort::parse_pdf)
       notes: >-
-        Multipart input + consolidateHeader/Citations from GrobidProfile bools
-        (0|1 only) + teiCoordinates JSON [figure,table,note,formula]. Timeout
-        120s. Profile fingerprint rotates cache identity (D204). Full dialect
-        (modes 2/3, funders, raw fields, page window) is S04. Since S02 the
+        Multipart is the sole projector of the typed FulltextRequestV1 dialect
+        since S04: exact Java field names/values, extended fields appended only
+        when enabled, so legacy rich/structural requests stay byte-identical to
+        the S02 wire contract (D204). Timeout 120s default; opt-in request/
+        response byte bounds are transport tuning excluded from identity.
+        Profile fingerprint rotates cache identity (D204). Since S02 the
         transport sits behind the provider-neutral ParseBackend seam
-        (GrobidHttpBackend); wire contract and cache identity are unchanged.
+        (GrobidHttpBackend). Since S04/T02 outcomes are typed and closed: 200
+        verbatim bytes (non-UTF-8 survives), 204 no_content, 400
+        invalid_request, 413/opt-in bounds limit_exceeded, 503 busy with
+        bounded Retry-After and no hidden retry, timeout vs transport
+        separated, other 5xx conversion_failed, else invalid_response; the
+        error body is never read and the facade maps availability class to
+        ParserError::Unavailable while the rest fail closed as ParseFailed.
     baseline: java-grobid-http@0.9.0-crf
     candidate: da-parse@http-proxy
     evidence_ref: crates/da-parse/src/http.rs
@@ -493,10 +509,14 @@ capabilities:
       response_format: coords attribute on requested TEI element families
     implementation:
       crate: da-parse
-      surface: crates/da-parse/src/profile.rs GrobidProfile::TEI_COORDINATES
+      surface: crates/da-parse/src/profile.rs GrobidProfile::TEI_COORDINATES + crates/da-parse/src/transport.rs CoordinateSet
       notes: >-
-        Constant figure,table,note,formula is part of configuration_fingerprint
-        (D204). Typed per-family coordinates and callouts are S07.
+        Legacy constant figure,table,note,formula stays part of
+        configuration_fingerprint (D204). Since S04 the request dialect
+        carries a typed CoordinateSet (deduped canonical wire order;
+        sanctioned families figure/table/note/formula) and legacy presets
+        keep rendering the D204 constant JSON. Per-family callout coordinates
+        beyond the sanctioned request families are S07.
     baseline: java-grobid-http@0.9.0-crf
     candidate: da-parse@profile-constant
     evidence_ref: crates/da-parse/src/profile.rs

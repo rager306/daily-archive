@@ -24,6 +24,13 @@
 //!   companion is reported, never fabricated) and never carries raw
 //!   document content.
 //!
+//! Since S04/T04 the gate additionally pins the typed transport identity
+//! guards: extended (non-legacy-equivalent) V1 dialects own deterministic,
+//! pairwise-distinct `fulltext=v1;…` canonical identities that never collide
+//! with the legacy D204 fingerprints, and transport tuning (timeout, opt-in
+//! request/response byte bounds) stays excluded from backend envelope
+//! identity.
+//!
 //! Scope guards: no network, no GROBID, no graph store, no wall-clock
 //! inputs. Fixtures and the baseline report are git-tracked files.
 
@@ -31,8 +38,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use da_parse::{
-    CachedTeiBackend, GROBID_HTTP_BACKEND_ID, GrobidProfile, ScholarlyParser, TeiEnvelope,
-    TeiIdentity, TeiLifter,
+    CachedTeiBackend, Consolidation, CoordinateFamily, CoordinateSet, FulltextDialectV1,
+    FulltextRequestVersioned, GROBID_HTTP_BACKEND_ID, GrobidHttpBackend, GrobidProfile, PageWindow,
+    ScholarlyParser, TeiEnvelope, TeiIdentity, TeiLifter,
 };
 use da_ports::parser::ParsedArticle;
 use serde_json::json;
@@ -699,4 +707,132 @@ fn s03_conservation_evidence_is_bound_per_case_and_aggregates_exactly() {
         .and_then(|v| v.as_object())
         .expect("aggregate delta_digests map");
     assert_eq!(digests.len(), 3, "one digest per case");
+}
+
+// ───────── S04/T04 typed transport identity guards ─────────
+
+/// Extended (non-legacy-equivalent) dialects own a versioned canonical
+/// identity that is deterministic, pairwise distinct and can never collide
+/// with the legacy D204 fingerprint namespace — which stays the ONLY cache
+/// key for legacy presets (they claim no extended identity).
+#[test]
+fn extended_dialect_identities_are_deterministic_distinct_and_legacy_collision_free() {
+    let extended = [
+        FulltextDialectV1::legacy_rich()
+            .with_consolidation(Consolidation::try_new(2, 1, 0).expect("sanctioned levels")),
+        FulltextDialectV1::legacy_rich().with_raw_citations(true),
+        FulltextDialectV1::legacy_rich().with_raw_affiliations(true),
+        FulltextDialectV1::legacy_rich().with_segment_sentences(true),
+        FulltextDialectV1::legacy_rich().with_emit_ids(true),
+        FulltextDialectV1::legacy_rich()
+            .with_page_window(Some(PageWindow::try_new(2, 5).expect("valid window"))),
+        FulltextDialectV1::legacy_rich().with_coordinates(CoordinateSet::from_families([
+            CoordinateFamily::Figure,
+            CoordinateFamily::Formula,
+        ])),
+    ];
+    let mut identities = Vec::new();
+    for dialect in extended {
+        let identity = dialect
+            .canonical_identity()
+            .expect("extended dialect owns a canonical identity");
+        assert!(
+            identity.starts_with("fulltext=v1;"),
+            "identity must be versioned: {identity}"
+        );
+        assert_eq!(
+            identity,
+            dialect
+                .canonical_identity()
+                .expect("deterministic identity"),
+            "canonical identity must be deterministic"
+        );
+        // Roundtrip through the versioned envelope preserves the identity.
+        let wire = serde_json::to_string(&FulltextRequestVersioned::v1(dialect))
+            .expect("envelope serializes");
+        let back: FulltextRequestVersioned =
+            serde_json::from_str(&wire).expect("envelope roundtrips");
+        assert_eq!(
+            back.into_dialect().canonical_identity(),
+            Some(identity.clone())
+        );
+        assert_ne!(
+            identity, RICH_FP,
+            "extended identity must not collide with rich"
+        );
+        assert_ne!(
+            identity, STRUCTURAL_FP,
+            "extended identity must not collide with structural"
+        );
+        identities.push(identity);
+    }
+    let unique: BTreeSet<&String> = identities.iter().collect();
+    assert_eq!(
+        unique.len(),
+        identities.len(),
+        "extended identities must be pairwise distinct: {identities:?}"
+    );
+
+    // Legacy presets keep NO extended identity: the D204 fingerprint stays
+    // their only cache key, so the two namespaces cannot collide.
+    assert!(
+        FulltextDialectV1::legacy_rich()
+            .canonical_identity()
+            .is_none()
+    );
+    assert!(
+        FulltextDialectV1::legacy_structural()
+            .canonical_identity()
+            .is_none()
+    );
+    assert_eq!(
+        GrobidProfile::rich().dialect(),
+        FulltextDialectV1::legacy_rich()
+    );
+    assert_eq!(
+        GrobidProfile::structural().dialect(),
+        FulltextDialectV1::legacy_structural()
+    );
+}
+
+/// Transport tuning (timeout, opt-in request/response byte bounds) is
+/// excluded from backend envelope identity: backends differing only in
+/// tuning stamp identical provenance. Offline by construction — `identity()`
+/// is a pure projection and no request is sent.
+#[test]
+fn transport_tuning_stays_excluded_from_envelope_identity() {
+    let base = GrobidHttpBackend::new(Some("http://127.0.0.1:1"));
+    assert_eq!(base.identity().backend_id(), GROBID_HTTP_BACKEND_ID);
+
+    let slow = base
+        .clone()
+        .with_timeout(std::time::Duration::from_secs(600));
+    let fast = base
+        .clone()
+        .with_timeout(std::time::Duration::from_millis(1));
+    assert_eq!(
+        slow.identity(),
+        fast.identity(),
+        "timeout must never enter envelope identity"
+    );
+
+    let bounded = base
+        .clone()
+        .with_request_byte_limit(1024)
+        .with_response_byte_limit(2048);
+    assert_eq!(
+        bounded.identity(),
+        base.identity(),
+        "opt-in byte limits must never enter envelope identity"
+    );
+
+    // The profile that DOES own the identity survives tuning, and rich vs
+    // structural stay separated.
+    let structural = base
+        .clone()
+        .with_profile(GrobidProfile::structural())
+        .with_timeout(std::time::Duration::from_secs(600))
+        .with_request_byte_limit(1024);
+    assert_eq!(structural.identity().profile_fingerprint(), STRUCTURAL_FP);
+    assert_ne!(structural.identity(), base.identity());
 }

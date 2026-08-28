@@ -13,6 +13,15 @@
 # `internal_observable`. Changing an obligation requires bumping
 # `ledger_version` here and coordinating the same fact into
 # grobid_compatibility.yaml within the slice wave.
+#
+# S04/T04: the fulltext endpoint entry additionally carries the optional
+# `typed_transport:` structured record documenting the versioned request
+# dialect and the closed failure vocabulary. `ledger_version` stays 1 — the
+# legacy 4-field wire contract and the D204 identities are byte-unchanged
+# (additive typed observation, not wire-contract evolution).
+# tests/data_contracts.rs cross-validates the record against live code and
+# fails loudly on any invented failure code, unmapped status or unsupported
+# request version.
 ledger_version: 1
 scope_note: >-
   Covers the public exports of crates/da-parse plus its implementing
@@ -23,7 +32,10 @@ scope_note: >-
   stage.tei_lift. Since M464-z84in2 S02 the staged-platform seams
   (ParseBackend, TeiEnvelope, TeiLifter, ScholarlyParser) are observed under
   the existing entry ids below — no parallel ledger and no new capability
-  identities (R105).
+  identities (R105). Since S04 the typed transport (versioned
+  FulltextRequestV1 request dialect, closed ParseBackendFailure vocabulary,
+  compatibility facade mapping) is documented inside the existing fulltext
+  endpoint entry — still no parallel ledger (R107/R113/R117).
 policy_locks:
   import_eligible: false
   dspy_enabled: false
@@ -45,15 +57,15 @@ entries:
     result_shape: 'ParseResult<ParsedArticle> = Result<ParsedArticle, ParserError>'
     error_shapes:
       - 'ParseFailed(String) — local PDF read failure (tokio::fs::read)'
-      - 'Unavailable(String) — GROBID network/transport failure (fail-closed)'
-      - 'ParseFailed("GROBID HTTP {status}") — non-success GROBID HTTP status'
-      - 'ParseFailed(String) — response body read failure'
+      - 'Unavailable("parse backend failure: code={busy|timeout|transport} phase=… status=… …") — availability-class typed backend failure, fail-closed'
+      - 'ParseFailed("parse backend failure: code={no_content|limit_exceeded|invalid_request|conversion_failed|invalid_response} phase=… status=… limit=… retry_after=…") — remaining typed backend failures (204, 413/opt-in bounds, 400, 5xx/body read, uninterpretable status)'
     async_behavior: async_trait method; tracing span name grobid_parse carrying paper_id
     notes:
       - Trait default parse_html stays ParserError::Unavailable on this path — there is no silent HTML fallback.
       - ParsedArticle keeps tei_xml = Some(raw TEI); layout_json and page_text_missingness stay None until a classifier stamps them later.
       - 'Since S02/T03 the facade drives the provider-neutral composition da_parse::ScholarlyParser (exactly one ParseBackend call, then TeiEnvelope → TeiLifter → projection); grobid_parse span, aggregate identity/size/timing-only logs and the error mapping are unchanged.'
-    compatibility_obligation: Signature, error mapping (fail-closed Unavailable on transport loss) and the ParsedArticle projection shape must be preserved by all later native/direct-parser work in this slice.
+      - 'Since S04/T03 typed backend failures cross the seam as Result<_, ParseBackendFailure> and convert to ParserError exactly once via ParseBackendFailure::to_parser_error: availability class (busy, timeout, transport) -> Unavailable, every other closed code -> ParseFailed; strings carry stable code=/phase=/status=/limit=/retry_after= metadata and never a cause, body, source or payload.'
+    compatibility_obligation: Signature, error mapping (fail-closed Unavailable on transport loss) and the ParsedArticle projection shape must be preserved by all later native/direct-parser work in this slice; the two-variant ParserError vocabulary must not grow — typed failures stay behind the seam (R107).
   - id: parse.constructor.grobid_parser
     kind: constructor
     owner_crate: da-parse
@@ -89,20 +101,52 @@ entries:
     http_method: POST
     request_fields:
       - 'input — multipart file part named paper.pdf with mime application/pdf'
-      - 'consolidateCitations — text field, "1" or "0"'
-      - 'consolidateHeader — text field, "1" or "0"'
-      - 'teiCoordinates — text field holding the JSON array string ["figure","table","note","formula"]'
-    result_shape: 'ParseResult<String> — raw TEI XML response body'
+      - 'consolidateCitations — text field rendered from the typed consolidation level (sanctioned 0..=1; legacy presets send "1" or "0")'
+      - 'consolidateHeader — text field rendered from the typed consolidation level (sanctioned 0..=2; legacy presets send "1" or "0")'
+      - 'teiCoordinates — text field holding the JSON array rendered from the typed CoordinateSet; legacy presets keep the D204 constant ["figure","table","note","formula"]'
+      - 'consolidateFunders — text field rendered from the typed funders level (sanctioned 0..=1); appended only when non-zero, omitted equals the GROBID default'
+      - 'includeRawCitations — "1" only when the typed switch is on; omitted otherwise'
+      - 'includeRawAffiliations — "1" only when the typed switch is on; omitted otherwise'
+      - 'segmentSentences — "1" only when the typed switch is on; omitted otherwise'
+      - 'generateIDs — "1" only when the typed switch is on; omitted otherwise'
+      - 'start — first page of the validated inclusive PageWindow (>= 1); appended only with a window'
+      - 'end — last page (>= start) of the validated inclusive PageWindow; appended only with a window'
+    result_shape: 'Result<TeiEnvelope, ParseBackendFailure> — verbatim raw TEI bytes (any encoding, no lossy decode) plus exact backend/profile identity (grobid-http | cached-tei)'
     error_shapes:
-      - 'ParseFailed(String) — multipart form construction failure'
-      - 'Unavailable(String) — send/transport failure'
-      - 'ParseFailed("GROBID HTTP {status}") — non-success status'
-      - 'ParseFailed(String) — body read failure'
+      - 'ParseBackendFailure — closed schema_version=1 vocabulary: busy (503 + bounded Retry-After), timeout, transport, no_content (204), limit_exceeded (413 or opt-in byte bounds), invalid_request (400), conversion_failed (5xx / body read), invalid_response'
+      - 'Unavailable("parse backend failure: code={busy|timeout|transport} …") — facade availability mapping, honest no-retry 503'
+      - 'ParseFailed("parse backend failure: code=… phase=… status=… limit=… retry_after=…") — facade fail-closed mapping of the remaining codes; the error body is never read and no payload/path/URL enters an error or log'
     notes:
       - 'Since S02/T01 the transport result crosses the provider-neutral ParseBackend seam as a TeiEnvelope — verbatim raw TEI bytes plus exact backend/profile identity (backend id grobid-http); bytes are never normalized or trimmed.'
       - 'The cached-TEI backend (backend id cached-tei) serves already-available bytes through the same seam without HTTP; the wire contract above is untouched.'
+      - 'Since S04/T01 the wire request is the serde-versioned FulltextRequestV1 dialect (FulltextRequestVersioned envelope, request schema version 1): typed Consolidation modes (header 0..=2, citations/funders 0..=1), typed CoordinateSet (deduped canonical wire order), raw citation/affiliation switches, sentence/ID switches and a validated inclusive page window. GrobidHttpBackend is the sole multipart projector: exact Java GROBID names/values above, extended fields appended only when enabled, so legacy rich/structural requests stay byte-identical to the S02 wire contract (D204 fingerprints pinned by tests/cache_identity.rs).'
+      - 'Since S04/T02 every wire outcome is a typed closed branch: 200 -> verbatim bytes (non-UTF-8 survives), 204 -> no_content, 400 -> invalid_request, 413 and opt-in request/response byte bounds -> limit_exceeded, 503 -> busy with honest no-retry and bounded Retry-After metadata (seconds | unparsable | absent), reqwest timeout -> timeout (distinct from connect/DNS/other transport), other 5xx -> conversion_failed, anything else -> invalid_response. No hidden retry; the error body is never read.'
+      - 'Extended (non-legacy-equivalent) dialects own a versioned canonical identity (fulltext=v1;… from FulltextDialectV1::canonical_identity) that never collides with the legacy D204 fingerprints; timeout and opt-in byte limits are transport tuning excluded from identity.'
       - 'registry_binding: rest.processFulltextDocument; dialect.teiCoordinates'
-    compatibility_obligation: The four multipart field names/values ARE the wire contract with Java GROBID; any change rotates the parse-stage cache identity (D204) and must bump ledger_version in the same commit.
+    # S04/T04 typed transport record. ledger_version stays 1: the legacy
+    # 4-field wire contract and D204 identities are byte-unchanged, so this
+    # is additive observation, not wire-contract evolution. Any change to
+    # the legacy wire values, failure codes or statuses MUST bump
+    # ledger_version (and PARSE_FAILURE_SCHEMA_VERSION for new codes) in the
+    # same commit — enforced by tests/data_contracts.rs cross-validation.
+    typed_transport:
+      request_schema: fulltext-v1
+      request_schema_version: 1
+      failure_schema_version: 1
+      statuses: [200, 204, 400, 413, 503]
+      failure_codes:
+      - busy
+      - timeout
+      - transport
+      - no_content
+      - limit_exceeded
+      - invalid_request
+      - conversion_failed
+      - invalid_response
+      retry_policy: honest_503_no_hidden_retry
+      retry_after_metadata: bounded_parse
+      compatibility_facade: 'availability class (busy, timeout, transport) -> ParserError::Unavailable; every other code -> ParserError::ParseFailed; strings carry stable code=/phase=/status=/limit=/retry_after= metadata only'
+    compatibility_obligation: The legacy multipart field names/values ARE the wire contract with Java GROBID; any change rotates the parse-stage cache identity (D204) and must bump ledger_version in the same commit. Additive V1 dialect fields ride the versioned request envelope and must keep the legacy projection byte-identical; the failure vocabulary is closed — new codes/statuses require a coordinated PARSE_FAILURE_SCHEMA_VERSION bump and the same coordinated identity decision as any D204 rotation.
   - id: parse.stage.lift_tei
     kind: lift_stage
     owner_crate: da-parse

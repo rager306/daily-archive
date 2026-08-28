@@ -16,6 +16,12 @@
 //!   ownership stays at the da-cli composition root (R116); the ledger
 //!   records those key NAMES only.
 //!
+//! Since S04/T04 the gate additionally proves the typed request/failure
+//! surfaces (`transport.rs`, `backend.rs`, `profile.rs`) stay free of
+//! `PathBuf`/env/cache-root/URL-default material in CODE (comments may
+//! document the prohibitions), and that every typed failure rendering
+//! (Display / Debug / serde wire form) carries zero payload or path material.
+//!
 //! The scanners' negative behavior is unit-tested in-file on synthetic
 //! inputs, so the gate itself is fail-visible rather than fail-silent.
 
@@ -355,6 +361,133 @@ let fixtures = \"crates/da-parse/tests/fixtures/preserved/x.tei.xml\";
     assert!(hits.iter().any(|h| h.contains("data/parse")));
     // Unrelated content must stay clean.
     assert!(parse_default_hits("let stage = \"parse.stage.lift_tei\";\n").is_empty());
+}
+
+// ───────── S04/T04: request/failure surface hygiene ─────────
+
+/// Typed request/failure vocabulary surfaces: the provider-neutral protocol
+/// layer and the legacy compatibility projection. `crates/da-parse/src/
+/// http.rs` is deliberately NOT scanned here — the facade shell owns the
+/// sanctioned env/URL resolution documented in the ledger (GROBID_URL).
+const REQUEST_FAILURE_SURFACES: [&str; 3] = [
+    "crates/da-parse/src/transport.rs",
+    "crates/da-parse/src/backend.rs",
+    "crates/da-parse/src/profile.rs",
+];
+
+/// Markers that must never appear in CODE of the request/failure surfaces.
+/// Line comments are stripped first: the modules' doc prose intentionally
+/// documents these prohibitions ("No PathBuf, no env values, no cache
+/// roots"), and prose must not trip the gate.
+const SURFACE_FORBIDDEN_MARKERS: [&str; 8] = [
+    "PathBuf",
+    "std::env",
+    "env::var",
+    "var_os",
+    "GROBID_URL",
+    "127.0.0.1:8070",
+    "cache_root",
+    "CACHE_ROOT",
+];
+
+fn strip_line_comments(text: &str) -> String {
+    text.lines()
+        .map(|line| {
+            if line.trim_start().starts_with("//") {
+                ""
+            } else {
+                line
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn surface_marker_hits(text: &str) -> Vec<String> {
+    let mut hits = Vec::new();
+    for (line_no, raw) in strip_line_comments(text).lines().enumerate() {
+        for marker in SURFACE_FORBIDDEN_MARKERS {
+            if raw.contains(marker) {
+                hits.push(format!(
+                    "[request-surface-leak] line {}: marker `{marker}`: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    hits
+}
+
+#[test]
+fn request_and_failure_surfaces_stay_free_of_paths_env_and_cache_roots() {
+    for rel in REQUEST_FAILURE_SURFACES {
+        let text = read_text(rel);
+        assert!(
+            text.len() > 1000,
+            "positive control failed: {rel} looks truncated"
+        );
+        let hits = surface_marker_hits(&text);
+        assert!(
+            hits.is_empty(),
+            "request/failure surface {rel} leaked path/env/cache-root/URL material (physical locations must never become part of the typed vocabulary):\n{}",
+            hits.join("\n")
+        );
+    }
+}
+
+#[test]
+fn surface_scanner_fails_visible_on_synthetic_violations() {
+    // Built via format! so the literals of THIS file stay clean.
+    let synthetic = format!(
+        "// doc prose mentioning {} must not trigger\nlet cache: {} = todo!();\nlet url = \"{}\";\nlet key = {}::var(\"X\");\n",
+        "DA_PARSE_CACHE_ROOT", "std::path::PathBuf", "http://127.0.0.1:8070", "std::env"
+    );
+    let hits = surface_marker_hits(&synthetic);
+    assert_eq!(hits.len(), 4, "expected four code hits, got {hits:?}");
+    assert!(hits.iter().any(|h| h.contains("PathBuf")));
+    assert!(hits.iter().any(|h| h.contains("127.0.0.1:8070")));
+    assert!(hits.iter().any(|h| h.contains("std::env")));
+    assert!(hits.iter().any(|h| h.contains("env::var")));
+    // Comment-only mentions must stay clean.
+    assert!(
+        surface_marker_hits("// GROBID_URL stays in the facade shell.\n").is_empty(),
+        "comment prose must not trip the scanner"
+    );
+}
+
+#[test]
+fn failure_renderings_never_carry_payload_or_path_material() {
+    use da_parse::{FailurePhase, LimitKind, ParseBackendFailure, RetryAfter};
+
+    let payload_markers = ["%PDF", "<TEI>", "paper.pdf", "..", "/", "\\"];
+    let failures = [
+        ParseBackendFailure::busy(503, Some(RetryAfter::Seconds(30))),
+        ParseBackendFailure::busy(503, Some(RetryAfter::Unparsable)),
+        ParseBackendFailure::timeout(FailurePhase::AwaitResponse),
+        ParseBackendFailure::transport(FailurePhase::Connect),
+        ParseBackendFailure::no_content(),
+        ParseBackendFailure::limit(LimitKind::RequestBytes, Some(413)),
+        ParseBackendFailure::limit(LimitKind::ResponseBytes, None),
+        ParseBackendFailure::invalid_request(400),
+        ParseBackendFailure::conversion(FailurePhase::ReadBody, Some(500)),
+        ParseBackendFailure::invalid_response(FailurePhase::AwaitResponse, Some(418)),
+    ];
+    for failure in &failures {
+        let renderings = [
+            failure.to_string(),
+            format!("{failure:?}"),
+            serde_json::to_string(failure).expect("typed failure serializes"),
+        ];
+        for rendering in renderings {
+            for marker in payload_markers {
+                assert!(
+                    !rendering.contains(marker),
+                    "typed failure rendering leaked `{marker}`: {rendering}"
+                );
+            }
+        }
+    }
 }
 
 // ───────── S03/T04: single sanctioned conservation evidence path ─────────

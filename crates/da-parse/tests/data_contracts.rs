@@ -19,16 +19,31 @@
 //!   to the da-parse lifter surface (`da-parse@lift-v1` candidate identity,
 //!   `preserved-java-tei` baseline identity).
 //!
+//! Since S04/T04 the gate additionally enforces:
+//! - the fulltext endpoint entry documents the S04 typed transport
+//!   (`typed_transport:` structured record) and it cross-validates against
+//!   the LIVE da_parse vocabulary — request schema version, the closed
+//!   eight-code failure vocabulary, the exact 200/204/400/413/503 status
+//!   taxonomy, honest no-retry 503 with bounded Retry-After metadata and the
+//!   two-variant compatibility facade mapping;
+//! - the ledger wire dialect stays inside the registry-of-record official
+//!   dialect (no invented fields/modes/families);
+//! - ledger_version stays 1: the legacy wire contract and D204 identities
+//!   are byte-unchanged (additive typed observation, not wire evolution).
+//!
 //! Scope guards honored by construction: this binary contacts no network
 //! service, parses no corpus document through the parser pipeline, touches no
 //! graph store, and depends on no wall-clock state. Project hard locks are
 //! asserted verbatim on both manifests, and every defect must FAIL LOUDLY —
 //! the silent skip is exactly the regression class this slice removes.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
-use da_parse::GrobidProfile;
+use da_parse::{
+    Consolidation, CoordinateSet, FULLTEXT_REQUEST_SCHEMA_VERSION, FailureCode, FulltextDialectV1,
+    FulltextRequestVersioned, GrobidProfile, PARSE_FAILURE_SCHEMA_VERSION,
+};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
@@ -72,6 +87,30 @@ const EVIDENCE_VOCAB: [&str; 10] = [
 
 /// Every case must request at least this evidence core.
 const MIN_EVIDENCE_FIELDS: [&str; 3] = ["source_sha256", "source_path", "profile_fingerprint"];
+
+/// The only sanctioned carrier of the S04 typed transport record (T04: the
+/// typed seam binds to the EXISTING endpoint entry — no parallel record).
+const TYPED_TRANSPORT_ENTRY_ID: &str = "parse.endpoint.process_fulltext_document";
+
+/// Status → typed-outcome taxonomy proven by the HTTP stub contract
+/// (S04/T02). Exactly these five statuses own a typed branch.
+const TYPED_TRANSPORT_STATUSES: [u16; 5] = [200, 204, 400, 413, 503];
+
+/// Every sanctioned V1 dialect wire name the ledger request_fields must
+/// carry (exact Java GROBID spelling; S04/T01–T02 typed surface).
+const SANCTIONED_WIRE_FIELD_NAMES: [&str; 11] = [
+    "input",
+    "consolidateHeader",
+    "consolidateCitations",
+    "consolidateFunders",
+    "includeRawCitations",
+    "includeRawAffiliations",
+    "teiCoordinates",
+    "segmentSentences",
+    "generateIDs",
+    "start",
+    "end",
+];
 
 // ───────────────────────────── data model ─────────────────────────────
 
@@ -144,6 +183,21 @@ enum HttpMethod {
     POST,
 }
 
+/// S04/T04 typed transport contract documented on the fulltext endpoint
+/// entry (`deny_unknown_fields`: an invented field fails loudly).
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+struct TypedTransportContract {
+    request_schema: String,
+    request_schema_version: u8,
+    failure_schema_version: u32,
+    statuses: Vec<u16>,
+    failure_codes: Vec<String>,
+    retry_policy: String,
+    retry_after_metadata: String,
+    compatibility_facade: String,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct LedgerEntry {
@@ -175,6 +229,8 @@ struct LedgerEntry {
     http_method: Option<HttpMethod>,
     #[serde(default)]
     request_fields: Vec<String>,
+    #[serde(default)]
+    typed_transport: Option<TypedTransportContract>,
     profile_name: Option<String>,
     configuration_fingerprint: Option<String>,
     #[serde(default)]
@@ -447,9 +503,131 @@ fn validate_ledger(l: &LedgerFile) -> Vec<String> {
         }
     }
 
+    // S04/T04: the typed transport record must exist on exactly the fulltext
+    // endpoint binding and cross-validate against the live Rust vocabulary.
+    if let Some(e) = l.entries.iter().find(|e| e.id == TYPED_TRANSPORT_ENTRY_ID)
+        && let Some(tt) = &e.typed_transport
+    {
+        errs.extend(validate_typed_transport(e, tt));
+    }
+    errs.extend(validate_typed_transport_placement(l));
+
     for anchor in ANCHOR_ENTRY_IDS {
         if !seen.contains(anchor) {
             errs.push(format!("[missing-anchor-entry] ledger lost `{anchor}`"));
+        }
+    }
+    errs
+}
+
+/// Live closed failure-code set derived from the public `FailureCode`
+/// vocabulary (serde snake_case wire form == `FailureCode::as_str`).
+fn live_failure_code_names() -> BTreeSet<String> {
+    [
+        FailureCode::Busy,
+        FailureCode::Timeout,
+        FailureCode::Transport,
+        FailureCode::NoContent,
+        FailureCode::LimitExceeded,
+        FailureCode::InvalidRequest,
+        FailureCode::ConversionFailed,
+        FailureCode::InvalidResponse,
+    ]
+    .into_iter()
+    .map(|code| code.as_str().to_string())
+    .collect()
+}
+
+/// The fulltext endpoint entry must document the S04 typed transport and it
+/// must cross-validate against the LIVE Rust vocabulary: request schema
+/// version, closed failure codes, the exact status taxonomy, honest no-retry
+/// 503 with bounded Retry-After, and the two-variant compatibility facade.
+fn validate_typed_transport(entry: &LedgerEntry, tt: &TypedTransportContract) -> Vec<String> {
+    let mut errs = Vec::new();
+    let ctx = entry.id.as_str();
+
+    if tt.request_schema_version != FULLTEXT_REQUEST_SCHEMA_VERSION {
+        errs.push(format!(
+            "[typed-transport-version] {ctx}: request_schema_version {} != live FULLTEXT_REQUEST_SCHEMA_VERSION {FULLTEXT_REQUEST_SCHEMA_VERSION}",
+            tt.request_schema_version
+        ));
+    }
+    if tt.request_schema != format!("fulltext-v{}", tt.request_schema_version) {
+        errs.push(format!(
+            "[typed-transport-version] {ctx}: request_schema `{}` must be spelled `fulltext-v{}`",
+            tt.request_schema, tt.request_schema_version
+        ));
+    }
+    if tt.failure_schema_version != PARSE_FAILURE_SCHEMA_VERSION {
+        errs.push(format!(
+            "[typed-transport-version] {ctx}: failure_schema_version {} != live PARSE_FAILURE_SCHEMA_VERSION {PARSE_FAILURE_SCHEMA_VERSION}",
+            tt.failure_schema_version
+        ));
+    }
+
+    let mut statuses = tt.statuses.clone();
+    statuses.sort_unstable();
+    statuses.dedup();
+    if statuses != TYPED_TRANSPORT_STATUSES.to_vec() {
+        errs.push(format!(
+            "[typed-transport-status-taxonomy] {ctx}: statuses {:?} must be exactly {:?} (200 success, 204 no_content, 400 invalid_request, 413 limit, 503 busy)",
+            tt.statuses, TYPED_TRANSPORT_STATUSES
+        ));
+    }
+
+    let live = live_failure_code_names();
+    let documented: BTreeSet<String> = tt.failure_codes.iter().cloned().collect();
+    for code in &documented {
+        if !live.contains(code) {
+            errs.push(format!(
+                "[unknown-failure-code] {ctx}: `{code}` is not a live FailureCode serde name"
+            ));
+        }
+    }
+    if documented != live {
+        errs.push(format!(
+            "[incomplete-failure-vocabulary] {ctx}: documented codes must equal the closed live set {live:?}, got {documented:?}"
+        ));
+    }
+
+    if tt.retry_policy != "honest_503_no_hidden_retry" {
+        errs.push(format!(
+            "[typed-transport-retry-drift] {ctx}: retry_policy `{}` must stay honest_503_no_hidden_retry",
+            tt.retry_policy
+        ));
+    }
+    if tt.retry_after_metadata != "bounded_parse" {
+        errs.push(format!(
+            "[typed-transport-retry-drift] {ctx}: retry_after_metadata `{}` must stay bounded_parse",
+            tt.retry_after_metadata
+        ));
+    }
+    if !tt.compatibility_facade.contains("Unavailable")
+        || !tt.compatibility_facade.contains("ParseFailed")
+    {
+        errs.push(format!(
+            "[typed-transport-facade-drift] {ctx}: compatibility_facade must document both legacy ParserError variants (Unavailable + ParseFailed)"
+        ));
+    }
+
+    errs
+}
+
+/// `typed_transport` is sanctioned on exactly the fulltext endpoint binding.
+fn validate_typed_transport_placement(l: &LedgerFile) -> Vec<String> {
+    let mut errs = Vec::new();
+    for e in &l.entries {
+        if e.id == TYPED_TRANSPORT_ENTRY_ID {
+            if e.typed_transport.is_none() {
+                errs.push(format!(
+                    "[missing-typed-transport] {TYPED_TRANSPORT_ENTRY_ID} must document the S04 typed transport"
+                ));
+            }
+        } else if e.typed_transport.is_some() {
+            errs.push(format!(
+                "[misplaced-typed-transport] {}: typed_transport is sanctioned only on {TYPED_TRANSPORT_ENTRY_ID}",
+                e.id
+            ));
         }
     }
     errs
@@ -1368,4 +1546,330 @@ fn every_case_requires_conservation_delta_evidence() {
             case.id
         );
     }
+}
+
+// ───────── S04/T04 typed transport cross-validation ─────────
+
+#[test]
+fn typed_transport_cross_validates_the_live_rust_vocabulary() {
+    let ledger: LedgerFile = expect_loaded(LEDGER_REL_PATH);
+    let errs = validate_ledger(&ledger);
+    assert!(
+        errs.is_empty(),
+        "ledger with typed transport must validate:\n{}",
+        errs.join("\n")
+    );
+
+    let entry = ledger
+        .entries
+        .iter()
+        .find(|e| e.id == TYPED_TRANSPORT_ENTRY_ID)
+        .expect("fulltext endpoint entry");
+    let tt = entry
+        .typed_transport
+        .as_ref()
+        .expect("typed transport record present");
+
+    // Versioned request schema equals the live constants and the envelope
+    // version label.
+    assert_eq!(tt.request_schema_version, FULLTEXT_REQUEST_SCHEMA_VERSION);
+    assert_eq!(
+        tt.request_schema,
+        format!(
+            "fulltext-{}",
+            FulltextRequestVersioned::v1(FulltextDialectV1::legacy_rich()).version_label()
+        )
+    );
+    assert_eq!(tt.failure_schema_version, PARSE_FAILURE_SCHEMA_VERSION);
+    let documented: BTreeSet<String> = tt.failure_codes.iter().cloned().collect();
+    assert_eq!(documented, live_failure_code_names());
+    assert_eq!(tt.statuses, TYPED_TRANSPORT_STATUSES.to_vec());
+
+    // The documented request fields carry every sanctioned V1 dialect wire
+    // name in the exact Java GROBID spelling the projector emits.
+    let documented_names: Vec<&str> = entry
+        .request_fields
+        .iter()
+        .map(|field| field.split('—').next().unwrap_or("").trim())
+        .collect();
+    for name in SANCTIONED_WIRE_FIELD_NAMES {
+        assert!(
+            documented_names.contains(&name),
+            "ledger request_fields must document the V1 wire field `{name}`: {documented_names:?}"
+        );
+    }
+}
+
+#[test]
+fn ledger_wire_fields_stay_inside_the_registry_official_dialect() {
+    // No invented wire dialect: every ledger request-field name and every
+    // da-parse accepted enum value must exist in the registry-of-record
+    // official request_fields for rest.processFulltextDocument.
+    let ledger: LedgerFile = expect_loaded(LEDGER_REL_PATH);
+    let registry = load_registry_value();
+    let cap = registry
+        .get("capabilities")
+        .and_then(|c| c.as_sequence())
+        .and_then(|seq| {
+            seq.iter().find(|c| {
+                c.get("id").and_then(|i| i.as_str()) == Some("rest.processFulltextDocument")
+            })
+        })
+        .expect("registry keeps the fulltext endpoint");
+    let official_fields = cap
+        .get("official")
+        .and_then(|o| o.get("request_fields"))
+        .and_then(|f| f.as_sequence())
+        .expect("official request_fields list");
+
+    let mut official_names: HashSet<String> = HashSet::new();
+    let mut official_values: HashMap<String, HashSet<String>> = HashMap::new();
+    for field in official_fields {
+        let name = field
+            .get("name")
+            .and_then(|n| n.as_str())
+            .expect("official field name")
+            .to_string();
+        if let Some(values) = field.get("values").and_then(|v| v.as_sequence()) {
+            let set = official_values.entry(name.clone()).or_default();
+            for value in values {
+                if let Some(n) = value.as_u64() {
+                    set.insert(n.to_string());
+                } else if let Some(s) = value.as_str() {
+                    set.insert(s.to_string());
+                }
+            }
+        }
+        official_names.insert(name);
+    }
+
+    let entry = ledger
+        .entries
+        .iter()
+        .find(|e| e.id == TYPED_TRANSPORT_ENTRY_ID)
+        .expect("fulltext endpoint entry");
+    for field in &entry.request_fields {
+        let name = field.split('—').next().unwrap_or("").trim();
+        assert!(
+            official_names.contains(name),
+            "ledger wire field `{name}` is not an official registry field"
+        );
+    }
+
+    // Live da-parse sanctioned ranges ⊆ official enum domains (probe the
+    // FULL official domain so out-of-domain values prove rejection too).
+    let header_accepted: Vec<u8> = (0..=3u8)
+        .filter(|v| Consolidation::try_new(*v, 0, 0).is_ok())
+        .collect();
+    let citations_accepted: Vec<u8> = (0..=2u8)
+        .filter(|v| Consolidation::try_new(0, *v, 0).is_ok())
+        .collect();
+    let funders_accepted: Vec<u8> = (0..=2u8)
+        .filter(|v| Consolidation::try_new(0, 0, *v).is_ok())
+        .collect();
+    assert_eq!(
+        header_accepted,
+        vec![0, 1, 2],
+        "sanctioned header range is 0..=2"
+    );
+    assert_eq!(
+        citations_accepted,
+        vec![0, 1],
+        "sanctioned citations range is 0..=1"
+    );
+    assert_eq!(
+        funders_accepted,
+        vec![0, 1],
+        "sanctioned funders range is 0..=1"
+    );
+    for (field_name, accepted) in [
+        ("consolidateHeader", &header_accepted),
+        ("consolidateCitations", &citations_accepted),
+        ("consolidateFunders", &funders_accepted),
+    ] {
+        let official = official_values
+            .get(field_name)
+            .unwrap_or_else(|| panic!("registry declares {field_name} enum values"));
+        for level in accepted {
+            assert!(
+                official.contains(&level.to_string()),
+                "da-parse accepts {field_name}={level} but the registry official dialect does not"
+            );
+        }
+    }
+
+    // Coordinate families stay inside the official teiCoordinates list.
+    let official_coords = official_values
+        .get("teiCoordinates")
+        .expect("registry declares teiCoordinates values");
+    for family in CoordinateSet::all().wire_value().split(',') {
+        assert!(
+            official_coords.contains(family),
+            "da-parse coordinate family `{family}` is not an official teiCoordinates value"
+        );
+    }
+}
+
+fn fulltext_typed_transport_mut<F: FnOnce(&mut TypedTransportContract)>(f: F) -> LedgerFile {
+    let (mut ledger, _) = loaded_pair();
+    let idx = ledger
+        .entries
+        .iter()
+        .position(|e| e.id == TYPED_TRANSPORT_ENTRY_ID)
+        .expect("fulltext endpoint entry");
+    let entry = &mut ledger.entries[idx];
+    let mut tt = entry
+        .typed_transport
+        .clone()
+        .expect("typed transport present");
+    f(&mut tt);
+    entry.typed_transport = Some(tt);
+    ledger
+}
+
+#[test]
+fn rejects_invented_failure_code_in_typed_transport() {
+    let ledger = fulltext_typed_transport_mut(|tt| {
+        tt.failure_codes.push("model_overheated".to_string());
+    });
+    let errs = validate_ledger(&ledger);
+    negative("[unknown-failure-code]", &errs, "invented failure code");
+    negative(
+        "[incomplete-failure-vocabulary]",
+        &errs,
+        "vocabulary no longer equals the closed set",
+    );
+}
+
+#[test]
+fn rejects_incomplete_closed_failure_vocabulary() {
+    let ledger = fulltext_typed_transport_mut(|tt| {
+        tt.failure_codes.retain(|code| code != "no_content");
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[incomplete-failure-vocabulary]",
+        &errs,
+        "dropped a closed code",
+    );
+}
+
+#[test]
+fn rejects_unsupported_request_version_in_typed_transport() {
+    let ledger = fulltext_typed_transport_mut(|tt| {
+        tt.request_schema_version = 9;
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[typed-transport-version]",
+        &errs,
+        "unsupported request schema version",
+    );
+
+    let ledger = fulltext_typed_transport_mut(|tt| {
+        tt.request_schema = "fulltext-v9".to_string();
+    });
+    let errs = validate_ledger(&ledger);
+    negative("[typed-transport-version]", &errs, "invented version label");
+}
+
+#[test]
+fn rejects_unmapped_status_in_typed_transport() {
+    let ledger = fulltext_typed_transport_mut(|tt| {
+        tt.statuses.push(418);
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[typed-transport-status-taxonomy]",
+        &errs,
+        "status outside the typed taxonomy",
+    );
+}
+
+#[test]
+fn rejects_dropped_retry_or_facade_guarantees_in_typed_transport() {
+    let ledger = fulltext_typed_transport_mut(|tt| {
+        tt.retry_policy = "silent_retry_on_503".to_string();
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[typed-transport-retry-drift]",
+        &errs,
+        "hidden retry policy",
+    );
+
+    let ledger = fulltext_typed_transport_mut(|tt| {
+        tt.compatibility_facade = "single new ParserError variant".to_string();
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[typed-transport-facade-drift]",
+        &errs,
+        "facade mapping lost a legacy variant",
+    );
+}
+
+#[test]
+fn rejects_missing_or_misplaced_typed_transport_record() {
+    let (mut ledger, _) = loaded_pair();
+    let idx = ledger
+        .entries
+        .iter()
+        .position(|e| e.id == TYPED_TRANSPORT_ENTRY_ID)
+        .expect("fulltext endpoint entry");
+    ledger.entries[idx].typed_transport = None;
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[missing-typed-transport]",
+        &errs,
+        "removed typed transport record",
+    );
+
+    let (mut ledger, _) = loaded_pair();
+    let record = ledger.entries[idx].typed_transport.clone();
+    let lift_idx = ledger
+        .entries
+        .iter()
+        .position(|e| e.id == "parse.stage.lift_tei")
+        .expect("lift entry present");
+    ledger.entries[lift_idx].typed_transport = record;
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[misplaced-typed-transport]",
+        &errs,
+        "typed transport moved off the endpoint binding",
+    );
+}
+
+#[test]
+fn rejects_unknown_fields_inside_typed_transport() {
+    let bad = "request_schema: fulltext-v1\nrequest_schema_version: 1\nfailure_schema_version: 1\nstatuses: [200]\nfailure_codes: []\nretry_policy: honest_503_no_hidden_retry\nretry_after_metadata: bounded_parse\ncompatibility_facade: x\ninvented_field: true\n";
+    match serde_yaml::from_str::<TypedTransportContract>(bad) {
+        Err(e) => assert!(
+            e.to_string().contains("unknown field"),
+            "deny_unknown_fields should trigger, got: {e}"
+        ),
+        Ok(_) => panic!("invented typed_transport field must not deserialize"),
+    }
+}
+
+#[test]
+fn rejects_invented_registry_binding_reference_on_the_endpoint() {
+    let (mut ledger, _) = loaded_pair();
+    let idx = ledger
+        .entries
+        .iter()
+        .position(|e| e.id == TYPED_TRANSPORT_ENTRY_ID)
+        .expect("fulltext endpoint entry");
+    for n in &mut ledger.entries[idx].notes {
+        if n.trim_start().starts_with("registry_binding:") {
+            *n = "registry_binding: rest.inventedSuperParser".to_string();
+        }
+    }
+    let errs = validate_registry_binding_notes(&ledger, &load_registry_ids());
+    negative(
+        "[unresolved-registry-binding-note]",
+        &errs,
+        "invented endpoint registry reference",
+    );
 }
