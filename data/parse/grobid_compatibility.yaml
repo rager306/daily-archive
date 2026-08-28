@@ -177,7 +177,9 @@ capabilities:
         Multipart input + consolidateHeader/Citations from GrobidProfile bools
         (0|1 only) + teiCoordinates JSON [figure,table,note,formula]. Timeout
         120s. Profile fingerprint rotates cache identity (D204). Full dialect
-        (modes 2/3, funders, raw fields, page window) is S04.
+        (modes 2/3, funders, raw fields, page window) is S04. Since S02 the
+        transport sits behind the provider-neutral ParseBackend seam
+        (GrobidHttpBackend); wire contract and cache identity are unchanged.
     baseline: java-grobid-http@0.9.0-crf
     candidate: da-parse@http-proxy
     evidence_ref: crates/da-parse/src/http.rs
@@ -1056,9 +1058,12 @@ capabilities:
       crate: da-parse
       surface: crates/da-parse/src/lift.rs
       notes: >-
-        String-find lift; no XML parser (no XXE). Silent skip of missing
-        fixtures is a hard integrity regression until T02. Conservation
-        inventory is S03. P0 idno/authors/figures/coords is S07.
+        String-find lift; no XML parser (no XXE). Single algorithm owner since
+        S02/T02 is the provider-neutral TeiLifter (TeiEnvelope + logical
+        paper_id/pdf_hash in, TeiParseIr out); GrobidParser::lift_tei delegates
+        to the same code. Silent skip of missing fixtures is a hard integrity
+        regression. Conservation inventory is S03. P0 idno/authors/figures/coords
+        is S07.
     baseline: preserved-java-tei
     candidate: da-parse@lift-v1
     evidence_ref: crates/da-parse/src/lift.rs

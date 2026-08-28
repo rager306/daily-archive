@@ -750,11 +750,15 @@ async fn test_ingest_citation_dedup_shared_reference() {
 
 #[tokio::test]
 async fn invalid_arxiv_citation_remains_reference_only() {
+    // M451 sanctioned GROBID salvage (da-domain try_parse_arxiv_locator):
+    // a mangled id whose HEAD is a valid arXiv id now resolves. Only an id
+    // with no valid head inside stays Reference-only. "1410.[Yahyaetal.2012"
+    // has head "1410" (no YYMM.NNNNN tail) — genuinely unparseable.
     use da_ports::parser::CitationEntry;
     let malformed = CitationEntry {
         raw_text: "Malformed but retained bibliography entry".into(),
         doi: None,
-        arxiv_id: Some("1410.3916.[Yahyaetal.2012".into()),
+        arxiv_id: Some("1410.[Yahyaetal.2012".into()),
         title: None,
         anchors: vec![],
     };
@@ -765,6 +769,38 @@ async fn invalid_arxiv_citation_remains_reference_only() {
     assert_eq!(result.total_cites_resolved, 0);
     assert_eq!(store.get_nodes_by_label("Reference").await.len(), 1);
     assert!(store.get_nodes_by_label("Citation").await.is_empty());
+}
+
+#[tokio::test]
+async fn grobid_mangled_citation_head_salvages_and_resolves() {
+    // M451 application-level pin (mirrors da-domain
+    // normalize_arxiv_grobid_mangled_citation_ids): a GROBID-mangled id whose
+    // head is a valid arXiv id resolves to the CANONICAL head identity —
+    // not the raw mangled string.
+    use da_ports::parser::CitationEntry;
+    let mangled = CitationEntry {
+        raw_text: "Mangled but salvageable bibliography entry".into(),
+        doi: None,
+        arxiv_id: Some("1410.3916.[Yahyaetal.2012".into()),
+        title: None,
+        anchors: vec![],
+    };
+    let (ingest, store) = make_ingest_with_citations(vec![], vec![mangled]);
+    let result = batch_ingest_pdfs(&ingest, &[("paper.pdf".into(), "2401.00001".into())], None)
+        .await
+        .unwrap();
+    assert_eq!(result.total_cites_resolved, 1);
+    let citations = store.get_nodes_by_label("Citation").await;
+    assert_eq!(citations.len(), 1);
+    let vid = store
+        .get_node_property_string(citations[0], "vid")
+        .await
+        .unwrap();
+    assert_eq!(
+        vid,
+        da_domain::vid::citation_arxiv_vid("1410.3916").unwrap(),
+        "salvaged citation must bind the canonical head id"
+    );
 }
 
 #[tokio::test]

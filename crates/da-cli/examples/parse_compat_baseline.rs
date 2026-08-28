@@ -1436,6 +1436,7 @@ fn write_report(path: &Path, text: &str) -> Result<(), String> {
 }
 
 fn main() -> ExitCode {
+    let _log_guard = da_cli::logging::init_pipeline_logging("parse_compat_baseline");
     let args = Args::parse();
     let repo_root = repo_root();
     let fixtures_root = resolve_against_repo(&repo_root, &args.fixtures);

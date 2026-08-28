@@ -1,9 +1,20 @@
-//! Data-contract gate for the scholarly parse plane (M464-z84in2 / S01 / T01).
+//! Data-contract gate for the scholarly parse plane
+//! (M464-z84in2 / S01 / T01 + S02 / T04).
 //!
 //! Validates contract SHAPE and REFERENTIAL INTEGRITY ONLY for:
 //! - `data/parse/api_compatibility_ledger.yaml`
 //! - `data/parse/regression_cases.yaml`
 //! - bindings resolve against registry ids from data/parse/grobid_compatibility.yaml
+//!
+//! Since S02/T04 the gate additionally enforces:
+//! - staged-platform seam bindings — ParseBackend / TeiEnvelope / TeiLifter /
+//!   ScholarlyParser must stay documented under their EXISTING sanctioned
+//!   entry ids (no parallel ledger, no new capability identities, R105);
+//! - stage/endpoint entries must cite a resolvable registry-of-record
+//!   capability id via a `registry_binding:` note;
+//! - the registry `stage.tei_lift` capability keeps binding the lift stage
+//!   to the da-parse lifter surface (`da-parse@lift-v1` candidate identity,
+//!   `preserved-java-tei` baseline identity).
 //!
 //! Scope guards honored by construction: this binary contacts no network
 //! service, parses no corpus document through the parser pipeline, touches no
@@ -454,6 +465,195 @@ fn ledger_profile_fingerprints(l: &LedgerFile) -> HashMap<ProfileName, String> {
         }
     }
     map
+}
+
+// ─────────────── staged-platform seam bindings (S02/T04) ─────────────
+
+/// S02 staged-platform seams bound to EXISTING sanctioned entry ids (R105):
+/// no parallel ledger, no new capability identities. Each seam must remain
+/// documented under its entry, with the named symbol evidence present in the
+/// entry's observable text (entry_point / request_shape / notes).
+const SEAM_BINDINGS: [(&str, &str, [&str; 2]); 4] = [
+    (
+        "ParseBackend",
+        "parse.endpoint.process_fulltext_document",
+        ["ParseBackend", "TeiEnvelope"],
+    ),
+    (
+        "TeiEnvelope",
+        "parse.stage.lift_tei",
+        ["TeiEnvelope", "TeiLifter"],
+    ),
+    (
+        "TeiLifter",
+        "parse.stage.lift_tei",
+        ["TeiLifter", "TeiEnvelope"],
+    ),
+    (
+        "ScholarlyParser",
+        "parse.entrypoint.grobid_parser.parse_pdf",
+        ["ScholarlyParser", "ParseBackend"],
+    ),
+];
+
+/// Entry kinds that must cite a registry-of-record capability id via a
+/// `registry_binding:` note (referential integrity INTO the registry — the
+/// ledger is an observation input, never a competing namespace).
+const REGISTRY_BINDING_KINDS: [EntryKind; 3] = [
+    EntryKind::LiftStage,
+    EntryKind::ProjectStage,
+    EntryKind::Endpoint,
+];
+
+/// All observable text of an entry where seam symbols must appear.
+fn entry_observable_text(e: &LedgerEntry) -> String {
+    let mut text = String::new();
+    if let Some(ep) = &e.entry_point {
+        text.push_str(ep);
+        text.push(' ');
+    }
+    if let Some(shape) = &e.request_shape {
+        text.push_str(shape);
+        text.push(' ');
+    }
+    for note in &e.notes {
+        text.push_str(note);
+        text.push(' ');
+    }
+    text
+}
+
+/// Every staged-platform seam must stay bound to its sanctioned entry id.
+fn validate_seam_bindings(l: &LedgerFile) -> Vec<String> {
+    let mut errs = Vec::new();
+    for (seam, entry_id, required_symbols) in SEAM_BINDINGS {
+        let Some(entry) = l.entries.iter().find(|e| e.id == entry_id) else {
+            errs.push(format!(
+                "[seam-binding-missing] seam `{seam}`: entry `{entry_id}` vanished from the ledger"
+            ));
+            continue;
+        };
+        let text = entry_observable_text(entry);
+        for symbol in required_symbols {
+            if !text.contains(symbol) {
+                errs.push(format!(
+                    "[seam-binding-missing] seam `{seam}`: entry `{entry_id}` no longer documents `{symbol}`"
+                ));
+            }
+        }
+    }
+    errs
+}
+
+/// Stage/endpoint entries must cite >=1 existing registry capability id via
+/// a `registry_binding:` note.
+fn validate_registry_binding_notes(l: &LedgerFile, registry_ids: &HashSet<String>) -> Vec<String> {
+    let mut errs = Vec::new();
+    for e in &l.entries {
+        if !REGISTRY_BINDING_KINDS.contains(&e.kind) {
+            continue;
+        }
+        let Some(note) = e
+            .notes
+            .iter()
+            .find(|n| n.trim_start().starts_with("registry_binding:"))
+        else {
+            errs.push(format!(
+                "[missing-registry-binding-note] {} must cite a registry capability via `registry_binding:`",
+                e.id
+            ));
+            continue;
+        };
+        let tokens: Vec<&str> = note
+            .split(':')
+            .nth(1)
+            .unwrap_or("")
+            .split(|c: char| c == ';' || c == ',' || c.is_whitespace())
+            .map(str::trim)
+            .filter(|t| !t.is_empty())
+            .collect();
+        if tokens.is_empty() {
+            errs.push(format!(
+                "[missing-registry-binding-note] {}: empty registry_binding note",
+                e.id
+            ));
+            continue;
+        }
+        let mut resolved = 0usize;
+        for token in tokens {
+            if !token.contains('.') {
+                continue;
+            }
+            if registry_ids.contains(token) {
+                resolved += 1;
+            } else {
+                errs.push(format!(
+                    "[unresolved-registry-binding-note] {}: `{token}` is not a registry capability id",
+                    e.id
+                ));
+            }
+        }
+        if resolved == 0 {
+            errs.push(format!(
+                "[missing-registry-binding-note] {}: no resolvable registry capability cited",
+                e.id
+            ));
+        }
+    }
+    errs
+}
+
+/// Full registry of record loaded generically (R117 generic reader).
+fn load_registry_value() -> serde_yaml::Value {
+    let full = repo_root().join(REGISTRY_REL_PATH);
+    let text = std::fs::read_to_string(&full)
+        .unwrap_or_else(|e| panic!("registry of record unreadable: {e}"));
+    serde_yaml::from_str(&text).unwrap_or_else(|e| panic!("registry yaml malformed: {e}"))
+}
+
+/// The registry-of-record `stage.tei_lift` capability must keep binding the
+/// lift stage to the da-parse lifter surface and its sanctioned identities.
+fn validate_registry_stage_binding(registry: &serde_yaml::Value) -> Vec<String> {
+    const DRIFT: &str = "[registry-stage-binding-drift]";
+    let mut errs = Vec::new();
+    let Some(cap) = registry
+        .get("capabilities")
+        .and_then(|c| c.as_sequence())
+        .and_then(|seq| {
+            seq.iter()
+                .find(|c| c.get("id").and_then(|i| i.as_str()) == Some("stage.tei_lift"))
+        })
+    else {
+        errs.push(format!("{DRIFT} registry lost capability `stage.tei_lift`"));
+        return errs;
+    };
+    let str_at = |node: &serde_yaml::Value, path: &[&str]| -> String {
+        let mut cur = node;
+        for key in path {
+            cur = match cur.get(key) {
+                Some(v) => v,
+                None => return String::new(),
+            };
+        }
+        cur.as_str().unwrap_or_default().to_string()
+    };
+    if str_at(cap, &["implementation", "crate"]) != "da-parse" {
+        errs.push(format!(
+            "{DRIFT} stage.tei_lift implementation.crate is no longer da-parse"
+        ));
+    }
+    if !str_at(cap, &["implementation", "surface"]).contains("crates/da-parse/src/lift.rs") {
+        errs.push(format!(
+            "{DRIFT} stage.tei_lift surface must stay on crates/da-parse/src/lift.rs"
+        ));
+    }
+    if str_at(cap, &["baseline"]) != "preserved-java-tei" {
+        errs.push(format!("{DRIFT} stage.tei_lift baseline identity changed"));
+    }
+    if str_at(cap, &["candidate"]) != "da-parse@lift-v1" {
+        errs.push(format!("{DRIFT} stage.tei_lift candidate identity rotated"));
+    }
+    errs
 }
 
 // ────────────────────────── manifest validation ───────────────────────
@@ -1012,4 +1212,139 @@ fn unknown_fields_are_denied_on_both_artifact_shapes() {
         ),
         Ok(_) => panic!("malformed manifest shape must not deserialize"),
     }
+}
+
+// ─────────────── staged-platform seam checks (S02/T04) ───────────────
+
+#[test]
+fn staged_platform_seams_are_public_api_with_exact_provenance() {
+    // Compile-time export proof for the R105 seam set that the DATA
+    // bindings above reference: the provider-neutral types resolve from the
+    // crate root and keep their documented identity accessors.
+    let envelope = da_parse::TeiEnvelope::new(
+        b"<TEI/>".to_vec(),
+        da_parse::TeiIdentity::cached_tei(GrobidProfile::structural()),
+    );
+    assert_eq!(
+        envelope.identity().backend_id(),
+        da_parse::CACHED_TEI_BACKEND_ID
+    );
+    assert_eq!(envelope.identity().profile_fingerprint(), STRUCTURAL_FP);
+    let _lifter = da_parse::TeiLifter::new();
+    let _request = da_parse::ParseBackendRequest::new("paper", b"pdf".to_vec());
+
+    fn assert_send_sync<T: Send + Sync>() {}
+    assert_send_sync::<da_parse::ScholarlyParser<da_parse::CachedTeiBackend>>();
+    assert_send_sync::<da_parse::CachedTeiBackend>();
+}
+
+#[test]
+fn seams_stay_bound_to_sanctioned_ledger_ids() {
+    let ledger: LedgerFile = expect_loaded(LEDGER_REL_PATH);
+    let errs = validate_seam_bindings(&ledger);
+    assert!(
+        errs.is_empty(),
+        "staged-platform seam bindings drifted:\n{}",
+        errs.join("\n")
+    );
+}
+
+#[test]
+fn stage_entries_cite_existing_registry_capabilities_and_stage_tei_lift_stays_bound() {
+    let ledger: LedgerFile = expect_loaded(LEDGER_REL_PATH);
+    let registry = load_registry_value();
+
+    let note_errs = validate_registry_binding_notes(&ledger, &load_registry_ids());
+    assert!(
+        note_errs.is_empty(),
+        "registry_binding note violations:\n{}",
+        note_errs.join("\n")
+    );
+
+    let stage_errs = validate_registry_stage_binding(&registry);
+    assert!(
+        stage_errs.is_empty(),
+        "stage.tei_lift registry binding drifted:\n{}",
+        stage_errs.join("\n")
+    );
+}
+
+#[test]
+fn rejects_seam_documentation_removal_from_the_lift_entry() {
+    let (mut ledger, _) = loaded_pair();
+    let idx = ledger
+        .entries
+        .iter()
+        .position(|e| e.id == "parse.stage.lift_tei")
+        .expect("lift entry present");
+    ledger.entries[idx].entry_point = Some("da_parse::GrobidParser::lift_tei".to_string());
+    ledger.entries[idx].request_shape =
+        Some("lift_tei(tei_xml: String, paper_id, pdf_hash) -> TeiParseIr".to_string());
+    ledger.entries[idx]
+        .notes
+        .retain(|n| !n.contains("TeiLifter") && !n.contains("TeiEnvelope"));
+    let errs = validate_seam_bindings(&ledger);
+    negative(
+        "[seam-binding-missing]",
+        &errs,
+        "stripped seam documentation",
+    );
+}
+
+#[test]
+fn rejects_removed_registry_binding_note() {
+    let (mut ledger, _) = loaded_pair();
+    for e in &mut ledger.entries {
+        e.notes
+            .retain(|n| !n.trim_start().starts_with("registry_binding:"));
+    }
+    let errs = validate_registry_binding_notes(&ledger, &load_registry_ids());
+    negative(
+        "[missing-registry-binding-note]",
+        &errs,
+        "removed registry_binding note",
+    );
+}
+
+#[test]
+fn rejects_invented_registry_binding_reference() {
+    let (mut ledger, _) = loaded_pair();
+    let idx = ledger
+        .entries
+        .iter()
+        .position(|e| e.id == "parse.stage.lift_tei")
+        .expect("lift entry present");
+    for n in &mut ledger.entries[idx].notes {
+        if n.trim_start().starts_with("registry_binding:") {
+            *n = "registry_binding: stage.invented_lift".to_string();
+        }
+    }
+    let errs = validate_registry_binding_notes(&ledger, &load_registry_ids());
+    negative(
+        "[unresolved-registry-binding-note]",
+        &errs,
+        "invented registry reference",
+    );
+}
+
+#[test]
+fn rejects_registry_stage_binding_drift_on_a_synthetic_registry() {
+    // A registry whose stage.tei_lift capability points elsewhere (another
+    // crate, rotated candidate identity) must fail the binding proof.
+    let yaml = "capabilities:\n  - id: stage.tei_lift\n    implementation:\n      crate: da-adapters\n      surface: crates/da-adapters/src/somewhere.rs\n    baseline: preserved-java-tei\n    candidate: da-adapters@lift-v1\n";
+    let registry: serde_yaml::Value = serde_yaml::from_str(yaml).expect("synthetic registry");
+    let errs = validate_registry_stage_binding(&registry);
+    assert!(
+        errs.iter()
+            .any(|e| e.contains("[registry-stage-binding-drift]")),
+        "expected drift detection, got {errs:?}"
+    );
+    // Losing the capability entirely must also fail.
+    let empty: serde_yaml::Value = serde_yaml::from_str("capabilities: []").expect("empty");
+    let errs = validate_registry_stage_binding(&empty);
+    negative(
+        "[registry-stage-binding-drift]",
+        &errs,
+        "removed stage.tei_lift capability",
+    );
 }

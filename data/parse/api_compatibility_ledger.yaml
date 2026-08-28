@@ -20,7 +20,10 @@ scope_note: >-
   XY-Cut live in da-adapters (see crates/da-parse/src/lib.rs crate docs) and
   are out of scope here. Registry-of-record cross-references used by
   regression_cases.yaml: rest.processFulltextDocument, dialect.teiCoordinates,
-  stage.tei_lift.
+  stage.tei_lift. Since M464-z84in2 S02 the staged-platform seams
+  (ParseBackend, TeiEnvelope, TeiLifter, ScholarlyParser) are observed under
+  the existing entry ids below — no parallel ledger and no new capability
+  identities (R105).
 policy_locks:
   import_eligible: false
   dspy_enabled: false
@@ -35,7 +38,7 @@ entries:
     visibility: public_trait_impl
     stability: stable
     entry_point: da_ports::parser::ParserPort::parse_pdf
-    implemented_by: da_parse::GrobidParser
+    implemented_by: da_parse::GrobidParser (compatibility facade composing da_parse::ScholarlyParser since S02/T03)
     port_trait: da_ports::parser::ParserPort
     request_shape: 'parse_pdf(&self, pdf_path: &str, paper_id: &str)'
     input_kind: pdf_file_path_string
@@ -49,6 +52,7 @@ entries:
     notes:
       - Trait default parse_html stays ParserError::Unavailable on this path — there is no silent HTML fallback.
       - ParsedArticle keeps tei_xml = Some(raw TEI); layout_json and page_text_missingness stay None until a classifier stamps them later.
+      - 'Since S02/T03 the facade drives the provider-neutral composition da_parse::ScholarlyParser (exactly one ParseBackend call, then TeiEnvelope → TeiLifter → projection); grobid_parse span, aggregate identity/size/timing-only logs and the error mapping are unchanged.'
     compatibility_obligation: Signature, error mapping (fail-closed Unavailable on transport loss) and the ParsedArticle projection shape must be preserved by all later native/direct-parser work in this slice.
   - id: parse.constructor.grobid_parser
     kind: constructor
@@ -94,19 +98,26 @@ entries:
       - 'Unavailable(String) — send/transport failure'
       - 'ParseFailed("GROBID HTTP {status}") — non-success status'
       - 'ParseFailed(String) — body read failure'
+    notes:
+      - 'Since S02/T01 the transport result crosses the provider-neutral ParseBackend seam as a TeiEnvelope — verbatim raw TEI bytes plus exact backend/profile identity (backend id grobid-http); bytes are never normalized or trimmed.'
+      - 'The cached-TEI backend (backend id cached-tei) serves already-available bytes through the same seam without HTTP; the wire contract above is untouched.'
+      - 'registry_binding: rest.processFulltextDocument; dialect.teiCoordinates'
     compatibility_obligation: The four multipart field names/values ARE the wire contract with Java GROBID; any change rotates the parse-stage cache identity (D204) and must bump ledger_version in the same commit.
   - id: parse.stage.lift_tei
     kind: lift_stage
     owner_crate: da-parse
-    visibility: internal_observable
+    visibility: public_fn
     stability: stable
-    entry_point: da_parse::GrobidParser::lift_tei
-    request_shape: 'lift_tei(tei_xml: String, paper_id, pdf_hash) -> TeiParseIr'
+    entry_point: da_parse::TeiLifter::lift_tei (single algorithm owner; da_parse::GrobidParser::lift_tei delegates)
+    request_shape: 'TeiLifter::lift(&TeiEnvelope, paper_id, pdf_hash) -> TeiParseIr | lift_tei(tei_xml: String, paper_id, pdf_hash) -> TeiParseIr'
     result_shape: TeiParseIr (pub struct — tei_xml, paper_id, title, abstract_text, body_text, sections, citations, tables, table_missingness, formulas, formula_missingness, pdf_hash)
     notes:
       - Pure local transformation; does NOT call Java GROBID or the network.
       - Extraction coverage this cut — title, abstract, body text, sections (nested div walk with flat head scan fallback and lexical path collision resolution), citations with in-text ref anchors resolved against back-matter xml:id, tables, formulas.
       - Intentional absences this cut — author lists, article-level idno and non-table figures are NOT parsed; TeiParseIr carries no fields for them.
+      - 'Since S02/T02 the single lift algorithm is owned by the provider-neutral da_parse::TeiLifter — it accepts a TeiEnvelope (verbatim raw TEI bytes plus exact backend/profile identity from the ParseBackend seam) with logical paper_id/pdf_hash and needs no HTTP, filesystem or runtime infrastructure.'
+      - 'da_parse::GrobidParser::lift_tei stays a compatibility delegate onto the same code — envelope-vs-compatibility parity is proven byte-exact on the preserved fixtures (S02/T02).'
+      - 'registry_binding: stage.tei_lift'
     compatibility_obligation: Lift determinism over unchanged TEI bytes is fixed; the intentional-absence list may only shrink behind a compatibility-note commit, never silently grow content.
   - id: parse.stage.project_article
     kind: project_stage
@@ -119,6 +130,8 @@ entries:
     notes:
       - Pure projection onto the ports type; layout_json stays None and page_text_missingness stays None on the GROBID path because a classifier stamps them later.
       - Section navigation identity — path_id, parent_section_id, order_in_parent, section_id sec-{path_id} — is produced by the section extractors consumed here.
+      - 'Reached through the S02 composition da_parse::ScholarlyParser::lift_and_project as well as the GrobidParser facade; pure projection semantics and the ParsedArticle shape are unchanged.'
+      - 'registry_binding: stage.tei_lift'
     compatibility_obligation: Projection must remain total and allocation-safe over any TeiParseIr and preserve the ports ParsedArticle field semantics consumed downstream by ingest.
   - id: parse.profile.rich
     kind: profile_contract
