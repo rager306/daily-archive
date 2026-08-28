@@ -1290,6 +1290,27 @@ fn scan_source(raw: &[u8]) -> ConservationInventory {
         let region_header = body_start.is_none_or(|bs| elem.span.0 < bs);
         let family = classify_element(elem, region_header, &mut title_seen, &mut abstract_seen);
 
+        // Structural damage on elements outside every conservation family
+        // (stray/unclosed structural containers, bare closes) must stay
+        // typed: emit a Malformed-family observation instead of vanishing
+        // silently (R106: corruption can never disappear without a reason).
+        // Well-formed sources produce no malformed elements, so this is a
+        // no-op on every preserved fixture and lift baseline.
+        if family.is_none() && elem.malformed {
+            inv.push(ConservationObservation {
+                family: ConservationFamily::Malformed,
+                ordinal: 0,
+                byte_range: Some(ByteRange::new(
+                    elem.span.0,
+                    elem.span.1.min(raw_len),
+                    raw_len,
+                )),
+                digest: sha256_hex(&raw[elem.span.0.min(raw.len())..elem.span.1.min(raw.len())]),
+                owner_family: None,
+                malformed: true,
+            });
+        }
+
         // Coordinate observations: any element carrying a coords attribute.
         if let Some(coords) = attr_value(&elem.attrs, "coords") {
             let owner = coordinate_owner(elem);
