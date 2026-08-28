@@ -20,6 +20,11 @@
 //!   (missing source file → `ParseFailed`, transport outage → `Unavailable`,
 //!   HTTP 500 → `ParseFailed` carrying the stable typed metadata
 //!   `code=conversion_failed … status=500`),
+//! - **every** [`da_parse::FailureCode`] of the closed S04 vocabulary is proven to
+//!   short-circuit exactly once, preserve all structured metadata on the
+//!   typed surface, keep the historical two-variant compatibility mapping
+//!   (availability class → `Unavailable`, the rest → `ParseFailed`) and leak
+//!   no TEI/PDF payload through the error string (S04/T03),
 //! - `ParserPort::parse_html` default stays `Unavailable`.
 //!
 //! The GROBID transport is a local deterministic stub server — no real GROBID
@@ -30,8 +35,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use da_parse::{
-    CachedTeiBackend, FailurePhase, GrobidHttpBackend, GrobidParser, GrobidProfile, ParseBackend,
-    ParseBackendFailure, ParseBackendRequest, ScholarlyParser, TeiEnvelope, TeiIdentity,
+    CachedTeiBackend, FailurePhase, GrobidHttpBackend, GrobidParser, GrobidProfile, LimitKind,
+    ParseBackend, ParseBackendFailure, ParseBackendRequest, RetryAfter, ScholarlyParser,
+    TeiEnvelope, TeiIdentity,
 };
 use da_ports::parser::{ParserError, ParserPort};
 use sha2::{Digest, Sha256};
@@ -332,6 +338,143 @@ async fn backend_error_short_circuits_lift_and_projection() {
         2,
         "each parse above drove exactly one backend invocation"
     );
+}
+
+/// Representative fake failure per closed [`da_parse::FailureCode`] plus the expected
+/// historical [`ParserError`] variant at the compatibility boundary (S04/T03).
+/// Availability class (busy/timeout/transport) stays `Unavailable`; everything
+/// else fails closed as `ParseFailed`.
+fn every_typed_failure() -> Vec<(&'static str, ParseBackendFailure, ExpectedCompatVariant)> {
+    vec![
+        (
+            "busy",
+            ParseBackendFailure::busy(503, Some(RetryAfter::Seconds(7))),
+            ExpectedCompatVariant::Unavailable,
+        ),
+        (
+            "timeout",
+            ParseBackendFailure::timeout(FailurePhase::AwaitResponse),
+            ExpectedCompatVariant::Unavailable,
+        ),
+        (
+            "transport",
+            ParseBackendFailure::transport(FailurePhase::Connect),
+            ExpectedCompatVariant::Unavailable,
+        ),
+        (
+            "no_content",
+            ParseBackendFailure::no_content(),
+            ExpectedCompatVariant::ParseFailed,
+        ),
+        (
+            "limit_exceeded",
+            ParseBackendFailure::limit(LimitKind::ResponseBytes, None),
+            ExpectedCompatVariant::ParseFailed,
+        ),
+        (
+            "invalid_request",
+            ParseBackendFailure::invalid_request(400),
+            ExpectedCompatVariant::ParseFailed,
+        ),
+        (
+            "conversion_failed",
+            ParseBackendFailure::conversion(FailurePhase::ReadBody, Some(500)),
+            ExpectedCompatVariant::ParseFailed,
+        ),
+        (
+            "invalid_response",
+            ParseBackendFailure::invalid_response(FailurePhase::AwaitResponse, Some(418)),
+            ExpectedCompatVariant::ParseFailed,
+        ),
+    ]
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ExpectedCompatVariant {
+    Unavailable,
+    ParseFailed,
+}
+
+#[tokio::test]
+async fn every_typed_failure_code_short_circuits_and_maps_fail_closed() {
+    // Exhaustive closed-vocabulary coverage: every FailureCode the backend can
+    // emit (S04/T01) short-circuits the composition exactly once and keeps its
+    // historical two-variant compatibility mapping without payload leakage.
+    assert_eq!(
+        every_typed_failure().len(),
+        8,
+        "the closed FailureCode vocabulary has exactly 8 variants — extend this table when it grows"
+    );
+
+    for (name, failure, expected_variant) in every_typed_failure() {
+        let backend = StatefulFakeBackend::new(FakeResponse::Failure(failure.clone()));
+        let parser = ScholarlyParser::new(backend.clone());
+
+        // Typed surface: the structured failure surfaces verbatim — every
+        // safe metadata field preserved (S04/T01 public typed backend).
+        let typed = parser
+            .fetch_envelope_once("comp-paper", PDF_FIXTURE.to_vec())
+            .await
+            .expect_err("typed consumers must observe the backend's own failure verbatim");
+        assert_eq!(
+            typed, failure,
+            "code {name}: typed failure must surface verbatim, unmapped"
+        );
+        assert_eq!(typed.code(), failure.code(), "code {name}");
+        assert_eq!(typed.phase(), failure.phase(), "code {name}");
+        assert_eq!(typed.status(), failure.status(), "code {name}");
+        assert_eq!(typed.retry_after(), failure.retry_after(), "code {name}");
+        assert_eq!(
+            typed.enforced_limit(),
+            failure.enforced_limit(),
+            "code {name}"
+        );
+        assert_eq!(
+            backend.call_count(),
+            1,
+            "code {name}: no hidden retry behind the typed failure"
+        );
+
+        // Compatibility surface: the historical two-variant ParserError
+        // mapping, exactly once per parse, never a third variant, and never
+        // a lift/projection fallback behind the failure.
+        let err = parser
+            .parse("comp-paper", PDF_FIXTURE.to_vec())
+            .await
+            .expect_err("compatibility facade must keep failing closed");
+        assert_eq!(
+            backend.call_count(),
+            2,
+            "code {name}: each parse above drove exactly one backend invocation"
+        );
+        // Exhaustive match pins the two historical variants as the ONLY shapes
+        // the facade can produce.
+        let message = match &err {
+            ParserError::ParseFailed(message) | ParserError::Unavailable(message) => message,
+        };
+        match expected_variant {
+            ExpectedCompatVariant::Unavailable => assert!(
+                matches!(&err, ParserError::Unavailable(_)),
+                "code {name}: availability-class failure must stay Unavailable, got {err:?}"
+            ),
+            ExpectedCompatVariant::ParseFailed => assert!(
+                matches!(&err, ParserError::ParseFailed(_)),
+                "code {name}: fail-closed failure must stay ParseFailed, got {err:?}"
+            ),
+        }
+        assert!(
+            message.contains(&format!("code={}", failure.code())),
+            "code {name}: stable typed metadata must survive the mapping: {message}"
+        );
+        assert!(
+            !message.contains("Composition Parity Paper"),
+            "code {name}: TEI payload must never leak through the error string"
+        );
+        assert!(
+            !message.contains("%PDF-1.4"),
+            "code {name}: PDF payload must never leak through the error string"
+        );
+    }
 }
 
 #[tokio::test]
