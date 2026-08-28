@@ -119,7 +119,9 @@ hard_regressions:
 metrics:
   conservation:
     family_counts: required
-    source_span_retention: required_from_s03
+    source_span_retention: required
+    delta_digest_and_verdict: required
+    malformed_summary: required
     coordinate_coverage: required_from_s07
   quality:
     strict_field_match: required_from_s03
@@ -144,6 +146,36 @@ metrics:
     ablation_lift_same_n: required_when_training
     lineage_hashes: required_when_training
     auto_promote: forbidden
+
+# S03/T04: every exact TeiEnvelope/TeiParseIr pair executed by a parse-compat
+# report must run through the sanctioned provider-neutral conservation engine
+# and carry its typed, redacting delta evidence (R106). The aggregate always
+# equals the sum over per-case rows; malformed bytes are summarized, never
+# hidden.
+conservation_evidence:
+  engine: da_parse::ConservationEngine
+  required_per_case_fields:
+  - engine
+  - backend_id
+  - profile_fingerprint
+  - paper_id
+  - raw_tei_sha256
+  - raw_tei_len
+  - verdict
+  - delta_digest
+  - total_rows
+  - loss_rows
+  - malformed_rows
+  - reason_counts
+  - structure_counts
+  - family_counts
+  - source_span_retention
+  - delta
+  identity_binding: >-
+    Per case: raw_tei_sha256 == case source_sha256, backend_id == cached-tei
+    envelope identity, profile_fingerprint == case profile fingerprint.
+  aggregate_rule: aggregate_counts_equal_per_case_sums
+  used_by: [S03-T04]
 
 promotion:
   default_state: candidate

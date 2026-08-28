@@ -356,3 +356,26 @@ let fixtures = \"crates/da-parse/tests/fixtures/preserved/x.tei.xml\";
     // Unrelated content must stay clean.
     assert!(parse_default_hits("let stage = \"parse.stage.lift_tei\";\n").is_empty());
 }
+
+// ───────── S03/T04: single sanctioned conservation evidence path ─────────
+
+#[test]
+fn parse_compat_emitter_consumes_the_engine_without_a_second_implementation() {
+    let emitter = read_text("crates/da-cli/examples/parse_compat_baseline.rs");
+    assert!(
+        emitter.contains("ConservationEngine"),
+        "parse-compat emitter must run the sanctioned da-parse conservation engine (S03/T04)"
+    );
+    for needle in [
+        "struct ConservationDelta",
+        "struct ConservationEntry",
+        "struct ConservationIdentity",
+        "fn scan_source",
+        "fn digest_delta",
+    ] {
+        assert!(
+            !emitter.contains(needle),
+            "emitter must not duplicate the conservation model/comparator (`{needle}`) — one engine, one evidence path, no second ledger"
+        );
+    }
+}

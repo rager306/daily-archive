@@ -70,8 +70,10 @@ const FROZEN_AGGREGATE_OUTPUT_HASH: &str =
     "sha256:90484527edcf0f853ec25da84caef9ccec06840f5cd5d22068a7ff1cc34a0a3f";
 const FROZEN_SOURCE_HASH: &str =
     "sha256:d0b2c6c7e3b4af551b1e804705b6424cd1c367832516beb383d9c3cb5ade4c49";
+/// Rotated by S03/T04: the manifest now requires `conservation_delta`
+/// evidence per case; the byte identity of the manifest text follows.
 const FROZEN_CORPUS_HASH: &str =
-    "sha256:8e142e918a2c16ecdafabd9240e5095fe2cb44d9f3539597dc9faf589cf33f87";
+    "sha256:0156f0208729d04446201b5589616931a3d7e7bae076687f72cc96e895c37b08";
 /// All three executed S01 cases run under the rich profile.
 const FROZEN_PROFILE_FINGERPRINT: &str = RICH_FP;
 
@@ -577,4 +579,124 @@ fn tei_lifter_replay_is_byte_deterministic() {
         serde_json::to_vec(&ir_b).expect("ir serializes"),
         "TeiLifter replay must stay byte-deterministic"
     );
+}
+
+// ───────── S03/T04 conservation evidence binding ─────────
+
+#[test]
+fn s03_conservation_evidence_is_bound_per_case_and_aggregates_exactly() {
+    let baseline = load_baseline();
+    let cases = baseline_cases(&baseline);
+    assert_eq!(cases.len(), 3, "three bound executed cases");
+
+    let mut reason_totals: BTreeMap<String, u64> = BTreeMap::new();
+    let mut structure_totals: BTreeMap<String, u64> = BTreeMap::new();
+    let mut total_rows = 0u64;
+    for case in &cases {
+        let cons = case
+            .get("conservation")
+            .expect("every executed case carries conservation evidence");
+        assert_eq!(
+            cons.get("engine").and_then(|v| v.as_str()),
+            Some("da_parse::ConservationEngine"),
+            "the sanctioned engine must stay bound"
+        );
+        assert_eq!(
+            cons.get("backend_id").and_then(|v| v.as_str()),
+            Some("cached-tei"),
+            "direct-TEI conservation identity is the cached-tei envelope identity"
+        );
+        assert_eq!(
+            cons.get("raw_tei_sha256").and_then(|v| v.as_str()),
+            Some(str_field(case, "source_sha256")),
+            "delta identity must bind the exact fixture checksum"
+        );
+        assert_eq!(
+            cons.get("profile_fingerprint").and_then(|v| v.as_str()),
+            Some(str_field(case, "profile_fingerprint")),
+            "delta identity must bind the exact profile fingerprint"
+        );
+        assert_eq!(
+            cons.get("verdict").and_then(|v| v.as_str()),
+            Some("loss_detected"),
+            "pristine preserved baseline stays pinned loss_detected (S03/T02)"
+        );
+        assert_eq!(
+            cons.get("malformed_rows").and_then(|v| v.as_u64()),
+            Some(0),
+            "pristine fixtures carry no malformed bytes"
+        );
+        let digest = cons
+            .get("delta_digest")
+            .and_then(|v| v.as_str())
+            .expect("delta_digest present");
+        assert_eq!(digest.len(), 64, "delta digest is plain 64-hex");
+        assert_eq!(
+            cons.pointer("/delta/identity/raw_tei_sha256")
+                .and_then(|v| v.as_str()),
+            Some(str_field(case, "source_sha256")),
+            "the embedded delta carries the same exact identity"
+        );
+        for (reason, count) in cons
+            .get("reason_counts")
+            .and_then(|v| v.as_object())
+            .expect("reason_counts object")
+        {
+            *reason_totals.entry(reason.clone()).or_insert(0) += count.as_u64().unwrap_or(0);
+        }
+        for (key, count) in cons
+            .get("structure_counts")
+            .and_then(|v| v.as_object())
+            .expect("structure_counts object")
+        {
+            *structure_totals.entry(key.clone()).or_insert(0) += count.as_u64().unwrap_or(0);
+        }
+        total_rows += cons.get("total_rows").and_then(|v| v.as_u64()).unwrap_or(0);
+    }
+
+    let aggregate = baseline
+        .get("conservation")
+        .expect("aggregate conservation section");
+    assert_eq!(aggregate.get("cases").and_then(|v| v.as_u64()), Some(3));
+    assert_eq!(
+        aggregate
+            .pointer("/verdicts/loss_detected")
+            .and_then(|v| v.as_u64()),
+        Some(3)
+    );
+    assert_eq!(
+        aggregate.get("total_rows").and_then(|v| v.as_u64()),
+        Some(total_rows)
+    );
+    assert_eq!(
+        aggregate.get("malformed_rows").and_then(|v| v.as_u64()),
+        Some(0)
+    );
+    for (reason, total) in aggregate
+        .get("reason_counts")
+        .and_then(|v| v.as_object())
+        .expect("aggregate reason_counts")
+    {
+        assert_eq!(
+            total.as_u64(),
+            Some(reason_totals.get(reason).copied().unwrap_or(0)),
+            "aggregate reason {reason} must equal the per-case sum"
+        );
+    }
+    for (key, total) in aggregate
+        .get("structure_counts")
+        .and_then(|v| v.as_object())
+        .expect("aggregate structure_counts")
+    {
+        assert_eq!(
+            total.as_u64(),
+            Some(structure_totals.get(key).copied().unwrap_or(0)),
+            "aggregate structure {key} must equal the per-case sum"
+        );
+    }
+    let digests = aggregate
+        .get("delta_digests")
+        .and_then(|v| v.as_object())
+        .expect("aggregate delta_digests map");
+    assert_eq!(digests.len(), 3, "one digest per case");
 }

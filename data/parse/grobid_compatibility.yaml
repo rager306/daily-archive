@@ -1062,8 +1062,10 @@ capabilities:
         S02/T02 is the provider-neutral TeiLifter (TeiEnvelope + logical
         paper_id/pdf_hash in, TeiParseIr out); GrobidParser::lift_tei delegates
         to the same code. Silent skip of missing fixtures is a hard integrity
-        regression. Conservation inventory is S03. P0 idno/authors/figures/coords
-        is S07.
+        regression. Conservation inventory is S03: the typed evidence is
+        da_parse::ConservationEngine.compare(TeiEnvelope, TeiParseIr), bound
+        per case in the parse-compat baseline report (S03/T04). P0
+        idno/authors/figures/coords is S07.
     baseline: preserved-java-tei
     candidate: da-parse@lift-v1
     evidence_ref: crates/da-parse/src/lift.rs
@@ -1074,7 +1076,7 @@ capabilities:
     - invented_revision
     - nondeterministic_output
     metrics:
-      conservation: family_counts_vs_tei
+      conservation: conservation_delta_vs_tei
       quality: current_lifted_counts
       performance: lift_latency_ms
     rollback_target: preserved-java-tei

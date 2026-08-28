@@ -12,6 +12,14 @@
 //!   and binds source hash, fixture/provenance identity, profile fingerprint,
 //!   output hash, family counts, current lifted counts and hard-regression
 //!   statuses. RAW PDF/TEI/document text NEVER enters the report.
+//! - Conservation evidence (S03/T04): every executed case runs its exact
+//!   `TeiEnvelope`/`TeiParseIr` pair through the public provider-neutral
+//!   `da_parse::ConservationEngine`; the report carries per-case and
+//!   aggregate family/span/structure/reason-code counts, the delta verdict
+//!   and digest, and a malformed summary — keyed to the exact
+//!   fixture/backend/profile identity. Replay equality is asserted in-process
+//!   (byte-identical delta), and injected loss stays visible as typed
+//!   non-zero reasons (proven by the focused tests below).
 //! - Java GROBID evidence is a separate, explicitly selected mode (`--java`).
 //!   The default run never contacts GROBID. Unavailable/unobserved Java
 //!   evidence is reported honestly; no version/request/latency/output value is
@@ -42,7 +50,11 @@ use std::process::ExitCode;
 use std::time::{Duration, Instant};
 
 use clap::Parser as CliParser;
-use da_parse::{GrobidParser, GrobidProfile};
+use da_parse::{
+    CACHED_TEI_BACKEND_ID, ConservationDelta, ConservationEngine, ConservationFamily,
+    ConservationReasonCode, FamilyDeltaCounts, GrobidParser, GrobidProfile, TeiEnvelope,
+    TeiIdentity, TeiLifter,
+};
 use da_ports::parser::{ParsedArticle, ParserPort};
 use serde::Deserialize;
 use serde_json::json;
@@ -64,6 +76,9 @@ const JAVA_PROBE_TIMEOUT: Duration = Duration::from_secs(10);
 
 const REPORT_SCHEMA_VERSION: &str = "parse-compat-baseline.v1";
 const CONTRACT_ID: &str = "parse-comparison";
+/// Sanctioned conservation engine bound by the comparison contract
+/// (data/parse/comparison_contract.yaml `conservation_evidence.engine`).
+const CONSERVATION_ENGINE_ID: &str = "da_parse::ConservationEngine";
 const BACKEND_ID_DIRECT: &str = "da-parse-direct-tei";
 const CORPUS_CLASS: &str = "fast_local_fixtures";
 /// Ledger entry whose multipart request fields Java observations must echo.
@@ -261,6 +276,53 @@ struct HardRegressionStatus {
     evidence: String,
 }
 
+/// Bounded span-retention counts: how many observed source byte spans exist
+/// and how many of them are retained verbatim in the candidate identity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+struct SourceSpanRetention {
+    source_spans: u64,
+    retained_spans: u64,
+}
+
+/// Per-case conservation evidence from the sanctioned engine. Serialized
+/// content is identity/counts/ordinals/ranges/digests only — the embedded
+/// `delta` (full ConservationDelta) is redacting by construction.
+#[derive(Debug, Clone, serde::Serialize)]
+struct ConservationCaseEvidence {
+    engine: String,
+    backend_id: String,
+    profile_fingerprint: String,
+    paper_id: String,
+    raw_tei_len: u64,
+    raw_tei_sha256: String,
+    verdict: String,
+    delta_digest: String,
+    total_rows: u64,
+    loss_rows: u64,
+    malformed_rows: u64,
+    reason_counts: BTreeMap<String, u64>,
+    structure_counts: BTreeMap<String, u64>,
+    family_counts: BTreeMap<ConservationFamily, FamilyDeltaCounts>,
+    source_span_retention: SourceSpanRetention,
+    delta: ConservationDelta,
+}
+
+/// Deterministic conservation aggregate: every counter is exactly the sum
+/// over the per-case rows (self-validated on every render, tested in-file).
+#[derive(Debug, Clone, serde::Serialize)]
+struct ConservationAggregate {
+    cases: usize,
+    verdicts: BTreeMap<String, u64>,
+    reason_counts: BTreeMap<String, u64>,
+    structure_counts: BTreeMap<String, u64>,
+    family_counts: BTreeMap<ConservationFamily, FamilyDeltaCounts>,
+    total_rows: u64,
+    loss_rows: u64,
+    malformed_rows: u64,
+    source_span_retention: SourceSpanRetention,
+    delta_digests: BTreeMap<String, String>,
+}
+
 #[derive(Debug, serde::Serialize)]
 struct CaseReport {
     case_id: String,
@@ -280,6 +342,7 @@ struct CaseReport {
     lifted_counts: BTreeMap<String, u64>,
     output_hash: String,
     outcome: String,
+    conservation: ConservationCaseEvidence,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -331,6 +394,7 @@ struct BaselineReport {
     report_identity: ReportIdentity,
     cases: Vec<CaseReport>,
     pending_cases: Vec<PendingCaseReport>,
+    conservation: ConservationAggregate,
     java_grobid: JavaEvidence,
     policy_locks: PolicyLocks,
 }
@@ -479,6 +543,7 @@ struct ContractData {
     promotion_default: String,
     rollback_target: String,
     hard_regressions: Vec<(String, String)>,
+    conservation_required_fields: Vec<String>,
 }
 
 fn load_contract(repo_root: &Path) -> Result<ContractData, String> {
@@ -525,6 +590,24 @@ fn load_contract(repo_root: &Path) -> Result<ContractData, String> {
         .and_then(|s| s.as_str())
         .map(str::to_string)
         .ok_or("[contract-shape] missing rollback.default_target")?;
+    // S03/T04: the contract binds the sanctioned conservation engine and the
+    // per-case evidence fields this emitter must carry and self-validate.
+    let conservation = v
+        .get("conservation_evidence")
+        .ok_or("[contract-shape] missing conservation_evidence (S03/T04 binding)")?;
+    let engine = conservation
+        .get("engine")
+        .and_then(|e| e.as_str())
+        .ok_or("[contract-shape] missing conservation_evidence.engine")?;
+    if engine != CONSERVATION_ENGINE_ID {
+        return Err(format!(
+            "[contract-engine-drift] contract binds conservation engine `{engine}` but the sanctioned engine is `{CONSERVATION_ENGINE_ID}`"
+        ));
+    }
+    let conservation_required_fields = str_vec(
+        conservation.get("required_per_case_fields"),
+        "conservation_evidence.required_per_case_fields",
+    )?;
     let mut hard_regressions = Vec::new();
     if let Some(seq) = v.get("hard_regressions").and_then(|h| h.as_sequence()) {
         for item in seq {
@@ -547,6 +630,7 @@ fn load_contract(repo_root: &Path) -> Result<ContractData, String> {
         promotion_default,
         rollback_target,
         hard_regressions,
+        conservation_required_fields,
     })
 }
 
@@ -661,6 +745,127 @@ fn family_counts_of(lifted: &BTreeMap<String, u64>) -> BTreeMap<String, u64> {
         .collect()
 }
 
+// ─────────────────── conservation evidence (S03/T04, R106) ────────────
+
+/// Closed reason-code counts of one delta (canonical snake_case keys).
+fn reason_counts_of(delta: &ConservationDelta) -> BTreeMap<String, u64> {
+    let mut counts = BTreeMap::new();
+    for entry in &delta.entries {
+        *counts.entry(entry.reason.as_str().to_string()).or_insert(0) += 1;
+    }
+    counts
+}
+
+/// Structure observations grouped by their stable structure key.
+fn structure_counts_of(delta: &ConservationDelta) -> BTreeMap<String, u64> {
+    let mut counts = BTreeMap::new();
+    for entry in &delta.entries {
+        if let Some(key) = &entry.structure_key {
+            *counts.entry(key.clone()).or_insert(0) += 1;
+        }
+    }
+    counts
+}
+
+/// How many observed source byte spans exist and how many survived as
+/// retained candidate identity (contract metric `source_span_retention`).
+fn source_span_retention_of(delta: &ConservationDelta) -> SourceSpanRetention {
+    let source_spans = delta
+        .family_counts
+        .values()
+        .map(|counts| u64::from(counts.source))
+        .sum();
+    let retained_spans = delta
+        .entries
+        .iter()
+        .filter(|entry| {
+            entry.reason == ConservationReasonCode::Retained && entry.byte_range.is_some()
+        })
+        .count() as u64;
+    SourceSpanRetention {
+        source_spans,
+        retained_spans,
+    }
+}
+
+/// Per-case evidence derived from the engine's redacting delta only.
+fn conservation_case_evidence(delta: &ConservationDelta) -> ConservationCaseEvidence {
+    ConservationCaseEvidence {
+        engine: CONSERVATION_ENGINE_ID.into(),
+        backend_id: delta.identity.backend_id.clone(),
+        profile_fingerprint: delta.identity.profile_fingerprint.clone(),
+        paper_id: delta.identity.paper_id.clone(),
+        raw_tei_len: u64::from(delta.identity.raw_tei_len),
+        raw_tei_sha256: delta.identity.raw_tei_sha256.clone(),
+        verdict: delta.verdict.as_str().into(),
+        delta_digest: delta.delta_digest.clone(),
+        total_rows: delta.entries.len() as u64,
+        loss_rows: delta.entries.iter().filter(|e| e.reason.is_loss()).count() as u64,
+        malformed_rows: delta
+            .entries
+            .iter()
+            .filter(|e| e.reason == ConservationReasonCode::MalformedSource)
+            .count() as u64,
+        reason_counts: reason_counts_of(delta),
+        structure_counts: structure_counts_of(delta),
+        family_counts: delta.family_counts.clone(),
+        source_span_retention: source_span_retention_of(delta),
+        delta: delta.clone(),
+    }
+}
+
+/// Deterministic aggregate: every counter is exactly the sum over the
+/// per-case rows (self-validated and byte-compared in tests).
+fn aggregate_conservation(cases: &[CaseReport]) -> ConservationAggregate {
+    let mut aggregate = ConservationAggregate {
+        cases: cases.len(),
+        verdicts: BTreeMap::new(),
+        reason_counts: BTreeMap::new(),
+        structure_counts: BTreeMap::new(),
+        family_counts: BTreeMap::new(),
+        total_rows: 0,
+        loss_rows: 0,
+        malformed_rows: 0,
+        source_span_retention: SourceSpanRetention {
+            source_spans: 0,
+            retained_spans: 0,
+        },
+        delta_digests: BTreeMap::new(),
+    };
+    for case in cases {
+        let evidence = &case.conservation;
+        *aggregate
+            .verdicts
+            .entry(evidence.verdict.clone())
+            .or_insert(0) += 1;
+        for (reason, count) in &evidence.reason_counts {
+            *aggregate.reason_counts.entry(reason.clone()).or_insert(0) += count;
+        }
+        for (key, count) in &evidence.structure_counts {
+            *aggregate.structure_counts.entry(key.clone()).or_insert(0) += count;
+        }
+        for (family, counts) in &evidence.family_counts {
+            let totals = aggregate.family_counts.entry(*family).or_default();
+            totals.source += counts.source;
+            totals.candidate += counts.candidate;
+            totals.retained += counts.retained;
+            totals.unsupported += counts.unsupported;
+            totals.lost += counts.lost;
+            totals.malformed += counts.malformed;
+        }
+        aggregate.total_rows += evidence.total_rows;
+        aggregate.loss_rows += evidence.loss_rows;
+        aggregate.malformed_rows += evidence.malformed_rows;
+        aggregate.source_span_retention.source_spans += evidence.source_span_retention.source_spans;
+        aggregate.source_span_retention.retained_spans +=
+            evidence.source_span_retention.retained_spans;
+        aggregate
+            .delta_digests
+            .insert(case.case_id.clone(), evidence.delta_digest.clone());
+    }
+    aggregate
+}
+
 // ──────────────────────── fixture resolution ──────────────────────────
 
 struct ResolvedFixture {
@@ -670,8 +875,8 @@ struct ResolvedFixture {
     provenance: ProvenanceFixture,
 }
 
-fn resolve_bound_fixtures<'a>(
-    manifest: &'a Manifest,
+fn resolve_bound_fixtures(
+    manifest: &Manifest,
     provenance: &Provenance,
     fixtures_root: &Path,
 ) -> Result<Vec<ResolvedFixture>, String> {
@@ -1148,34 +1353,55 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
     let mut case_reports = Vec::new();
     for r in &resolved {
         let case = &manifest.cases[r.case_index];
-        let tei = String::from_utf8(
-            std::fs::read(
-                inputs.fixtures_root.join(
-                    r.source_path
-                        .strip_prefix(FIXTURE_PREFIX)
-                        .expect("prefix re-checked at resolution"),
-                ),
-            )
-            .map_err(|e| format!("[missing-fixture-file] case `{}`: {e}", case.id))?,
+        let tei_bytes = std::fs::read(
+            inputs.fixtures_root.join(
+                r.source_path
+                    .strip_prefix(FIXTURE_PREFIX)
+                    .expect("prefix re-checked at resolution"),
+            ),
         )
-        .map_err(|e| format!("[fixture-not-utf8] case `{}`: {e}", case.id))?;
+        .map_err(|e| format!("[missing-fixture-file] case `{}`: {e}", case.id))?;
+        // The fail-visible UTF-8 gate is preserved: preserved fixtures must
+        // be clean UTF-8 (the lifter's lossy decode is only a totality floor
+        // for adversarial input, never an excuse for drifted fixtures).
+        String::from_utf8(tei_bytes.clone())
+            .map_err(|e| format!("[fixture-not-utf8] case `{}`: {e}", case.id))?;
 
         let profile = profile_by_name(&case.grobid_profile)?;
-        let ir = GrobidParser::lift_tei(
-            tei.clone(),
+        // Exact envelope/IR pair (S03/T04): cached-TEI envelope identity
+        // rides the case's own profile fingerprint; no HTTP anywhere.
+        let envelope = TeiEnvelope::new(tei_bytes, TeiIdentity::cached_tei(profile));
+        let engine = ConservationEngine::new();
+        let lifter = TeiLifter::new();
+        let ir = lifter.lift(
+            &envelope,
             r.provenance.paper_id.clone(),
             r.source_sha256.clone(),
         );
+        let delta_first = engine.compare(&envelope, &ir);
         let article = GrobidParser::project_article(ir);
         let hash_first = output_hash_of(&article);
 
-        let ir_again =
-            GrobidParser::lift_tei(tei, r.provenance.paper_id.clone(), r.source_sha256.clone());
+        // Replay: identical bytes must reproduce the identical lift output
+        // AND the identical conservation delta (full equality, not just the
+        // digest).
+        let ir_again = lifter.lift(
+            &envelope,
+            r.provenance.paper_id.clone(),
+            r.source_sha256.clone(),
+        );
+        let delta_again = engine.compare(&envelope, &ir_again);
         let article_again = GrobidParser::project_article(ir_again);
         let hash_again = output_hash_of(&article_again);
         if hash_first != hash_again {
             return Err(format!(
                 "[nondeterministic-output] case `{}`: output hash changed across in-process replay ({hash_first} vs {hash_again})",
+                case.id
+            ));
+        }
+        if delta_first != delta_again {
+            return Err(format!(
+                "[nondeterministic-conservation] case `{}`: conservation delta changed across in-process replay",
                 case.id
             ));
         }
@@ -1199,8 +1425,11 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
             lifted_counts: lifted,
             output_hash: hash_first,
             outcome: "parse_ok".into(),
+            conservation: conservation_case_evidence(&delta_first),
         });
     }
+
+    let conservation = aggregate_conservation(&case_reports);
 
     // 4. Aggregate deterministic identity (sorted, path-independent).
     let mut fixture_ids = BTreeSet::new();
@@ -1314,6 +1543,7 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
         report_identity: identity,
         cases: case_reports,
         pending_cases: pending_reports,
+        conservation,
         java_grobid,
         policy_locks: manifest.policy_locks,
     })
@@ -1370,6 +1600,56 @@ fn self_validate(
                 "[forbidden-field] `{forbidden}` leaked into the report"
             ));
         }
+    }
+
+    // Conservation evidence: contract-required per-case fields, exact
+    // fixture/backend/profile identity binding, digest shape, and aggregate
+    // == case-row sums (S03/T04).
+    for case in &report.cases {
+        let cons =
+            serde_json::to_value(&case.conservation).map_err(|e| format!("[serialization] {e}"))?;
+        for field in &contract.conservation_required_fields {
+            if cons.get(field).is_none() {
+                return Err(format!(
+                    "[missing-conservation-field] `{field}` absent from case `{}` conservation evidence",
+                    case.case_id
+                ));
+            }
+        }
+        if case.conservation.engine != CONSERVATION_ENGINE_ID
+            || case.conservation.backend_id != CACHED_TEI_BACKEND_ID
+            || case.conservation.raw_tei_sha256 != case.source_sha256
+            || case.conservation.profile_fingerprint != case.profile_fingerprint
+        {
+            return Err(format!(
+                "[conservation-binding-mismatch] case `{}`: delta identity does not bind the exact fixture/backend/profile identity",
+                case.case_id
+            ));
+        }
+        let digest = case.conservation.delta_digest.trim_start_matches("sha256:");
+        if !is_sha256_hex(digest) {
+            return Err(format!(
+                "[conservation-digest-shape] case `{}`: delta digest is not a sha256 hex string",
+                case.case_id
+            ));
+        }
+    }
+    let recomputed = aggregate_conservation(&report.cases);
+    let recomputed_value =
+        serde_json::to_value(&recomputed).map_err(|e| format!("[serialization] {e}"))?;
+    let aggregate_value =
+        serde_json::to_value(&report.conservation).map_err(|e| format!("[serialization] {e}"))?;
+    if recomputed_value != aggregate_value {
+        return Err(
+            "[conservation-aggregate-mismatch] aggregate conservation counters are not the exact sum over per-case rows"
+                .into(),
+        );
+    }
+    if report.conservation.cases != report.cases.len() {
+        return Err(
+            "[conservation-same-n] conservation aggregate does not cover every executed case"
+                .into(),
+        );
     }
 
     // Raw-document canaries: bibliographic titles from provenance and TEI
@@ -1476,6 +1756,14 @@ fn main() -> ExitCode {
                 "  output_hash={} profile={}",
                 identity.output_hash, identity.profile_fingerprint
             );
+            println!(
+                "  conservation: cases={} verdicts={:?} total_rows={} loss_rows={} malformed_rows={}",
+                report.conservation.cases,
+                report.conservation.verdicts,
+                report.conservation.total_rows,
+                report.conservation.loss_rows,
+                report.conservation.malformed_rows
+            );
             println!("  family_counts: {:?}", identity.family_counts);
             println!(
                 "  pending_cases={} java={}",
@@ -1484,13 +1772,17 @@ fn main() -> ExitCode {
             );
             for c in &report.cases {
                 println!(
-                    "  case {}: sections={} citations={} tables={} formulas={} output_hash={}",
+                    "  case {}: sections={} citations={} tables={} formulas={} output_hash={} conservation={}/{} rows={} digest={}",
                     c.case_id,
                     c.family_counts.get("sections").unwrap_or(&0),
                     c.family_counts.get("citations").unwrap_or(&0),
                     c.family_counts.get("tables").unwrap_or(&0),
                     c.family_counts.get("formulas").unwrap_or(&0),
-                    c.output_hash
+                    c.output_hash,
+                    c.conservation.verdict,
+                    c.conservation.loss_rows,
+                    c.conservation.total_rows,
+                    c.conservation.delta_digest
                 );
             }
             println!("  elapsed_ms={}", started.elapsed().as_millis());
@@ -1712,6 +2004,10 @@ mod tests {
         }
         // Identity/count/shape fields stay present while raw families stay out.
         assert!(text.contains("family_counts"));
+        assert!(
+            text.contains("\"conservation\"") && text.contains("delta_digest"),
+            "conservation evidence must be present in the serialized report"
+        );
         let value = serde_json::to_value(&report).unwrap();
         let mut keys = Vec::new();
         collect_object_keys(&value, &mut keys);
@@ -1800,6 +2096,244 @@ mod tests {
                 .join("preserved/hub_2507.19457.structural.tei.xml")
                 .exists(),
             "structural fixture must NOT be invented"
+        );
+    }
+
+    // ────────────── S03/T04 conservation evidence ──────────────
+
+    const HUB_FIXTURE_REL: &str = "crates/da-parse/tests/fixtures/preserved/hub_2507.19457.tei.xml";
+
+    fn find_sub(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+        haystack.windows(needle.len()).position(|w| w == needle)
+    }
+
+    /// M2-style injected corruption (mirrors the S03/T02 contract helper):
+    /// break the first `</head>` close tag so the source span is damaged.
+    fn corrupt_first_head_close_tag(bytes: &[u8]) -> Vec<u8> {
+        let position = find_sub(bytes, b"</head>").expect("fixture carries a </head> close tag");
+        let mut mutated = bytes.to_vec();
+        mutated.splice(position..position + 7, b"</heab>".iter().copied());
+        mutated
+    }
+
+    #[test]
+    fn conservation_aggregate_equals_case_sums_and_binds_exact_identity() {
+        let (inputs, _) = test_inputs(default_java());
+        let (report, text) = build_and_render(&inputs).expect("render");
+        let aggregate = &report.conservation;
+        assert_eq!(aggregate.cases, 3, "same-n conservation coverage");
+        assert_eq!(
+            aggregate.verdicts.get("loss_detected"),
+            Some(&3),
+            "pristine preserved baseline is pinned loss_detected (S03/T02)"
+        );
+        assert_eq!(
+            aggregate.malformed_rows, 0,
+            "pristine fixtures carry no malformed bytes"
+        );
+        for (reason, total) in &aggregate.reason_counts {
+            let sum: u64 = report
+                .cases
+                .iter()
+                .map(|c| {
+                    c.conservation
+                        .reason_counts
+                        .get(reason)
+                        .copied()
+                        .unwrap_or(0)
+                })
+                .sum();
+            assert_eq!(
+                *total, sum,
+                "reason {reason} aggregate must equal the case sum"
+            );
+        }
+        for (key, total) in &aggregate.structure_counts {
+            let sum: u64 = report
+                .cases
+                .iter()
+                .map(|c| {
+                    c.conservation
+                        .structure_counts
+                        .get(key)
+                        .copied()
+                        .unwrap_or(0)
+                })
+                .sum();
+            assert_eq!(
+                *total, sum,
+                "structure {key} aggregate must equal the case sum"
+            );
+        }
+        for (family, counts) in &aggregate.family_counts {
+            let mut sum = FamilyDeltaCounts::default();
+            for case in &report.cases {
+                let per = case
+                    .conservation
+                    .family_counts
+                    .get(family)
+                    .copied()
+                    .unwrap_or_default();
+                sum.source += per.source;
+                sum.candidate += per.candidate;
+                sum.retained += per.retained;
+                sum.unsupported += per.unsupported;
+                sum.lost += per.lost;
+                sum.malformed += per.malformed;
+            }
+            assert_eq!(
+                counts, &sum,
+                "family {family:?} aggregate must equal the case sum"
+            );
+        }
+        let total_rows: u64 = report.cases.iter().map(|c| c.conservation.total_rows).sum();
+        assert_eq!(aggregate.total_rows, total_rows);
+        let loss_rows: u64 = report.cases.iter().map(|c| c.conservation.loss_rows).sum();
+        assert_eq!(aggregate.loss_rows, loss_rows);
+        let source_spans: u64 = report
+            .cases
+            .iter()
+            .map(|c| c.conservation.source_span_retention.source_spans)
+            .sum();
+        assert_eq!(aggregate.source_span_retention.source_spans, source_spans);
+        assert!(
+            aggregate.source_span_retention.source_spans > 0,
+            "every observed source span must be counted"
+        );
+        for case in &report.cases {
+            let cons = &case.conservation;
+            assert_eq!(cons.engine, CONSERVATION_ENGINE_ID);
+            assert_eq!(cons.backend_id, CACHED_TEI_BACKEND_ID);
+            assert_eq!(
+                cons.raw_tei_sha256, case.source_sha256,
+                "delta identity binds the exact fixture checksum"
+            );
+            assert_eq!(cons.profile_fingerprint, case.profile_fingerprint);
+            assert_eq!(cons.paper_id, case.provenance_paper_id);
+            assert!(is_sha256_hex(
+                cons.delta_digest.trim_start_matches("sha256:")
+            ));
+            assert!(cons.total_rows > 0);
+        }
+        assert_eq!(aggregate.delta_digests.len(), 3, "one digest per case");
+        assert!(
+            text.contains("\"conservation\"") && text.contains("delta_digest"),
+            "serialized report must carry the conservation evidence"
+        );
+    }
+
+    #[test]
+    fn injected_family_loss_yields_exact_nonzero_typed_reasons() {
+        let (inputs, repo) = test_inputs(default_java());
+        let (report, _) = build_and_render(&inputs).expect("render");
+        let row = report
+            .cases
+            .iter()
+            .find(|c| c.source_path.ends_with("hub_2507.19457.tei.xml"))
+            .expect("hub case present");
+        let (paper, sha, emitter_digest) = (
+            row.provenance_paper_id.clone(),
+            row.source_sha256.clone(),
+            row.conservation.delta_digest.clone(),
+        );
+        let bytes = std::fs::read(repo.join(HUB_FIXTURE_REL)).expect("hub fixture readable");
+        let envelope = TeiEnvelope::new(bytes, TeiIdentity::cached_tei(GrobidProfile::rich()));
+        let engine = ConservationEngine::new();
+        let lifter = TeiLifter::new();
+        let pristine = engine.compare(&envelope, &lifter.lift(&envelope, paper, sha));
+        assert_eq!(
+            pristine.delta_digest, emitter_digest,
+            "the emitter baseline and a direct engine run must agree exactly"
+        );
+
+        // Injected loss: delete one lifted citation item from the candidate.
+        let mut ir = lifter.lift(&envelope, "2507.19457", "hub");
+        ir.citations.pop();
+        let mutated = engine.compare(&envelope, &ir);
+        assert_eq!(mutated.verdict.as_str(), "loss_detected");
+        let pristine_reasons = reason_counts_of(&pristine);
+        let mutated_reasons = reason_counts_of(&mutated);
+        let bump =
+            |counts: &BTreeMap<String, u64>, key: &str| counts.get(key).copied().unwrap_or(0);
+        assert_eq!(
+            bump(&mutated_reasons, "observed_but_missing"),
+            bump(&pristine_reasons, "observed_but_missing") + 1,
+            "exactly one extra observed_but_missing row"
+        );
+        assert_eq!(
+            bump(&mutated_reasons, "count_mismatch"),
+            bump(&pristine_reasons, "count_mismatch"),
+            "count_mismatch is a family-level row; the citation family already carries exactly one in the pristine baseline (header sourceDesc biblStruct)"
+        );
+        let pristine_citations = pristine
+            .family_counts
+            .get(&ConservationFamily::CitationEntry)
+            .copied()
+            .unwrap_or_default();
+        let mutated_citations = mutated
+            .family_counts
+            .get(&ConservationFamily::CitationEntry)
+            .copied()
+            .unwrap_or_default();
+        assert_eq!(
+            mutated_citations.lost,
+            pristine_citations.lost + 1,
+            "citation_entry lost count must move by exactly one"
+        );
+        assert_eq!(
+            mutated.entries.len(),
+            pristine.entries.len(),
+            "the lost item's retained row becomes the extra observed_but_missing row; the family-level count_mismatch row stays single"
+        );
+        assert_ne!(mutated.delta_digest, pristine.delta_digest);
+    }
+
+    #[test]
+    fn injected_malformed_bytes_yield_nonzero_malformed_summary_and_stay_bounded() {
+        let (_inputs, repo) = test_inputs(default_java());
+        let bytes = std::fs::read(repo.join(HUB_FIXTURE_REL)).expect("hub fixture readable");
+        let corrupted_bytes = corrupt_first_head_close_tag(&bytes);
+        let envelope = TeiEnvelope::new(
+            corrupted_bytes.clone(),
+            TeiIdentity::cached_tei(GrobidProfile::rich()),
+        );
+        let engine = ConservationEngine::new();
+        let lifter = TeiLifter::new();
+        let ir = lifter.lift(&envelope, "2507.19457", "hub");
+        let first = engine.compare(&envelope, &ir);
+        let replay = engine.compare(&envelope, &ir);
+        assert_eq!(
+            first, replay,
+            "conservation replay must stay byte-identical on malformed bytes"
+        );
+        assert_eq!(first.verdict.as_str(), "malformed_source");
+        let evidence = conservation_case_evidence(&first);
+        assert!(
+            evidence.malformed_rows >= 1,
+            "malformed summary must count the injected corruption"
+        );
+        assert!(
+            evidence
+                .reason_counts
+                .get("malformed_source")
+                .copied()
+                .unwrap_or(0)
+                >= 1
+        );
+        let sections = evidence
+            .family_counts
+            .get(&ConservationFamily::Section)
+            .copied()
+            .unwrap_or_default();
+        assert!(
+            sections.malformed >= 1,
+            "the corrupted </head> close tag must surface as a malformed section span"
+        );
+        assert!(
+            evidence.delta.entries.iter().all(|e| e
+                .byte_range
+                .map_or(true, |range| range.is_valid(corrupted_bytes.len()))),
+            "every reported byte range must satisfy the safe-bounds invariant"
         );
     }
 }

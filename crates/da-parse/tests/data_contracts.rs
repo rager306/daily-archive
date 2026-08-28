@@ -6,6 +6,9 @@
 //! - `data/parse/regression_cases.yaml`
 //! - bindings resolve against registry ids from data/parse/grobid_compatibility.yaml
 //!
+//! Since S03/T04 every regression case must additionally require
+//! `conservation_delta` typed conservation evidence (sanctioned engine only).
+//!
 //! Since S02/T04 the gate additionally enforces:
 //! - staged-platform seam bindings — ParseBackend / TeiEnvelope / TeiLifter /
 //!   ScholarlyParser must stay documented under their EXISTING sanctioned
@@ -54,7 +57,7 @@ const ANCHOR_ENTRY_IDS: [&str; 8] = [
 ];
 
 /// Allowed vocabulary for `required_evidence_fields`.
-const EVIDENCE_VOCAB: [&str; 9] = [
+const EVIDENCE_VOCAB: [&str; 10] = [
     "source_sha256",
     "source_path",
     "profile_fingerprint",
@@ -62,6 +65,7 @@ const EVIDENCE_VOCAB: [&str; 9] = [
     "tei_output_sha256",
     "family_counts",
     "lifted_counts",
+    "conservation_delta",
     "latency_ms_when_executable",
     "known_regressions",
 ];
@@ -1347,4 +1351,21 @@ fn rejects_registry_stage_binding_drift_on_a_synthetic_registry() {
         &errs,
         "removed stage.tei_lift capability",
     );
+}
+
+// ───────── S03/T04 conservation evidence requirement ─────────
+
+#[test]
+fn every_case_requires_conservation_delta_evidence() {
+    let manifest: RegressionManifest = expect_loaded(REGRESSION_REL_PATH);
+    assert!(!manifest.cases.is_empty(), "positive control: cases loaded");
+    for case in &manifest.cases {
+        assert!(
+            case.required_evidence_fields
+                .iter()
+                .any(|field| field == "conservation_delta"),
+            "case `{}` must require `conservation_delta` evidence (S03/T04: every exact TeiEnvelope/TeiParseIr pair runs through the sanctioned conservation engine)",
+            case.id
+        );
+    }
 }
