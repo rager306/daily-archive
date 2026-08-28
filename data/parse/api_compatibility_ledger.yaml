@@ -22,6 +22,14 @@
 # tests/data_contracts.rs cross-validates the record against live code and
 # fails loudly on any invented failure code, unmapped status or unsupported
 # request version.
+#
+# S05/T03: the sanctioned header/references proxy operations are observed as
+# first-class endpoint entries (parse.endpoint.process_header_document,
+# parse.endpoint.process_references_document), each carrying its own
+# typed_transport record cross-validated against the LIVE Rust vocabulary —
+# still no parallel ledger (R107/R113/R117). ledger_version stays 1: additive
+# observation only, the legacy wire contract and the D204 identities are
+# byte-unchanged.
 ledger_version: 1
 scope_note: >-
   Covers the public exports of crates/da-parse plus its implementing
@@ -35,7 +43,11 @@ scope_note: >-
   identities (R105). Since S04 the typed transport (versioned
   FulltextRequestV1 request dialect, closed ParseBackendFailure vocabulary,
   compatibility facade mapping) is documented inside the existing fulltext
-  endpoint entry — still no parallel ledger (R107/R113/R117).
+  endpoint entry — still no parallel ledger (R107/R113/R117). Since S05 the
+  closed header/references proxy operations are observed as first-class
+  endpoint entries with their own typed_transport records cross-validated
+  against the live Rust vocabulary — no parallel ledger and no new capability
+  identities.
 policy_locks:
   import_eligible: false
   dspy_enabled: false
@@ -130,8 +142,11 @@ entries:
     # ledger_version (and PARSE_FAILURE_SCHEMA_VERSION for new codes) in the
     # same commit — enforced by tests/data_contracts.rs cross-validation.
     typed_transport:
+      endpoint: fulltext
       request_schema: fulltext-v1
       request_schema_version: 1
+      result_kind: full_document
+      result_identity_namespace: fulltext=v1
       failure_schema_version: 1
       statuses: [200, 204, 400, 413, 503]
       failure_codes:
@@ -146,7 +161,100 @@ entries:
       retry_policy: honest_503_no_hidden_retry
       retry_after_metadata: bounded_parse
       compatibility_facade: 'availability class (busy, timeout, transport) -> ParserError::Unavailable; every other code -> ParserError::ParseFailed; strings carry stable code=/phase=/status=/limit=/retry_after= metadata only'
+      rollback_target: java-grobid-http@0.9.0-crf
     compatibility_obligation: The legacy multipart field names/values ARE the wire contract with Java GROBID; any change rotates the parse-stage cache identity (D204) and must bump ledger_version in the same commit. Additive V1 dialect fields ride the versioned request envelope and must keep the legacy projection byte-identical; the failure vocabulary is closed — new codes/statuses require a coordinated PARSE_FAILURE_SCHEMA_VERSION bump and the same coordinated identity decision as any D204 rotation.
+  - id: parse.endpoint.process_header_document
+    kind: endpoint
+    owner_crate: da-parse
+    visibility: internal_observable
+    stability: internal_observable
+    entry_point: 'da_parse::GrobidHttpBackend::process_header (pub(crate); reached through ParseBackend::fetch_tei since S05/T02)'
+    http_endpoint: /api/processHeaderDocument
+    http_method: POST
+    request_fields:
+      - 'input — multipart file part named paper.pdf with mime application/pdf (the source PDF bytes; identical shape for every sanctioned endpoint)'
+      - 'consolidateHeader — text field rendered from the typed header consolidation level (sanctioned 0..=2; legacy presets send "1" or "0")'
+      - 'includeRawAffiliations — "1" only when the typed switch is on; omitted otherwise'
+    result_shape: 'Result<TeiEnvelope, ParseBackendFailure> — verbatim partial header TEI bytes (any encoding, no lossy decode) plus exact backend/profile/result identity (grobid-http | cached-tei)'
+    error_shapes:
+      - 'ParseBackendFailure — the SAME shared closed schema_version=1 vocabulary as fulltext: busy (503 + bounded Retry-After), timeout, transport, no_content (204), limit_exceeded (413 or opt-in byte bounds), invalid_request (400), conversion_failed (5xx / body read), invalid_response'
+      - 'Unavailable("parse backend failure: code={busy|timeout|transport} …") — facade availability mapping, honest no-retry 503'
+      - 'ParseFailed("parse backend failure: code=… phase=… status=… limit=… retry_after=…") — facade fail-closed mapping of the remaining codes; the error body is never read and no payload/path/URL enters an error or log'
+    async_behavior: async through ParseBackend::fetch_tei; tracing carries endpoint=<logical> debug/warn signals only — never a URL, payload or response body
+    notes:
+      - 'Since S05/T01 the wire request is the serde-versioned HeaderRequestV1 dialect (HeaderRequestVersioned envelope, request schema version 1): typed HeaderConsolidation (0..=2) plus the includeRawAffiliations switch. The dialect is deny_unknown_fields — fulltext-only knobs (teiCoordinates, citations/funders consolidation, pages, sentences, IDs), references-only knobs and transport tuning have no field and cannot cross endpoints.'
+      - 'Since S05/T02 the operation runs through the ONE endpoint-neutral one-shot multipart exchange shared with fulltext: exactly one POST to the static /api/processHeaderDocument route (ParseEndpoint::static_path only — no caller-controlled route or URL), exactly one streamed response read, every wire outcome a typed closed branch. No hidden retry; the error body is never read.'
+      - 'Proxy successes return the partial header TEI directly as a TeiEnvelope stamped with the endpoint/profile/result identity (endpoint=header;schema=v1;header=v1;consolidateHeader=…;rawAffiliations=…) on top of the byte-unchanged D204 fingerprint: no TeiLifter, no ParsedArticle projection, no ParserPort on this seam.'
+      - 'The Java 0.9.0 handler accepts no teiCoordinates — the pre-S05 registry drift was corrected in S05/T03 and this projector must never emit it (tests/data_contracts.rs rejects re-adding it).'
+      - 'registry_binding: rest.processHeaderDocument'
+    typed_transport:
+      endpoint: header
+      request_schema: header-v1
+      request_schema_version: 1
+      result_kind: header
+      result_identity_namespace: header=v1
+      failure_schema_version: 1
+      statuses: [200, 204, 400, 413, 503]
+      failure_codes:
+      - busy
+      - timeout
+      - transport
+      - no_content
+      - limit_exceeded
+      - invalid_request
+      - conversion_failed
+      - invalid_response
+      retry_policy: honest_503_no_hidden_retry
+      retry_after_metadata: bounded_parse
+      compatibility_facade: 'availability class (busy, timeout, transport) -> ParserError::Unavailable; every other code -> ParserError::ParseFailed; strings carry stable code=/phase=/status=/limit=/retry_after= metadata only'
+      rollback_target: java-grobid-http@0.9.0-crf
+    compatibility_obligation: 'The exact closed allowlist (input, consolidateHeader, optional includeRawAffiliations), the static route and the shared failure taxonomy ARE the header proxy wire contract; any change rotates the endpoint result identity and requires the same coordinated decision as a D204 rotation (R113). Never emit teiCoordinates or a foreign endpoint knob; transport tuning, locations and payloads stay out of identity and out of logs.'
+  - id: parse.endpoint.process_references_document
+    kind: endpoint
+    owner_crate: da-parse
+    visibility: internal_observable
+    stability: internal_observable
+    entry_point: 'da_parse::GrobidHttpBackend::process_references (pub(crate); reached through ParseBackend::fetch_tei since S05/T02)'
+    http_endpoint: /api/processReferences
+    http_method: POST
+    request_fields:
+      - 'input — multipart file part named paper.pdf with mime application/pdf (the source PDF bytes; identical shape for every sanctioned endpoint)'
+      - 'consolidateCitations — text field rendered from the typed citations consolidation level (sanctioned 0..=1; legacy presets send "1" or "0")'
+      - 'includeRawCitations — "1" only when the typed switch is on; omitted otherwise'
+    result_shape: 'Result<TeiEnvelope, ParseBackendFailure> — verbatim partial listBibl TEI bytes (any encoding, no lossy decode) plus exact backend/profile/result identity (grobid-http | cached-tei)'
+    error_shapes:
+      - 'ParseBackendFailure — the SAME shared closed schema_version=1 vocabulary as fulltext: busy (503 + bounded Retry-After), timeout, transport, no_content (204), limit_exceeded (413 or opt-in byte bounds), invalid_request (400), conversion_failed (5xx / body read), invalid_response'
+      - 'Unavailable("parse backend failure: code={busy|timeout|transport} …") — facade availability mapping, honest no-retry 503'
+      - 'ParseFailed("parse backend failure: code=… phase=… status=… limit=… retry_after=…") — facade fail-closed mapping of the remaining codes; the error body is never read and no payload/path/URL enters an error or log'
+    async_behavior: async through ParseBackend::fetch_tei; tracing carries endpoint=<logical> debug/warn signals only — never a URL, payload or response body
+    notes:
+      - 'Since S05/T01 the wire request is the serde-versioned ReferencesRequestV1 dialect (ReferencesRequestVersioned envelope, request schema version 1): typed CitationsConsolidation (0..=1) plus the includeRawCitations switch. The dialect is deny_unknown_fields — fulltext-only knobs, header-only knobs and transport tuning have no field and cannot cross endpoints.'
+      - 'Since S05/T02 the operation runs through the ONE endpoint-neutral one-shot multipart exchange shared with fulltext: exactly one POST to the static /api/processReferences route (ParseEndpoint::static_path only), exactly one streamed response read, every wire outcome a typed closed branch. No hidden retry; the error body is never read.'
+      - 'Proxy successes return the partial listBibl TEI directly as a TeiEnvelope stamped with the endpoint/profile/result identity (endpoint=references;schema=v1;references=v1;consolidateCitations=…;rawCitations=…) on top of the byte-unchanged D204 fingerprint: no TeiLifter, no ParsedArticle projection, no ParserPort on this seam.'
+      - 'The Java 0.9.0 handler accepts no teiCoordinates — the pre-S05 registry drift was corrected in S05/T03 and this projector must never emit it (tests/data_contracts.rs rejects re-adding it).'
+      - 'registry_binding: rest.processReferences'
+    typed_transport:
+      endpoint: references
+      request_schema: references-v1
+      request_schema_version: 1
+      result_kind: list_bibl
+      result_identity_namespace: references=v1
+      failure_schema_version: 1
+      statuses: [200, 204, 400, 413, 503]
+      failure_codes:
+      - busy
+      - timeout
+      - transport
+      - no_content
+      - limit_exceeded
+      - invalid_request
+      - conversion_failed
+      - invalid_response
+      retry_policy: honest_503_no_hidden_retry
+      retry_after_metadata: bounded_parse
+      compatibility_facade: 'availability class (busy, timeout, transport) -> ParserError::Unavailable; every other code -> ParserError::ParseFailed; strings carry stable code=/phase=/status=/limit=/retry_after= metadata only'
+      rollback_target: java-grobid-http@0.9.0-crf
+    compatibility_obligation: 'The exact closed allowlist (input, consolidateCitations, optional includeRawCitations), the static route and the shared failure taxonomy ARE the references proxy wire contract; any change rotates the endpoint result identity and requires the same coordinated decision as a D204 rotation (R113). Never emit teiCoordinates or a foreign endpoint knob; transport tuning, locations and payloads stay out of identity and out of logs.'
   - id: parse.stage.lift_tei
     kind: lift_stage
     owner_crate: da-parse

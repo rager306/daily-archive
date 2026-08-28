@@ -48,6 +48,16 @@ defaults:
     teiCoordinates: typed-CoordinateSet-deduped-canonical-order
     teiCoordinates_constant: figure,table,note,formula
     failure_vocabulary: ParseBackendFailure-schema-v1-closed-8-codes
+    # S05/T03: the two sanctioned proxy operations ride their own versioned
+    # request dialects through the same ParseBackend seam and share the ONE
+    # closed failure vocabulary; their multipart allowlists are closed and
+    # never carry a foreign endpoint knob or teiCoordinates.
+    header_request_envelope: HeaderRequestVersioned-v1
+    header_allowlist: input,consolidateHeader(0..=2),includeRawAffiliations
+    header_static_route: /api/processHeaderDocument
+    references_request_envelope: ReferencesRequestVersioned-v1
+    references_allowlist: input,consolidateCitations(0..=1),includeRawCitations
+    references_static_route: /api/processReferences
   known_hard_regressions_until_t02:
   - silent_skip_missing_tei_fixture
   configuration_keys_documented_not_owned:
@@ -275,7 +285,7 @@ capabilities:
   - id: rest.processHeaderDocument
     group: 3
     kind: endpoint
-    state: absent
+    state: proxy
     product_scope: required
     promotion_state: candidate
     official:
@@ -285,15 +295,32 @@ capabilities:
       - {name: input, required: true, type: pdf-bytes}
       - {name: consolidateHeader, required: false, type: enum, values: [0, 1, 2, 3]}
       - {name: includeRawAffiliations, required: false, type: enum, values: [0, 1]}
-      - {name: teiCoordinates, required: false, type: list}
-      response_format: application/xml TEI header
+      response_format: application/xml TEI header (200); 204 empty; 400 invalid; 413 too large; 503 busy; client timeout/transport typed separately
+      busy_semantics: honest_503_not_internal_retry; bounded_retry_after_metadata
     implementation:
       crate: da-parse
-      surface: none
-      notes: S05 proxy compatibility. Currently only fulltext is spoken.
+      surface: crates/da-parse/src/http.rs GrobidHttpBackend::process_header (reached through ParseBackend::fetch_tei)
+      notes: >-
+        Since S05/T02 the closed header operation proxies Java GROBID through
+        the shared endpoint-neutral one-shot multipart exchange: exactly one
+        POST to the static /api/processHeaderDocument route (ParseEndpoint
+        mapping only — no caller-controlled route), exactly one streamed
+        response read, the shared closed failure ladder (200 verbatim bytes
+        incl. empty/non-UTF-8, 204 no_content, 400 invalid_request, 413/
+        opt-in bounds limit_exceeded, 503 busy with bounded Retry-After,
+        timeout vs transport separated, 5xx conversion_failed, else
+        invalid_response; no hidden retry, the error body is never read).
+        Multipart allowlist is exactly input, consolidateHeader (typed
+        0..=2), optional includeRawAffiliations. The Java 0.9.0 handler
+        accepts NO teiCoordinates — the pre-S05 DATA drift claiming it here
+        was corrected in S05/T03, and the projector denies every
+        fulltext/references knob. The partial header TEI is returned
+        verbatim as a TeiEnvelope stamped with the endpoint/profile/result
+        identity (endpoint=header;schema=v1;header=v1;…): no TeiLifter, no
+        ParsedArticle projection, no ParserPort on this seam.
     baseline: java-grobid-http@0.9.0-crf
-    candidate: none
-    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    candidate: da-parse@http-proxy
+    evidence_ref: crates/da-parse/src/http.rs
     hard_regressions: [invented_revision, lost_references_or_links]
     metrics:
       conservation: header_field_counts
@@ -304,7 +331,7 @@ capabilities:
   - id: rest.processReferences
     group: 3
     kind: endpoint
-    state: absent
+    state: proxy
     product_scope: required
     promotion_state: candidate
     official:
@@ -314,15 +341,33 @@ capabilities:
       - {name: input, required: true, type: pdf-bytes}
       - {name: consolidateCitations, required: false, type: enum, values: [0, 1, 2]}
       - {name: includeRawCitations, required: false, type: enum, values: [0, 1]}
-      - {name: teiCoordinates, required: false, type: list}
-      response_format: application/xml TEI listBibl
+      response_format: application/xml TEI listBibl (200); 204 empty; 400 invalid; 413 too large; 503 busy; client timeout/transport typed separately
+      busy_semantics: honest_503_not_internal_retry; bounded_retry_after_metadata
     implementation:
       crate: da-parse
-      surface: none
-      notes: S05 proxy compatibility. Citation conservation is a hard regression.
+      surface: crates/da-parse/src/http.rs GrobidHttpBackend::process_references (reached through ParseBackend::fetch_tei)
+      notes: >-
+        Since S05/T02 the closed references operation proxies Java GROBID
+        through the same shared endpoint-neutral one-shot multipart exchange:
+        exactly one POST to the static /api/processReferences route
+        (ParseEndpoint mapping only), exactly one streamed response read, the
+        shared closed failure ladder (200 verbatim bytes incl.
+        empty/non-UTF-8, 204 no_content, 400 invalid_request, 413/opt-in
+        bounds limit_exceeded, 503 busy with bounded Retry-After, timeout vs
+        transport separated, 5xx conversion_failed, else invalid_response;
+        no hidden retry, the error body is never read). Multipart allowlist
+        is exactly input, consolidateCitations (typed 0..=1), optional
+        includeRawCitations. The Java 0.9.0 handler accepts NO teiCoordinates
+        — the pre-S05 DATA drift claiming it here was corrected in S05/T03,
+        and the projector denies every fulltext/header knob. The partial
+        listBibl TEI is returned verbatim as a TeiEnvelope stamped with the
+        endpoint/profile/result identity
+        (endpoint=references;schema=v1;references=v1;…): no TeiLifter, no
+        ParsedArticle projection, no ParserPort on this seam. Citation
+        conservation is a hard regression.
     baseline: java-grobid-http@0.9.0-crf
-    candidate: none
-    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    candidate: da-parse@http-proxy
+    evidence_ref: crates/da-parse/src/http.rs
     hard_regressions: [lost_references_or_links, nondeterministic_output]
     metrics:
       conservation: biblstruct_count
@@ -502,8 +547,8 @@ capabilities:
     product_scope: required
     promotion_state: candidate
     official:
-      identity: teiCoordinates request field on fulltext/header/references
-      grobid_path_constant: n/a
+      identity: 'teiCoordinates request field on fulltext (S05/T03 drift correction: the Java 0.9.0 processHeaderDocument/processReferences handlers accept none)'
+      grobid_path_constant: PATH_FULL_TEXT
       request_fields:
       - {name: teiCoordinates, required: false, type: list}
       response_format: coords attribute on requested TEI element families
@@ -516,7 +561,12 @@ capabilities:
         carries a typed CoordinateSet (deduped canonical wire order;
         sanctioned families figure/table/note/formula) and legacy presets
         keep rendering the D204 constant JSON. Per-family callout coordinates
-        beyond the sanctioned request families are S07.
+        beyond the sanctioned request families are S07. S05/T03 corrected
+        the pre-S05 DATA drift that claimed teiCoordinates on the Java 0.9.0
+        header/references handlers: teiCoordinates stays fulltext-only, is
+        preserved untouched on the fulltext wire contract, and the closed
+        header/references projectors deny it (tests/data_contracts.rs
+        rejects re-adding it).
     baseline: java-grobid-http@0.9.0-crf
     candidate: da-parse@profile-constant
     evidence_ref: crates/da-parse/src/profile.rs

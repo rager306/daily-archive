@@ -40,8 +40,8 @@ use std::path::{Path, PathBuf};
 use da_parse::{
     CachedTeiBackend, Consolidation, CoordinateFamily, CoordinateSet, FulltextDialectV1,
     FulltextRequestVersioned, GROBID_HTTP_BACKEND_ID, GrobidHttpBackend, GrobidProfile,
-    HeaderDialectV1, PageWindow, ParseBackendRequest, ReferencesDialectV1, ScholarlyParser,
-    TeiEnvelope, TeiIdentity, TeiLifter, TeiResultIdentity,
+    HeaderDialectV1, PageWindow, ParseBackend, ParseBackendRequest, ReferencesDialectV1,
+    ScholarlyParser, TeiEnvelope, TeiIdentity, TeiLifter, TeiResultIdentity,
 };
 use da_ports::parser::ParsedArticle;
 use serde_json::json;
@@ -911,4 +911,94 @@ fn s05_endpoint_result_identities_are_distinct_deterministic_and_free_of_tuning(
         assert!(TeiIdentity::grobid_http(profile).result().is_none());
         assert!(TeiIdentity::cached_tei(profile).result().is_none());
     }
+}
+
+// ---------------------------------------------------------------------------
+// S05/T03: DATA-bound proxy identity regressions
+// ---------------------------------------------------------------------------
+
+/// The stamped endpoint result identity stays free of transport tuning AND
+/// base URL: two backends differing only in URL/timeout/limits produce
+/// identical header/references provenance, while the three endpoint
+/// identities stay pairwise distinct, versioned-namespace bound and
+/// collision-free with the legacy D204 fingerprint namespace (which remains
+/// the ONLY fulltext cache identity for legacy presets).
+#[test]
+fn s05_proxy_result_identities_exclude_tuning_and_stay_d204_collision_free() {
+    let tuned = GrobidHttpBackend::new(Some("http://127.0.0.99:65000"))
+        .with_timeout(std::time::Duration::from_millis(1))
+        .with_request_byte_limit(64)
+        .with_response_byte_limit(128);
+    let plain = GrobidHttpBackend::new(Some("http://127.0.0.1:1"));
+
+    let proxies = [
+        (
+            "header",
+            plain
+                .default_header_request("p", Vec::new())
+                .result_identity(),
+            tuned
+                .default_header_request("p", Vec::new())
+                .result_identity(),
+        ),
+        (
+            "references",
+            plain
+                .default_references_request("p", Vec::new())
+                .result_identity(),
+            tuned
+                .default_references_request("p", Vec::new())
+                .result_identity(),
+        ),
+    ];
+    for (endpoint, from_plain, from_tuned) in proxies {
+        assert_eq!(
+            from_plain, from_tuned,
+            "{endpoint}: base URL, timeout and byte limits must never enter the endpoint result identity"
+        );
+        assert_eq!(
+            plain.identity().with_result(from_plain.clone()),
+            tuned.identity().with_result(from_tuned),
+            "{endpoint}: stamped provenance must be tuning- and base-URL-free"
+        );
+        let canonical = from_plain.canonical();
+        assert!(
+            canonical.starts_with(&format!("endpoint={endpoint};schema=v1;{endpoint}=v1;")),
+            "{endpoint}: canonical identity must carry the versioned namespace: {canonical}"
+        );
+    }
+
+    // Pairwise distinct across the three operations for the same profile,
+    // collision-free with the D204 fingerprints and free of transport
+    // tuning / location material.
+    let structural = GrobidProfile::structural();
+    let fulltext =
+        ParseBackendRequest::from_legacy_profile(&structural, "p", Vec::new()).result_identity();
+    let header = ParseBackendRequest::header_from_legacy_profile(&structural, "p", Vec::new())
+        .result_identity();
+    let references =
+        ParseBackendRequest::references_from_legacy_profile(&structural, "p", Vec::new())
+            .result_identity();
+    assert_ne!(fulltext, header);
+    assert_ne!(header, references);
+    assert_ne!(fulltext, references);
+    for identity in [
+        fulltext.canonical(),
+        header.canonical(),
+        references.canonical(),
+    ] {
+        assert_ne!(identity, RICH_FP);
+        assert_ne!(identity, STRUCTURAL_FP);
+        for forbidden in ["http", "://", "timeout", "limit", "cache"] {
+            assert!(
+                !identity.to_lowercase().contains(forbidden),
+                "identity `{identity}` must stay free of `{forbidden}`"
+            );
+        }
+    }
+
+    // Stamping keeps the byte-stable D204 fingerprint and backend id intact.
+    let stamped = TeiIdentity::grobid_http(structural).with_result(header);
+    assert_eq!(stamped.profile_fingerprint(), STRUCTURAL_FP);
+    assert_eq!(stamped.backend_id(), GROBID_HTTP_BACKEND_ID);
 }

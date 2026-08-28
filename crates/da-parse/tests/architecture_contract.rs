@@ -22,9 +22,20 @@
 //! document the prohibitions), and that every typed failure rendering
 //! (Display / Debug / serde wire form) carries zero payload or path material.
 //!
+//! Since S05/T03 the gate additionally proves the closed endpoint routing:
+//! the exact Java GROBID process routes are sanctioned ONLY inside the
+//! static `ParseEndpoint` mapping (any other da-parse source dispatching a
+//! route literal is free-form dispatch), the static routes carry no physical
+//! defaults (scheme/host/port), and the registry of record keeps the D127
+//! import lock, `auto_promote: forbidden`, the `da-parse` candidate identity
+//! and exactly the five sanctioned proxy capabilities. The dependency ban
+//! now also covers the JVM family (jni/jvm) on top of
+//! Samyama/kg-*/SONA/ruVLLM/RVF/redb.
+//!
 //! The scanners' negative behavior is unit-tested in-file on synthetic
 //! inputs, so the gate itself is fail-visible rather than fail-silent.
 
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 const DA_PARSE_MANIFEST: &str = "crates/da-parse/Cargo.toml";
@@ -37,7 +48,7 @@ const DOWNSTREAM_SOURCE_DIRS: [&str; 2] = ["crates/da-domain/src", "crates/da-ap
 
 /// Dependency names da-parse must never acquire. `kg-*` and `rvf-*` prefixes
 /// are rejected in addition to these exact names.
-const FORBIDDEN_DEP_NAMES: [&str; 16] = [
+const FORBIDDEN_DEP_NAMES: [&str; 18] = [
     "samyama",
     "kg-ontology",
     "kg-storage",
@@ -49,6 +60,8 @@ const FORBIDDEN_DEP_NAMES: [&str; 16] = [
     "ruvector",
     "rvf",
     "redb",
+    "jni",
+    "jvm",
     "graph-store",
     "da-application",
     "da-domain",
@@ -303,17 +316,19 @@ fn dependency_scanner_fails_visible_on_synthetic_violations() {
 da-ports = { workspace = true }
 samyama = \"0.1\"
 kg-storage = { workspace = true }
+jvm = \"0.1\"
 
 [dev-dependencies]
 da-application = { path = \"../da-application\" }
 ";
     let names = manifest_dependency_names(synthetic);
-    assert_eq!(names.len(), 4, "scanner must read every dependency table");
+    assert_eq!(names.len(), 5, "scanner must read every dependency table");
     let hits = forbidden_dependency_hits(&names);
-    assert_eq!(hits.len(), 3, "expected three forbidden hits, got {hits:?}");
+    assert_eq!(hits.len(), 4, "expected four forbidden hits, got {hits:?}");
     assert!(hits.iter().any(|h| h.contains("`samyama`")));
     assert!(hits.iter().any(|h| h.contains("`kg-storage`")));
     assert!(hits.iter().any(|h| h.contains("`da-application`")));
+    assert!(hits.iter().any(|h| h.contains("`jvm`")));
 
     // Prefix families are rejected even when not enumerated exactly.
     let prefixed =
@@ -511,4 +526,204 @@ fn parse_compat_emitter_consumes_the_engine_without_a_second_implementation() {
             "emitter must not duplicate the conservation model/comparator (`{needle}`) — one engine, one evidence path, no second ledger"
         );
     }
+}
+
+// ───── S05/T03: closed static routing, no physical defaults, policy locks ─────
+
+/// The exact static Java GROBID routes of the closed `ParseEndpoint` mapping.
+/// These literals are sanctioned ONLY in transport.rs (the closed mapping);
+/// any other da-parse source dispatching one is free-form route dispatch.
+const STATIC_ROUTE_LITERALS: [&str; 3] = [
+    "/api/processFulltextDocument",
+    "/api/processHeaderDocument",
+    "/api/processReferences",
+];
+
+/// Comment-stripped `(line_no, line)` pairs — `//`-style line comments (doc
+/// comments included) are prose and must not trip the route scanner.
+fn comment_stripped_lines(text: &str) -> Vec<(usize, String)> {
+    text.lines()
+        .enumerate()
+        .map(|(line_no, line)| (line_no + 1, line.to_string()))
+        .filter(|(_, line)| !line.trim_start().starts_with("//"))
+        .collect()
+}
+
+/// Route-literal scanner: an occurrence of a process route OUTSIDE the closed
+/// mapping file is free-form dispatch and fails the gate.
+fn free_form_route_hits(files: &[(String, String)]) -> Vec<String> {
+    const CLOSED_MAPPING_FILE: &str = "crates/da-parse/src/transport.rs";
+    let mut hits = Vec::new();
+    for (rel, text) in files {
+        for (line_no, line) in comment_stripped_lines(text) {
+            for literal in STATIC_ROUTE_LITERALS {
+                if line.contains(literal) && rel != CLOSED_MAPPING_FILE {
+                    hits.push(format!(
+                        "[free-form-route-dispatch] {rel}:{line_no}: route literal `{literal}` outside the closed ParseEndpoint mapping"
+                    ));
+                }
+            }
+        }
+    }
+    hits
+}
+
+#[test]
+fn endpoint_routes_are_closed_static_and_free_of_free_form_dispatch() {
+    // The closed mapping owns the exact static Java routes...
+    let transport = read_text("crates/da-parse/src/transport.rs");
+    for literal in STATIC_ROUTE_LITERALS {
+        assert!(
+            transport.contains(literal),
+            "static route `{literal}` must stay in the closed ParseEndpoint mapping"
+        );
+    }
+
+    // ...and no other da-parse source dispatches one — every caller selects
+    // its route through ParseEndpoint::static_path (checked below).
+    let mut files = Vec::new();
+    collect_rs_files(&repo_root().join("crates/da-parse/src"), &mut files);
+    assert!(
+        files.len() >= 9,
+        "positive control failed: only {} da-parse source files scanned",
+        files.len()
+    );
+    let mut scanned: Vec<(String, String)> = Vec::new();
+    for file in &files {
+        let rel = file
+            .strip_prefix(repo_root())
+            .unwrap_or(file)
+            .to_string_lossy()
+            .to_string();
+        let text = std::fs::read_to_string(file)
+            .unwrap_or_else(|e| panic!("source unreadable {}: {e}", file.display()));
+        scanned.push((rel, text));
+    }
+    let hits = free_form_route_hits(&scanned);
+    assert!(
+        hits.is_empty(),
+        "free-form route dispatch appeared in the parse plane (routing must stay the closed static ParseEndpoint mapping):\n{}",
+        hits.join("\n")
+    );
+
+    // Positive control: the HTTP exchange really selects routes through the
+    // closed mapping.
+    let http = read_text("crates/da-parse/src/http.rs");
+    assert!(
+        http.contains(".static_path()"),
+        "the HTTP exchange must select its route via ParseEndpoint::static_path, never a caller-controlled string"
+    );
+}
+
+#[test]
+fn route_scanner_fails_visible_on_synthetic_violations() {
+    let synthetic = "let route = \"/api/processHeaderDocument\";\n".to_string();
+    let files = vec![("crates/da-parse/src/invented.rs".to_string(), synthetic)];
+    let hits = free_form_route_hits(&files);
+    assert_eq!(hits.len(), 1, "expected one dispatch hit, got {hits:?}");
+    assert!(hits[0].contains("[free-form-route-dispatch]"));
+    // The closed mapping file itself is sanctioned for the exact literals...
+    let mapping = vec![(
+        "crates/da-parse/src/transport.rs".to_string(),
+        "Self::Header => \"/api/processHeaderDocument\",\n".to_string(),
+    )];
+    assert!(free_form_route_hits(&mapping).is_empty());
+    // ...and comment prose must not trip the scanner.
+    let prose = vec![(
+        "crates/da-parse/src/invented.rs".to_string(),
+        "/// POST /api/processHeaderDocument is the static route.\n".to_string(),
+    )];
+    assert!(free_form_route_hits(&prose).is_empty());
+}
+
+#[test]
+fn closed_endpoint_vocabulary_carries_no_physical_defaults() {
+    use da_parse::ParseEndpoint;
+
+    let mut paths = Vec::new();
+    for endpoint in [
+        ParseEndpoint::Fulltext,
+        ParseEndpoint::Header,
+        ParseEndpoint::References,
+    ] {
+        let path = endpoint.static_path();
+        assert!(
+            path.starts_with("/api/"),
+            "{endpoint}: static route must stay a relative Java GROBID path, got `{path}`"
+        );
+        for marker in ["http", "://", ":", "\\", "127.0.0.1", "8070"] {
+            assert!(
+                !path.contains(marker),
+                "{endpoint}: static route `{path}` leaked physical default `{marker}`"
+            );
+        }
+        paths.push(path);
+    }
+    let unique: BTreeSet<_> = paths.iter().collect();
+    assert_eq!(
+        unique.len(),
+        3,
+        "the three closed routes stay pairwise distinct"
+    );
+}
+
+#[test]
+fn parse_registry_keeps_d127_import_lock_candidate_identity_and_proxy_set() {
+    let registry: serde_yaml::Value = {
+        let text = read_text("data/parse/grobid_compatibility.yaml");
+        serde_yaml::from_str(&text).expect("registry of record parses")
+    };
+    // D127: the import lock stays closed — the proxy wave must not open it.
+    assert_eq!(
+        registry.get("import_eligible").and_then(|v| v.as_bool()),
+        Some(false),
+        "D127 import lock drifted open in the registry of record"
+    );
+    assert_eq!(
+        registry.get("auto_promote").and_then(|v| v.as_str()),
+        Some("forbidden"),
+        "auto-promotion must stay forbidden in the registry of record"
+    );
+    // The candidate stays the staged native Rust crate — never a JVM, native
+    // model or storage-stack claim.
+    assert_eq!(
+        registry
+            .get("defaults")
+            .and_then(|d| d.get("candidate"))
+            .and_then(|c| c.get("backend"))
+            .and_then(|v| v.as_str()),
+        Some("da-parse"),
+    );
+    assert_eq!(
+        registry
+            .get("defaults")
+            .and_then(|d| d.get("rollback_target"))
+            .and_then(|v| v.as_str()),
+        Some("java-grobid-http@0.9.0-crf"),
+        "the rollback target is the typed-transport rollback binding of record"
+    );
+    // Exactly the sanctioned capabilities may claim proxy state — an
+    // invented proxy operation cannot smuggle itself into the registry.
+    let proxy_ids: BTreeSet<String> = registry
+        .get("capabilities")
+        .and_then(|c| c.as_sequence())
+        .expect("capabilities sequence")
+        .iter()
+        .filter(|c| c.get("state").and_then(|s| s.as_str()) == Some("proxy"))
+        .filter_map(|c| c.get("id").and_then(|i| i.as_str()).map(str::to_string))
+        .collect();
+    let expected: BTreeSet<String> = [
+        "rest.isalive",
+        "rest.processFulltextDocument",
+        "rest.processHeaderDocument",
+        "rest.processReferences",
+        "dialect.teiCoordinates",
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .collect();
+    assert_eq!(
+        proxy_ids, expected,
+        "the sanctioned proxy set must stay exactly these five capabilities"
+    );
 }

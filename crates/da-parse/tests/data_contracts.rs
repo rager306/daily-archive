@@ -31,6 +31,24 @@
 //! - ledger_version stays 1: the legacy wire contract and D204 identities
 //!   are byte-unchanged (additive typed observation, not wire evolution).
 //!
+//! Since S05/T03 the gate additionally enforces:
+//! - the two sanctioned proxy endpoint entries
+//!   (parse.endpoint.process_header_document,
+//!   parse.endpoint.process_references_document) carry their own
+//!   `typed_transport` records, cross-validated against the LIVE da_parse
+//!   vocabulary: closed endpoint/result-kind names, per-endpoint request
+//!   schema versions, result identity namespaces that prefix the live
+//!   canonical identities, the SHARED eight-code failure schema, the exact
+//!   status taxonomy, honest no-retry 503 with bounded Retry-After, the
+//!   registry-of-record rollback target and the exact closed multipart field
+//!   allowlists on the exact static routes;
+//! - the registry-of-record official dialects of all three sanctioned
+//!   endpoints equal the live allowlists (header/references carry NO
+//!   teiCoordinates — the pre-S05 DATA drift is corrected and must never
+//!   return), cite the live static routes and stay in `proxy` state;
+//! - an invented endpoint, route, field, version, result kind, status or
+//!   failure code in either document fails loudly.
+//!
 //! Scope guards honored by construction: this binary contacts no network
 //! service, parses no corpus document through the parser pipeline, touches no
 //! graph store, and depends on no wall-clock state. Project hard locks are
@@ -42,7 +60,9 @@ use std::path::{Path, PathBuf};
 
 use da_parse::{
     Consolidation, CoordinateSet, FULLTEXT_REQUEST_SCHEMA_VERSION, FailureCode, FulltextDialectV1,
-    FulltextRequestVersioned, GrobidProfile, PARSE_FAILURE_SCHEMA_VERSION,
+    FulltextRequestVersioned, GrobidProfile, HEADER_REQUEST_SCHEMA_VERSION, HeaderDialectV1,
+    PARSE_FAILURE_SCHEMA_VERSION, ParseEndpoint, REFERENCES_REQUEST_SCHEMA_VERSION,
+    ReferencesDialectV1,
 };
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -60,11 +80,13 @@ const RICH_FP: &str = "profile=rich;consolidateHeader=1;consolidateCitations=1;t
 const STRUCTURAL_FP: &str = "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note,formula";
 
 /// Ids that MUST exist in the ledger for every later slice task to resolve.
-const ANCHOR_ENTRY_IDS: [&str; 8] = [
+const ANCHOR_ENTRY_IDS: [&str; 10] = [
     "parse.entrypoint.grobid_parser.parse_pdf",
     "parse.constructor.grobid_parser",
     "parse.probe.is_alive",
     "parse.endpoint.process_fulltext_document",
+    "parse.endpoint.process_header_document",
+    "parse.endpoint.process_references_document",
     "parse.stage.lift_tei",
     "parse.stage.project_article",
     "parse.profile.rich",
@@ -88,9 +110,22 @@ const EVIDENCE_VOCAB: [&str; 10] = [
 /// Every case must request at least this evidence core.
 const MIN_EVIDENCE_FIELDS: [&str; 3] = ["source_sha256", "source_path", "profile_fingerprint"];
 
-/// The only sanctioned carrier of the S04 typed transport record (T04: the
-/// typed seam binds to the EXISTING endpoint entry — no parallel record).
-const TYPED_TRANSPORT_ENTRY_ID: &str = "parse.endpoint.process_fulltext_document";
+/// The sanctioned carriers of typed transport records (S05/T03: the S04
+/// fulltext binding plus the two proxy operations — no parallel record).
+const TYPED_TRANSPORT_ENTRY_IDS: [&str; 3] = [
+    "parse.endpoint.process_fulltext_document",
+    "parse.endpoint.process_header_document",
+    "parse.endpoint.process_references_document",
+];
+const TYPED_TRANSPORT_ENTRY_ID: &str = TYPED_TRANSPORT_ENTRY_IDS[0];
+
+/// Registry-of-record capability per sanctioned typed-transport endpoint
+/// (cross-validated in `validate_registry_endpoint_dialects`).
+const SANCTIONED_REGISTRY_ENDPOINTS: [(&str, ParseEndpoint); 3] = [
+    ("rest.processFulltextDocument", ParseEndpoint::Fulltext),
+    ("rest.processHeaderDocument", ParseEndpoint::Header),
+    ("rest.processReferences", ParseEndpoint::References),
+];
 
 /// Status → typed-outcome taxonomy proven by the HTTP stub contract
 /// (S04/T02). Exactly these five statuses own a typed branch.
@@ -111,6 +146,12 @@ const SANCTIONED_WIRE_FIELD_NAMES: [&str; 11] = [
     "start",
     "end",
 ];
+
+/// Live closed multipart field allowlists of the two S05 proxy operations
+/// (the exact Java GROBID projector surface; no foreign knob, no
+/// teiCoordinates — the Java 0.9.0 handlers accept none).
+const HEADER_WIRE_FIELDS: [&str; 3] = ["input", "consolidateHeader", "includeRawAffiliations"];
+const REFERENCES_WIRE_FIELDS: [&str; 3] = ["input", "consolidateCitations", "includeRawCitations"];
 
 // ───────────────────────────── data model ─────────────────────────────
 
@@ -183,19 +224,25 @@ enum HttpMethod {
     POST,
 }
 
-/// S04/T04 typed transport contract documented on the fulltext endpoint
-/// entry (`deny_unknown_fields`: an invented field fails loudly).
+/// Typed transport contract documented on a sanctioned endpoint entry
+/// (`deny_unknown_fields`: an invented field fails loudly). Since S05/T03
+/// the record carries the closed endpoint/result identities and the registry
+/// rollback binding next to the request/failure schema.
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 struct TypedTransportContract {
+    endpoint: String,
     request_schema: String,
     request_schema_version: u8,
+    result_kind: String,
+    result_identity_namespace: String,
     failure_schema_version: u32,
     statuses: Vec<u16>,
     failure_codes: Vec<String>,
     retry_policy: String,
     retry_after_metadata: String,
     compatibility_facade: String,
+    rollback_target: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -503,14 +550,19 @@ fn validate_ledger(l: &LedgerFile) -> Vec<String> {
         }
     }
 
-    // S04/T04: the typed transport record must exist on exactly the fulltext
-    // endpoint binding and cross-validate against the live Rust vocabulary.
-    if let Some(e) = l.entries.iter().find(|e| e.id == TYPED_TRANSPORT_ENTRY_ID)
-        && let Some(tt) = &e.typed_transport
-    {
-        errs.extend(validate_typed_transport(e, tt));
+    // S04/S05: every typed transport record must exist on exactly its
+    // sanctioned endpoint binding and cross-validate against the live Rust
+    // vocabulary of that endpoint.
+    let rollback_target = registry_rollback_target();
+    for entry_id in TYPED_TRANSPORT_ENTRY_IDS {
+        if let Some(e) = l.entries.iter().find(|e| e.id == entry_id)
+            && let Some(tt) = &e.typed_transport
+        {
+            errs.extend(validate_typed_transport(e, tt, &rollback_target));
+        }
     }
     errs.extend(validate_typed_transport_placement(l));
+    errs.extend(validate_registry_endpoint_dialects(&load_registry_value()));
 
     for anchor in ANCHOR_ENTRY_IDS {
         if !seen.contains(anchor) {
@@ -538,26 +590,129 @@ fn live_failure_code_names() -> BTreeSet<String> {
     .collect()
 }
 
-/// The fulltext endpoint entry must document the S04 typed transport and it
-/// must cross-validate against the LIVE Rust vocabulary: request schema
-/// version, closed failure codes, the exact status taxonomy, honest no-retry
-/// 503 with bounded Retry-After, and the two-variant compatibility facade.
-fn validate_typed_transport(entry: &LedgerEntry, tt: &TypedTransportContract) -> Vec<String> {
+/// Live closed endpoint vocabulary parsed from the wire (snake_case) form.
+fn parse_endpoint_name(name: &str) -> Option<ParseEndpoint> {
+    [
+        ParseEndpoint::Fulltext,
+        ParseEndpoint::Header,
+        ParseEndpoint::References,
+    ]
+    .into_iter()
+    .find(|endpoint| endpoint.as_str() == name)
+}
+
+/// Live request schema version + sanctioned multipart field allowlist of a
+/// closed endpoint (the exact Java GROBID projector surface).
+fn live_endpoint_facts(endpoint: ParseEndpoint) -> (u8, &'static [&'static str]) {
+    match endpoint {
+        ParseEndpoint::Fulltext => (
+            FULLTEXT_REQUEST_SCHEMA_VERSION,
+            &SANCTIONED_WIRE_FIELD_NAMES,
+        ),
+        ParseEndpoint::Header => (HEADER_REQUEST_SCHEMA_VERSION, &HEADER_WIRE_FIELDS),
+        ParseEndpoint::References => (REFERENCES_REQUEST_SCHEMA_VERSION, &REFERENCES_WIRE_FIELDS),
+    }
+}
+
+/// The LIVE canonical identity of the endpoint dialect starts with the
+/// documented versioned namespace — a live-code proof, not just a YAML
+/// string comparison (extended fulltext identities and every header/
+/// references dialect start with `endpoint=v<version>;`).
+fn live_result_identity_starts_with(endpoint: ParseEndpoint, namespace: &str) -> bool {
+    match endpoint {
+        ParseEndpoint::Fulltext => FulltextDialectV1::legacy_rich()
+            .with_raw_citations(true)
+            .canonical_identity()
+            .is_some_and(|identity| identity.starts_with(namespace)),
+        ParseEndpoint::Header => HeaderDialectV1::legacy_rich()
+            .canonical_identity()
+            .starts_with(namespace),
+        ParseEndpoint::References => ReferencesDialectV1::legacy_rich()
+            .canonical_identity()
+            .starts_with(namespace),
+    }
+}
+
+/// Wire field names documented in an endpoint entry's request_fields
+/// (`name — description` ledger list style).
+fn documented_field_names(entry: &LedgerEntry) -> Vec<String> {
+    entry
+        .request_fields
+        .iter()
+        .map(|field| field.split('—').next().unwrap_or("").trim().to_string())
+        .collect()
+}
+
+/// The registry-of-record rollback target every typed transport must bind.
+fn registry_rollback_target() -> String {
+    load_registry_value()
+        .get("defaults")
+        .and_then(|d| d.get("rollback_target"))
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string()
+}
+
+/// A typed transport record must cross-validate against the LIVE Rust
+/// vocabulary of its endpoint: closed endpoint/result-kind names, the
+/// per-endpoint request schema version, a result identity namespace that
+/// prefixes the live canonical identity, the shared failure schema, the
+/// exact status taxonomy, honest no-retry 503 with bounded Retry-After, the
+/// registry rollback target, the exact closed multipart field allowlist and
+/// the exact static route.
+fn validate_typed_transport(
+    entry: &LedgerEntry,
+    tt: &TypedTransportContract,
+    registry_rollback: &str,
+) -> Vec<String> {
     let mut errs = Vec::new();
     let ctx = entry.id.as_str();
 
-    if tt.request_schema_version != FULLTEXT_REQUEST_SCHEMA_VERSION {
+    // Closed endpoint vocabulary: an invented proxy operation fails loudly.
+    let Some(endpoint) = parse_endpoint_name(&tt.endpoint) else {
         errs.push(format!(
-            "[typed-transport-version] {ctx}: request_schema_version {} != live FULLTEXT_REQUEST_SCHEMA_VERSION {FULLTEXT_REQUEST_SCHEMA_VERSION}",
+            "[unknown-typed-transport-endpoint] {ctx}: `{}` is not a live ParseEndpoint name",
+            tt.endpoint
+        ));
+        return errs;
+    };
+    let (live_version, allowed_fields) = live_endpoint_facts(endpoint);
+
+    if tt.request_schema_version != live_version {
+        errs.push(format!(
+            "[typed-transport-version] {ctx}: request_schema_version {} != live {endpoint} schema version {live_version}",
             tt.request_schema_version
         ));
     }
-    if tt.request_schema != format!("fulltext-v{}", tt.request_schema_version) {
+    if tt.request_schema != format!("{}-v{}", tt.endpoint, tt.request_schema_version) {
         errs.push(format!(
-            "[typed-transport-version] {ctx}: request_schema `{}` must be spelled `fulltext-v{}`",
-            tt.request_schema, tt.request_schema_version
+            "[typed-transport-version] {ctx}: request_schema `{}` must be spelled `{}-v{}`",
+            tt.request_schema, tt.endpoint, tt.request_schema_version
         ));
     }
+
+    // The closed result kind is the static endpoint → result-kind mapping.
+    if tt.result_kind != endpoint.result_kind().as_str() {
+        errs.push(format!(
+            "[unknown-result-kind] {ctx}: `{}` is not the live {endpoint} result kind `{}`",
+            tt.result_kind,
+            endpoint.result_kind().as_str()
+        ));
+    }
+    // The result identity namespace must be the versioned namespace AND the
+    // live canonical identity must really start with it.
+    let expected_namespace = format!("{}=v{}", tt.endpoint, tt.request_schema_version);
+    if tt.result_identity_namespace != expected_namespace {
+        errs.push(format!(
+            "[typed-transport-identity-namespace] {ctx}: result_identity_namespace `{}` must be `{expected_namespace}`",
+            tt.result_identity_namespace
+        ));
+    } else if !live_result_identity_starts_with(endpoint, &expected_namespace) {
+        errs.push(format!(
+            "[typed-transport-identity-namespace] {ctx}: live dialect identity no longer starts with `{expected_namespace}`"
+        ));
+    }
+
     if tt.failure_schema_version != PARSE_FAILURE_SCHEMA_VERSION {
         errs.push(format!(
             "[typed-transport-version] {ctx}: failure_schema_version {} != live PARSE_FAILURE_SCHEMA_VERSION {PARSE_FAILURE_SCHEMA_VERSION}",
@@ -609,23 +764,58 @@ fn validate_typed_transport(entry: &LedgerEntry, tt: &TypedTransportContract) ->
             "[typed-transport-facade-drift] {ctx}: compatibility_facade must document both legacy ParserError variants (Unavailable + ParseFailed)"
         ));
     }
+    if tt.rollback_target != registry_rollback {
+        errs.push(format!(
+            "[typed-transport-rollback-drift] {ctx}: rollback_target `{}` != registry of record rollback target `{registry_rollback}`",
+            tt.rollback_target
+        ));
+    }
+
+    // The documented multipart projection is the EXACT closed allowlist of
+    // this endpoint — a foreign knob (e.g. teiCoordinates on the header
+    // proxy) is visible drift.
+    let allowed: BTreeSet<&str> = allowed_fields.iter().copied().collect();
+    let documented_names = documented_field_names(entry);
+    let documented_fields: BTreeSet<&str> = documented_names.iter().map(String::as_str).collect();
+    for name in &documented_fields {
+        if !allowed.contains(name) {
+            errs.push(format!(
+                "[foreign-endpoint-field] {ctx}: `{name}` is not a sanctioned {endpoint} field (allowed: {allowed:?})"
+            ));
+        }
+    }
+    if documented_fields != allowed {
+        errs.push(format!(
+            "[incomplete-endpoint-field-allowlist] {ctx}: documented fields {documented_fields:?} must equal the closed {endpoint} allowlist {allowed:?}"
+        ));
+    }
+
+    // The documented route is the live static path — never a free-form path.
+    if entry.http_endpoint.as_deref() != Some(endpoint.static_path()) {
+        errs.push(format!(
+            "[typed-transport-route-drift] {ctx}: http_endpoint {:?} != live static path `{}`",
+            entry.http_endpoint,
+            endpoint.static_path()
+        ));
+    }
 
     errs
 }
 
-/// `typed_transport` is sanctioned on exactly the fulltext endpoint binding.
+/// `typed_transport` is sanctioned on exactly the three endpoint bindings.
 fn validate_typed_transport_placement(l: &LedgerFile) -> Vec<String> {
     let mut errs = Vec::new();
     for e in &l.entries {
-        if e.id == TYPED_TRANSPORT_ENTRY_ID {
+        if TYPED_TRANSPORT_ENTRY_IDS.contains(&e.id.as_str()) {
             if e.typed_transport.is_none() {
                 errs.push(format!(
-                    "[missing-typed-transport] {TYPED_TRANSPORT_ENTRY_ID} must document the S04 typed transport"
+                    "[missing-typed-transport] {} must document its typed transport",
+                    e.id
                 ));
             }
         } else if e.typed_transport.is_some() {
             errs.push(format!(
-                "[misplaced-typed-transport] {}: typed_transport is sanctioned only on {TYPED_TRANSPORT_ENTRY_ID}",
+                "[misplaced-typed-transport] {}: typed_transport is sanctioned only on {TYPED_TRANSPORT_ENTRY_IDS:?}",
                 e.id
             ));
         }
@@ -635,6 +825,74 @@ fn validate_typed_transport_placement(l: &LedgerFile) -> Vec<String> {
 
 fn ledger_id_set(l: &LedgerFile) -> HashSet<String> {
     l.entries.iter().map(|e| e.id.clone()).collect()
+}
+
+/// The registry-of-record official dialects of the three sanctioned
+/// endpoints must equal the LIVE closed allowlists (S05/T03 drift
+/// correction: header/references carry NO teiCoordinates and must never
+/// re-gain it), cite the live static routes and stay in `proxy` state.
+fn validate_registry_endpoint_dialects(registry: &serde_yaml::Value) -> Vec<String> {
+    const DRIFT: &str = "[registry-endpoint-dialect-drift]";
+    const STATE_DRIFT: &str = "[registry-endpoint-state-drift]";
+    let mut errs = Vec::new();
+    let Some(caps) = registry.get("capabilities").and_then(|c| c.as_sequence()) else {
+        errs.push(format!("{DRIFT} registry lost its capabilities sequence"));
+        return errs;
+    };
+    for (cap_id, endpoint) in SANCTIONED_REGISTRY_ENDPOINTS {
+        let Some(cap) = caps
+            .iter()
+            .find(|c| c.get("id").and_then(|i| i.as_str()) == Some(cap_id))
+        else {
+            errs.push(format!("{DRIFT} registry lost capability `{cap_id}`"));
+            continue;
+        };
+        if cap.get("state").and_then(|s| s.as_str()) != Some("proxy") {
+            errs.push(format!(
+                "{STATE_DRIFT} {cap_id} must stay in `proxy` state (sanctioned live operation)"
+            ));
+        }
+        let official = cap.get("official");
+        let identity = official
+            .and_then(|o| o.get("identity"))
+            .and_then(|i| i.as_str())
+            .unwrap_or_default();
+        if !identity.contains(endpoint.static_path()) {
+            errs.push(format!(
+                "{DRIFT} {cap_id} official identity `{identity}` no longer cites the live static route `{}`",
+                endpoint.static_path()
+            ));
+        }
+        let (_, allowed_fields) = live_endpoint_facts(endpoint);
+        let official_names: Option<BTreeSet<String>> = official
+            .and_then(|o| o.get("request_fields"))
+            .and_then(|f| f.as_sequence())
+            .map(|seq| {
+                seq.iter()
+                    .filter_map(|f| f.get("name").and_then(|n| n.as_str()).map(str::to_string))
+                    .collect()
+            });
+        let Some(official_names) = official_names else {
+            errs.push(format!("{DRIFT} {cap_id} lost its official request_fields"));
+            continue;
+        };
+        let allowed: BTreeSet<String> = allowed_fields.iter().map(|s| s.to_string()).collect();
+        for name in &official_names {
+            if !allowed.contains(name) {
+                errs.push(format!(
+                    "[registry-endpoint-field-drift] {cap_id}: official field `{name}` is not a sanctioned {} field {allowed:?} — pre-S05 drift must never return",
+                    endpoint.as_str()
+                ));
+            }
+        }
+        if official_names != allowed {
+            errs.push(format!(
+                "[registry-endpoint-allowlist-incomplete] {cap_id}: official fields {official_names:?} must equal the closed {} allowlist {allowed:?}",
+                endpoint.as_str()
+            ));
+        }
+    }
+    errs
 }
 
 fn ledger_profile_fingerprints(l: &LedgerFile) -> HashMap<ProfileName, String> {
@@ -1710,20 +1968,37 @@ fn ledger_wire_fields_stay_inside_the_registry_official_dialect() {
     }
 }
 
-fn fulltext_typed_transport_mut<F: FnOnce(&mut TypedTransportContract)>(f: F) -> LedgerFile {
+/// Mutate the typed transport record of a sanctioned endpoint binding.
+fn typed_transport_mut<F: FnOnce(&mut TypedTransportContract)>(entry_id: &str, f: F) -> LedgerFile {
     let (mut ledger, _) = loaded_pair();
     let idx = ledger
         .entries
         .iter()
-        .position(|e| e.id == TYPED_TRANSPORT_ENTRY_ID)
-        .expect("fulltext endpoint entry");
-    let entry = &mut ledger.entries[idx];
-    let mut tt = entry
+        .position(|e| e.id == entry_id)
+        .unwrap_or_else(|| panic!("{entry_id} present"));
+    let mut tt = ledger.entries[idx]
         .typed_transport
         .clone()
         .expect("typed transport present");
     f(&mut tt);
-    entry.typed_transport = Some(tt);
+    ledger.entries[idx].typed_transport = Some(tt);
+    ledger
+}
+
+fn fulltext_typed_transport_mut<F: FnOnce(&mut TypedTransportContract)>(f: F) -> LedgerFile {
+    typed_transport_mut(TYPED_TRANSPORT_ENTRY_ID, f)
+}
+
+/// Mutate the observable entry fields (not the typed transport record) of a
+/// sanctioned binding.
+fn ledger_entry_mut<F: FnOnce(&mut LedgerEntry)>(entry_id: &str, f: F) -> LedgerFile {
+    let (mut ledger, _) = loaded_pair();
+    let idx = ledger
+        .entries
+        .iter()
+        .position(|e| e.id == entry_id)
+        .unwrap_or_else(|| panic!("{entry_id} present"));
+    f(&mut ledger.entries[idx]);
     ledger
 }
 
@@ -1839,11 +2114,26 @@ fn rejects_missing_or_misplaced_typed_transport_record() {
         &errs,
         "typed transport moved off the endpoint binding",
     );
+
+    // The header proxy record is equally load-bearing (S05/T03).
+    let mut ledger = typed_transport_mut(TYPED_TRANSPORT_ENTRY_IDS[1], |_| {});
+    let idx = ledger
+        .entries
+        .iter()
+        .position(|e| e.id == TYPED_TRANSPORT_ENTRY_IDS[1])
+        .expect("header endpoint entry");
+    ledger.entries[idx].typed_transport = None;
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[missing-typed-transport]",
+        &errs,
+        "removed header proxy typed transport",
+    );
 }
 
 #[test]
 fn rejects_unknown_fields_inside_typed_transport() {
-    let bad = "request_schema: fulltext-v1\nrequest_schema_version: 1\nfailure_schema_version: 1\nstatuses: [200]\nfailure_codes: []\nretry_policy: honest_503_no_hidden_retry\nretry_after_metadata: bounded_parse\ncompatibility_facade: x\ninvented_field: true\n";
+    let bad = "endpoint: header\nrequest_schema: header-v1\nrequest_schema_version: 1\nresult_kind: header\nresult_identity_namespace: header=v1\nfailure_schema_version: 1\nstatuses: [200]\nfailure_codes: []\nretry_policy: honest_503_no_hidden_retry\nretry_after_metadata: bounded_parse\ncompatibility_facade: x\nrollback_target: java-grobid-http@0.9.0-crf\ninvented_field: true\n";
     match serde_yaml::from_str::<TypedTransportContract>(bad) {
         Err(e) => assert!(
             e.to_string().contains("unknown field"),
@@ -1871,5 +2161,326 @@ fn rejects_invented_registry_binding_reference_on_the_endpoint() {
         "[unresolved-registry-binding-note]",
         &errs,
         "invented endpoint registry reference",
+    );
+}
+
+// ───────── S05/T03 proxy typed transport cross-validation ─────────
+
+#[test]
+fn proxy_typed_transport_cross_validates_the_live_rust_vocabulary() {
+    let ledger: LedgerFile = expect_loaded(LEDGER_REL_PATH);
+    let errs = validate_ledger(&ledger);
+    assert!(
+        errs.is_empty(),
+        "ledger with proxy typed transports must validate:\n{}",
+        errs.join("\n")
+    );
+
+    let mut records: Vec<(String, TypedTransportContract)> = Vec::new();
+    for entry_id in TYPED_TRANSPORT_ENTRY_IDS {
+        let entry = ledger
+            .entries
+            .iter()
+            .find(|e| e.id == entry_id)
+            .unwrap_or_else(|| panic!("{entry_id} present"));
+        let tt = entry
+            .typed_transport
+            .as_ref()
+            .unwrap_or_else(|| panic!("{entry_id} carries a typed transport record"));
+        let endpoint = parse_endpoint_name(&tt.endpoint)
+            .unwrap_or_else(|| panic!("{entry_id}: closed endpoint expected"));
+        assert_eq!(
+            entry.http_endpoint.as_deref(),
+            Some(endpoint.static_path()),
+            "{entry_id}: documented route must be the live static path"
+        );
+        assert_eq!(
+            tt.result_kind,
+            endpoint.result_kind().as_str(),
+            "{entry_id}: result kind must equal the live closed mapping"
+        );
+        records.push((tt.endpoint.clone(), tt.clone()));
+    }
+
+    // Exactly the three sanctioned endpoints — an invented proxy operation
+    // cannot smuggle itself into the ledger.
+    let endpoints: BTreeSet<String> = records
+        .iter()
+        .map(|(endpoint, _)| endpoint.clone())
+        .collect();
+    assert_eq!(
+        endpoints,
+        ["fulltext", "header", "references"]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+        "exactly the three sanctioned endpoints may carry typed transports"
+    );
+
+    // ONE shared failure schema across all three operations (same exchange).
+    let shared = |tt: &TypedTransportContract| {
+        (
+            tt.failure_schema_version,
+            tt.statuses.clone(),
+            tt.failure_codes.clone(),
+            tt.retry_policy.clone(),
+            tt.retry_after_metadata.clone(),
+        )
+    };
+    let baseline = shared(&records[0].1);
+    for (endpoint, tt) in &records[1..] {
+        assert_eq!(
+            shared(tt),
+            baseline,
+            "{endpoint}: the sanctioned operations share ONE failure schema"
+        );
+    }
+
+    // Per-endpoint multipart allowlists equal the live closed projectors.
+    let header_entry = ledger
+        .entries
+        .iter()
+        .find(|e| e.id == TYPED_TRANSPORT_ENTRY_IDS[1])
+        .expect("header entry");
+    let references_entry = ledger
+        .entries
+        .iter()
+        .find(|e| e.id == TYPED_TRANSPORT_ENTRY_IDS[2])
+        .expect("references entry");
+    let header_documented: BTreeSet<String> =
+        documented_field_names(header_entry).into_iter().collect();
+    let references_documented: BTreeSet<String> = documented_field_names(references_entry)
+        .into_iter()
+        .collect();
+    let header_allowed: BTreeSet<String> =
+        HEADER_WIRE_FIELDS.into_iter().map(str::to_string).collect();
+    let references_allowed: BTreeSet<String> = REFERENCES_WIRE_FIELDS
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+    assert_eq!(
+        header_documented, header_allowed,
+        "header proxy allowlist must be exactly the closed live projector surface"
+    );
+    assert_eq!(
+        references_documented, references_allowed,
+        "references proxy allowlist must be exactly the closed live projector surface"
+    );
+}
+
+#[test]
+fn registry_official_dialects_match_the_live_endpoint_allowlists() {
+    let errs = validate_registry_endpoint_dialects(&load_registry_value());
+    assert!(
+        errs.is_empty(),
+        "registry-of-record endpoint dialects drifted from the live allowlists:\n{}",
+        errs.join("\n")
+    );
+}
+
+#[test]
+fn rejects_invented_endpoint_or_result_kind_in_proxy_typed_transport() {
+    let ledger = typed_transport_mut(TYPED_TRANSPORT_ENTRY_IDS[1], |tt| {
+        tt.endpoint = "processFulltextAssetDocument".to_string();
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[unknown-typed-transport-endpoint]",
+        &errs,
+        "invented endpoint name",
+    );
+
+    let ledger = typed_transport_mut(TYPED_TRANSPORT_ENTRY_IDS[1], |tt| {
+        tt.result_kind = "bibliography".to_string();
+    });
+    let errs = validate_ledger(&ledger);
+    negative("[unknown-result-kind]", &errs, "invented result kind");
+
+    let ledger = typed_transport_mut(TYPED_TRANSPORT_ENTRY_IDS[2], |tt| {
+        tt.result_kind = "full_document".to_string();
+    });
+    let errs = validate_ledger(&ledger);
+    negative("[unknown-result-kind]", &errs, "cross-endpoint result kind");
+}
+
+#[test]
+fn rejects_foreign_knob_in_proxy_request_fields() {
+    // teiCoordinates must never return to the corrected header/references
+    // dialects, and no references/header knob may cross over.
+    let ledger = ledger_entry_mut(TYPED_TRANSPORT_ENTRY_IDS[1], |entry| {
+        entry
+            .request_fields
+            .push("teiCoordinates — invented drift re-add".to_string());
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[foreign-endpoint-field]",
+        &errs,
+        "teiCoordinates on header",
+    );
+
+    let ledger = ledger_entry_mut(TYPED_TRANSPORT_ENTRY_IDS[1], |entry| {
+        entry
+            .request_fields
+            .push("includeRawCitations — references-only knob".to_string());
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[foreign-endpoint-field]",
+        &errs,
+        "citations knob on header",
+    );
+
+    let ledger = ledger_entry_mut(TYPED_TRANSPORT_ENTRY_IDS[2], |entry| {
+        entry
+            .request_fields
+            .push("consolidateHeader — header-only knob".to_string());
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[foreign-endpoint-field]",
+        &errs,
+        "header knob on references",
+    );
+}
+
+#[test]
+fn rejects_incomplete_proxy_field_allowlist() {
+    let ledger = ledger_entry_mut(TYPED_TRANSPORT_ENTRY_IDS[2], |entry| {
+        entry
+            .request_fields
+            .retain(|field| !field.starts_with("input"));
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[incomplete-endpoint-field-allowlist]",
+        &errs,
+        "dropped input field",
+    );
+}
+
+#[test]
+fn rejects_proxy_version_route_identity_or_rollback_drift() {
+    let ledger = typed_transport_mut(TYPED_TRANSPORT_ENTRY_IDS[1], |tt| {
+        tt.request_schema_version = 2;
+    });
+    let errs = validate_ledger(&ledger);
+    negative("[typed-transport-version]", &errs, "unsupported version");
+
+    let ledger = typed_transport_mut(TYPED_TRANSPORT_ENTRY_IDS[1], |tt| {
+        tt.result_identity_namespace = "header=v2".to_string();
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[typed-transport-identity-namespace]",
+        &errs,
+        "invented identity namespace",
+    );
+
+    let ledger = ledger_entry_mut(TYPED_TRANSPORT_ENTRY_IDS[1], |entry| {
+        entry.http_endpoint = Some("/api/processHeaderDocumentV2".to_string());
+    });
+    let errs = validate_ledger(&ledger);
+    negative("[typed-transport-route-drift]", &errs, "free-form route");
+
+    let ledger = typed_transport_mut(TYPED_TRANSPORT_ENTRY_IDS[2], |tt| {
+        tt.rollback_target = "native-rust-parser@v9".to_string();
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[typed-transport-rollback-drift]",
+        &errs,
+        "rotated rollback target",
+    );
+
+    let ledger = typed_transport_mut(TYPED_TRANSPORT_ENTRY_IDS[2], |tt| {
+        tt.statuses.push(418);
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[typed-transport-status-taxonomy]",
+        &errs,
+        "status outside the typed taxonomy",
+    );
+
+    let ledger = typed_transport_mut(TYPED_TRANSPORT_ENTRY_IDS[2], |tt| {
+        tt.failure_codes.push("model_overheated".to_string());
+    });
+    let errs = validate_ledger(&ledger);
+    negative("[unknown-failure-code]", &errs, "invented failure code");
+}
+
+#[test]
+fn rejects_registry_dialect_drift_back_to_pre_s05_claims() {
+    // Re-adding teiCoordinates to the corrected header dialect fails.
+    let mut registry = load_registry_value();
+    let caps = registry
+        .get_mut("capabilities")
+        .and_then(|c| c.as_sequence_mut())
+        .expect("capabilities sequence");
+    let header = caps
+        .iter_mut()
+        .find(|c| c.get("id").and_then(|i| i.as_str()) == Some("rest.processHeaderDocument"))
+        .expect("header capability");
+    let fields = header
+        .get_mut("official")
+        .and_then(|o| o.get_mut("request_fields"))
+        .and_then(|f| f.as_sequence_mut())
+        .expect("official request_fields");
+    let mut invented = serde_yaml::Mapping::new();
+    invented.insert(
+        serde_yaml::Value::String("name".into()),
+        serde_yaml::Value::String("teiCoordinates".into()),
+    );
+    fields.push(serde_yaml::Value::Mapping(invented));
+    let errs = validate_registry_endpoint_dialects(&registry);
+    negative(
+        "[registry-endpoint-field-drift]",
+        &errs,
+        "teiCoordinates re-added to header",
+    );
+
+    // Demoting the sanctioned proxy back to absent fails.
+    let mut registry = load_registry_value();
+    let caps = registry
+        .get_mut("capabilities")
+        .and_then(|c| c.as_sequence_mut())
+        .expect("capabilities sequence");
+    let references = caps
+        .iter_mut()
+        .find(|c| c.get("id").and_then(|i| i.as_str()) == Some("rest.processReferences"))
+        .expect("references capability");
+    if let Some(state) = references.get_mut("state") {
+        *state = serde_yaml::Value::String("absent".into());
+    }
+    let errs = validate_registry_endpoint_dialects(&registry);
+    negative(
+        "[registry-endpoint-state-drift]",
+        &errs,
+        "proxy demoted to absent",
+    );
+
+    // Dropping the input field breaks the closed allowlist.
+    let mut registry = load_registry_value();
+    let caps = registry
+        .get_mut("capabilities")
+        .and_then(|c| c.as_sequence_mut())
+        .expect("capabilities sequence");
+    let header = caps
+        .iter_mut()
+        .find(|c| c.get("id").and_then(|i| i.as_str()) == Some("rest.processHeaderDocument"))
+        .expect("header capability");
+    if let Some(fields) = header
+        .get_mut("official")
+        .and_then(|o| o.get_mut("request_fields"))
+        .and_then(|f| f.as_sequence_mut())
+    {
+        fields.retain(|f| f.get("name").and_then(|n| n.as_str()) != Some("input"));
+    }
+    let errs = validate_registry_endpoint_dialects(&registry);
+    negative(
+        "[registry-endpoint-allowlist-incomplete]",
+        &errs,
+        "input dropped from header",
     );
 }
