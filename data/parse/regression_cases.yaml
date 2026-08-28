@@ -1,5 +1,5 @@
 # Bounded regression-case DATA manifest — scholarly parse plane
-# (M464-z84in2 / S01 / T01). Sanctioned location per ADR-068 schema hierarchy:
+# (M464-z84in2 / S01 / T01+T02). Sanctioned location per ADR-068 schema hierarchy:
 # data/parse (see data/parse/SCHEMA.yaml, R113/R117).
 #
 # Every case references a repository fixture path by stable case ID and
@@ -13,11 +13,10 @@
 # Binding lifecycle: `pending` cases carry no checksum yet and skip file
 # existence checks; flipping to `bound` requires a 64-hex sha256 AND the file
 # present on disk (enforced by crates/da-parse/tests/data_contracts.rs).
-# Current honest state: BOTH fixtures are pending because no preserved TEI
-# bytes exist in the working tree today (all data/article_corpora/m033* paths
-# resolve ENOENT; repo-wide scan finds zero *.tei.xml files) — the regression
-# pins in src/real_tei_tests.rs therefore silently skip. S01/T02 owns the
-# transition to bound, ending silent skips.
+# T02 bound the three preserved rich TEI copies under
+# crates/da-parse/tests/fixtures/preserved/. The structural companion remains
+# pending: no structural-profile bytes exist, and copying rich TEI would
+# violate D204 cache-key separation. Owner of that bind is S01/T03.
 manifest_version: 1
 scope_note: >-
   Contract layer only — this manifest binds identities and expectations;
@@ -41,15 +40,14 @@ cases:
     source_kind: preserved_grobid_tei
     fixture:
       path: crates/da-parse/tests/fixtures/preserved/hub_2507.19457.tei.xml
+      sha256: 985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b79e7ec4
       origin: >-
-        Planned compact derivation of the arXiv 2507.19457 (GEPA hub) full-text
-        GROBID CRF TEI historically pinned by src/real_tei_tests.rs at
-        data/article_corpora/m033-grobid-probe-v1/per-paper/2507.19457/grobid.tei.xml
-        — a path which is currently ENOENT. Capture-time consolidation flags are
-        not recorded in TEI headers and are NOT asserted here; the profile below
-        fixes reproduction and cache identity only.
-    binding_status: pending
-    binding_owner_task: S01/T02
+        Byte-identical copy of archive/data-legacy/article_corpora/m033-grobid-probe-v1/per-paper/2507.19457/grobid.tei.xml
+        (M033 GROBID CRF probe, GEPA hub arXiv 2507.19457). Capture-time
+        consolidation flags are not recorded in TEI headers and are NOT
+        asserted here; the profile below fixes reproduction and cache identity
+        only. Provenance: crates/da-parse/tests/fixtures/preserved/provenance.yaml.
+    binding_status: bound
     grobid_profile: rich
     expected_cache_config_fingerprint: 'profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula'
     stages:
@@ -73,7 +71,71 @@ cases:
       - parse.profile.rich
     obligation_acknowledged: true
     notes:
-      - Behavioral floors once bound — sections >= 80 and citations >= 80 per the existing hub pin; tables and formulas re-checked at bind time.
+      - 'Behavioral floors: sections >= 80, citations >= 80, 3 tables, 24 formulas; 21 header authors and 22 non-table figures present in TEI bytes (not lifted this cut).'
+  - id: reg.tei.rlm-2512.24601
+    source_kind: preserved_grobid_tei
+    fixture:
+      path: crates/da-parse/tests/fixtures/preserved/rlm_2512.24601.tei.xml
+      sha256: e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3
+      origin: >-
+        Byte-identical copy of archive/data-legacy/article_corpora/m033-grobid-probe-v1/per-paper/2512.24601/grobid.tei.xml
+        (Recursive Language Models, arXiv 2512.24601). Same M033 CRF probe.
+        Provenance: crates/da-parse/tests/fixtures/preserved/provenance.yaml.
+    binding_status: bound
+    grobid_profile: rich
+    expected_cache_config_fingerprint: 'profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula'
+    stages:
+      - tei_lift_ir
+      - ir_project_article
+    stage_execution_mode: offline_local
+    expected_outcome: parse_ok
+    required_evidence_fields:
+      - source_sha256
+      - source_path
+      - profile_fingerprint
+      - family_counts
+      - lifted_counts
+    ledger_bindings:
+      - rest.processFulltextDocument
+      - dialect.teiCoordinates
+      - parse.stage.lift_tei
+      - parse.stage.project_article
+      - parse.profile.rich
+    obligation_acknowledged: true
+    notes:
+      - '4 header authors, 29 non-table figures, 2 tables, 25 coords attributes in TEI bytes.'
+  - id: reg.tei.reca-bibliography-2605.26525
+    source_kind: preserved_grobid_tei
+    fixture:
+      path: crates/da-parse/tests/fixtures/preserved/reca_2605.26525v1.tei.xml
+      sha256: dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040
+      origin: >-
+        Byte-identical copy of archive/data-legacy/article_corpora/m033-grobid-probe-v1/per-paper/2605.26525v1/grobid.tei.xml
+        (ReCA, arXiv 2605.26525v1). Same M033 CRF probe. Provenance:
+        crates/da-parse/tests/fixtures/preserved/provenance.yaml.
+    binding_status: bound
+    grobid_profile: rich
+    expected_cache_config_fingerprint: 'profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula'
+    stages:
+      - tei_lift_ir
+      - ir_project_article
+    stage_execution_mode: offline_local
+    expected_outcome: parse_ok
+    required_evidence_fields:
+      - source_sha256
+      - source_path
+      - profile_fingerprint
+      - family_counts
+      - lifted_counts
+    ledger_bindings:
+      - rest.processFulltextDocument
+      - dialect.teiCoordinates
+      - parse.stage.lift_tei
+      - parse.stage.project_article
+      - parse.profile.rich
+    obligation_acknowledged: true
+    notes:
+      - 'Large bibliography pin: citations >= 70. 11 header authors, 55 non-table figures, 34 coords attributes in TEI bytes.'
   - id: reg.tei.compact-hub-structural-identity
     source_kind: preserved_grobid_tei
     fixture:
@@ -82,9 +144,10 @@ cases:
         Planned companion fixture pinning the structural reproduction identity
         (consolidation flags zero, Crossref-independent) for the same hub
         document, demonstrating that structural and rich cache identities stay
-        separated end to end (D204).
+        separated end to end (D204). No structural-profile TEI exists in the
+        working tree; inventing one by copying rich bytes is forbidden.
     binding_status: pending
-    binding_owner_task: S01/T02
+    binding_owner_task: S01/T03
     grobid_profile: structural
     expected_cache_config_fingerprint: 'profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note,formula'
     stages:
@@ -103,4 +166,4 @@ cases:
       - parse.profile.structural
     obligation_acknowledged: true
     notes:
-      - Byte-distinct from the rich case by definition — differing consolidation histories produce different TEI bytes, never one shared artifact.
+      - 'Byte-distinct from the rich case by definition — differing consolidation histories produce different TEI bytes, never one shared artifact. T03 owns the bind (Java/direct TEI baseline) or a typed absence.'

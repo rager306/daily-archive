@@ -16,6 +16,7 @@ use std::path::{Path, PathBuf};
 
 use da_parse::GrobidProfile;
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 
 const LEDGER_REL_PATH: &str = "data/parse/api_compatibility_ledger.yaml";
 const REGRESSION_REL_PATH: &str = "data/parse/regression_cases.yaml";
@@ -564,9 +565,18 @@ fn validate_manifest(m: &RegressionManifest, refs: &ValidationRefs) -> Vec<Strin
                     errs.push(format!("[bad-sha256] {ctx}"));
                 }
                 let full = repo_root().join(&c.fixture.path);
-                match std::fs::read_to_string(&full) {
-                    Ok(body) if !body.trim().is_empty() => {}
-                    Ok(_) => errs.push(format!("[empty-fixture-file] {ctx}: {}", c.fixture.path)),
+                match std::fs::read(&full) {
+                    Ok(body) if body.is_empty() => {
+                        errs.push(format!("[empty-fixture-file] {ctx}: {}", c.fixture.path))
+                    }
+                    Ok(body) => {
+                        let actual = hex::encode(Sha256::digest(&body));
+                        if actual != *sha {
+                            errs.push(format!(
+                                "[fixture-sha256-mismatch] {ctx}: declared `{sha}` actual `{actual}`"
+                            ));
+                        }
+                    }
                     Err(e) => errs.push(format!(
                         "[missing-fixture-file] {ctx}: {} ({e})",
                         c.fixture.path
@@ -864,6 +874,23 @@ fn rejects_pending_case_carrying_a_premature_checksum() {
     m.cases[idx].fixture.sha256 = Some("b".repeat(64));
     let e = validate_manifest(&m, &refs_from(&ledger));
     negative("[pending-with-sha256]", &e, "premature checksum");
+}
+
+#[test]
+fn rejects_bound_case_whose_bytes_do_not_match_declared_sha256() {
+    let (ledger, mut m) = loaded_pair();
+    let idx = m
+        .cases
+        .iter()
+        .position(|c| c.binding_status == BindingStatus::Bound)
+        .expect("at least one bound case");
+    m.cases[idx].fixture.sha256 = Some("c".repeat(64));
+    let e = validate_manifest(&m, &refs_from(&ledger));
+    negative(
+        "[fixture-sha256-mismatch]",
+        &e,
+        "bound checksum disagrees with bytes",
+    );
 }
 
 #[test]

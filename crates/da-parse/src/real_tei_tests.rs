@@ -1,5 +1,31 @@
 use super::*;
 use da_ports::parser::FormulaRepresentation;
+use sha2::{Digest, Sha256};
+
+const PRESERVED_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/preserved");
+const HUB_SHA: &str = "985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b79e7ec4";
+const RLM_SHA: &str = "e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3";
+const RECA_SHA: &str = "dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040";
+
+/// Load a tracked preserved TEI fixture. Missing, empty or checksum-mismatched
+/// files FAIL VISIBLY — silent skip is the regression class S01/T02 removes.
+fn load_preserved_tei(file_name: &str, expected_sha256: &str) -> String {
+    let path = format!("{PRESERVED_DIR}/{file_name}");
+    let bytes = std::fs::read(&path).unwrap_or_else(|e| {
+        panic!("missing preserved TEI fixture `{path}`: {e} (silent skip is forbidden)")
+    });
+    assert!(!bytes.is_empty(), "preserved TEI fixture `{path}` is empty");
+    let actual = hex::encode(Sha256::digest(&bytes));
+    assert_eq!(
+        actual, expected_sha256,
+        "preserved TEI fixture `{path}` sha256 mismatch"
+    );
+    String::from_utf8(bytes).unwrap_or_else(|e| panic!("fixture `{path}` is not UTF-8: {e}"))
+}
+
+fn tei_header(tei: &str) -> &str {
+    tei.split("<text>").next().unwrap_or(tei)
+}
 
 /// Hub paper for large bibliography regression: arXiv **2507.19457** (GEPA).
 /// Real GROBID TEI has ~80 `<biblStruct>` in `<back>` (largest in m033 probe).
@@ -7,17 +33,7 @@ use da_ports::parser::FormulaRepresentation;
 /// Previous pin was only `citations.len() > 5` — too weak to catch bibliography drops.
 #[test]
 fn test_real_grobid_tei_gepa_hub_bibliography_2507_19457() {
-    let path = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../data/article_corpora/m033-grobid-probe-v1/per-paper/2507.19457/grobid.tei.xml"
-    );
-    let tei = match std::fs::read_to_string(path) {
-        Ok(t) => t,
-        Err(_) => {
-            eprintln!("skipping real TEI test (file not found): {path}");
-            return;
-        }
-    };
+    let tei = load_preserved_tei("hub_2507.19457.tei.xml", HUB_SHA);
     let sections = GrobidParser::extract_sections(&tei);
     let citations = GrobidParser::extract_citations(&tei);
     println!(
@@ -132,17 +148,7 @@ fn test_real_grobid_tei_gepa_hub_bibliography_2507_19457() {
 /// Second large-bibliography pin (m033 probe): 2605.26525v1 ~78 back biblStruct.
 #[test]
 fn test_real_grobid_tei_large_bibliography_2605_26525() {
-    let path = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../data/article_corpora/m033-grobid-probe-v1/per-paper/2605.26525v1/grobid.tei.xml"
-    );
-    let tei = match std::fs::read_to_string(path) {
-        Ok(t) => t,
-        Err(_) => {
-            eprintln!("skipping real TEI test (file not found): {path}");
-            return;
-        }
-    };
+    let tei = load_preserved_tei("reca_2605.26525v1.tei.xml", RECA_SHA);
     let citations = GrobidParser::extract_citations(&tei);
     println!("2605.26525v1 TEI: {} citations", citations.len());
     assert!(
@@ -159,17 +165,7 @@ fn test_real_grobid_tei_large_bibliography_2605_26525() {
 /// extractor's paths with the matching ordinal.
 #[test]
 fn test_real_grobid_tei_tables_2507_19457() {
-    let path = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../data/article_corpora/m033-grobid-probe-v1/per-paper/2507.19457/grobid.tei.xml"
-    );
-    let tei = match std::fs::read_to_string(path) {
-        Ok(t) => t,
-        Err(_) => {
-            eprintln!("skipping real TEI test (file not found): {path}");
-            return;
-        }
-    };
+    let tei = load_preserved_tei("hub_2507.19457.tei.xml", HUB_SHA);
     let (tables, missingness) = GrobidParser::extract_tables(&tei);
     let (tables_again, _) = GrobidParser::extract_tables(&tei);
     assert_eq!(
@@ -243,17 +239,7 @@ fn test_real_grobid_tei_tables_2507_19457() {
 /// extractor's paths with the matching ordinal.
 #[test]
 fn test_real_grobid_tei_formulas_2507_19457() {
-    let path = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../data/article_corpora/m033-grobid-probe-v1/per-paper/2507.19457/grobid.tei.xml"
-    );
-    let tei = match std::fs::read_to_string(path) {
-        Ok(t) => t,
-        Err(_) => {
-            eprintln!("skipping real TEI test (file not found): {path}");
-            return;
-        }
-    };
+    let tei = load_preserved_tei("hub_2507.19457.tei.xml", HUB_SHA);
     let (formulas, missingness) = GrobidParser::extract_formulas(&tei);
     let (formulas_again, _) = GrobidParser::extract_formulas(&tei);
     assert_eq!(
@@ -338,4 +324,114 @@ fn test_real_grobid_tei_formulas_2507_19457() {
 #[test]
 fn test_real_grobid_tei_sections_and_citations() {
     test_real_grobid_tei_gepa_hub_bibliography_2507_19457();
+}
+
+/// T02: preserved TEI bytes still carry authors, article-level idno and
+/// non-table figures. This cut does not lift those families (see
+/// `this_cut_ir_omits_authors_idno_and_non_table_figures`); the pin is on
+/// the fixture, not on a new IR field.
+#[test]
+fn test_preserved_tei_bytes_cover_authors_idno_and_figures() {
+    let hub = load_preserved_tei("hub_2507.19457.tei.xml", HUB_SHA);
+    let rlm = load_preserved_tei("rlm_2512.24601.tei.xml", RLM_SHA);
+    let reca = load_preserved_tei("reca_2605.26525v1.tei.xml", RECA_SHA);
+    for (name, tei, min_authors, min_nontable_figures) in [
+        ("hub", hub.as_str(), 21usize, 20usize),
+        ("rlm", rlm.as_str(), 4, 20),
+        ("reca", reca.as_str(), 11, 40),
+    ] {
+        let header = tei_header(tei);
+        let authors = header.matches("<author").count();
+        assert!(
+            authors >= min_authors,
+            "{name} header expected ≥{min_authors} <author, got {authors}"
+        );
+        assert!(
+            header.contains("<idno"),
+            "{name} header must carry at least one <idno>"
+        );
+        let figures = tei.matches("<figure").count();
+        let fig_ids = tei.matches("xml:id=\"fig_").count();
+        assert!(
+            fig_ids >= min_nontable_figures,
+            "{name} expected ≥{min_nontable_figures} non-table figure xml:id, got figures={figures} fig_ids={fig_ids}"
+        );
+    }
+}
+
+/// T02: GROBID restarts `n` among sibling divs on the hub. The walker must
+/// uniquify `path_id` (suffix `~2`, `~3`, …) instead of colliding.
+#[test]
+fn test_hub_restarted_numbering_yields_unique_path_ids() {
+    let tei = load_preserved_tei("hub_2507.19457.tei.xml", HUB_SHA);
+    let sections = GrobidParser::extract_sections(&tei);
+    let mut paths = std::collections::HashSet::new();
+    let mut suffixed = 0usize;
+    for s in &sections {
+        let p = s
+            .path_id
+            .as_deref()
+            .expect("nested GROBID TEI must assign path_id");
+        assert!(
+            paths.insert(p.to_string()),
+            "duplicate section path_id `{p}` — restarted numbering was not uniquified"
+        );
+        if p.contains('~') {
+            suffixed += 1;
+        }
+    }
+    assert!(
+        suffixed >= 1,
+        "hub TEI restarts n among siblings; expected at least one `~` suffix, got 0 (sections={})",
+        sections.len()
+    );
+    println!(
+        "hub restarted numbering: {} sections, {} collision suffixes",
+        sections.len(),
+        suffixed
+    );
+}
+
+/// T02: this-cut IR still omits authors / article idno / non-table figures
+/// even when the real hub TEI contains them. Lift expansion is later slices.
+#[test]
+fn test_this_cut_ir_still_omits_authors_figures_idno_on_real_hub() {
+    let tei = load_preserved_tei("hub_2507.19457.tei.xml", HUB_SHA);
+    let ir = GrobidParser::lift_tei(tei, "2507.19457", "fixture");
+    let article = GrobidParser::project_article(ir);
+    let v = serde_json::to_value(&article).unwrap();
+    assert!(v.get("authors").is_none());
+    assert!(v.get("figures").is_none());
+    assert!(v.get("idno").is_none());
+    assert!(!article.tables.is_empty(), "tables ARE lifted this cut");
+    assert!(!article.formulas.is_empty(), "formulas ARE lifted this cut");
+}
+
+/// T02: reca/rlm TEI carry GROBID `coords` on `<graphic>` (not on formulas
+/// or tables in this probe). This cut does not lift graphics; the pin is on
+/// the fixture bytes so later visual-head slices have source-bound coords.
+#[test]
+fn test_preserved_tei_bytes_cover_graphic_coordinates() {
+    let reca = load_preserved_tei("reca_2605.26525v1.tei.xml", RECA_SHA);
+    let rlm = load_preserved_tei("rlm_2512.24601.tei.xml", RLM_SHA);
+    for (name, tei, min_coords) in [("reca", reca.as_str(), 30usize), ("rlm", rlm.as_str(), 20)] {
+        let coords = tei.matches("coords=").count();
+        let graphic_coords = tei.matches("<graphic").count();
+        assert!(
+            coords >= min_coords,
+            "{name} expected ≥{min_coords} coords= attributes, got {coords}"
+        );
+        assert!(
+            graphic_coords >= min_coords,
+            "{name} coords live on <graphic>; expected ≥{min_coords} graphics, got {graphic_coords}"
+        );
+        println!("{name} coords={coords} graphics={graphic_coords}");
+    }
+    let (formulas, _) = GrobidParser::extract_formulas(&reca);
+    let (tables, _) = GrobidParser::extract_tables(&reca);
+    assert!(
+        formulas.iter().all(|f| f.coordinates.is_none())
+            && tables.iter().all(|t| t.coordinates.is_none()),
+        "this probe stamps coords on <graphic>, not on lifted formula/table elements"
+    );
 }
