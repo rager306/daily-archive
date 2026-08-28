@@ -5,8 +5,9 @@
 //!
 //! - the composed parser invokes its [`ParseBackend`] **exactly once** per
 //!   parse (stateful fake, no hidden retries),
-//! - a backend failure short-circuits the pipeline: the backend's own
-//!   `ParserError` surfaces verbatim and neither lift nor projection runs,
+//! - a backend failure short-circuits the pipeline: the backend's own typed
+//!   failure ([`da_parse::ParseBackendFailure`], S04/T01) surfaces verbatim
+//!   with its structured metadata and neither lift nor projection runs,
 //! - the cached/offline composition needs no HTTP at all and replays
 //!   byte-equal articles,
 //! - the `GrobidParser` compatibility facade really drives
@@ -15,9 +16,10 @@
 //!   produce **equal `ParsedArticle`s** (identical serde fields) with
 //!   `tei_xml = Some(raw TEI)`, `layout_json = None`,
 //!   `page_text_missingness = None`,
-//! - external `ParserError` mapping is unchanged through the delegation
-//!   (missing source file → `ParseFailed`, transport outage →
-//!   `Unavailable`, HTTP 500 → `ParseFailed("GROBID HTTP 500")`),
+//! - external `ParserError` mapping stays fail-closed through the delegation
+//!   (missing source file → `ParseFailed`, transport outage → `Unavailable`,
+//!   HTTP 500 → `ParseFailed` carrying the stable typed metadata
+//!   `code=conversion_failed … status=500`),
 //! - `ParserPort::parse_html` default stays `Unavailable`.
 //!
 //! The GROBID transport is a local deterministic stub server — no real GROBID
@@ -28,10 +30,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use da_parse::{
-    CachedTeiBackend, GrobidHttpBackend, GrobidParser, GrobidProfile, ParseBackend,
-    ParseBackendRequest, ScholarlyParser, TeiEnvelope, TeiIdentity,
+    CachedTeiBackend, FailurePhase, GrobidHttpBackend, GrobidParser, GrobidProfile, ParseBackend,
+    ParseBackendFailure, ParseBackendRequest, ScholarlyParser, TeiEnvelope, TeiIdentity,
 };
-use da_ports::parser::{ParseResult, ParserError, ParserPort};
+use da_ports::parser::{ParserError, ParserPort};
 use sha2::{Digest, Sha256};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -55,7 +57,8 @@ const PDF_FIXTURE: &[u8] = b"%PDF-1.4 composition fixture bytes";
 /// Response the fake backend hands out per invocation.
 enum FakeResponse {
     Tei(Vec<u8>),
-    Unavailable(&'static str),
+    /// Typed backend failure surfaced verbatim (S04/T01).
+    Failure(ParseBackendFailure),
 }
 
 /// Stateful fake backend: records every invocation and the exact logical
@@ -74,8 +77,10 @@ impl StatefulFakeBackend {
         Self::new(FakeResponse::Tei(tei))
     }
 
-    fn failing(message: &'static str) -> Self {
-        Self::new(FakeResponse::Unavailable(message))
+    fn failing() -> Self {
+        Self::new(FakeResponse::Failure(ParseBackendFailure::transport(
+            FailurePhase::Connect,
+        )))
     }
 
     fn new(response: FakeResponse) -> Self {
@@ -102,7 +107,10 @@ impl StatefulFakeBackend {
 
 #[async_trait::async_trait]
 impl ParseBackend for StatefulFakeBackend {
-    async fn fetch_tei(&self, request: ParseBackendRequest) -> ParseResult<TeiEnvelope> {
+    async fn fetch_tei(
+        &self,
+        request: ParseBackendRequest,
+    ) -> Result<TeiEnvelope, ParseBackendFailure> {
         self.calls.fetch_add(1, Ordering::SeqCst);
         self.requests
             .lock()
@@ -113,9 +121,7 @@ impl ParseBackend for StatefulFakeBackend {
                 bytes.clone(),
                 TeiIdentity::new("fake-composition", "profile=fake"),
             )),
-            FakeResponse::Unavailable(message) => {
-                Err(ParserError::Unavailable((*message).to_string()))
-            }
+            FakeResponse::Failure(failure) => Err(failure.clone()),
         }
     }
 }
@@ -290,26 +296,42 @@ async fn composed_parser_calls_backend_exactly_once_and_projects_full_article() 
 
 #[tokio::test]
 async fn backend_error_short_circuits_lift_and_projection() {
-    let backend = StatefulFakeBackend::failing("composition outage");
+    let backend = StatefulFakeBackend::failing();
     let parser = ScholarlyParser::new(backend.clone());
 
-    let err = parser
-        .parse("comp-paper", PDF_FIXTURE.to_vec())
+    // Typed consumers get the backend's own failure verbatim — structured
+    // metadata intact, unmapped (fetch_envelope_once is the typed surface).
+    let typed = parser
+        .fetch_envelope_once("comp-paper", PDF_FIXTURE.to_vec())
         .await
         .expect_err("backend failure must surface as Err, never a silent skip");
-
-    assert!(
-        matches!(err, ParserError::Unavailable(ref message) if message == "composition outage"),
-        "the backend's own error must surface verbatim and unmapped: {err:?}"
+    assert_eq!(
+        typed,
+        ParseBackendFailure::transport(FailurePhase::Connect),
+        "the backend's typed failure must surface verbatim and unmapped"
     );
     assert_eq!(
         backend.call_count(),
         1,
         "no retry after failure: exactly one backend invocation"
     );
-    // Short-circuit by construction: `parse` propagates with `?` before the
-    // pure stage — there is no fallback envelope, so lift and projection
-    // cannot have executed behind this error (no panic, no default article).
+
+    // The composition maps to the historical ParserError exactly once
+    // (fail-closed Unavailable for availability-class failures) and never
+    // lifts or projects behind the error (no fallback envelope exists).
+    let err = parser
+        .parse("comp-paper", PDF_FIXTURE.to_vec())
+        .await
+        .expect_err("backend failure must surface as Err through parse, too");
+    assert!(
+        matches!(err, ParserError::Unavailable(ref message) if message.contains("code=transport")),
+        "availability-class failures must map to Unavailable with stable metadata: {err:?}"
+    );
+    assert_eq!(
+        backend.call_count(),
+        2,
+        "each parse above drove exactly one backend invocation"
+    );
 }
 
 #[tokio::test]
@@ -451,8 +473,9 @@ async fn facade_maps_http_error_status_through_composition() {
     let _ = std::fs::remove_file(&pdf_path);
 
     assert!(
-        matches!(err, ParserError::ParseFailed(ref message) if message.contains("GROBID HTTP 500")),
-        "non-success status must keep its historical mapping: {err:?}"
+        matches!(err, ParserError::ParseFailed(ref message)
+            if message.contains("code=conversion_failed") && message.contains("status=500")),
+        "non-success status must keep its historical ParseFailed mapping with stable typed metadata: {err:?}"
     );
     assert_eq!(
         hits.load(Ordering::SeqCst),

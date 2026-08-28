@@ -20,10 +20,9 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use da_parse::{
-    CACHED_TEI_BACKEND_ID, CachedTeiBackend, GROBID_HTTP_BACKEND_ID, GrobidHttpBackend,
-    GrobidProfile, ParseBackend, ParseBackendRequest, TeiEnvelope,
+    CACHED_TEI_BACKEND_ID, CachedTeiBackend, FailureCode, FailurePhase, GROBID_HTTP_BACKEND_ID,
+    GrobidHttpBackend, GrobidProfile, ParseBackend, ParseBackendRequest, TeiEnvelope,
 };
-use da_ports::parser::ParserError;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 /// TEI fixture with multi-byte text and a deliberate CRLF/LF/tab/whitespace
@@ -388,10 +387,14 @@ async fn http_backend_surfaces_http_error_status_fail_visibly() {
         .fetch_tei(request_fixture())
         .await
         .expect_err("backend failure must surface as Err, never a silent skip");
-    assert!(
-        matches!(err, ParserError::ParseFailed(ref msg) if msg.contains("GROBID HTTP 500")),
-        "unexpected error shape: {err:?}"
+    assert_eq!(
+        err.code(),
+        FailureCode::ConversionFailed,
+        "unexpected failure shape: {err}"
     );
+    assert_eq!(err.status(), Some(500));
+    assert_eq!(err.phase(), FailurePhase::AwaitResponse);
+    assert_eq!(err.schema_version(), da_parse::PARSE_FAILURE_SCHEMA_VERSION);
     assert_eq!(
         log.lock().expect("request log lock").len(),
         1,
@@ -411,10 +414,12 @@ async fn http_backend_surfaces_transport_outage_as_unavailable() {
         .fetch_tei(request_fixture())
         .await
         .expect_err("connection refusal must surface as Err");
-    assert!(
-        matches!(err, ParserError::Unavailable(_)),
-        "transport outage must keep the Unavailable mapping: {err:?}"
+    assert_eq!(
+        err.code(),
+        FailureCode::Transport,
+        "transport outage must stay a typed Transport failure: {err}"
     );
+    assert_eq!(err.phase(), FailurePhase::Connect);
 }
 
 #[tokio::test]

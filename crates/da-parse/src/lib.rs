@@ -9,7 +9,11 @@
 //! so cached-TEI replay and the GROBID HTTP path share one contract (R105).
 //! [`ScholarlyParser`] closes the seams into the runtime
 //! backend→envelope→lift→project composition; [`GrobidParser`] stays the
-//! compatibility facade for existing `Arc<dyn ParserPort>` callers.
+//! compatibility facade for existing `Arc<dyn ParserPort>` callers. Since
+//! S04/T01 the request carries the serde-versioned V1 fulltext dialect and
+//! the transport returns the closed typed [`ParseBackendFailure`] vocabulary
+//! (R107); the compatibility `ParserError` mapping stays exactly once at the
+//! facade boundary.
 
 mod backend;
 mod conservation;
@@ -20,6 +24,7 @@ mod lift;
 mod parser;
 mod profile;
 mod projector;
+mod transport;
 
 pub use backend::{
     CACHED_TEI_BACKEND_ID, CachedTeiBackend, GROBID_HTTP_BACKEND_ID, ParseBackend,
@@ -36,6 +41,13 @@ pub use ir::TeiParseIr;
 pub use lift::TeiLifter;
 pub use parser::ScholarlyParser;
 pub use profile::GrobidProfile;
+pub use transport::{
+    CitationsConsolidation, Consolidation, CoordinateFamily, CoordinateSet,
+    FULLTEXT_REQUEST_SCHEMA_VERSION, FailureCode, FailurePhase, FulltextDialectV1,
+    FulltextRequestVersioned, FundersConsolidation, HeaderConsolidation, InvalidConsolidation,
+    InvalidPageWindow, LimitKind, PARSE_FAILURE_SCHEMA_VERSION, PageWindow, ParseBackendFailure,
+    RetryAfter,
+};
 
 #[cfg(test)]
 mod real_tei_tests;

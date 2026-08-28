@@ -1,97 +1,125 @@
-//! Provider-neutral parse backend seam (R105): transport ends here.
+//! Provider-neutral parse transport seam: the typed request, the backend
+//! trait and the deterministic cached-TEI backend (R105, M464-z84in2
+//! S02/T01; S04/T01 adds the versioned request dialect and the typed failure
+//! vocabulary).
 //!
-//! A [`ParseBackend`] turns a logical request (paper id + source bytes) into a
-//! [`TeiEnvelope`]. It owns *how* TEI is obtained (Java GROBID HTTP, cached
-//! bytes) and nothing else: lifting and projection live in the lifter and the
-//! [`crate::http::GrobidParser`] compatibility facade.
+//! Since S04/T01 [`ParseBackendRequest`] carries the serde-versioned V1
+//! fulltext dialect ([`crate::transport::FulltextDialectV1`]) next to the
+//! provider-neutral logical id + source bytes, and [`ParseBackend::fetch_tei`]
+//! returns a closed typed failure ([`crate::transport::ParseBackendFailure`])
+//! instead of the free-form `ParserError` string. [`CachedTeiBackend`] stays
+//! a deterministic success.
 
 use crate::envelope::{TeiEnvelope, TeiIdentity};
 use crate::profile::GrobidProfile;
+use crate::transport::{FulltextDialectV1, ParseBackendFailure};
 use async_trait::async_trait;
-use da_ports::parser::ParseResult;
 
 /// Stable backend id for the Java GROBID HTTP transport.
 pub const GROBID_HTTP_BACKEND_ID: &str = "grobid-http";
-
-/// Stable backend id for replay of already-available cached TEI bytes.
+/// Stable backend id for cached-TEI replay.
 pub const CACHED_TEI_BACKEND_ID: &str = "cached-tei";
 
-/// Logical, provider-neutral backend request.
+/// Provider-neutral fulltext parse request (R105/R107).
 ///
-/// Carries the paper's logical identity and its source bytes. Deliberately
-/// free of `PathBuf`s, env/cache roots and physical source paths: filesystem
-/// layout is a compatibility-shell concern (`GrobidParser::parse_pdf` reads
-/// the file, then hands bytes across this seam).
-#[derive(Debug, Clone)]
+/// Logical identity (`paper_id`), source bytes and the output-affecting V1
+/// dialect — nothing else. No `PathBuf`, no env values, no cache roots, no
+/// timeout or size limits: transport tuning is deliberately not part of the
+/// request vocabulary and therefore never enters content identity.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParseBackendRequest {
     paper_id: String,
     pdf_bytes: Vec<u8>,
+    dialect: FulltextDialectV1,
 }
 
 impl ParseBackendRequest {
-    /// Build a request from a logical paper id and raw source bytes.
+    /// Legacy/default constructor: provider-neutral logical id + source
+    /// bytes, with the dialect reproducing the current default
+    /// (`GrobidProfile::rich()`) fulltext wire request exactly.
     pub fn new(paper_id: impl Into<String>, pdf_bytes: impl Into<Vec<u8>>) -> Self {
+        Self::with_dialect(paper_id, pdf_bytes, FulltextDialectV1::legacy_rich())
+    }
+
+    /// Build from a legacy profile preset: the dialect reproduces that
+    /// profile's fulltext wire request (`rich`, `structural` or `custom`).
+    pub fn from_legacy_profile(
+        profile: &GrobidProfile,
+        paper_id: impl Into<String>,
+        pdf_bytes: impl Into<Vec<u8>>,
+    ) -> Self {
+        Self::with_dialect(paper_id, pdf_bytes, profile.dialect())
+    }
+
+    /// Full constructor over an explicit V1 dialect.
+    pub fn with_dialect(
+        paper_id: impl Into<String>,
+        pdf_bytes: impl Into<Vec<u8>>,
+        dialect: FulltextDialectV1,
+    ) -> Self {
         Self {
             paper_id: paper_id.into(),
             pdf_bytes: pdf_bytes.into(),
+            dialect,
         }
     }
 
-    /// Logical paper identity (never a filesystem path).
+    /// Provider-neutral logical paper id (never a physical path obligation).
     pub fn paper_id(&self) -> &str {
         &self.paper_id
     }
 
-    /// Raw source document bytes.
+    /// Source bytes (PDF for the fulltext path; irrelevant payload for
+    /// cached-TEI replay).
     pub fn pdf_bytes(&self) -> &[u8] {
         &self.pdf_bytes
     }
+
+    /// The versioned V1 dialect carried by this request.
+    pub const fn dialect(&self) -> &FulltextDialectV1 {
+        &self.dialect
+    }
 }
 
-/// Transport seam between source acquisition and TEI lifting (R105).
+/// Provider-neutral transport seam (R105/R107).
 ///
-/// Contract (enforced by `tests/backend_contract.rs` for every backend):
-/// - the returned [`TeiEnvelope`] carries the TEI bytes verbatim (no
-///   normalization) plus exact backend/profile identity;
-/// - identity is independent of transport tuning (timeouts);
-/// - failures surface as `Err(ParserError)` — never panic, never silently
-///   skip. Typed 204/503/timeout semantics belong to slice S04; this seam
-///   must not widen the transport dialect.
+/// Exactly one transport outcome per call: either a verbatim-byte
+/// [`TeiEnvelope`] or one closed [`ParseBackendFailure`]. Implementations
+/// never retry internally — failures surface verbatim with their structured
+/// metadata intact.
 #[async_trait]
 pub trait ParseBackend: Send + Sync {
-    /// Acquire the raw TEI payload for `request`.
-    async fn fetch_tei(&self, request: ParseBackendRequest) -> ParseResult<TeiEnvelope>;
+    /// Fetch TEI for `request` — at most one invocation, typed outcome.
+    async fn fetch_tei(
+        &self,
+        request: ParseBackendRequest,
+    ) -> Result<TeiEnvelope, ParseBackendFailure>;
 }
 
-/// Backend serving already-available TEI bytes without any transport.
-///
-/// This is the offline/cached side of R105: preserved TEI (e.g. S01
-/// archived sidecars) is lifted without HTTP. Bytes are wrapped, never
-/// validated or normalized here — empty/malformed payloads stay verbatim so
-/// nothing is silently skipped (S04 types the absence later).
+/// Deterministic cached-TEI backend: serves already-available bytes with no
+/// transport at all. Infallible by construction (S04: still a deterministic
+/// success under the typed failure trait).
 #[derive(Debug, Clone)]
 pub struct CachedTeiBackend {
-    raw_tei: Vec<u8>,
+    tei_bytes: Vec<u8>,
     identity: TeiIdentity,
 }
 
 impl CachedTeiBackend {
-    /// Wrap already-available raw TEI bytes with cached-tei identity for
-    /// `profile` (the profile that produced the bytes).
-    pub fn new(raw_tei: impl Into<Vec<u8>>, profile: GrobidProfile) -> Self {
-        Self::with_identity(raw_tei, TeiIdentity::cached_tei(profile))
+    /// Cached backend over `tei_bytes`, identity stamped from `profile`.
+    pub fn new(tei_bytes: impl Into<Vec<u8>>, profile: GrobidProfile) -> Self {
+        Self::with_identity(tei_bytes, TeiIdentity::cached_tei(profile))
     }
 
-    /// Wrap bytes with an explicit [`TeiIdentity`], preserving the
-    /// producing-backend provenance of archived payloads.
-    pub fn with_identity(raw_tei: impl Into<Vec<u8>>, identity: TeiIdentity) -> Self {
+    /// Cached backend over `tei_bytes` with an explicit identity.
+    pub fn with_identity(tei_bytes: impl Into<Vec<u8>>, identity: TeiIdentity) -> Self {
         Self {
-            raw_tei: raw_tei.into(),
+            tei_bytes: tei_bytes.into(),
             identity,
         }
     }
 
-    /// Exact backend/profile identity stamped on every envelope.
+    /// Exact provenance identity stamped on every served envelope.
     pub fn identity(&self) -> &TeiIdentity {
         &self.identity
     }
@@ -99,11 +127,12 @@ impl CachedTeiBackend {
 
 #[async_trait]
 impl ParseBackend for CachedTeiBackend {
-    async fn fetch_tei(&self, _request: ParseBackendRequest) -> ParseResult<TeiEnvelope> {
-        // Bytes are already available: no transport, no failure modes, no
-        // normalization — identical envelope on every call.
+    async fn fetch_tei(
+        &self,
+        _request: ParseBackendRequest,
+    ) -> Result<TeiEnvelope, ParseBackendFailure> {
         Ok(TeiEnvelope::new(
-            self.raw_tei.clone(),
+            self.tei_bytes.clone(),
             self.identity.clone(),
         ))
     }

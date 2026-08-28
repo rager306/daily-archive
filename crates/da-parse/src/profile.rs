@@ -1,63 +1,125 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+//! Effective-input GROBID profile — the legacy compatibility surface over
+//! the typed S04 transport vocabulary (M464-z84in2 S04/T01).
+//!
+//! Since S02 this type owned two public raw bools (`consolidate_citations`,
+//! `consolidate_header`) plus the frozen D204 fingerprint strings. Since S04
+//! the raw bools are replaced by typed [`Consolidation`] levels inside their
+//! sanctioned ranges; the staged compatibility surface keeps:
+//!
+//! - [`GrobidProfile::rich`], [`GrobidProfile::structural`],
+//!   [`GrobidProfile::name`],
+//! - byte-identical [`GrobidProfile::configuration_fingerprint`] strings
+//!   (D204; rotation is a coordinated identity decision, never a refactor
+//!   side effect),
+//! - [`GrobidProfile::TEI_COORDINATES`] / [`GrobidProfile::tei_coordinates_json`],
+//! - boolean accessors for the historical fields, plus
+//!   [`GrobidProfile::custom`] / [`GrobidProfile::with_consolidation`] for
+//!   the custom profiles previously built through struct-literal mutation.
+//!
+//! The typed request dialect lives in [`crate::transport`];
+//! [`GrobidProfile::dialect`] projects this profile into it without loss.
+
+use crate::transport::{Consolidation, CoordinateSet, FulltextDialectV1};
+
+/// Effective-input tuning of the GROBID REST dialect.
+///
+/// `Copy` by design: it is handed to every envelope identity and cached
+/// backend unchanged.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GrobidProfile {
-    pub consolidate_citations: bool,
-    pub consolidate_header: bool,
+    consolidation: Consolidation,
+    coordinates: CoordinateSet,
 }
 
 impl GrobidProfile {
-    /// Coordinate groups always requested by this adapter. `formula` was
-    /// added in M400 S03 T01 so GROBID emits `coords` on `<formula>`
-    /// elements; the resulting `configuration_fingerprint` change rotates the
-    /// parse-stage cache identity (D204 — never mix profiles/coordinates
-    /// under one cache key).
-    pub const TEI_COORDINATES: &'static str = "figure,table,note,formula";
+    /// Coordinate families requested for TEI output (legacy wire string,
+    /// D204) — the exact historical associated constant.
+    pub const TEI_COORDINATES: &str = "figure,table,note,formula";
 
-    pub const fn rich() -> Self {
+    /// Rich profile: citation + header consolidation on, full coordinates.
+    pub fn rich() -> Self {
         Self {
-            consolidate_citations: true,
-            consolidate_header: true,
+            consolidation: Consolidation::legacy(true, true),
+            coordinates: CoordinateSet::default(),
         }
     }
 
-    pub const fn structural() -> Self {
+    /// Structural profile: remote consolidation off, full coordinates.
+    pub fn structural() -> Self {
         Self {
-            consolidate_citations: false,
-            consolidate_header: false,
+            consolidation: Consolidation::legacy(false, false),
+            coordinates: CoordinateSet::default(),
         }
     }
 
-    /// Stable semantic name for the effective consolidation policy.
-    /// Mixed policies are intentionally reported as `custom`; they remain
-    /// valid but must never reuse a named profile's cache identity.
-    pub fn name(self) -> &'static str {
-        match (self.consolidate_header, self.consolidate_citations) {
-            (true, true) => "rich",
-            (false, false) => "structural",
+    /// Custom profile from typed consolidation levels (full coordinates —
+    /// the compatibility domain of the previous struct-literal mutation).
+    pub fn custom(consolidation: Consolidation) -> Self {
+        Self {
+            consolidation,
+            coordinates: CoordinateSet::default(),
+        }
+    }
+
+    /// Staged compatibility builder: replace the consolidation levels
+    /// (previously public raw bools).
+    pub fn with_consolidation(mut self, consolidation: Consolidation) -> Self {
+        self.consolidation = consolidation;
+        self
+    }
+
+    /// Typed consolidation levels of this profile.
+    pub const fn consolidation(&self) -> Consolidation {
+        self.consolidation
+    }
+
+    /// Requested coordinate families.
+    pub const fn coordinates(&self) -> CoordinateSet {
+        self.coordinates
+    }
+
+    /// Historical raw-bool accessor: header consolidation enabled.
+    pub fn consolidate_header(&self) -> bool {
+        self.consolidation.header().value() != 0
+    }
+
+    /// Historical raw-bool accessor: citation consolidation enabled.
+    pub fn consolidate_citations(&self) -> bool {
+        self.consolidation.citations().value() != 0
+    }
+
+    /// Stable preset name (`rich`, `structural`, `custom`) — the exact
+    /// historical derivation over the two consolidation levels.
+    pub fn name(&self) -> &'static str {
+        match (
+            self.consolidation.header().value(),
+            self.consolidation.citations().value(),
+        ) {
+            (1, 1) => "rich",
+            (0, 0) => "structural",
             _ => "custom",
         }
     }
 
-    /// Exact effective-input identity for cache keys. HTTP timeout is
-    /// deliberately excluded: it does not alter successful TEI semantics.
-    pub fn configuration_fingerprint(self) -> String {
+    /// D204 configuration fingerprint — byte-stable since S02.
+    pub fn configuration_fingerprint(&self) -> String {
         format!(
             "profile={};consolidateHeader={};consolidateCitations={};teiCoordinates={}",
             self.name(),
-            u8::from(self.consolidate_header),
-            u8::from(self.consolidate_citations),
-            Self::TEI_COORDINATES
+            self.consolidation.header(),
+            self.consolidation.citations(),
+            self.coordinates.wire_value()
         )
     }
 
-    /// The `teiCoordinates` JSON array sent to GROBID, rendered from
-    /// [`Self::TEI_COORDINATES`] so the request body can never drift from the
-    /// configuration fingerprint (D204 — M400 S03 T01: `formula` must reach
-    /// the REST call, not just the cache key).
+    /// TEI coordinate JSON for the REST body (legacy constant rendering).
     pub fn tei_coordinates_json() -> String {
-        let items: Vec<String> = Self::TEI_COORDINATES
-            .split(',')
-            .map(|c| format!("\"{c}\""))
-            .collect();
-        format!("[{}]", items.join(","))
+        CoordinateSet::default().json_value()
+    }
+
+    /// Typed V1 dialect reproducing this profile's fulltext wire request
+    /// (extended fields off, no page window).
+    pub fn dialect(&self) -> FulltextDialectV1 {
+        FulltextDialectV1::from_parts(self.consolidation, self.coordinates)
     }
 }

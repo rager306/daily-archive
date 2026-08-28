@@ -5,7 +5,9 @@
 //! historical [`GrobidParser`] stays as a compatibility facade delegating to
 //! it, so existing `Arc<dyn ParserPort>` callers, the `grobid_parse` lifecycle
 //! span, external `ParserError` mapping and cache identities are unchanged
-//! (R105). Typed 204/503/timeout semantics remain slice S04 scope.
+//! (R105). Since S04/T01 the backend seam carries the closed typed failure
+//! vocabulary ([`ParseBackendFailure`]); the wire-level per-branch 204/503/
+//! timeout/limit stub proofs land in slice S04/T02.
 //!
 //! Since S02/T03 the facade's `impl ParserPort` lives in [`crate::parser`] and
 //! drives the full backend→envelope→lift→project composition through
@@ -15,8 +17,8 @@
 use crate::backend::{ParseBackend, ParseBackendRequest};
 use crate::envelope::{TeiEnvelope, TeiIdentity};
 use crate::profile::GrobidProfile;
+use crate::transport::{FailurePhase, LimitKind, ParseBackendFailure, RetryAfter};
 use async_trait::async_trait;
-use da_ports::parser::{ParseResult, ParserError};
 
 pub(crate) const DEFAULT_GROBID_URL: &str = "http://127.0.0.1:8070";
 
@@ -101,31 +103,29 @@ impl GrobidHttpBackend {
     ///
     /// These parameters are GROBID 0.9.0 REST API options (see GROBID docs).
     /// They add ~2-5s per paper for Crossref lookups; acceptable for batch ingest.
-    pub(crate) async fn process_fulltext(&self, pdf_bytes: &[u8]) -> ParseResult<String> {
+    pub(crate) async fn process_fulltext(
+        &self,
+        pdf_bytes: &[u8],
+    ) -> Result<String, ParseBackendFailure> {
         let url = format!("{}/api/processFulltextDocument", self.url);
         let part = reqwest::multipart::Part::bytes(pdf_bytes.to_vec())
             .file_name("paper.pdf")
             .mime_str("application/pdf")
-            .map_err(|e| ParserError::ParseFailed(e.to_string()))?;
+            .map_err(|_| ParseBackendFailure::conversion(FailurePhase::MultipartEncode, None))?;
 
+        // Wire dialect: identical field names and enum values to the S02
+        // request (D204 byte-compatible); the typed consolidation levels
+        // render the same `"0"`/`"1"` wire strings for the legacy presets.
+        // S04/T02 makes this multipart the sole projector of the typed
+        // request dialect.
+        let consolidation = self.profile.consolidation();
         let form = reqwest::multipart::Form::new()
             .part("input", part)
             .text(
                 "consolidateCitations",
-                if self.profile.consolidate_citations {
-                    "1"
-                } else {
-                    "0"
-                },
+                consolidation.citations().to_string(),
             )
-            .text(
-                "consolidateHeader",
-                if self.profile.consolidate_header {
-                    "1"
-                } else {
-                    "0"
-                },
-            )
+            .text("consolidateHeader", consolidation.header().to_string())
             .text("teiCoordinates", GrobidProfile::tei_coordinates_json());
 
         let resp = self
@@ -141,7 +141,15 @@ impl GrobidHttpBackend {
                     error = %e,
                     "GROBID processFulltextDocument network error"
                 );
-                ParserError::Unavailable(e.to_string())
+                // Honest typed classification (timeout is distinct from
+                // connect/DNS/other transport I/O). No internal retry.
+                if e.is_timeout() {
+                    ParseBackendFailure::timeout(FailurePhase::AwaitResponse)
+                } else if e.is_connect() {
+                    ParseBackendFailure::transport(FailurePhase::Connect)
+                } else {
+                    ParseBackendFailure::transport(FailurePhase::Send)
+                }
             })?;
 
         let status = resp.status();
@@ -152,7 +160,22 @@ impl GrobidHttpBackend {
                 status = %status,
                 "GROBID processFulltextDocument non-success HTTP status"
             );
-            return Err(ParserError::ParseFailed(format!("GROBID HTTP {status}")));
+            // Closed typed classification; the raw error body is never read.
+            return Err(match status.as_u16() {
+                503 => ParseBackendFailure::busy(
+                    503,
+                    resp.headers()
+                        .get("retry-after")
+                        .and_then(|v| v.to_str().ok())
+                        .and_then(RetryAfter::parse_header),
+                ),
+                400 => ParseBackendFailure::invalid_request(400),
+                413 => ParseBackendFailure::limit(LimitKind::RequestBytes, Some(413)),
+                s if (500..600).contains(&s) => {
+                    ParseBackendFailure::conversion(FailurePhase::AwaitResponse, Some(s))
+                }
+                s => ParseBackendFailure::invalid_response(FailurePhase::AwaitResponse, Some(s)),
+            });
         }
 
         let tei_xml = resp.text().await.map_err(|e| {
@@ -161,7 +184,7 @@ impl GrobidHttpBackend {
                 error = %e,
                 "GROBID processFulltextDocument: failed to read response body"
             );
-            ParserError::ParseFailed(e.to_string())
+            ParseBackendFailure::conversion(FailurePhase::ReadBody, Some(status.as_u16()))
         })?;
 
         tracing::debug!(
@@ -184,7 +207,10 @@ fn build_client(timeout: std::time::Duration) -> reqwest::Client {
 
 #[async_trait]
 impl ParseBackend for GrobidHttpBackend {
-    async fn fetch_tei(&self, request: ParseBackendRequest) -> ParseResult<TeiEnvelope> {
+    async fn fetch_tei(
+        &self,
+        request: ParseBackendRequest,
+    ) -> Result<TeiEnvelope, ParseBackendFailure> {
         let paper_id = request.paper_id().to_string();
         let tei_xml = self.process_fulltext(request.pdf_bytes()).await?;
         let identity = self.identity();

@@ -19,6 +19,7 @@ use crate::backend::{ParseBackend, ParseBackendRequest};
 use crate::envelope::TeiEnvelope;
 use crate::http::GrobidParser;
 use crate::lift::TeiLifter;
+use crate::transport::ParseBackendFailure;
 use async_trait::async_trait;
 use da_ports::parser::{ParseResult, ParsedArticle, ParserError, ParserPort};
 
@@ -63,20 +64,28 @@ impl<B: ParseBackend> ScholarlyParser<B> {
     ) -> ParseResult<ParsedArticle> {
         let source = pdf_bytes.into();
         let pdf_hash = TeiLifter::pdf_hash(&source);
-        let envelope = self.fetch_envelope_once(paper_id, source).await?;
+        // Single compatibility conversion boundary: typed backend failures
+        // map to the historical `ParserError` exactly once, here — never a
+        // second backend call, never a lift/projection of a failed fetch.
+        let envelope = self
+            .fetch_envelope_once(paper_id, source)
+            .await
+            .map_err(|failure| failure.to_parser_error())?;
         Ok(self.lift_and_project(paper_id, pdf_hash, envelope))
     }
 
     /// Run the backend exactly once and return its envelope.
     ///
-    /// Single-call discipline: no hidden retries. Transport outcomes surface
-    /// verbatim as `Err(ParserError)`; typed 204/503/timeout semantics are
-    /// slice S04 scope and are not widened here.
+    /// Single-call discipline: no hidden retries. Since S04/T01 the typed
+    /// failure surfaces verbatim (`Result<_, ParseBackendFailure>`), so typed
+    /// consumers keep the structured status/phase/limit/retry metadata; the
+    /// historical `ParserError` mapping happens exactly once at the
+    /// compatibility boundary via `ParseBackendFailure::to_parser_error`.
     pub async fn fetch_envelope_once(
         &self,
         paper_id: &str,
         pdf_bytes: impl Into<Vec<u8>>,
-    ) -> ParseResult<TeiEnvelope> {
+    ) -> Result<TeiEnvelope, ParseBackendFailure> {
         self.backend
             .fetch_tei(ParseBackendRequest::new(paper_id, pdf_bytes))
             .await
@@ -131,7 +140,10 @@ impl ParserPort for GrobidParser {
         let composition = ScholarlyParser::new(self.backend().clone());
 
         let request_start = std::time::Instant::now();
-        let envelope = composition.fetch_envelope_once(paper_id, pdf_bytes).await?;
+        let envelope = composition
+            .fetch_envelope_once(paper_id, pdf_bytes)
+            .await
+            .map_err(|failure| failure.to_parser_error())?;
         let grobid_elapsed_ms = request_start.elapsed().as_millis() as u64;
         let tei_size = envelope.raw_tei().len();
         tracing::info!(

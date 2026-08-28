@@ -6,8 +6,8 @@ use std::collections::HashSet;
 fn structural_profile_disables_remote_consolidation() {
     let parser = GrobidParser::new(None).with_profile(GrobidProfile::structural());
     assert_eq!(parser.profile(), GrobidProfile::structural());
-    assert!(!parser.profile().consolidate_header);
-    assert!(!parser.profile().consolidate_citations);
+    assert!(!parser.profile().consolidate_header());
+    assert!(!parser.profile().consolidate_citations());
 }
 
 #[test]
@@ -25,8 +25,8 @@ fn profile_fingerprints_bind_semantics_and_exclude_timeout() {
         GrobidProfile::rich().configuration_fingerprint(),
         GrobidProfile::structural().configuration_fingerprint()
     );
-    let mut custom = GrobidProfile::structural();
-    custom.consolidate_header = true;
+    let custom = GrobidProfile::structural()
+        .with_consolidation(Consolidation::try_new(1, 0, 0).expect("sanctioned levels"));
     assert_eq!(custom.name(), "custom");
     assert!(
         custom
@@ -1070,7 +1070,6 @@ fn empty_tei_projects_success_with_tei_xml_present() {
 
 mod composition_units {
     use super::*;
-    use da_ports::parser::ParseResult;
     use std::sync::Mutex;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -1104,7 +1103,10 @@ mod composition_units {
 
     #[async_trait::async_trait]
     impl ParseBackend for CountingBackend {
-        async fn fetch_tei(&self, request: ParseBackendRequest) -> ParseResult<TeiEnvelope> {
+        async fn fetch_tei(
+            &self,
+            request: ParseBackendRequest,
+        ) -> Result<TeiEnvelope, ParseBackendFailure> {
             self.calls.fetch_add(1, Ordering::SeqCst);
             self.requests
                 .lock()
