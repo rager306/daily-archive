@@ -32,6 +32,12 @@
 //! now also covers the JVM family (jni/jvm) on top of
 //! Samyama/kg-*/SONA/ruVLLM/RVF/redb.
 //!
+//! Since S06/T01 the gate additionally scans the frozen bounded-batch and
+//! cache contract modules (`batch.rs`, `cache.rs`) with the same
+//! location/tuning hygiene rules and, on top, proves they grow no retry
+//! surface (no retry/backoff/attempt material in code): the batch contract
+//! stays an exactly-once, no-hidden-retry vocabulary (R107).
+//!
 //! The scanners' negative behavior is unit-tested in-file on synthetic
 //! inputs, so the gate itself is fail-visible rather than fail-silent.
 
@@ -380,14 +386,18 @@ let fixtures = \"crates/da-parse/tests/fixtures/preserved/x.tei.xml\";
 
 // ───────── S04/T04: request/failure surface hygiene ─────────
 
-/// Typed request/failure vocabulary surfaces: the provider-neutral protocol
-/// layer and the legacy compatibility projection. `crates/da-parse/src/
-/// http.rs` is deliberately NOT scanned here — the facade shell owns the
-/// sanctioned env/URL resolution documented in the ledger (GROBID_URL).
-const REQUEST_FAILURE_SURFACES: [&str; 3] = [
+/// Typed request/failure/batch/cache vocabulary surfaces: the provider-
+/// neutral protocol layer, the legacy compatibility projection and, since
+/// S06/T01, the frozen bounded-batch and cache contract modules. `crates/
+/// da-parse/src/http.rs` is deliberately NOT scanned here — the facade
+/// shell owns the sanctioned env/URL resolution documented in the ledger
+/// (GROBID_URL).
+const TYPED_VOCABULARY_SURFACES: [&str; 5] = [
     "crates/da-parse/src/transport.rs",
     "crates/da-parse/src/backend.rs",
     "crates/da-parse/src/profile.rs",
+    "crates/da-parse/src/batch.rs",
+    "crates/da-parse/src/cache.rs",
 ];
 
 /// Markers that must never appear in CODE of the request/failure surfaces.
@@ -419,9 +429,13 @@ fn strip_line_comments(text: &str) -> String {
 }
 
 fn surface_marker_hits(text: &str) -> Vec<String> {
+    surface_marker_hits_for(text, &SURFACE_FORBIDDEN_MARKERS)
+}
+
+fn surface_marker_hits_for(text: &str, markers: &[&str]) -> Vec<String> {
     let mut hits = Vec::new();
     for (line_no, raw) in strip_line_comments(text).lines().enumerate() {
-        for marker in SURFACE_FORBIDDEN_MARKERS {
+        for marker in markers {
             if raw.contains(marker) {
                 hits.push(format!(
                     "[request-surface-leak] line {}: marker `{marker}`: {}",
@@ -435,8 +449,8 @@ fn surface_marker_hits(text: &str) -> Vec<String> {
 }
 
 #[test]
-fn request_and_failure_surfaces_stay_free_of_paths_env_and_cache_roots() {
-    for rel in REQUEST_FAILURE_SURFACES {
+fn typed_vocabulary_surfaces_stay_free_of_paths_env_and_cache_roots() {
+    for rel in TYPED_VOCABULARY_SURFACES {
         let text = read_text(rel);
         assert!(
             text.len() > 1000,
@@ -503,6 +517,70 @@ fn failure_renderings_never_carry_payload_or_path_material() {
             }
         }
     }
+}
+
+// ───────── S06/T01: batch/cache contract surface hygiene ─────────
+
+/// The frozen bounded-batch and cache contract modules. Beyond the
+/// location/tuning markers of the typed surfaces above, these two modules
+/// must never grow a RETRY surface in code (no retry decisions, backoff or
+/// attempt counters): availability semantics stay with the backend (an
+/// honest typed Busy, exactly-once per document), and the batch contract
+/// has no field that could even express a retry policy (R107).
+const BATCH_CACHE_SURFACES: [&str; 2] = [
+    "crates/da-parse/src/batch.rs",
+    "crates/da-parse/src/cache.rs",
+];
+
+const BATCH_CACHE_FORBIDDEN_MARKERS: [&str; 10] = [
+    "PathBuf",
+    "std::env",
+    "env::var",
+    "var_os",
+    "GROBID_URL",
+    "127.0.0.1:8070",
+    "cache_root",
+    "CACHE_ROOT",
+    "retry",
+    "backoff",
+];
+
+#[test]
+fn batch_and_cache_contract_surfaces_stay_free_of_locations_and_retry() {
+    for rel in BATCH_CACHE_SURFACES {
+        let text = read_text(rel);
+        assert!(
+            text.len() > 1000,
+            "positive control failed: {rel} looks truncated"
+        );
+        let hits = surface_marker_hits_for(&text, &BATCH_CACHE_FORBIDDEN_MARKERS);
+        assert!(
+            hits.is_empty(),
+            "batch/cache contract surface {rel} leaked location/tuning/retry material:\n{}",
+            hits.join("\n")
+        );
+    }
+}
+
+#[test]
+fn batch_surface_scanner_fails_visible_on_synthetic_violations() {
+    // Built via format! so the literals of THIS file stay clean.
+    let synthetic = format!(
+        "let policy = {}::exponential();\nlet tries = {}_{}.max(1);\n",
+        "backoff", "attempt", "retry"
+    );
+    let hits = surface_marker_hits_for(&synthetic, &BATCH_CACHE_FORBIDDEN_MARKERS);
+    assert_eq!(hits.len(), 2, "expected two code hits, got {hits:?}");
+    assert!(hits.iter().any(|h| h.contains("backoff")));
+    assert!(hits.iter().any(|h| h.contains("retry")));
+    // A clean batch/cache surface passes the same scanner.
+    assert!(
+        surface_marker_hits_for(
+            "let mode = CacheMode::Off;\n",
+            &BATCH_CACHE_FORBIDDEN_MARKERS
+        )
+        .is_empty()
+    );
 }
 
 // ───────── S03/T04: single sanctioned conservation evidence path ─────────

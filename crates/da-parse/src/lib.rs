@@ -17,8 +17,17 @@
 //! and references operations: versioned per-endpoint request dialects and
 //! endpoint result identities distinguish every operation and effective
 //! request without touching the fulltext facade or the D204 pins (R113).
+//! Since S06/T01 the frozen bounded-batch and cache contract lives in
+//! [`batch`] / [`cache`]: the closed four-mode cache vocabulary with its
+//! truth table, NonZero bounded limits, ordered items over
+//! [`ParseBackendRequest`], the ordered input fingerprint, the schema-bound
+//! resume cursor, per-stage dispositions and one typed terminal outcome per
+//! admitted document — still without touching `ParserPort` or introducing
+//! any path/env/retry surface.
 
 mod backend;
+mod batch;
+mod cache;
 mod conservation;
 mod envelope;
 mod http;
@@ -32,6 +41,16 @@ mod transport;
 pub use backend::{
     CACHED_TEI_BACKEND_ID, CachedTeiBackend, GROBID_HTTP_BACKEND_ID, ParseBackend,
     ParseBackendRequest,
+};
+pub use batch::{
+    BatchCursor, PARSE_BATCH_CURSOR_SCHEMA_VERSION, PARSE_BATCH_SCHEMA_VERSION, ParseBatch,
+    ParseBatchAdmissionError, ParseBatchCursorError, ParseBatchItem, ParseBatchLimits,
+    ParseDocumentFailure, ParseDocumentOutcome, ParseDocumentSuccess, ordered_input_fingerprint,
+};
+pub use cache::{
+    CacheIntegrityCode, CacheMode, CacheStageDisposition, PARSE_CACHE_DISPOSITION_SCHEMA_VERSION,
+    PARSE_CACHE_FAILURE_SCHEMA_VERSION, PROJECT_ARTICLE_STAGE_ID, ParseCacheDispositions,
+    ParseCacheFailure, ParseCacheStage, RAW_TEI_STAGE_ID,
 };
 pub use conservation::{
     ByteRange, ConservationDelta, ConservationEngine, ConservationEntry, ConservationFamily,
