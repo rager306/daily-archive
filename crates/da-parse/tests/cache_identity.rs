@@ -1303,3 +1303,81 @@ fn s06_projector_payload_binds_verified_dependencies() {
     .unwrap_err();
     assert_eq!(error.code(), CacheIntegrityCode::ManifestCorrupt);
 }
+
+// ───── S06/T05 batch/cache vocabulary byte pins for the DATA ledger ─────
+
+#[test]
+fn s06_batch_cache_vocabulary_stays_byte_pinned_for_the_data_ledger() {
+    use da_parse::{
+        CacheMode, CacheStageDisposition, PARSE_BATCH_CURSOR_SCHEMA_VERSION,
+        PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION, PARSE_BATCH_SCHEMA_VERSION,
+        PROJECT_ARTICLE_PAYLOAD_SCHEMA_VERSION,
+    };
+
+    // Stage identities + payload schema versions: exactly the strings the
+    // data/parse ledgers declare (S06/T05) and the storage adapter (T03)
+    // namespaces by. Any drift here rotates the cache identity — a
+    // coordinated D204-grade decision, never a silent rename.
+    assert_eq!(RAW_TEI_STAGE_ID, "parse.raw_tei.v1");
+    assert_eq!(PROJECT_ARTICLE_STAGE_ID, "parse.project_article.v1");
+    assert_eq!(RAW_TEI_PAYLOAD_SCHEMA_VERSION, 1);
+    assert_eq!(PROJECT_ARTICLE_PAYLOAD_SCHEMA_VERSION, 1);
+    assert_eq!(
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        "ParsedArticle@serde-v3-unique-navigation"
+    );
+    assert_eq!(ParseCacheStage::RawTei.stage_id(), RAW_TEI_STAGE_ID);
+    assert_eq!(
+        ParseCacheStage::ProjectArticle.stage_id(),
+        PROJECT_ARTICLE_STAGE_ID
+    );
+
+    // Closed four-mode vocabulary: kebab-case wire names plus the exact
+    // truth-table rows the ledgers pin (refresh bypasses hits — reads stay
+    // false because the stored value is never consulted).
+    let mode_rows: [(CacheMode, &str, bool, bool, bool); 4] = [
+        (CacheMode::Off, "off", false, false, false),
+        (CacheMode::ReadOnly, "read-only", true, false, false),
+        (CacheMode::WriteThrough, "write-through", true, true, false),
+        (CacheMode::Refresh, "refresh", false, true, true),
+    ];
+    for (mode, wire, reads, publishes, bypasses) in mode_rows {
+        assert_eq!(mode.as_str(), wire, "{wire}");
+        assert_eq!(mode.reads_stages(), reads, "{wire}");
+        assert_eq!(mode.publishes_results(), publishes, "{wire}");
+        assert_eq!(mode.bypasses_hits(), bypasses, "{wire}");
+    }
+
+    // Closed per-stage disposition vocabulary (serde snake_case wire forms).
+    assert_eq!(CacheStageDisposition::Hit.as_str(), "hit");
+    assert_eq!(
+        CacheStageDisposition::ComputedPublished.as_str(),
+        "computed_published"
+    );
+    assert_eq!(
+        CacheStageDisposition::ComputedUnpublished.as_str(),
+        "computed_unpublished"
+    );
+    assert_eq!(
+        CacheStageDisposition::ComputedUncached.as_str(),
+        "computed_uncached"
+    );
+
+    // Closed integrity-code vocabulary — the terminal per-document taxonomy
+    // in the DATA ledger pins exactly these five snake_case names.
+    let integrity_rows = [
+        (CacheIntegrityCode::ChecksumMismatch, "checksum_mismatch"),
+        (CacheIntegrityCode::ManifestCorrupt, "manifest_corrupt"),
+        (CacheIntegrityCode::IdentityMismatch, "identity_mismatch"),
+        (CacheIntegrityCode::PayloadUnreadable, "payload_unreadable"),
+        (CacheIntegrityCode::StageWriteFailed, "stage_write_failed"),
+    ];
+    for (code, wire) in integrity_rows {
+        assert_eq!(code.as_str(), wire);
+    }
+
+    // Schema versions of the batch / cursor / run-summary vocabularies.
+    assert_eq!(PARSE_BATCH_SCHEMA_VERSION, 1);
+    assert_eq!(PARSE_BATCH_CURSOR_SCHEMA_VERSION, 1);
+    assert_eq!(PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION, 1);
+}

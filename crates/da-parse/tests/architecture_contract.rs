@@ -38,6 +38,13 @@
 //! surface (no retry/backoff/attempt material in code): the batch contract
 //! stays an exactly-once, no-hidden-retry vocabulary (R107).
 //!
+//! Since S06/T05 the gate additionally proves the redb accelerator stays
+//! FEATURE-GATED inside the two infrastructure crates only (optional
+//! dependency in da-adapters, forwarding feature in da-cli; D295 role
+//! `rebuildable_only`): no other workspace crate — the parse plane, the
+//! domain/application cores and the kg-* universals included — may acquire
+//! redb as a dependency or as a feature.
+//!
 //! The scanners' negative behavior is unit-tested in-file on synthetic
 //! inputs, so the gate itself is fail-visible rather than fail-silent.
 
@@ -803,5 +810,156 @@ fn parse_registry_keeps_d127_import_lock_candidate_identity_and_proxy_set() {
     assert_eq!(
         proxy_ids, expected,
         "the sanctioned proxy set must stay exactly these five capabilities"
+    );
+}
+
+// ───── S06/T05: redb stays a feature-gated rebuildable-only accelerator ─────
+
+/// Infrastructure crates allowed to carry the redb accelerator (D295 role
+/// `rebuildable_only`). The workspace root's [workspace.dependencies]
+/// version pin is not an acquisition and is deliberately not scanned —
+/// only crates/*/Cargo.toml manifests are.
+const REDB_ALLOWED_CRATES: [&str; 2] = ["da-adapters", "da-cli"];
+
+/// Scan one crate manifest for redb material. A dependency row outside the
+/// infrastructure crates, a non-optional row anywhere, or a redb feature
+/// outside the infrastructure crates all fail the gate.
+fn redb_dependency_hits(crate_name: &str, manifest_text: &str) -> Vec<String> {
+    let mut hits = Vec::new();
+    let mut section = String::new();
+    for (line_no, raw) in manifest_text.lines().enumerate() {
+        let line = raw.trim();
+        if line.starts_with('[') && line.ends_with(']') {
+            section = line[1..line.len() - 1].to_string();
+            continue;
+        }
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if section == "features" {
+            if let Some((name, _value)) = line.split_once('=')
+                && name.trim() == "redb"
+                && !REDB_ALLOWED_CRATES.contains(&crate_name)
+            {
+                hits.push(format!(
+                    "[redb-feature-outside-infrastructure] line {}: {crate_name}: [{section}] {line}",
+                    line_no + 1
+                ));
+            }
+            continue;
+        }
+        if !section.ends_with("dependencies") {
+            continue;
+        }
+        if let Some((name, rest)) = line.split_once('=')
+            && name.trim() == "redb"
+        {
+            if !REDB_ALLOWED_CRATES.contains(&crate_name) {
+                hits.push(format!(
+                    "[redb-outside-infrastructure] line {}: {crate_name}: [{section}] {line}",
+                    line_no + 1
+                ));
+            } else if !rest.contains("optional") {
+                hits.push(format!(
+                    "[redb-not-feature-gated] line {}: {crate_name}: [{section}] {line} must carry optional = true",
+                    line_no + 1
+                ));
+            }
+        }
+    }
+    hits
+}
+
+#[test]
+fn redb_stays_feature_gated_in_infrastructure_crates_only() {
+    // Positive controls: the sanctioned wiring really exists.
+    let adapters = read_text("crates/da-adapters/Cargo.toml");
+    assert!(
+        adapters.contains("redb = { workspace = true, optional = true }"),
+        "positive control failed: da-adapters lost its optional redb dependency"
+    );
+    assert!(
+        adapters.contains("redb = [\"dep:redb\"]"),
+        "positive control failed: da-adapters lost its redb feature"
+    );
+    let cli = read_text("crates/da-cli/Cargo.toml");
+    assert!(
+        cli.contains("redb = [\"da-adapters/redb\"]"),
+        "positive control failed: da-cli lost its redb forwarding feature"
+    );
+
+    // The whole crates/ tree stays clean: only da-adapters carries the
+    // (optional) dependency row, only the two infrastructure crates carry
+    // the feature, and nothing else — parse plane, domain/application cores
+    // or kg-* universals — acquires redb at all.
+    let crates_dir = repo_root().join("crates");
+    let mut scanned = 0usize;
+    let mut hits = Vec::new();
+    let entries = std::fs::read_dir(&crates_dir).expect("crates directory readable");
+    for entry in entries.flatten() {
+        let manifest = entry.path().join("Cargo.toml");
+        if !manifest.is_file() {
+            continue;
+        }
+        scanned += 1;
+        let crate_name = entry.file_name().to_string_lossy().to_string();
+        let text = std::fs::read_to_string(&manifest)
+            .unwrap_or_else(|e| panic!("manifest unreadable {manifest:?}: {e}"));
+        hits.extend(redb_dependency_hits(&crate_name, &text));
+    }
+    assert!(
+        scanned >= 8,
+        "positive control failed: only {scanned} crate manifests scanned"
+    );
+    assert!(
+        hits.is_empty(),
+        "redb leaked outside the feature-gated infrastructure accelerators (D295: rebuildable_only):\n{}",
+        hits.join("\n")
+    );
+
+    // da-parse stays on the explicit name-level ban list too (belt and
+    // braces: the value-aware scan above must agree with the ban list).
+    let parse = read_text(DA_PARSE_MANIFEST);
+    assert!(
+        redb_dependency_hits("da-parse", &parse).is_empty(),
+        "da-parse must not acquire redb"
+    );
+}
+
+#[test]
+fn redb_scanner_fails_visible_on_synthetic_violations() {
+    let infra_non_optional = "[dependencies]\nredb = \"2.6\"\n";
+    let hits = redb_dependency_hits("da-adapters", infra_non_optional);
+    assert_eq!(
+        hits.len(),
+        1,
+        "expected the missing optional flag, got {hits:?}"
+    );
+    assert!(hits[0].contains("[redb-not-feature-gated]"));
+
+    let outside = "[dependencies]\nredb = { workspace = true, optional = true }\n";
+    let hits = redb_dependency_hits("kg-storage", outside);
+    assert_eq!(
+        hits.len(),
+        1,
+        "expected the outside-infrastructure hit, got {hits:?}"
+    );
+    assert!(hits[0].contains("[redb-outside-infrastructure]"));
+
+    let feature_outside = "[features]\nredb = [\"dep:redb\"]\n";
+    let hits = redb_dependency_hits("da-domain", feature_outside);
+    assert_eq!(hits.len(), 1, "expected the feature hit, got {hits:?}");
+    assert!(hits[0].contains("[redb-feature-outside-infrastructure]"));
+
+    // Clean infrastructure wiring passes the same scanner...
+    let clean = "[dependencies]\nredb = { workspace = true, optional = true }\n\n[features]\nredb = [\"dep:redb\"]\n";
+    assert!(redb_dependency_hits("da-adapters", clean).is_empty());
+    // ...and a clean parse-plane manifest stays clean.
+    assert!(
+        redb_dependency_hits(
+            "da-parse",
+            "[dependencies]\nda-ports = { workspace = true }\n"
+        )
+        .is_empty()
     );
 }

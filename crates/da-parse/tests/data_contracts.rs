@@ -49,6 +49,26 @@
 //! - an invented endpoint, route, field, version, result kind, status or
 //!   failure code in either document fails loudly.
 //!
+//! Since S06/T05 the gate additionally enforces:
+//! - the additive `batch_cache_observation:` record on the observation
+//!   ledger (bounded batch + two-stage cache semantics) cross-validates
+//!   against the LIVE da_parse vocabulary: the exact four-mode cache
+//!   vocabulary with its truth table, the two stage identities with their
+//!   payload schema versions and exact key-dependency sets, the projector
+//!   schema fingerprint, the NonZero batch bounds (excluded from content
+//!   identity), the schema-bound fail-closed cursor, the per-document
+//!   terminal taxonomy (backend + cache-integrity codes), the run-summary
+//!   serialized field set, the legacy read-only identities and the redb
+//!   role `rebuildable_only` (D295);
+//! - the registry-of-record `defaults.batch_cache` declaration agrees with
+//!   the observation record and the live vocabulary (DATA↔DATA↔live);
+//! - `configuration_keys_documented_not_owned` equals EXACTLY the live
+//!   da-cli composition-root key constants — an invented key (documented
+//!   but undefined) or a dropped live key fails by exact name;
+//! - the `data/parse` tree stays exactly the sanctioned file set (no
+//!   parallel ledger tree) and the ledger text stays free of raw parse
+//!   payload material.
+//!
 //! Scope guards honored by construction: this binary contacts no network
 //! service, parses no corpus document through the parser pipeline, touches no
 //! graph store, and depends on no wall-clock state. Project hard locks are
@@ -59,10 +79,16 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use da_parse::{
-    Consolidation, CoordinateSet, FULLTEXT_REQUEST_SCHEMA_VERSION, FailureCode, FulltextDialectV1,
-    FulltextRequestVersioned, GrobidProfile, HEADER_REQUEST_SCHEMA_VERSION, HeaderDialectV1,
-    PARSE_FAILURE_SCHEMA_VERSION, ParseEndpoint, REFERENCES_REQUEST_SCHEMA_VERSION,
-    ReferencesDialectV1,
+    BatchCursor, CacheIntegrityCode, CacheMode, Consolidation, CoordinateSet,
+    FULLTEXT_REQUEST_SCHEMA_VERSION, FailureCode, FulltextDialectV1, FulltextRequestVersioned,
+    GrobidProfile, HEADER_REQUEST_SCHEMA_VERSION, HeaderDialectV1,
+    PARSE_BATCH_CURSOR_SCHEMA_VERSION, PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION,
+    PARSE_BATCH_SCHEMA_VERSION, PARSE_FAILURE_SCHEMA_VERSION,
+    PROJECT_ARTICLE_PAYLOAD_SCHEMA_VERSION, PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+    PROJECT_ARTICLE_STAGE_ID, ParseBackendRequest, ParseBatchLimits, ParseCacheStage,
+    ParseEndpoint, RAW_TEI_PAYLOAD_SCHEMA_VERSION, RAW_TEI_STAGE_ID,
+    REFERENCES_REQUEST_SCHEMA_VERSION, ReferencesDialectV1, project_article_stage_key,
+    raw_tei_stage_key,
 };
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -293,6 +319,7 @@ struct LedgerFile {
     #[allow(dead_code)]
     scope_note: String,
     policy_locks: PolicyLocks,
+    batch_cache_observation: BatchCacheObservation,
     entries: Vec<LedgerEntry>,
 }
 
@@ -563,6 +590,16 @@ fn validate_ledger(l: &LedgerFile) -> Vec<String> {
     }
     errs.extend(validate_typed_transport_placement(l));
     errs.extend(validate_registry_endpoint_dialects(&load_registry_value()));
+    errs.extend(validate_registry_config_keys(&load_registry_value()));
+    errs.extend(validate_data_parse_tree());
+    errs.extend(validate_batch_cache_registry_consistency(
+        &l.batch_cache_observation,
+        &load_registry_value(),
+    ));
+    errs.extend(validate_batch_cache_observation(
+        &l.batch_cache_observation,
+        &ledger_id_set(l),
+    ));
 
     for anchor in ANCHOR_ENTRY_IDS {
         if !seen.contains(anchor) {
@@ -1093,6 +1130,847 @@ fn validate_registry_stage_binding(registry: &serde_yaml::Value) -> Vec<String> 
     if str_at(cap, &["candidate"]) != "da-parse@lift-v1" {
         errs.push(format!("{DRIFT} stage.tei_lift candidate identity rotated"));
     }
+    errs
+}
+
+// ───── S06/T05: batch/cache observation ↔ live Rust cross-checks ─────
+
+/// Additive batch/cache observation of the observation ledger
+/// (`deny_unknown_fields`: an invented field fails loudly at load).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BatchCacheObservation {
+    carrier_entry_ids: Vec<String>,
+    cache_modes: Vec<CacheModeObservation>,
+    #[allow(dead_code)] // prose carrier of the mode semantics
+    cache_modes_note: String,
+    cache_stages: Vec<CacheStageObservation>,
+    batch_limits: BatchLimitsObservation,
+    cursor: CursorObservation,
+    terminal_per_document_taxonomy: TerminalTaxonomyObservation,
+    run_summary: RunSummaryObservation,
+    legacy_read_only: LegacyReadOnlyObservation,
+    redb: RedbObservation,
+    raw_content_free: bool,
+}
+
+/// One row of the four-mode cache vocabulary plus its truth table.
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+struct CacheModeObservation {
+    mode: String,
+    reads_stages: bool,
+    publishes_results: bool,
+    bypasses_hits: bool,
+}
+
+/// One row of the two-stage cache vocabulary with its live identities.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CacheStageObservation {
+    stage: String,
+    stage_id: String,
+    payload_schema_version: u32,
+    /// Only the projector stage may declare this (raw stays fingerprint-free).
+    projector_schema_fingerprint: Option<String>,
+    key_dependencies: Vec<String>,
+    paper_id_in_key: bool,
+    rotation: String,
+}
+
+/// Bounded batch limits semantics.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BatchLimitsObservation {
+    bounded_fields: Vec<String>,
+    nonzero_bounds: bool,
+    content_identity_excluded: bool,
+    admission_scope: String,
+}
+
+/// Schema-bound resume cursor semantics.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CursorObservation {
+    input_binding: String,
+    schema_version: u32,
+    fail_closed: bool,
+}
+
+/// Per-document terminal outcome taxonomy.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TerminalTaxonomyObservation {
+    outcome_schema_version: u32,
+    one_outcome_per_admitted_ordinal: bool,
+    backend_failure_codes: Vec<String>,
+    cache_failure_stages: Vec<String>,
+    cache_integrity_codes: Vec<String>,
+}
+
+/// Run summary schema + counter field set.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RunSummaryObservation {
+    schema_version: u32,
+    counters: Vec<String>,
+}
+
+/// Legacy read-only parse identities (read-only reuse, never promotion).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LegacyReadOnlyObservation {
+    identities: Vec<String>,
+    projection_schema: String,
+    hit_creates_canonical_record: bool,
+}
+
+/// redb accelerator role (D295: rebuildable only, never authority).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RedbObservation {
+    role: String,
+    feature_gated: bool,
+    owner_crates: Vec<String>,
+    #[allow(dead_code)] // prose statement of what deletion preserves
+    deletion_preserves: String,
+}
+
+/// The live ParseCacheStage for a serde wire name.
+fn parse_live_cache_stage(name: &str) -> Option<ParseCacheStage> {
+    match name {
+        "raw_tei" => Some(ParseCacheStage::RawTei),
+        "project_article" => Some(ParseCacheStage::ProjectArticle),
+        _ => None,
+    }
+}
+
+/// The live cache mode for a wire name (closed four-mode vocabulary).
+fn parse_live_cache_mode(name: &str) -> Option<CacheMode> {
+    [
+        CacheMode::Off,
+        CacheMode::ReadOnly,
+        CacheMode::WriteThrough,
+        CacheMode::Refresh,
+    ]
+    .into_iter()
+    .find(|mode| mode.as_str() == name)
+}
+
+/// The live closed cache-integrity vocabulary (serde snake_case wire form).
+fn live_integrity_code_names() -> BTreeSet<String> {
+    [
+        CacheIntegrityCode::ChecksumMismatch,
+        CacheIntegrityCode::ManifestCorrupt,
+        CacheIntegrityCode::IdentityMismatch,
+        CacheIntegrityCode::PayloadUnreadable,
+        CacheIntegrityCode::StageWriteFailed,
+    ]
+    .into_iter()
+    .map(|code| code.as_str().to_string())
+    .collect()
+}
+
+/// Live ParseBatchRunSummary serialized field names, extracted from the
+/// source Serialize impl (mechanical DATA↔live proof, no instance needed).
+fn live_run_summary_fields() -> BTreeSet<String> {
+    let source = std::fs::read_to_string(repo_root().join("crates/da-parse/src/batch.rs"))
+        .unwrap_or_else(|e| panic!("batch.rs unreadable: {e}"));
+    let start = source
+        .find("impl Serialize for ParseBatchRunSummary")
+        .expect("run summary serializer present in batch.rs");
+    let end = source[start..]
+        .find("impl<'de> Deserialize<'de> for ParseBatchRunSummary")
+        .map(|offset| start + offset)
+        .unwrap_or(source.len());
+    let mut names = BTreeSet::new();
+    for rest in source[start..end].split("serialize_field(\"").skip(1) {
+        let name = rest.split('"').next().unwrap_or_default();
+        if !name.is_empty() {
+            names.insert(name.to_string());
+        }
+    }
+    // Positive controls: the identity/header fields the parser must have
+    // seen — if the serializer shape changes, this gate fails loudly.
+    for header in [
+        "schema_version",
+        "mode",
+        "limits",
+        "input_fingerprint",
+        "resumed_from_ordinal",
+        "cursor",
+    ] {
+        assert!(
+            names.contains(header),
+            "positive control failed: run summary header field `{header}` not parsed"
+        );
+    }
+    assert!(
+        names.len() >= 20,
+        "positive control failed: only {} run summary fields parsed",
+        names.len()
+    );
+    names
+}
+
+/// The counter fields of the run summary = serialized fields minus the
+/// identity/header fields the DATA declares separately.
+fn live_run_summary_counter_names() -> BTreeSet<String> {
+    const HEADER: [&str; 6] = [
+        "schema_version",
+        "mode",
+        "limits",
+        "input_fingerprint",
+        "resumed_from_ordinal",
+        "cursor",
+    ];
+    live_run_summary_fields()
+        .into_iter()
+        .filter(|name| !HEADER.contains(&name.as_str()))
+        .collect()
+}
+
+/// Live composition-root config key names, extracted from the `*_KEY`
+/// string constants of crates/da-cli/src/parse_config.rs.
+fn live_config_keys() -> BTreeSet<String> {
+    let source = std::fs::read_to_string(repo_root().join("crates/da-cli/src/parse_config.rs"))
+        .unwrap_or_else(|e| panic!("parse_config.rs unreadable: {e}"));
+    let mut keys = BTreeSet::new();
+    for rest in source.split("_KEY: &str = \"").skip(1) {
+        let value = rest.split('"').next().unwrap_or_default();
+        if !value.is_empty() {
+            keys.insert(value.to_string());
+        }
+    }
+    assert!(
+        keys.len() >= 8,
+        "positive control failed: composition-root key constants not parsed: {keys:?}"
+    );
+    keys
+}
+
+/// The registry `configuration_keys_documented_not_owned` list must equal
+/// EXACTLY the live da-cli composition-root key set — an invented
+/// (documented but undefined) key or a dropped live key fails by name.
+fn validate_registry_config_keys(registry: &serde_yaml::Value) -> Vec<String> {
+    const DRIFT: &str = "[registry-config-key-drift]";
+    let mut errs = Vec::new();
+    let documented: Option<Vec<String>> = registry
+        .get("defaults")
+        .and_then(|d| d.get("configuration_keys_documented_not_owned"))
+        .and_then(|v| v.as_sequence())
+        .map(|seq| {
+            seq.iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect()
+        });
+    let Some(documented) = documented else {
+        errs.push(format!(
+            "{DRIFT} registry lost `configuration_keys_documented_not_owned`"
+        ));
+        return errs;
+    };
+    let live = live_config_keys();
+    let declared: BTreeSet<String> = documented.into_iter().collect();
+    for key in &declared {
+        if !live.contains(key) {
+            errs.push(format!(
+                "[unknown-config-key] `{key}` is documented-not-owned but no live da-cli composition-root constant defines it"
+            ));
+        }
+    }
+    if declared != live {
+        for key in live.difference(&declared) {
+            errs.push(format!(
+                "[incomplete-config-key-set] live composition-root key `{key}` is missing from the registry list"
+            ));
+        }
+    }
+    errs
+}
+
+/// The observation ledger tree stays exactly the sanctioned data/parse file
+/// set — no parallel ledger tree may appear (R113/R117).
+fn data_parse_tree_errs(entries: Vec<(String, bool)>) -> Vec<String> {
+    const SANCTIONED: [&str; 5] = [
+        "SCHEMA.yaml",
+        "api_compatibility_ledger.yaml",
+        "comparison_contract.yaml",
+        "grobid_compatibility.yaml",
+        "regression_cases.yaml",
+    ];
+    let mut errs = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
+    for (name, is_dir) in entries {
+        if is_dir {
+            errs.push(format!(
+                "[parallel-ledger-tree] unexpected directory `data/parse/{name}` in the parse-plane ledger tree"
+            ));
+            continue;
+        }
+        if !SANCTIONED.contains(&name.as_str()) {
+            errs.push(format!(
+                "[parallel-ledger-tree] unexpected file `data/parse/{name}` — the ledger tree is exactly the sanctioned set"
+            ));
+        }
+        seen.insert(name);
+    }
+    for name in SANCTIONED {
+        if !seen.contains(name) {
+            errs.push(format!(
+                "[missing-sanctioned-data-file] `data/parse/{name}` vanished"
+            ));
+        }
+    }
+    errs
+}
+
+fn validate_data_parse_tree() -> Vec<String> {
+    let Ok(entries) = std::fs::read_dir(repo_root().join("data/parse")) else {
+        return vec!["[unreadable-data-parse-tree] data/parse disappeared".to_string()];
+    };
+    let listing = entries
+        .flatten()
+        .map(|entry| {
+            (
+                entry.file_name().to_string_lossy().to_string(),
+                entry.path().is_dir(),
+            )
+        })
+        .collect();
+    data_parse_tree_errs(listing)
+}
+
+/// The ledger is an observation document: raw parse payload material must
+/// never enter it (no TEI/PDF bytes, no payload-envelope field names).
+fn raw_content_scan(text: &str) -> Vec<String> {
+    const RAW_MARKERS: [&str; 3] = ["<TEI", "%PDF-", "tei_xml_hex"];
+    RAW_MARKERS
+        .into_iter()
+        .filter(|marker| text.contains(marker))
+        .map(|marker| {
+            format!("[raw-content-in-ledger] ledger text contains raw material marker `{marker}`")
+        })
+        .collect()
+}
+
+/// The mutual DATA↔DATA check: the registry-of-record `defaults.batch_cache`
+/// declaration must agree with the observation record (and both are already
+/// checked against the live vocabulary).
+fn validate_batch_cache_registry_consistency(
+    obs: &BatchCacheObservation,
+    registry: &serde_yaml::Value,
+) -> Vec<String> {
+    const DRIFT: &str = "[registry-batch-cache-drift]";
+    let mut errs = Vec::new();
+    let Some(section) = registry.get("defaults").and_then(|d| d.get("batch_cache")) else {
+        errs.push(format!("{DRIFT} registry lost `defaults.batch_cache`"));
+        return errs;
+    };
+    let str_at = |node: &serde_yaml::Value, key: &str| -> String {
+        node.get(key)
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string()
+    };
+    let seq_at = |node: &serde_yaml::Value, key: &str| -> Vec<String> {
+        node.get(key)
+            .and_then(|v| v.as_sequence())
+            .map(|seq| {
+                seq.iter()
+                    .filter_map(|v| v.as_str().map(str::to_string))
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let nested = |node: &serde_yaml::Value, key: &str| -> serde_yaml::Value {
+        node.get(key).cloned().unwrap_or(serde_yaml::Value::Null)
+    };
+
+    // The four-mode vocabulary agrees across both documents.
+    let registry_modes: BTreeSet<String> = seq_at(section, "cache_modes").into_iter().collect();
+    let observation_modes: BTreeSet<String> =
+        obs.cache_modes.iter().map(|m| m.mode.clone()).collect();
+    if registry_modes != observation_modes {
+        errs.push(format!(
+            "{DRIFT} registry cache_modes {registry_modes:?} != observation modes {observation_modes:?}"
+        ));
+    }
+
+    // Stage identities agree.
+    let stages = nested(section, "cache_stages");
+    let raw = obs.cache_stages.iter().find(|s| s.stage == "raw_tei");
+    let projector = obs
+        .cache_stages
+        .iter()
+        .find(|s| s.stage == "project_article");
+    if let (Some(raw), Some(projector)) = (raw, projector) {
+        let projector_fp = projector
+            .projector_schema_fingerprint
+            .clone()
+            .unwrap_or_default();
+        for (key, expected) in [
+            ("raw_tei_stage_id", raw.stage_id.clone()),
+            ("project_article_stage_id", projector.stage_id.clone()),
+            ("projector_schema_fingerprint", projector_fp),
+        ] {
+            let actual = str_at(&stages, key);
+            if actual != expected {
+                errs.push(format!(
+                    "{DRIFT} registry `{key}` `{actual}` != observation `{expected}`"
+                ));
+            }
+        }
+        for (key, expected) in [
+            ("raw_payload_schema_version", raw.payload_schema_version),
+            (
+                "project_article_payload_schema_version",
+                projector.payload_schema_version,
+            ),
+        ] {
+            let actual = stages.get(key).and_then(serde_yaml::Value::as_u64);
+            if actual != Some(u64::from(expected)) {
+                errs.push(format!(
+                    "{DRIFT} registry `{key}` {actual:?} != observation {expected}"
+                ));
+            }
+        }
+    }
+
+    // Batch limits, cursor binding and redb role agree.
+    let limits_fields: BTreeSet<String> = seq_at(section, "batch_limits_bounded_fields")
+        .into_iter()
+        .collect();
+    let observation_limits: BTreeSet<String> =
+        obs.batch_limits.bounded_fields.iter().cloned().collect();
+    if limits_fields != observation_limits {
+        errs.push(format!(
+            "{DRIFT} registry batch_limits_bounded_fields {limits_fields:?} != observation bounds {observation_limits:?}"
+        ));
+    }
+    if str_at(section, "cursor_input_binding") != obs.cursor.input_binding {
+        errs.push(format!(
+            "{DRIFT} registry cursor_input_binding `{}` != observation `{}`",
+            str_at(section, "cursor_input_binding"),
+            obs.cursor.input_binding
+        ));
+    }
+    let redb_owners: BTreeSet<String> = seq_at(section, "redb_owner_crates").into_iter().collect();
+    let observation_owners: BTreeSet<String> = obs.redb.owner_crates.iter().cloned().collect();
+    if redb_owners != observation_owners {
+        errs.push(format!(
+            "{DRIFT} registry redb_owner_crates {redb_owners:?} != observation owners {observation_owners:?}"
+        ));
+    }
+    if str_at(section, "redb_role") != obs.redb.role {
+        errs.push(format!(
+            "{DRIFT} registry redb_role `{}` != observation `{}`",
+            str_at(section, "redb_role"),
+            obs.redb.role
+        ));
+    }
+
+    // Legacy read-only identities agree.
+    let legacy: BTreeSet<String> = seq_at(section, "legacy_read_only_identities")
+        .into_iter()
+        .collect();
+    let observation_legacy: BTreeSet<String> =
+        obs.legacy_read_only.identities.iter().cloned().collect();
+    if legacy != observation_legacy {
+        errs.push(format!(
+            "{DRIFT} registry legacy_read_only_identities {legacy:?} != observation {observation_legacy:?}"
+        ));
+    }
+    errs
+}
+
+/// Full cross-validation of the batch/cache observation record against the
+/// LIVE da_parse vocabulary. Drift is localized to the exact field via the
+/// tagged errors below.
+fn validate_batch_cache_observation(
+    obs: &BatchCacheObservation,
+    ledger_ids: &HashSet<String>,
+) -> Vec<String> {
+    let mut errs = Vec::new();
+
+    // Carriers: the observation rides EXISTING sanctioned entries only —
+    // no new capability identities (R105/R113).
+    for id in &obs.carrier_entry_ids {
+        if !ledger_ids.contains(id) {
+            errs.push(format!(
+                "[unresolved-batch-cache-carrier] `{id}` is not a ledger entry id"
+            ));
+        }
+    }
+    for required in [
+        "parse.endpoint.process_fulltext_document",
+        "parse.stage.project_article",
+        "parse.profile.structural",
+    ] {
+        if !obs
+            .carrier_entry_ids
+            .iter()
+            .any(|carrier| carrier == required)
+        {
+            errs.push(format!(
+                "[incomplete-batch-cache-carriers] missing required carrier `{required}`"
+            ));
+        }
+    }
+
+    // Cache modes: exactly the live four-mode vocabulary, truth table exact.
+    let mut seen_modes: HashSet<&str> = HashSet::new();
+    for row in &obs.cache_modes {
+        let Some(live_mode) = parse_live_cache_mode(&row.mode) else {
+            errs.push(format!(
+                "[unknown-cache-mode] `{}` is not a live CacheMode wire form",
+                row.mode
+            ));
+            continue;
+        };
+        if !seen_modes.insert(row.mode.as_str()) {
+            errs.push(format!(
+                "[duplicate-cache-mode] `{}` declared twice",
+                row.mode
+            ));
+        }
+        let live_row = (
+            live_mode.reads_stages(),
+            live_mode.publishes_results(),
+            live_mode.bypasses_hits(),
+        );
+        let declared_row = (row.reads_stages, row.publishes_results, row.bypasses_hits);
+        if declared_row != live_row {
+            errs.push(format!(
+                "[cache-mode-truth-table] `{}` declared {:?} but the live truth table is {live_row:?}",
+                row.mode, declared_row
+            ));
+        }
+    }
+    let live_mode_names: BTreeSet<String> = [
+        CacheMode::Off,
+        CacheMode::ReadOnly,
+        CacheMode::WriteThrough,
+        CacheMode::Refresh,
+    ]
+    .into_iter()
+    .map(|mode| mode.as_str().to_string())
+    .collect();
+    let declared_modes: BTreeSet<String> = obs.cache_modes.iter().map(|m| m.mode.clone()).collect();
+    if declared_modes != live_mode_names {
+        errs.push(format!(
+            "[incomplete-cache-mode-vocabulary] declared {declared_modes:?} must equal the closed live set {live_mode_names:?}"
+        ));
+    }
+
+    // Cache stages: closed two-stage vocabulary with live identities.
+    for stage in &obs.cache_stages {
+        let Some(live) = parse_live_cache_stage(&stage.stage) else {
+            errs.push(format!(
+                "[unknown-cache-stage] `{}` is not a live ParseCacheStage serde name",
+                stage.stage
+            ));
+            continue;
+        };
+        if stage.stage_id != live.stage_id() {
+            errs.push(format!(
+                "[unknown-cache-stage-id] `{}` stage_id `{}` != live `{}`",
+                stage.stage,
+                stage.stage_id,
+                live.stage_id()
+            ));
+        }
+        let live_payload_version = match live {
+            ParseCacheStage::RawTei => RAW_TEI_PAYLOAD_SCHEMA_VERSION,
+            ParseCacheStage::ProjectArticle => PROJECT_ARTICLE_PAYLOAD_SCHEMA_VERSION,
+        };
+        if stage.payload_schema_version != live_payload_version {
+            errs.push(format!(
+                "[cache-stage-schema-drift] `{}` payload_schema_version {} != live {live_payload_version}",
+                stage.stage, stage.payload_schema_version
+            ));
+        }
+        match live {
+            ParseCacheStage::RawTei => {
+                if stage.projector_schema_fingerprint.is_some() {
+                    errs.push(
+                        "[cache-stage-schema-drift] raw_tei must not carry projector_schema_fingerprint"
+                            .into(),
+                    );
+                }
+            }
+            ParseCacheStage::ProjectArticle => {
+                if stage.projector_schema_fingerprint.as_deref()
+                    != Some(PROJECT_ARTICLE_SCHEMA_FINGERPRINT)
+                {
+                    errs.push(format!(
+                        "[cache-stage-schema-drift] projector_schema_fingerprint {:?} != live `{PROJECT_ARTICLE_SCHEMA_FINGERPRINT}`",
+                        stage.projector_schema_fingerprint
+                    ));
+                }
+            }
+        }
+        let allowed: &[&str] = match live {
+            ParseCacheStage::RawTei => &["endpoint", "dialect_wire", "source_bytes"],
+            ParseCacheStage::ProjectArticle => &[
+                "paper_id",
+                "pdf_sha256",
+                "raw_payload_sha256",
+                "projector_schema_fingerprint",
+            ],
+        };
+        let allowed_set: BTreeSet<&str> = allowed.iter().copied().collect();
+        let declared_deps: BTreeSet<&str> =
+            stage.key_dependencies.iter().map(String::as_str).collect();
+        for dep in &declared_deps {
+            if !allowed_set.contains(dep) {
+                errs.push(format!(
+                    "[unknown-stage-key-dependency] `{}`: `{dep}` is not a sanctioned key dependency {allowed_set:?}",
+                    stage.stage
+                ));
+            }
+        }
+        if declared_deps != allowed_set {
+            errs.push(format!(
+                "[incomplete-stage-key-dependencies] `{}`: dependencies {declared_deps:?} must equal {allowed_set:?}",
+                stage.stage
+            ));
+        }
+        let expected_paper_id_in_key = live == ParseCacheStage::ProjectArticle;
+        if stage.paper_id_in_key != expected_paper_id_in_key {
+            errs.push(format!(
+                "[cache-stage-key-binding] `{}` paper_id_in_key {} must be {expected_paper_id_in_key}",
+                stage.stage, stage.paper_id_in_key
+            ));
+        }
+        if stage.rotation != "independent" {
+            errs.push(format!(
+                "[cache-stage-rotation-drift] `{}` rotation `{}` must stay `independent`",
+                stage.stage, stage.rotation
+            ));
+        }
+    }
+    let declared_stages: BTreeSet<&str> =
+        obs.cache_stages.iter().map(|s| s.stage.as_str()).collect();
+    let expected_stages: BTreeSet<&str> = ["raw_tei", "project_article"].into_iter().collect();
+    if declared_stages != expected_stages {
+        errs.push(format!(
+            "[incomplete-cache-stage-vocabulary] stages {declared_stages:?} must equal {expected_stages:?}"
+        ));
+    }
+
+    // Batch limits semantics.
+    {
+        let bl = &obs.batch_limits;
+        let live_fields: BTreeSet<&str> = [
+            "workers",
+            "queue_capacity",
+            "max_in_flight",
+            "max_documents",
+        ]
+        .into_iter()
+        .collect();
+        let declared_fields: BTreeSet<&str> =
+            bl.bounded_fields.iter().map(String::as_str).collect();
+        for field in &declared_fields {
+            if !live_fields.contains(field) {
+                errs.push(format!(
+                    "[unknown-batch-limit-field] `{field}` is not a live ParseBatchLimits bound"
+                ));
+            }
+        }
+        if declared_fields != live_fields {
+            errs.push(format!(
+                "[incomplete-batch-limit-fields] bounds {declared_fields:?} must equal {live_fields:?}"
+            ));
+        }
+        if !bl.nonzero_bounds || !bl.content_identity_excluded {
+            errs.push(
+                "[batch-limit-drift] nonzero_bounds and content_identity_excluded must both stay true"
+                    .into(),
+            );
+        }
+        if bl.admission_scope != "batch_wide_error_only_at_admission" {
+            errs.push(format!(
+                "[batch-admission-scope-drift] admission_scope `{}` must stay batch_wide_error_only_at_admission",
+                bl.admission_scope
+            ));
+        }
+    }
+
+    // Cursor binding.
+    {
+        let cursor = &obs.cursor;
+        if cursor.input_binding != "ordered_input_fingerprint" {
+            errs.push(format!(
+                "[cursor-binding-drift] input_binding `{}` must stay ordered_input_fingerprint",
+                cursor.input_binding
+            ));
+        }
+        if cursor.schema_version != PARSE_BATCH_CURSOR_SCHEMA_VERSION {
+            errs.push(format!(
+                "[cursor-schema-drift] schema_version {} != live {PARSE_BATCH_CURSOR_SCHEMA_VERSION}",
+                cursor.schema_version
+            ));
+        }
+        if !cursor.fail_closed {
+            errs.push("[cursor-binding-drift] fail_closed must stay true".into());
+        }
+    }
+
+    // Terminal per-document taxonomy.
+    {
+        let taxonomy = &obs.terminal_per_document_taxonomy;
+        if taxonomy.outcome_schema_version != PARSE_BATCH_SCHEMA_VERSION {
+            errs.push(format!(
+                "[terminal-schema-drift] outcome_schema_version {} != live {PARSE_BATCH_SCHEMA_VERSION}",
+                taxonomy.outcome_schema_version
+            ));
+        }
+        if !taxonomy.one_outcome_per_admitted_ordinal {
+            errs.push(
+                "[terminal-taxonomy-drift] one_outcome_per_admitted_ordinal must stay true".into(),
+            );
+        }
+        let live_backend = live_failure_code_names();
+        let declared_backend: BTreeSet<String> =
+            taxonomy.backend_failure_codes.iter().cloned().collect();
+        for code in &declared_backend {
+            if !live_backend.contains(code) {
+                errs.push(format!(
+                    "[unknown-failure-code] terminal taxonomy code `{code}` is not a live FailureCode serde name"
+                ));
+            }
+        }
+        if declared_backend != live_backend {
+            errs.push(
+                "[incomplete-failure-vocabulary] terminal taxonomy codes must equal the closed live set"
+                    .into(),
+            );
+        }
+        let live_stage_ids: BTreeSet<String> = [
+            ParseCacheStage::RawTei.stage_id().to_string(),
+            ParseCacheStage::ProjectArticle.stage_id().to_string(),
+        ]
+        .into_iter()
+        .collect();
+        let declared_cache_stages: BTreeSet<String> =
+            taxonomy.cache_failure_stages.iter().cloned().collect();
+        for id in &declared_cache_stages {
+            if !live_stage_ids.contains(id) {
+                errs.push(format!(
+                    "[unknown-cache-stage-id] cache failure stage `{id}` is not a live stage id"
+                ));
+            }
+        }
+        if declared_cache_stages != live_stage_ids {
+            errs.push(
+                "[incomplete-cache-stage-vocabulary] cache_failure_stages must equal the two live stage ids"
+                    .into(),
+            );
+        }
+        let live_integrity = live_integrity_code_names();
+        let declared_integrity: BTreeSet<String> =
+            taxonomy.cache_integrity_codes.iter().cloned().collect();
+        for code in &declared_integrity {
+            if !live_integrity.contains(code) {
+                errs.push(format!(
+                    "[unknown-cache-integrity-code] `{code}` is not a live CacheIntegrityCode serde name"
+                ));
+            }
+        }
+        if declared_integrity != live_integrity {
+            errs.push(
+                "[incomplete-cache-integrity-vocabulary] integrity codes must equal the closed live set"
+                    .into(),
+            );
+        }
+    }
+
+    // Run summary schema + counters.
+    {
+        let summary = &obs.run_summary;
+        if summary.schema_version != PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION {
+            errs.push(format!(
+                "[run-summary-schema-drift] schema_version {} != live {PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION}",
+                summary.schema_version
+            ));
+        }
+        let live_counters = live_run_summary_counter_names();
+        let declared_counters: BTreeSet<String> = summary.counters.iter().cloned().collect();
+        for counter in &declared_counters {
+            if !live_counters.contains(counter) {
+                errs.push(format!(
+                    "[unknown-run-summary-counter] `{counter}` is not a live ParseBatchRunSummary serialized field"
+                ));
+            }
+        }
+        if declared_counters != live_counters {
+            errs.push(
+                "[incomplete-run-summary-counters] counters must equal the live serialized field set"
+                    .into(),
+            );
+        }
+    }
+
+    // Legacy read-only identities.
+    {
+        let legacy = &obs.legacy_read_only;
+        let live_identities: BTreeSet<&str> = ["pdf-grobid", "html-primary"].into_iter().collect();
+        let declared: BTreeSet<&str> = legacy.identities.iter().map(String::as_str).collect();
+        for id in &declared {
+            if !live_identities.contains(id) {
+                errs.push(format!(
+                    "[unknown-legacy-identity] `{id}` is not a sanctioned legacy read-only identity"
+                ));
+            }
+        }
+        if declared != live_identities {
+            errs.push(
+                "[incomplete-legacy-identity-set] identities must be exactly pdf-grobid and html-primary"
+                    .into(),
+            );
+        }
+        if legacy.projection_schema != "ParsedArticle.v1" {
+            errs.push(format!(
+                "[legacy-identity-schema-drift] projection_schema `{}` must stay ParsedArticle.v1",
+                legacy.projection_schema
+            ));
+        }
+        if legacy.hit_creates_canonical_record {
+            errs.push(
+                "[legacy-identity-write-drift] a legacy hit must never create a canonical record"
+                    .into(),
+            );
+        }
+    }
+
+    // redb accelerator role (D295).
+    {
+        let redb = &obs.redb;
+        if redb.role != "rebuildable_only" {
+            errs.push(format!(
+                "[redb-role-drift] role `{}` must stay rebuildable_only (D295)",
+                redb.role
+            ));
+        }
+        if !redb.feature_gated {
+            errs.push("[redb-role-drift] feature_gated must stay true".into());
+        }
+        let live_owners: BTreeSet<&str> = ["da-adapters", "da-cli"].into_iter().collect();
+        let declared_owners: BTreeSet<&str> =
+            redb.owner_crates.iter().map(String::as_str).collect();
+        if declared_owners != live_owners {
+            errs.push(format!(
+                "[redb-role-drift] owner_crates {declared_owners:?} must be exactly the infrastructure crates {live_owners:?}"
+            ));
+        }
+    }
+
+    if !obs.raw_content_free {
+        errs.push("[raw-content-flag-drift] raw_content_free must stay true".into());
+    }
+
     errs
 }
 
@@ -2483,4 +3361,526 @@ fn rejects_registry_dialect_drift_back_to_pre_s05_claims() {
         &errs,
         "input dropped from header",
     );
+}
+
+// ───── S06/T05 batch/cache observation cross-validation tests ─────
+
+/// Mutate the batch/cache observation record of the loaded ledger.
+fn observation_mut<F: FnOnce(&mut BatchCacheObservation)>(f: F) -> LedgerFile {
+    let (mut ledger, _) = loaded_pair();
+    f(&mut ledger.batch_cache_observation);
+    ledger
+}
+
+#[test]
+fn batch_cache_observation_cross_validates_the_live_rust_vocabulary() {
+    let ledger: LedgerFile = expect_loaded(LEDGER_REL_PATH);
+    let errs = validate_ledger(&ledger);
+    assert!(
+        errs.is_empty(),
+        "ledger with batch/cache observation must validate:\n{}",
+        errs.join("\n")
+    );
+    let observation = &ledger.batch_cache_observation;
+
+    // Modes: the DATA truth table equals the LIVE truth-table methods.
+    assert_eq!(
+        observation.cache_modes.len(),
+        4,
+        "exactly the four sanctioned modes"
+    );
+    for row in &observation.cache_modes {
+        let mode = parse_live_cache_mode(&row.mode).expect("closed mode");
+        assert_eq!(row.reads_stages, mode.reads_stages(), "{}", row.mode);
+        assert_eq!(
+            row.publishes_results,
+            mode.publishes_results(),
+            "{}",
+            row.mode
+        );
+        assert_eq!(row.bypasses_hits, mode.bypasses_hits(), "{}", row.mode);
+    }
+
+    // Stage identities equal the live constants, and the live stage keys
+    // really carry the DATA-declared stage-id prefixes.
+    for stage in &observation.cache_stages {
+        let live = parse_live_cache_stage(&stage.stage).expect("closed stage");
+        assert_eq!(stage.stage_id, live.stage_id());
+    }
+    let request = ParseBackendRequest::with_dialect(
+        "paper-ledger",
+        b"pdf-bytes".to_vec(),
+        FulltextDialectV1::legacy_rich(),
+    );
+    assert!(
+        raw_tei_stage_key(&request).starts_with(RAW_TEI_STAGE_ID),
+        "the live raw stage key must carry the DATA-declared stage-id prefix"
+    );
+    assert!(
+        project_article_stage_key(
+            "paper-ledger",
+            "pdf-sha",
+            "raw-sha",
+            PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        )
+        .starts_with(PROJECT_ARTICLE_STAGE_ID),
+        "the live projector stage key must carry the DATA-declared stage-id prefix"
+    );
+
+    // Cursor: fail-closed against a foreign input fingerprint (live probe).
+    let cursor = BatchCursor::at("fingerprint-a", 1);
+    assert!(cursor.validate_for("fingerprint-b", 4).is_err());
+    assert!(cursor.validate_for("fingerprint-a", 4).is_ok());
+
+    // Batch limits: zero bounds fail closed at the wire (live NonZero type).
+    let zero_wire = format!(
+        "{{\"schema_version\":{PARSE_BATCH_SCHEMA_VERSION},\"workers\":0,\"queue_capacity\":2,\"max_in_flight\":2,\"max_documents\":4}}"
+    );
+    assert!(
+        serde_json::from_str::<ParseBatchLimits>(&zero_wire).is_err(),
+        "a zero bound must be a wire error (NonZero bounds)"
+    );
+
+    // Config keys: the registry documents exactly the live da-cli keys.
+    let key_errs = validate_registry_config_keys(&load_registry_value());
+    assert!(
+        key_errs.is_empty(),
+        "config key drift:\n{}",
+        key_errs.join("\n")
+    );
+
+    // The ledger tree stays exactly the sanctioned file set.
+    let tree_errs = validate_data_parse_tree();
+    assert!(
+        tree_errs.is_empty(),
+        "parallel ledger tree:\n{}",
+        tree_errs.join("\n")
+    );
+
+    // No raw parse material entered the ledger text.
+    let ledger_text =
+        std::fs::read_to_string(repo_root().join(LEDGER_REL_PATH)).expect("ledger readable");
+    let raw_errs = raw_content_scan(&ledger_text);
+    assert!(
+        raw_errs.is_empty(),
+        "raw content in ledger:\n{}",
+        raw_errs.join("\n")
+    );
+}
+
+#[test]
+fn rejects_invented_cache_mode_in_batch_cache_observation() {
+    let ledger = observation_mut(|obs| {
+        obs.cache_modes.push(CacheModeObservation {
+            mode: "archive-only".to_string(),
+            reads_stages: false,
+            publishes_results: false,
+            bypasses_hits: false,
+        });
+    });
+    let errs = validate_ledger(&ledger);
+    negative("[unknown-cache-mode]", &errs, "invented cache mode");
+    negative(
+        "[incomplete-cache-mode-vocabulary]",
+        &errs,
+        "vocabulary no longer equals the closed set",
+    );
+}
+
+#[test]
+fn rejects_cache_mode_truth_table_drift() {
+    let ledger = observation_mut(|obs| {
+        if let Some(row) = obs
+            .cache_modes
+            .iter_mut()
+            .find(|row| row.mode == "write-through")
+        {
+            row.publishes_results = false;
+        }
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[cache-mode-truth-table]",
+        &errs,
+        "write-through lost its publish",
+    );
+
+    let ledger = observation_mut(|obs| {
+        if let Some(row) = obs.cache_modes.iter_mut().find(|row| row.mode == "refresh") {
+            row.bypasses_hits = false;
+        }
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[cache-mode-truth-table]",
+        &errs,
+        "refresh lost its hit bypass",
+    );
+}
+
+#[test]
+fn rejects_invented_cache_stage_or_schema_drift() {
+    let ledger = observation_mut(|obs| {
+        if let Some(raw) = obs.cache_stages.iter_mut().find(|s| s.stage == "raw_tei") {
+            raw.stage_id = "parse.raw_tei.v2".to_string();
+        }
+    });
+    let errs = validate_ledger(&ledger);
+    negative("[unknown-cache-stage-id]", &errs, "rotated raw stage id");
+
+    let ledger = observation_mut(|obs| {
+        if let Some(projector) = obs
+            .cache_stages
+            .iter_mut()
+            .find(|s| s.stage == "project_article")
+        {
+            projector.payload_schema_version += 1;
+        }
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[cache-stage-schema-drift]",
+        &errs,
+        "rotated payload schema version",
+    );
+
+    let ledger = observation_mut(|obs| {
+        if let Some(raw) = obs.cache_stages.iter_mut().find(|s| s.stage == "raw_tei") {
+            raw.rotation = "shared_with_projector".to_string();
+        }
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[cache-stage-rotation-drift]",
+        &errs,
+        "stages no longer rotate independently",
+    );
+
+    let ledger = observation_mut(|obs| {
+        obs.cache_stages.push(CacheStageObservation {
+            stage: "summary_text".to_string(),
+            stage_id: "parse.summary_text.v1".to_string(),
+            payload_schema_version: 1,
+            projector_schema_fingerprint: None,
+            key_dependencies: vec!["paper_id".to_string()],
+            paper_id_in_key: true,
+            rotation: "independent".to_string(),
+        });
+    });
+    let errs = validate_ledger(&ledger);
+    negative("[unknown-cache-stage]", &errs, "invented cache stage");
+    negative(
+        "[incomplete-cache-stage-vocabulary]",
+        &errs,
+        "vocabulary no longer equals the closed set",
+    );
+}
+
+#[test]
+fn rejects_invented_stage_key_dependency() {
+    let ledger = observation_mut(|obs| {
+        if let Some(raw) = obs.cache_stages.iter_mut().find(|s| s.stage == "raw_tei") {
+            raw.key_dependencies.push("worker_count".to_string());
+        }
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[unknown-stage-key-dependency]",
+        &errs,
+        "tuning became key material",
+    );
+
+    let ledger = observation_mut(|obs| {
+        if let Some(raw) = obs.cache_stages.iter_mut().find(|s| s.stage == "raw_tei") {
+            raw.key_dependencies.retain(|dep| dep != "source_bytes");
+        }
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[incomplete-stage-key-dependencies]",
+        &errs,
+        "dropped a key dependency",
+    );
+
+    let ledger = observation_mut(|obs| {
+        if let Some(projector) = obs
+            .cache_stages
+            .iter_mut()
+            .find(|s| s.stage == "project_article")
+        {
+            projector.paper_id_in_key = false;
+        }
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[cache-stage-key-binding]",
+        &errs,
+        "paper id left the projector key",
+    );
+}
+
+#[test]
+fn rejects_batch_limits_cursor_and_taxonomy_drift() {
+    let ledger = observation_mut(|obs| {
+        obs.batch_limits.bounded_fields.push("timeouts".to_string());
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[unknown-batch-limit-field]",
+        &errs,
+        "tuning became a declared bound",
+    );
+
+    let ledger = observation_mut(|obs| {
+        obs.batch_limits.content_identity_excluded = false;
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[batch-limit-drift]",
+        &errs,
+        "bounds entered content identity",
+    );
+
+    let ledger = observation_mut(|obs| {
+        obs.cursor.input_binding = "manifest_row_order".to_string();
+    });
+    let errs = validate_ledger(&ledger);
+    negative("[cursor-binding-drift]", &errs, "invented cursor binding");
+
+    let ledger = observation_mut(|obs| {
+        obs.terminal_per_document_taxonomy.outcome_schema_version += 1;
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[terminal-schema-drift]",
+        &errs,
+        "unsupported outcome schema version",
+    );
+
+    let ledger = observation_mut(|obs| {
+        obs.terminal_per_document_taxonomy
+            .backend_failure_codes
+            .push("model_overheated".to_string());
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[unknown-failure-code]",
+        &errs,
+        "invented terminal failure code",
+    );
+
+    let ledger = observation_mut(|obs| {
+        obs.terminal_per_document_taxonomy
+            .cache_integrity_codes
+            .push("baton_pass_failed".to_string());
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[unknown-cache-integrity-code]",
+        &errs,
+        "invented integrity code",
+    );
+
+    let ledger = observation_mut(|obs| {
+        obs.terminal_per_document_taxonomy
+            .cache_failure_stages
+            .push("parse.invented.v1".to_string());
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[unknown-cache-stage-id]",
+        &errs,
+        "invented cache failure stage",
+    );
+}
+
+#[test]
+fn rejects_run_summary_counter_drift() {
+    let ledger = observation_mut(|obs| {
+        obs.run_summary.counters.push("invented_gauge".to_string());
+    });
+    let errs = validate_ledger(&ledger);
+    negative("[unknown-run-summary-counter]", &errs, "invented counter");
+
+    let ledger = observation_mut(|obs| {
+        obs.run_summary
+            .counters
+            .retain(|counter| counter != "succeeded");
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[incomplete-run-summary-counters]",
+        &errs,
+        "dropped a live counter",
+    );
+}
+
+#[test]
+fn rejects_legacy_identity_and_redb_role_drift() {
+    let ledger = observation_mut(|obs| {
+        obs.legacy_read_only
+            .identities
+            .push("native-parser-v9".to_string());
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[unknown-legacy-identity]",
+        &errs,
+        "invented legacy identity",
+    );
+
+    let ledger = observation_mut(|obs| {
+        obs.legacy_read_only.hit_creates_canonical_record = true;
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[legacy-identity-write-drift]",
+        &errs,
+        "legacy read-only became a promotion",
+    );
+
+    let ledger = observation_mut(|obs| {
+        obs.redb.role = "authoritative_store".to_string();
+    });
+    let errs = validate_ledger(&ledger);
+    negative("[redb-role-drift]", &errs, "redb claimed authority");
+
+    let ledger = observation_mut(|obs| {
+        obs.redb.owner_crates.push("da-parse".to_string());
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[redb-role-drift]",
+        &errs,
+        "redb moved into the parse plane",
+    );
+}
+
+#[test]
+fn rejects_invented_config_key_in_the_registry() {
+    let mut registry = load_registry_value();
+    let keys = registry
+        .get_mut("defaults")
+        .and_then(|d| d.get_mut("configuration_keys_documented_not_owned"))
+        .and_then(|v| v.as_sequence_mut())
+        .expect("config key sequence");
+    keys.push(serde_yaml::Value::String("DA_PARSE_INVENTED_KEY".into()));
+    let errs = validate_registry_config_keys(&registry);
+    negative(
+        "[unknown-config-key]",
+        &errs,
+        "documented key no live constant defines",
+    );
+
+    let mut registry = load_registry_value();
+    let keys = registry
+        .get_mut("defaults")
+        .and_then(|d| d.get_mut("configuration_keys_documented_not_owned"))
+        .and_then(|v| v.as_sequence_mut())
+        .expect("config key sequence");
+    keys.retain(|value| value.as_str() != Some("DA_PARSE_CACHE_MODE"));
+    let errs = validate_registry_config_keys(&registry);
+    negative("[incomplete-config-key-set]", &errs, "dropped a live key");
+}
+
+#[test]
+fn rejects_parallel_ledger_tree_and_raw_content() {
+    let errs = data_parse_tree_errs(vec![
+        ("SCHEMA.yaml".to_string(), false),
+        ("api_compatibility_ledger.yaml".to_string(), false),
+        ("comparison_contract.yaml".to_string(), false),
+        ("grobid_compatibility.yaml".to_string(), false),
+        ("regression_cases.yaml".to_string(), false),
+        ("parse_ledger_v2.yaml".to_string(), false),
+    ]);
+    negative(
+        "[parallel-ledger-tree]",
+        &errs,
+        "a second ledger file appeared",
+    );
+
+    let errs = data_parse_tree_errs(vec![("api_compatibility_ledger.yaml".to_string(), false)]);
+    negative(
+        "[missing-sanctioned-data-file]",
+        &errs,
+        "a sanctioned file vanished",
+    );
+
+    let errs = raw_content_scan("report: <TEI>verbatim</TEI>");
+    negative("[raw-content-in-ledger]", &errs, "raw TEI in the ledger");
+
+    let ledger = observation_mut(|obs| {
+        obs.raw_content_free = false;
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[raw-content-flag-drift]",
+        &errs,
+        "raw-content flag relaxed",
+    );
+}
+
+#[test]
+fn rejects_registry_batch_cache_drift_against_the_observation() {
+    let (ledger, _) = loaded_pair();
+    let mut registry = load_registry_value();
+    let section = registry
+        .get_mut("defaults")
+        .and_then(|d| d.get_mut("batch_cache"))
+        .expect("registry batch_cache section");
+    if let Some(modes) = section
+        .get_mut("cache_modes")
+        .and_then(|v| v.as_sequence_mut())
+    {
+        modes.retain(|mode| mode.as_str() != Some("refresh"));
+        modes.push(serde_yaml::Value::String("rebuild".into()));
+    }
+    let errs =
+        validate_batch_cache_registry_consistency(&ledger.batch_cache_observation, &registry);
+    negative(
+        "[registry-batch-cache-drift]",
+        &errs,
+        "registry mode vocabulary drifted",
+    );
+
+    let mut registry = load_registry_value();
+    let section = registry
+        .get_mut("defaults")
+        .and_then(|d| d.get_mut("batch_cache"))
+        .expect("registry batch_cache section");
+    if let Some(role) = section.get_mut("redb_role") {
+        *role = serde_yaml::Value::String("authoritative_store".into());
+    }
+    let errs =
+        validate_batch_cache_registry_consistency(&ledger.batch_cache_observation, &registry);
+    negative(
+        "[registry-batch-cache-drift]",
+        &errs,
+        "registry redb role drifted",
+    );
+
+    let empty = serde_yaml::from_str::<serde_yaml::Value>("defaults: {}").expect("empty registry");
+    let errs = validate_batch_cache_registry_consistency(&ledger.batch_cache_observation, &empty);
+    negative(
+        "[registry-batch-cache-drift]",
+        &errs,
+        "registry lost defaults.batch_cache",
+    );
+}
+
+#[test]
+fn rejects_invented_field_inside_batch_cache_observation() {
+    let text = std::fs::read_to_string(repo_root().join(LEDGER_REL_PATH)).expect("ledger readable");
+    let tampered = text.replace(
+        "  raw_content_free: true",
+        "  raw_content_free: true\n  invented_accelerator: redb-authority",
+    );
+    assert_ne!(text, tampered, "anchor for the injected field not found");
+    match serde_yaml::from_str::<LedgerFile>(&tampered) {
+        Err(e) => assert!(
+            e.to_string().contains("unknown field"),
+            "deny_unknown_fields should trigger, got: {e}"
+        ),
+        Ok(_) => panic!("an invented observation field must not deserialize"),
+    }
 }

@@ -58,19 +58,62 @@ defaults:
     references_request_envelope: ReferencesRequestVersioned-v1
     references_allowlist: input,consolidateCitations(0..=1),includeRawCitations
     references_static_route: /api/processReferences
+  # S06/T05: additive batch/cache observation of the bounded resumable batch
+  # and its two-stage artifact cache. Machine-checked against the LIVE
+  # da-parse vocabulary by crates/da-parse/tests/data_contracts.rs; the
+  # parse-plane states above stay byte-unchanged.
+  batch_cache:
+    batch_cache_schema_version: 1
+    cache_modes: [off, read-only, write-through, refresh]
+    cache_mode_semantics: >-
+      Exactly these four modes; output semantics are mode-independent.
+      off never reads and never writes; read-only reads both stages and
+      computes without publishing on a miss; write-through reads and
+      publishes raw TEI BEFORE the projector stage; refresh bypasses hits
+      and REPLACES both stages.
+    cache_stages:
+      raw_tei_stage_id: parse.raw_tei.v1
+      project_article_stage_id: parse.project_article.v1
+      raw_payload_schema_version: 1
+      project_article_payload_schema_version: 1
+      projector_schema_fingerprint: ParsedArticle@serde-v3-unique-navigation
+      stage_rotation: independent
+    batch_limits_bounded_fields: [workers, queue_capacity, max_in_flight, max_documents]
+    batch_limits_nonzero: true
+    batch_limits_content_identity_excluded: true
+    batch_wide_error_scope: admission_only
+    cursor_input_binding: ordered_input_fingerprint
+    cursor_schema_version: 1
+    cursor_fail_closed: true
+    terminal_per_document_taxonomy: one_typed_outcome_per_admitted_ordinal
+    terminal_backend_failure_schema: ParseBackendFailure-v1-closed-8-codes
+    terminal_cache_integrity_codes: [checksum_mismatch, manifest_corrupt, identity_mismatch, payload_unreadable, stage_write_failed]
+    run_summary_schema_version: 1
+    legacy_read_only_identities: [pdf-grobid, html-primary]
+    legacy_projection_schema: ParsedArticle.v1
+    legacy_hit_creates_canonical_record: false
+    redb_role: rebuildable_only
+    redb_feature_gated: true
+    redb_owner_crates: [da-adapters, da-cli]
+    redb_deletion_preserves: canonical_stage_payloads_and_terminal_evidence
   known_hard_regressions_until_t02:
   - silent_skip_missing_tei_fixture
   configuration_keys_documented_not_owned:
     # Values live at da-cli composition root (R116). Ledger records names only.
+    # S06/T05: this list is machine-checked against the LIVE da-cli key
+    # constants (crates/da-cli/src/parse_config.rs) — an invented key or a
+    # dropped live key fails data_contracts by exact name. The pre-S06
+    # phantom names DA_PARSE_POLICY_ROOT and DA_PARSE_EXPERIENCE_RVF_PATH
+    # were removed (no live code defines them) and the real GROBID_URL
+    # compatibility alias was added.
   - DA_GROBID_URL
+  - GROBID_URL
   - DA_PARSE_BACKEND
   - DA_PARSE_CACHE_MODE
   - DA_PARSE_CACHE_ROOT
   - DA_PARSE_BATCH_SIZE
   - DA_PARSE_WORKERS
   - DA_PARSE_QUEUE_CAPACITY
-  - DA_PARSE_POLICY_ROOT
-  - DA_PARSE_EXPERIENCE_RVF_PATH
   - DA_PARSE_REDB_INDEX_ENABLED
   - DA_PARSE_REDB_INDEX_PATH
 

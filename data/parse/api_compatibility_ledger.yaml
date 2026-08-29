@@ -30,6 +30,19 @@
 # still no parallel ledger (R107/R113/R117). ledger_version stays 1: additive
 # observation only, the legacy wire contract and the D204 identities are
 # byte-unchanged.
+#
+# S06/T05: the bounded batch and two-stage cache semantics are observed in
+# the additive `batch_cache_observation:` section below. It rides the
+# EXISTING endpoint/stage bindings (its carrier_entry_ids) — no new
+# capability identities and still no parallel ledger (R107/R113/R117).
+# ledger_version stays 1: the D204 fingerprints, the S04/S05 wire dialects
+# and the typed transports above are byte-unchanged. The exact four-mode
+# cache vocabulary, the two stage identities, the bounded batch limits, the
+# schema-bound cursor, the per-document terminal taxonomy, the legacy
+# read-only identities and the redb role (rebuildable_only, D295) are
+# machine-checked against the LIVE da-parse vocabulary by
+# tests/data_contracts.rs — an invented mode/stage/failure/config key fails
+# the gate by exact field.
 ledger_version: 1
 scope_note: >-
   Covers the public exports of crates/da-parse plus its implementing
@@ -55,6 +68,85 @@ policy_locks:
   llm_promotion: forbidden
   free_label_invention: forbidden
   sidecar_status: candidate_evidence_only
+# S06/T05 additive batch/cache observation (structured record; see the
+# header comment). Every value below is cross-validated against the live
+# da-parse vocabulary — drift fails per exact field.
+batch_cache_observation:
+  carrier_entry_ids:
+    - parse.endpoint.process_fulltext_document
+    - parse.endpoint.process_header_document
+    - parse.endpoint.process_references_document
+    - parse.stage.lift_tei
+    - parse.stage.project_article
+    - parse.profile.rich
+    - parse.profile.structural
+  cache_modes:
+    - mode: off
+      reads_stages: false
+      publishes_results: false
+      bypasses_hits: false
+    - mode: read-only
+      reads_stages: true
+      publishes_results: false
+      bypasses_hits: false
+    - mode: write-through
+      reads_stages: true
+      publishes_results: true
+      bypasses_hits: false
+    - mode: refresh
+      reads_stages: false
+      publishes_results: true
+      bypasses_hits: true
+  cache_modes_note: >-
+    Exactly these four modes; document output semantics are mode-independent
+    (byte-equal ParsedArticle across modes is an executor obligation). off
+    never reads and never writes; read-only reads both stages and computes
+    without publishing on a miss; write-through reads and publishes raw TEI
+    BEFORE the projector stage; refresh bypasses hits and REPLACES both
+    stages. Stage tuning (workers/queue/limits/timeouts/roots) never
+    changes this truth table and never enters content identity.
+  cache_stages:
+    - stage: raw_tei
+      stage_id: parse.raw_tei.v1
+      payload_schema_version: 1
+      key_dependencies: [endpoint, dialect_wire, source_bytes]
+      paper_id_in_key: false
+      rotation: independent
+    - stage: project_article
+      stage_id: parse.project_article.v1
+      payload_schema_version: 1
+      projector_schema_fingerprint: ParsedArticle@serde-v3-unique-navigation
+      key_dependencies: [paper_id, pdf_sha256, raw_payload_sha256, projector_schema_fingerprint]
+      paper_id_in_key: true
+      rotation: independent
+  batch_limits:
+    bounded_fields: [workers, queue_capacity, max_in_flight, max_documents]
+    nonzero_bounds: true
+    content_identity_excluded: true
+    admission_scope: batch_wide_error_only_at_admission
+  cursor:
+    input_binding: ordered_input_fingerprint
+    schema_version: 1
+    fail_closed: true
+  terminal_per_document_taxonomy:
+    outcome_schema_version: 1
+    one_outcome_per_admitted_ordinal: true
+    backend_failure_codes: [busy, timeout, transport, no_content, limit_exceeded, invalid_request, conversion_failed, invalid_response]
+    cache_failure_stages: [parse.raw_tei.v1, parse.project_article.v1]
+    cache_integrity_codes: [checksum_mismatch, manifest_corrupt, identity_mismatch, payload_unreadable, stage_write_failed]
+  run_summary:
+    schema_version: 1
+    counters: [admitted, skipped_on_resume, completed, succeeded, failed, backend_calls, raw_hits, raw_legacy_hits, raw_writes, raw_write_failures, projector_hits, projector_writes, projector_write_failures, max_in_flight_observed, max_queue_depth_observed, sink_errors, checkpoint_errors]
+  legacy_read_only:
+    identities: [pdf-grobid, html-primary]
+    projection_schema: ParsedArticle.v1
+    hit_creates_canonical_record: false
+  redb:
+    role: rebuildable_only
+    feature_gated: true
+    owner_crates: [da-adapters, da-cli]
+    deletion_preserves: canonical_stage_payloads_and_terminal_evidence
+  raw_content_free: true
 entries:
   - id: parse.entrypoint.grobid_parser.parse_pdf
     kind: entrypoint
