@@ -963,3 +963,442 @@ fn redb_scanner_fails_visible_on_synthetic_violations() {
         .is_empty()
     );
 }
+
+// ───── S08/T04: the native date shadow candidate stays a quarantined pure leaf ─────
+
+/// The S08 native date component surface. Since S08/T04 the gate additionally
+/// proves the date module stays a pure, side-channel-free, scope-frozen leaf
+/// and that the candidate never enters the runtime parse composition, the
+/// crate's identity constants or a promoted lifecycle state. The shadow
+/// candidate remains fully inspectable (crate-root re-export + registry
+/// evidence_ref) but never served.
+const NATIVE_DATE_SURFACE: &str = "crates/da-parse/src/native_date.rs";
+
+/// Side-channel markers banned from the date module's CODE (comments may
+/// document the prohibitions — the scanner strips line comments first).
+/// The module imports nothing but `serde`, so every hit is a real violation:
+/// no env/filesystem/physical-path, network/HTTP, clock/time, process,
+/// tracing/logging, shared-state or RNG material may even be nameable from
+/// the shadow candidate.
+const NATIVE_DATE_SIDE_CHANNEL_MARKERS: [&str; 24] = [
+    "std::env",
+    "env::var",
+    "var_os",
+    "std::fs",
+    "std::path",
+    "PathBuf",
+    "File::",
+    "std::net",
+    "TcpStream",
+    "reqwest",
+    "http",
+    "std::process",
+    "Command::",
+    "std::time",
+    "SystemTime",
+    "Instant",
+    "std::thread",
+    "std::sync",
+    "OnceLock",
+    "tracing",
+    "log::",
+    "println!",
+    "eprintln!",
+    "rand",
+];
+
+/// Scope-creep markers: author/personal-name/affiliation/linkage and
+/// header/reference/citation composition vocabulary must never appear in the
+/// date module's CODE. S08 ships a DATE parser only — name/linkage extraction
+/// and header/reference composition stay with the sanctioned
+/// `rest.processHeader*` / `rest.processReferences` capabilities.
+const NATIVE_DATE_SCOPE_CREEP_MARKERS: [&str; 9] = [
+    "author",
+    "affiliation",
+    "surname",
+    "given_name",
+    "personal_name",
+    "linkage",
+    "citation",
+    "reference",
+    "header",
+];
+
+/// Parse-plane surfaces that must never reference the candidate: the runtime
+/// composition (`ParserPort` facade, `ScholarlyParser`, `TeiLifter`,
+/// `TeiParseIr`, the `ParsedArticle` projector, envelope/transport/backend,
+/// batch/cache contracts, profile, conservation). Hidden runtime activation
+/// is a fail — the parser is observable only through the additive
+/// parse-compat shadow evidence.
+const NATIVE_DATE_COMPOSITION_SURFACES: [&str; 12] = [
+    "crates/da-parse/src/http.rs",
+    "crates/da-parse/src/parser.rs",
+    "crates/da-parse/src/lift.rs",
+    "crates/da-parse/src/ir.rs",
+    "crates/da-parse/src/projector.rs",
+    "crates/da-parse/src/envelope.rs",
+    "crates/da-parse/src/transport.rs",
+    "crates/da-parse/src/backend.rs",
+    "crates/da-parse/src/batch.rs",
+    "crates/da-parse/src/cache.rs",
+    "crates/da-parse/src/profile.rs",
+    "crates/da-parse/src/conservation.rs",
+];
+
+/// Comment-stripped substring scan (one hit per marker per line).
+fn native_date_marker_hits(text: &str, markers: &[&str]) -> Vec<String> {
+    let mut hits = Vec::new();
+    for (line_no, raw) in strip_line_comments(text).lines().enumerate() {
+        for marker in markers {
+            if raw.contains(marker) {
+                hits.push(format!(
+                    "[native-date-boundary] line {}: marker `{marker}`: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    hits
+}
+
+/// Import roots (`use <root>::…`) of a comment-stripped text.
+fn import_roots_of(text: &str) -> BTreeSet<String> {
+    strip_line_comments(text)
+        .lines()
+        .filter_map(|line| {
+            let line = line.trim_start();
+            let rest = line.strip_prefix("use ")?;
+            rest.split([':', ' ', '{', ';'])
+                .find(|token| !token.is_empty())
+                .map(str::to_string)
+        })
+        .collect()
+}
+
+#[test]
+fn native_date_module_imports_only_serde_with_no_side_channels() {
+    let text = read_text(NATIVE_DATE_SURFACE);
+    assert!(
+        text.len() > 5000,
+        "positive control failed: {NATIVE_DATE_SURFACE} looks truncated"
+    );
+
+    // The only importable root is serde (Serialize/Deserialize for the
+    // closed wire form) — no `extern crate`, nothing else.
+    assert_eq!(
+        import_roots_of(&text),
+        BTreeSet::from(["serde".to_string()]),
+        "the date module must import nothing but serde"
+    );
+    assert!(
+        !strip_line_comments(&text).contains("extern crate"),
+        "the date module must not use `extern crate`"
+    );
+
+    // No side channel is even nameable from the module's code.
+    let hits = native_date_marker_hits(&text, &NATIVE_DATE_SIDE_CHANNEL_MARKERS);
+    assert!(
+        hits.is_empty(),
+        "the native date module acquired a side channel (env/filesystem/network/clock/process/tracing/shared state) — the shadow candidate must stay a pure function:\n{}",
+        hits.join("\n")
+    );
+}
+
+#[test]
+fn native_date_module_stays_a_date_parser_without_composition_growth() {
+    let text = read_text(NATIVE_DATE_SURFACE);
+    let hits = native_date_marker_hits(&text, &NATIVE_DATE_SCOPE_CREEP_MARKERS);
+    assert!(
+        hits.is_empty(),
+        "S08 scope creep: author/personal-name/affiliation/linkage/header/reference composition vocabulary appeared in the date module's code:\n{}",
+        hits.join("\n")
+    );
+}
+
+#[test]
+fn native_date_candidate_never_enters_the_parse_composition_or_da_ports() {
+    // Positive controls: the module stays declared AND re-exported from the
+    // crate root (full inspectability)...
+    let lib = read_text("crates/da-parse/src/lib.rs");
+    assert!(
+        lib.contains("mod native_date;"),
+        "positive control failed: the date module lost its crate-root declaration"
+    );
+    assert!(
+        lib.contains("pub use native_date::"),
+        "positive control failed: the candidate lost its crate-root re-export (it must stay fully inspectable)"
+    );
+    // ...and the registry of record still points at the evidence surface.
+    let registry = read_text("data/parse/grobid_compatibility.yaml");
+    assert!(
+        registry.contains(NATIVE_DATE_SURFACE),
+        "the registry evidence_ref must keep pointing at the candidate surface"
+    );
+
+    // Negative guard: no composition surface and no da-ports source
+    // (`ParserPort` home) may reference the candidate.
+    let mut hits = Vec::new();
+    for rel in NATIVE_DATE_COMPOSITION_SURFACES {
+        let text = read_text(rel);
+        for (line_no, raw) in text.lines().enumerate() {
+            if raw.contains("native_date") || raw.contains("NativeDate") {
+                hits.push(format!(
+                    "[hidden-runtime-activation] {rel}:{}: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    let mut ports_files = Vec::new();
+    collect_rs_files(&repo_root().join("crates/da-ports/src"), &mut ports_files);
+    assert!(
+        ports_files.len() >= 5,
+        "positive control failed: only {} da-ports source files scanned",
+        ports_files.len()
+    );
+    for file in &ports_files {
+        let rel = file
+            .strip_prefix(repo_root())
+            .unwrap_or(file)
+            .to_string_lossy()
+            .to_string();
+        let text = std::fs::read_to_string(file)
+            .unwrap_or_else(|e| panic!("source unreadable {}: {e}", file.display()));
+        for (line_no, raw) in text.lines().enumerate() {
+            if raw.contains("native_date") || raw.contains("NativeDate") {
+                hits.push(format!(
+                    "[hidden-runtime-activation] {rel}:{}: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    assert!(
+        hits.is_empty(),
+        "the native date candidate leaked into the runtime parse composition or da-ports (shadow means never served):\n{}",
+        hits.join("\n")
+    );
+}
+
+#[test]
+fn parse_identity_fingerprints_stay_frozen_alongside_the_candidate() {
+    use da_parse::{
+        CACHED_TEI_BACKEND_ID, GROBID_HTTP_BACKEND_ID, GrobidProfile, NATIVE_DATE_PARSER_ID,
+        NATIVE_DATE_PARSER_VERSION, PROJECT_ARTICLE_SCHEMA_FINGERPRINT, PROJECT_ARTICLE_STAGE_ID,
+        RAW_TEI_STAGE_ID,
+    };
+
+    // Projection fingerprint and stage ids: byte-frozen — the candidate must
+    // never rotate cache identity as a side effect.
+    assert_eq!(
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        "ParsedArticle@serde-v4-p0-tei-lift"
+    );
+    assert_eq!(RAW_TEI_STAGE_ID, "parse.raw_tei.v1");
+    assert_eq!(PROJECT_ARTICLE_STAGE_ID, "parse.project_article.v1");
+    assert_eq!(GROBID_HTTP_BACKEND_ID, "grobid-http");
+    assert_eq!(CACHED_TEI_BACKEND_ID, "cached-tei");
+
+    // D204 rich/structural fingerprints: byte-frozen profile identities.
+    assert_eq!(
+        GrobidProfile::rich().configuration_fingerprint(),
+        "profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula"
+    );
+    assert_eq!(
+        GrobidProfile::structural().configuration_fingerprint(),
+        "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note,formula"
+    );
+
+    // The candidate identity stays exactly the versioned code truth the
+    // registry and the baseline bind against.
+    assert_eq!(
+        format!("{NATIVE_DATE_PARSER_ID}@{NATIVE_DATE_PARSER_VERSION}"),
+        "da-parse.native_date@1.0.0"
+    );
+}
+
+#[test]
+fn process_date_stays_shadow_candidate_with_java_rollback_and_zero_promotion() {
+    use da_parse::{
+        NATIVE_DATE_OUTCOME_SCHEMA_VERSION, NATIVE_DATE_PARSER_ID, NATIVE_DATE_PARSER_VERSION,
+    };
+
+    let registry: serde_yaml::Value =
+        serde_yaml::from_str(&read_text("data/parse/grobid_compatibility.yaml"))
+            .expect("registry of record parses");
+
+    // D127 stays closed at the registry root.
+    assert_eq!(
+        registry.get("import_eligible").and_then(|v| v.as_bool()),
+        Some(false),
+        "D127 import lock drifted open in the registry of record"
+    );
+
+    // rest.processDate: shadow + candidate + Java rollback, bound to the
+    // exact code identity (no registry/code drift).
+    let capability = registry
+        .get("capabilities")
+        .and_then(|c| c.as_sequence())
+        .expect("capabilities sequence")
+        .iter()
+        .find(|c| c.get("id").and_then(|i| i.as_str()) == Some("rest.processDate"))
+        .expect("rest.processDate capability must exist")
+        .clone();
+    assert_eq!(
+        capability.get("state").and_then(|v| v.as_str()),
+        Some("shadow"),
+        "rest.processDate must stay shadow — promotion is a conscious coordinated decision, never a refactor side effect"
+    );
+    assert_eq!(
+        capability.get("promotion_state").and_then(|v| v.as_str()),
+        Some("candidate")
+    );
+    assert_eq!(
+        capability
+            .get("candidate")
+            .and_then(|v| v.as_str())
+            .expect("candidate string"),
+        format!("{NATIVE_DATE_PARSER_ID}@{NATIVE_DATE_PARSER_VERSION}"),
+        "the registry candidate must match the code identity exactly"
+    );
+    for field in ["baseline", "rollback_target"] {
+        assert_eq!(
+            capability.get(field).and_then(|v| v.as_str()),
+            Some("java-grobid-http@0.9.0-crf"),
+            "Java GROBID must stay the {field} of record for rest.processDate"
+        );
+    }
+    assert_eq!(
+        capability.get("evidence_ref").and_then(|v| v.as_str()),
+        Some(NATIVE_DATE_SURFACE)
+    );
+    let hard: BTreeSet<String> = capability
+        .get("hard_regressions")
+        .and_then(|v| v.as_sequence())
+        .expect("hard_regressions sequence")
+        .iter()
+        .filter_map(|v| v.as_str().map(str::to_string))
+        .collect();
+    for required in ["invented_revision", "nondeterministic_output"] {
+        assert!(
+            hard.contains(required),
+            "rest.processDate lost hard regression `{required}`"
+        );
+    }
+
+    // Zero capabilities may claim promoted-grade lifecycle state today; the
+    // first legitimate promotion must consciously update this guard.
+    let promoted: Vec<String> = registry
+        .get("capabilities")
+        .and_then(|c| c.as_sequence())
+        .expect("capabilities sequence")
+        .iter()
+        .filter(|c| {
+            c.get("state").and_then(|s| s.as_str()) == Some("promoted")
+                || c.get("promotion_state").and_then(|s| s.as_str()) == Some("promoted")
+        })
+        .filter_map(|c| c.get("id").and_then(|i| i.as_str()).map(str::to_string))
+        .collect();
+    assert!(
+        promoted.is_empty(),
+        "silent promotion appeared in the registry: {promoted:?}"
+    );
+
+    // The comparison contract's additive shadow block carries the same
+    // locked lifecycle and the closed forbidden vocabulary.
+    let contract: serde_yaml::Value =
+        serde_yaml::from_str(&read_text("data/parse/comparison_contract.yaml"))
+            .expect("comparison contract parses");
+    let shadow = contract
+        .get("native_date_shadow")
+        .expect("native_date_shadow block must exist");
+    assert_eq!(
+        shadow.get("observation_mode").and_then(|v| v.as_str()),
+        Some("shadow")
+    );
+    assert_eq!(
+        shadow.get("promotion_state").and_then(|v| v.as_str()),
+        Some("candidate")
+    );
+    assert_eq!(
+        shadow.get("engine").and_then(|v| v.as_str()),
+        Some("da_parse::NativeDateParser")
+    );
+    assert_eq!(
+        shadow.get("candidate_id").and_then(|v| v.as_str()),
+        Some(NATIVE_DATE_PARSER_ID)
+    );
+    assert_eq!(
+        shadow.get("candidate_version").and_then(|v| v.as_str()),
+        Some(NATIVE_DATE_PARSER_VERSION)
+    );
+    assert_eq!(
+        shadow
+            .get("outcome_schema_version")
+            .and_then(|v| v.as_str()),
+        Some(NATIVE_DATE_OUTCOME_SCHEMA_VERSION)
+    );
+    assert_eq!(
+        shadow.get("rollback_target").and_then(|v| v.as_str()),
+        Some("java-grobid-http@0.9.0-crf")
+    );
+    let forbidden: BTreeSet<String> = shadow
+        .get("forbidden")
+        .and_then(|v| v.as_sequence())
+        .expect("forbidden sequence")
+        .iter()
+        .filter_map(|v| v.as_str().map(str::to_string))
+        .collect();
+    for required in [
+        "auto_promotion",
+        "runtime_routing",
+        "raw_display_text",
+        "tei_fragments",
+        "invented_bindings",
+    ] {
+        assert!(
+            forbidden.contains(required),
+            "comparison contract lost forbidden rule `{required}`"
+        );
+    }
+}
+
+#[test]
+fn native_date_boundary_scanner_fails_visible_on_synthetic_violations() {
+    // Import-root scanner: a forbidden root fires, serde stays clean.
+    let synthetic = format!("use {}::GraphStore;\nuse serde::Serialize;\n", "samyama");
+    assert_eq!(
+        import_roots_of(&synthetic),
+        BTreeSet::from(["samyama".to_string(), "serde".to_string()])
+    );
+
+    // Side-channel scan: code hits fire; comment prose never trips.
+    let synthetic = format!(
+        "let v = {}::var(\"X\");\nlet t = {}::now();\nlet f = {}::read_to_string(\"x\");\n// {} mention in prose stays clean\n",
+        "std::env", "std::time", "std::fs", "tracing"
+    );
+    let hits = native_date_marker_hits(&synthetic, &NATIVE_DATE_SIDE_CHANNEL_MARKERS);
+    assert_eq!(hits.len(), 4, "expected four code hits, got {hits:?}");
+    for marker in ["std::env", "env::var", "std::time", "std::fs"] {
+        assert!(
+            hits.iter().any(|h| h.contains(&format!("`{marker}`"))),
+            "missing hit for `{marker}`: {hits:?}"
+        );
+    }
+    assert!(hits.iter().all(|h| !h.contains("tracing")));
+
+    // Scope-creep scan: composition vocabulary fires, prose stays clean.
+    let synthetic = "fn author_affiliation_composition() {}\n".to_string();
+    let hits = native_date_marker_hits(&synthetic, &NATIVE_DATE_SCOPE_CREEP_MARKERS);
+    assert_eq!(hits.len(), 2, "expected two creep hits, got {hits:?}");
+    assert!(
+        native_date_marker_hits(
+            "// author header reference prose must never trip the scanner\n",
+            &NATIVE_DATE_SCOPE_CREEP_MARKERS
+        )
+        .is_empty()
+    );
+}

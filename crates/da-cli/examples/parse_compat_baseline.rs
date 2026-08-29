@@ -1306,7 +1306,7 @@ impl ShadowOracleWhen {
         match parts.as_slice() {
             [y] => {
                 let year = num(y)?;
-                (y.len() == 4 && (1000..=9999).contains(&year)).then(|| Self::Y(year as i32))
+                (y.len() == 4 && (1000..=9999).contains(&year)).then_some(Self::Y(year as i32))
             }
             [y, m] => {
                 let (year, month) = (num(y)?, u8::try_from(num(m)?).ok()?);
@@ -1314,7 +1314,7 @@ impl ShadowOracleWhen {
                     && m.len() == 2
                     && (1000..=9999).contains(&year)
                     && (1..=12).contains(&month))
-                .then(|| Self::YM(year as i32, month))
+                .then_some(Self::YM(year as i32, month))
             }
             [y, m, d] => {
                 let (year, month) = (num(y)?, u8::try_from(num(m)?).ok()?);
@@ -1326,7 +1326,7 @@ impl ShadowOracleWhen {
                     && (1..=12).contains(&month)
                     && day >= 1
                     && days_in(year as i32, month).is_some_and(|max| day <= max))
-                .then(|| Self::Ymd(year as i32, month, day))
+                .then_some(Self::Ymd(year as i32, month, day))
             }
             _ => None,
         }

@@ -85,11 +85,12 @@ const FROZEN_AGGREGATE_OUTPUT_HASH: &str =
     "sha256:3d1f0a537766de0f8003b34498b8685611a8c7df218c79c1055020cd403bdea7";
 const FROZEN_SOURCE_HASH: &str =
     "sha256:d0b2c6c7e3b4af551b1e804705b6424cd1c367832516beb383d9c3cb5ade4c49";
-/// Rotated by S03/T04 (per-case `conservation_delta` evidence) and again by
-/// S07/T05: the hub-case note now records that the TEI-byte author/figure
-/// facts are lifted since S07; the byte identity of the manifest follows.
+/// Rotated by S03/T04 (per-case `conservation_delta` evidence), S07/T05
+/// (hub-case note records the TEI-byte author/figure facts) and S08/T03
+/// (date obligations added to the same three regression cases): the byte
+/// identity of the manifest follows each sanctioned DATA edit.
 const FROZEN_CORPUS_HASH: &str =
-    "sha256:a00e1c63886a5d821bcf69346fa985480e47ea22106c2fa9c76f835636163871";
+    "sha256:defb48d6b2b820e297c7fba8e64b4a974a2beb422cddbe61ac44a52f4ad08b92";
 /// All three executed S01 cases run under the rich profile.
 const FROZEN_PROFILE_FINGERPRINT: &str = RICH_FP;
 
@@ -1404,4 +1405,228 @@ fn s06_batch_cache_vocabulary_stays_byte_pinned_for_the_data_ledger() {
     assert_eq!(PARSE_BATCH_SCHEMA_VERSION, 1);
     assert_eq!(PARSE_BATCH_CURSOR_SCHEMA_VERSION, 1);
     assert_eq!(PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION, 1);
+}
+
+// ───── S08/T04: the native date shadow candidate never touches cache identity ─────
+
+#[test]
+fn s08_native_date_shadow_stays_outside_cache_identity_and_d204_pins() {
+    use da_parse::{
+        CACHED_TEI_BACKEND_ID, GROBID_HTTP_BACKEND_ID, GrobidProfile,
+        NATIVE_DATE_OUTCOME_SCHEMA_VERSION, NATIVE_DATE_PARSER_ID, NATIVE_DATE_PARSER_VERSION,
+        PROJECT_ARTICLE_STAGE_ID, RAW_TEI_STAGE_ID, project_article_stage_key,
+    };
+
+    // Candidate identity: the exact code truth the evidence layer binds.
+    assert_eq!(NATIVE_DATE_PARSER_ID, "da-parse.native_date");
+    assert_eq!(NATIVE_DATE_PARSER_VERSION, "1.0.0");
+    assert_eq!(
+        NATIVE_DATE_OUTCOME_SCHEMA_VERSION,
+        "da-parse.native-date.outcome/v1"
+    );
+
+    // Stage identities + projection fingerprint: byte-frozen with the
+    // candidate in the tree (identity rotation is a coordinated D204-grade
+    // decision, never a component-addition side effect).
+    assert_eq!(RAW_TEI_STAGE_ID, "parse.raw_tei.v1");
+    assert_eq!(PROJECT_ARTICLE_STAGE_ID, "parse.project_article.v1");
+    assert_eq!(
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        "ParsedArticle@serde-v4-p0-tei-lift"
+    );
+    assert_eq!(GROBID_HTTP_BACKEND_ID, "grobid-http");
+    assert_eq!(CACHED_TEI_BACKEND_ID, "cached-tei");
+    assert_eq!(GrobidProfile::rich().configuration_fingerprint(), RICH_FP);
+    assert_eq!(
+        GrobidProfile::structural().configuration_fingerprint(),
+        STRUCTURAL_FP
+    );
+
+    // The projector stage key stays bound to exactly its four declared
+    // inputs and never absorbs a native-date term: keys for a fixed sample
+    // stay byte-stable across calls, carry no candidate token, and remain
+    // content-sensitive in every declared input.
+    let sample = (
+        "reg.tei.hub-bibliography-2507.19457",
+        "a".repeat(32),
+        "b".repeat(32),
+    );
+    let key_a = project_article_stage_key(
+        sample.0,
+        &sample.1,
+        &sample.2,
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+    );
+    let key_b = project_article_stage_key(
+        sample.0,
+        &sample.1,
+        &sample.2,
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+    );
+    assert_eq!(key_a, key_b, "stage key must stay deterministic");
+    assert!(
+        !key_a.contains("native_date") && !key_a.contains("NativeDate"),
+        "the projector stage key must stay candidate-free"
+    );
+    assert_ne!(
+        key_a,
+        project_article_stage_key(
+            "reg.tei.rlm-2512.24601",
+            &sample.1,
+            &sample.2,
+            PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        )
+    );
+    assert_ne!(
+        key_a,
+        project_article_stage_key(
+            sample.0,
+            &"c".repeat(32),
+            &sample.2,
+            PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        )
+    );
+    assert_ne!(
+        key_a,
+        project_article_stage_key(
+            sample.0,
+            &sample.1,
+            &"d".repeat(32),
+            PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        )
+    );
+
+    // Historical GrobidParser readability pins survive unchanged.
+    for rel in [
+        "crates/da-cli/src/production.rs",
+        "crates/da-adapters/src/pipeline_stages.rs",
+    ] {
+        let text =
+            String::from_utf8(read_bytes(rel)).unwrap_or_else(|_| panic!("{rel} must be utf-8"));
+        assert!(
+            text.contains("GrobidParser@tei-navigation-v3"),
+            "historical GrobidParser identity pin disappeared from {rel}"
+        );
+    }
+
+    // The baseline keeps the additive shadow block OUTSIDE the executed-case
+    // identity surface: exactly the three S01-bound cases, none carrying a
+    // native-date field, and the aggregate shadow evidence complete,
+    // same-n and digest-bound (173/173 strict).
+    let baseline = load_baseline();
+    let cases = baseline_cases(&baseline);
+    assert_eq!(
+        cases.len(),
+        3,
+        "executed-case surface must stay exactly the three S01-bound cases"
+    );
+    for case in &cases {
+        assert!(
+            case.get("native_date_shadow").is_none() && case.get("native_date").is_none(),
+            "a native-date field leaked into an executed case identity — shadow evidence must stay additive"
+        );
+    }
+    let shadow = baseline
+        .get("native_date_shadow")
+        .expect("baseline must carry the additive native_date_shadow block");
+    assert_eq!(
+        shadow.get("engine").and_then(|v| v.as_str()),
+        Some("da_parse::NativeDateParser")
+    );
+    assert_eq!(
+        shadow.get("candidate_id").and_then(|v| v.as_str()),
+        Some("da-parse.native_date")
+    );
+    assert_eq!(
+        shadow.get("candidate_version").and_then(|v| v.as_str()),
+        Some("1.0.0")
+    );
+    assert_eq!(
+        shadow
+            .get("outcome_schema_version")
+            .and_then(|v| v.as_str()),
+        Some("da-parse.native-date.outcome/v1")
+    );
+    assert_eq!(
+        shadow.get("observation_mode").and_then(|v| v.as_str()),
+        Some("shadow")
+    );
+    assert_eq!(
+        shadow.get("promotion_state").and_then(|v| v.as_str()),
+        Some("candidate")
+    );
+    assert_eq!(
+        shadow.get("rollback_target").and_then(|v| v.as_str()),
+        Some("java-grobid-http@0.9.0-crf")
+    );
+    for (field, expected) in [
+        ("denominator_total", 173),
+        ("oracle_n", 173),
+        ("candidate_n", 173),
+        ("strict_n", 173),
+        ("invented_component_count", 0),
+        ("malformed_count", 0),
+        ("unsupported_count", 0),
+    ] {
+        assert_eq!(
+            u64_field(shadow, &format!("/{field}")),
+            expected,
+            "shadow aggregate field {field} drifted"
+        );
+    }
+    assert_eq!(
+        shadow.get("same_n").and_then(|v| v.as_bool()),
+        Some(true),
+        "strict same-n parity is the stopping gate of the shadow denominator"
+    );
+    let digest = shadow
+        .get("aggregate_digest")
+        .and_then(|v| v.as_str())
+        .expect("aggregate digest");
+    let digest_hex = digest.strip_prefix("sha256:").unwrap_or(digest);
+    assert_eq!(
+        digest_hex.len(),
+        64,
+        "aggregate digest must be sha-256 hex (optionally sha256:-prefixed): {digest}"
+    );
+    assert!(
+        digest_hex.bytes().all(|b| b.is_ascii_hexdigit()),
+        "aggregate digest must be hex: {digest}"
+    );
+    // The digest is bound to the exact per-occurrence rows: the row vector
+    // carries exactly the shadow denominator as identity/hash evidence only —
+    // and never any raw display text (redaction is a hard regression).
+    let rows = shadow
+        .get("per_occurrence")
+        .and_then(|v| v.as_array())
+        .expect("per_occurrence rows");
+    assert_eq!(
+        rows.len(),
+        173,
+        "per-occurrence row vector must equal the shadow denominator"
+    );
+    for row in rows {
+        for field in [
+            "case_id",
+            "fixture_id",
+            "ordinal",
+            "span",
+            "scope",
+            "input_sha256",
+            "oracle_when_sha256",
+            "outcome",
+            "precision",
+        ] {
+            assert!(
+                row.get(field).is_some(),
+                "per-occurrence row lacks identity field `{field}`"
+            );
+        }
+        for banned in ["when_display", "source_text", "tei_fragment", "display"] {
+            assert!(
+                row.get(banned).is_none(),
+                "per-occurrence row leaked raw-text field `{banned}`"
+            );
+        }
+    }
 }

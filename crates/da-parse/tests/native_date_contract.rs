@@ -19,6 +19,63 @@ use da_parse::{
     NativeDateOutcome, NativeDateParser, NativeDateUnsupported, RecognizedDate,
 };
 
+// ───── S08/T04: shadow-boundary closure on the component itself ─────
+
+#[test]
+fn s08_component_stays_stateless_across_instances_and_call_sequences() {
+    // Freshly constructed parsers agree on every outcome class: no lazy
+    // init, no environment dependence, no hidden construction state.
+    let inputs = [
+        "2025",
+        "2025-07",
+        "2024-02-29",
+        "July 16, 2025",
+        "16 July 2025",
+        "2025-02-30",
+        "1990s",
+        "03/04/2021",
+        "",
+        "   ",
+    ];
+    let a = NativeDateParser::new();
+    let b = NativeDateParser;
+    for input in inputs {
+        assert_eq!(
+            a.parse(input),
+            b.parse(input),
+            "independent instances diverged on {input:?}"
+        );
+    }
+
+    // A long-lived shared instance produces exactly the fresh-instance
+    // outcomes for an interleaved call sequence: parsing never depends on
+    // prior calls (no cache, no accumulated state, no environment reads).
+    let sequence = [
+        "2025",
+        "Feb 3, 2021",
+        "2021-02-29",
+        "not a date",
+        "2020/07/04",
+        "September 30, 2024",
+    ];
+    let shared = NativeDateParser::new();
+    let via_shared: Vec<NativeDateOutcome> =
+        sequence.iter().map(|input| shared.parse(input)).collect();
+    let via_fresh: Vec<NativeDateOutcome> = sequence
+        .iter()
+        .map(|input| NativeDateParser::new().parse(input))
+        .collect();
+    assert_eq!(
+        via_shared, via_fresh,
+        "a shared parser instance must stay stateless across calls"
+    );
+
+    // The candidate identity stays the versioned shadow pair the registry
+    // and the baseline bind against.
+    assert_eq!(NATIVE_DATE_PARSER_ID, "da-parse.native_date");
+    assert_eq!(NATIVE_DATE_PARSER_VERSION, "1.0.0");
+}
+
 fn parse(input: &str) -> NativeDateOutcome {
     NativeDateParser::new().parse(input)
 }
