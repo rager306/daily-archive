@@ -1540,3 +1540,166 @@ fn native_date_boundary_scanner_fails_visible_on_synthetic_violations() {
         .is_empty()
     );
 }
+
+// ───── S10/T06: affiliation recognition/linking remain quarantined pure leaves ─────
+
+const NATIVE_AFFILIATION_SURFACE: &str = "crates/da-parse/src/native_affiliation.rs";
+const NATIVE_AFFILIATION_SIDE_CHANNEL_MARKERS: [&str; 24] = [
+    "std::env",
+    "env::var",
+    "var_os",
+    "std::fs",
+    "std::path",
+    "PathBuf",
+    "File::",
+    "std::net",
+    "TcpStream",
+    "reqwest",
+    "std::process",
+    "Command::",
+    "std::time",
+    "SystemTime",
+    "Instant",
+    "std::thread",
+    "std::sync",
+    "OnceLock",
+    "tracing",
+    "log::",
+    "println!",
+    "eprintln!",
+    "rand",
+    "tokio",
+];
+const NATIVE_AFFILIATION_SCOPE_CREEP_MARKERS: [&str; 15] = [
+    "TeiEnvelope",
+    "TeiLifter",
+    "TeiParseIr",
+    "ParserPort",
+    "ParsedArticle",
+    "projector",
+    "Grobid",
+    "GraphStore",
+    "Samyama",
+    "Conservation",
+    "import_eligible",
+    "promotion_state",
+    "HeaderAuthor",
+    "filesystem",
+    "network",
+];
+const NATIVE_AFFILIATION_RUNTIME_SURFACES: [&str; 12] = [
+    "crates/da-parse/src/http.rs",
+    "crates/da-parse/src/parser.rs",
+    "crates/da-parse/src/lift.rs",
+    "crates/da-parse/src/ir.rs",
+    "crates/da-parse/src/projector.rs",
+    "crates/da-parse/src/envelope.rs",
+    "crates/da-parse/src/transport.rs",
+    "crates/da-parse/src/backend.rs",
+    "crates/da-parse/src/batch.rs",
+    "crates/da-parse/src/cache.rs",
+    "crates/da-parse/src/profile.rs",
+    "crates/da-parse/src/conservation.rs",
+];
+
+#[test]
+fn native_affiliation_components_are_serde_only_and_runtime_quarantined() {
+    let text = read_text(NATIVE_AFFILIATION_SURFACE);
+    assert!(
+        text.len() > 10_000,
+        "positive control failed: affiliation surface is truncated"
+    );
+    assert_eq!(
+        import_roots_of(&text),
+        BTreeSet::from(["serde".to_string()])
+    );
+    assert!(native_date_marker_hits(&text, &NATIVE_AFFILIATION_SIDE_CHANNEL_MARKERS).is_empty());
+    assert!(native_date_marker_hits(&text, &NATIVE_AFFILIATION_SCOPE_CREEP_MARKERS).is_empty());
+
+    // The parser half is text-only and must not acquire a linker dependency;
+    // the linker half may mention only the accepted S09 name type.
+    let parser_impl = text
+        .split("impl NativeAffiliationParser")
+        .nth(1)
+        .and_then(|rest| rest.split("fn malformed").next())
+        .expect("parser implementation remains present");
+    assert!(!parser_impl.contains("NativeAffiliationLinker"));
+    assert!(!parser_impl.contains("RecognizedPersonalName"));
+    let linker_impl = text
+        .split("impl NativeAffiliationLinker")
+        .nth(1)
+        .and_then(|rest| rest.split("fn valid_span").next())
+        .expect("linker implementation remains present");
+    assert!(linker_impl.contains("RecognizedPersonalName"));
+    assert!(!linker_impl.contains("NativePersonalNameParser"));
+
+    let lib = read_text("crates/da-parse/src/lib.rs");
+    assert!(lib.contains("mod native_affiliation;"));
+    assert!(lib.contains("pub use native_affiliation::"));
+    let mut hits = Vec::new();
+    for rel in NATIVE_AFFILIATION_RUNTIME_SURFACES {
+        for (line_no, raw) in read_text(rel).lines().enumerate() {
+            if raw.contains("native_affiliation") || raw.contains("NativeAffiliation") {
+                hits.push(format!(
+                    "[hidden-runtime-activation] {rel}:{}: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    let mut ports_files = Vec::new();
+    collect_rs_files(&repo_root().join("crates/da-ports/src"), &mut ports_files);
+    assert!(
+        ports_files.len() >= 5,
+        "positive control failed: da-ports scan is too small"
+    );
+    for file in ports_files {
+        let rel = file
+            .strip_prefix(repo_root())
+            .unwrap_or(&file)
+            .to_string_lossy();
+        for (line_no, raw) in std::fs::read_to_string(&file)
+            .expect("port source readable")
+            .lines()
+            .enumerate()
+        {
+            if raw.contains("native_affiliation") || raw.contains("NativeAffiliation") {
+                hits.push(format!(
+                    "[hidden-runtime-activation] {rel}:{}: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    assert!(
+        hits.is_empty(),
+        "native affiliation leaked into runtime composition:\n{}",
+        hits.join("\n")
+    );
+}
+
+#[test]
+fn native_affiliation_boundary_scanner_fails_visible_on_synthetic_violations() {
+    let synthetic =
+        "use std::fs::File;\nuse serde::Serialize;\nlet x = std::env::var(\"X\");\nfn wire() {}\n";
+    assert!(import_roots_of(synthetic).contains("std"));
+    assert!(
+        native_date_marker_hits(synthetic, &NATIVE_AFFILIATION_SIDE_CHANNEL_MARKERS).len() >= 3
+    );
+    assert!(
+        !native_date_marker_hits(
+            "fn x() { ParserPort::new(); }\n",
+            &NATIVE_AFFILIATION_SCOPE_CREEP_MARKERS
+        )
+        .is_empty()
+    );
+    assert!(
+        native_date_marker_hits(
+            "// std::fs and ParserPort are prose only\n",
+            &NATIVE_AFFILIATION_SIDE_CHANNEL_MARKERS
+        )
+        .is_empty()
+    );
+}

@@ -90,7 +90,7 @@ const FROZEN_SOURCE_HASH: &str =
 /// (date obligations added to the same three regression cases): the byte
 /// identity of the manifest follows each sanctioned DATA edit.
 const FROZEN_CORPUS_HASH: &str =
-    "sha256:f3186d4d3f7277063ae7aa787a28bf3881ca749adacfa4b911d830bc53ac18bb";
+    "sha256:bf84fcc62ee2f663ec82fd944e5b747e329cfef0b04e6f98fbd71cf9e3c5fc34";
 /// All three executed S01 cases run under the rich profile.
 const FROZEN_PROFILE_FINGERPRINT: &str = RICH_FP;
 
@@ -1722,4 +1722,109 @@ fn s08_native_date_shadow_stays_outside_cache_identity_and_d204_pins() {
             );
         }
     }
+}
+
+// ───── S10/T06: native affiliation shadow cannot rotate production identity ─────
+
+#[test]
+fn s10_native_affiliation_shadow_stays_outside_cache_and_conservation_identity() {
+    use da_parse::{
+        NATIVE_AFFILIATION_LINK_SCHEMA_VERSION, NATIVE_AFFILIATION_OUTCOME_SCHEMA_VERSION,
+        NATIVE_AFFILIATION_PARSER_ID, NATIVE_AFFILIATION_PARSER_VERSION,
+    };
+
+    assert_eq!(NATIVE_AFFILIATION_PARSER_ID, "da-parse.native_affiliation");
+    assert_eq!(NATIVE_AFFILIATION_PARSER_VERSION, "1.0.0");
+    assert_eq!(
+        NATIVE_AFFILIATION_OUTCOME_SCHEMA_VERSION,
+        "da-parse.native-affiliation.outcome/v1"
+    );
+    assert_eq!(
+        NATIVE_AFFILIATION_LINK_SCHEMA_VERSION,
+        "da-parse.native-affiliation-link.outcome/v1"
+    );
+    assert_eq!(RAW_TEI_STAGE_ID, "parse.raw_tei.v1");
+    assert_eq!(PROJECT_ARTICLE_STAGE_ID, "parse.project_article.v1");
+    assert_eq!(
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        "ParsedArticle@serde-v4-p0-tei-lift"
+    );
+    assert_eq!(GrobidProfile::rich().configuration_fingerprint(), RICH_FP);
+    assert_eq!(
+        GrobidProfile::structural().configuration_fingerprint(),
+        STRUCTURAL_FP
+    );
+
+    let key = project_article_stage_key(
+        "reg.tei.hub-bibliography-2507.19457",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+    );
+    assert!(!key.contains("native_affiliation") && !key.contains("Affiliation"));
+
+    let baseline = load_baseline();
+    let shadow = baseline
+        .get("native_affiliation_shadow")
+        .expect("affiliation evidence is additive, not a case identity field");
+    for (field, expected) in [
+        ("candidate_id", NATIVE_AFFILIATION_PARSER_ID),
+        ("candidate_version", NATIVE_AFFILIATION_PARSER_VERSION),
+        (
+            "outcome_schema_version",
+            NATIVE_AFFILIATION_OUTCOME_SCHEMA_VERSION,
+        ),
+        ("observation_mode", "shadow"),
+        ("promotion_state", "candidate"),
+        ("auto_promote", "forbidden"),
+    ] {
+        assert_eq!(shadow.get(field).and_then(|v| v.as_str()), Some(expected));
+    }
+    assert_eq!(
+        shadow.get("import_eligible").and_then(|v| v.as_bool()),
+        Some(false)
+    );
+    assert_eq!(
+        shadow.get("address_observed_n").and_then(|v| v.as_u64()),
+        Some(0)
+    );
+    for section in ["recognition", "linking"] {
+        let section = shadow
+            .get(section)
+            .expect("recognition/linking are separate");
+        assert_eq!(section.get("oracle_n").and_then(|v| v.as_u64()), Some(13));
+        assert_eq!(
+            section.get("candidate_n").and_then(|v| v.as_u64()),
+            Some(13)
+        );
+        assert_eq!(section.get("same_n").and_then(|v| v.as_bool()), Some(true));
+        for field in [
+            "lost_count",
+            "extra_count",
+            "reordered_count",
+            "invented_count",
+        ] {
+            assert_eq!(
+                section.get(field).and_then(|v| v.as_u64()),
+                Some(0),
+                "{section} drifted: {field}"
+            );
+        }
+    }
+    assert!(
+        baseline.get("conservation").is_some(),
+        "D299 conservation must remain additive"
+    );
+    assert_eq!(
+        baseline
+            .pointer("/policy_locks/import_eligible")
+            .and_then(|v| v.as_bool()),
+        Some(false)
+    );
+    assert_eq!(
+        baseline
+            .pointer("/report_identity/promotion_state")
+            .and_then(|v| v.as_str()),
+        Some("candidate")
+    );
 }
