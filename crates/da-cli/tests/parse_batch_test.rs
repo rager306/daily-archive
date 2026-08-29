@@ -6,26 +6,51 @@
 //! executor → atomic versioned result report — exercised offline, plus
 //! the redb accelerator contract (feature-gated, D295).
 //!
-//! Objective proofs required by the S06 plan:
+//! Objective proofs required by the S06 plan (T06 semantic parity +
+//! architecture closure):
 //!
 //! - invalid blank/unknown/zero/overflow/conflicting config values fail
 //!   BEFORE the backend is opened (typed errors, zero HTTP attempts);
-//! - an offline loopback run shows a mixed per-document report (typed
-//!   busy failure preserved verbatim, exactly one HTTP attempt per
-//!   document), the bounded settings echo and resume;
+//! - an offline loopback run shows a MIXED per-document report (typed busy
+//!   AND malformed-response failures preserved verbatim, exactly one HTTP
+//!   attempt per document), the bounded settings echo and resume;
+//! - successful `ParsedArticle` payloads are byte-identical across cache
+//!   modes (write-through compute vs refresh recompute via the real
+//!   payload cache; off via ordered terminal identities);
+//! - a raw hit re-projects after the projector stage is lost/rotated, with
+//!   zero backend calls, and re-publishes byte-identical bytes;
+//! - a pre-cut legacy fixture hits read-only with no HTTP and no
+//!   canonical write inside the batch-composed cache root;
+//! - a forced mid-run interruption resumes from the durable redb cursor
+//!   against the exact input fingerprint (feature-gated, D295);
 //! - deleting redb never loses raw/projector payload or completed
 //!   evidence and the accelerator rebuilds from canonical evidence.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
+use da_adapters::parse_cache::{FileParseArtifactCache, lookup_with_legacy_parse_identity};
+use da_adapters::pipeline_cache::FilePipelineCache;
 use da_cli::parse_batch::{
     ParseBatchArgs, ParseBatchCliError, ParseBatchManifestV1, ParseBatchReportV1, load_manifest,
     run_with_env,
 };
-use da_parse::{CacheMode, FailureCode, ParseDocumentFailure, RetryAfter};
+use da_parse::{
+    CacheMode, FailureCode, GrobidProfile, PROJECT_ARTICLE_SCHEMA_FINGERPRINT, ParseArtifactCache,
+    ParseBackendRequest, ParseDocumentFailure, ProjectArticlePayload, RetryAfter,
+    project_article_stage_key, raw_tei_stage_key,
+};
+// Fingerprint recomputation is only exercised by the redb-gated forced
+// interruption test (the interrupted run leaves NO report to read it from).
+#[cfg(feature = "redb")]
+use da_parse::{ParseBatchItem, ordered_input_fingerprint};
+use da_ports::pipeline_cache::{
+    CacheLookup, PipelineCache, SourceFormat, SourceIdentity, StageCacheKey,
+};
+use sha2::{Digest, Sha256};
 use tempfile::TempDir;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -51,6 +76,16 @@ fn pdf_bytes(marker: &str) -> Vec<u8> {
     bytes
 }
 
+fn sha256_hex(bytes: &[u8]) -> String {
+    hex::encode(Sha256::digest(bytes))
+}
+
+/// Pre-cut legacy `ParsedArticle` fixture (pre-S06 collapsed pdf-grobid
+/// identity). The legacy read seam serves payload bytes verbatim without
+/// interpreting them — byte identity is the contract (same as the adapter
+/// contract tests).
+const LEGACY_PARSED_ARTICLE_FIXTURE: &str = r#"{"paper_id":"doc-legacy","language":"en","title":"Legacy Parsed Fixture","sections":[],"references":[],"full_text":"legacy body","figures":[],"tables":[],"annotations":[]}"#;
+
 // ───────────────────────── local stub GROBID ─────────────────────────
 
 type RequestLog = Arc<Mutex<Vec<(String, Vec<u8>)>>>;
@@ -63,6 +98,13 @@ enum Plan {
     Tei,
     /// 503 with `Retry-After: 7` (typed Busy, never retried).
     Busy,
+    /// 418 — outside the closed interpreted status set: typed
+    /// `invalid_response`, never retried.
+    Malformed,
+    /// 200 OK with the liftable TEI fixture after `delay_ms` (parks one
+    /// document mid-flight for the forced-interruption test).
+    #[cfg_attr(not(feature = "redb"), allow(dead_code))]
+    SlowTei(u64),
 }
 
 async fn spawn_stub(plans: Vec<(&'static str, Plan)>) -> (SocketAddr, RequestLog) {
@@ -108,6 +150,11 @@ async fn serve_connection(
             vec![("Retry-After", "7")],
             Vec::new(),
         ),
+        Some(Plan::Malformed) => (418, "I'm a Teapot", Vec::new(), Vec::new()),
+        Some(Plan::SlowTei(delay_ms)) => {
+            tokio::time::sleep(Duration::from_millis(delay_ms)).await;
+            (200, "OK", Vec::new(), TEI_FIXTURE.as_bytes().to_vec())
+        }
         None => (500, "Internal Server Error", Vec::new(), Vec::new()),
     };
     let mut head = format!("HTTP/1.1 {status} {reason}\r\nContent-Type: application/xml\r\n");
@@ -212,10 +259,11 @@ fn decode_chunked(mut input: &[u8]) -> Vec<u8> {
 
 // ───────────────────────── harness ─────────────────────────
 
-const DOCS: [(&str, &str); 3] = [
+const DOCS: [(&str, &str); 4] = [
     ("doc-alpha", MARKER_ALPHA),
     ("doc-beta", MARKER_BETA),
     ("doc-gamma", MARKER_GAMMA),
+    ("doc-delta", MARKER_DELTA),
 ];
 
 struct Harness {
@@ -227,10 +275,13 @@ struct Harness {
 }
 
 async fn harness() -> Harness {
+    // Mixed run: success / busy / success / malformed — one typed terminal
+    // class per document across the whole suite.
     harness_with_plans(vec![
         (MARKER_ALPHA, Plan::Tei),
         (MARKER_BETA, Plan::Busy),
         (MARKER_GAMMA, Plan::Tei),
+        (MARKER_DELTA, Plan::Malformed),
     ])
     .await
 }
@@ -361,6 +412,117 @@ fn assert_typed_busy(failure: &ParseDocumentFailure) {
     }
 }
 
+fn assert_typed_malformed(failure: &ParseDocumentFailure) {
+    match failure {
+        ParseDocumentFailure::Backend(backend) => {
+            assert_eq!(backend.code(), FailureCode::InvalidResponse);
+            assert_eq!(backend.retry_after(), None);
+        }
+        other => panic!("expected typed malformed-response failure, got {other:?}"),
+    }
+}
+
+// ───────────────── payload-level parity helpers (T06) ─────────────────
+
+/// The exact fulltext request the CLI builds for one manifest document —
+/// same constructor, so the same stage keys.
+fn fulltext_request(paper_id: &str, marker: &str) -> ParseBackendRequest {
+    ParseBackendRequest::new(paper_id, pdf_bytes(marker))
+}
+
+/// The (raw, projected) stage keys the batch run published for one
+/// successful document (TEI fixture ⇒ known raw payload sha).
+fn stage_keys_for(paper_id: &str, marker: &str) -> (String, String) {
+    let request = fulltext_request(paper_id, marker);
+    let pdf_sha256 = sha256_hex(&pdf_bytes(marker));
+    let raw_sha256 = sha256_hex(TEI_FIXTURE.as_bytes());
+    let raw_key = raw_tei_stage_key(&request);
+    let projected_key = project_article_stage_key(
+        paper_id,
+        &pdf_sha256,
+        &raw_sha256,
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+    );
+    (raw_key, projected_key)
+}
+
+/// Read the durable (backing-tier) raw-stage payload for `key`.
+async fn read_backing_raw(h: &Harness, key: &str) -> Option<Vec<u8>> {
+    FileParseArtifactCache::new(&h.cache_root)
+        .read_raw(key)
+        .await
+        .expect("backing raw stage read")
+        .map(|read| read.payload().to_vec())
+}
+
+/// Read the durable (backing-tier) projected-stage payload for `key`.
+async fn read_backing_projected(h: &Harness, key: &str) -> Option<Vec<u8>> {
+    FileParseArtifactCache::new(&h.cache_root)
+        .read_projected(key)
+        .await
+        .expect("backing projected stage read")
+        .map(|read| read.payload().to_vec())
+}
+
+/// Simulate projector schema rotation at the composition root: every
+/// projected-stage record for the current fingerprint disappears while the
+/// raw TEI stage survives (a rotated fingerprint orphans its entries).
+fn remove_projected_stage_entries(root: &Path) {
+    fn walk(dir: &Path, targets: &mut Vec<PathBuf>) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                if path
+                    .file_name()
+                    .map(|name| name.to_string_lossy() == da_parse::PROJECT_ARTICLE_STAGE_ID)
+                    .unwrap_or(false)
+                {
+                    targets.push(path);
+                } else {
+                    walk(&path, targets);
+                }
+            }
+        }
+    }
+    let mut targets = Vec::new();
+    walk(root, &mut targets);
+    assert!(
+        !targets.is_empty(),
+        "expected published projected entries to exist"
+    );
+    for path in targets {
+        std::fs::remove_dir_all(path).expect("remove projected stage subtree");
+    }
+}
+
+/// The current production rich-PDF parse key (`da load` vocabulary) for a
+/// single-manifestation PDF source — the canonical input of the legacy
+/// collapsed-identity lookup.
+fn legacy_canonical_parse_key(paper_id: &str, pdf_sha: &str) -> StageCacheKey {
+    StageCacheKey {
+        source: SourceIdentity {
+            article_id: paper_id.to_string(),
+            selected_format: SourceFormat::Pdf,
+            pdf_sha256: Some(pdf_sha.to_string()),
+            html_sha256: None,
+            acquisition_fingerprint: format!("acq-v2;pdf={pdf_sha};html=none"),
+            normalization_fingerprint: pdf_sha.to_string(),
+        },
+        stage_id: "parse".to_string(),
+        dependency_output_sha256: BTreeMap::new(),
+        implementation_fingerprint: "da_adapters::GrobidParser@load-v1".to_string(),
+        configuration_fingerprint: GrobidProfile::rich()
+            .configuration_fingerprint()
+            .to_string(),
+        prompt_fingerprint: None,
+        model_fingerprint: None,
+        output_schema_fingerprint: "ParsedArticle.v1".to_string(),
+    }
+}
+
 // ───────────────────────── mixed write-through run ─────────────────────────
 
 #[tokio::test]
@@ -371,11 +533,11 @@ async fn mixed_write_through_reports_typed_outcomes_bounded_settings_and_redacti
 
     assert_eq!(report.schema_version, 1);
     assert_eq!(report.cache_mode, CacheMode::WriteThrough);
-    assert_eq!(report.summary.admitted, 3);
-    assert_eq!(report.summary.completed, 3);
+    assert_eq!(report.summary.admitted, 4);
+    assert_eq!(report.summary.completed, 4);
     assert_eq!(report.summary.succeeded, 2);
-    assert_eq!(report.summary.failed, 1);
-    assert_eq!(report.summary.backend_calls, 3);
+    assert_eq!(report.summary.failed, 2);
+    assert_eq!(report.summary.backend_calls, 4);
     assert_eq!(report.summary.raw_writes, 2);
     assert_eq!(report.summary.projector_writes, 2);
     assert_eq!(report.summary.raw_hits, 0);
@@ -391,11 +553,11 @@ async fn mixed_write_through_reports_typed_outcomes_bounded_settings_and_redacti
     assert!(report.summary.max_queue_depth_observed <= 8);
     // The full run advanced the cursor past every terminal document.
     assert_eq!(report.resumed_from_ordinal, 0);
-    assert_eq!(report.cursor.next_ordinal(), 3);
+    assert_eq!(report.cursor.next_ordinal(), 4);
     assert_eq!(report.cursor.input_fingerprint(), report.input_fingerprint);
 
     // Exactly one terminal outcome per admitted ordinal, correlated.
-    assert_eq!(report.documents.len(), 3);
+    assert_eq!(report.documents.len(), 4);
     for (ordinal, (paper_id, _)) in DOCS.iter().enumerate() {
         let entry = &report.documents[ordinal];
         assert_eq!(entry.ordinal, ordinal as u32);
@@ -406,7 +568,12 @@ async fn mixed_write_through_reports_typed_outcomes_bounded_settings_and_redacti
     // exactly ONE HTTP attempt — no hidden retry, no legacy collapse).
     assert_typed_busy(report.documents[1].result.as_ref().unwrap_err());
     assert_eq!(attempts_for(&h, MARKER_BETA), 1);
-    assert_eq!(total_attempts(&h), 3);
+    // The malformed document keeps its typed invalid_response failure —
+    // also exactly one HTTP attempt — and later documents still ran
+    // (later documents survive earlier failures).
+    assert_typed_malformed(report.documents[3].result.as_ref().unwrap_err());
+    assert_eq!(attempts_for(&h, MARKER_DELTA), 1);
+    assert_eq!(total_attempts(&h), 4);
 
     // Redaction: no base URL, no TEI namespace, no raw PDF/TEI bytes, no
     // physical roots anywhere in the report. (The closed backend identity
@@ -422,6 +589,7 @@ async fn mixed_write_through_reports_typed_outcomes_bounded_settings_and_redacti
         MARKER_ALPHA,
         MARKER_BETA,
         MARKER_GAMMA,
+        MARKER_DELTA,
         "<TEI",
     ] {
         if let Some(index) = report_json.find(leak) {
@@ -452,15 +620,17 @@ async fn read_only_replay_serves_hits_without_extra_backend_calls() {
     assert_eq!(replay.summary.projector_hits, 2);
     assert_eq!(replay.summary.raw_writes, 0);
     assert_eq!(replay.summary.projector_writes, 0);
-    // Only the busy document is re-attempted (it never reached the cache).
-    assert_eq!(replay.summary.backend_calls, 1);
-    assert_eq!(total_attempts(&h), http_after_first + 1);
+    // Only the busy/malformed documents are re-attempted (neither ever
+    // reached the cache).
+    assert_eq!(replay.summary.backend_calls, 2);
+    assert_eq!(total_attempts(&h), http_after_first + 2);
     assert_eq!(attempts_for(&h, MARKER_ALPHA), 1);
     // Semantic parity: successful terminal signals are identical across
     // modes (the projector cache served checksum-verified identical bytes).
     assert_eq!(success_identity(&replay, 0), success_identity(&first, 0));
     assert_eq!(success_identity(&replay, 2), success_identity(&first, 2));
     assert_typed_busy(replay.documents[1].result.as_ref().unwrap_err());
+    assert_typed_malformed(replay.documents[3].result.as_ref().unwrap_err());
 }
 
 // ───────────────────────── off mode ─────────────────────────
@@ -472,13 +642,14 @@ async fn off_mode_computes_without_any_cache_contact() {
     let report = read_report(&h);
 
     assert_eq!(report.cache_mode, CacheMode::Off);
-    assert_eq!(report.summary.backend_calls, 3);
+    assert_eq!(report.summary.backend_calls, 4);
     assert_eq!(report.summary.raw_hits, 0);
     assert_eq!(report.summary.raw_writes, 0);
     assert_eq!(report.summary.projector_hits, 0);
     assert_eq!(report.summary.projector_writes, 0);
     assert_eq!(report.summary.succeeded, 2);
     assert_typed_busy(report.documents[1].result.as_ref().unwrap_err());
+    assert_typed_malformed(report.documents[3].result.as_ref().unwrap_err());
     // The cache root was never created — off never reads and never writes.
     assert!(
         !h.cache_root.exists() || std::fs::read_dir(&h.cache_root).unwrap().next().is_none(),
@@ -499,14 +670,16 @@ async fn refresh_bypasses_warm_entries_and_replaces_them() {
 
     assert_eq!(refreshed.cache_mode, CacheMode::Refresh);
     // Hits are bypassed: every document re-executes on the backend.
-    assert_eq!(refreshed.summary.backend_calls, 3);
+    assert_eq!(refreshed.summary.backend_calls, 4);
     assert_eq!(refreshed.summary.raw_hits, 0);
     assert_eq!(refreshed.summary.projector_hits, 0);
     // Both stages are replaced with freshly computed values.
     assert_eq!(refreshed.summary.raw_writes, 2);
     assert_eq!(refreshed.summary.projector_writes, 2);
     assert_eq!(success_identity(&refreshed, 0), success_identity(&first, 0));
+    assert_eq!(success_identity(&refreshed, 2), success_identity(&first, 2));
     assert_typed_busy(refreshed.documents[1].result.as_ref().unwrap_err());
+    assert_typed_malformed(refreshed.documents[3].result.as_ref().unwrap_err());
 }
 
 // ───────────────────────── resume ─────────────────────────
@@ -521,8 +694,8 @@ async fn resume_after_completed_run_skips_every_document_without_backend() {
     run_with(&h, env_map(&h, Some("read-only")), true).await;
     let resumed = read_report(&h);
 
-    assert_eq!(resumed.resumed_from_ordinal, 3);
-    assert_eq!(resumed.summary.skipped_on_resume, 3);
+    assert_eq!(resumed.resumed_from_ordinal, 4);
+    assert_eq!(resumed.summary.skipped_on_resume, 4);
     assert_eq!(resumed.summary.completed, 0);
     assert_eq!(resumed.summary.backend_calls, 0);
     assert!(resumed.documents.is_empty());
@@ -776,7 +949,7 @@ async fn redb_delete_preserves_payloads_and_rebuilds_the_accelerator() {
             accelerator
                 .load_cursor(&report.input_fingerprint)
                 .expect("lookup"),
-            Some(3)
+            Some(4)
         );
         let indexed = accelerator
             .manifest_entries(&report.input_fingerprint)
@@ -786,7 +959,8 @@ async fn redb_delete_preserves_payloads_and_rebuilds_the_accelerator() {
             Some(vec![
                 (0, "doc-alpha".to_string()),
                 (1, "doc-beta".to_string()),
-                (2, "doc-gamma".to_string())
+                (2, "doc-gamma".to_string()),
+                (3, "doc-delta".to_string())
             ])
         );
     }
@@ -798,7 +972,7 @@ async fn redb_delete_preserves_payloads_and_rebuilds_the_accelerator() {
     // Run 2: resume works via the canonical report fallback…
     run_with(&h, env.clone(), true).await;
     let resumed = read_report(&h);
-    assert_eq!(resumed.summary.skipped_on_resume, 3);
+    assert_eq!(resumed.summary.skipped_on_resume, 4);
     assert_eq!(resumed.summary.backend_calls, 0);
     // …and the accelerator was REBUILT by the re-enabled run: the file is
     // recreated and the manifest index restored unconditionally. (A fully
@@ -816,7 +990,8 @@ async fn redb_delete_preserves_payloads_and_rebuilds_the_accelerator() {
             Some(vec![
                 (0, "doc-alpha".to_string()),
                 (1, "doc-beta".to_string()),
-                (2, "doc-gamma".to_string())
+                (2, "doc-gamma".to_string()),
+                (3, "doc-delta".to_string())
             ])
         );
         assert_eq!(
@@ -842,7 +1017,7 @@ async fn redb_delete_preserves_payloads_and_rebuilds_the_accelerator() {
             accelerator
                 .load_cursor(&third.input_fingerprint)
                 .expect("lookup"),
-            Some(3),
+            Some(4),
             "durable cursor advancement rebuilds the accelerator row"
         );
     }
@@ -867,4 +1042,380 @@ async fn redb_enabled_without_the_feature_fails_closed() {
         .expect_err("enabled accelerator without the feature must fail closed");
     assert_eq!(error, ParseBatchCliError::RedbNotCompiled);
     assert_eq!(total_attempts(&h), 0);
+}
+
+// ───────────────── T06: semantic parity across cache modes ─────────────────
+
+#[tokio::test]
+async fn parsed_article_payloads_are_byte_identical_across_cache_modes() {
+    // Write-through: fresh end-to-end compute, both stages published.
+    let h = harness().await;
+    run_with(&h, env_map(&h, Some("write-through")), false).await;
+    let write_through = read_report(&h);
+    let (alpha_raw, alpha_projected) = stage_keys_for("doc-alpha", MARKER_ALPHA);
+    let (_, gamma_projected) = stage_keys_for("doc-gamma", MARKER_GAMMA);
+    let wt_alpha_raw = read_backing_raw(&h, &alpha_raw)
+        .await
+        .expect("raw published");
+    let wt_alpha_projected = read_backing_projected(&h, &alpha_projected)
+        .await
+        .expect("projected published");
+    let wt_gamma_projected = read_backing_projected(&h, &gamma_projected)
+        .await
+        .expect("projected published");
+
+    // The published projection binds the current schema fingerprint, the
+    // exact raw TEI bytes and the document identity, and decodes.
+    let alpha_pdf_sha = sha256_hex(&pdf_bytes(MARKER_ALPHA));
+    let alpha_raw_sha = sha256_hex(TEI_FIXTURE.as_bytes());
+    ProjectArticlePayload::decode_and_verify(
+        &wt_alpha_projected,
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        &alpha_raw_sha,
+        "doc-alpha",
+        &alpha_pdf_sha,
+    )
+    .expect("published projected payload verifies");
+
+    // Refresh: bypasses every hit and REPLACES both stages with freshly
+    // computed values — the recomputation must be byte-identical.
+    run_with(&h, env_map(&h, Some("refresh")), false).await;
+    let refreshed = read_report(&h);
+    assert_eq!(
+        read_backing_raw(&h, &alpha_raw).await,
+        Some(wt_alpha_raw.clone()),
+        "raw TEI bytes are verbatim across computing modes"
+    );
+    assert_eq!(
+        read_backing_projected(&h, &alpha_projected).await,
+        Some(wt_alpha_projected.clone()),
+        "ParsedArticle payload bytes are mode-independent"
+    );
+    assert_eq!(
+        read_backing_projected(&h, &gamma_projected).await,
+        Some(wt_gamma_projected.clone()),
+        "ParsedArticle payload bytes are mode-independent"
+    );
+    assert_eq!(
+        success_identity(&refreshed, 0),
+        success_identity(&write_through, 0)
+    );
+    assert_eq!(
+        success_identity(&refreshed, 2),
+        success_identity(&write_through, 2)
+    );
+    assert_typed_busy(refreshed.documents[1].result.as_ref().unwrap_err());
+    assert_typed_malformed(refreshed.documents[3].result.as_ref().unwrap_err());
+
+    // Off: zero cache contact; the same inputs show identical ordered
+    // terminal identities (semantic parity at the report surface).
+    let off_h = harness().await;
+    run_with(&off_h, env_map(&off_h, Some("off")), false).await;
+    let off = read_report(&off_h);
+    assert_eq!(off.documents.len(), write_through.documents.len());
+    for (ordinal, _) in DOCS.iter().enumerate() {
+        match (
+            &off.documents[ordinal].result,
+            &write_through.documents[ordinal].result,
+        ) {
+            (Ok(left), Ok(right)) => assert_eq!(
+                left.result_identity, right.result_identity,
+                "semantic drift at ordinal {ordinal}"
+            ),
+            (Err(left), Err(right)) => {
+                assert_eq!(left, right, "typed failure drift at ordinal {ordinal}")
+            }
+            _ => panic!("terminal class drift at ordinal {ordinal}"),
+        }
+    }
+    assert!(
+        !off_h.cache_root.exists()
+            || std::fs::read_dir(&off_h.cache_root)
+                .unwrap()
+                .next()
+                .is_none(),
+        "off mode must not touch the cache root"
+    );
+}
+
+// ───────────────── T06: raw-hit re-projection after projector rotation ─────────────────
+
+#[tokio::test]
+async fn raw_hits_reproject_after_projector_stage_loss_without_backend() {
+    let h = harness().await;
+    run_with(&h, env_map(&h, Some("write-through")), false).await;
+    let first = read_report(&h);
+    let (alpha_raw, alpha_projected) = stage_keys_for("doc-alpha", MARKER_ALPHA);
+    let (_, gamma_projected) = stage_keys_for("doc-gamma", MARKER_GAMMA);
+    let projected_alpha_before = read_backing_projected(&h, &alpha_projected)
+        .await
+        .expect("projected entry");
+    let projected_gamma_before = read_backing_projected(&h, &gamma_projected)
+        .await
+        .expect("projected entry");
+    let raw_alpha_before = read_backing_raw(&h, &alpha_raw).await.expect("raw entry");
+
+    // Projector schema rotation in effect: projected records are gone for
+    // the current fingerprint while the raw TEI stage survives.
+    remove_projected_stage_entries(&h.cache_root);
+    assert!(read_backing_projected(&h, &alpha_projected).await.is_none());
+
+    run_with(&h, env_map(&h, Some("write-through")), false).await;
+    let reprojected = read_report(&h);
+    // Raw hits carried the re-projection: zero backend calls for the two
+    // successful documents (only busy/malformed documents re-fetch).
+    assert_eq!(reprojected.summary.raw_hits, 2);
+    assert_eq!(reprojected.summary.projector_hits, 0);
+    assert_eq!(
+        reprojected.summary.raw_writes, 0,
+        "raw hits are never rewritten"
+    );
+    assert_eq!(
+        reprojected.summary.projector_writes, 2,
+        "re-projection re-publishes the projector stage"
+    );
+    assert_eq!(reprojected.summary.backend_calls, 2);
+    assert_eq!(
+        attempts_for(&h, MARKER_ALPHA),
+        1,
+        "raw hit never re-fetches"
+    );
+    assert_eq!(
+        attempts_for(&h, MARKER_GAMMA),
+        1,
+        "raw hit never re-fetches"
+    );
+    // Deterministic projector: re-projected bytes equal the originals and
+    // the raw stage is untouched.
+    assert_eq!(
+        read_backing_projected(&h, &alpha_projected).await,
+        Some(projected_alpha_before)
+    );
+    assert_eq!(
+        read_backing_projected(&h, &gamma_projected).await,
+        Some(projected_gamma_before)
+    );
+    assert_eq!(
+        read_backing_raw(&h, &alpha_raw).await,
+        Some(raw_alpha_before)
+    );
+    // Terminal identities unchanged; failures stay typed.
+    assert_eq!(
+        success_identity(&reprojected, 0),
+        success_identity(&first, 0)
+    );
+    assert_eq!(
+        success_identity(&reprojected, 2),
+        success_identity(&first, 2)
+    );
+    assert_typed_busy(reprojected.documents[1].result.as_ref().unwrap_err());
+    assert_typed_malformed(reprojected.documents[3].result.as_ref().unwrap_err());
+}
+
+// ───────────────── T06: pre-cut legacy fixture inside the batch root ─────────────────
+
+#[tokio::test]
+async fn precut_legacy_fixture_hits_without_http_or_canonical_write() {
+    let h = harness().await;
+    // A pre-cut legacy record (pre-S06 collapsed pdf-grobid identity) is
+    // seeded into the batch cache root before any run happens.
+    let pipeline = FilePipelineCache::new(&h.cache_root);
+    let pdf_sha = sha256_hex(&pdf_bytes(MARKER_ALPHA));
+    let canonical = legacy_canonical_parse_key("doc-legacy", &pdf_sha);
+    let mut legacy_key = canonical.clone();
+    legacy_key.source.acquisition_fingerprint = pdf_sha.clone();
+    legacy_key.configuration_fingerprint = "pdf-grobid".to_string();
+    pipeline
+        .store_success(
+            &legacy_key,
+            LEGACY_PARSED_ARTICLE_FIXTURE.as_bytes(),
+            BTreeMap::new(),
+            "2026-08-29T00:00:00Z",
+        )
+        .expect("seed legacy fixture");
+
+    // Real batch composition over the same root: the write-through run
+    // must not disturb the legacy record.
+    run_with(&h, env_map(&h, Some("write-through")), false).await;
+    let attempts_after_batch = total_attempts(&h);
+
+    // The legacy hit: read-only, resolved from the collapsed pdf-grobid
+    // identity, bytes verbatim, no canonical record, no HTTP.
+    let outcome = lookup_with_legacy_parse_identity(
+        &pipeline,
+        &canonical,
+        false,
+        GrobidProfile::rich(),
+        "2026-08-29T00:01:00Z",
+    )
+    .expect("legacy lookup");
+    let CacheLookup::Hit(hit) = outcome.lookup else {
+        panic!("pre-cut legacy fixture must hit under the collapsed identity")
+    };
+    assert_eq!(
+        hit.payload,
+        LEGACY_PARSED_ARTICLE_FIXTURE.as_bytes(),
+        "legacy fixture bytes round-trip verbatim"
+    );
+    assert_eq!(outcome.resolved_from.as_deref(), Some("pdf-grobid"));
+    assert_eq!(
+        pipeline.manifest("doc-legacy").expect("manifest").len(),
+        1,
+        "a legacy hit never creates a canonical record"
+    );
+    assert_eq!(
+        total_attempts(&h),
+        attempts_after_batch,
+        "no HTTP for the legacy document"
+    );
+}
+
+// ───────────────── T06: forced interruption + durable redb resume ─────────────────
+
+#[cfg(feature = "redb")]
+#[tokio::test]
+async fn forced_interruption_resumes_from_the_durable_redb_cursor() {
+    let h = harness_with_plans(vec![
+        (MARKER_ALPHA, Plan::Tei),
+        (MARKER_BETA, Plan::SlowTei(3000)),
+        (MARKER_GAMMA, Plan::Tei),
+        (MARKER_DELTA, Plan::Malformed),
+    ])
+    .await;
+    let accelerator_path = h._temp.path().join("accel").join("accel.redb");
+    let mut env = env_map(&h, Some("write-through"));
+    env.insert(
+        "DA_PARSE_REDB_INDEX_ENABLED".to_string(),
+        "true".to_string(),
+    );
+    env.insert(
+        "DA_PARSE_REDB_INDEX_PATH".to_string(),
+        accelerator_path.display().to_string(),
+    );
+
+    // Run 1: interrupted mid-flight. doc-alpha (ordinal 0) reaches durable
+    // terminal state; doc-beta (ordinal 1) stays parked on the stub, so
+    // the contiguous durable prefix freezes at 1. The watcher races the
+    // run and wins as soon as alpha is durably published (+ one beat for
+    // the sink ack + checkpoint save); the losing run future is DROPPED —
+    // the forced cancellation.
+    // Box::pin so the forced `drop` below REALLY cancels the run: a
+    // stack-pinned future (tokio::pin!) survives `drop(Pin<&mut>)` and
+    // would keep the run frame — and its accelerator Arc — alive until the
+    // end of the test scope, blocking the resume's accelerator open.
+    let mut run_fut = Box::pin(run_with(&h, env.clone(), false));
+    let (_, alpha_projected) = stage_keys_for("doc-alpha", MARKER_ALPHA);
+    let watcher = async {
+        loop {
+            if read_backing_projected(&h, &alpha_projected).await.is_some() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(25)).await;
+        }
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    };
+    tokio::select! {
+        result = &mut run_fut => panic!(
+            "run finished before the forced interruption: {result:?}"
+        ),
+        () = watcher => {}
+    }
+    drop(run_fut);
+    // An interrupted run never writes the terminal report.
+    assert!(
+        !h.report.exists(),
+        "interrupted run must not write a report"
+    );
+
+    // Dropping the run future detaches the executor workers (the true
+    // process-death analog is process exit): they drain the parked
+    // documents durably while the interrupted run itself never returns —
+    // no report, no run summary.
+    let (_, beta_projected) = stage_keys_for("doc-beta", MARKER_BETA);
+    let (_, gamma_projected) = stage_keys_for("doc-gamma", MARKER_GAMMA);
+    let mut drained = false;
+    for _ in 0..400 {
+        if read_backing_projected(&h, &beta_projected).await.is_some()
+            && read_backing_projected(&h, &gamma_projected).await.is_some()
+        {
+            drained = true;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(25)).await;
+    }
+    assert!(drained, "interrupted run never drained its durable work");
+    // True process death releases the accelerator file lock via the OS at
+    // process exit; the in-process analog is the detached workers exiting on
+    // the closed admission channel and dropping the last checkpoint handles.
+    // Poll for the lock instead of guessing a fixed beat.
+    let mut lock_free = false;
+    for attempt in 0..150 {
+        match da_adapters::parse_cursor::ParseCursorAccelerator::open(&accelerator_path) {
+            Ok(probe) => {
+                drop(probe);
+                lock_free = true;
+                println!("accelerator lock free after {attempt} polls");
+                break;
+            }
+            Err(_) => tokio::time::sleep(Duration::from_millis(100)).await,
+        }
+    }
+    assert!(
+        lock_free,
+        "detached workers never released the accelerator file lock"
+    );
+
+    // The input fingerprint the interrupted run worked on — computed
+    // independently here, since the interrupted run left NO report.
+    let fingerprint = {
+        let items: Vec<ParseBatchItem> = DOCS
+            .iter()
+            .map(|(paper_id, marker)| fulltext_request(paper_id, marker))
+            .enumerate()
+            .map(|(ordinal, request)| ParseBatchItem::new(ordinal as u32, request))
+            .collect();
+        ordered_input_fingerprint(&items)
+    };
+
+    // Run 2: resume against the exact input fingerprint. NO report exists,
+    // so the resume evidence can only be the redb accelerator's durable
+    // cursor — the accelerator-first contract after an interrupted run.
+    run_with(&h, env.clone(), true).await;
+    let resumed = read_report(&h);
+    assert_eq!(resumed.resumed_from_ordinal, 4);
+    assert_eq!(resumed.summary.skipped_on_resume, 4);
+    assert!(resumed.documents.is_empty());
+    assert_eq!(resumed.summary.backend_calls, 0);
+    assert_eq!(resumed.cursor.next_ordinal(), 4);
+    assert_eq!(resumed.input_fingerprint, fingerprint);
+    // Exactly one HTTP attempt per document across the interruption.
+    assert_eq!(attempts_for(&h, MARKER_ALPHA), 1);
+    assert_eq!(attempts_for(&h, MARKER_BETA), 1);
+    assert_eq!(attempts_for(&h, MARKER_GAMMA), 1);
+    assert_eq!(attempts_for(&h, MARKER_DELTA), 1);
+    // The accelerator still carries the exact manifest index.
+    {
+        let accelerator =
+            da_adapters::parse_cursor::ParseCursorAccelerator::open(&accelerator_path)
+                .expect("open accelerator");
+        assert_eq!(
+            accelerator
+                .load_cursor(&resumed.input_fingerprint)
+                .expect("lookup"),
+            Some(4),
+            "the fully skipped resume leaves the durable cursor intact"
+        );
+        let indexed = accelerator
+            .manifest_entries(&resumed.input_fingerprint)
+            .expect("manifest lookup");
+        assert_eq!(
+            indexed,
+            Some(vec![
+                (0, "doc-alpha".to_string()),
+                (1, "doc-beta".to_string()),
+                (2, "doc-gamma".to_string()),
+                (3, "doc-delta".to_string())
+            ])
+        );
+    }
 }
