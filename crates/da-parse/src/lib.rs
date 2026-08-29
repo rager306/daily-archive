@@ -33,6 +33,7 @@ mod envelope;
 mod http;
 mod ir;
 mod lift;
+mod native_date;
 mod parser;
 mod profile;
 mod projector;
@@ -68,6 +69,11 @@ pub use envelope::{TeiEnvelope, TeiIdentity, TeiResultIdentity};
 pub use http::{GrobidHttpBackend, GrobidParser};
 pub use ir::TeiParseIr;
 pub use lift::TeiLifter;
+pub use native_date::{
+    DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,
+    NATIVE_DATE_PARSER_ID, NATIVE_DATE_PARSER_VERSION, NativeDateAmbiguous, NativeDateMalformed,
+    NativeDateOutcome, NativeDateParser, NativeDateUnsupported, RecognizedDate,
+};
 pub use parser::{ScholarlyParser, lift_and_project_envelope};
 pub use profile::GrobidProfile;
 pub use transport::{
