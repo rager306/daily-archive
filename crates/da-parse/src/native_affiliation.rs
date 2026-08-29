@@ -106,6 +106,9 @@ fn parse(input: &str) -> NativeAffiliationOutcome {
     if input.chars().any(char::is_control) {
         return malformed(NativeAffiliationMalformed::ControlCharacter);
     }
+    if input.chars().any(is_bidi_formatting_mark) {
+        return malformed(NativeAffiliationMalformed::UnexpectedCharacter);
+    }
     if input.contains(';') || input.contains(':') || input.contains('(') || input.contains(')') {
         return NativeAffiliationOutcome::Unsupported {
             reason: NativeAffiliationUnsupported::UnsupportedPunctuation,
@@ -192,6 +195,24 @@ fn parse(input: &str) -> NativeAffiliationOutcome {
         };
     }
     NativeAffiliationOutcome::Recognized { components }
+}
+
+fn is_bidi_formatting_mark(c: char) -> bool {
+    matches!(
+        c,
+        '\u{061c}'
+            | '\u{200e}'
+            | '\u{200f}'
+            | '\u{202a}'
+            | '\u{202b}'
+            | '\u{202c}'
+            | '\u{202d}'
+            | '\u{202e}'
+            | '\u{2066}'
+            | '\u{2067}'
+            | '\u{2068}'
+            | '\u{2069}'
+    )
 }
 
 fn is_marker(value: &str) -> bool {
