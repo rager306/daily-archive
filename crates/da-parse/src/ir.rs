@@ -3,21 +3,28 @@
 use crate::http::GrobidParser;
 use crate::lift::TeiLifter;
 use da_ports::parser::{
-    CitationEntry, ExtractedFormula, ExtractedTable, FormulaMissingReason, Section,
-    TableMissingReason,
+    CitationEntry, DeclaredArxivIdentity, DeclaredIdMissingReason, ExtractedFigure,
+    ExtractedFormula, ExtractedTable, FormulaMissingReason, HeaderAuthor, Section,
+    TableMissingReason, VisualCallout,
 };
 use serde::{Deserialize, Serialize};
 
 /// Intermediate representation for the GROBID PDF path.
 ///
 /// Stores the TEI string and the tissues already on today's `ParsedArticle`
-/// (KTD1 / AE9). Author lists, article-level idno, and non-table figures are
-/// intentionally absent — they are not parsed this cut.
+/// (KTD1 / AE9).
+///
+/// Since M464-z84in2 S07/T01 the IR mirrors the additive P0 wire families
+/// (declared arXiv identity + typed missingness, document-ordered header
+/// authors, non-table figures with graphic coordinates, figure/table visual
+/// callouts) with `#[serde(default)]` on every new field. The single
+/// `TeiLifter` populates them in S07 T02/T03 — until then they stay at typed
+/// emptiness, never invented.
 ///
 /// `Serialize`/`Deserialize` since M464-z84in2 S02/T02: the TeiLifter
 /// parity tests compare serialized IRs byte-for-byte between the
 /// provider-neutral envelope path and the compatibility path (R105).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TeiParseIr {
     pub tei_xml: String,
     pub paper_id: String,
@@ -30,6 +37,17 @@ pub struct TeiParseIr {
     pub table_missingness: Option<TableMissingReason>,
     pub formulas: Vec<ExtractedFormula>,
     pub formula_missingness: Option<FormulaMissingReason>,
+    /// S07 P0 mirror families (serde default keeps legacy IR JSON decodable).
+    #[serde(default)]
+    pub declared_arxiv_id: Option<DeclaredArxivIdentity>,
+    #[serde(default)]
+    pub declared_id_missingness: Option<DeclaredIdMissingReason>,
+    #[serde(default)]
+    pub header_authors: Vec<HeaderAuthor>,
+    #[serde(default)]
+    pub figures: Vec<ExtractedFigure>,
+    #[serde(default)]
+    pub visual_callouts: Vec<VisualCallout>,
     pub pdf_hash: String,
 }
 

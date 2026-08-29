@@ -1810,6 +1810,7 @@ mod tests {
                 formula_missingness: None,
                 page_text_missingness: None,
                 pdf_hash: source_sha.clone(),
+                ..Default::default()
             };
             let entities = Vec::<ExtractedEntity>::new();
             let embedding = vec![0.25_f32, -0.5, 1.0];

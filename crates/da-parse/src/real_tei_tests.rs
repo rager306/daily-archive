@@ -400,17 +400,44 @@ fn test_hub_restarted_numbering_yields_unique_path_ids() {
     );
 }
 
-/// T02: this-cut IR still omits authors / article idno / non-table figures
-/// even when the real hub TEI contains them. Lift expansion is later slices.
+/// S07/T01 boundary state: the additive P0 wire families exist on
+/// `ParsedArticle` under their typed names with serde defaults, but the
+/// single lifter does not populate them yet (S07 T02/T03) — the real hub
+/// TEI's header authors, declared idno and non-table figures stay at typed
+/// emptiness, never invented. No legacy-named `authors`/`idno` fields exist.
 #[test]
 fn test_this_cut_ir_still_omits_authors_figures_idno_on_real_hub() {
     let tei = load_preserved_tei("hub_2507.19457.tei.xml", HUB_SHA);
     let ir = GrobidParser::lift_tei(tei, "2507.19457", "fixture");
     let article = GrobidParser::project_article(ir);
     let v = serde_json::to_value(&article).unwrap();
-    assert!(v.get("authors").is_none());
-    assert!(v.get("figures").is_none());
-    assert!(v.get("idno").is_none());
+    assert!(
+        v.get("authors").is_none(),
+        "no legacy-named authors field; the family is `header_authors`"
+    );
+    assert!(
+        v.get("idno").is_none(),
+        "no article-level idno; the family is `declared_arxiv_id`"
+    );
+    assert_eq!(
+        v.get("header_authors"),
+        Some(&serde_json::Value::Array(vec![])),
+        "hub header authors stay typed-empty until T02 lifts them"
+    );
+    assert_eq!(
+        v.get("figures"),
+        Some(&serde_json::Value::Array(vec![])),
+        "hub non-table figures stay typed-empty until T03 lifts them"
+    );
+    assert_eq!(
+        v.get("visual_callouts"),
+        Some(&serde_json::Value::Array(vec![]))
+    );
+    assert_eq!(v.get("declared_arxiv_id"), Some(&serde_json::Value::Null));
+    assert_eq!(
+        v.get("declared_id_missingness"),
+        Some(&serde_json::Value::Null)
+    );
     assert!(!article.tables.is_empty(), "tables ARE lifted this cut");
     assert!(!article.formulas.is_empty(), "formulas ARE lifted this cut");
 }

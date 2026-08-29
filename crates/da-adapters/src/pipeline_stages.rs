@@ -542,6 +542,7 @@ mod tests {
                 formula_missingness: None,
                 page_text_missingness: None,
                 pdf_hash: "a".repeat(64),
+                ..Default::default()
             })
         }
     }
@@ -640,6 +641,7 @@ mod tests {
             formula_missingness: None,
             page_text_missingness: None,
             pdf_hash: "a".repeat(64),
+            ..Default::default()
         };
         let output = stage
             .execute(StageExecutionRequest {
@@ -723,6 +725,7 @@ mod tests {
             formula_missingness: None,
             page_text_missingness: None,
             pdf_hash: "a".repeat(64),
+            ..Default::default()
         };
         let output = stage
             .execute(StageExecutionRequest {

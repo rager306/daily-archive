@@ -61,6 +61,7 @@ impl ParserPort for MockParser {
             formula_missingness: None,
             page_text_missingness: None,
             pdf_hash: "hash".into(),
+            ..Default::default()
         })
     }
 }

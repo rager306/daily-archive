@@ -72,9 +72,11 @@ pub use pdf_classification::{
 };
 
 pub use parser::{
-    CharSpan, CitationAnchor, CitationEntry, ExtractedFormula, ExtractedTable,
-    FormulaMissingReason, FormulaRepresentation, PageTextMissing, ParserPort, Section, TableCell,
-    TableMissingReason, page_text_missingness_from,
+    CalloutUnresolvedReason, CharSpan, CitationAnchor, CitationEntry, DeclaredArxivIdentity,
+    DeclaredIdMissingReason, ExtractedFigure, ExtractedFormula, ExtractedTable,
+    FigureGraphicMissingReason, FormulaMissingReason, FormulaRepresentation, HeaderAuthor,
+    PageTextMissing, ParserPort, Section, TableCell, TableMissingReason, VisualCallout,
+    VisualCalloutKind, page_text_missingness_from,
 };
 pub use promotion::{PromotionCommitError, PromotionCommitSink, PromotionDecision};
 pub use tex_source::{
@@ -121,6 +123,7 @@ mod serde_roundtrip_tests {
             formulas: vec![],
             formula_missingness: None,
             page_text_missingness: None,
+            ..Default::default()
         });
     }
 
@@ -162,6 +165,7 @@ mod serde_roundtrip_tests {
             formulas: vec![],
             formula_missingness: None,
             page_text_missingness: None,
+            ..Default::default()
         });
     }
 
@@ -211,6 +215,138 @@ mod serde_roundtrip_tests {
         );
     }
 
+    /// M464-z84in2 S07/T01 (R085): legacy ParsedArticle JSON predating the
+    /// S07 P0 families decodes with typed defaults — no invented identity,
+    /// no missingness claims, empty header/figure/callout families.
+    #[test]
+    fn roundtrip_parsed_article_legacy_omits_s07_families() {
+        let json = r#"{"paper_id":"2507.19457","title":"GEPA","abstract_text":"a","body_text":"b","sections":[],"citations":[],"layout_json":null,"tei_xml":null,"pdf_hash":"abc123","tables":[],"table_missingness":null,"formulas":[],"formula_missingness":null,"page_text_missingness":null}"#;
+        let article: ParsedArticle =
+            serde_json::from_str(json).expect("pre-S07 ParsedArticle deserializes");
+        assert!(article.declared_arxiv_id.is_none());
+        assert!(article.declared_id_missingness.is_none());
+        assert!(article.header_authors.is_empty());
+        assert!(article.figures.is_empty());
+        assert!(article.visual_callouts.is_empty());
+    }
+
+    /// M464-z84in2 S07/T01: the additive P0 wire families survive roundtrip
+    /// with identity, author order (Unicode + incomplete names), figure
+    /// coordinates, graphic missingness and unresolved callout state intact.
+    #[test]
+    fn roundtrip_parsed_article_with_s07_families() {
+        roundtrip_json(&ParsedArticle {
+            paper_id: "2507.19457".into(),
+            title: "GEPA".into(),
+            abstract_text: "a".into(),
+            body_text: "b".into(),
+            sections: vec![],
+            citations: vec![],
+            layout_json: None,
+            tei_xml: None,
+            pdf_hash: "abc123".into(),
+            tables: vec![],
+            table_missingness: None,
+            formulas: vec![],
+            formula_missingness: None,
+            page_text_missingness: None,
+            declared_arxiv_id: Some(DeclaredArxivIdentity {
+                raw: "arXiv:2507.19457v2[cs.CL]".into(),
+                bare_id: "2507.19457".into(),
+                revision: Some("v2".into()),
+                source_digest: "a".repeat(64),
+            }),
+            declared_id_missingness: None,
+            header_authors: vec![
+                HeaderAuthor {
+                    name: "Ozan \u{130}rsoy".into(),
+                    forename: Some("Ozan".into()),
+                    surname: Some("\u{130}rsoy".into()),
+                    source_digest: "b".repeat(64),
+                },
+                HeaderAuthor {
+                    name: "Yu".into(),
+                    forename: None,
+                    surname: None,
+                    source_digest: "c".repeat(64),
+                },
+            ],
+            figures: vec![ExtractedFigure {
+                figure_id: "fig_0".into(),
+                label: Some("Figure 1".into()),
+                caption: Some("Overview".into()),
+                coordinates: Some("90,91.80,190.43,428.38,331.74".into()),
+                graphic_missingness: None,
+                source_digest: "d".repeat(64),
+            }],
+            visual_callouts: vec![VisualCallout {
+                kind: VisualCalloutKind::Figure,
+                target: None,
+                unresolved: Some(CalloutUnresolvedReason::NoTarget),
+                quote: "[12]".into(),
+                offset: Some(41),
+                section_path_id: Some("3.2".into()),
+                section_ordinal: Some(1),
+                source_digest: "e".repeat(64),
+            }],
+        });
+    }
+
+    /// M464-z84in2 S07/T01: the closed S07 enum wire tags are stable
+    /// snake_case strings, and a revision-less declared identity roundtrips
+    /// with `revision: null` — never rewritten to a guessed v1.
+    #[test]
+    fn roundtrip_s07_wire_tags_and_revision_honesty() {
+        roundtrip_json(&DeclaredArxivIdentity {
+            raw: "2507.19457".into(),
+            bare_id: "2507.19457".into(),
+            revision: None,
+            source_digest: "a".repeat(64),
+        });
+        roundtrip_json(&DeclaredIdMissingReason::NoIdno);
+        roundtrip_json(&DeclaredIdMissingReason::Malformed(
+            "not an arxiv id".into(),
+        ));
+        roundtrip_json(&FigureGraphicMissingReason::NoGraphicChild);
+        roundtrip_json(&FigureGraphicMissingReason::GraphicWithoutCoordinates);
+        roundtrip_json(&FigureGraphicMissingReason::Malformed("bad coords".into()));
+        roundtrip_json(&CalloutUnresolvedReason::NoTarget);
+        roundtrip_json(&CalloutUnresolvedReason::TargetNotInInventory);
+        roundtrip_json(&VisualCalloutKind::Figure);
+        roundtrip_json(&VisualCalloutKind::Table);
+
+        assert_eq!(
+            serde_json::to_string(&DeclaredIdMissingReason::NoIdno).unwrap(),
+            "\"no_idno\""
+        );
+        assert_eq!(
+            serde_json::to_string(&FigureGraphicMissingReason::GraphicWithoutCoordinates).unwrap(),
+            "\"graphic_without_coordinates\""
+        );
+        assert_eq!(
+            serde_json::to_string(&CalloutUnresolvedReason::TargetNotInInventory).unwrap(),
+            "\"target_not_in_inventory\""
+        );
+        assert_eq!(
+            serde_json::to_string(&VisualCalloutKind::Figure).unwrap(),
+            "\"figure\""
+        );
+
+        let identity = DeclaredArxivIdentity {
+            raw: "2507.19457".into(),
+            bare_id: "2507.19457".into(),
+            revision: None,
+            source_digest: "a".repeat(64),
+        };
+        let json = serde_json::to_string(&identity).unwrap();
+        assert!(
+            json.contains("\"revision\":null"),
+            "wire keeps null revision"
+        );
+        let back: DeclaredArxivIdentity = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.revision, None, "revision is never guessed");
+    }
+
     /// M400 S03 T01: a ParsedArticle carrying extracted TEI formulas survives
     /// roundtrip with formula_id, label, coordinates, representation, section
     /// identity, span and digest intact.
@@ -241,6 +377,7 @@ mod serde_roundtrip_tests {
             }],
             formula_missingness: None,
             page_text_missingness: None,
+            ..Default::default()
         });
     }
 

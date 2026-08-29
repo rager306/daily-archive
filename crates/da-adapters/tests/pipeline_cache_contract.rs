@@ -367,6 +367,7 @@ async fn parse_artifact_cache_roundtrips_full_versioned_payloads() {
         formulas: Vec::new(),
         formula_missingness: None,
         page_text_missingness: None,
+        ..Default::default()
     };
     let projector_key = projected_stage_key(&raw_sha);
     let projected_payload = ProjectArticlePayload::build(

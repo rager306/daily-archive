@@ -341,6 +341,7 @@ mod tests {
             formula_missingness: None,
             page_text_missingness: None,
             pdf_hash: "b".repeat(64),
+            ..Default::default()
         }
     }
 

@@ -73,6 +73,7 @@ fn revision_request(revision: u32, section_count: usize) -> RevisionMaterializat
             formula_missingness: None,
             page_text_missingness: None,
             pdf_hash: sha(u64::from(revision)),
+            ..Default::default()
         },
         manifestations: vec![RevisionManifestationInput {
             format: "pdf".into(),

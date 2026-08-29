@@ -83,6 +83,7 @@ fn html_article(paper_id: &str) -> ParsedArticle {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: "a".repeat(64),
+        ..Default::default()
     }
 }
 

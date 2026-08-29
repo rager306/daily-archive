@@ -352,6 +352,7 @@ mod tests {
             formula_missingness: None,
             page_text_missingness: None,
             pdf_hash: "source-sha".into(),
+            ..Default::default()
         }
     }
 

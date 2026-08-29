@@ -47,6 +47,7 @@ fn parsed() -> ParsedArticle {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: "src".into(),
+        ..Default::default()
     }
 }
 

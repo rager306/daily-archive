@@ -50,6 +50,7 @@ fn parsed() -> ParsedArticle {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: "a".repeat(64),
+        ..Default::default()
     }
 }
 
@@ -122,6 +123,7 @@ fn html_context_conservation_observer_reports_honest_typed_missingness() {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: "b".repeat(64),
+        ..Default::default()
     };
     let snapshot = observe_parsed_article(&parsed, 1024, &BTreeSet::new()).unwrap();
 
@@ -178,6 +180,7 @@ fn html_context_conservation_observer_partial_identity_keeps_missingness() {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: "c".repeat(64),
+        ..Default::default()
     };
     parsed.sections.push(Section {
         title: "Stable".into(),
@@ -257,6 +260,7 @@ fn html_context_conservation_evidence_reports_honest_deltas() {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: "d".repeat(64),
+        ..Default::default()
     };
     let entities = vec![
         ExtractedEntity {

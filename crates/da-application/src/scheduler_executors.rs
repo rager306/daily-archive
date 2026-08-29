@@ -111,6 +111,13 @@ impl GraphParsedArticleProvider {
             formulas: Vec::new(),
             formula_missingness: None,
             page_text_missingness: None,
+            // S07 P0 families (M464-z84in2): scheduler synthesis carries no
+            // TEI header/figures — typed emptiness, never invented.
+            declared_arxiv_id: None,
+            declared_id_missingness: None,
+            header_authors: Vec::new(),
+            figures: Vec::new(),
+            visual_callouts: Vec::new(),
             pdf_hash: String::new(),
         })
     }
@@ -626,6 +633,7 @@ mod tests {
                 formula_missingness: None,
                 page_text_missingness: None,
                 pdf_hash: "hash".into(),
+                ..Default::default()
             })
         }
     }

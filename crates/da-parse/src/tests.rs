@@ -1034,17 +1034,36 @@ fn this_cut_ir_omits_authors_idno_and_non_table_figures() {
     assert_eq!(ir.abstract_text, "A");
     let article = GrobidParser::project_article(ir);
     let v = serde_json::to_value(&article).unwrap();
+    // S07/T01: the additive P0 families exist on the wire under their typed
+    // names with `#[serde(default)]`, but this cut does not INVENT values:
+    // titleStmt authors are not header_authors and a body figure is not
+    // lifted yet (T02/T03 implement the single lifter). Typed emptiness only.
     assert!(
         v.get("authors").is_none(),
-        "article JSON must not grow an authors field"
-    );
-    assert!(
-        v.get("figures").is_none(),
-        "article JSON must not grow a figures index"
+        "no legacy-named authors field; the family is `header_authors`"
     );
     assert!(
         v.get("idno").is_none(),
-        "article JSON must not grow article-level idno"
+        "no article-level idno; the family is `declared_arxiv_id`"
+    );
+    assert_eq!(
+        v.get("header_authors"),
+        Some(&serde_json::Value::Array(vec![])),
+        "titleStmt `<author>` must not be invented into header_authors this cut"
+    );
+    assert_eq!(
+        v.get("figures"),
+        Some(&serde_json::Value::Array(vec![])),
+        "body figure must not be invented into figures this cut (T03 lifts it)"
+    );
+    assert_eq!(
+        v.get("visual_callouts"),
+        Some(&serde_json::Value::Array(vec![]))
+    );
+    assert_eq!(v.get("declared_arxiv_id"), Some(&serde_json::Value::Null));
+    assert_eq!(
+        v.get("declared_id_missingness"),
+        Some(&serde_json::Value::Null)
     );
     assert_eq!(article.layout_json, None);
     assert_eq!(article.page_text_missingness, None);

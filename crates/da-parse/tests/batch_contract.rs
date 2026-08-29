@@ -92,6 +92,7 @@ fn fixture_article(paper_id: &str) -> ParsedArticle {
         formulas: Vec::new(),
         formula_missingness: None,
         page_text_missingness: None,
+        ..Default::default()
     }
 }
 

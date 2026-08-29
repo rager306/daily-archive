@@ -15,7 +15,7 @@ pub enum ParserError {
 pub type ParseResult<T> = Result<T, ParserError>;
 
 /// A parsed article from GROBID + ODL.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ParsedArticle {
     pub paper_id: String,
     pub title: String,
@@ -58,6 +58,33 @@ pub struct ParsedArticle {
     /// GROBID `body_text` is **not** rewritten — this is detection, not repair.
     #[serde(default)]
     pub page_text_missingness: Option<Vec<PageTextMissing>>,
+
+    // ─── S07 P0 lift families (M464-z84in2 S07 T01) ───
+    /// Declared arXiv identity from the TEI header `<idno type="arXiv">`.
+    /// `None` = typed `declared_id_missingness` explains why; the revision is
+    /// carried only when explicitly declared — never guessed (S07).
+    #[serde(default)]
+    pub declared_arxiv_id: Option<DeclaredArxivIdentity>,
+    /// Typed missingness when `declared_arxiv_id` is `None` (R087 — no
+    /// silent loss). `None` means the identity is declared (or the payload
+    /// predates S07).
+    #[serde(default)]
+    pub declared_id_missingness: Option<DeclaredIdMissingReason>,
+    /// Document-ordered header authors (`<persName>` inside the TEI header;
+    /// `sourceDesc`/`biblStruct` on the GROBID path). Bibliography persName
+    /// entries never appear here. Empty until the lifter populates it
+    /// (S07 T02); the HTML path keeps it typed-empty.
+    #[serde(default)]
+    pub header_authors: Vec<HeaderAuthor>,
+    /// Non-table figures in document order (S07 T03). Table wrappers
+    /// (`<figure type="table">`) are extracted as `tables`, never here.
+    #[serde(default)]
+    pub figures: Vec<ExtractedFigure>,
+    /// Visual callouts (`<ref type="figure|table">`) in document order, with
+    /// an explicit target-unresolved state (S07 T03). Bibr refs stay on
+    /// `CitationAnchor`; `ptr`/`note` refs stay outside this model.
+    #[serde(default)]
+    pub visual_callouts: Vec<VisualCallout>,
 }
 
 /// A source char span `[start, end)` (end exclusive) inside a section's
@@ -300,6 +327,197 @@ pub struct ExtractedTable {
     /// but zero rows/cells) — fail-closed, never invented cells.
     #[serde(default)]
     pub missingness: Option<TableMissingReason>,
+}
+
+// ─── S07 P0 lift families (M464-z84in2 S07 T01) ───────────────────────────
+//
+// Additive wire model for the P0 losses M463 proved are already present in
+// saved Java GROBID TEI: declared arXiv identity, document-ordered header
+// authors, non-table figures with graphic coordinates, and figure/table
+// visual callouts. The single pure TeiLifter populates these (S07 T02/T03);
+// every new field is `#[serde(default)]` so legacy cached/fixture JSON keeps
+// decoding (R085), and nothing is invented before the lifter implements
+// (typed emptiness, never fabricated content).
+
+/// Declared arXiv identity lifted from the TEI header (M464-z84in2 S07).
+///
+/// Semantics are declared-only: the identity exists when the header carries a
+/// usable `<idno type="arXiv">` value (GROBID emits e.g.
+/// `arXiv:2507.19457v2[cs.CL]`). `raw` preserves the full declared value
+/// verbatim; `revision` carries the revision suffix ONLY when explicitly
+/// declared in the raw value — never guessed and never defaulted to `v1`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DeclaredArxivIdentity {
+    /// Full declared idno value verbatim (e.g. `"arXiv:2507.19457v2[cs.CL]"`).
+    pub raw: String,
+    /// Revisionless arXiv id parsed out of the declared value
+    /// (e.g. `"2507.19457"`). Empty only when the raw value carries no
+    /// parseable arXiv id — accompanied by typed `declared_id_missingness`.
+    pub bare_id: String,
+    /// Explicitly declared revision suffix (e.g. `"v2"`) when the raw value
+    /// carries one; `None` when undeclared — never guessed.
+    pub revision: Option<String>,
+    /// Deterministic SHA-256 digest of the raw declared value — identity
+    /// evidence (R087).
+    pub source_digest: String,
+}
+
+/// Typed missingness for the declared arXiv idno (M464-z84in2 S07).
+///
+/// Accompanies `declared_arxiv_id = None`: no-silent-loss evidence of WHY the
+/// header declared no usable arXiv identity (R087). A missing/eroded idno is
+/// never repaired into a synthetic value.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DeclaredIdMissingReason {
+    /// The TEI header contains no `<idno type="arXiv">` element.
+    NoIdno,
+    /// An `<idno type="arXiv">` element exists but its value carries no
+    /// parseable arXiv id (detail describes the unusable shape).
+    Malformed(String),
+}
+
+/// One document-ordered header author (M464-z84in2 S07).
+///
+/// Built from a `<persName>` inside the TEI header only — bibliography
+/// persName entries are citations, never authors. Order is source document
+/// order (no sorting); Unicode and incomplete names (e.g. surname only) are
+/// preserved verbatim — never silently dropped, never reordered, never split
+/// by guesswork.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HeaderAuthor {
+    /// Full display name as declared, joined in document order. Empty only
+    /// when the source persName itself is empty (count honesty beats
+    /// dropping the entry).
+    pub name: String,
+    /// Declared forename when the persName explicitly decomposes one;
+    /// `None` when undeclared — never guessed from the display name.
+    #[serde(default)]
+    pub forename: Option<String>,
+    /// Declared surname when the persName explicitly decomposes one;
+    /// `None` when undeclared — never guessed from the display name.
+    #[serde(default)]
+    pub surname: Option<String>,
+    /// Deterministic SHA-256 digest of the display name — the author's
+    /// source-digest evidence (R087).
+    pub source_digest: String,
+}
+
+/// Typed missingness for the graphic part of a non-table figure
+/// (M464-z84in2 S07).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FigureGraphicMissingReason {
+    /// The `<figure>` element carries no `<graphic>` child at all.
+    NoGraphicChild,
+    /// A `<graphic>` child exists but carries no `coords` attribute.
+    GraphicWithoutCoordinates,
+    /// A graphic/coordinate structure is present but unusable (detail
+    /// describes the unusable shape).
+    Malformed(String),
+}
+
+/// A non-table figure lifted in document order (M464-z84in2 S07).
+///
+/// GROBID emits visual figures as `<figure xml:id="fig_0">` inside the
+/// `<body>`. Table wrappers (`<figure type="table">`) are NEVER figures here
+/// — they are extracted as [`ExtractedTable`]. Figures keep document order
+/// (no id-based sorting); every optional part is honestly absent via
+/// `Option`/typed missingness — nothing is invented.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExtractedFigure {
+    /// Stable figure identifier: the `xml:id` of the `<figure>` element
+    /// (e.g. `"fig_0"`), falling back to the deterministic ordinal key
+    /// `"figure-{index}"` (document order, 0-based) when undeclared —
+    /// mirroring the `ExtractedTable`/`ExtractedFormula` fallback convention.
+    pub figure_id: String,
+    /// Label from the `<label>` child (e.g. `"Figure 1"`), if any.
+    #[serde(default)]
+    pub label: Option<String>,
+    /// Caption from the `<head>` child, if any.
+    #[serde(default)]
+    pub caption: Option<String>,
+    /// GROBID `coords` attribute owned by the `<graphic>` child when
+    /// emitted, else `None`. The value is preserved verbatim (page-prefixed
+    /// comma-separated GROBID coordinate values, e.g.
+    /// `"4,70.87,220.12,470.27,117.03"`) — never re-parsed for storage.
+    #[serde(default)]
+    pub coordinates: Option<String>,
+    /// Typed graphic missingness when the figure carries no usable graphic
+    /// coordinates (no graphic child / graphic without coords / malformed).
+    /// `None` = graphic with declared coordinates.
+    #[serde(default)]
+    pub graphic_missingness: Option<FigureGraphicMissingReason>,
+    /// Deterministic SHA-256 digest of figure_id + label + caption +
+    /// coordinates + graphic missingness — the figure's source-digest
+    /// evidence (R087).
+    pub source_digest: String,
+}
+
+/// Closed kind of a visual cross-reference (M464-z84in2 S07).
+///
+/// Only `<ref type="figure">` and `<ref type="table">` surface here; other
+/// ref kinds keep their existing semantics (`bibr` → [`CitationAnchor`], and
+/// `ptr`/`note` refs stay outside this model).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum VisualCalloutKind {
+    Figure,
+    Table,
+}
+
+/// Typed unresolved state for a visual callout target (M464-z84in2 S07).
+///
+/// Callout links are kept honestly unresolved — never guessed into
+/// figure/table identities.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CalloutUnresolvedReason {
+    /// The `<ref>` carries no usable `target` attribute (absent or empty).
+    NoTarget,
+    /// The declared target matches no lifted figure/table inventory entry.
+    TargetNotInInventory,
+}
+
+/// One visual cross-reference in document order (M464-z84in2 S07).
+///
+/// Generalizes the citation-anchor section-window mechanics to
+/// `<ref type="figure|table">`: closed kind, declared target, in-text quote,
+/// bounded offset and section context, plus an explicit target-unresolved
+/// state. Figure targets resolve against the lifted figure inventory, table
+/// targets against `tables`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct VisualCallout {
+    /// Closed callout kind (figure or table).
+    pub kind: VisualCalloutKind,
+    /// Declared target id with any leading `#` stripped (e.g. `"fig_0"`)
+    /// when the ref carries one; `None` = typed `no_target` unresolved
+    /// state.
+    #[serde(default)]
+    pub target: Option<String>,
+    /// Explicit target-unresolved state; `None` = the target resolved
+    /// against the lifted figure/table inventory. Never guessed.
+    #[serde(default)]
+    pub unresolved: Option<CalloutUnresolvedReason>,
+    /// In-text surface text of the ref.
+    pub quote: String,
+    /// 0-based char offset of the quote within the containing section's
+    /// stripped text (`Section.text`), mirroring `CitationAnchor.offset`.
+    /// `None` when there is no section text to anchor against.
+    #[serde(default)]
+    pub offset: Option<u32>,
+    /// `path_id` of the section containing the callout; `None` when the ref
+    /// is outside every section window (typed missingness, never guessed).
+    #[serde(default)]
+    pub section_path_id: Option<String>,
+    /// 0-based ordinal of that section in `ParsedArticle.sections` (section
+    /// titles repeat, so the ordinal disambiguates). `None` together with
+    /// `section_path_id`.
+    #[serde(default)]
+    pub section_ordinal: Option<usize>,
+    /// Deterministic SHA-256 digest of kind + target + quote + offset +
+    /// section identity — the callout's source-digest evidence (R087).
+    pub source_digest: String,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

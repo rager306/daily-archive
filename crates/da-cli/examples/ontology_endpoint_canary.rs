@@ -447,6 +447,7 @@ fn parsed(paper_id: &str) -> ParsedArticle {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: "fixture-sha256".into(),
+        ..Default::default()
     }
 }
 

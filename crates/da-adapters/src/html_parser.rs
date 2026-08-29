@@ -363,6 +363,13 @@ impl ParserPort for HtmlParser {
             table_missingness: None,
             formulas: Vec::new(),
             formula_missingness: None,
+            // S07 P0 families (M464-z84in2): the HTML path carries no TEI
+            // header/figures — typed emptiness, never invented here.
+            declared_arxiv_id: None,
+            declared_id_missingness: None,
+            header_authors: Vec::new(),
+            figures: Vec::new(),
+            visual_callouts: Vec::new(),
             page_text_missingness: None,
             pdf_hash: Self::simple_hash(&html),
         })

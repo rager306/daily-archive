@@ -967,6 +967,7 @@ mod region_grounding_tests {
             formula_missingness: None,
             page_text_missingness: None,
             pdf_hash: String::new(),
+            ..Default::default()
         }
     }
 

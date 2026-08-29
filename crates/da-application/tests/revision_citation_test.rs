@@ -70,6 +70,7 @@ fn parsed_article(
         formulas: Vec::new(),
         formula_missingness: None,
         page_text_missingness: None,
+        ..Default::default()
     }
 }
 

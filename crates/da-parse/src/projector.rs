@@ -32,6 +32,13 @@ impl crate::http::GrobidParser {
             table_missingness: ir.table_missingness,
             formulas: ir.formulas,
             formula_missingness: ir.formula_missingness,
+            // S07 P0 families flow through verbatim (typed emptiness until
+            // S07 T02/T03 populate the IR side).
+            declared_arxiv_id: ir.declared_arxiv_id,
+            declared_id_missingness: ir.declared_id_missingness,
+            header_authors: ir.header_authors,
+            figures: ir.figures,
+            visual_callouts: ir.visual_callouts,
             page_text_missingness: None,
         }
     }

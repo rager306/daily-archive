@@ -66,6 +66,7 @@ impl ParserPort for MockParser {
             formula_missingness: None,
             page_text_missingness: None,
             pdf_hash: format!("hash_{paper_id}"),
+            ..Default::default()
         })
     }
 }
@@ -145,6 +146,7 @@ async fn materializer_only_ingest_has_no_fake_compute_ports() {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: "cached-hash".into(),
+        ..Default::default()
     };
     ingest
         .materialize_parsed(&parsed, vec![0.1; 1024], None, None, None)
@@ -176,6 +178,7 @@ async fn cached_parsed_materialization_replay_is_idempotent() {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: "cached-hash".into(),
+        ..Default::default()
     };
 
     ingest
@@ -228,6 +231,7 @@ async fn identical_materialization_replay_has_no_physical_writes() {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: "cached-replay-hash".into(),
+        ..Default::default()
     };
 
     let first = ingest
@@ -291,6 +295,7 @@ async fn parsed_materialization_preserves_full_unicode_section_text_and_checksum
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: "cached-hash-long".into(),
+        ..Default::default()
     };
     let ingest_result = ingest
         .materialize_parsed(&parsed, vec![0.1; 1024], None, None, None)
@@ -404,6 +409,7 @@ async fn pdf_triage_is_materialized_onto_paper_node() {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: "triage-hash".into(),
+        ..Default::default()
     };
     let (ingest, store) = make_ingest(vec![]);
     ingest
@@ -505,6 +511,7 @@ async fn changed_embedding_replaces_via_sanctioned_upsert() {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: "cached-hash".into(),
+        ..Default::default()
     };
     ingest
         .materialize_parsed(&parsed, vec![0.1; 1024], None, None, None)
@@ -546,6 +553,7 @@ async fn cached_catalog_provenance_replay_is_idempotent() {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: "cached-hash".into(),
+        ..Default::default()
     };
 
     for _ in 0..2 {
@@ -994,6 +1002,7 @@ async fn revision_ingest_emits_additive_revision_owned_bibliography_edges() {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: source_sha256.clone(),
+        ..Default::default()
     };
     let revision_context = || RevisionContentContext {
         source_code: "arxiv".into(),
@@ -1206,6 +1215,7 @@ async fn revision_ingest_writes_in_text_anchors_on_revision_owned_edges_only() {
         formula_missingness: None,
         page_text_missingness: None,
         pdf_hash: source_sha256.clone(),
+        ..Default::default()
     };
     let revision_context = || RevisionContentContext {
         source_code: "arxiv".into(),

@@ -1952,6 +1952,7 @@ mod tests {
             formula_missingness: None,
             page_text_missingness: None,
             pdf_hash: "a".repeat(64),
+            ..Default::default()
         };
         let payload = serde_json::to_vec(&parsed).unwrap();
         let cache = FilePipelineCache::new(root.join("cache"));
@@ -2063,6 +2064,7 @@ mod tests {
             formula_missingness: None,
             page_text_missingness: None,
             pdf_hash: "a".repeat(64),
+            ..Default::default()
         };
         let extractor = RuleBasedExtractor::with_config(
             da_adapters::rule_extractor::ExtractionConfig::bundled(),
@@ -2131,6 +2133,7 @@ mod tests {
             formula_missingness: None,
             page_text_missingness: None,
             pdf_hash: "a".repeat(64),
+            ..Default::default()
         };
         let extractor = RuleBasedExtractor::with_config(
             da_adapters::rule_extractor::ExtractionConfig::bundled(),
@@ -2200,6 +2203,7 @@ mod tests {
             formula_missingness: None,
             page_text_missingness: None,
             pdf_hash: "a".repeat(64),
+            ..Default::default()
         };
         let extractor = RuleBasedExtractor::with_config(
             da_adapters::rule_extractor::ExtractionConfig::bundled(),
@@ -2275,6 +2279,7 @@ mod tests {
             formula_missingness: None,
             page_text_missingness: None,
             pdf_hash: "a".repeat(64),
+            ..Default::default()
         };
         let extractor = RuleBasedExtractor::with_config(
             da_adapters::rule_extractor::ExtractionConfig::bundled(),

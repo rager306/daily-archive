@@ -122,6 +122,14 @@ impl TeiLifter {
             table_missingness,
             formulas,
             formula_missingness,
+            // S07 P0 families (M464-z84in2): the additive wire fields exist
+            // but the single lifter populates them in S07 T02/T03 — until
+            // then they stay at typed emptiness, never invented here.
+            declared_arxiv_id: None,
+            declared_id_missingness: None,
+            header_authors: Vec::new(),
+            figures: Vec::new(),
+            visual_callouts: Vec::new(),
             pdf_hash: pdf_hash.into(),
         }
     }
