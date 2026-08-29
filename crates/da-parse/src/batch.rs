@@ -36,19 +36,30 @@
 //!
 //! da-cli root (R116); `ParserPort` is NOT extended by this contract.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 use std::num::NonZeroUsize;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::time::Instant;
 
+use async_trait::async_trait;
 use da_ports::parser::ParsedArticle;
 use serde::de::{self, Deserializer};
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use tokio::sync::{Mutex, Semaphore, mpsc};
 
-use crate::backend::ParseBackendRequest;
-use crate::cache::{CacheMode, ParseCacheDispositions, ParseCacheFailure};
-use crate::envelope::TeiResultIdentity;
+use crate::backend::{ParseBackend, ParseBackendRequest};
+use crate::cache::{
+    CacheMode, CacheStageDisposition, PROJECT_ARTICLE_SCHEMA_FINGERPRINT, ParseArtifactCache,
+    ParseCacheDispositions, ParseCacheFailure, ProjectArticlePayload, RawTeiEnvelopePayload,
+    project_article_stage_key, raw_tei_stage_key, sha256_hex,
+};
+use crate::envelope::{TeiEnvelope, TeiResultIdentity};
+use crate::lift::TeiLifter;
+use crate::parser::lift_and_project_envelope;
 use crate::transport::{ParseBackendFailure, ParseEndpoint};
 
 /// Stable schema version of the batch limits / outcome vocabulary.
@@ -229,8 +240,9 @@ fn write_segment(hasher: &mut Sha256, tag: &[u8], bytes: &[u8]) {
 /// including the rich/structural legacy presets, whose canonical extended
 /// identity is deliberately absent — changes the fingerprint. Future
 /// dialect fields are covered automatically because serialization walks the
-/// struct, not a hand-maintained field list.
-fn endpoint_dialect_wire(request: &ParseBackendRequest) -> String {
+/// struct, not a hand-maintained field list. Shared with the S06 stage-key
+/// derivation (`cache::raw_tei_stage_key`).
+pub(crate) fn endpoint_dialect_wire(request: &ParseBackendRequest) -> String {
     match request.endpoint() {
         ParseEndpoint::Fulltext => {
             serde_json::to_string(request.dialect()).expect("closed dialect serialization is total")
@@ -610,6 +622,12 @@ impl ParseBatch {
     pub const fn cursor(&self) -> &BatchCursor {
         &self.cursor
     }
+
+    /// Consume the batch, yielding the ordered items (executor handoff —
+    /// source bytes move without a copy).
+    pub fn into_items(self) -> Vec<ParseBatchItem> {
+        self.items
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -794,3 +812,1193 @@ impl ParseDocumentOutcome {
     }
 }
 // S06/T01 typed batch contract
+
+// ---------------------------------------------------------------------------
+// S06/T02: durable sink/checkpoint seams + bounded two-stage batch executor
+// ---------------------------------------------------------------------------
+
+/// Stable schema version of the run summary vocabulary.
+pub const PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION: u32 = 1;
+
+/// Failure of the durable result-sink or checkpoint seam. The message is
+/// caller-owned text — the executor never attaches payload, path or
+/// location material to it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParseBatchSinkError(pub String);
+
+impl fmt::Display for ParseBatchSinkError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "parse batch sink failure: {}", self.0)
+    }
+}
+
+impl std::error::Error for ParseBatchSinkError {}
+
+/// Durable terminal-result sink (S06/T02 seam): results stream out through
+/// this seam as documents reach terminal state — no full-corpus payload is
+/// retained beyond the bounded queue. `Ok(())` is the DURABLE
+/// acknowledgment the cursor advancement is built on; `Err` leaves the
+/// document unacknowledged and the cursor never moves past it.
+#[async_trait]
+pub trait ParseBatchResultSink: Send + Sync {
+    /// Record one terminal outcome durably.
+    async fn record(&self, outcome: ParseDocumentOutcome) -> Result<(), ParseBatchSinkError>;
+}
+
+/// Durable batch checkpoint seam (S06/T02): the executor saves the cursor
+/// of the durably acknowledged contiguous terminal prefix, in strictly
+/// advancing order. A run interrupted anywhere resumes from the last saved
+/// cursor — unwritten ordinals are never skipped.
+#[async_trait]
+pub trait BatchCheckpoint: Send + Sync {
+    /// Durably record `cursor` (the contiguous acknowledged terminal
+    /// prefix position).
+    async fn save(&self, cursor: &BatchCursor) -> Result<(), ParseBatchSinkError>;
+}
+
+/// In-memory [`ParseBatchResultSink`] (provider-neutral composition/test
+/// seam): collects outcomes; reads return them in admission-ordinal order.
+#[derive(Debug, Default)]
+pub struct ParseBatchCollector {
+    outcomes: Mutex<Vec<ParseDocumentOutcome>>,
+}
+
+impl ParseBatchCollector {
+    /// Empty collector.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// All recorded outcomes sorted by admission ordinal (exactly one
+    /// entry per terminal document of the run).
+    pub async fn outcomes_sorted(&self) -> Vec<ParseDocumentOutcome> {
+        let mut outcomes = self.outcomes.lock().await.clone();
+        outcomes.sort_by_key(|outcome| outcome.ordinal());
+        outcomes
+    }
+}
+
+#[async_trait]
+impl ParseBatchResultSink for ParseBatchCollector {
+    async fn record(&self, outcome: ParseDocumentOutcome) -> Result<(), ParseBatchSinkError> {
+        self.outcomes.lock().await.push(outcome);
+        Ok(())
+    }
+}
+
+/// In-memory [`BatchCheckpoint`] (provider-neutral composition/test seam):
+/// keeps the last durably saved cursor.
+#[derive(Debug, Default)]
+pub struct ParseBatchMemoryCheckpoint {
+    cursor: Mutex<Option<BatchCursor>>,
+}
+
+impl ParseBatchMemoryCheckpoint {
+    /// Empty checkpoint.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// The last durably saved cursor, if any.
+    pub async fn cursor(&self) -> Option<BatchCursor> {
+        self.cursor.lock().await.clone()
+    }
+}
+
+#[async_trait]
+impl BatchCheckpoint for ParseBatchMemoryCheckpoint {
+    async fn save(&self, cursor: &BatchCursor) -> Result<(), ParseBatchSinkError> {
+        *self.cursor.lock().await = Some(cursor.clone());
+        Ok(())
+    }
+}
+
+/// Closed run summary of one bounded batch execution: admission/skip
+/// counts, terminal counts, per-stage hit/write counters (including honest
+/// failed-publication counts and legacy read-only hits), bounded-load
+/// gauges, sink/checkpoint errors and the durable cursor the run ended
+/// with. No payload, no location, no tuning material beyond the declared
+/// bounds.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParseBatchRunSummary {
+    schema_version: u32,
+    mode: CacheMode,
+    limits: ParseBatchLimits,
+    input_fingerprint: String,
+    resumed_from_ordinal: u32,
+    cursor: BatchCursor,
+    admitted: u32,
+    skipped_on_resume: u32,
+    completed: u32,
+    succeeded: u32,
+    failed: u32,
+    backend_calls: u64,
+    raw_hits: u64,
+    raw_legacy_hits: u64,
+    raw_writes: u64,
+    raw_write_failures: u64,
+    projector_hits: u64,
+    projector_writes: u64,
+    projector_write_failures: u64,
+    max_in_flight_observed: usize,
+    max_queue_depth_observed: usize,
+    sink_errors: u64,
+    checkpoint_errors: u64,
+}
+
+impl ParseBatchRunSummary {
+    /// Stable schema version.
+    pub const fn schema_version(&self) -> u32 {
+        self.schema_version
+    }
+    /// Cache mode of the run.
+    pub const fn mode(&self) -> CacheMode {
+        self.mode
+    }
+    /// Effective bounds of the run.
+    pub const fn limits(&self) -> &ParseBatchLimits {
+        &self.limits
+    }
+    /// The ordered input content fingerprint.
+    pub fn input_fingerprint(&self) -> &str {
+        &self.input_fingerprint
+    }
+    /// Ordinal the run started at (cursor position on admission).
+    pub const fn resumed_from_ordinal(&self) -> u32 {
+        self.resumed_from_ordinal
+    }
+    /// The durable cursor at run end (contiguous acknowledged prefix).
+    pub const fn cursor(&self) -> &BatchCursor {
+        &self.cursor
+    }
+    /// Documents admitted to the batch.
+    pub const fn admitted(&self) -> u32 {
+        self.admitted
+    }
+    /// Documents skipped because a prior run already made them terminal.
+    pub const fn skipped_on_resume(&self) -> u32 {
+        self.skipped_on_resume
+    }
+    /// Terminal outcomes produced by THIS run.
+    pub const fn completed(&self) -> u32 {
+        self.completed
+    }
+    /// Documents that succeeded.
+    pub const fn succeeded(&self) -> u32 {
+        self.succeeded
+    }
+    /// Documents that failed (backend or cache integrity — never silent).
+    pub const fn failed(&self) -> u32 {
+        self.failed
+    }
+    /// Backend invocations (exactly once per fetched document).
+    pub const fn backend_calls(&self) -> u64 {
+        self.backend_calls
+    }
+    /// Raw-stage cache hits.
+    pub const fn raw_hits(&self) -> u64 {
+        self.raw_hits
+    }
+    /// Raw-stage hits served from a LEGACY read-only identity (T03+).
+    pub const fn raw_legacy_hits(&self) -> u64 {
+        self.raw_legacy_hits
+    }
+    /// Raw-stage durable publishes.
+    pub const fn raw_writes(&self) -> u64 {
+        self.raw_writes
+    }
+    /// Raw-stage publications that failed (honest, never semantic drift).
+    pub const fn raw_write_failures(&self) -> u64 {
+        self.raw_write_failures
+    }
+    /// Projection-stage cache hits.
+    pub const fn projector_hits(&self) -> u64 {
+        self.projector_hits
+    }
+    /// Projection-stage durable publishes.
+    pub const fn projector_writes(&self) -> u64 {
+        self.projector_writes
+    }
+    /// Projection-stage publications that failed.
+    pub const fn projector_write_failures(&self) -> u64 {
+        self.projector_write_failures
+    }
+    /// Peak simultaneously executing documents.
+    pub const fn max_in_flight_observed(&self) -> usize {
+        self.max_in_flight_observed
+    }
+    /// Peak bounded-queue backlog (admitted, not yet received by a worker).
+    pub const fn max_queue_depth_observed(&self) -> usize {
+        self.max_queue_depth_observed
+    }
+    /// Sink acknowledgments that failed (outcomes stay unclaimed).
+    pub const fn sink_errors(&self) -> u64 {
+        self.sink_errors
+    }
+    /// Checkpoint saves that failed (durable cursor freezes honestly).
+    pub const fn checkpoint_errors(&self) -> u64 {
+        self.checkpoint_errors
+    }
+}
+
+impl Serialize for ParseBatchRunSummary {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut state = serializer.serialize_struct("ParseBatchRunSummary", 23)?;
+        state.serialize_field("schema_version", &self.schema_version)?;
+        state.serialize_field("mode", &self.mode)?;
+        state.serialize_field("limits", &self.limits)?;
+        state.serialize_field("input_fingerprint", &self.input_fingerprint)?;
+        state.serialize_field("resumed_from_ordinal", &self.resumed_from_ordinal)?;
+        state.serialize_field("cursor", &self.cursor)?;
+        state.serialize_field("admitted", &self.admitted)?;
+        state.serialize_field("skipped_on_resume", &self.skipped_on_resume)?;
+        state.serialize_field("completed", &self.completed)?;
+        state.serialize_field("succeeded", &self.succeeded)?;
+        state.serialize_field("failed", &self.failed)?;
+        state.serialize_field("backend_calls", &self.backend_calls)?;
+        state.serialize_field("raw_hits", &self.raw_hits)?;
+        state.serialize_field("raw_legacy_hits", &self.raw_legacy_hits)?;
+        state.serialize_field("raw_writes", &self.raw_writes)?;
+        state.serialize_field("raw_write_failures", &self.raw_write_failures)?;
+        state.serialize_field("projector_hits", &self.projector_hits)?;
+        state.serialize_field("projector_writes", &self.projector_writes)?;
+        state.serialize_field("projector_write_failures", &self.projector_write_failures)?;
+        state.serialize_field("max_in_flight_observed", &self.max_in_flight_observed)?;
+        state.serialize_field("max_queue_depth_observed", &self.max_queue_depth_observed)?;
+        state.serialize_field("sink_errors", &self.sink_errors)?;
+        state.serialize_field("checkpoint_errors", &self.checkpoint_errors)?;
+        state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for ParseBatchRunSummary {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct Repr {
+            schema_version: u32,
+            mode: CacheMode,
+            limits: ParseBatchLimits,
+            input_fingerprint: String,
+            resumed_from_ordinal: u32,
+            cursor: BatchCursor,
+            admitted: u32,
+            skipped_on_resume: u32,
+            completed: u32,
+            succeeded: u32,
+            failed: u32,
+            backend_calls: u64,
+            raw_hits: u64,
+            raw_legacy_hits: u64,
+            raw_writes: u64,
+            raw_write_failures: u64,
+            projector_hits: u64,
+            projector_writes: u64,
+            projector_write_failures: u64,
+            max_in_flight_observed: usize,
+            max_queue_depth_observed: usize,
+            sink_errors: u64,
+            checkpoint_errors: u64,
+        }
+        let repr = Repr::deserialize(deserializer)?;
+        if repr.schema_version != PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION {
+            return Err(de::Error::custom(format!(
+                "unsupported run summary schema version {} (supported: {PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION})",
+                repr.schema_version
+            )));
+        }
+        Ok(Self {
+            schema_version: repr.schema_version,
+            mode: repr.mode,
+            limits: repr.limits,
+            input_fingerprint: repr.input_fingerprint,
+            resumed_from_ordinal: repr.resumed_from_ordinal,
+            cursor: repr.cursor,
+            admitted: repr.admitted,
+            skipped_on_resume: repr.skipped_on_resume,
+            completed: repr.completed,
+            succeeded: repr.succeeded,
+            failed: repr.failed,
+            backend_calls: repr.backend_calls,
+            raw_hits: repr.raw_hits,
+            raw_legacy_hits: repr.raw_legacy_hits,
+            raw_writes: repr.raw_writes,
+            raw_write_failures: repr.raw_write_failures,
+            projector_hits: repr.projector_hits,
+            projector_writes: repr.projector_writes,
+            projector_write_failures: repr.projector_write_failures,
+            max_in_flight_observed: repr.max_in_flight_observed,
+            max_queue_depth_observed: repr.max_queue_depth_observed,
+            sink_errors: repr.sink_errors,
+            checkpoint_errors: repr.checkpoint_errors,
+        })
+    }
+}
+
+// ─────────────────── executor internals ───────────────────
+
+#[derive(Debug, Default, Clone)]
+struct DocumentStats {
+    backend_calls: u64,
+    raw_hit: bool,
+    raw_legacy_hit: bool,
+    raw_write_published: bool,
+    raw_write_failed: bool,
+    projector_hit: bool,
+    projector_write_published: bool,
+    projector_write_failed: bool,
+    backend_ms: u64,
+    projection_ms: u64,
+}
+
+struct DocumentExecution {
+    outcome: ParseDocumentOutcome,
+    stats: DocumentStats,
+}
+
+struct QueuedItem {
+    item: ParseBatchItem,
+    enqueued_at: Instant,
+}
+
+#[derive(Debug)]
+struct CursorTracker {
+    acked: BTreeSet<u32>,
+    acked_next: u32,
+    saved_next: u32,
+    checkpoint_broken: bool,
+}
+
+#[derive(Debug, Default)]
+struct RunCounters {
+    succeeded: AtomicU64,
+    failed: AtomicU64,
+    backend_calls: AtomicU64,
+    raw_hits: AtomicU64,
+    raw_legacy_hits: AtomicU64,
+    raw_writes: AtomicU64,
+    raw_write_failures: AtomicU64,
+    projector_hits: AtomicU64,
+    projector_writes: AtomicU64,
+    projector_write_failures: AtomicU64,
+    sink_errors: AtomicU64,
+    checkpoint_errors: AtomicU64,
+    queue_depth: AtomicUsize,
+    max_queue_depth: AtomicUsize,
+    in_flight: AtomicUsize,
+    max_in_flight: AtomicUsize,
+}
+
+impl RunCounters {
+    fn note_queue_depth(&self, delta: isize) {
+        if delta >= 0 {
+            let now = self.queue_depth.fetch_add(delta as usize, Ordering::SeqCst) + delta as usize;
+            self.max_queue_depth.fetch_max(now, Ordering::SeqCst);
+        } else {
+            self.queue_depth
+                .fetch_sub(delta.unsigned_abs(), Ordering::SeqCst);
+        }
+    }
+
+    fn note_in_flight(&self, delta: isize) {
+        if delta >= 0 {
+            let now = self.in_flight.fetch_add(delta as usize, Ordering::SeqCst) + delta as usize;
+            self.max_in_flight.fetch_max(now, Ordering::SeqCst);
+        } else {
+            self.in_flight
+                .fetch_sub(delta.unsigned_abs(), Ordering::SeqCst);
+        }
+    }
+}
+
+struct PublicationState {
+    next_ordinal: u32,
+    pending: BTreeMap<u32, ParseDocumentOutcome>,
+}
+
+struct RunShared {
+    input_fingerprint: String,
+    tracker: Mutex<CursorTracker>,
+    publication: Mutex<PublicationState>,
+    counters: RunCounters,
+}
+
+/// Durable-prefix advancement: ack the outcome, extend the contiguous
+/// terminal prefix, save the checkpoint UNDER the advancement lock so
+/// saved cursor positions are strictly monotonic. A failed save freezes
+/// the durable cursor at the last durably saved position — later outcomes
+/// stay recorded but are never claimed as resumable.
+async fn acknowledge(shared: &RunShared, checkpoint: &dyn BatchCheckpoint, ordinal: u32) {
+    let mut tracker = shared.tracker.lock().await;
+    tracker.acked.insert(ordinal);
+    while tracker.acked.contains(&tracker.acked_next) {
+        tracker.acked_next += 1;
+    }
+    if tracker.acked_next > tracker.saved_next && !tracker.checkpoint_broken {
+        let cursor = BatchCursor::at(shared.input_fingerprint.clone(), tracker.acked_next);
+        if checkpoint.save(&cursor).await.is_ok() {
+            tracker.saved_next = tracker.acked_next;
+        } else {
+            tracker.checkpoint_broken = true;
+            shared
+                .counters
+                .checkpoint_errors
+                .fetch_add(1, Ordering::SeqCst);
+        }
+    }
+}
+
+fn elapsed_millis(at: Instant) -> u64 {
+    u64::try_from(at.elapsed().as_millis()).unwrap_or(u64::MAX)
+}
+
+fn success_outcome(
+    item: &ParseBatchItem,
+    mode: CacheMode,
+    raw: CacheStageDisposition,
+    projector: CacheStageDisposition,
+    article: ParsedArticle,
+    result_identity: String,
+    stats: DocumentStats,
+) -> DocumentExecution {
+    DocumentExecution {
+        outcome: ParseDocumentOutcome::new(
+            item.ordinal(),
+            item.paper_id().to_string(),
+            mode,
+            ParseCacheDispositions::new(raw, projector),
+            Ok(ParseDocumentSuccess::new(article, result_identity)),
+        ),
+        stats,
+    }
+}
+
+fn failure_outcome(
+    item: &ParseBatchItem,
+    mode: CacheMode,
+    raw: CacheStageDisposition,
+    projector: CacheStageDisposition,
+    failure: ParseDocumentFailure,
+    stats: DocumentStats,
+) -> DocumentExecution {
+    DocumentExecution {
+        outcome: ParseDocumentOutcome::new(
+            item.ordinal(),
+            item.paper_id().to_string(),
+            mode,
+            ParseCacheDispositions::new(raw, projector),
+            Err(failure),
+        ),
+        stats,
+    }
+}
+
+async fn fetch_timed<B: ParseBackend>(
+    backend: &B,
+    request: &ParseBackendRequest,
+    stats: &mut DocumentStats,
+) -> Result<TeiEnvelope, ParseBackendFailure> {
+    stats.backend_calls += 1;
+    let started = Instant::now();
+    let result = backend.fetch_tei(request.clone()).await;
+    stats.backend_ms = elapsed_millis(started);
+    result
+}
+
+fn project_timed(
+    paper_id: &str,
+    pdf_hash: String,
+    envelope: &TeiEnvelope,
+    stats: &mut DocumentStats,
+) -> ParsedArticle {
+    let started = Instant::now();
+    let article = lift_and_project_envelope(paper_id, pdf_hash, envelope);
+    stats.projection_ms = elapsed_millis(started);
+    article
+}
+
+/// Execute one document under the mode truth table. Cost strategies only:
+/// the semantic output (projected article) is mode-independent.
+async fn execute_document<B: ParseBackend, C: ParseArtifactCache>(
+    backend: &B,
+    cache: &C,
+    projector_schema_fingerprint: &str,
+    mode: CacheMode,
+    item: &ParseBatchItem,
+) -> DocumentExecution {
+    use CacheStageDisposition::{ComputedPublished, ComputedUncached, ComputedUnpublished, Hit};
+
+    let request = item.request();
+    let paper_id = item.paper_id().to_string();
+    let pdf_sha256 = sha256_hex(request.pdf_bytes());
+    let pdf_hash = TeiLifter::pdf_hash(request.pdf_bytes());
+    let result_identity = item.result_identity();
+
+    match mode {
+        CacheMode::Off => {
+            // The mode never consults and never publishes: zero cache calls.
+            let mut stats = DocumentStats::default();
+            match fetch_timed(backend, request, &mut stats).await {
+                Ok(envelope) => {
+                    let article = project_timed(&paper_id, pdf_hash, &envelope, &mut stats);
+                    success_outcome(
+                        item,
+                        mode,
+                        ComputedUncached,
+                        ComputedUncached,
+                        article,
+                        result_identity.canonical(),
+                        stats,
+                    )
+                }
+                Err(failure) => failure_outcome(
+                    item,
+                    mode,
+                    ComputedUncached,
+                    ComputedUncached,
+                    ParseDocumentFailure::Backend(failure),
+                    stats,
+                ),
+            }
+        }
+        CacheMode::ReadOnly | CacheMode::WriteThrough => {
+            let raw_key = raw_tei_stage_key(request);
+            let mut stats = DocumentStats::default();
+            match cache.read_raw(&raw_key).await {
+                Err(failure) => {
+                    // Corruption is a typed ERROR, never a silent miss and
+                    // never a backend fallback.
+                    failure_outcome(
+                        item,
+                        mode,
+                        ComputedUncached,
+                        ComputedUncached,
+                        ParseDocumentFailure::Cache(failure),
+                        stats,
+                    )
+                }
+                Ok(None) => {
+                    // Raw miss: fetch fresh (exactly one backend call).
+                    let envelope = match fetch_timed(backend, request, &mut stats).await {
+                        Ok(envelope) => envelope,
+                        Err(failure) => {
+                            return failure_outcome(
+                                item,
+                                mode,
+                                ComputedUncached,
+                                ComputedUncached,
+                                ParseDocumentFailure::Backend(failure),
+                                stats,
+                            );
+                        }
+                    };
+                    let raw_sha256 = sha256_hex(envelope.raw_tei());
+                    let projector_key = project_article_stage_key(
+                        &paper_id,
+                        &pdf_sha256,
+                        &raw_sha256,
+                        projector_schema_fingerprint,
+                    );
+                    // Write-through commits raw BEFORE any projector-stage
+                    // interaction; read-only never writes.
+                    let raw_disposition = match mode {
+                        CacheMode::WriteThrough => {
+                            let raw_payload =
+                                RawTeiEnvelopePayload::build(&envelope, &result_identity);
+                            match cache.write_raw(&raw_key, &raw_payload.encode()).await {
+                                Ok(()) => {
+                                    stats.raw_write_published = true;
+                                    ComputedPublished
+                                }
+                                Err(_) => {
+                                    stats.raw_write_failed = true;
+                                    ComputedUnpublished
+                                }
+                            }
+                        }
+                        _ => ComputedUnpublished,
+                    };
+                    match cache.read_projected(&projector_key).await {
+                        Err(failure) => failure_outcome(
+                            item,
+                            mode,
+                            raw_disposition,
+                            ComputedUncached,
+                            ParseDocumentFailure::Cache(failure),
+                            stats,
+                        ),
+                        Ok(Some(read)) => {
+                            match ProjectArticlePayload::decode_and_verify(
+                                read.payload(),
+                                projector_schema_fingerprint,
+                                &raw_sha256,
+                                &paper_id,
+                                &pdf_sha256,
+                            ) {
+                                Err(failure) => failure_outcome(
+                                    item,
+                                    mode,
+                                    raw_disposition,
+                                    ComputedUncached,
+                                    ParseDocumentFailure::Cache(failure),
+                                    stats,
+                                ),
+                                Ok(article) => {
+                                    stats.projector_hit = true;
+                                    success_outcome(
+                                        item,
+                                        mode,
+                                        raw_disposition,
+                                        Hit,
+                                        article,
+                                        result_identity.canonical(),
+                                        stats,
+                                    )
+                                }
+                            }
+                        }
+                        Ok(None) => {
+                            let article = project_timed(&paper_id, pdf_hash, &envelope, &mut stats);
+                            match mode {
+                                CacheMode::WriteThrough => {
+                                    let projector_payload = ProjectArticlePayload::build(
+                                        &article,
+                                        projector_schema_fingerprint,
+                                        &raw_sha256,
+                                        &paper_id,
+                                        &pdf_sha256,
+                                    );
+                                    let projector_disposition = match cache
+                                        .write_projected(
+                                            &projector_key,
+                                            &projector_payload.encode(),
+                                        )
+                                        .await
+                                    {
+                                        Ok(()) => {
+                                            stats.projector_write_published = true;
+                                            ComputedPublished
+                                        }
+                                        Err(_) => {
+                                            stats.projector_write_failed = true;
+                                            ComputedUnpublished
+                                        }
+                                    };
+                                    success_outcome(
+                                        item,
+                                        mode,
+                                        raw_disposition,
+                                        projector_disposition,
+                                        article,
+                                        result_identity.canonical(),
+                                        stats,
+                                    )
+                                }
+                                _ => success_outcome(
+                                    item,
+                                    mode,
+                                    ComputedUnpublished,
+                                    ComputedUnpublished,
+                                    article,
+                                    result_identity.canonical(),
+                                    stats,
+                                ),
+                            }
+                        }
+                    }
+                }
+                Ok(Some(read)) => {
+                    // Raw hit: verify bytes + identity BEFORE anything else.
+                    stats.raw_hit = true;
+                    stats.raw_legacy_hit = read.is_legacy();
+                    let (envelope, raw_sha256) = match RawTeiEnvelopePayload::decode_and_verify(
+                        read.payload(),
+                        &result_identity,
+                    ) {
+                        Ok(verified) => verified,
+                        Err(failure) => {
+                            return failure_outcome(
+                                item,
+                                mode,
+                                ComputedUncached,
+                                ComputedUncached,
+                                ParseDocumentFailure::Cache(failure),
+                                stats,
+                            );
+                        }
+                    };
+                    let raw_disposition = mode.stage_disposition_for(true);
+                    let projector_key = project_article_stage_key(
+                        &paper_id,
+                        &pdf_sha256,
+                        &raw_sha256,
+                        projector_schema_fingerprint,
+                    );
+                    match cache.read_projected(&projector_key).await {
+                        Err(failure) => failure_outcome(
+                            item,
+                            mode,
+                            raw_disposition,
+                            ComputedUncached,
+                            ParseDocumentFailure::Cache(failure),
+                            stats,
+                        ),
+                        Ok(Some(read)) => {
+                            match ProjectArticlePayload::decode_and_verify(
+                                read.payload(),
+                                projector_schema_fingerprint,
+                                &raw_sha256,
+                                &paper_id,
+                                &pdf_sha256,
+                            ) {
+                                Err(failure) => failure_outcome(
+                                    item,
+                                    mode,
+                                    raw_disposition,
+                                    ComputedUncached,
+                                    ParseDocumentFailure::Cache(failure),
+                                    stats,
+                                ),
+                                Ok(article) => {
+                                    stats.projector_hit = true;
+                                    success_outcome(
+                                        item,
+                                        mode,
+                                        raw_disposition,
+                                        Hit,
+                                        article,
+                                        result_identity.canonical(),
+                                        stats,
+                                    )
+                                }
+                            }
+                        }
+                        Ok(None) => {
+                            // Projector miss: re-project from the verified
+                            // raw bytes — never a backend re-fetch.
+                            let article = project_timed(&paper_id, pdf_hash, &envelope, &mut stats);
+                            match mode {
+                                CacheMode::WriteThrough => {
+                                    let projector_payload = ProjectArticlePayload::build(
+                                        &article,
+                                        projector_schema_fingerprint,
+                                        &raw_sha256,
+                                        &paper_id,
+                                        &pdf_sha256,
+                                    );
+                                    let projector_disposition = match cache
+                                        .write_projected(
+                                            &projector_key,
+                                            &projector_payload.encode(),
+                                        )
+                                        .await
+                                    {
+                                        Ok(()) => {
+                                            stats.projector_write_published = true;
+                                            ComputedPublished
+                                        }
+                                        Err(_) => {
+                                            stats.projector_write_failed = true;
+                                            ComputedUnpublished
+                                        }
+                                    };
+                                    success_outcome(
+                                        item,
+                                        mode,
+                                        raw_disposition,
+                                        projector_disposition,
+                                        article,
+                                        result_identity.canonical(),
+                                        stats,
+                                    )
+                                }
+                                _ => success_outcome(
+                                    item,
+                                    mode,
+                                    raw_disposition,
+                                    ComputedUnpublished,
+                                    article,
+                                    result_identity.canonical(),
+                                    stats,
+                                ),
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        CacheMode::Refresh => {
+            // Bypasses hits and replaces both stages; the backend is
+            // always called exactly once.
+            let mut stats = DocumentStats::default();
+            let envelope = match fetch_timed(backend, request, &mut stats).await {
+                Ok(envelope) => envelope,
+                Err(failure) => {
+                    return failure_outcome(
+                        item,
+                        mode,
+                        ComputedUncached,
+                        ComputedUncached,
+                        ParseDocumentFailure::Backend(failure),
+                        stats,
+                    );
+                }
+            };
+            let raw_key = raw_tei_stage_key(request);
+            let raw_sha256 = sha256_hex(envelope.raw_tei());
+            let raw_disposition = match cache
+                .write_raw(
+                    &raw_key,
+                    &RawTeiEnvelopePayload::build(&envelope, &result_identity).encode(),
+                )
+                .await
+            {
+                Ok(()) => {
+                    stats.raw_write_published = true;
+                    ComputedPublished
+                }
+                Err(_) => {
+                    stats.raw_write_failed = true;
+                    ComputedUnpublished
+                }
+            };
+            let projector_key = project_article_stage_key(
+                &paper_id,
+                &pdf_sha256,
+                &raw_sha256,
+                projector_schema_fingerprint,
+            );
+            let article = project_timed(&paper_id, pdf_hash, &envelope, &mut stats);
+            let projector_payload = ProjectArticlePayload::build(
+                &article,
+                projector_schema_fingerprint,
+                &raw_sha256,
+                &paper_id,
+                &pdf_sha256,
+            );
+            let projector_disposition = match cache
+                .write_projected(&projector_key, &projector_payload.encode())
+                .await
+            {
+                Ok(()) => {
+                    stats.projector_write_published = true;
+                    ComputedPublished
+                }
+                Err(_) => {
+                    stats.projector_write_failed = true;
+                    ComputedUnpublished
+                }
+            };
+            success_outcome(
+                item,
+                mode,
+                raw_disposition,
+                projector_disposition,
+                article,
+                result_identity.canonical(),
+                stats,
+            )
+        }
+    }
+}
+
+struct WorkerContext<B: ParseBackend, C: ParseArtifactCache> {
+    backend: Arc<B>,
+    cache: Arc<C>,
+    projector_schema_fingerprint: String,
+    mode: CacheMode,
+    shared: Arc<RunShared>,
+    rx: Arc<Mutex<mpsc::Receiver<QueuedItem>>>,
+    semaphore: Arc<Semaphore>,
+    sink: Arc<dyn ParseBatchResultSink>,
+    checkpoint: Arc<dyn BatchCheckpoint>,
+}
+
+impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
+    async fn work(self) {
+        loop {
+            let queued = {
+                let mut rx = self.rx.lock().await;
+                rx.recv().await
+            };
+            let Some(queued) = queued else {
+                break;
+            };
+            self.shared.counters.note_queue_depth(-1);
+            // The in-flight permit covers the whole durable write path
+            // (execution + sink record + acknowledgment), so bounded
+            // execution and durable prefix advancement stay in step.
+            let Ok(permit) = self.semaphore.clone().acquire_owned().await else {
+                break;
+            };
+            self.shared.counters.note_in_flight(1);
+            self.execute_one(queued).await;
+            self.shared.counters.note_in_flight(-1);
+            drop(permit);
+        }
+    }
+
+    async fn execute_one(&self, queued: QueuedItem) {
+        let execution = execute_document(
+            self.backend.as_ref(),
+            self.cache.as_ref(),
+            &self.projector_schema_fingerprint,
+            self.mode,
+            &queued.item,
+        )
+        .await;
+        let outcome = execution.outcome;
+        let stats = execution.stats;
+        let succeeded = outcome.is_success();
+        tracing::debug!(
+            ordinal = outcome.ordinal(),
+            paper_id = outcome.paper_id(),
+            mode = %self.mode.as_str(),
+            queue_wait_ms = elapsed_millis(queued.enqueued_at),
+            backend_ms = stats.backend_ms,
+            projection_ms = stats.projection_ms,
+            succeeded,
+            "parse batch document terminal"
+        );
+        let counters = &self.shared.counters;
+        counters
+            .backend_calls
+            .fetch_add(stats.backend_calls, Ordering::SeqCst);
+        if stats.raw_hit {
+            counters.raw_hits.fetch_add(1, Ordering::SeqCst);
+            if stats.raw_legacy_hit {
+                counters.raw_legacy_hits.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+        if stats.raw_write_published {
+            counters.raw_writes.fetch_add(1, Ordering::SeqCst);
+        }
+        if stats.raw_write_failed {
+            counters.raw_write_failures.fetch_add(1, Ordering::SeqCst);
+        }
+        if stats.projector_hit {
+            counters.projector_hits.fetch_add(1, Ordering::SeqCst);
+        }
+        if stats.projector_write_published {
+            counters.projector_writes.fetch_add(1, Ordering::SeqCst);
+        }
+        if stats.projector_write_failed {
+            counters
+                .projector_write_failures
+                .fetch_add(1, Ordering::SeqCst);
+        }
+        // Computation may finish out of order, but durable publication is
+        // strictly ordinal. Holding this lock across the sink acknowledgment
+        // intentionally backpressures later results when an earlier ordinal
+        // is parked or interrupted; they remain resumable rather than being
+        // exposed beyond a gap in the durable prefix.
+        let ordinal = queued.item.ordinal();
+        let mut publication = self.shared.publication.lock().await;
+        publication.pending.insert(ordinal, outcome);
+        loop {
+            let next_ordinal = publication.next_ordinal;
+            let Some(next_outcome) = publication.pending.remove(&next_ordinal) else {
+                break;
+            };
+            match self.sink.record(next_outcome).await {
+                Ok(()) => acknowledge(&self.shared, &*self.checkpoint, next_ordinal).await,
+                Err(_) => {
+                    counters.sink_errors.fetch_add(1, Ordering::SeqCst);
+                }
+            }
+            publication.next_ordinal += 1;
+        }
+        drop(publication);
+        if succeeded {
+            counters.succeeded.fetch_add(1, Ordering::SeqCst);
+        } else {
+            counters.failed.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+}
+
+/// Bounded batch executor (S06/T02): drives one admitted [`ParseBatch`] over
+/// the injected [`ParseBackend`] and the two-stage injected
+/// [`ParseArtifactCache`].
+///
+/// Per document, exactly one typed terminal outcome is produced and
+/// streamed through the sink; the four cache modes change only cache COST
+/// (the mode truth table), never the semantic output — successful documents
+/// carry byte-equal `ParsedArticle` payloads across all modes. Backend and
+/// cache failures are per-document; the run continues; a typed backend
+/// failure is exactly one backend invocation (no call amplification).
+///
+/// The cursor moves only through the durably acknowledged contiguous
+/// terminal prefix (sink acknowledgments + checkpoint saves under the
+/// advancement lock), so an interrupted run never skips an unwritten
+/// ordinal.
+pub struct ParseBatchExecutor<B: ParseBackend, C: ParseArtifactCache> {
+    backend: Arc<B>,
+    cache: Arc<C>,
+    projector_schema_fingerprint: String,
+}
+
+impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecutor<B, C> {
+    /// Compose the executor over a backend and a two-stage artifact cache.
+    pub fn new(backend: B, cache: C) -> Self {
+        Self {
+            backend: Arc::new(backend),
+            cache: Arc::new(cache),
+            projector_schema_fingerprint: PROJECT_ARTICLE_SCHEMA_FINGERPRINT.to_string(),
+        }
+    }
+
+    /// Override the projector schema fingerprint (rotation seam: a rotated
+    /// fingerprint orphans projection-stage entries while raw TEI survives).
+    pub fn with_projector_schema_fingerprint(mut self, fingerprint: impl Into<String>) -> Self {
+        self.projector_schema_fingerprint = fingerprint.into();
+        self
+    }
+
+    /// The effective projector schema fingerprint.
+    pub fn projector_schema_fingerprint(&self) -> &str {
+        &self.projector_schema_fingerprint
+    }
+
+    /// Run the admitted batch to completion, streaming terminal outcomes
+    /// through `sink` and advancing `checkpoint` through the durably
+    /// acknowledged contiguous terminal prefix.
+    pub async fn run(
+        &self,
+        batch: ParseBatch,
+        sink: Arc<dyn ParseBatchResultSink>,
+        checkpoint: Arc<dyn BatchCheckpoint>,
+    ) -> ParseBatchRunSummary {
+        let started = Instant::now();
+        let limits = *batch.limits();
+        let mode = batch.mode();
+        let input_fingerprint = batch.input_fingerprint().to_string();
+        let resumed_from = batch.cursor().next_ordinal();
+        let admitted = batch.total_documents() as u32;
+        let skipped_on_resume = resumed_from.min(admitted);
+        let queue_capacity = limits.queue_capacity().get();
+        let max_in_flight = limits.max_in_flight().get();
+
+        tracing::info!(
+            mode = %mode.as_str(),
+            input_fingerprint = %input_fingerprint,
+            admitted,
+            resumed_from_ordinal = resumed_from,
+            workers = limits.workers().get(),
+            queue_capacity,
+            max_in_flight,
+            "parse batch run starting"
+        );
+
+        let shared = Arc::new(RunShared {
+            input_fingerprint: input_fingerprint.clone(),
+            tracker: Mutex::new(CursorTracker {
+                acked: BTreeSet::new(),
+                acked_next: resumed_from,
+                saved_next: resumed_from,
+                checkpoint_broken: false,
+            }),
+            publication: Mutex::new(PublicationState {
+                next_ordinal: resumed_from,
+                pending: BTreeMap::new(),
+            }),
+            counters: RunCounters::default(),
+        });
+
+        // Independent bounds: the bounded admission queue caps how much
+        // work is buffered; the semaphore caps simultaneously executing
+        // documents.
+        let (tx, rx) = mpsc::channel::<QueuedItem>(queue_capacity);
+        let rx = Arc::new(Mutex::new(rx));
+        let semaphore = Arc::new(Semaphore::new(max_in_flight));
+
+        let mut workers = Vec::new();
+        for _ in 0..limits.workers().get() {
+            workers.push(tokio::spawn(
+                WorkerContext {
+                    backend: self.backend.clone(),
+                    cache: self.cache.clone(),
+                    projector_schema_fingerprint: self.projector_schema_fingerprint.clone(),
+                    mode,
+                    shared: shared.clone(),
+                    rx: rx.clone(),
+                    semaphore: semaphore.clone(),
+                    sink: sink.clone(),
+                    checkpoint: checkpoint.clone(),
+                }
+                .work(),
+            ));
+        }
+
+        // Feeder: admits items at/after the resume cursor into the bounded
+        // queue. Items before the cursor are already terminal from a prior
+        // run — skipped, never re-executed.
+        for item in batch.into_items().into_iter().skip(resumed_from as usize) {
+            shared.counters.note_queue_depth(1);
+            if tx
+                .send(QueuedItem {
+                    item,
+                    enqueued_at: Instant::now(),
+                })
+                .await
+                .is_err()
+            {
+                break;
+            }
+        }
+        drop(tx);
+        for worker in workers {
+            let _ = worker.await;
+        }
+
+        let saved_next = shared.tracker.lock().await.saved_next;
+        let completed = shared.counters.succeeded.load(Ordering::SeqCst)
+            + shared.counters.failed.load(Ordering::SeqCst);
+        let summary = ParseBatchRunSummary {
+            schema_version: PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION,
+            mode,
+            limits,
+            input_fingerprint: input_fingerprint.clone(),
+            resumed_from_ordinal: resumed_from,
+            cursor: BatchCursor::at(input_fingerprint, saved_next),
+            admitted,
+            skipped_on_resume,
+            completed: u32::try_from(completed).unwrap_or(u32::MAX),
+            succeeded: u32::try_from(shared.counters.succeeded.load(Ordering::SeqCst))
+                .unwrap_or(u32::MAX),
+            failed: u32::try_from(shared.counters.failed.load(Ordering::SeqCst))
+                .unwrap_or(u32::MAX),
+            backend_calls: shared.counters.backend_calls.load(Ordering::SeqCst),
+            raw_hits: shared.counters.raw_hits.load(Ordering::SeqCst),
+            raw_legacy_hits: shared.counters.raw_legacy_hits.load(Ordering::SeqCst),
+            raw_writes: shared.counters.raw_writes.load(Ordering::SeqCst),
+            raw_write_failures: shared.counters.raw_write_failures.load(Ordering::SeqCst),
+            projector_hits: shared.counters.projector_hits.load(Ordering::SeqCst),
+            projector_writes: shared.counters.projector_writes.load(Ordering::SeqCst),
+            projector_write_failures: shared
+                .counters
+                .projector_write_failures
+                .load(Ordering::SeqCst),
+            max_in_flight_observed: shared.counters.max_in_flight.load(Ordering::SeqCst),
+            max_queue_depth_observed: shared.counters.max_queue_depth.load(Ordering::SeqCst),
+            sink_errors: shared.counters.sink_errors.load(Ordering::SeqCst),
+            checkpoint_errors: shared.counters.checkpoint_errors.load(Ordering::SeqCst),
+        };
+        tracing::info!(
+            mode = %summary.mode.as_str(),
+            input_fingerprint = %summary.input_fingerprint,
+            admitted = summary.admitted,
+            skipped_on_resume = summary.skipped_on_resume,
+            completed = summary.completed,
+            succeeded = summary.succeeded,
+            failed = summary.failed,
+            backend_calls = summary.backend_calls,
+            raw_hits = summary.raw_hits,
+            projector_hits = summary.projector_hits,
+            cursor_next_ordinal = summary.cursor.next_ordinal(),
+            duration_ms = elapsed_millis(started),
+            "parse batch run complete"
+        );
+        summary
+    }
+}

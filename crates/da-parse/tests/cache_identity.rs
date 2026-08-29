@@ -1002,3 +1002,298 @@ fn s05_proxy_result_identities_exclude_tuning_and_stay_d204_collision_free() {
     assert_eq!(stamped.profile_fingerprint(), STRUCTURAL_FP);
     assert_eq!(stamped.backend_id(), GROBID_HTTP_BACKEND_ID);
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// S06/T02: two-stage cache payload + stage-key identity gate
+// ═══════════════════════════════════════════════════════════════════════
+
+use da_parse::{
+    CacheIntegrityCode, PROJECT_ARTICLE_SCHEMA_FINGERPRINT, PROJECT_ARTICLE_STAGE_ID,
+    ParseCacheStage, ProjectArticlePayload, RAW_TEI_PAYLOAD_SCHEMA_VERSION, RAW_TEI_STAGE_ID,
+    RawTeiEnvelopePayload, project_article_stage_key, raw_tei_stage_key,
+};
+
+fn s06_fulltext_request(paper: &str, bytes: Vec<u8>) -> da_parse::ParseBackendRequest {
+    da_parse::ParseBackendRequest::with_dialect(paper, bytes, FulltextDialectV1::legacy_rich())
+}
+
+fn s06_envelope(
+    tei: &str,
+    dialect: FulltextDialectV1,
+) -> (da_parse::TeiEnvelope, da_parse::TeiResultIdentity) {
+    let identity = da_parse::TeiIdentity::new("identity-gate-backend", RICH_FP);
+    let result = da_parse::TeiResultIdentity::fulltext(dialect);
+    (
+        da_parse::TeiEnvelope::new(tei, identity.clone().with_result(result.clone())),
+        result,
+    )
+}
+
+#[test]
+fn s06_raw_stage_payload_identity_is_versioned_and_verbatim() {
+    let (envelope, result) = s06_envelope(
+        "<TEI>verbatim bytes</TEI>",
+        FulltextDialectV1::legacy_rich(),
+    );
+    let payload = RawTeiEnvelopePayload::build(&envelope, &result);
+    let wire = serde_json::to_value(&payload).unwrap();
+    for field in [
+        "schema_version",
+        "stage_id",
+        "backend_id",
+        "profile_fingerprint",
+        "result_identity",
+        "payload_sha256",
+        "tei_xml_hex",
+    ] {
+        assert!(
+            wire.get(field).is_some(),
+            "raw payload wire lost `{field}`: {wire}"
+        );
+    }
+    assert_eq!(
+        wire["schema_version"],
+        json!(RAW_TEI_PAYLOAD_SCHEMA_VERSION),
+        "raw payload schema version drifted"
+    );
+    assert_eq!(wire["stage_id"], json!(RAW_TEI_STAGE_ID));
+    assert_eq!(wire["backend_id"], json!("identity-gate-backend"));
+    assert_eq!(wire["profile_fingerprint"], json!(RICH_FP));
+    assert_eq!(
+        wire["result_identity"],
+        json!(result.canonical()),
+        "the stamped endpoint result identity must ride the payload"
+    );
+    // Verbatim bytes: hex decode reproduces the TEI byte-exactly.
+    let decoded = hex::decode(wire["tei_xml_hex"].as_str().unwrap()).unwrap();
+    assert_eq!(decoded, b"<TEI>verbatim bytes</TEI>");
+    assert_eq!(wire["payload_sha256"], json!(sha256_hex(&decoded)));
+
+    let (verified, sha) =
+        RawTeiEnvelopePayload::decode_and_verify(&serde_json::to_vec(&payload).unwrap(), &result)
+            .expect("intact payload verifies");
+    assert_eq!(verified.raw_tei(), b"<TEI>verbatim bytes</TEI>");
+    assert_eq!(sha, sha256_hex(b"<TEI>verbatim bytes</TEI>"));
+
+    // Foreign schema version fails closed (corruption, not a miss).
+    let mut foreign = wire.clone();
+    foreign["schema_version"] = json!(RAW_TEI_PAYLOAD_SCHEMA_VERSION + 1);
+    let error =
+        RawTeiEnvelopePayload::decode_and_verify(&serde_json::to_vec(&foreign).unwrap(), &result)
+            .unwrap_err();
+    assert_eq!(error.code(), CacheIntegrityCode::ManifestCorrupt);
+    assert_eq!(error.stage(), ParseCacheStage::RawTei);
+}
+
+#[test]
+fn s06_stage_keys_are_content_addressed_and_schema_bound() {
+    let bytes_a = b"source-a".to_vec();
+    let base = s06_fulltext_request("paper-key", bytes_a.clone());
+    let raw_key = raw_tei_stage_key(&base);
+    assert!(raw_key.starts_with(RAW_TEI_STAGE_ID), "{raw_key}");
+    assert_eq!(raw_key.len(), RAW_TEI_STAGE_ID.len() + 1 + 64);
+
+    // Content-bound: bytes and effective dialect change the key.
+    let bytes_changed = s06_fulltext_request("paper-key", b"source-b".to_vec());
+    assert_ne!(
+        raw_key,
+        raw_tei_stage_key(&bytes_changed),
+        "source bytes are raw content"
+    );
+    let structural = s06_fulltext_request("paper-key", bytes_a.clone());
+    let structural = {
+        // Same bytes under the structural legacy preset are a different
+        // effective dialect (different TEI), so the raw key must differ.
+        let _ = structural;
+        let req = da_parse::ParseBackendRequest::with_dialect(
+            "paper-key",
+            bytes_a.clone(),
+            FulltextDialectV1::legacy_structural(),
+        );
+        raw_tei_stage_key(&req)
+    };
+    assert_ne!(
+        raw_key, structural,
+        "rich vs structural are distinct raw content"
+    );
+
+    // Logical paper ids do NOT affect the raw key: raw TEI depends on the
+    // request content, not the id.
+    let other_id = s06_fulltext_request("other-paper", bytes_a.clone());
+    assert_eq!(raw_key, raw_tei_stage_key(&other_id));
+
+    // The projector key binds every projection dependency.
+    let proj = |paper: &str, pdf: &str, raw: &str, fp: &str| {
+        project_article_stage_key(paper, pdf, raw, fp)
+    };
+    let reference = proj(
+        "paper-key",
+        "pdf-sha",
+        "raw-sha",
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+    );
+    assert!(
+        reference.starts_with(PROJECT_ARTICLE_STAGE_ID),
+        "{reference}"
+    );
+    assert_ne!(
+        reference,
+        proj(
+            "other-paper",
+            "pdf-sha",
+            "raw-sha",
+            PROJECT_ARTICLE_SCHEMA_FINGERPRINT
+        ),
+        "paper ids ARE projection content"
+    );
+    assert_ne!(
+        reference,
+        proj(
+            "paper-key",
+            "other-pdf",
+            "raw-sha",
+            PROJECT_ARTICLE_SCHEMA_FINGERPRINT
+        )
+    );
+    assert_ne!(
+        reference,
+        proj(
+            "paper-key",
+            "pdf-sha",
+            "other-raw",
+            PROJECT_ARTICLE_SCHEMA_FINGERPRINT
+        ),
+        "the verified raw payload SHA is a projection dependency"
+    );
+    assert_ne!(
+        reference,
+        proj("paper-key", "pdf-sha", "raw-sha", "ParsedArticle@rotated"),
+        "a projector schema fix orphans projection entries without touching raw"
+    );
+}
+
+#[test]
+fn s06_raw_payload_verification_maps_integrity_codes() {
+    let (envelope, result) = s06_envelope("<TEI>map</TEI>", FulltextDialectV1::legacy_rich());
+    let good = RawTeiEnvelopePayload::build(&envelope, &result).encode();
+
+    // Junk wrapper → manifest corrupt.
+    let error = RawTeiEnvelopePayload::decode_and_verify(b"{junk", &result).unwrap_err();
+    assert_eq!(error.code(), CacheIntegrityCode::ManifestCorrupt);
+
+    // Undecodable hex payload → payload unreadable.
+    let mut unreadable: serde_json::Value = serde_json::from_slice(&good).unwrap();
+    unreadable["tei_xml_hex"] = json!("not-hex-!");
+    let error = RawTeiEnvelopePayload::decode_and_verify(
+        &serde_json::to_vec(&unreadable).unwrap(),
+        &result,
+    )
+    .unwrap_err();
+    assert_eq!(error.code(), CacheIntegrityCode::PayloadUnreadable);
+
+    // Byte drift → checksum mismatch.
+    let mut drifted: serde_json::Value = serde_json::from_slice(&good).unwrap();
+    let hex_payload = drifted["tei_xml_hex"].as_str().unwrap().to_string();
+    let mut bytes = hex_payload.into_bytes();
+    let last = bytes.len() - 1;
+    bytes[last] = if bytes[last] == b'0' { b'1' } else { b'0' };
+    drifted["tei_xml_hex"] = json!(String::from_utf8(bytes).unwrap());
+    let error =
+        RawTeiEnvelopePayload::decode_and_verify(&serde_json::to_vec(&drifted).unwrap(), &result)
+            .unwrap_err();
+    assert_eq!(error.code(), CacheIntegrityCode::ChecksumMismatch);
+
+    // A payload produced for a different endpoint result → identity mismatch.
+    // Fulltext rich/structural intentionally share one result schema identity;
+    // tuning differences belong to the request/cache key, not result shape.
+    let foreign = da_parse::TeiResultIdentity::header(HeaderDialectV1::legacy_rich());
+    let error = RawTeiEnvelopePayload::decode_and_verify(&good, &foreign).unwrap_err();
+    assert_eq!(error.code(), CacheIntegrityCode::IdentityMismatch);
+}
+
+#[test]
+fn s06_projector_payload_binds_verified_dependencies() {
+    let (envelope, result) = s06_envelope("<TEI>proj</TEI>", FulltextDialectV1::legacy_rich());
+    let (verified, raw_sha) = RawTeiEnvelopePayload::decode_and_verify(
+        &RawTeiEnvelopePayload::build(&envelope, &result).encode(),
+        &result,
+    )
+    .unwrap();
+    let article = da_parse::lift_and_project_envelope("proj-paper", "pdf-hash", &verified);
+
+    let build = || {
+        ProjectArticlePayload::build(
+            &article,
+            PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+            &raw_sha,
+            "proj-paper",
+            "pdf-sha",
+        )
+    };
+    let restored = ProjectArticlePayload::decode_and_verify(
+        &build().encode(),
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        &raw_sha,
+        "proj-paper",
+        "pdf-sha",
+    )
+    .expect("intact projection payload verifies");
+    assert_eq!(
+        serde_json::to_value(&restored).unwrap(),
+        serde_json::to_value(&article).unwrap(),
+        "the cached projection is wire-equal to the fresh one"
+    );
+
+    // Foreign fingerprint → manifest corrupt.
+    let error = ProjectArticlePayload::decode_and_verify(
+        &build().encode(),
+        "ParsedArticle@rotated",
+        &raw_sha,
+        "proj-paper",
+        "pdf-sha",
+    )
+    .unwrap_err();
+    assert_eq!(error.code(), CacheIntegrityCode::ManifestCorrupt);
+    assert_eq!(error.stage(), ParseCacheStage::ProjectArticle);
+
+    // Different verified raw payload SHA / pdf sha / paper id → identity mismatch.
+    for (raw, pdf, paper) in [
+        ("other-raw", "pdf-sha", "proj-paper"),
+        ("raw-sha", "other-pdf", "proj-paper"),
+        ("raw-sha", "pdf-sha", "other-paper"),
+    ] {
+        let error = ProjectArticlePayload::decode_and_verify(
+            &build().encode(),
+            PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+            raw,
+            paper,
+            pdf,
+        )
+        .unwrap_err();
+        assert_eq!(error.code(), CacheIntegrityCode::IdentityMismatch);
+    }
+
+    // Interpretable wrapper, undecodable article → payload unreadable.
+    let mut scalar: serde_json::Value = serde_json::from_slice(&build().encode()).unwrap();
+    scalar["article"] = json!(42);
+    let error = ProjectArticlePayload::decode_and_verify(
+        &serde_json::to_vec(&scalar).unwrap(),
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        &raw_sha,
+        "proj-paper",
+        "pdf-sha",
+    )
+    .unwrap_err();
+    assert_eq!(error.code(), CacheIntegrityCode::PayloadUnreadable);
+
+    // Junk wrapper → manifest corrupt.
+    let error = ProjectArticlePayload::decode_and_verify(
+        b"{junk",
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        &raw_sha,
+        "proj-paper",
+        "pdf-sha",
+    )
+    .unwrap_err();
+    assert_eq!(error.code(), CacheIntegrityCode::ManifestCorrupt);
+}

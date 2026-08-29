@@ -43,14 +43,21 @@ pub use backend::{
     ParseBackendRequest,
 };
 pub use batch::{
-    BatchCursor, PARSE_BATCH_CURSOR_SCHEMA_VERSION, PARSE_BATCH_SCHEMA_VERSION, ParseBatch,
-    ParseBatchAdmissionError, ParseBatchCursorError, ParseBatchItem, ParseBatchLimits,
-    ParseDocumentFailure, ParseDocumentOutcome, ParseDocumentSuccess, ordered_input_fingerprint,
+    BatchCheckpoint, BatchCursor, PARSE_BATCH_CURSOR_SCHEMA_VERSION,
+    PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION, PARSE_BATCH_SCHEMA_VERSION, ParseBatch,
+    ParseBatchAdmissionError, ParseBatchCollector, ParseBatchCursorError, ParseBatchExecutor,
+    ParseBatchItem, ParseBatchLimits, ParseBatchMemoryCheckpoint, ParseBatchResultSink,
+    ParseBatchRunSummary, ParseBatchSinkError, ParseDocumentFailure, ParseDocumentOutcome,
+    ParseDocumentSuccess, ordered_input_fingerprint,
 };
 pub use cache::{
-    CacheIntegrityCode, CacheMode, CacheStageDisposition, PARSE_CACHE_DISPOSITION_SCHEMA_VERSION,
-    PARSE_CACHE_FAILURE_SCHEMA_VERSION, PROJECT_ARTICLE_STAGE_ID, ParseCacheDispositions,
-    ParseCacheFailure, ParseCacheStage, RAW_TEI_STAGE_ID,
+    CacheIntegrityCode, CacheMode, CacheStageDisposition, MEMORY_TIER_DEFAULT_CAPACITY,
+    PARSE_CACHE_DISPOSITION_SCHEMA_VERSION, PARSE_CACHE_FAILURE_SCHEMA_VERSION,
+    PROJECT_ARTICLE_PAYLOAD_SCHEMA_VERSION, PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+    PROJECT_ARTICLE_STAGE_ID, ParseArtifactCache, ParseCacheDispositions, ParseCacheFailure,
+    ParseCacheStage, ProjectArticlePayload, RAW_TEI_PAYLOAD_SCHEMA_VERSION, RAW_TEI_STAGE_ID,
+    RawStageRead, RawTeiEnvelopePayload, TwoStageParseCache, project_article_stage_key,
+    raw_tei_stage_key,
 };
 pub use conservation::{
     ByteRange, ConservationDelta, ConservationEngine, ConservationEntry, ConservationFamily,
@@ -61,7 +68,7 @@ pub use envelope::{TeiEnvelope, TeiIdentity, TeiResultIdentity};
 pub use http::{GrobidHttpBackend, GrobidParser};
 pub use ir::TeiParseIr;
 pub use lift::TeiLifter;
-pub use parser::ScholarlyParser;
+pub use parser::{ScholarlyParser, lift_and_project_envelope};
 pub use profile::GrobidProfile;
 pub use transport::{
     CitationsConsolidation, Consolidation, CoordinateFamily, CoordinateSet,

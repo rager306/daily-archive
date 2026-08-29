@@ -38,11 +38,12 @@ use da_parse::{
     BatchCursor, CacheIntegrityCode, CacheMode, CacheStageDisposition, FailureCode,
     FulltextDialectV1, HeaderDialectV1, PARSE_BATCH_CURSOR_SCHEMA_VERSION,
     PARSE_BATCH_SCHEMA_VERSION, PARSE_CACHE_DISPOSITION_SCHEMA_VERSION,
-    PARSE_CACHE_FAILURE_SCHEMA_VERSION, PROJECT_ARTICLE_STAGE_ID, ParseBackendFailure,
-    ParseBackendRequest, ParseBatch, ParseBatchAdmissionError, ParseBatchCursorError,
-    ParseBatchItem, ParseBatchLimits, ParseCacheDispositions, ParseCacheFailure, ParseCacheStage,
-    ParseDocumentFailure, ParseDocumentOutcome, ParseDocumentSuccess, RAW_TEI_STAGE_ID,
-    ReferencesDialectV1, RetryAfter, ordered_input_fingerprint,
+    PARSE_CACHE_FAILURE_SCHEMA_VERSION, PROJECT_ARTICLE_STAGE_ID, ParseBackend,
+    ParseBackendFailure, ParseBackendRequest, ParseBatch, ParseBatchAdmissionError,
+    ParseBatchCursorError, ParseBatchItem, ParseBatchLimits, ParseCacheDispositions,
+    ParseCacheFailure, ParseCacheStage, ParseDocumentFailure, ParseDocumentOutcome,
+    ParseDocumentSuccess, RAW_TEI_STAGE_ID, ReferencesDialectV1, RetryAfter,
+    ordered_input_fingerprint,
 };
 use da_ports::parser::ParsedArticle;
 use serde_json::{Value, json};
@@ -915,4 +916,1209 @@ fn batch_wire_forms_carry_no_location_tuning_or_retry_material() {
     }
     // And the success wire carries no slash-separated locations either.
     let _unused: Value = serde_json::from_str(surfaces.last().unwrap()).unwrap();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// S06/T02: bounded two-stage executor over stateful fakes
+// ═══════════════════════════════════════════════════════════════════════
+
+use std::collections::HashMap;
+use std::future::pending;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering as AtomicOrdering};
+use std::time::Duration;
+
+use async_trait::async_trait;
+use da_parse::{
+    BatchCheckpoint, PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION, PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+    ParseArtifactCache, ParseBatchExecutor, ParseBatchMemoryCheckpoint, ParseBatchResultSink,
+    ParseBatchRunSummary, ParseBatchSinkError, ProjectArticlePayload, RawStageRead,
+    RawTeiEnvelopePayload, TeiEnvelope, TeiIdentity, project_article_stage_key, raw_tei_stage_key,
+};
+
+const RAW_KEY_PREFIX: &str = "parse.raw_tei.v1:";
+const PROJECTOR_KEY_PREFIX: &str = "parse.project_article.v1:";
+
+// ───────────────────────── stateful fakes ─────────────────────────
+
+#[derive(Default)]
+struct BackendState {
+    calls: std::sync::Mutex<Vec<String>>,
+    counts: std::sync::Mutex<HashMap<String, usize>>,
+    in_flight: AtomicUsize,
+    max_in_flight: AtomicUsize,
+}
+
+#[derive(Clone)]
+struct FakeBackend {
+    state: Arc<BackendState>,
+    tei: Arc<HashMap<String, String>>,
+    failures: Arc<HashMap<String, ParseBackendFailure>>,
+    delay: Duration,
+}
+
+impl FakeBackend {
+    fn new() -> Self {
+        Self {
+            state: Arc::default(),
+            tei: Arc::default(),
+            failures: Arc::default(),
+            delay: Duration::ZERO,
+        }
+    }
+
+    fn with_tei(mut self, paper: &str, tei: &str) -> Self {
+        let mut map = HashMap::clone(&self.tei);
+        map.insert(paper.to_string(), tei.to_string());
+        self.tei = Arc::new(map);
+        self
+    }
+
+    fn with_busy(mut self, paper: &str, status: u16, seconds: u64) -> Self {
+        let mut failures = HashMap::clone(&self.failures);
+        failures.insert(
+            paper.to_string(),
+            ParseBackendFailure::busy(status, Some(RetryAfter::Seconds(seconds))),
+        );
+        self.failures = Arc::new(failures);
+        self
+    }
+
+    fn with_delay(mut self, delay: Duration) -> Self {
+        self.delay = delay;
+        self
+    }
+
+    fn call_count(&self, paper: &str) -> usize {
+        self.state
+            .counts
+            .lock()
+            .unwrap()
+            .get(paper)
+            .copied()
+            .unwrap_or(0)
+    }
+}
+
+#[async_trait]
+impl ParseBackend for FakeBackend {
+    fn default_request(&self, paper_id: &str, pdf_bytes: Vec<u8>) -> ParseBackendRequest {
+        ParseBackendRequest::new(paper_id, pdf_bytes)
+    }
+
+    async fn fetch_tei(
+        &self,
+        request: ParseBackendRequest,
+    ) -> Result<TeiEnvelope, ParseBackendFailure> {
+        let paper = request.paper_id().to_string();
+        self.state.calls.lock().unwrap().push(paper.clone());
+        *self.state.counts.lock().unwrap().entry(paper).or_insert(0) += 1;
+        let now = self.state.in_flight.fetch_add(1, AtomicOrdering::SeqCst) + 1;
+        self.state
+            .max_in_flight
+            .fetch_max(now, AtomicOrdering::SeqCst);
+        if !self.delay.is_zero() {
+            tokio::time::sleep(self.delay).await;
+        }
+        self.state.in_flight.fetch_sub(1, AtomicOrdering::SeqCst);
+        if let Some(failure) = self.failures.get(request.paper_id()) {
+            return Err(failure.clone());
+        }
+        let tei = self
+            .tei
+            .get(request.paper_id())
+            .cloned()
+            .unwrap_or_else(|| format!("<TEI>body-for-{}</TEI>", request.paper_id()));
+        let identity = TeiIdentity::new("fake-test-backend", "profile=fake;test=1");
+        Ok(TeiEnvelope::new(
+            tei,
+            identity.with_result(request.result_identity()),
+        ))
+    }
+}
+
+#[derive(Default)]
+struct CacheState {
+    store: std::sync::Mutex<HashMap<String, Vec<u8>>>,
+    calls: std::sync::Mutex<Vec<String>>,
+    fail_projector_writes: AtomicBool,
+    legacy_raw: AtomicBool,
+}
+
+#[derive(Clone, Default)]
+struct FakeCache {
+    state: Arc<CacheState>,
+}
+
+impl FakeCache {
+    fn calls(&self) -> Vec<String> {
+        self.state.calls.lock().unwrap().clone()
+    }
+
+    fn keys_with_prefix(&self, prefix: &str) -> Vec<String> {
+        self.state
+            .store
+            .lock()
+            .unwrap()
+            .keys()
+            .filter(|key| key.starts_with(prefix))
+            .cloned()
+            .collect()
+    }
+
+    fn snapshot(&self) -> Vec<(String, Vec<u8>)> {
+        let mut entries: Vec<(String, Vec<u8>)> = self
+            .state
+            .store
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|(key, payload)| (key.clone(), payload.clone()))
+            .collect();
+        entries.sort();
+        entries
+    }
+
+    fn mutate_payload<F: Fn(&mut serde_json::Value)>(&self, prefix: &str, mutate: F) {
+        let mut store = self.state.store.lock().unwrap();
+        let key = store
+            .keys()
+            .find(|key| key.starts_with(prefix))
+            .cloned()
+            .expect("stored entry with prefix");
+        let mut value: serde_json::Value =
+            serde_json::from_slice(&store[&key]).expect("stored payload parses");
+        mutate(&mut value);
+        store.insert(key, serde_json::to_vec(&value).unwrap());
+    }
+
+    fn scramble_payload(&self, prefix: &str) {
+        let mut store = self.state.store.lock().unwrap();
+        let key = store
+            .keys()
+            .find(|key| key.starts_with(prefix))
+            .cloned()
+            .expect("stored entry with prefix");
+        store.insert(key, b"{not json at all".to_vec());
+    }
+}
+
+#[async_trait]
+impl ParseArtifactCache for FakeCache {
+    async fn read_raw(&self, key: &str) -> Result<Option<RawStageRead>, ParseCacheFailure> {
+        self.state
+            .calls
+            .lock()
+            .unwrap()
+            .push(format!("read_raw:{key}"));
+        let store = self.state.store.lock().unwrap();
+        Ok(store.get(key).map(|payload| {
+            if self.state.legacy_raw.load(AtomicOrdering::SeqCst) {
+                RawStageRead::from_legacy(payload.clone())
+            } else {
+                RawStageRead::canonical(payload.clone())
+            }
+        }))
+    }
+
+    async fn write_raw(&self, key: &str, payload: &[u8]) -> Result<(), ParseCacheFailure> {
+        self.state
+            .calls
+            .lock()
+            .unwrap()
+            .push(format!("write_raw:{key}"));
+        self.state
+            .store
+            .lock()
+            .unwrap()
+            .insert(key.to_string(), payload.to_vec());
+        Ok(())
+    }
+
+    async fn read_projected(&self, key: &str) -> Result<Option<RawStageRead>, ParseCacheFailure> {
+        self.state
+            .calls
+            .lock()
+            .unwrap()
+            .push(format!("read_projected:{key}"));
+        let store = self.state.store.lock().unwrap();
+        Ok(store
+            .get(key)
+            .map(|payload| RawStageRead::canonical(payload.clone())))
+    }
+
+    async fn write_projected(&self, key: &str, payload: &[u8]) -> Result<(), ParseCacheFailure> {
+        self.state
+            .calls
+            .lock()
+            .unwrap()
+            .push(format!("write_projected:{key}"));
+        if self
+            .state
+            .fail_projector_writes
+            .load(AtomicOrdering::SeqCst)
+        {
+            return Err(ParseCacheFailure::new(
+                ParseCacheStage::ProjectArticle,
+                CacheIntegrityCode::StageWriteFailed,
+            ));
+        }
+        self.state
+            .store
+            .lock()
+            .unwrap()
+            .insert(key.to_string(), payload.to_vec());
+        Ok(())
+    }
+}
+
+struct FakeSink {
+    outcomes: std::sync::Mutex<Vec<ParseDocumentOutcome>>,
+    fail_at: Option<u32>,
+    park_at: Option<u32>,
+}
+
+impl FakeSink {
+    fn new() -> Self {
+        Self {
+            outcomes: std::sync::Mutex::new(Vec::new()),
+            fail_at: None,
+            park_at: None,
+        }
+    }
+
+    fn failing_at(ordinal: u32) -> Self {
+        Self {
+            fail_at: Some(ordinal),
+            ..Self::new()
+        }
+    }
+
+    fn parking_at(ordinal: u32) -> Self {
+        Self {
+            park_at: Some(ordinal),
+            ..Self::new()
+        }
+    }
+
+    fn recorded_ordinals(&self) -> Vec<u32> {
+        let mut ordinals: Vec<u32> = self
+            .outcomes
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|outcome| outcome.ordinal())
+            .collect();
+        ordinals.sort();
+        ordinals
+    }
+
+    fn recorded(&self) -> Vec<ParseDocumentOutcome> {
+        let mut outcomes = self.outcomes.lock().unwrap().clone();
+        outcomes.sort_by_key(|outcome| outcome.ordinal());
+        outcomes
+    }
+}
+
+#[async_trait]
+impl ParseBatchResultSink for FakeSink {
+    async fn record(&self, outcome: ParseDocumentOutcome) -> Result<(), ParseBatchSinkError> {
+        if self.park_at == Some(outcome.ordinal()) {
+            pending::<()>().await;
+        }
+        if self.fail_at == Some(outcome.ordinal()) {
+            return Err(ParseBatchSinkError("injected sink failure".to_string()));
+        }
+        self.outcomes.lock().unwrap().push(outcome);
+        Ok(())
+    }
+}
+
+struct FakeCheckpoint {
+    saved: std::sync::Mutex<Vec<BatchCursor>>,
+    fail: bool,
+}
+
+impl FakeCheckpoint {
+    fn new() -> Self {
+        Self {
+            saved: std::sync::Mutex::new(Vec::new()),
+            fail: false,
+        }
+    }
+
+    fn failing() -> Self {
+        Self {
+            fail: true,
+            ..Self::new()
+        }
+    }
+
+    fn last_saved(&self) -> Option<BatchCursor> {
+        self.saved.lock().unwrap().last().cloned()
+    }
+}
+
+#[async_trait]
+impl BatchCheckpoint for FakeCheckpoint {
+    async fn save(&self, cursor: &BatchCursor) -> Result<(), ParseBatchSinkError> {
+        if self.fail {
+            return Err(ParseBatchSinkError(
+                "injected checkpoint failure".to_string(),
+            ));
+        }
+        self.saved.lock().unwrap().push(cursor.clone());
+        Ok(())
+    }
+}
+
+fn exec_limits(max_documents: usize) -> ParseBatchLimits {
+    ParseBatchLimits::new(nz(2), nz(4), nz(2), nz(max_documents))
+}
+
+fn requests_for(ids: &[&str]) -> Vec<ParseBackendRequest> {
+    ids.iter()
+        .enumerate()
+        .map(|(index, id)| request(id, index as u8 + 1))
+        .collect()
+}
+
+fn admitted(mode: CacheMode, ids: &[&str]) -> ParseBatch {
+    ParseBatch::admit(mode, exec_limits(64), requests_for(ids), None).expect("test batch admits")
+}
+
+// ───────────────────────── executor behavior ─────────────────────────
+
+#[tokio::test(start_paused = true)]
+async fn executor_off_mode_makes_zero_cache_calls() {
+    let backend = FakeBackend::new();
+    let backend_handle = backend.clone();
+    let cache = FakeCache::default();
+    let cache_handle = cache.clone();
+    let executor = ParseBatchExecutor::new(backend, cache);
+    let sink = Arc::new(FakeSink::new());
+    let checkpoint = Arc::new(ParseBatchMemoryCheckpoint::new());
+    let summary = executor
+        .run(
+            admitted(CacheMode::Off, &["doc-a", "doc-b"]),
+            sink.clone(),
+            checkpoint.clone(),
+        )
+        .await;
+    assert_eq!(summary.completed(), 2);
+    assert_eq!(summary.succeeded(), 2);
+    assert_eq!(summary.failed(), 0);
+    assert_eq!(summary.backend_calls(), 2);
+    assert!(
+        cache_handle.calls().is_empty(),
+        "off mode never consults caches"
+    );
+    assert!(
+        cache_handle.snapshot().is_empty(),
+        "off mode never publishes"
+    );
+    assert_eq!(backend_handle.call_count("doc-a"), 1);
+    let outcomes = sink.outcomes.lock().unwrap().clone();
+    for outcome in outcomes {
+        assert!(outcome.is_success());
+        let dispositions = outcome.dispositions();
+        assert_eq!(dispositions.raw(), CacheStageDisposition::ComputedUncached);
+        assert_eq!(
+            dispositions.projector(),
+            CacheStageDisposition::ComputedUncached
+        );
+    }
+    assert!(checkpoint.cursor().await.unwrap().next_ordinal() >= 2);
+}
+
+#[tokio::test(start_paused = true)]
+async fn articles_are_byte_equal_across_all_four_modes() {
+    let expected = [
+        (
+            CacheMode::Off,
+            CacheStageDisposition::ComputedUncached,
+            CacheStageDisposition::ComputedUncached,
+        ),
+        (
+            CacheMode::ReadOnly,
+            CacheStageDisposition::ComputedUnpublished,
+            CacheStageDisposition::ComputedUnpublished,
+        ),
+        (
+            CacheMode::WriteThrough,
+            CacheStageDisposition::ComputedPublished,
+            CacheStageDisposition::ComputedPublished,
+        ),
+        (
+            CacheMode::Refresh,
+            CacheStageDisposition::ComputedPublished,
+            CacheStageDisposition::ComputedPublished,
+        ),
+    ];
+    let mut baseline: Option<serde_json::Value> = None;
+    for (mode, raw, projector) in expected {
+        let executor = ParseBatchExecutor::new(FakeBackend::new(), FakeCache::default());
+        let sink = Arc::new(FakeSink::new());
+        let summary = executor
+            .run(
+                admitted(mode, &["mode-doc"]),
+                sink.clone(),
+                Arc::new(ParseBatchMemoryCheckpoint::new()),
+            )
+            .await;
+        assert_eq!(summary.succeeded(), 1, "{mode}: fresh compute succeeds");
+        let outcome = &sink.recorded()[0];
+        assert!(outcome.is_success());
+        assert_eq!(
+            outcome.dispositions().raw(),
+            raw,
+            "{mode}: raw disposition drifted"
+        );
+        assert_eq!(
+            outcome.dispositions().projector(),
+            projector,
+            "{mode}: projector disposition drifted"
+        );
+        let article_wire =
+            serde_json::to_value(outcome.result().as_ref().unwrap().article()).unwrap();
+        match &baseline {
+            None => baseline = Some(article_wire),
+            Some(baseline) => assert_eq!(
+                &article_wire, baseline,
+                "{mode}: semantic drift across modes"
+            ),
+        }
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn write_through_miss_commits_raw_before_projector_with_exact_sequence() {
+    let cache = FakeCache::default();
+    let cache_handle = cache.clone();
+    let executor = ParseBatchExecutor::new(FakeBackend::new(), cache);
+    let sink = Arc::new(FakeSink::new());
+    let summary = executor
+        .run(
+            admitted(CacheMode::WriteThrough, &["seq-doc"]),
+            sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(summary.succeeded(), 1);
+    assert_eq!(summary.raw_writes(), 1);
+    assert_eq!(summary.projector_writes(), 1);
+    let calls = cache_handle.calls();
+    let ops: Vec<&str> = calls
+        .iter()
+        .map(|call| call.split(':').next().unwrap())
+        .collect();
+    assert_eq!(
+        ops,
+        vec!["read_raw", "write_raw", "read_projected", "write_projected"],
+        "write-through miss order drifted: {calls:?}"
+    );
+    assert!(calls[0].starts_with("read_raw:parse.raw_tei.v1:"));
+    assert!(calls[2].starts_with("read_projected:parse.project_article.v1:"));
+}
+
+#[tokio::test(start_paused = true)]
+async fn read_only_full_hit_avoids_backend_and_keeps_cache_byte_identical() {
+    // Populate through write-through first.
+    let cache = FakeCache::default();
+    let cache_handle = cache.clone();
+    let populate = ParseBatchExecutor::new(FakeBackend::new(), cache.clone());
+    let first = populate
+        .run(
+            admitted(CacheMode::WriteThrough, &["hit-doc"]),
+            Arc::new(FakeSink::new()),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(first.succeeded(), 1);
+    let before = cache_handle.snapshot();
+
+    // Read-only replay: zero backend calls, byte-identical cache, full hit.
+    let replay = ParseBatchExecutor::new(FakeBackend::new(), cache);
+    let sink = Arc::new(FakeSink::new());
+    let summary = replay
+        .run(
+            admitted(CacheMode::ReadOnly, &["hit-doc"]),
+            sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(
+        summary.backend_calls(),
+        0,
+        "a full hit must not call the backend"
+    );
+    assert_eq!(summary.raw_hits(), 1);
+    assert_eq!(summary.projector_hits(), 1);
+    assert_eq!(summary.raw_writes(), 0);
+    assert_eq!(
+        cache_handle.snapshot(),
+        before,
+        "read-only never mutates the cache"
+    );
+    let outcome = &sink.recorded()[0];
+    assert_eq!(outcome.dispositions().raw(), CacheStageDisposition::Hit);
+    assert_eq!(
+        outcome.dispositions().projector(),
+        CacheStageDisposition::Hit
+    );
+}
+
+#[tokio::test(start_paused = true)]
+async fn raw_hit_reprojects_after_projector_schema_rotation_without_backend() {
+    let cache = FakeCache::default();
+    let cache_handle = cache.clone();
+    let populate = ParseBatchExecutor::new(FakeBackend::new(), cache.clone());
+    let populate_sink = Arc::new(FakeSink::new());
+    let first = populate
+        .run(
+            admitted(CacheMode::WriteThrough, &["rot-doc"]),
+            populate_sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(first.succeeded(), 1);
+    let first_wire = serde_json::to_value(
+        populate_sink.recorded()[0]
+            .result()
+            .as_ref()
+            .unwrap()
+            .article(),
+    )
+    .unwrap();
+
+    // A rotated projector fingerprint orphans projector entries; raw survives.
+    let replay = ParseBatchExecutor::new(FakeBackend::new(), cache)
+        .with_projector_schema_fingerprint("ParsedArticle@rotated-for-test");
+    let sink = Arc::new(FakeSink::new());
+    let summary = replay
+        .run(
+            admitted(CacheMode::ReadOnly, &["rot-doc"]),
+            sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(
+        summary.backend_calls(),
+        0,
+        "raw hit must re-project without the backend"
+    );
+    assert_eq!(summary.raw_hits(), 1);
+    assert_eq!(summary.projector_hits(), 0);
+    assert_eq!(
+        cache_handle.keys_with_prefix(PROJECTOR_KEY_PREFIX).len(),
+        1,
+        "old entries are orphaned, not deleted"
+    );
+    let outcome = &sink.recorded()[0];
+    assert_eq!(outcome.dispositions().raw(), CacheStageDisposition::Hit);
+    assert_eq!(
+        outcome.dispositions().projector(),
+        CacheStageDisposition::ComputedUnpublished
+    );
+    assert_eq!(
+        serde_json::to_value(outcome.result().as_ref().unwrap().article()).unwrap(),
+        first_wire,
+        "re-projection is byte-equal"
+    );
+}
+
+#[tokio::test(start_paused = true)]
+async fn projector_write_failure_leaves_honest_reusable_raw_state() {
+    let cache = FakeCache::default();
+    cache
+        .state
+        .fail_projector_writes
+        .store(true, AtomicOrdering::SeqCst);
+    let cache_handle = cache.clone();
+    let executor = ParseBatchExecutor::new(FakeBackend::new(), cache);
+    let sink = Arc::new(FakeSink::new());
+    let summary = executor
+        .run(
+            admitted(CacheMode::WriteThrough, &["projfail-doc"]),
+            sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(
+        summary.succeeded(),
+        1,
+        "a failed publish never fails the document"
+    );
+    assert_eq!(summary.projector_write_failures(), 1);
+    assert_eq!(
+        summary.raw_writes(),
+        1,
+        "raw committed before the projector stage"
+    );
+    let outcome = &sink.recorded()[0];
+    assert_eq!(
+        outcome.dispositions().raw(),
+        CacheStageDisposition::ComputedPublished
+    );
+    assert_eq!(
+        outcome.dispositions().projector(),
+        CacheStageDisposition::ComputedUnpublished
+    );
+
+    // The committed raw state is reusable: replay hits raw, re-projects.
+    let replay = ParseBatchExecutor::new(FakeBackend::new(), cache_handle);
+    let replay_sink = Arc::new(FakeSink::new());
+    let replay_summary = replay
+        .run(
+            admitted(CacheMode::ReadOnly, &["projfail-doc"]),
+            replay_sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(replay_summary.backend_calls(), 0);
+    assert_eq!(replay_summary.raw_hits(), 1);
+    let replay_outcome = &replay_sink.recorded()[0];
+    assert!(replay_outcome.is_success());
+    assert_eq!(
+        replay_outcome.dispositions().raw(),
+        CacheStageDisposition::Hit
+    );
+}
+
+#[tokio::test(start_paused = true)]
+async fn busy_503_is_typed_exactly_once_and_the_run_continues() {
+    let backend = FakeBackend::new().with_busy("busy-doc", 503, 7);
+    let backend_handle = backend.clone();
+    let executor = ParseBatchExecutor::new(backend, FakeCache::default());
+    let sink = Arc::new(FakeSink::new());
+    let summary = executor
+        .run(
+            admitted(
+                CacheMode::WriteThrough,
+                &["ok-before", "busy-doc", "ok-after"],
+            ),
+            sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(summary.completed(), 3);
+    assert_eq!(summary.succeeded(), 2);
+    assert_eq!(summary.failed(), 1);
+    assert_eq!(
+        backend_handle.call_count("busy-doc"),
+        1,
+        "a typed busy is exactly one backend invocation"
+    );
+    let outcomes = sink.recorded();
+    let ordinals: Vec<u32> = outcomes.iter().map(|outcome| outcome.ordinal()).collect();
+    assert_eq!(
+        ordinals,
+        vec![0, 1, 2],
+        "later documents survive earlier failures"
+    );
+    match outcomes[1].result() {
+        Err(ParseDocumentFailure::Backend(failure)) => {
+            assert_eq!(failure.status(), Some(503));
+            assert_eq!(failure.retry_after(), Some(RetryAfter::Seconds(7)));
+        }
+        other => panic!("expected a typed busy failure, got {other:?}"),
+    }
+    let cursor = summary.cursor();
+    assert_eq!(
+        cursor.next_ordinal(),
+        3,
+        "terminal failures are part of the durable prefix"
+    );
+}
+
+#[tokio::test(start_paused = true)]
+async fn raw_corruption_is_a_typed_error_never_a_miss() {
+    let cache = FakeCache::default();
+    let cache_handle = cache.clone();
+    let populate = ParseBatchExecutor::new(FakeBackend::new(), cache.clone());
+    let first = populate
+        .run(
+            admitted(CacheMode::WriteThrough, &["corrupt-a", "corrupt-b"]),
+            Arc::new(FakeSink::new()),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(first.succeeded(), 2);
+
+    cache_handle.mutate_payload(RAW_KEY_PREFIX, |value| {
+        let hex_payload = value["tei_xml_hex"].as_str().unwrap().to_string();
+        let mut bytes = hex_payload.into_bytes();
+        let last = bytes.len() - 1;
+        bytes[last] = if bytes[last] == b'0' { b'1' } else { b'0' };
+        value["tei_xml_hex"] = serde_json::Value::String(String::from_utf8(bytes).unwrap());
+    });
+
+    let replay = ParseBatchExecutor::new(FakeBackend::new(), cache);
+    let sink = Arc::new(FakeSink::new());
+    let summary = replay
+        .run(
+            admitted(CacheMode::ReadOnly, &["corrupt-a", "corrupt-b"]),
+            sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(
+        summary.backend_calls(),
+        0,
+        "corruption never falls back to the backend"
+    );
+    assert_eq!(summary.failed(), 1);
+    assert_eq!(
+        summary.succeeded(),
+        1,
+        "the run continues past one corrupt document"
+    );
+    let recorded = sink.recorded();
+    let failures: Vec<&ParseDocumentOutcome> = recorded
+        .iter()
+        .filter(|outcome| !outcome.is_success())
+        .collect();
+    match failures[0].result() {
+        Err(ParseDocumentFailure::Cache(failure)) => {
+            assert_eq!(failure.stage(), ParseCacheStage::RawTei);
+            assert_eq!(failure.code(), CacheIntegrityCode::ChecksumMismatch);
+        }
+        other => panic!("expected a typed checksum failure, got {other:?}"),
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn foreign_raw_identity_and_broken_payloads_fail_visible() {
+    // Foreign result identity stamped into a stored raw payload.
+    let cache = FakeCache::default();
+    let cache_handle = cache.clone();
+    let populate = ParseBatchExecutor::new(FakeBackend::new(), cache.clone());
+    populate
+        .run(
+            admitted(CacheMode::WriteThrough, &["identity-doc"]),
+            Arc::new(FakeSink::new()),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    cache_handle.mutate_payload(RAW_KEY_PREFIX, |value| {
+        value["result_identity"] =
+            serde_json::Value::String("endpoint=header;schema=v1;header=v1;foreign=1".to_string());
+    });
+    let replay = ParseBatchExecutor::new(FakeBackend::new(), cache);
+    let sink = Arc::new(FakeSink::new());
+    let summary = replay
+        .run(
+            admitted(CacheMode::ReadOnly, &["identity-doc"]),
+            sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(summary.backend_calls(), 0);
+    match sink.recorded()[0].result() {
+        Err(ParseDocumentFailure::Cache(failure)) => {
+            assert_eq!(failure.stage(), ParseCacheStage::RawTei);
+            assert_eq!(failure.code(), CacheIntegrityCode::IdentityMismatch);
+        }
+        other => panic!("expected an identity mismatch, got {other:?}"),
+    }
+
+    // Uninterpretable projector wrapper (manifest corrupt).
+    let cache = FakeCache::default();
+    let cache_handle = cache.clone();
+    let populate = ParseBatchExecutor::new(FakeBackend::new(), cache.clone());
+    populate
+        .run(
+            admitted(CacheMode::WriteThrough, &["scramble-doc"]),
+            Arc::new(FakeSink::new()),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    cache_handle.scramble_payload(PROJECTOR_KEY_PREFIX);
+    let replay = ParseBatchExecutor::new(FakeBackend::new(), cache);
+    let sink = Arc::new(FakeSink::new());
+    let summary = replay
+        .run(
+            admitted(CacheMode::ReadOnly, &["scramble-doc"]),
+            sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(summary.backend_calls(), 0, "no recompute past corruption");
+    match sink.recorded()[0].result() {
+        Err(ParseDocumentFailure::Cache(failure)) => {
+            assert_eq!(failure.stage(), ParseCacheStage::ProjectArticle);
+            assert_eq!(failure.code(), CacheIntegrityCode::ManifestCorrupt);
+        }
+        other => panic!("expected manifest corrupt, got {other:?}"),
+    }
+
+    // Interpretable wrapper, undecodable article payload.
+    let cache = FakeCache::default();
+    let cache_handle = cache.clone();
+    let populate = ParseBatchExecutor::new(FakeBackend::new(), cache.clone());
+    populate
+        .run(
+            admitted(CacheMode::WriteThrough, &["scalar-doc"]),
+            Arc::new(FakeSink::new()),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    cache_handle.mutate_payload(PROJECTOR_KEY_PREFIX, |value| {
+        value["article"] = serde_json::Value::Number(serde_json::Number::from(42));
+    });
+    let replay = ParseBatchExecutor::new(FakeBackend::new(), cache);
+    let sink = Arc::new(FakeSink::new());
+    let summary = replay
+        .run(
+            admitted(CacheMode::ReadOnly, &["scalar-doc"]),
+            sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(summary.backend_calls(), 0);
+    match sink.recorded()[0].result() {
+        Err(ParseDocumentFailure::Cache(failure)) => {
+            assert_eq!(failure.stage(), ParseCacheStage::ProjectArticle);
+            assert_eq!(failure.code(), CacheIntegrityCode::PayloadUnreadable);
+        }
+        other => panic!("expected payload unreadable, got {other:?}"),
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn bounded_load_gauges_never_exceed_config_and_true_overlap_happens() {
+    let backend = FakeBackend::new().with_delay(Duration::from_millis(5));
+    let backend_handle = backend.clone();
+    let executor = ParseBatchExecutor::new(backend, FakeCache::default());
+    let sink = Arc::new(FakeSink::new());
+    let ids: Vec<String> = (0..6).map(|index| format!("load-{index}")).collect();
+    let id_refs: Vec<&str> = ids.iter().map(String::as_str).collect();
+    let limits = ParseBatchLimits::new(nz(3), nz(2), nz(2), nz(6));
+    let batch = ParseBatch::admit(CacheMode::Off, limits, requests_for(&id_refs), None).unwrap();
+    let summary = executor
+        .run(
+            batch,
+            sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(summary.succeeded(), 6);
+    assert!(
+        summary.max_in_flight_observed() <= 2,
+        "in-flight bound drifted: {}",
+        summary.max_in_flight_observed()
+    );
+    assert_eq!(
+        summary.max_in_flight_observed(),
+        2,
+        "with six delayed documents the bound must actually be reached"
+    );
+    assert!(summary.max_queue_depth_observed() <= 6);
+    assert!(backend_handle.call_count("load-0") == 1);
+}
+
+#[tokio::test(start_paused = true)]
+async fn sink_failure_freezes_cursor_and_resume_redoes_only_unwritten_ordinals() {
+    let backend = FakeBackend::new();
+    let backend_handle = backend.clone();
+    let executor = ParseBatchExecutor::new(backend, FakeCache::default());
+    let batch = admitted(CacheMode::WriteThrough, &["sink-a", "sink-b"]);
+    let fingerprint = batch.input_fingerprint().to_string();
+    let sink = Arc::new(FakeSink::failing_at(1));
+    let summary = executor
+        .run(
+            batch,
+            sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(summary.sink_errors(), 1);
+    assert_eq!(
+        summary.cursor().next_ordinal(),
+        1,
+        "cursor never passes an unacknowledged ordinal"
+    );
+    assert_eq!(summary.succeeded(), 2, "both documents still terminate");
+
+    // Resume from the frozen cursor: ordinal 0 is skipped (already durable),
+    // ordinal 1 is redone.
+    let replay = ParseBatchExecutor::new(FakeBackend::new(), FakeCache::default());
+    let replay_batch = ParseBatch::admit(
+        CacheMode::WriteThrough,
+        exec_limits(64),
+        requests_for(&["sink-a", "sink-b"]),
+        Some(BatchCursor::at(&fingerprint, 1)),
+    )
+    .unwrap();
+    let replay_sink = Arc::new(FakeSink::new());
+    let replay_summary = replay
+        .run(
+            replay_batch,
+            replay_sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(replay_summary.skipped_on_resume(), 1);
+    let ordinals: Vec<u32> = replay_sink
+        .recorded()
+        .iter()
+        .map(|outcome| outcome.ordinal())
+        .collect();
+    assert_eq!(
+        ordinals,
+        vec![1],
+        "resume redoes exactly the unwritten ordinal"
+    );
+    let _ = backend_handle;
+}
+
+#[tokio::test(start_paused = true)]
+async fn interrupted_run_never_skips_unwritten_ordinals_and_resume_completes() {
+    let backend = FakeBackend::new().with_delay(Duration::from_millis(5));
+    let cache = FakeCache::default();
+    let executor = ParseBatchExecutor::new(backend, cache);
+    let batch = admitted(
+        CacheMode::WriteThrough,
+        &["int-0", "int-1", "int-2", "int-3"],
+    );
+    let fingerprint = batch.input_fingerprint().to_string();
+    let sink = Arc::new(FakeSink::parking_at(2));
+    let checkpoint = Arc::new(ParseBatchMemoryCheckpoint::new());
+    let run = executor.run(batch, sink.clone(), checkpoint.clone());
+    tokio::select! {
+        _ = run => panic!("the run must be interrupted at the parked sink"),
+        _ = tokio::time::sleep(Duration::from_secs(3600)) => {}
+    }
+    assert_eq!(sink.recorded_ordinals(), vec![0, 1]);
+    let cursor = checkpoint.cursor().await.expect("durable cursor");
+    assert_eq!(
+        cursor.next_ordinal(),
+        2,
+        "cancellation never skips unwritten ordinals"
+    );
+
+    // Resume against the exact input fingerprint.
+    let resume = ParseBatchExecutor::new(
+        FakeBackend::new().with_delay(Duration::from_millis(5)),
+        FakeCache::default(),
+    );
+    let resume_batch = ParseBatch::admit(
+        CacheMode::WriteThrough,
+        exec_limits(64),
+        requests_for(&["int-0", "int-1", "int-2", "int-3"]),
+        Some(BatchCursor::at(&fingerprint, 2)),
+    )
+    .unwrap();
+    let resume_sink = Arc::new(FakeSink::new());
+    let resume_checkpoint = Arc::new(ParseBatchMemoryCheckpoint::new());
+    let resume_summary = resume
+        .run(resume_batch, resume_sink.clone(), resume_checkpoint.clone())
+        .await;
+    assert_eq!(resume_summary.skipped_on_resume(), 2);
+    assert_eq!(resume_summary.completed(), 2);
+    assert_eq!(resume_sink.recorded_ordinals(), vec![2, 3]);
+    assert_eq!(resume_checkpoint.cursor().await.unwrap().next_ordinal(), 4);
+}
+
+#[tokio::test(start_paused = true)]
+async fn refresh_bypasses_hits_and_replaces_both_stages() {
+    let cache = FakeCache::default();
+    let cache_handle = cache.clone();
+    let populate = ParseBatchExecutor::new(FakeBackend::new(), cache.clone());
+    populate
+        .run(
+            admitted(CacheMode::WriteThrough, &["refresh-doc"]),
+            Arc::new(FakeSink::new()),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    let before = cache_handle.snapshot();
+
+    let backend = FakeBackend::new().with_tei("refresh-doc", "<TEI>replaced-body</TEI>");
+    let backend_handle = backend.clone();
+    let refresh = ParseBatchExecutor::new(backend, cache);
+    let sink = Arc::new(FakeSink::new());
+    let summary = refresh
+        .run(
+            admitted(CacheMode::Refresh, &["refresh-doc"]),
+            sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(summary.backend_calls(), 1, "refresh always re-fetches");
+    assert_eq!(summary.raw_hits(), 0);
+    assert_eq!(summary.raw_writes(), 1);
+    assert_eq!(summary.projector_writes(), 1);
+    let outcome = &sink.recorded()[0];
+    assert_eq!(
+        outcome.dispositions().raw(),
+        CacheStageDisposition::ComputedPublished
+    );
+    assert_eq!(
+        outcome.dispositions().projector(),
+        CacheStageDisposition::ComputedPublished
+    );
+    assert_ne!(
+        cache_handle.snapshot(),
+        before,
+        "refresh replaced the stages"
+    );
+    assert!(backend_handle.call_count("refresh-doc") == 1);
+}
+
+#[tokio::test(start_paused = true)]
+async fn legacy_raw_hits_are_counted_not_promoted() {
+    let cache = FakeCache::default();
+    let cache_handle = cache.clone();
+    let populate = ParseBatchExecutor::new(FakeBackend::new(), cache.clone());
+    populate
+        .run(
+            admitted(CacheMode::WriteThrough, &["legacy-doc"]),
+            Arc::new(FakeSink::new()),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    cache_handle
+        .state
+        .legacy_raw
+        .store(true, AtomicOrdering::SeqCst);
+    let replay = ParseBatchExecutor::new(FakeBackend::new(), cache);
+    let sink = Arc::new(FakeSink::new());
+    let summary = replay
+        .run(
+            admitted(CacheMode::ReadOnly, &["legacy-doc"]),
+            sink.clone(),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(summary.raw_hits(), 1);
+    assert_eq!(summary.raw_legacy_hits(), 1);
+    assert_eq!(
+        summary.raw_writes(),
+        0,
+        "a legacy read never creates a canonical record"
+    );
+}
+
+#[tokio::test(start_paused = true)]
+async fn checkpoint_failure_freezes_the_durable_cursor() {
+    let executor = ParseBatchExecutor::new(FakeBackend::new(), FakeCache::default());
+    let sink = Arc::new(FakeSink::new());
+    let checkpoint = Arc::new(FakeCheckpoint::failing());
+    let summary = executor
+        .run(
+            admitted(CacheMode::WriteThrough, &["ckpt-a", "ckpt-b"]),
+            sink.clone(),
+            checkpoint.clone(),
+        )
+        .await;
+    assert_eq!(summary.succeeded(), 2);
+    assert_eq!(summary.checkpoint_errors(), 1);
+    assert_eq!(
+        summary.cursor().next_ordinal(),
+        0,
+        "the durable cursor stays at the last durably saved position"
+    );
+    assert_eq!(
+        sink.recorded_ordinals(),
+        vec![0, 1],
+        "outcomes stay recorded"
+    );
+    assert!(checkpoint.last_saved().is_none());
+}
+
+#[test]
+fn run_summary_wire_is_strictly_versioned() {
+    let wire = json!({
+        "schema_version": PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION,
+        "mode": "write-through",
+        "limits": serde_json::to_value(limits()).unwrap(),
+        "input_fingerprint": "f".repeat(64),
+        "resumed_from_ordinal": 0,
+        "cursor": serde_json::to_value(BatchCursor::at("f".repeat(64), 2)).unwrap(),
+        "admitted": 3,
+        "skipped_on_resume": 0,
+        "completed": 3,
+        "succeeded": 2,
+        "failed": 1,
+        "backend_calls": 3,
+        "raw_hits": 0,
+        "raw_legacy_hits": 0,
+        "raw_writes": 2,
+        "raw_write_failures": 0,
+        "projector_hits": 0,
+        "projector_writes": 2,
+        "projector_write_failures": 0,
+        "max_in_flight_observed": 2,
+        "max_queue_depth_observed": 2,
+        "sink_errors": 0,
+        "checkpoint_errors": 0,
+    });
+    let summary: ParseBatchRunSummary = serde_json::from_value(wire.clone()).unwrap();
+    assert_eq!(summary.mode(), CacheMode::WriteThrough);
+    assert_eq!(summary.succeeded(), 2);
+    assert_eq!(summary.cursor().next_ordinal(), 2);
+    let mut foreign = wire.clone();
+    foreign["schema_version"] = json!(PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION + 1);
+    let error = serde_json::from_value::<ParseBatchRunSummary>(foreign)
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("schema version"), "{error}");
+    let mut extra = wire;
+    extra["retries"] = json!(3);
+    assert!(
+        serde_json::from_value::<ParseBatchRunSummary>(extra).is_err(),
+        "the summary has no field for call amplification"
+    );
+}
+
+#[tokio::test(start_paused = true)]
+async fn stage_keys_and_payloads_keep_their_s06_identity_pins() {
+    let requests = requests_for(&["key-doc"]);
+    let raw_key = raw_tei_stage_key(&requests[0]);
+    assert!(raw_key.starts_with(RAW_KEY_PREFIX));
+    assert_eq!(raw_key.len(), RAW_KEY_PREFIX.len() + 64);
+    let projector_key = project_article_stage_key(
+        "key-doc",
+        "pdf-sha",
+        "raw-sha",
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+    );
+    assert!(projector_key.starts_with(PROJECTOR_KEY_PREFIX));
+
+    // A stored raw payload round-trips and verifies against its request.
+    let identity = TeiIdentity::new("fake-test-backend", "profile=fake;test=1");
+    let envelope = TeiEnvelope::new(
+        "<TEI>identity</TEI>",
+        identity.with_result(requests[0].result_identity()),
+    );
+    let payload = RawTeiEnvelopePayload::build(&envelope, &requests[0].result_identity());
+    let encoded = payload.encode();
+    let (verified, sha) =
+        RawTeiEnvelopePayload::decode_and_verify(&encoded, &requests[0].result_identity()).unwrap();
+    assert_eq!(verified.raw_tei(), b"<TEI>identity</TEI>");
+    assert_eq!(sha, payload.payload_sha256());
+
+    // The projection payload binds its verified dependencies.
+    let article = da_parse::lift_and_project_envelope("key-doc", "pdf-hash", &verified);
+    let projection = ProjectArticlePayload::build(
+        &article,
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        &sha,
+        "key-doc",
+        "pdf-sha",
+    );
+    let restored = ProjectArticlePayload::decode_and_verify(
+        &projection.encode(),
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        &sha,
+        "key-doc",
+        "pdf-sha",
+    )
+    .unwrap();
+    assert_eq!(
+        serde_json::to_value(&restored).unwrap(),
+        serde_json::to_value(&article).unwrap(),
+        "cached projection is wire-equal to the fresh one"
+    );
 }

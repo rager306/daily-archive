@@ -103,9 +103,23 @@ impl<B: ParseBackend> ScholarlyParser<B> {
         pdf_hash: impl Into<String>,
         envelope: TeiEnvelope,
     ) -> ParsedArticle {
-        let ir = TeiLifter::new().lift(&envelope, paper_id, pdf_hash);
-        GrobidParser::project_article(ir)
+        lift_and_project_envelope(paper_id, pdf_hash, &envelope)
     }
+}
+
+/// Pure projection stage shared by the runtime composition and the S06
+/// batch executor: lift the envelope's verbatim TEI (single algorithm, the
+/// provider-neutral [`TeiLifter`]) and project the historical
+/// [`ParsedArticle`] through the sanctioned `GrobidParser::project_article`
+/// stage. Exactly one code path behind both entries — the S06 executor's
+/// cache hits and fresh computes land on the same projection.
+pub fn lift_and_project_envelope(
+    paper_id: &str,
+    pdf_hash: impl Into<String>,
+    envelope: &TeiEnvelope,
+) -> ParsedArticle {
+    let ir = TeiLifter::new().lift(envelope, paper_id, pdf_hash);
+    GrobidParser::project_article(ir)
 }
 
 // ---------------------------------------------------------------------------
