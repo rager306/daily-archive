@@ -97,6 +97,8 @@ const LEDGER_REL_PATH: &str = "data/parse/api_compatibility_ledger.yaml";
 const REGRESSION_REL_PATH: &str = "data/parse/regression_cases.yaml";
 /// Registry of record for R113/R117 compatibility states (loaded generically).
 const REGISTRY_REL_PATH: &str = "data/parse/grobid_compatibility.yaml";
+/// Comparison contract carrying the S08/T03 native date shadow DATA terms.
+const COMPARISON_CONTRACT_REL: &str = "data/parse/comparison_contract.yaml";
 
 /// Canonical cache/configuration fingerprints (D204). The positive tests bind
 /// these strings to the LIVE API values, so any future drift in
@@ -120,7 +122,7 @@ const ANCHOR_ENTRY_IDS: [&str; 10] = [
 ];
 
 /// Allowed vocabulary for `required_evidence_fields`.
-const EVIDENCE_VOCAB: [&str; 10] = [
+const EVIDENCE_VOCAB: [&str; 11] = [
     "source_sha256",
     "source_path",
     "profile_fingerprint",
@@ -131,6 +133,7 @@ const EVIDENCE_VOCAB: [&str; 10] = [
     "conservation_delta",
     "latency_ms_when_executable",
     "known_regressions",
+    "native_date_shadow",
 ];
 
 /// Every case must request at least this evidence core.
@@ -233,6 +236,8 @@ enum EntryKind {
     LiftStage,
     ProjectStage,
     ProfileContract,
+    /// S08/T03: an observable pure shadow component (no runtime route).
+    ShadowComponent,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -499,6 +504,7 @@ fn validate_ledger(l: &LedgerFile) -> Vec<String> {
                 | EntryKind::LiftStage
                 | EntryKind::ProjectStage
                 | EntryKind::ProfileContract
+                | EntryKind::ShadowComponent
         );
         if needs_entry_point
             && e.entry_point
@@ -511,7 +517,10 @@ fn validate_ledger(l: &LedgerFile) -> Vec<String> {
         }
         let needs_io_shapes = matches!(
             e.kind,
-            EntryKind::Entrypoint | EntryKind::LiftStage | EntryKind::ProjectStage
+            EntryKind::Entrypoint
+                | EntryKind::LiftStage
+                | EntryKind::ProjectStage
+                | EntryKind::ShadowComponent
         );
         if needs_io_shapes && e.request_shape.as_deref().is_none_or(str::is_empty) {
             errs.push(format!("[entry-shape] {} must declare request_shape", e.id));
@@ -525,6 +534,7 @@ fn validate_ledger(l: &LedgerFile) -> Vec<String> {
                 | EntryKind::Constructor
                 | EntryKind::LiftStage
                 | EntryKind::ProjectStage
+                | EntryKind::ShadowComponent
         );
         if forbids_fingerprint && e.configuration_fingerprint.is_some() {
             errs.push(format!(
@@ -976,10 +986,11 @@ const SEAM_BINDINGS: [(&str, &str, [&str; 2]); 4] = [
 /// Entry kinds that must cite a registry-of-record capability id via a
 /// `registry_binding:` note (referential integrity INTO the registry — the
 /// ledger is an observation input, never a competing namespace).
-const REGISTRY_BINDING_KINDS: [EntryKind; 3] = [
+const REGISTRY_BINDING_KINDS: [EntryKind; 4] = [
     EntryKind::LiftStage,
     EntryKind::ProjectStage,
     EntryKind::Endpoint,
+    EntryKind::ShadowComponent,
 ];
 
 /// All observable text of an entry where seam symbols must appear.
@@ -4026,4 +4037,369 @@ fn s07_reintroducing_the_retired_fingerprint_fails_the_tagged_checks() {
         &errs,
         "registry reverted to the retired projection fingerprint",
     );
+}
+
+// ─────────────── S08/T03: native date shadow DATA gates ───────────────
+
+/// Versioned Rust shadow candidate identity (must equal the LIVE da-parse
+/// constants; data/parse/comparison_contract.yaml `native_date_shadow`).
+const NATIVE_DATE_CANDIDATE_ID: &str = da_parse::NATIVE_DATE_PARSER_ID;
+const NATIVE_DATE_CANDIDATE_VERSION: &str = da_parse::NATIVE_DATE_PARSER_VERSION;
+const NATIVE_DATE_OUTCOME_SCHEMA: &str = da_parse::NATIVE_DATE_OUTCOME_SCHEMA_VERSION;
+const NATIVE_DATE_ENGINE: &str = "da_parse::NativeDateParser";
+const NATIVE_DATE_ROLLBACK: &str = "java-grobid-http@0.9.0-crf";
+/// Checksum-bound occurrence denominator pinned by the comparison contract.
+const NATIVE_DATE_DENOMINATOR_TOTAL: i64 = 173;
+
+fn validate_native_date_shadow(
+    registry: &serde_yaml::Value,
+    manifest: &RegressionManifest,
+    contract: &serde_yaml::Value,
+) -> Vec<String> {
+    let mut errs = Vec::new();
+    let cap = registry
+        .get("capabilities")
+        .and_then(|c| c.as_sequence())
+        .and_then(|seq| {
+            seq.iter()
+                .find(|c| c.get("id").and_then(|i| i.as_str()) == Some("rest.processDate"))
+        });
+    let Some(cap) = cap else {
+        errs.push("[native-date-capability-lost] registry lost `rest.processDate`".into());
+        return errs;
+    };
+    // Honest state: shadow + candidate promotion + Java rollback preserved.
+    if cap.get("state").and_then(|s| s.as_str()) != Some("shadow") {
+        errs.push("[native-date-state-drift] rest.processDate must stay `shadow`".into());
+    }
+    if cap.get("promotion_state").and_then(|s| s.as_str()) != Some("candidate") {
+        errs.push(
+            "[native-date-state-drift] rest.processDate promotion_state must stay `candidate"
+                .into(),
+        );
+    }
+    let candidate = cap
+        .get("candidate")
+        .and_then(|c| c.as_str())
+        .unwrap_or_default();
+    let expected_candidate = format!("{NATIVE_DATE_CANDIDATE_ID}@{NATIVE_DATE_CANDIDATE_VERSION}");
+    if candidate != expected_candidate {
+        errs.push(format!(
+            "[native-date-candidate-drift] rest.processDate candidate `{candidate}` != versioned `{expected_candidate}`"
+        ));
+    }
+    for key in ["baseline", "rollback_target"] {
+        if cap.get(key).and_then(|s| s.as_str()) != Some(NATIVE_DATE_ROLLBACK) {
+            errs.push(format!(
+                "[native-date-rollback-drift] rest.processDate {key} must stay `{NATIVE_DATE_ROLLBACK}`"
+            ));
+        }
+    }
+    let regressions: Vec<String> = cap
+        .get("hard_regressions")
+        .and_then(|h| h.as_sequence())
+        .map(|seq| {
+            seq.iter()
+                .filter_map(|i| i.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
+    for required in ["invented_revision", "nondeterministic_output"] {
+        if !regressions.contains(&required.to_string()) {
+            errs.push(format!(
+                "[native-date-regression-drift] rest.processDate hard_regressions lost `{required}`"
+            ));
+        }
+    }
+    let official_fields: Vec<String> = cap
+        .get("official")
+        .and_then(|o| o.get("request_fields"))
+        .and_then(|f| f.as_sequence())
+        .map(|seq| {
+            seq.iter()
+                .filter_map(|f| f.get("name").and_then(|n| n.as_str()).map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
+    if official_fields != vec!["date".to_string()] {
+        errs.push(format!(
+            "[native-date-field-drift] rest.processDate official request fields {official_fields:?} must stay the closed single-field [\"date\"] allowlist"
+        ));
+    }
+
+    // Contract terms: shadow mode, zero-invention budget, pinned denominator.
+    let Some(shadow) = contract.get("native_date_shadow") else {
+        errs.push(
+            "[native-date-contract-lost] comparison contract lost `native_date_shadow".into(),
+        );
+        return errs;
+    };
+    if shadow.get("engine").and_then(|s| s.as_str()) != Some(NATIVE_DATE_ENGINE) {
+        errs.push(
+            "[native-date-engine-drift] contract engine must stay `da_parse::NativeDateParser"
+                .into(),
+        );
+    }
+    if shadow.get("candidate_id").and_then(|s| s.as_str()) != Some(NATIVE_DATE_CANDIDATE_ID) {
+        errs.push(
+            "[native-date-candidate-drift] contract candidate_id diverges from the live constant"
+                .into(),
+        );
+    }
+    if shadow.get("candidate_version").and_then(|s| s.as_str())
+        != Some(NATIVE_DATE_CANDIDATE_VERSION)
+    {
+        errs.push(
+            "[native-date-candidate-drift] contract candidate_version diverges from the live constant"
+                .into(),
+        );
+    }
+    if shadow
+        .get("outcome_schema_version")
+        .and_then(|s| s.as_str())
+        != Some(NATIVE_DATE_OUTCOME_SCHEMA)
+    {
+        errs.push(
+            "[native-date-schema-drift] contract outcome_schema_version diverges from the live constant"
+                .into(),
+        );
+    }
+    if shadow.get("observation_mode").and_then(|s| s.as_str()) != Some("shadow") {
+        errs.push(
+            "[native-date-state-drift] contract observation_mode must stay `shadow` (never a runtime route)"
+                .into(),
+        );
+    }
+    if shadow.get("promotion_state").and_then(|s| s.as_str()) != Some("candidate") {
+        errs.push(
+            "[native-date-state-drift] contract promotion_state must stay `candidate` (auto-promotion forbidden)"
+                .into(),
+        );
+    }
+    if shadow.get("rollback_target").and_then(|s| s.as_str()) != Some(NATIVE_DATE_ROLLBACK) {
+        errs.push(format!(
+            "[native-date-rollback-drift] contract rollback_target must stay `{NATIVE_DATE_ROLLBACK}`"
+        ));
+    }
+    let denominator = shadow.get("denominator");
+    if denominator
+        .and_then(|d| d.get("total"))
+        .and_then(|t| t.as_i64())
+        != Some(NATIVE_DATE_DENOMINATOR_TOTAL)
+    {
+        errs.push(
+            "[native-date-denominator-erosion] contract denominator.total must stay 173".into(),
+        );
+    }
+    let mut per_fixture: Vec<(String, i64)> = denominator
+        .and_then(|d| d.get("per_fixture"))
+        .and_then(|p| p.as_mapping())
+        .map(|map| {
+            map.iter()
+                .filter_map(|(k, v)| Some((k.as_str()?.to_string(), v.as_i64()?)))
+                .collect()
+        })
+        .unwrap_or_default();
+    per_fixture.sort();
+    let expected_split = vec![
+        ("reg.tei.hub-bibliography-2507.19457".to_string(), 80),
+        ("reg.tei.reca-bibliography-2605.26525".to_string(), 43),
+        ("reg.tei.rlm-2512.24601".to_string(), 50),
+    ];
+    if per_fixture != expected_split {
+        errs.push(format!(
+            "[native-date-denominator-erosion] per-fixture denominator {per_fixture:?} must stay the pinned split 80 + 50 + 43"
+        ));
+    }
+    let semantics = shadow.get("semantics");
+    if semantics
+        .and_then(|s| s.get("same_n"))
+        .and_then(|s| s.as_str())
+        != Some("required")
+    {
+        errs.push("[native-date-same-n-drift] semantics.same_n must stay `required".into());
+    }
+    if semantics
+        .and_then(|s| s.get("invented_component_budget"))
+        .and_then(|b| b.as_i64())
+        != Some(0)
+    {
+        errs.push(
+            "[native-date-invention-budget] semantics.invented_component_budget must stay 0".into(),
+        );
+    }
+    let forbidden: Vec<String> = shadow
+        .get("forbidden")
+        .and_then(|f| f.as_sequence())
+        .map(|seq| {
+            seq.iter()
+                .filter_map(|i| i.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
+    for required in [
+        "auto_promotion",
+        "runtime_routing",
+        "raw_display_text",
+        "tei_fragments",
+        "invented_bindings",
+    ] {
+        if !forbidden.contains(&required.to_string()) {
+            errs.push(format!(
+                "[native-date-forbidden-drift] contract forbidden list lost `{required}`"
+            ));
+        }
+    }
+
+    // Every bound case carries the date obligation (registry capability,
+    // observable surface and shadow evidence field).
+    for case in manifest
+        .cases
+        .iter()
+        .filter(|c| c.binding_status == BindingStatus::Bound)
+    {
+        for binding in ["rest.processDate", "parse.component.native_date_shadow"] {
+            if !case.ledger_bindings.iter().any(|b| b == binding) {
+                errs.push(format!(
+                    "[native-date-obligation-missing] case `{}` lost the `{binding}` binding",
+                    case.id
+                ));
+            }
+        }
+        if !case
+            .required_evidence_fields
+            .iter()
+            .any(|f| f == "native_date_shadow")
+        {
+            errs.push(format!(
+                "[native-date-obligation-missing] case `{}` lost the `native_date_shadow` evidence field",
+                case.id
+            ));
+        }
+    }
+    errs
+}
+
+#[test]
+fn native_date_shadow_data_contracts_hold() {
+    let registry = load_registry_value();
+    let contract: serde_yaml::Value = load_yaml(COMPARISON_CONTRACT_REL).expect("contract");
+    let manifest: RegressionManifest = expect_loaded(REGRESSION_REL_PATH);
+    let errs = validate_native_date_shadow(&registry, &manifest, &contract);
+    assert!(
+        errs.is_empty(),
+        "native date shadow DATA violations:\n{}",
+        errs.join("\n")
+    );
+    // The ledger carries the shadow component entry and cross-binds the
+    // registry capability.
+    let ledger: LedgerFile = expect_loaded(LEDGER_REL_PATH);
+    let entry = ledger
+        .entries
+        .iter()
+        .find(|e| e.id == "parse.component.native_date_shadow")
+        .expect("shadow component entry present");
+    assert_eq!(entry.owner_crate, "da-parse");
+    assert!(matches!(entry.kind, EntryKind::ShadowComponent));
+    assert!(
+        entry
+            .compatibility_obligation
+            .contains("java-grobid-http@0.9.0-crf")
+    );
+    let note_errs = validate_registry_binding_notes(&ledger, &load_registry_ids());
+    assert!(
+        note_errs.is_empty(),
+        "shadow registry_binding note must resolve: {note_errs:?}"
+    );
+}
+
+#[test]
+fn rejects_native_date_state_promotion() {
+    let mut registry = load_registry_value();
+    if let Some(caps) = registry
+        .get_mut("capabilities")
+        .and_then(|c| c.as_sequence_mut())
+    {
+        for cap in caps.iter_mut() {
+            if cap.get("id").and_then(|i| i.as_str()) == Some("rest.processDate") {
+                *cap.get_mut("state").expect("state key") =
+                    serde_yaml::Value::String("promoted".into());
+            }
+        }
+    }
+    let manifest: RegressionManifest = expect_loaded(REGRESSION_REL_PATH);
+    let contract: serde_yaml::Value = load_yaml(COMPARISON_CONTRACT_REL).expect("contract");
+    let errs = validate_native_date_shadow(&registry, &manifest, &contract);
+    negative(
+        "[native-date-state-drift]",
+        &errs,
+        "registry state promotion",
+    );
+}
+
+#[test]
+fn rejects_native_date_candidate_erasure() {
+    let mut registry = load_registry_value();
+    if let Some(caps) = registry
+        .get_mut("capabilities")
+        .and_then(|c| c.as_sequence_mut())
+    {
+        for cap in caps.iter_mut() {
+            if cap.get("id").and_then(|i| i.as_str()) == Some("rest.processDate") {
+                *cap.get_mut("candidate").expect("candidate key") =
+                    serde_yaml::Value::String("none".into());
+            }
+        }
+    }
+    let manifest: RegressionManifest = expect_loaded(REGRESSION_REL_PATH);
+    let contract: serde_yaml::Value = load_yaml(COMPARISON_CONTRACT_REL).expect("contract");
+    let errs = validate_native_date_shadow(&registry, &manifest, &contract);
+    negative("[native-date-candidate-drift]", &errs, "candidate erasure");
+}
+
+#[test]
+fn rejects_native_date_denominator_erosion() {
+    let registry = load_registry_value();
+    let mut contract: serde_yaml::Value = load_yaml(COMPARISON_CONTRACT_REL).expect("contract");
+    contract["native_date_shadow"]["denominator"]["total"] = serde_yaml::Value::Number(172.into());
+    let manifest: RegressionManifest = expect_loaded(REGRESSION_REL_PATH);
+    let errs = validate_native_date_shadow(&registry, &manifest, &contract);
+    negative(
+        "[native-date-denominator-erosion]",
+        &errs,
+        "denominator erosion",
+    );
+}
+
+#[test]
+fn rejects_native_date_obligation_removal_and_invented_binding() {
+    let registry = load_registry_value();
+    let contract: serde_yaml::Value = load_yaml(COMPARISON_CONTRACT_REL).expect("contract");
+    let mut manifest: RegressionManifest = expect_loaded(REGRESSION_REL_PATH);
+    let idx = manifest
+        .cases
+        .iter()
+        .position(|c| c.binding_status == BindingStatus::Bound)
+        .expect("bound case");
+    manifest.cases[idx]
+        .ledger_bindings
+        .retain(|b| b != "rest.processDate");
+    manifest.cases[idx]
+        .required_evidence_fields
+        .retain(|f| f != "native_date_shadow");
+    let errs = validate_native_date_shadow(&registry, &manifest, &contract);
+    negative(
+        "[native-date-obligation-missing]",
+        &errs,
+        "date obligation stripped",
+    );
+    // An invented date binding never resolves (R117 referential integrity).
+    let (ledger, _) = loaded_pair();
+    let mut m2: RegressionManifest = expect_loaded(REGRESSION_REL_PATH);
+    m2.cases[idx]
+        .ledger_bindings
+        .push("rest.processDateV2".to_string());
+    let refs = refs_from(&ledger);
+    let errs2 = validate_manifest(&m2, &refs);
+    negative("[unresolved-ledger-ref]", &errs2, "invented date binding");
 }

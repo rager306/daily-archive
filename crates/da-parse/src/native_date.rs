@@ -833,6 +833,22 @@ fn parse(input: &str) -> NativeDateOutcome {
     if input.len() > NATIVE_DATE_INPUT_BYTE_CAP {
         return NativeDateOutcome::Oversized;
     }
+    // Character-policy failures have whole-input precedence: a control/NUL
+    // or non-ASCII script marker anywhere must not be masked by an earlier
+    // unexpected ASCII character. Whitespace remains sanctioned.
+    if input.chars().any(|c| c.is_control() && !c.is_whitespace()) {
+        return NativeDateOutcome::Malformed {
+            reason: NativeDateMalformed::ControlCharacter,
+        };
+    }
+    if input
+        .chars()
+        .any(|c| !c.is_ascii() && !c.is_whitespace() && !matches!(c, '\u{2013}' | '\u{2014}'))
+    {
+        return NativeDateOutcome::Malformed {
+            reason: NativeDateMalformed::NonAsciiScript,
+        };
+    }
     let toks = match tokenize(input) {
         Ok(toks) => toks,
         Err(reason) => return NativeDateOutcome::Malformed { reason },

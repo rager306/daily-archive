@@ -17,6 +17,13 @@
 # crates/da-parse/tests/fixtures/preserved/. The structural companion remains
 # pending: no structural-profile bytes exist, and copying rich TEI would
 # violate D204 cache-key separation. Owner of that bind is S01/T03. Since S03/T04 every case (bound and pending) additionally requires `conservation_delta` typed conservation evidence; see data/parse/comparison_contract.yaml `conservation_evidence`.
+# Since S08/T03 the three bound cases additionally carry the native-date
+# shadow obligation: registry capability `rest.processDate` (state: shadow,
+# versioned candidate da-parse.native_date@1.0.0), the observable surface
+# entry `parse.component.native_date_shadow` and the `native_date_shadow`
+# evidence field, all delivered inside the single parse-compat baseline
+# report (never a parallel date report). manifest_version stays 1: additive
+# obligation only, no fixture bytes, profile identity or stage list changes.
 manifest_version: 1
 scope_note: >-
   Contract layer only — this manifest binds identities and expectations;
@@ -62,6 +69,7 @@ cases:
       - family_counts
       - lifted_counts
       - conservation_delta
+      - native_date_shadow
     ledger_bindings:
       - rest.processFulltextDocument
       - dialect.teiCoordinates
@@ -70,9 +78,12 @@ cases:
       - parse.stage.lift_tei
       - parse.stage.project_article
       - parse.profile.rich
+      - rest.processDate
+      - parse.component.native_date_shadow
     obligation_acknowledged: true
     notes:
       - 'Behavioral floors: sections >= 80, citations >= 80, 3 tables, 24 formulas; 21 header authors and 22 non-table figures present in TEI bytes (lifted since S07 — counts bound by the baseline report).'
+      - 'Since S08/T03: 80 ordered <date type="published"> occurrences (1+1+78) ride the native_date_shadow evidence; strict parity 80/80.'
   - id: reg.tei.rlm-2512.24601
     source_kind: preserved_grobid_tei
     fixture:
@@ -97,15 +108,19 @@ cases:
       - family_counts
       - lifted_counts
       - conservation_delta
+      - native_date_shadow
     ledger_bindings:
       - rest.processFulltextDocument
       - dialect.teiCoordinates
       - parse.stage.lift_tei
       - parse.stage.project_article
       - parse.profile.rich
+      - rest.processDate
+      - parse.component.native_date_shadow
     obligation_acknowledged: true
     notes:
       - '4 header authors, 29 non-table figures, 2 tables, 25 coords attributes in TEI bytes.'
+      - 'Since S08/T03: 50 ordered <date type="published"> occurrences (1+1+48) ride the native_date_shadow evidence; strict parity 50/50.'
   - id: reg.tei.reca-bibliography-2605.26525
     source_kind: preserved_grobid_tei
     fixture:
@@ -130,15 +145,19 @@ cases:
       - family_counts
       - lifted_counts
       - conservation_delta
+      - native_date_shadow
     ledger_bindings:
       - rest.processFulltextDocument
       - dialect.teiCoordinates
       - parse.stage.lift_tei
       - parse.stage.project_article
       - parse.profile.rich
+      - rest.processDate
+      - parse.component.native_date_shadow
     obligation_acknowledged: true
     notes:
       - 'Large bibliography pin: citations >= 70. 11 header authors, 55 non-table figures, 34 coords attributes in TEI bytes.'
+      - 'Since S08/T03: 43 ordered <date type="published"> occurrences (1+1+41) ride the native_date_shadow evidence; strict parity 43/43.'
   - id: reg.tei.compact-hub-structural-identity
     source_kind: preserved_grobid_tei
     fixture:

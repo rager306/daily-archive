@@ -180,6 +180,56 @@ conservation_evidence:
   aggregate_rule: aggregate_counts_equal_per_case_sums
   used_by: [S03-T04]
 
+# S08/T03: the native scholarly-date candidate is observed INSIDE this single
+# parse-compat report as additive shadow evidence (never a parallel date
+# report). Every parsed occurrence rides the checksum-bound ordered
+# <date type="published"> occurrence vector of the three preserved TEI
+# fixtures, exactly the vector the T02 oracle contract pins. Evidence is
+# identity/hash/count only; raw date display text and TEI fragments are
+# forbidden. The candidate stays shadow: no runtime route, promotion_state
+# stays candidate, auto-promotion stays forbidden (D127), Java GROBID remains
+# oracle and rollback target.
+native_date_shadow:
+  engine: da_parse::NativeDateParser
+  candidate_id: da-parse.native_date
+  candidate_version: '1.0.0'
+  outcome_schema_version: da-parse.native-date.outcome/v1
+  observation_mode: shadow
+  oracle_source: tei_when_attribute
+  corpus_class: fast_local_fixtures
+  occurrence_vector: ordered <date type="published"> elements in document order per bound fixture
+  denominator:
+    total: 173
+    per_fixture:
+      reg.tei.hub-bibliography-2507.19457: 80
+      reg.tei.rlm-2512.24601: 50
+      reg.tei.reca-bibliography-2605.26525: 43
+  scope_order: [header_article_date, header_bibliography_date, bibliography_date]
+  semantics:
+    strict: candidate recognized equals the oracle when exactly (every declared component and the implied precision)
+    soft: candidate recognized matches the oracle at year precision
+    same_n: required
+    mismatch: hard_failure
+    invented_component_budget: 0
+  redaction: >-
+    Per-occurrence evidence carries fixture id, ordinal, byte span, scope tag
+    and SHA-256 only — never the source display string, the `when` value or
+    any TEI fragment.
+  latency: >-
+    p50/p95/p99 are bucketized characterization labels from a closed bucket
+    vocabulary; exact wall-clock never enters the report so two offline
+    generations stay byte-identical.
+  forbidden:
+  - auto_promotion
+  - runtime_routing
+  - raw_display_text
+  - tei_fragments
+  - invented_bindings
+  hard_regressions: [invented_revision, nondeterministic_output, panic, silent_skip_missing_tei_fixture]
+  promotion_state: candidate
+  rollback_target: java-grobid-http@0.9.0-crf
+  used_by: [S08-T03]
+
 promotion:
   default_state: candidate
   allowed_states: [absent, proxy, shadow, candidate, promoted, fallback]

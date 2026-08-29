@@ -54,6 +54,19 @@
 # endpoint identity are byte-unchanged. ledger_version stays 1: additive
 # observation plus the sanctioned compatibility-note shrink of the
 # intentional-absence list (lift_tei entry).
+#
+# S08/T03: the pure native scholarly-date shadow candidate (S08) is observed
+# as the additive parse.component.native_date_shadow entry below plus the
+# registry state transition rest.processDate absent -> shadow (versioned
+# candidate da-parse.native_date@1.0.0). The candidate rides ONLY the
+# parse-compat baseline native_date_shadow evidence over the checksum-bound
+# ordered <date type="published"> occurrence vector (denominator 173) — it
+# is NOT wired into ParserPort/TeiLifter/TeiParseIr/ParsedArticle or any
+# runtime route, Java GROBID stays oracle and rollback target and promotion
+# stays candidate (D127). No parallel ledger, no new corpus root;
+# ledger_version stays 1: additive observation only, the D204 profile
+# fingerprints, the raw-TEI stage identity and every endpoint identity are
+# byte-unchanged.
 ledger_version: 1
 scope_note: >-
   Covers the public exports of crates/da-parse plus its implementing
@@ -389,6 +402,30 @@ entries:
       - 'Reached through the S02 composition da_parse::ScholarlyParser::lift_and_project as well as the GrobidParser facade; pure projection semantics are unchanged. Since S07/T05 the ParsedArticle wire carries the additive P0 lift families (declared arXiv identity + typed missingness, header_authors, figures, visual_callouts — all #[serde(default)], legacy payloads keep decoding per R085) and the projection schema fingerprint rotated to ParsedArticle@serde-v4-p0-tei-lift: projection-stage cache entries only, raw-TEI stage keys and every D204 identity stay frozen.'
       - 'registry_binding: stage.tei_lift'
     compatibility_obligation: Projection must remain total and allocation-safe over any TeiParseIr and preserve the ports ParsedArticle field semantics consumed downstream by ingest.
+  - id: parse.component.native_date_shadow
+    kind: shadow_component
+    owner_crate: da-parse
+    visibility: public_fn
+    stability: internal_observable
+    entry_point: da_parse::NativeDateParser::parse
+    request_shape: 'parse(&self, input: &str) -> NativeDateOutcome (256-byte input cap; ASCII grammar, Unicode whitespace separators)'
+    result_shape: 'NativeDateOutcome (closed wire da-parse.native-date.outcome/v1: recognized stores only explicitly declared year/optional month/day + precision Year|YearMonth|FullDate; empty/malformed/unsupported/ambiguous/oversized carry closed reason codes)'
+    error_shapes: []
+    async_behavior: synchronous_pure
+    request_fields: []
+    notes:
+      - 'Shadow candidate only (S08/T03): observed solely through the parse-compat baseline native_date_shadow evidence on the checksum-bound ordered <date type="published"> occurrence vector (denominator 173 = 80 + 50 + 43, strict 173/173, per-scope [3,3,167]).'
+      - 'Pure component: no filesystem/env/clock/HTTP/tracing/graph access; linear scan without regex backtracking; calendar validation without chrono; total (never panics, never invents components, century/timezone/locale never guessed).'
+      - 'NOT wired into ParserPort, TeiLifter, TeiParseIr, ParsedArticle, the projector or any runtime route; raw/projector cache fingerprints and D204 profile identities are byte-unchanged.'
+      - 'registry_binding: rest.processDate'
+    compatibility_obligation: >-
+      The candidate stays shadow: Java GROBID remains oracle, baseline and
+      rollback target (java-grobid-http@0.9.0-crf); promotion_state stays
+      candidate; auto-promotion stays forbidden (D127); import/graph stays
+      false. Any runtime routing, policy promotion or training/policy
+      elevation requires an explicit user decision and a same-n strict parity
+      receipt; per-occurrence evidence carries fixture id, ordinal, span and
+      SHA-256 only, never display text or TEI fragments.
   - id: parse.profile.rich
     kind: profile_contract
     owner_crate: da-parse

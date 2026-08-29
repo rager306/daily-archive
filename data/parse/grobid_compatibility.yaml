@@ -424,7 +424,7 @@ capabilities:
   - id: rest.processDate
     group: 4
     kind: endpoint
-    state: absent
+    state: shadow
     product_scope: supporting
     promotion_state: candidate
     official:
@@ -435,11 +435,21 @@ capabilities:
       response_format: application/xml TEI date
     implementation:
       crate: da-parse
-      surface: none
-      notes: Native candidate is S08. Java remains oracle.
+      surface: >-
+        none (candidate surface only: crates/da-parse/src/native_date.rs — pure
+        NativeDateParser, never wired into ParserPort, TeiLifter, TeiParseIr,
+        ParsedArticle, the projector or any runtime route)
+      notes: >-
+        S08/T03 shipped the versioned shadow candidate da-parse.native_date@1.0.0
+        (wire da-parse.native-date.outcome/v1). It is observed ONLY as additive
+        native_date_shadow evidence inside the single parse-compat baseline
+        report over the checksum-bound ordered <date type="published">
+        occurrence vector (denominator 173 = 80 + 50 + 43). Java GROBID remains
+        oracle, baseline and rollback target; promotion_state stays candidate;
+        auto-promotion stays forbidden (D127); import/graph stays false.
     baseline: java-grobid-http@0.9.0-crf
-    candidate: none
-    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
+    candidate: da-parse.native_date@1.0.0
+    evidence_ref: crates/da-parse/src/native_date.rs
     hard_regressions: [invented_revision, nondeterministic_output]
     metrics:
       conservation: date_field_presence
