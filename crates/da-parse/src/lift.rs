@@ -1,6 +1,7 @@
 //! TEI lift: title/body, sections, citations, tables, formulas, plus the
 //! S07 P0 families lifted in document order (declared arXiv identity and
-//! header authors since S07/T02; figures/callouts follow in T03).
+//! header authors since S07/T02; non-table figures with graphic coordinates
+//! and figure/table visual callouts since S07/T03).
 //!
 //! Since M464-z84in2 S02/T02 the single lift algorithm is owned by the
 //! provider-neutral [`TeiLifter`]: a [`TeiEnvelope`] (verbatim raw TEI bytes
@@ -12,8 +13,10 @@
 
 use super::envelope::TeiEnvelope;
 use da_ports::parser::{
-    CharSpan, DeclaredArxivIdentity, DeclaredIdMissingReason, ExtractedFormula, ExtractedTable,
+    CalloutUnresolvedReason, CharSpan, DeclaredArxivIdentity, DeclaredIdMissingReason,
+    ExtractedFigure, ExtractedFormula, ExtractedTable, FigureGraphicMissingReason,
     FormulaMissingReason, FormulaRepresentation, HeaderAuthor, TableCell, TableMissingReason,
+    VisualCallout, VisualCalloutKind,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -26,11 +29,38 @@ struct DivSpan {
     n_attr: Option<String>,
 }
 
-/// Raw in-text `<ref type="bibr">` occurrence captured before it is mapped
-/// onto a back-matter bibliography entry (T03). `target` is the `xml:id` of
-/// the cited `<biblStruct>` with the leading `#` stripped; refs without a
-/// target cannot be attached and are dropped at mapping time.
+/// Closed kind of an in-text `<ref>` anchor (T03). Bibr anchors stay the
+/// citation family; figure/table anchors become visual callouts. Refs of any
+/// other kind (or untyped refs) stay outside both families and are skipped.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RefKind {
+    Bibr,
+    Figure,
+    Table,
+}
+
+impl RefKind {
+    /// Parse the ref kind from an opening tag's `type` attribute. `None` for
+    /// absent/unknown kinds (note, xref-style pointers, untyped refs) —
+    /// never guessed into a family.
+    fn from_open_tag(open_tag: &str) -> Option<Self> {
+        match TeiLifter::extract_attr(open_tag, "type").as_deref() {
+            Some("bibr") => Some(Self::Bibr),
+            Some("figure") => Some(Self::Figure),
+            Some("table") => Some(Self::Table),
+            _ => None,
+        }
+    }
+}
+
+/// Raw in-text `<ref>` occurrence captured before it is mapped onto its
+/// target family (T03): bibr refs onto back-matter bibliography entries,
+/// figure/table refs onto [`VisualCallout`](da_ports::parser::VisualCallout)s.
+/// `target` is the declared target id with the leading `#` stripped; refs
+/// without a target cannot be attached and surface as typed unresolved
+/// state (bibr: dropped at mapping time; callouts: `no_target`).
 struct RawRefAnchor {
+    kind: RefKind,
     target: Option<String>,
     quote: String,
     section_path_id: Option<String>,
@@ -118,6 +148,11 @@ impl TeiLifter {
         let (declared_arxiv_id, declared_id_missingness) =
             Self::extract_declared_arxiv_id(&tei_xml);
         let header_authors = Self::extract_header_authors(&tei_xml);
+        // S07/T03 (M464-z84in2): non-table figures (table wrappers stay the
+        // table family — never double-counted) and figure/table visual
+        // callouts, both in document order through this same pure algorithm.
+        let figures = Self::extract_figures(&tei_xml);
+        let visual_callouts = Self::extract_visual_callouts(&tei_xml);
         crate::ir::TeiParseIr {
             tei_xml,
             paper_id: paper_id.into(),
@@ -131,13 +166,13 @@ impl TeiLifter {
             formulas,
             formula_missingness,
             // S07 P0 families (M464-z84in2): declared identity + header
-            // authors since T02; figures and visual callouts stay typed-empty
-            // until T03 adds their families — never invented here.
+            // authors since T02, non-table figures + visual callouts since
+            // T03 — all through this single pure algorithm.
             declared_arxiv_id,
             declared_id_missingness,
             header_authors,
-            figures: Vec::new(),
-            visual_callouts: Vec::new(),
+            figures,
+            visual_callouts,
             pdf_hash: pdf_hash.into(),
         }
     }
@@ -983,6 +1018,14 @@ impl TeiLifter {
     /// TEI walks divs recursively; flat TEI scans `<head>` windows and then
     /// applies the same flat-path collision resolution as the section pass.
     fn extract_ref_anchors(tei: &str) -> Vec<RawRefAnchor> {
+        Self::extract_ref_anchors_of_kinds(tei, &[RefKind::Bibr])
+    }
+
+    /// Same section-window anchor mechanics, restricted to the requested ref
+    /// kinds (T03): bibr anchors feed the citation family, figure/table
+    /// anchors feed the visual-callout family. Citation-anchor semantics are
+    /// untouched — the bibr pass requests only [`RefKind::Bibr`].
+    fn extract_ref_anchors_of_kinds(tei: &str, kinds: &[RefKind]) -> Vec<RawRefAnchor> {
         let Some(body) = Self::tei_body(tei) else {
             return Vec::new();
         };
@@ -995,10 +1038,10 @@ impl TeiLifter {
             if let Some(first) = Self::find_child_divs(body).first()
                 && first.content_start > 0
             {
-                Self::scan_refs_in_window(body, 0, first.content_start, None, &mut out, 0);
+                Self::scan_refs_in_window(body, 0, first.content_start, None, &mut out, 0, kinds);
             }
             let mut used_paths = HashSet::new();
-            Self::walk_div_anchors(body, "", &mut used_paths, &mut out);
+            Self::walk_div_anchors(body, "", &mut used_paths, &mut out, kinds);
             out
         } else {
             let mut out = Vec::new();
@@ -1006,9 +1049,9 @@ impl TeiLifter {
             // starts sections at the first `<head>`), so anchors there stay
             // path-unresolved rather than being dropped silently.
             if let Some(first_head) = body.find("<head") {
-                Self::scan_refs_in_window(body, 0, first_head, None, &mut out, 0);
+                Self::scan_refs_in_window(body, 0, first_head, None, &mut out, 0, kinds);
             }
-            Self::scan_flat_anchors(body, &mut out);
+            Self::scan_flat_anchors(body, &mut out, kinds);
             // Resolve anchor paths against every head window (including
             // windows without anchors) using the same collision algorithm as
             // the section pass, so a later window repeating a raw path (e.g.
@@ -1020,14 +1063,21 @@ impl TeiLifter {
         }
     }
 
-    /// Extract the inner content of the `<body>...</body>` element, or None.
-    fn tei_body(tei: &str) -> Option<&str> {
+    /// Extract the inner content span of the `<body>...</body>` element as
+    /// absolute `(content_start, close_start)` byte offsets, or None.
+    fn tei_body_span(tei: &str) -> Option<(usize, usize)> {
         let start = tei.find("<body")?;
         let after = &tei[start..];
         let tag_end = after.find('>')?;
-        let rest = &after[tag_end + 1..];
-        let end = rest.find("</body>")?;
-        Some(&rest[..end])
+        let content_start = start + tag_end + 1;
+        let close = tei[content_start..].find("</body>")? + content_start;
+        Some((content_start, close))
+    }
+
+    /// Extract the inner content of the `<body>...</body>` element, or None.
+    fn tei_body(tei: &str) -> Option<&str> {
+        let (start, end) = Self::tei_body_span(tei)?;
+        Some(&tei[start..end])
     }
 
     /// Recursive `<div>` walk for in-text anchors (nested TEI). Computes the
@@ -1043,6 +1093,7 @@ impl TeiLifter {
         parent_path: &str,
         used_paths: &mut HashSet<String>,
         out: &mut Vec<RawRefAnchor>,
+        kinds: &[RefKind],
     ) {
         let div_spans = Self::find_child_divs(body);
         for (local_sibling, div_span) in div_spans.iter().enumerate() {
@@ -1085,6 +1136,7 @@ impl TeiLifter {
                     Some(path_id.clone()),
                     out,
                     0,
+                    kinds,
                 );
             }
 
@@ -1097,10 +1149,10 @@ impl TeiLifter {
                 .unwrap_or(body.len());
             let gap_start = ce + "</div>".len();
             if next_start > gap_start {
-                Self::scan_refs_in_window(body, gap_start, next_start, None, out, 0);
+                Self::scan_refs_in_window(body, gap_start, next_start, None, out, 0, kinds);
             }
 
-            Self::walk_div_anchors(div_content, &path_id, used_paths, out);
+            Self::walk_div_anchors(div_content, &path_id, used_paths, out, kinds);
         }
     }
 
@@ -1129,7 +1181,7 @@ impl TeiLifter {
     /// Flat `<head>`-window scan for in-text anchors (flat TEI, MEM654),
     /// mirroring `extract_sections_flat`: section text is everything after
     /// `</head>` up to the next `<head>` (or body end).
-    fn scan_flat_anchors(body: &str, out: &mut Vec<RawRefAnchor>) {
+    fn scan_flat_anchors(body: &str, out: &mut Vec<RawRefAnchor>, kinds: &[RefKind]) {
         let mut pos = 0;
         // Window ordinal 0 is the pre-first-head region (path-unresolved);
         // each <head> window gets 1, 2, ... so path-collision resolution can
@@ -1159,6 +1211,7 @@ impl TeiLifter {
                 Some(path_component),
                 out,
                 window_ordinal,
+                kinds,
             );
             pos = text_end;
             window_ordinal += 1;
@@ -1252,11 +1305,12 @@ impl TeiLifter {
         }
     }
 
-    /// Scan `raw[start..end]` for `<ref type="bibr">` anchors and push a
-    /// `RawRefAnchor` per occurrence. The offset is the char position of the
-    /// quote in the window's stripped-and-trimmed text (identical to
-    /// `Section.text` construction), so consumers can join anchors to the
-    /// stored section text directly.
+    /// Scan `raw[start..end]` for in-text `<ref>` anchors of the requested
+    /// kinds and push one `RawRefAnchor` per occurrence. The offset is the
+    /// char position of the quote in the window's stripped-and-trimmed text
+    /// (identical to `Section.text` construction), so consumers can join
+    /// anchors to the stored section text directly.
+    #[allow(clippy::too_many_arguments)]
     fn scan_refs_in_window(
         raw: &str,
         start: usize,
@@ -1264,6 +1318,7 @@ impl TeiLifter {
         section_path_id: Option<String>,
         out: &mut Vec<RawRefAnchor>,
         window_ordinal: usize,
+        kinds: &[RefKind],
     ) {
         let mut pos = start;
         while let Some(rel) = raw[pos..end].find("<ref") {
@@ -1273,9 +1328,14 @@ impl TeiLifter {
                 None => break,
             };
             let open_tag = &raw[abs..=tag_end];
-            // Only bibl refs are citation anchors (ignores <ref type="note">
-            // and other non-bibliographic markers).
-            if !(open_tag.contains("type=\"bibr\"") || open_tag.contains("type='bibr'")) {
+            // Only the requested ref kinds are captured (bibr → citations;
+            // figure/table → visual callouts; other kinds — `note`, untyped
+            // refs, `<ptr>` elements — stay outside both families).
+            let Some(kind) = RefKind::from_open_tag(open_tag) else {
+                pos = abs + 1;
+                continue;
+            };
+            if !kinds.contains(&kind) {
                 pos = abs + 1;
                 continue;
             }
@@ -1291,6 +1351,7 @@ impl TeiLifter {
                 .as_ref()
                 .map(|_| Self::stripped_text_offset(raw, start, quote_start, end));
             out.push(RawRefAnchor {
+                kind,
                 target,
                 quote,
                 section_path_id: section_path_id.clone(),
@@ -1832,6 +1893,29 @@ impl TeiLifter {
         None
     }
 
+    /// Attribute-presence check at name boundaries, regardless of value
+    /// (empty attributes are present but unusable — T03 graphic missingness
+    /// distinguishes them from absent attributes).
+    fn has_attr(open_tag: &str, name: &str) -> bool {
+        for quote in ['"', '\''] {
+            let needle = format!("{name}={quote}");
+            let mut search_from = 0usize;
+            while let Some(pos) = open_tag[search_from..].find(&needle) {
+                let abs = search_from + pos;
+                let boundary_ok = open_tag[..abs]
+                    .chars()
+                    .next_back()
+                    .map(|c| c == ' ' || c == '\t' || c == '\n' || c == '>')
+                    .unwrap_or(true);
+                if boundary_ok {
+                    return true;
+                }
+                search_from = abs + 1;
+            }
+        }
+        false
+    }
+
     /// Parse a positive integer TEI span attribute (`cols`/`rows`); None
     /// when missing or unparseable (caller defaults to 1).
     fn parse_span_attr(open_tag: &str, name: &str) -> Option<u32> {
@@ -2198,6 +2282,333 @@ impl TeiLifter {
         let close = content.find("</idno>")?;
         let value = Self::strip_xml_tags(&content[..close]);
         if value.is_empty() { None } else { Some(value) }
+    }
+
+    // ─── S07/T03 (M464-z84in2): non-table figures + visual callouts ───
+
+    /// Extract non-table figures in document order (M464-z84in2 S07/T03).
+    ///
+    /// GROBID emits visual figures as `<figure xml:id="fig_N">` inside the
+    /// body (and, rarely, trailing regions — the scan covers the whole TEI,
+    /// mirroring `extract_tables`). Table wrappers (`<figure
+    /// type="table">`) are NEVER figures here — they belong to the table
+    /// family and are skipped whole, so the two families never double-count
+    /// the same element. Order is source document order (no id sorting);
+    /// every optional part is honestly absent (`Option`/typed missingness),
+    /// never invented.
+    pub(crate) fn extract_figures(tei: &str) -> Vec<ExtractedFigure> {
+        let mut figures = Vec::new();
+        let mut pos = 0usize;
+        while let Some(rel) = tei[pos..].find("<figure") {
+            let abs = pos + rel;
+            // Skip closing tags and non-element matches.
+            if tei[abs..].starts_with("</figure") {
+                pos = abs + 1;
+                continue;
+            }
+            let tag_end = match tei[abs..].find('>') {
+                Some(e) => abs + e,
+                None => break,
+            };
+            let open_tag = &tei[abs..=tag_end];
+            let close = match tei[tag_end..].find("</figure>") {
+                Some(e) => tag_end + e,
+                None => break,
+            };
+            if Self::extract_attr(open_tag, "type").as_deref() == Some("table") {
+                // Table wrapper: the `<table>` element inside is the table
+                // family's member (extract_tables); skip the wrapper whole.
+                pos = close + "</figure>".len();
+                continue;
+            }
+            let self_closing = open_tag.ends_with("/>");
+            let content = if self_closing {
+                ""
+            } else {
+                &tei[tag_end + 1..close]
+            };
+            figures.push(Self::build_figure(open_tag, content, figures.len()));
+            pos = close + "</figure>".len();
+        }
+        figures
+    }
+
+    /// Build one `ExtractedFigure` from a non-table `<figure>` element.
+    /// Identity: declared `xml:id`, else the deterministic ordinal key
+    /// `figure-{index}` (document order, 0-based). Label/caption come from
+    /// the first `<label>`/`<head>` child (empty → `None`, mirroring the
+    /// table caption convention). Coordinates are graphic-owned: the first
+    /// `<graphic>` child declaring non-empty `coords` wins; graphics with no
+    /// coords, no graphic at all and unusable shapes surface as typed
+    /// missingness instead of invented coordinates.
+    fn build_figure(open_tag: &str, content: &str, index: usize) -> ExtractedFigure {
+        let figure_id =
+            Self::extract_attr(open_tag, "xml:id").unwrap_or_else(|| format!("figure-{index}"));
+        let label = Self::first_child_text(content, "label");
+        let caption = Self::first_child_text(content, "head");
+
+        // Collect every `<graphic ...>` opening tag inside the figure.
+        let mut graphics: Vec<&str> = Vec::new();
+        let mut pos = 0usize;
+        while let Some(rel) = content[pos..].find("<graphic") {
+            let abs = pos + rel;
+            if content[abs..].starts_with("</graphic") {
+                pos = abs + 1;
+                continue;
+            }
+            let Some(tag_end) = content[abs..].find('>') else {
+                break;
+            };
+            graphics.push(&content[abs..=abs + tag_end]);
+            pos = abs + tag_end + 1;
+        }
+        let first_coords = graphics
+            .iter()
+            .filter_map(|tag| Self::extract_attr(tag, "coords"))
+            .find(|coords| !coords.trim().is_empty());
+        let (coordinates, graphic_missingness) = match first_coords {
+            Some(coords) => (Some(coords), None),
+            None if graphics.is_empty() => (None, Some(FigureGraphicMissingReason::NoGraphicChild)),
+            None => {
+                if graphics.iter().any(|tag| Self::has_attr(tag, "coords")) {
+                    // A coords attribute exists but is empty/unusable.
+                    (
+                        None,
+                        Some(FigureGraphicMissingReason::Malformed(
+                            "graphic coords attribute is empty".to_string(),
+                        )),
+                    )
+                } else {
+                    (
+                        None,
+                        Some(FigureGraphicMissingReason::GraphicWithoutCoordinates),
+                    )
+                }
+            }
+        };
+
+        let digest = Self::figure_digest(
+            &figure_id,
+            label.as_deref(),
+            caption.as_deref(),
+            coordinates.as_deref(),
+            graphic_missingness.as_ref(),
+        );
+        ExtractedFigure {
+            figure_id,
+            label,
+            caption,
+            coordinates,
+            graphic_missingness,
+            source_digest: digest,
+        }
+    }
+
+    /// Text of the FIRST `<child>` element inside `content` (tags stripped;
+    /// empty text → `None`, mirroring the table caption convention). The
+    /// element-name boundary check keeps `<label>` from matching a longer
+    /// element that merely starts with the same text.
+    fn first_child_text(content: &str, child: &str) -> Option<String> {
+        let open_needle = format!("<{child}");
+        let rel = content.find(&open_needle)?;
+        let next_char = content[rel + open_needle.len()..].chars().next()?;
+        if !matches!(next_char, '>' | '/' | ' ' | '\t' | '\n' | '\r') {
+            return None;
+        }
+        let tag_end = content[rel..].find('>')? + rel;
+        if content[..=tag_end].ends_with("/>") {
+            return None;
+        }
+        let close_needle = format!("</{child}>");
+        let close = content[tag_end + 1..].find(&close_needle)? + tag_end + 1;
+        let text = Self::strip_xml_tags(&content[tag_end + 1..close]);
+        if text.is_empty() { None } else { Some(text) }
+    }
+
+    /// Stable tag for the graphic missingness shape (digest input only —
+    /// machine-readable, source-free detail).
+    fn graphic_missingness_tag(reason: Option<&FigureGraphicMissingReason>) -> String {
+        match reason {
+            None => String::new(),
+            Some(FigureGraphicMissingReason::NoGraphicChild) => "no_graphic_child".to_string(),
+            Some(FigureGraphicMissingReason::GraphicWithoutCoordinates) => {
+                "graphic_without_coordinates".to_string()
+            }
+            Some(FigureGraphicMissingReason::Malformed(detail)) => {
+                format!("malformed:{detail}")
+            }
+        }
+    }
+
+    /// Deterministic SHA-256 figure digest over figure_id, label, caption,
+    /// coordinates and graphic missingness — the figure's source-digest
+    /// evidence (R087).
+    fn figure_digest(
+        figure_id: &str,
+        label: Option<&str>,
+        caption: Option<&str>,
+        coordinates: Option<&str>,
+        graphic_missingness: Option<&FigureGraphicMissingReason>,
+    ) -> String {
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(figure_id.as_bytes());
+        hasher.update(b"\n");
+        hasher.update(label.unwrap_or("").as_bytes());
+        hasher.update(b"\n");
+        hasher.update(caption.unwrap_or("").as_bytes());
+        hasher.update(b"\n");
+        hasher.update(coordinates.unwrap_or("").as_bytes());
+        hasher.update(b"\n");
+        hasher.update(Self::graphic_missingness_tag(graphic_missingness).as_bytes());
+        hex::encode(hasher.finalize())
+    }
+
+    /// Extract figure/table visual callouts in document order
+    /// (M464-z84in2 S07/T03).
+    ///
+    /// Generalizes the citation-anchor section-window mechanics to
+    /// `<ref type="figure|table">`: the same nested-div / flat-`<head>` walk
+    /// (same path collision resolution) assigns section identity and bounded
+    /// offsets inside `<body>`, while refs outside `<body>` (e.g. back-matter
+    /// table callouts) stay in the family with the typed-unresolved section
+    /// state (`section_path_id`/`offset` = `None`) — never silently dropped,
+    /// never guessed into a section. Bibr refs are untouched (they stay
+    /// citation anchors through their own body-scoped pass), and `ptr`/`note`
+    /// refs stay outside this model. Targets resolve against the lifted
+    /// figure inventory and the `ExtractedTable` inventory; every mismatch
+    /// surfaces as typed `target_not_in_inventory`.
+    pub(crate) fn extract_visual_callouts(tei: &str) -> Vec<VisualCallout> {
+        const KINDS: &[RefKind] = &[RefKind::Figure, RefKind::Table];
+
+        // 0-based ordinal of each section path (section titles repeat, so
+        // callouts need the ordinal to disambiguate — mirrors
+        // ExtractedTable.section_ordinal, MEM685).
+        let sections = Self::extract_sections(tei);
+        let mut ordinal_by_path: HashMap<String, usize> = HashMap::new();
+        for (idx, section) in sections.iter().enumerate() {
+            if let Some(path) = section.path_id.as_deref() {
+                ordinal_by_path.entry(path.to_string()).or_insert(idx);
+            }
+        }
+
+        // Body-scoped anchors carry section context; pre-header/head and
+        // post-body regions are scanned with no section window so their
+        // callouts stay honestly section-unresolved.
+        let mut raw = Self::extract_ref_anchors_of_kinds(tei, KINDS);
+        match Self::tei_body_span(tei) {
+            Some((body_start, body_end)) => {
+                let header_end = tei
+                    .find("</teiHeader>")
+                    .map_or(0, |i| i + "</teiHeader>".len());
+                if header_end < body_start {
+                    Self::scan_refs_in_window(
+                        tei, header_end, body_start, None, &mut raw, 0, KINDS,
+                    );
+                }
+                if body_end < tei.len() {
+                    Self::scan_refs_in_window(tei, body_end, tei.len(), None, &mut raw, 0, KINDS);
+                }
+            }
+            None => {
+                Self::scan_refs_in_window(tei, 0, tei.len(), None, &mut raw, 0, KINDS);
+            }
+        }
+
+        // Inventories: figure ids from the figure family, table ids from the
+        // table family — the exact ids the same lift emits for those
+        // families (fallback ordinal conventions included).
+        let figure_ids: HashSet<String> = Self::extract_figures(tei)
+            .into_iter()
+            .map(|figure| figure.figure_id)
+            .collect();
+        let table_ids: HashSet<String> = Self::extract_tables(tei)
+            .0
+            .into_iter()
+            .map(|table| table.table_id)
+            .collect();
+
+        raw.into_iter()
+            .filter_map(|anchor| {
+                let kind = match anchor.kind {
+                    RefKind::Figure => VisualCalloutKind::Figure,
+                    RefKind::Table => VisualCalloutKind::Table,
+                    RefKind::Bibr => return None,
+                };
+                let unresolved = match anchor.target.as_deref() {
+                    None => Some(CalloutUnresolvedReason::NoTarget),
+                    Some(target) => {
+                        let known = match kind {
+                            VisualCalloutKind::Figure => figure_ids.contains(target),
+                            VisualCalloutKind::Table => table_ids.contains(target),
+                        };
+                        if known {
+                            None
+                        } else {
+                            Some(CalloutUnresolvedReason::TargetNotInInventory)
+                        }
+                    }
+                };
+                let section_ordinal = anchor
+                    .section_path_id
+                    .as_ref()
+                    .and_then(|path| ordinal_by_path.get(path).copied());
+                let source_digest = Self::callout_digest(
+                    kind,
+                    anchor.target.as_deref(),
+                    &anchor.quote,
+                    anchor.offset,
+                    anchor.section_path_id.as_deref(),
+                    section_ordinal,
+                );
+                Some(VisualCallout {
+                    kind,
+                    target: anchor.target,
+                    unresolved,
+                    quote: anchor.quote,
+                    offset: anchor.offset,
+                    section_path_id: anchor.section_path_id,
+                    section_ordinal,
+                    source_digest,
+                })
+            })
+            .collect()
+    }
+
+    /// Deterministic SHA-256 callout digest over kind + target + quote +
+    /// offset + section identity — the callout's source-digest evidence
+    /// (R087).
+    fn callout_digest(
+        kind: VisualCalloutKind,
+        target: Option<&str>,
+        quote: &str,
+        offset: Option<u32>,
+        section_path_id: Option<&str>,
+        section_ordinal: Option<usize>,
+    ) -> String {
+        use sha2::{Digest, Sha256};
+        let kind_tag = match kind {
+            VisualCalloutKind::Figure => "figure",
+            VisualCalloutKind::Table => "table",
+        };
+        let mut hasher = Sha256::new();
+        hasher.update(kind_tag.as_bytes());
+        hasher.update(b"\n");
+        hasher.update(target.unwrap_or("").as_bytes());
+        hasher.update(b"\n");
+        hasher.update(quote.as_bytes());
+        hasher.update(b"\n");
+        hasher.update(offset.map(|o| o.to_string()).unwrap_or_default().as_bytes());
+        hasher.update(b"\n");
+        hasher.update(section_path_id.unwrap_or("").as_bytes());
+        hasher.update(b"\n");
+        hasher.update(
+            section_ordinal
+                .map(|o| o.to_string())
+                .unwrap_or_default()
+                .as_bytes(),
+        );
+        hex::encode(hasher.finalize())
     }
 
     /// Strip XML tags from text.

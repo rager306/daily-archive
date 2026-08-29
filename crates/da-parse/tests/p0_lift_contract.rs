@@ -30,8 +30,12 @@
 //! S07/T02 extends this contract with lifted-output assertions for the
 //! declared arXiv identity and the header authors (exact counts, order,
 //! digests, typed missingness, byte-equality of the two public lift paths);
-//! figures/callouts follow in T03, and T04 converts these families from
-//! `unsupported_this_cut` to conservation evidence.
+//! S07/T03 extends it with lifted-output assertions for non-table figures
+//! (graphic-owned coordinates, typed graphic missingness, table-wrapper
+//! exclusion) and figure/table visual callouts (closed kind, declared
+//! target, typed unresolved state, bounded offsets, section context); T04
+//! converts these families from `unsupported_this_cut` to conservation
+//! evidence.
 //!
 //! Reports are redacting by construction: nothing here prints raw TEI,
 //! author names, captions, quotes, URLs or physical paths.
@@ -221,6 +225,9 @@ struct S07BytePins {
     figure_refs_without_target: usize,
     table_refs: usize,
     table_refs_without_target: usize,
+    /// Callouts outside every section window (back-matter refs): present in
+    /// the family, but with typed-unresolved section state.
+    out_of_window_callouts: usize,
     body_persname_not_authors: usize,
 }
 
@@ -241,6 +248,7 @@ fn pins_for(case_id: &str) -> S07BytePins {
             figure_refs_without_target: 10,
             table_refs: 5,
             table_refs_without_target: 2,
+            out_of_window_callouts: 0,
             body_persname_not_authors: 686,
         },
         "reg.tei.rlm-2512.24601" => S07BytePins {
@@ -258,6 +266,7 @@ fn pins_for(case_id: &str) -> S07BytePins {
             figure_refs_without_target: 10,
             table_refs: 11,
             table_refs_without_target: 4,
+            out_of_window_callouts: 14,
             body_persname_not_authors: 998,
         },
         "reg.tei.reca-bibliography-2605.26525" => S07BytePins {
@@ -275,6 +284,7 @@ fn pins_for(case_id: &str) -> S07BytePins {
             figure_refs_without_target: 5,
             table_refs: 11,
             table_refs_without_target: 1,
+            out_of_window_callouts: 0,
             body_persname_not_authors: 573,
         },
         other => panic!("FATAL {other}: no S07 byte pins registered"),
@@ -420,7 +430,9 @@ fn fixture_bytes_pin_the_s07_stopping_condition_inputs() {
 }
 
 /// The table-wrapper exclusion rule the lifter must implement: wrappers are
-/// counted separately from non-table figures, and the two never overlap.
+/// counted separately from non-table figures, and the two never overlap —
+/// on the frozen bytes AND in the lifted output (no double-counting, the
+/// id sets are disjoint, and the counts sum to the total figure tags).
 #[test]
 fn table_wrappers_are_never_counted_as_figures() {
     for fixture in preserved_bound_fixtures() {
@@ -440,6 +452,26 @@ fn table_wrappers_are_never_counted_as_figures() {
             non_table + wrappers,
             pins.total_figure_tags,
             "{case}: classification is total, nothing falls through"
+        );
+
+        // Lifted output keeps the same partition: figures and tables are
+        // disjoint families whose sizes sum to the total wrapper count.
+        let ir = TeiLifter::lift_tei(tei, fixture.paper_id.clone(), "s07-t03-wrapper-hash");
+        assert_eq!(ir.figures.len(), non_table, "{case}: lifted figure count");
+        assert_eq!(ir.tables.len(), wrappers, "{case}: lifted table count");
+        let table_ids: std::collections::HashSet<&str> =
+            ir.tables.iter().map(|t| t.table_id.as_str()).collect();
+        for figure in &ir.figures {
+            assert!(
+                !table_ids.contains(figure.figure_id.as_str()),
+                "{case}: figure '{}' must not double-count as a table",
+                figure.figure_id
+            );
+        }
+        assert_eq!(
+            ir.figures.len() + ir.tables.len(),
+            pins.total_figure_tags,
+            "{case}: lifted partition covers every figure element"
         );
     }
 }
@@ -642,8 +674,9 @@ fn legacy_tei_parse_ir_json_decodes_with_s07_defaults() {
 /// the pinned declared identity (verbatim raw, parsed bare id, explicitly
 /// declared revision — never guessed, never defaulted) and exactly the
 /// header-scoped author count per fixture, with document order, declared
-/// decomposition coverage and digest-bound display names. Figures/callouts
-/// stay typed-empty (T03 families), and every previously accepted family
+/// decomposition coverage and digest-bound display names. Since S07/T03 the
+/// figure/callout families lift too (exact counts pinned here; full shape
+/// pins in the T03 contract below), and every previously accepted family
 /// keeps lifting unchanged.
 #[test]
 fn t02_lifter_lifts_declared_id_and_header_authors_exactly_on_all_fixtures() {
@@ -724,10 +757,17 @@ fn t02_lifter_lifts_declared_id_and_header_authors_exactly_on_all_fixtures() {
             "{case}: two lifts are byte-equal"
         );
 
-        // T03 boundary: figures/callouts stay typed-empty until T03.
-        assert!(
-            ir.figures.is_empty() && ir.visual_callouts.is_empty(),
-            "{case}: figures/callouts must not be invented before T03"
+        // S07/T03 families lift through the same pure algorithm: exact
+        // ordered counts per fixture (shape pins in the T03 contract test).
+        assert_eq!(
+            ir.figures.len(),
+            pins.non_table_figures,
+            "{case}: non-table figures lift in document order"
+        );
+        assert_eq!(
+            ir.visual_callouts.len(),
+            pins.figure_refs + pins.table_refs,
+            "{case}: figure/table callouts lift in document order"
         );
         // Previously accepted families keep lifting (projection-level pins
         // live in the real-TEI suite; byte-level baseline rotation is T05).
@@ -750,7 +790,7 @@ fn t02_lifter_lifts_declared_id_and_header_authors_exactly_on_all_fixtures() {
 
 /// The two public lift paths — the recorded `parse.stage.lift_tei`
 /// compatibility stage and the provider-neutral envelope path — share the
-/// single algorithm: serialized IRs are byte-equal, the lifted S07/T02
+/// single algorithm: serialized IRs are byte-equal, the lifted S07/T02+T03
 /// families match field-for-field, and the projected articles are byte-equal
 /// on every fixture.
 #[test]
@@ -780,6 +820,14 @@ fn t02_two_public_lift_paths_are_byte_equal_on_the_lifted_families() {
         assert_eq!(
             compat.header_authors, envelope_ir.header_authors,
             "{case}: header authors match across paths"
+        );
+        assert_eq!(
+            compat.figures, envelope_ir.figures,
+            "{case}: figures match across paths"
+        );
+        assert_eq!(
+            compat.visual_callouts, envelope_ir.visual_callouts,
+            "{case}: visual callouts match across paths"
         );
         let compat_article = GrobidParser::project_article(compat);
         let envelope_article = GrobidParser::project_article(envelope_ir);
@@ -954,4 +1002,276 @@ fn t02_header_authors_scoping_order_and_incomplete_names() {
     // Deterministic replay on the synthetic shape too.
     let replay = TeiLifter::lift_tei(tei.to_string(), "p", "h");
     assert_eq!(replay.header_authors, ir.header_authors);
+}
+
+// ─── S07/T03: lifted-output contract for figures + visual callouts ──────────
+
+/// S07/T03 lifted-output contract: the single pure lifter produces exactly
+/// the byte-oracle quantities per fixture — document-ordered non-table
+/// figures with graphic-owned coordinates and typed graphic missingness
+/// (table wrappers never double-counted), and figure/table visual callouts
+/// with closed kind, declared target, typed unresolved state, bounded
+/// offsets and section context. All targeted callouts resolve against their
+/// family inventory on these fixtures; target-less callouts stay `no_target`
+/// and rlm's back-matter callouts stay section-unresolved — present, never
+/// dropped.
+#[test]
+fn t03_figures_and_visual_callouts_lift_exactly_on_all_fixtures() {
+    for fixture in preserved_bound_fixtures() {
+        let case = &fixture.case_id;
+        let pins = pins_for(case);
+        let ir = TeiLifter::lift_tei(
+            as_tei(&fixture.bytes, case),
+            fixture.paper_id.clone(),
+            "s07-t03-contract-hash",
+        );
+
+        // Figures: exact ordered count, graphic-owned coordinates, typed
+        // missingness, 64-hex digests, unique declared ids.
+        assert_eq!(
+            ir.figures.len(),
+            pins.non_table_figures,
+            "{case}: non-table figure count"
+        );
+        assert_eq!(
+            ir.figures
+                .iter()
+                .filter(|f| f.coordinates.is_some())
+                .count(),
+            pins.coords,
+            "{case}: graphic-owned coordinates"
+        );
+        assert!(
+            ir.figures.iter().all(|f| f.graphic_missingness.is_none()
+                || f.graphic_missingness == Some(FigureGraphicMissingReason::NoGraphicChild)),
+            "{case}: fixtures carry no unusable graphic shapes"
+        );
+        assert_eq!(
+            ir.figures
+                .iter()
+                .filter(
+                    |f| f.graphic_missingness == Some(FigureGraphicMissingReason::NoGraphicChild)
+                )
+                .count(),
+            pins.non_table_figures - pins.coords,
+            "{case}: graphic-missing decomposition mirrors the coords pin"
+        );
+        let mut ids: Vec<&str> = ir.figures.iter().map(|f| f.figure_id.as_str()).collect();
+        ids.sort_unstable();
+        ids.dedup();
+        assert_eq!(
+            ids.len(),
+            pins.non_table_figures,
+            "{case}: unique figure ids"
+        );
+        for figure in &ir.figures {
+            assert_eq!(figure.source_digest.len(), 64, "{case}: figure digest");
+        }
+
+        // Callouts: exact kind split, typed unresolved state, bounded
+        // offsets, section context (out-of-window callouts stay typed).
+        assert_eq!(
+            ir.visual_callouts.len(),
+            pins.figure_refs + pins.table_refs,
+            "{case}: total callouts"
+        );
+        assert_eq!(
+            ir.visual_callouts
+                .iter()
+                .filter(|c| c.kind == VisualCalloutKind::Figure)
+                .count(),
+            pins.figure_refs,
+            "{case}: figure callouts"
+        );
+        assert_eq!(
+            ir.visual_callouts
+                .iter()
+                .filter(|c| c.kind == VisualCalloutKind::Table)
+                .count(),
+            pins.table_refs,
+            "{case}: table callouts"
+        );
+        assert_eq!(
+            ir.visual_callouts
+                .iter()
+                .filter(|c| c.unresolved == Some(CalloutUnresolvedReason::NoTarget))
+                .count(),
+            pins.figure_refs_without_target + pins.table_refs_without_target,
+            "{case}: target-less callouts stay typed no_target"
+        );
+        assert!(
+            ir.visual_callouts
+                .iter()
+                .all(|c| c.unresolved != Some(CalloutUnresolvedReason::TargetNotInInventory)),
+            "{case}: every fixture-declared target resolves in its inventory"
+        );
+        assert_eq!(
+            ir.visual_callouts
+                .iter()
+                .filter(|c| c.section_path_id.is_none())
+                .count(),
+            pins.out_of_window_callouts,
+            "{case}: section-unresolved callouts stay typed, never dropped"
+        );
+        for callout in &ir.visual_callouts {
+            assert_eq!(callout.source_digest.len(), 64, "{case}: callout digest");
+            if let (Some(path), Some(ordinal)) =
+                (callout.section_path_id.as_deref(), callout.section_ordinal)
+            {
+                assert_eq!(
+                    ir.sections[ordinal].path_id.as_deref(),
+                    Some(path),
+                    "{case}: callout ordinal points at its section"
+                );
+                if let Some(offset) = callout.offset {
+                    let chars: Vec<char> = ir.sections[ordinal].text.chars().collect();
+                    let start = offset as usize;
+                    let end = (start + callout.quote.chars().count()).min(chars.len());
+                    assert_eq!(
+                        chars.get(start..end).map(|s| s.iter().collect::<String>()),
+                        Some(callout.quote.clone()),
+                        "{case}: offset {offset} must point at the quote in '{path}'"
+                    );
+                }
+            } else {
+                assert!(
+                    callout.section_ordinal.is_none() && callout.offset.is_none(),
+                    "{case}: out-of-window callouts stay fully section-unresolved"
+                );
+            }
+        }
+
+        // Deterministic replay on the synthetic surface too.
+        let replay = TeiLifter::lift_tei(
+            as_tei(&fixture.bytes, case),
+            fixture.paper_id.clone(),
+            "s07-t03-contract-hash",
+        );
+        assert_eq!(replay.figures, ir.figures, "{case}: figure replay");
+        assert_eq!(
+            replay.visual_callouts, ir.visual_callouts,
+            "{case}: callout replay"
+        );
+    }
+}
+
+/// S07/T03 malformed shapes stay TOTAL and typed: figures without a graphic
+/// child, graphics without coordinates and empty coords attributes surface
+/// as typed graphic missingness (never invented coordinates); callouts with
+/// an unresolvable target keep the typed `target_not_in_inventory` state;
+/// the ordinal `figure-{index}` fallback covers figures without xml:id; a
+/// target-less callout in a section text window carries the bounded offset;
+/// and a document with no figures/refs at all lifts typed-empty.
+#[test]
+fn t03_malformed_figures_and_unresolved_callouts_stay_total_and_typed() {
+    let tei = concat!(
+        r##"<TEI><teiHeader><title>T</title></teiHeader><text><body>"##,
+        r##"<div><head n="1">S</head>"##,
+        r##"<p>See <ref type="figure" target="#fig_x">Fig</ref>, <ref type="table">Tab</ref> and <ref type="figure" target="#nope">X</ref>.</p>"##,
+        // Resolved graphic-owned coords.
+        r##"<figure xml:id="fig_x"><head>Figure 1</head><label>1</label><graphic coords="4,1,2,3,4" type="bitmap" /></figure>"##,
+        // No graphic child at all.
+        r##"<figure xml:id="fig_y"><figDesc>no graphic</figDesc></figure>"##,
+        // Graphic present but coords-less.
+        r##"<figure xml:id="fig_z"><graphic type="bitmap" /></figure>"##,
+        // Graphic coords declared but empty: unusable shape, typed.
+        r##"<figure xml:id="fig_w"><graphic coords="" /></figure>"##,
+        // No xml:id: honest ordinal fallback identity.
+        r##"<figure><head>No id</head></figure>"##,
+        // Table wrapper: the table family's member, never a figure.
+        r##"<figure type="table" xml:id="tab_0"><head>T</head><table><row><cell>c</cell></row></table></figure>"##,
+        r##"</div>"##,
+        r##"</body></text></TEI>"##,
+    );
+    let ir = TeiLifter::lift_tei(tei.to_string(), "p", "h");
+
+    // Figures: document-ordered, ids + typed graphic missingness exact.
+    let ids: Vec<&str> = ir.figures.iter().map(|f| f.figure_id.as_str()).collect();
+    assert_eq!(
+        ids,
+        vec!["fig_x", "fig_y", "fig_z", "fig_w", "figure-4"],
+        "document order with the ordinal fallback for the id-less figure"
+    );
+    assert_eq!(
+        ir.figures[0].coordinates.as_deref(),
+        Some("4,1,2,3,4"),
+        "graphic-owned coords lift verbatim"
+    );
+    assert_eq!(ir.figures[0].graphic_missingness, None);
+    assert_eq!(
+        ir.figures[1].graphic_missingness,
+        Some(FigureGraphicMissingReason::NoGraphicChild)
+    );
+    assert_eq!(
+        ir.figures[2].graphic_missingness,
+        Some(FigureGraphicMissingReason::GraphicWithoutCoordinates)
+    );
+    assert!(matches!(
+        ir.figures[3].graphic_missingness,
+        Some(FigureGraphicMissingReason::Malformed(_))
+    ));
+    assert_eq!(
+        ir.figures[4].graphic_missingness,
+        Some(FigureGraphicMissingReason::NoGraphicChild)
+    );
+    // The table wrapper never became a figure and is in the table family.
+    assert!(!ids.contains(&"tab_0"), "no double-count of table wrappers");
+    assert_eq!(
+        ir.tables
+            .iter()
+            .map(|t| t.table_id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["tab_0"]
+    );
+
+    // Callouts: resolved, no-target and dangling-target in document order.
+    assert_eq!(ir.visual_callouts.len(), 3);
+    assert_eq!(ir.visual_callouts[0].kind, VisualCalloutKind::Figure);
+    assert_eq!(ir.visual_callouts[0].target.as_deref(), Some("fig_x"));
+    assert_eq!(ir.visual_callouts[0].unresolved, None);
+    assert_eq!(ir.visual_callouts[1].kind, VisualCalloutKind::Table);
+    assert_eq!(
+        ir.visual_callouts[1].unresolved,
+        Some(CalloutUnresolvedReason::NoTarget),
+        "target-less callouts stay typed no_target"
+    );
+    assert_eq!(
+        ir.visual_callouts[2].unresolved,
+        Some(CalloutUnresolvedReason::TargetNotInInventory),
+        "dangling targets stay typed, never guessed away"
+    );
+    // Bounded offsets inside the section window; unresolved links preserved.
+    for callout in &ir.visual_callouts {
+        assert_eq!(callout.section_path_id.as_deref(), Some("1"));
+        let offset = callout.offset.expect("in-window callout carries offset");
+        let sec = ir
+            .sections
+            .iter()
+            .find(|s| s.path_id.as_deref() == Some("1"))
+            .expect("section 1");
+        let chars: Vec<char> = sec.text.chars().collect();
+        let start = offset as usize;
+        let end = (start + callout.quote.chars().count()).min(chars.len());
+        assert_eq!(
+            chars.get(start..end).map(|s| s.iter().collect::<String>()),
+            Some(callout.quote.clone()),
+            "offset {offset} points at the quote inside the section text"
+        );
+    }
+    // ptr/notes stay outside the callout family.
+    assert!(
+        !tei.contains("<ptr"),
+        "synthetic shape pins the exclusion surface"
+    );
+
+    // Deterministic replay on the synthetic shape.
+    let replay = TeiLifter::lift_tei(tei.to_string(), "p", "h");
+    assert_eq!(replay.figures, ir.figures);
+    assert_eq!(replay.visual_callouts, ir.visual_callouts);
+
+    // A document with no figures/refs at all lifts typed-empty (total).
+    let empty = "<TEI><teiHeader></teiHeader><text><body><p>plain</p></body></text></TEI>";
+    let ir = TeiLifter::lift_tei(empty.to_string(), "p", "h");
+    assert!(ir.figures.is_empty());
+    assert!(ir.visual_callouts.is_empty());
 }

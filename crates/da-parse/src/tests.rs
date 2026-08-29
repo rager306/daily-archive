@@ -1020,7 +1020,7 @@ fn test_extract_formulas_coordinates_preserved() {
 }
 
 #[test]
-fn s07_t02_boundary_typed_id_missingness_figures_stay_unlifted_until_t03() {
+fn s07_t03_figures_lift_and_header_families_stay_typed_on_synthetic_shape() {
     let tei = concat!(
         r#"<TEI><teiHeader><fileDesc><titleStmt><title>T</title>"#,
         r#"<author>Alice</author></titleStmt>"#,
@@ -1053,14 +1053,27 @@ fn s07_t02_boundary_typed_id_missingness_figures_stay_unlifted_until_t03() {
         Some(&serde_json::Value::Array(vec![])),
         "titleStmt plain-text `<author>` is outside the declared persName family"
     );
+    // S07/T03: the body figure lifts (no graphic child → typed
+    // no_graphic_child), and a document with no figure/table refs lifts
+    // typed-empty callouts — nothing invented.
+    let figures = v
+        .get("figures")
+        .and_then(|f| f.as_array())
+        .expect("figures family present");
+    assert_eq!(figures.len(), 1, "the body figure lifts since S07/T03");
     assert_eq!(
-        v.get("figures"),
-        Some(&serde_json::Value::Array(vec![])),
-        "body figure must not be invented into figures this cut (T03 lifts it)"
+        figures[0].get("figure_id"),
+        Some(&serde_json::Value::String("fig_0".to_string()))
+    );
+    assert_eq!(
+        figures[0].get("graphic_missingness"),
+        Some(&serde_json::Value::String("no_graphic_child".to_string())),
+        "figure without a graphic child keeps typed missingness (R087)"
     );
     assert_eq!(
         v.get("visual_callouts"),
-        Some(&serde_json::Value::Array(vec![]))
+        Some(&serde_json::Value::Array(vec![])),
+        "no refs → typed-empty callouts"
     );
     assert_eq!(v.get("declared_arxiv_id"), Some(&serde_json::Value::Null));
     assert_eq!(

@@ -1,5 +1,7 @@
 use super::*;
-use da_ports::parser::FormulaRepresentation;
+use da_ports::parser::{
+    CalloutUnresolvedReason, FigureGraphicMissingReason, FormulaRepresentation, VisualCalloutKind,
+};
 use sha2::{Digest, Sha256};
 
 const PRESERVED_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/preserved");
@@ -407,8 +409,9 @@ fn test_hub_restarted_numbering_yields_unique_path_ids() {
 /// Pins: exactly the declared idno values (with their declared revisions —
 /// never guessed, never defaulted), exact header-author counts 21/4/11,
 /// decomposition coverage (hub carries one surname-only author — incomplete
-/// names survive without silent drop), 64-hex source digests, and the T03
-/// boundary (figures/callouts stay typed-empty until their families lift).
+/// names survive without silent drop), 64-hex source digests, and the S07/T03
+/// families (figures/callouts lift — pinned in detail by
+/// `test_real_tei_lifts_figures_and_visual_callouts_on_all_fixtures`).
 /// No legacy-named `authors`/`idno` fields exist, and no author name is ever
 /// printed (redaction by construction).
 #[test]
@@ -538,20 +541,263 @@ fn test_real_tei_lifts_declared_id_and_header_authors_on_all_fixtures() {
             "{name}: replay keeps the declared identity"
         );
 
-        // T03 boundary: figures/callouts stay typed-empty until their
-        // families lift; no legacy-named wire fields exist.
-        assert!(article.figures.is_empty(), "{name}: figures lift in T03");
+        // S07/T03 families now lift too (exact pins live in
+        // test_real_tei_lifts_figures_and_visual_callouts_on_all_fixtures);
+        // here we keep the no-legacy-fields pin only.
         assert!(
-            article.visual_callouts.is_empty(),
-            "{name}: visual callouts lift in T03"
+            !article.figures.is_empty() && !article.visual_callouts.is_empty(),
+            "{name}: figures/callouts lift since S07/T03"
         );
         let v = serde_json::to_value(&article).unwrap();
         assert!(v.get("authors").is_none(), "{name}");
         assert!(v.get("idno").is_none(), "{name}");
         println!(
-            "{name}: declared id lifts (revision={:?}), {} header authors (forename {with_fore}/surname {with_sur}); figures stay T03-empty",
+            "{name}: declared id lifts (revision={:?}), {} header authors (forename {with_fore}/surname {with_sur}); {} figures + {} callouts lifted (S07/T03)",
             declared.revision,
-            article.header_authors.len()
+            article.header_authors.len(),
+            article.figures.len(),
+            article.visual_callouts.len()
+        );
+    }
+}
+
+/// S07/T03: the single pure lifter now lifts non-table figures (graphic-owned
+/// coordinates, typed graphic missingness) and figure/table visual callouts
+/// (closed kind, declared target, explicit unresolved state, bounded offsets,
+/// section context) on all three checksum-bound fixtures.
+///
+/// Per-fixture pins mirror the independent byte oracle:
+/// figures 22/29/55, coords 1/25/34 (every one graphic-owned),
+/// NoGraphicChild 21/4/21, callouts 24+5 / 25+11 / 30+11 of which
+/// 10+2 / 10+4 / 5+1 carry no declared target (`no_target`), and rlm's 11
+/// back-matter table callouts stay section-unresolved (typed, never dropped).
+/// Nothing raw is printed — captions/quotes stay out of logs by construction.
+#[test]
+fn test_real_tei_lifts_figures_and_visual_callouts_on_all_fixtures() {
+    for (
+        name,
+        file,
+        sha,
+        paper_id,
+        figures,
+        coords,
+        no_graphic_child,
+        figure_calls,
+        table_calls,
+        figure_no_target,
+        table_no_target,
+        out_of_window,
+    ) in [
+        (
+            "hub",
+            "hub_2507.19457.tei.xml",
+            HUB_SHA,
+            "2507.19457",
+            22usize,
+            1usize,
+            21usize,
+            24usize,
+            5usize,
+            10usize,
+            2usize,
+            0usize,
+        ),
+        (
+            "rlm",
+            "rlm_2512.24601.tei.xml",
+            RLM_SHA,
+            "2512.24601",
+            29,
+            25,
+            4,
+            25,
+            11,
+            10,
+            4,
+            14,
+        ),
+        (
+            "reca",
+            "reca_2605.26525v1.tei.xml",
+            RECA_SHA,
+            "2605.26525v1",
+            55,
+            34,
+            21,
+            30,
+            11,
+            5,
+            1,
+            0,
+        ),
+    ] {
+        let tei = load_preserved_tei(file, sha);
+        let ir = GrobidParser::lift_tei(tei, paper_id, "fixture");
+
+        // ── Figures: document-ordered, table wrappers never double-counted.
+        assert_eq!(ir.figures.len(), figures, "{name}: non-table figure count");
+        assert_eq!(
+            ir.figures
+                .iter()
+                .filter(|f| f.coordinates.is_some())
+                .count(),
+            coords,
+            "{name}: graphic-owned coordinates"
+        );
+        assert_eq!(
+            ir.figures
+                .iter()
+                .filter(
+                    |f| f.graphic_missingness == Some(FigureGraphicMissingReason::NoGraphicChild)
+                )
+                .count(),
+            no_graphic_child,
+            "{name}: figures without any graphic child"
+        );
+        assert!(
+            ir.figures.iter().all(|f| f.graphic_missingness.is_none()
+                || f.graphic_missingness == Some(FigureGraphicMissingReason::NoGraphicChild)),
+            "{name}: fixtures carry no unusable graphic shapes"
+        );
+        let mut figure_ids: Vec<&str> = ir.figures.iter().map(|f| f.figure_id.as_str()).collect();
+        figure_ids.sort_unstable();
+        figure_ids.dedup();
+        assert_eq!(figure_ids.len(), figures, "{name}: figure ids are unique");
+        assert_eq!(
+            ir.figures.first().map(|f| f.figure_id.as_str()),
+            Some("fig_0"),
+            "{name}: document order starts at the first fixture figure"
+        );
+        for figure in &ir.figures {
+            assert_eq!(
+                figure.source_digest.len(),
+                64,
+                "{name}: figure digest is a SHA-256"
+            );
+            if let Some(caption) = &figure.caption {
+                assert!(!caption.contains('<'), "{name}: caption is tag-free");
+            }
+            if let Some(label) = &figure.label {
+                assert!(!label.contains('<'), "{name}: label is tag-free");
+            }
+        }
+
+        // ── Callouts: closed kind split, explicit unresolved state, bounded
+        //    offsets, section context; unresolved links are preserved, never
+        //    dropped.
+        assert_eq!(ir.visual_callouts.len(), figure_calls + table_calls);
+        assert_eq!(
+            ir.visual_callouts
+                .iter()
+                .filter(|c| c.kind == VisualCalloutKind::Figure)
+                .count(),
+            figure_calls,
+            "{name}: figure callouts"
+        );
+        assert_eq!(
+            ir.visual_callouts
+                .iter()
+                .filter(|c| c.kind == VisualCalloutKind::Table)
+                .count(),
+            table_calls,
+            "{name}: table callouts"
+        );
+        let no_target = ir
+            .visual_callouts
+            .iter()
+            .filter(|c| c.unresolved == Some(CalloutUnresolvedReason::NoTarget))
+            .count();
+        assert_eq!(
+            no_target,
+            figure_no_target + table_no_target,
+            "{name}: target-less callouts stay typed no_target"
+        );
+        assert_eq!(
+            ir.visual_callouts
+                .iter()
+                .filter(|c| c.unresolved == Some(CalloutUnresolvedReason::TargetNotInInventory))
+                .count(),
+            0,
+            "{name}: every fixture-declared target resolves in its inventory"
+        );
+        // Resolved targets really belong to their inventory family.
+        let lifted_figure_ids: std::collections::HashSet<&str> =
+            ir.figures.iter().map(|f| f.figure_id.as_str()).collect();
+        let lifted_table_ids: std::collections::HashSet<&str> =
+            ir.tables.iter().map(|t| t.table_id.as_str()).collect();
+        for callout in &ir.visual_callouts {
+            if let Some(target) = callout.target.as_deref() {
+                assert_eq!(
+                    callout.unresolved, None,
+                    "{name}: targeted callout must be resolved"
+                );
+                let inventory = match callout.kind {
+                    VisualCalloutKind::Figure => &lifted_figure_ids,
+                    VisualCalloutKind::Table => &lifted_table_ids,
+                };
+                assert!(
+                    inventory.contains(target),
+                    "{name}: target '{target}' must live in its family inventory"
+                );
+            }
+            assert_eq!(callout.source_digest.len(), 64, "{name}: callout digest");
+        }
+        // Section context: in-window callouts point at real sections with
+        // bounded offsets; out-of-window callouts (rlm's back-matter table
+        // callouts) stay section-unresolved — present, not dropped.
+        let out_of_window_count = ir
+            .visual_callouts
+            .iter()
+            .filter(|c| c.section_path_id.is_none())
+            .count();
+        assert_eq!(
+            out_of_window_count, out_of_window,
+            "{name}: section-unresolved callouts"
+        );
+        for callout in &ir.visual_callouts {
+            match callout.section_path_id.as_deref() {
+                Some(path) => {
+                    let ordinal = callout
+                        .section_ordinal
+                        .unwrap_or_else(|| panic!("{name}: ordinal with path"));
+                    assert_eq!(
+                        ir.sections[ordinal].path_id.as_deref(),
+                        Some(path),
+                        "{name}: callout ordinal points at its section"
+                    );
+                    if let Some(offset) = callout.offset {
+                        let sec = &ir.sections[ordinal];
+                        let chars: Vec<char> = sec.text.chars().collect();
+                        let start = offset as usize;
+                        let end = (start + callout.quote.chars().count()).min(chars.len());
+                        assert_eq!(
+                            chars.get(start..end).map(|s| s.iter().collect::<String>()),
+                            Some(callout.quote.clone()),
+                            "{name}: offset {offset} must point at the quote in section '{path}'"
+                        );
+                    }
+                }
+                None => {
+                    assert!(
+                        callout.section_ordinal.is_none() && callout.offset.is_none(),
+                        "{name}: out-of-window callouts stay fully section-unresolved"
+                    );
+                }
+            }
+        }
+
+        // Deterministic replay: the lifted families are byte-equal.
+        let replay = GrobidParser::lift_tei(load_preserved_tei(file, sha), paper_id, "fixture");
+        assert_eq!(replay.figures, ir.figures, "{name}: figure replay");
+        assert_eq!(
+            replay.visual_callouts, ir.visual_callouts,
+            "{name}: callout replay"
+        );
+
+        println!(
+            "{name}: {} figures ({coords} with graphic coords, {no_graphic_child} without graphic), {} callouts ({figure_calls} fig + {table_calls} tab, {no_target} no-target, {out_of_window_count} section-unresolved)",
+            ir.figures.len(),
+            ir.visual_callouts.len()
         );
     }
 }
