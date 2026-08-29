@@ -76,7 +76,7 @@ defaults:
       project_article_stage_id: parse.project_article.v1
       raw_payload_schema_version: 1
       project_article_payload_schema_version: 1
-      projector_schema_fingerprint: ParsedArticle@serde-v3-unique-navigation
+      projector_schema_fingerprint: ParsedArticle@serde-v4-p0-tei-lift
       stage_rotation: independent
     batch_limits_bounded_fields: [workers, queue_capacity, max_in_flight, max_documents]
     batch_limits_nonzero: true
@@ -1064,8 +1064,8 @@ capabilities:
       response_format: TEI teiHeader
     implementation:
       crate: da-parse
-      surface: crates/da-parse/src/lift.rs (partial title/idno/authors)
-      notes: P0 lift S07; native header composition S12.
+      surface: crates/da-parse/src/lift.rs (title/idno/authors lifted since S07)
+      notes: P0 idno/authors LIFTED since S07 (declared-only revision, document-ordered header authors); native header composition S12.
     baseline: java-grobid-header
     candidate: da-parse@lift-partial
     evidence_ref: crates/da-parse/src/lift.rs
@@ -1114,8 +1114,8 @@ capabilities:
       response_format: TEI figure/table/formula
     implementation:
       crate: da-parse
-      surface: crates/da-parse/src/lift.rs (tables/formulas characterization)
-      notes: Native heads S16. Lost figures/tables/formulas is a hard regression.
+      surface: crates/da-parse/src/lift.rs (tables/formulas characterized; non-table figures + graphic coords lifted since S07)
+      notes: Native heads S16. Non-table figures with graphic-owned coordinates are lifted since S07 (table wrappers stay tables — no double-count). Lost figures/tables/formulas is a hard regression.
     baseline: java-grobid-fulltext
     candidate: da-parse@lift-partial
     evidence_ref: crates/da-parse/src/lift.rs
@@ -1178,7 +1178,13 @@ capabilities:
         regression. Conservation inventory is S03: the typed evidence is
         da_parse::ConservationEngine.compare(TeiEnvelope, TeiParseIr), bound
         per case in the parse-compat baseline report (S03/T04). P0
-        idno/authors/figures/coords is S07.
+        idno/authors/figures/coords/callouts LIFTED since S07 (M464-z84in2):
+        declared-only revision, document-ordered header authors, non-table
+        figures with graphic-owned coordinates and figure/table callouts —
+        typed missingness, never invented; the intentional-absence list shrank
+        behind the S07/T05 compatibility-note commit and the projection schema
+        fingerprint rotated to ParsedArticle@serde-v4-p0-tei-lift (projection
+        stage only).
     baseline: preserved-java-tei
     candidate: da-parse@lift-v1
     evidence_ref: crates/da-parse/src/lift.rs

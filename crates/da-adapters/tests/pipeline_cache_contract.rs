@@ -11,9 +11,10 @@ use da_adapters::{
     pipeline_cache::FilePipelineCache,
 };
 use da_parse::{
-    CacheIntegrityCode, FulltextDialectV1, GrobidProfile, ParseArtifactCache, ParseBackendRequest,
-    ParseCacheStage, ProjectArticlePayload, RAW_TEI_STAGE_ID, RawTeiEnvelopePayload, TeiEnvelope,
-    TeiIdentity, TeiResultIdentity, project_article_stage_key, raw_tei_stage_key,
+    CacheIntegrityCode, FulltextDialectV1, GrobidProfile, PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+    ParseArtifactCache, ParseBackendRequest, ParseCacheStage, ProjectArticlePayload,
+    RAW_TEI_STAGE_ID, RawTeiEnvelopePayload, TeiEnvelope, TeiIdentity, TeiResultIdentity,
+    project_article_stage_key, raw_tei_stage_key,
 };
 use da_ports::parser::ParsedArticle;
 use da_ports::pipeline_cache::{
@@ -157,7 +158,7 @@ fn projected_stage_key(raw_payload_sha: &str) -> String {
         "paper-id",
         &"a".repeat(64),
         raw_payload_sha,
-        "ParsedArticle@serde-v3-unique-navigation",
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
     )
 }
 
@@ -372,7 +373,7 @@ async fn parse_artifact_cache_roundtrips_full_versioned_payloads() {
     let projector_key = projected_stage_key(&raw_sha);
     let projected_payload = ProjectArticlePayload::build(
         &article,
-        "ParsedArticle@serde-v3-unique-navigation",
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
         &raw_sha,
         "paper-id",
         &"a".repeat(64),
@@ -389,7 +390,7 @@ async fn parse_artifact_cache_roundtrips_full_versioned_payloads() {
         .expect("projected staged hit");
     let decoded = ProjectArticlePayload::decode_and_verify(
         projected_read.payload(),
-        "ParsedArticle@serde-v3-unique-navigation",
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
         &raw_sha,
         "paper-id",
         &"a".repeat(64),

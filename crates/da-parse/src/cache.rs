@@ -444,7 +444,15 @@ pub const PROJECT_ARTICLE_PAYLOAD_SCHEMA_VERSION: u32 = 1;
 /// raw TEI survives independently — the two stages rotate independently.
 /// Stage KEYS derive from this fingerprint, so a rotation naturally orphans
 /// old projection entries without touching the raw stage.
-pub const PROJECT_ARTICLE_SCHEMA_FINGERPRINT: &str = "ParsedArticle@serde-v3-unique-navigation";
+///
+/// Rotation history: `serde-v3-unique-navigation` → `serde-v4-p0-tei-lift`
+/// (M464-z84in2 S07/T05) — the additive P0 lift families (declared arXiv
+/// identity + typed missingness, header authors, non-table figures with
+/// graphic coordinates, figure/table visual callouts) joined the wire, so
+/// the old fingerprint would have mislabeled the projection payload. Raw-TEI
+/// stage keys, D204 profile fingerprints and endpoint identities are
+/// unchanged.
+pub const PROJECT_ARTICLE_SCHEMA_FINGERPRINT: &str = "ParsedArticle@serde-v4-p0-tei-lift";
 
 /// Domain separator binding raw-TEI stage keys to this contract generation.
 const RAW_TEI_STAGE_KEY_DOMAIN: &[u8] = b"da-parse/raw-tei-stage-key/v1";

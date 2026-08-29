@@ -43,6 +43,17 @@
 # machine-checked against the LIVE da-parse vocabulary by
 # tests/data_contracts.rs — an invented mode/stage/failure/config key fails
 # the gate by exact field.
+#
+# S07/T05: the additive P0 lift families (declared arXiv id + typed
+# missingness, header authors, non-table figures with graphic coordinates,
+# figure/table callouts) are observed inside parse.stage.lift_tei and
+# parse.stage.project_article below. The ONLY identity rotated is the
+# projection schema fingerprint (ParsedArticle@serde-v4-p0-tei-lift — the
+# v3 label would have mislabeled the projection payload); D204 profile
+# fingerprints, raw-TEI stage identity, the S04/S05 wire dialects and every
+# endpoint identity are byte-unchanged. ledger_version stays 1: additive
+# observation plus the sanctioned compatibility-note shrink of the
+# intentional-absence list (lift_tei entry).
 ledger_version: 1
 scope_note: >-
   Covers the public exports of crates/da-parse plus its implementing
@@ -115,7 +126,7 @@ batch_cache_observation:
     - stage: project_article
       stage_id: parse.project_article.v1
       payload_schema_version: 1
-      projector_schema_fingerprint: ParsedArticle@serde-v3-unique-navigation
+      projector_schema_fingerprint: ParsedArticle@serde-v4-p0-tei-lift
       key_dependencies: [paper_id, pdf_sha256, raw_payload_sha256, projector_schema_fingerprint]
       paper_id_in_key: true
       rotation: independent
@@ -354,11 +365,11 @@ entries:
     stability: stable
     entry_point: da_parse::TeiLifter::lift_tei (single algorithm owner; da_parse::GrobidParser::lift_tei delegates)
     request_shape: 'TeiLifter::lift(&TeiEnvelope, paper_id, pdf_hash) -> TeiParseIr | lift_tei(tei_xml: String, paper_id, pdf_hash) -> TeiParseIr'
-    result_shape: TeiParseIr (pub struct — tei_xml, paper_id, title, abstract_text, body_text, sections, citations, tables, table_missingness, formulas, formula_missingness, pdf_hash)
+    result_shape: 'TeiParseIr (pub struct — tei_xml, paper_id, title, abstract_text, body_text, sections, citations, tables, table_missingness, formulas, formula_missingness, pdf_hash; additive since S07 — declared_arxiv_id, declared_id_missingness, header_authors, figures, visual_callouts)'
     notes:
       - Pure local transformation; does NOT call Java GROBID or the network.
-      - Extraction coverage this cut — title, abstract, body text, sections (nested div walk with flat head scan fallback and lexical path collision resolution), citations with in-text ref anchors resolved against back-matter xml:id, tables, formulas.
-      - Intentional absences this cut — author lists, article-level idno and non-table figures are NOT parsed; TeiParseIr carries no fields for them.
+      - Extraction coverage this cut — title, abstract, body text, sections (nested div walk with flat head scan fallback and lexical path collision resolution), citations with in-text ref anchors resolved against back-matter xml:id, tables, formulas; since S07 also the declared arXiv idno (verbatim raw value plus the revision ONLY when explicitly declared — never guessed), document-ordered header authors (Unicode/incomplete names preserved, bibliography persName never promoted), non-table figures in document order with graphic-owned coordinates and typed graphic missingness, and figure/table visual callouts generalized from the citation-anchor section-window mechanics.
+      - 'Intentional absences remaining since S07/T05 (the former author-list/article-idno/non-table-figure absences are LIFTED behind this compatibility-note commit, never silently grown) — Link and Note ref families stay unsupported conservation families, ptr/note refs are never visual callouts, and a missing/eroded idno is never repaired into a synthetic identity.'
       - 'Since S02/T02 the single lift algorithm is owned by the provider-neutral da_parse::TeiLifter — it accepts a TeiEnvelope (verbatim raw TEI bytes plus exact backend/profile identity from the ParseBackend seam) with logical paper_id/pdf_hash and needs no HTTP, filesystem or runtime infrastructure.'
       - 'da_parse::GrobidParser::lift_tei stays a compatibility delegate onto the same code — envelope-vs-compatibility parity is proven byte-exact on the preserved fixtures (S02/T02).'
       - 'Since S03/T04 the sanctioned conservation evidence for every lift result is da_parse::ConservationEngine.compare(&TeiEnvelope, &TeiParseIr); the parse-compat baseline binds each executed case ConservationDelta (identity/verdict/delta_digest plus family/span/structure/reason counts and a malformed summary) under data/parse/comparison_contract.yaml conservation_evidence.'
@@ -375,7 +386,7 @@ entries:
     notes:
       - Pure projection onto the ports type; layout_json stays None and page_text_missingness stays None on the GROBID path because a classifier stamps them later.
       - Section navigation identity — path_id, parent_section_id, order_in_parent, section_id sec-{path_id} — is produced by the section extractors consumed here.
-      - 'Reached through the S02 composition da_parse::ScholarlyParser::lift_and_project as well as the GrobidParser facade; pure projection semantics and the ParsedArticle shape are unchanged.'
+      - 'Reached through the S02 composition da_parse::ScholarlyParser::lift_and_project as well as the GrobidParser facade; pure projection semantics are unchanged. Since S07/T05 the ParsedArticle wire carries the additive P0 lift families (declared arXiv identity + typed missingness, header_authors, figures, visual_callouts — all #[serde(default)], legacy payloads keep decoding per R085) and the projection schema fingerprint rotated to ParsedArticle@serde-v4-p0-tei-lift: projection-stage cache entries only, raw-TEI stage keys and every D204 identity stay frozen.'
       - 'registry_binding: stage.tei_lift'
     compatibility_obligation: Projection must remain total and allocation-safe over any TeiParseIr and preserve the ports ParsedArticle field semantics consumed downstream by ingest.
   - id: parse.profile.rich

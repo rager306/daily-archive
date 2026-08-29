@@ -24,6 +24,14 @@
 //!   The default run never contacts GROBID. Unavailable/unobserved Java
 //!   evidence is reported honestly; no version/request/latency/output value is
 //!   ever fabricated.
+//! - Projection identity (S07/T05): the `ParsedArticle` projection schema
+//!   fingerprint is `ParsedArticle@serde-v4-p0-tei-lift` — the additive P0
+//!   lift families joined the wire, so the v3 label would have been
+//!   dishonest — and the output-hash preimage is
+//!   `da-parse.lift-output-preimage.v2` (v1 was blind to exactly the lifted
+//!   families). Raw-TEI stage keys, D204 profile fingerprints and endpoint
+//!   identities stay frozen; the per-case report additionally carries the
+//!   closed S07 typed-missingness counts (machine tags only).
 //! - Ordering and serialization are stable: identical inputs produce identical
 //!   identity/count/regression content (verified in-file and by running the
 //!   command twice and comparing bytes).
@@ -263,6 +271,9 @@ struct ReportIdentity {
     fixture_ids: Vec<String>,
     family_counts: BTreeMap<String, u64>,
     current_lifted_counts: BTreeMap<String, u64>,
+    /// Aggregate of the per-case S07 typed-missingness counts (exact sum —
+    /// machine tags only, never document content).
+    typed_missingness: BTreeMap<String, u64>,
     promotion_state: String,
     rollback_target: String,
     known_hard_regressions: Vec<HardRegressionStatus>,
@@ -340,6 +351,9 @@ struct CaseReport {
     obligation_acknowledged: bool,
     family_counts: BTreeMap<String, u64>,
     lifted_counts: BTreeMap<String, u64>,
+    /// Closed typed-missingness counts of the S07 P0 families (machine tags
+    /// only — never raw document content).
+    typed_missingness: BTreeMap<String, u64>,
     output_hash: String,
     outcome: String,
     conservation: ConservationCaseEvidence,
@@ -665,9 +679,16 @@ fn backend_version(repo_root: &Path) -> (String, String) {
 /// Canonical digest preimage of the lifted projection. Deliberately EXCLUDES
 /// raw `tei_xml` (bound to `null`): the identity covers the lifted content
 /// only, and raw TEI/PDF/document text never reaches the report.
+///
+/// v2 (M464-z84in2 S07/T05): the additive P0 lift families — declared arXiv
+/// identity + typed missingness, header authors, non-table figures with
+/// graphic coordinates, figure/table visual callouts — joined the preimage.
+/// The v1 digest would have been blind to exactly the families this slice
+/// lifted, so the output-hash pin rotates with them (raw-TEI stage identity
+/// is untouched).
 fn lifted_output_preimage(article: &ParsedArticle) -> serde_json::Value {
     json!({
-        "schema": "da-parse.lift-output-preimage.v1",
+        "schema": "da-parse.lift-output-preimage.v2",
         "paper_id": article.paper_id,
         "pdf_hash": article.pdf_hash,
         "title": article.title,
@@ -679,6 +700,11 @@ fn lifted_output_preimage(article: &ParsedArticle) -> serde_json::Value {
         "table_missingness": &article.table_missingness,
         "formulas": &article.formulas,
         "formula_missingness": &article.formula_missingness,
+        "declared_arxiv_id": &article.declared_arxiv_id,
+        "declared_id_missingness": &article.declared_id_missingness,
+        "header_authors": &article.header_authors,
+        "figures": &article.figures,
+        "visual_callouts": &article.visual_callouts,
         "tei_xml": serde_json::Value::Null,
     })
 }
@@ -735,14 +761,120 @@ fn lifted_counts(article: &ParsedArticle) -> BTreeMap<String, u64> {
             .filter(|f| f.missingness.is_none())
             .count() as u64,
     );
+    // S07 P0 lift families (M464-z84in2): counts only — names, captions,
+    // coordinates and quotes never leave the digest preimage above.
+    m.insert(
+        "declared_arxiv_id".into(),
+        u64::from(article.declared_arxiv_id.is_some()),
+    );
+    m.insert(
+        "declared_id_missingness".into(),
+        u64::from(article.declared_id_missingness.is_some()),
+    );
+    m.insert(
+        "declared_id_revision_declared".into(),
+        u64::from(
+            article
+                .declared_arxiv_id
+                .as_ref()
+                .is_some_and(|id| id.revision.is_some()),
+        ),
+    );
+    m.insert("header_authors".into(), article.header_authors.len() as u64);
+    m.insert("figures".into(), article.figures.len() as u64);
+    m.insert(
+        "figure_coordinates".into(),
+        article
+            .figures
+            .iter()
+            .filter(|f| f.coordinates.is_some())
+            .count() as u64,
+    );
+    m.insert(
+        "figure_graphic_missingness".into(),
+        article
+            .figures
+            .iter()
+            .filter(|f| f.graphic_missingness.is_some())
+            .count() as u64,
+    );
+    m.insert(
+        "visual_callouts".into(),
+        article.visual_callouts.len() as u64,
+    );
+    m.insert(
+        "visual_callouts_resolved".into(),
+        article
+            .visual_callouts
+            .iter()
+            .filter(|c| c.unresolved.is_none())
+            .count() as u64,
+    );
+    m.insert(
+        "visual_callouts_unresolved".into(),
+        article
+            .visual_callouts
+            .iter()
+            .filter(|c| c.unresolved.is_some())
+            .count() as u64,
+    );
     m
 }
 
 fn family_counts_of(lifted: &BTreeMap<String, u64>) -> BTreeMap<String, u64> {
-    ["sections", "citations", "tables", "formulas"]
-        .into_iter()
-        .map(|k| (k.to_string(), lifted.get(k).copied().unwrap_or(0)))
-        .collect()
+    [
+        "sections",
+        "citations",
+        "tables",
+        "formulas",
+        "header_authors",
+        "figures",
+        "visual_callouts",
+    ]
+    .into_iter()
+    .map(|k| (k.to_string(), lifted.get(k).copied().unwrap_or(0)))
+    .collect()
+}
+
+/// Closed typed-missingness vocabulary of the S07 P0 lift families, as
+/// counts keyed by machine tags. Details of malformed values never leave
+/// the digest — reports carry the closed tag, never document content.
+fn typed_missingness_counts(article: &ParsedArticle) -> BTreeMap<String, u64> {
+    use da_ports::parser::{
+        CalloutUnresolvedReason, DeclaredIdMissingReason, FigureGraphicMissingReason,
+    };
+    let mut m = BTreeMap::new();
+    match &article.declared_id_missingness {
+        Some(DeclaredIdMissingReason::NoIdno) => {
+            m.insert("declared_id_no_idno".to_string(), 1);
+        }
+        Some(DeclaredIdMissingReason::Malformed(_)) => {
+            m.insert("declared_id_malformed".to_string(), 1);
+        }
+        None => {}
+    }
+    for figure in &article.figures {
+        let tag = match &figure.graphic_missingness {
+            Some(FigureGraphicMissingReason::NoGraphicChild) => "figure_graphic_no_graphic_child",
+            Some(FigureGraphicMissingReason::GraphicWithoutCoordinates) => {
+                "figure_graphic_graphic_without_coordinates"
+            }
+            Some(FigureGraphicMissingReason::Malformed(_)) => "figure_graphic_malformed",
+            None => continue,
+        };
+        *m.entry(tag.to_string()).or_insert(0) += 1;
+    }
+    for callout in &article.visual_callouts {
+        let tag = match &callout.unresolved {
+            Some(CalloutUnresolvedReason::NoTarget) => "callout_unresolved_no_target",
+            Some(CalloutUnresolvedReason::TargetNotInInventory) => {
+                "callout_unresolved_target_not_in_inventory"
+            }
+            None => continue,
+        };
+        *m.entry(tag.to_string()).or_insert(0) += 1;
+    }
+    m
 }
 
 // ─────────────────── conservation evidence (S03/T04, R106) ────────────
@@ -1036,8 +1168,8 @@ fn hard_regression_statuses(
                 "changed_reading_order" => ("monitored", monitored("section/path_id")),
                 "lost_figures_tables_formulas" => ("monitored", monitored("table/cell/formula")),
                 "invented_revision" => (
-                    "not_applicable_this_cut",
-                    "this-cut IR intentionally omits authors/idno/revision lifting (ledger parse.stage.lift_tei intentional-absence list)".to_string(),
+                    "pass",
+                    "declared-only idno/revision lift since S07: the revision is carried only when explicitly declared in the raw `<idno type=\"arXiv\">` value; missing/malformed idno surfaces as typed declared_id_missingness, never a guessed revision (pinned by p0_lift_contract + real_tei_tests)".to_string(),
                 ),
                 "dropped_parser_work" => (
                     "not_applicable_offline",
@@ -1068,11 +1200,15 @@ fn hard_regression_statuses(
             description: "aggregate-counts-only observation row (no raw content)".to_string(),
             status: "observed".to_string(),
             evidence: format!(
-                "sections={} citations={} tables={} formulas={} output_hash={}",
+                "sections={} citations={} tables={} formulas={} header_authors={} figures={} visual_callouts={} typed_missingness={} output_hash={}",
                 c.family_counts.get("sections").unwrap_or(&0),
                 c.family_counts.get("citations").unwrap_or(&0),
                 c.family_counts.get("tables").unwrap_or(&0),
                 c.family_counts.get("formulas").unwrap_or(&0),
+                c.family_counts.get("header_authors").unwrap_or(&0),
+                c.family_counts.get("figures").unwrap_or(&0),
+                c.family_counts.get("visual_callouts").unwrap_or(&0),
+                c.typed_missingness.values().sum::<u64>(),
                 c.output_hash
             ),
         }))
@@ -1407,6 +1543,7 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
         }
 
         let lifted = lifted_counts(&article);
+        let typed_missingness = typed_missingness_counts(&article);
         case_reports.push(CaseReport {
             case_id: case.id.clone(),
             binding_status: case.binding_status.clone(),
@@ -1423,6 +1560,7 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
             obligation_acknowledged: case.obligation_acknowledged,
             family_counts: family_counts_of(&lifted),
             lifted_counts: lifted,
+            typed_missingness,
             output_hash: hash_first,
             outcome: "parse_ok".into(),
             conservation: conservation_case_evidence(&delta_first),
@@ -1437,6 +1575,7 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
     let mut output_lines = String::new();
     let mut family_totals: BTreeMap<String, u64> = BTreeMap::new();
     let mut lifted_totals: BTreeMap<String, u64> = BTreeMap::new();
+    let mut missingness_totals: BTreeMap<String, u64> = BTreeMap::new();
     let mut fingerprints = BTreeSet::new();
     for c in &case_reports {
         fixture_ids.insert(c.case_id.clone());
@@ -1451,6 +1590,9 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
         }
         for (k, v) in &c.lifted_counts {
             *lifted_totals.entry(k.clone()).or_insert(0) += v;
+        }
+        for (k, v) in &c.typed_missingness {
+            *missingness_totals.entry(k.clone()).or_insert(0) += v;
         }
     }
     let (backend_version, backend_version_basis) = backend_version(inputs.repo_root);
@@ -1475,6 +1617,7 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
         fixture_ids: fixture_ids.into_iter().collect(),
         family_counts: family_totals,
         current_lifted_counts: lifted_totals,
+        typed_missingness: missingness_totals,
         promotion_state: contract.promotion_default.clone(),
         rollback_target: contract.rollback_target.clone(),
         known_hard_regressions: hard_regression_statuses(&contract, &case_reports, determinism_held),
@@ -1765,6 +1908,7 @@ fn main() -> ExitCode {
                 report.conservation.malformed_rows
             );
             println!("  family_counts: {:?}", identity.family_counts);
+            println!("  typed_missingness: {:?}", identity.typed_missingness);
             println!(
                 "  pending_cases={} java={}",
                 report.pending_cases.len(),
@@ -1772,12 +1916,15 @@ fn main() -> ExitCode {
             );
             for c in &report.cases {
                 println!(
-                    "  case {}: sections={} citations={} tables={} formulas={} output_hash={} conservation={}/{} rows={} digest={}",
+                    "  case {}: sections={} citations={} tables={} formulas={} header_authors={} figures={} visual_callouts={} output_hash={} conservation={}/{} rows={} digest={}",
                     c.case_id,
                     c.family_counts.get("sections").unwrap_or(&0),
                     c.family_counts.get("citations").unwrap_or(&0),
                     c.family_counts.get("tables").unwrap_or(&0),
                     c.family_counts.get("formulas").unwrap_or(&0),
+                    c.family_counts.get("header_authors").unwrap_or(&0),
+                    c.family_counts.get("figures").unwrap_or(&0),
+                    c.family_counts.get("visual_callouts").unwrap_or(&0),
                     c.output_hash,
                     c.conservation.verdict,
                     c.conservation.loss_rows,

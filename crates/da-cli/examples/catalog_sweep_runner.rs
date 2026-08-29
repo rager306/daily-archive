@@ -20,7 +20,7 @@ use da_application::{PipelineOrchestrator, PipelineRunReport, StageDisposition};
 use da_cli::catalog_sweep::{
     ArticleMetrics, CatalogEntry, DeviationKind, SweepThresholds, classify_deviations,
 };
-use da_parse::{GrobidParser, GrobidProfile};
+use da_parse::{GrobidParser, GrobidProfile, PROJECT_ARTICLE_SCHEMA_FINGERPRINT};
 use da_ports::pipeline_cache::{PipelineCache, SourceIdentity};
 use da_ports::pipeline_stage::{PipelineStageExecutor, StageContract};
 use kg_pipeline::PipelineBuilder;
@@ -282,7 +282,7 @@ async fn process_one(
                 configuration_fingerprint: "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note,formula".into(),
                 prompt_fingerprint: None,
                 model_fingerprint: Some("grobid/grobid:0.9.0-crf".into()),
-                output_schema_fingerprint: "ParsedArticle@serde-v3-unique-navigation".into(),
+                output_schema_fingerprint: PROJECT_ARTICLE_SCHEMA_FINGERPRINT.into(),
             })
             .with_retry_delay_seconds(30),
     );

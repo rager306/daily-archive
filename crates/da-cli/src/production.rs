@@ -17,7 +17,7 @@ use da_application::{
     MultimodalComposition, MultimodalFingerprintSummary, PipelineOrchestrator,
 };
 use da_domain::{PipelineStageLedger, StageIdRegistry};
-use da_parse::{GrobidParser, GrobidProfile};
+use da_parse::{GrobidParser, GrobidProfile, PROJECT_ARTICLE_SCHEMA_FINGERPRINT};
 use da_ports::figure_detection::{FigureDetectionPort, FigureDetectionRequest};
 use da_ports::multimodal_llm::{ModelRouteDescriptor, ModelWireProtocol, MultimodalLlmPort};
 use da_ports::parser::ParserPort;
@@ -407,7 +407,7 @@ pub fn compose_multimodal_production(
             configuration_fingerprint: profile_fp.clone(),
             prompt_fingerprint: None,
             model_fingerprint: Some("grobid/grobid:0.9.0-crf".into()),
-            output_schema_fingerprint: "ParsedArticle@serde-v3-unique-navigation".into(),
+            output_schema_fingerprint: PROJECT_ARTICLE_SCHEMA_FINGERPRINT.into(),
         }),
     );
 

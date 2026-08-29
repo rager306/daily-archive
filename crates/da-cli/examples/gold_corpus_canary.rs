@@ -13,7 +13,7 @@ use da_adapters::{
 use da_application::{PipelineOrchestrator, PipelineRunReport, StageDisposition};
 use da_cli::gold_corpus::{CanonicalSourceKind, GoldCorpusManifest};
 use da_domain::eval::{ExtractionMetrics, GoldEntity, PredictedEntity};
-use da_parse::{GrobidParser, GrobidProfile};
+use da_parse::{GrobidParser, GrobidProfile, PROJECT_ARTICLE_SCHEMA_FINGERPRINT};
 use da_ports::extractor::ExtractedEntity;
 use da_ports::pipeline_cache::{
     CacheLookup, PipelineCache, SourceFormat, SourceIdentity, StageOutcome,
@@ -219,7 +219,7 @@ async fn main() -> Result<()> {
                         prompt_fingerprint: None,
                         model_fingerprint: Some("grobid/grobid:0.9.0-crf".into()),
                         output_schema_fingerprint:
-                            "ParsedArticle@serde-v3-unique-navigation".into(),
+                            PROJECT_ARTICLE_SCHEMA_FINGERPRINT.into(),
                     })
                     .with_retry_delay_seconds(args.retry_delay_seconds),
                 ),

@@ -1,5 +1,5 @@
 //! Cache-identity regression gate for the scholarly parse plane
-//! (M464-z84in2 / S02 / T04).
+//! (M464-z84in2 / S02 / T04; projection-identity rotation S07 / T05).
 //!
 //! Proves the S02 seam extraction (ParseBackend / TeiEnvelope / TeiLifter /
 //! ScholarlyParser) did NOT rotate any production identity:
@@ -8,7 +8,7 @@
 //!   stay byte-stable and keep separating rich from structural; envelope
 //!   identity rides the exact same strings, so envelope and cache identity
 //!   cannot drift apart and transport tuning never leaks in;
-//! - the frozen S01 baseline identities in the tracked
+//! - the frozen baseline identities in the tracked
 //!   `artifacts/parse_compat/baseline.json` (per-case output hashes,
 //!   aggregate output/source hashes, corpus hash, conservation totals) are
 //!   reproduced EXACTLY by the new composition path (CachedTeiBackend →
@@ -17,9 +17,11 @@
 //!   identity byte-for-byte;
 //! - the bounded legacy/production cache-identity strings production relies
 //!   on (`da_adapters::GrobidParser@load-v1`, `ParsedArticle.v1`, the legacy
-//!   `pdf-grobid` lookup, `GrobidParser@tei-navigation-v3`,
-//!   `ParsedArticle@serde-v3-unique-navigation`, the GROBID model
-//!   fingerprint) are still pinned in their source surfaces;
+//!   `pdf-grobid` lookup, `GrobidParser@tei-navigation-v3`, the
+//!   S07/T05-rotated projection fingerprint
+//!   `ParsedArticle@serde-v4-p0-tei-lift` (owned by the single da-parse
+//!   const and referenced — never re-literalized — by production), the
+//!   GROBID model fingerprint) are still pinned in their source surfaces;
 //! - the baseline report keeps honest typed absences (the structural
 //!   companion is reported, never fabricated) and never carries raw
 //!   document content.
@@ -56,42 +58,52 @@ const COMPARISON_CONTRACT_REL: &str = "data/parse/comparison_contract.yaml";
 const RICH_FP: &str = "profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula";
 const STRUCTURAL_FP: &str = "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note,formula";
 
-/// Per-case output hashes frozen at S01. Any change means the lift/projection
+/// Per-case output hashes frozen at S01 and rotated by S07/T05: the
+/// `da-parse.lift-output-preimage.v2` preimage now covers the additive P0
+/// lift families (declared arXiv id, header authors, figures with graphic
+/// coordinates, visual callouts). Any further change means the lift/projection
 /// output identity rotated and must be a conscious, coordinated decision —
 /// never a refactor side effect.
 const FROZEN_CASE_OUTPUT_HASHES: [(&str, &str); 3] = [
     (
         "reg.tei.hub-bibliography-2507.19457",
-        "sha256:f621bc87809a930caf39816aace46cd52d71c4a2e6e88b7f7fbeaa8bca45b397",
+        "sha256:f8ce01ec075828c93487d0803d74e328ae6758f9365a03d9eee6a474cea40e68",
     ),
     (
         "reg.tei.rlm-2512.24601",
-        "sha256:e06c45fe8dc50677b7a08128790977152891a8e1dd7aac624f5795023b9b2d81",
+        "sha256:f77b414af8909932599f91d4d633baf1a0a8c79e8bfbb26cdd2ee907ccd26229",
     ),
     (
         "reg.tei.reca-bibliography-2605.26525",
-        "sha256:55325dfad7f9a56624ba8eb964a038f5ec0f8fc0b5405a26cc586032ba42b2d2",
+        "sha256:e7ac1aaa3ccd2666bc97804f3cd50f4f29d7771a4038d9793696edd33677f593",
     ),
 ];
 
-/// Aggregate identities frozen at S01 (`baseline.json` report_identity).
+/// Aggregate identities frozen at S01, output hash rotated by S07/T05 (the
+/// v2 preimage covers the lifted P0 families).
 const FROZEN_AGGREGATE_OUTPUT_HASH: &str =
-    "sha256:90484527edcf0f853ec25da84caef9ccec06840f5cd5d22068a7ff1cc34a0a3f";
+    "sha256:3d1f0a537766de0f8003b34498b8685611a8c7df218c79c1055020cd403bdea7";
 const FROZEN_SOURCE_HASH: &str =
     "sha256:d0b2c6c7e3b4af551b1e804705b6424cd1c367832516beb383d9c3cb5ade4c49";
-/// Rotated by S03/T04: the manifest now requires `conservation_delta`
-/// evidence per case; the byte identity of the manifest text follows.
+/// Rotated by S03/T04 (per-case `conservation_delta` evidence) and again by
+/// S07/T05: the hub-case note now records that the TEI-byte author/figure
+/// facts are lifted since S07; the byte identity of the manifest follows.
 const FROZEN_CORPUS_HASH: &str =
-    "sha256:0156f0208729d04446201b5589616931a3d7e7bae076687f72cc96e895c37b08";
+    "sha256:a00e1c63886a5d821bcf69346fa985480e47ea22106c2fa9c76f835636163871";
 /// All three executed S01 cases run under the rich profile.
 const FROZEN_PROFILE_FINGERPRINT: &str = RICH_FP;
 
-/// Aggregate conservation totals frozen at S01 (family_counts).
-const FROZEN_TOTALS: [(&str, u64); 4] = [
+/// Aggregate lifted family totals frozen at S01; the S07 P0 families
+/// (header_authors, figures, visual_callouts) joined with the S07/T05
+/// rotation of the baseline report.
+const FROZEN_TOTALS: [(&str, u64); 7] = [
     ("citations", 207),
+    ("figures", 106),
     ("formulas", 38),
+    ("header_authors", 36),
     ("sections", 264),
     ("tables", 8),
+    ("visual_callouts", 106),
 ];
 
 /// Pending structural companion identity (typed absence — honest).
@@ -145,9 +157,13 @@ fn u64_field(case: &serde_json::Value, pointer: &str) -> u64 {
 /// `crates/da-cli/examples/parse_compat_baseline.rs::lifted_output_preimage`.
 /// Raw `tei_xml` is deliberately bound to null: the identity covers lifted
 /// content only, and raw TEI/PDF/document text never enters reports.
+///
+/// v2 (M464-z84in2 S07/T05): the additive P0 lift families joined the
+/// preimage — the v1 digest was blind to exactly the families this slice
+/// lifted, so the output-hash pin rotates with them.
 fn lifted_output_preimage(article: &ParsedArticle) -> serde_json::Value {
     json!({
-        "schema": "da-parse.lift-output-preimage.v1",
+        "schema": "da-parse.lift-output-preimage.v2",
         "paper_id": article.paper_id,
         "pdf_hash": article.pdf_hash,
         "title": article.title,
@@ -159,6 +175,11 @@ fn lifted_output_preimage(article: &ParsedArticle) -> serde_json::Value {
         "table_missingness": &article.table_missingness,
         "formulas": &article.formulas,
         "formula_missingness": &article.formula_missingness,
+        "declared_arxiv_id": &article.declared_arxiv_id,
+        "declared_id_missingness": &article.declared_id_missingness,
+        "header_authors": &article.header_authors,
+        "figures": &article.figures,
+        "visual_callouts": &article.visual_callouts,
         "tei_xml": serde_json::Value::Null,
     })
 }
@@ -540,7 +561,10 @@ fn production_cache_identity_strings_stay_pinned_in_their_source_surfaces() {
             "crates/da-cli/src/production.rs",
             &[
                 "\"GrobidParser@tei-navigation-v3\"",
-                "\"ParsedArticle@serde-v3-unique-navigation\"",
+                // S07/T05: the projection fingerprint lives ONLY in the
+                // da-parse const — production references it instead of
+                // carrying a drift-prone literal copy.
+                "PROJECT_ARTICLE_SCHEMA_FINGERPRINT",
                 "\"grobid/grobid:0.9.0-crf\"",
             ],
         ),
@@ -548,7 +572,7 @@ fn production_cache_identity_strings_stay_pinned_in_their_source_surfaces() {
             "crates/da-adapters/src/pipeline_stages.rs",
             &[
                 "\"GrobidParser@tei-navigation-v3\"",
-                "\"ParsedArticle@serde-v3-unique-navigation\"",
+                "PROJECT_ARTICLE_SCHEMA_FINGERPRINT",
             ],
         ),
     ];
@@ -1324,7 +1348,7 @@ fn s06_batch_cache_vocabulary_stays_byte_pinned_for_the_data_ledger() {
     assert_eq!(PROJECT_ARTICLE_PAYLOAD_SCHEMA_VERSION, 1);
     assert_eq!(
         PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
-        "ParsedArticle@serde-v3-unique-navigation"
+        "ParsedArticle@serde-v4-p0-tei-lift"
     );
     assert_eq!(ParseCacheStage::RawTei.stage_id(), RAW_TEI_STAGE_ID);
     assert_eq!(

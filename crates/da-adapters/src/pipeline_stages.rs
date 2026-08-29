@@ -1,6 +1,7 @@
 //! Production pipeline-stage adapters for parsing and figure detection (M371 S02).
 
 use async_trait::async_trait;
+use da_parse::PROJECT_ARTICLE_SCHEMA_FINGERPRINT;
 use da_ports::embedder::{Embedder, EmbedderError};
 use da_ports::extractor::Extractor;
 use da_ports::figure_detection::{FigureDetectionPort, FigureDetectionRequest};
@@ -40,7 +41,7 @@ impl GrobidParseStage {
                         .into(),
                 prompt_fingerprint: None,
                 model_fingerprint: Some("grobid/grobid:0.9.0-crf".into()),
-                output_schema_fingerprint: "ParsedArticle@serde-v3-unique-navigation".into(),
+                output_schema_fingerprint: PROJECT_ARTICLE_SCHEMA_FINGERPRINT.into(),
             },
         }
     }
@@ -236,7 +237,7 @@ impl HtmlParseStage {
                     .into(),
                 prompt_fingerprint: None,
                 model_fingerprint: None,
-                output_schema_fingerprint: "ParsedArticle@serde-v3-unique-navigation".into(),
+                output_schema_fingerprint: PROJECT_ARTICLE_SCHEMA_FINGERPRINT.into(),
             },
         }
     }

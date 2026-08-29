@@ -182,7 +182,7 @@ fn multimodal_orchestrator(
             b"parsed-article",
             grobid_profile,
             Some("grobid/grobid:0.9.0-crf"),
-            "ParsedArticle@serde-v3-unique-navigation",
+            "ParsedArticle@serde-v4-p0-tei-lift",
         )),
         Arc::new(FakeStage::new(
             "figure_detect",

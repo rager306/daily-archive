@@ -3884,3 +3884,146 @@ fn rejects_invented_field_inside_batch_cache_observation() {
         Ok(_) => panic!("an invented observation field must not deserialize"),
     }
 }
+
+// ───────────────── S07/T05 projection-identity rotation ───────────────────
+//
+// The additive P0 lift families joined the ParsedArticle wire, so the
+// projection schema fingerprint rotated (ParsedArticle@serde-v4-p0-tei-lift).
+// These checks bind the rotation mutually: Rust const ↔ ledger ↔ registry,
+// the retired v3 literal must be fully rotated out of the live surfaces,
+// and a re-introduced retired value must fail the exact tagged checks.
+
+/// The retired projection fingerprint. Its ONLY sanctioned residence is
+/// rotation-history documentation (e.g. the da-parse const doc comment);
+/// it must never label a live stage key or data contract again.
+const RETIRED_PROJECTION_FINGERPRINT: &str = "ParsedArticle@serde-v3-unique-navigation";
+
+#[test]
+fn s07_projection_fingerprint_is_mutually_bound_across_rust_ledger_and_registry() {
+    // The live const carries the S07 rotation.
+    assert_eq!(
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT, "ParsedArticle@serde-v4-p0-tei-lift",
+        "the projection schema fingerprint must carry the S07 P0-lift rotation"
+    );
+
+    // Direct Rust↔registry binding: the registry of record declares the
+    // LIVE fingerprint (the ledger↔registry agreement is checked elsewhere;
+    // this closes the triangle so a registry-only revert fails here).
+    let registry = load_registry_value();
+    let registry_fp = registry
+        .get("defaults")
+        .and_then(|d| d.get("batch_cache"))
+        .and_then(|b| b.get("cache_stages"))
+        .and_then(|s| s.get("projector_schema_fingerprint"))
+        .and_then(|v| v.as_str())
+        .expect("registry declares projector_schema_fingerprint");
+    assert_eq!(
+        registry_fp, PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        "registry projector_schema_fingerprint drifted from the live da-parse const"
+    );
+
+    // The ledger observation record binds the same value through the full
+    // validator (live-vocabulary check included).
+    let ledger: LedgerFile = expect_loaded(LEDGER_REL_PATH);
+    let ledger_ids = ledger_id_set(&ledger);
+    let mut errs = validate_batch_cache_observation(&ledger.batch_cache_observation, &ledger_ids);
+    errs.extend(validate_batch_cache_registry_consistency(
+        &ledger.batch_cache_observation,
+        &load_registry_value(),
+    ));
+    assert!(
+        errs.is_empty(),
+        "batch/cache observation must stay consistent with the rotated fingerprint: {errs:?}"
+    );
+}
+
+#[test]
+fn s07_retired_projection_fingerprint_is_fully_rotated_out_of_live_surfaces() {
+    // 1. No data/parse contract may still label the retired identity.
+    let parse_dir = repo_root().join("data/parse");
+    let mut scanned = 0;
+    let mut entries = std::fs::read_dir(&parse_dir)
+        .unwrap_or_else(|e| panic!("data/parse readable: {e}"))
+        .collect::<Result<Vec<_>, _>>()
+        .expect("data/parse entries readable");
+    entries.sort_by_key(|e| e.file_name());
+    for entry in entries {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("yaml") {
+            continue;
+        }
+        let text = std::fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("{} readable: {e}", path.display()));
+        scanned += 1;
+        assert!(
+            !text.contains(RETIRED_PROJECTION_FINGERPRINT),
+            "{} still carries the retired projection fingerprint — the S07/T05 rotation is incomplete",
+            path.display()
+        );
+    }
+    assert!(
+        scanned >= 4,
+        "expected the four data/parse contracts, scanned {scanned}"
+    );
+
+    // 2. The production surfaces reference the da-parse const instead of
+    //    carrying their own (drift-prone) literal copy.
+    for rel in [
+        "crates/da-cli/src/production.rs",
+        "crates/da-adapters/src/pipeline_stages.rs",
+        "crates/da-cli/examples/catalog_sweep_runner.rs",
+        "crates/da-cli/examples/gold_corpus_canary.rs",
+        "crates/da-adapters/tests/pipeline_cache_contract.rs",
+    ] {
+        let text = String::from_utf8(
+            std::fs::read(repo_root().join(rel)).unwrap_or_else(|e| panic!("{rel} readable: {e}")),
+        )
+        .unwrap_or_else(|_| panic!("{rel} must be utf-8"));
+        assert!(
+            !text.contains(RETIRED_PROJECTION_FINGERPRINT),
+            "{rel} still hardcodes the retired projection fingerprint"
+        );
+    }
+}
+
+#[test]
+fn s07_reintroducing_the_retired_fingerprint_fails_the_tagged_checks() {
+    // Observation record reverting to the retired value → live-vocabulary
+    // drift is named by the exact tag.
+    let ledger = observation_mut(|obs| {
+        if let Some(projector) = obs
+            .cache_stages
+            .iter_mut()
+            .find(|s| s.stage == "project_article")
+        {
+            projector.projector_schema_fingerprint =
+                Some(RETIRED_PROJECTION_FINGERPRINT.to_string());
+        }
+    });
+    let errs = validate_ledger(&ledger);
+    negative(
+        "[cache-stage-schema-drift]",
+        &errs,
+        "observation reverted to the retired projection fingerprint",
+    );
+
+    // Registry reverting while the observation stays rotated → DATA↔DATA
+    // drift is named by the exact tag.
+    let (ledger, _) = loaded_pair();
+    let mut registry = load_registry_value();
+    let section = registry
+        .get_mut("defaults")
+        .and_then(|d| d.get_mut("batch_cache"))
+        .and_then(|b| b.get_mut("cache_stages"))
+        .expect("registry cache_stages section");
+    if let Some(fp) = section.get_mut("projector_schema_fingerprint") {
+        *fp = serde_yaml::Value::String(RETIRED_PROJECTION_FINGERPRINT.into());
+    }
+    let errs =
+        validate_batch_cache_registry_consistency(&ledger.batch_cache_observation, &registry);
+    negative(
+        "[registry-batch-cache-drift]",
+        &errs,
+        "registry reverted to the retired projection fingerprint",
+    );
+}
