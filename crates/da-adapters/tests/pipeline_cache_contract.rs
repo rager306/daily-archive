@@ -6,13 +6,16 @@ use std::{
 };
 
 use da_adapters::{
-    memory_pipeline_cache::MemoryPipelineCache, parse_cache::FileParseArtifactCache,
+    memory_pipeline_cache::MemoryPipelineCache,
+    parse_cache::{FileParseArtifactCache, lookup_with_legacy_parse_identity},
     pipeline_cache::FilePipelineCache,
 };
 use da_parse::{
-    CacheIntegrityCode, ParseArtifactCache, ParseBackendRequest, ParseCacheStage, RAW_TEI_STAGE_ID,
-    project_article_stage_key, raw_tei_stage_key,
+    CacheIntegrityCode, FulltextDialectV1, GrobidProfile, ParseArtifactCache, ParseBackendRequest,
+    ParseCacheStage, ProjectArticlePayload, RAW_TEI_STAGE_ID, RawTeiEnvelopePayload, TeiEnvelope,
+    TeiIdentity, TeiResultIdentity, project_article_stage_key, raw_tei_stage_key,
 };
+use da_ports::parser::ParsedArticle;
 use da_ports::pipeline_cache::{
     CacheLookup, PipelineCache, PipelineCacheError, SourceFormat, SourceIdentity, StageCacheKey,
 };
@@ -318,5 +321,173 @@ async fn concurrent_parse_artifact_publication_is_atomic_and_deterministic() {
     }
     let read = cache.read_raw(&raw).await.unwrap().expect("published");
     assert_eq!(read.payload(), b"same-verbatim-tei");
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+// ── S06/T03: full versioned payload round-trips + legacy ParsedArticle reads ──
+
+/// The complete staged payload — the versioned `RawTeiEnvelopePayload` and
+/// `ProjectArticlePayload` envelopes over a real `ParsedArticle` — written
+/// through the artifact cache and read back byte-exact, then re-verified by
+/// `da_parse`'s own `decode_and_verify` (S06/T03 verify proof 1).
+#[tokio::test]
+async fn parse_artifact_cache_roundtrips_full_versioned_payloads() {
+    let root = temp("artifact-full-payloads");
+    let cache = FileParseArtifactCache::new(&root);
+
+    let tei = "<TEI xmlns=\"http://www.tei-c.org/ns/1.0\">full staged payload</TEI>";
+    let result = TeiResultIdentity::fulltext(FulltextDialectV1::legacy_rich());
+    let envelope = TeiEnvelope::new(
+        tei,
+        TeiIdentity::new("identity-gate-backend", "profile-fp").with_result(result.clone()),
+    );
+    let raw_payload = RawTeiEnvelopePayload::build(&envelope, &result);
+    let raw = raw_stage_key();
+    cache.write_raw(&raw, &raw_payload.encode()).await.unwrap();
+
+    let raw_read = cache.read_raw(&raw).await.unwrap().expect("raw staged hit");
+    let (verified_envelope, raw_sha) =
+        RawTeiEnvelopePayload::decode_and_verify(raw_read.payload(), &result)
+            .expect("raw payload survives the cache byte-exact");
+    assert_eq!(verified_envelope.raw_tei(), tei.as_bytes());
+    assert_eq!(raw_sha, raw_payload.payload_sha256());
+
+    let article = ParsedArticle {
+        paper_id: "paper-id".into(),
+        title: "Atomic Payload Cache".into(),
+        abstract_text: "round trip".into(),
+        body_text: "projected body".into(),
+        sections: vec![],
+        citations: vec![],
+        layout_json: None,
+        tei_xml: Some(tei.to_string()),
+        pdf_hash: "a".repeat(64),
+        tables: Vec::new(),
+        table_missingness: None,
+        formulas: Vec::new(),
+        formula_missingness: None,
+        page_text_missingness: None,
+    };
+    let projector_key = projected_stage_key(&raw_sha);
+    let projected_payload = ProjectArticlePayload::build(
+        &article,
+        "ParsedArticle@serde-v3-unique-navigation",
+        &raw_sha,
+        "paper-id",
+        &"a".repeat(64),
+    );
+    cache
+        .write_projected(&projector_key, &projected_payload.encode())
+        .await
+        .unwrap();
+
+    let projected_read = cache
+        .read_projected(&projector_key)
+        .await
+        .unwrap()
+        .expect("projected staged hit");
+    let decoded = ProjectArticlePayload::decode_and_verify(
+        projected_read.payload(),
+        "ParsedArticle@serde-v3-unique-navigation",
+        &raw_sha,
+        "paper-id",
+        &"a".repeat(64),
+    )
+    .expect("projected payload survives the cache byte-exact");
+    assert_eq!(
+        serde_json::to_string(&decoded).unwrap(),
+        serde_json::to_string(&article).unwrap()
+    );
+
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+/// A REAL legacy `ParsedArticle` record — the exact pre-S06 `da load` write
+/// form (collapsed `pdf-grobid` identity, `ParsedArticle.v1` JSON without
+/// the newer defaulted fields) — reads back byte-identical through the
+/// extracted fallback, decodes with today's `ParsedArticle` schema, and
+/// stays read-only (S06/T03 verify proof 2; no migration, no canonical
+/// record, no rewrite).
+#[test]
+fn legacy_parsed_article_reads_back_byte_identical_and_read_only() {
+    let root = temp("artifact-legacy-parsed");
+    let cache = FilePipelineCache::new(&root);
+
+    let pdf_sha = "a".repeat(64);
+    let canonical_source = SourceIdentity {
+        article_id: "test.paper".into(),
+        selected_format: SourceFormat::Pdf,
+        pdf_sha256: Some(pdf_sha.clone()),
+        html_sha256: None,
+        acquisition_fingerprint: format!("acq-v2;pdf={pdf_sha};html=none"),
+        normalization_fingerprint: "identity-v1".into(),
+    };
+    let canonical_key = StageCacheKey {
+        source: canonical_source.clone(),
+        stage_id: "parse".into(),
+        dependency_output_sha256: BTreeMap::new(),
+        implementation_fingerprint: "da_adapters::GrobidParser@load-v1".into(),
+        configuration_fingerprint: GrobidProfile::rich().configuration_fingerprint(),
+        prompt_fingerprint: None,
+        model_fingerprint: None,
+        output_schema_fingerprint: "ParsedArticle.v1".into(),
+    };
+    // The collapsed legacy identity exactly as the pre-S06 writer stored it:
+    // acquisition pinned to the selected PDF bytes, configuration
+    // "pdf-grobid", everything else byte-identical to the canonical key.
+    let stored_legacy_key = StageCacheKey {
+        source: SourceIdentity {
+            acquisition_fingerprint: pdf_sha.clone(),
+            ..canonical_source
+        },
+        configuration_fingerprint: "pdf-grobid".into(),
+        ..canonical_key.clone()
+    };
+
+    // Pre-S06 JSON: only the nine original fields — the newer defaulted
+    // fields (tables/formulas/missingness) did not exist when it was written.
+    let legacy_payload = serde_json::json!({
+        "paper_id": "test.paper",
+        "title": "Legacy stored article",
+        "abstract_text": "",
+        "body_text": "legacy body",
+        "sections": [],
+        "citations": [],
+        "layout_json": null,
+        "tei_xml": null,
+        "pdf_hash": pdf_sha,
+    })
+    .to_string()
+    .into_bytes();
+    cache
+        .store_success(
+            &stored_legacy_key,
+            &legacy_payload,
+            BTreeMap::new(),
+            "2026-08-14T00:00:00Z",
+        )
+        .unwrap();
+
+    let outcome = lookup_with_legacy_parse_identity(
+        &cache,
+        &canonical_key,
+        false,
+        GrobidProfile::rich(),
+        "2026-08-14T00:01:00Z",
+    )
+    .expect("legacy lookup succeeds");
+    let CacheLookup::Hit(hit) = outcome.lookup else {
+        panic!("expected the stored legacy ParsedArticle to hit")
+    };
+    assert_eq!(outcome.resolved_from.as_deref(), Some("pdf-grobid"));
+    assert_eq!(hit.payload, legacy_payload);
+    let decoded: ParsedArticle = serde_json::from_slice(&hit.payload)
+        .expect("legacy JSON still decodes with the current ParsedArticle schema");
+    assert_eq!(decoded.paper_id, "test.paper");
+    assert!(decoded.tables.is_empty());
+    assert!(decoded.formulas.is_empty());
+
+    // Read-only: the lookup created no canonical record (exactly one entry).
+    assert_eq!(cache.manifest("test.paper").unwrap().len(), 1);
     std::fs::remove_dir_all(root).unwrap();
 }
