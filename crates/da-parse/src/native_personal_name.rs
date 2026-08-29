@@ -228,10 +228,10 @@ fn tokenize(input: &str) -> Result<Vec<String>, TokenizeError> {
             NativePersonalNameMalformed::RepeatedSeparator,
         ));
     }
-    if out
-        .iter()
-        .any(|token: &String| token.trim_matches('.').is_empty())
-    {
+    if out.iter().any(|token: &String| {
+        token.trim_matches('.').is_empty()
+            || (token != "," && !token.chars().any(char::is_alphabetic))
+    }) {
         return Err(TokenizeError::Malformed(
             NativePersonalNameMalformed::EmptyComponent,
         ));
@@ -345,6 +345,9 @@ fn initials_of(w: &str) -> Vec<String> {
     w.trim_matches('.')
         .split('-')
         .filter(|p| !p.is_empty())
-        .map(|p| p.chars().filter(|c| c.is_alphabetic()).take(1).collect())
+        .filter_map(|p| {
+            let initial: String = p.chars().filter(|c| c.is_alphabetic()).take(1).collect();
+            (!initial.is_empty()).then_some(initial)
+        })
         .collect()
 }
