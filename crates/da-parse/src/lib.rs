@@ -82,10 +82,14 @@ pub use native_affiliation::{
     NativeAffiliationParser, NativeAffiliationUnsupported, RecognizedAffiliationComponent,
 };
 pub use native_citation::{
-    CitationField, CitationFieldRole, CitationSpan, NATIVE_CITATION_INPUT_BYTE_CAP,
-    NATIVE_CITATION_OUTCOME_SCHEMA_VERSION, NATIVE_CITATION_PARSER_ID,
-    NATIVE_CITATION_PARSER_VERSION, NativeCitationAmbiguous, NativeCitationMalformed,
-    NativeCitationOutcome, NativeCitationParser, NativeCitationUnsupported,
+    CitationField, CitationFieldRole, CitationSpan, NATIVE_CITATION_ANCHOR_SCANNER_ID,
+    NATIVE_CITATION_INPUT_BYTE_CAP, NATIVE_CITATION_OUTCOME_SCHEMA_VERSION,
+    NATIVE_CITATION_PARSER_ID, NATIVE_CITATION_PARSER_VERSION, NATIVE_REFERENCE_SEGMENTER_ID,
+    NativeCitationAmbiguous, NativeCitationAnchor, NativeCitationAnchorError,
+    NativeCitationAnchorLimits, NativeCitationAnchorOutcome, NativeCitationAnchorScanner,
+    NativeCitationMalformed, NativeCitationOutcome, NativeCitationParser,
+    NativeCitationUnsupported, NativeReference, NativeReferenceListError,
+    NativeReferenceListOutcome, NativeReferenceSegmenter, NativeReferenceSegmenterLimits,
 };
 pub use native_date::{
     DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,

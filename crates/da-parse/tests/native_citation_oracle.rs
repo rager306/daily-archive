@@ -3,7 +3,11 @@
 //! This deliberately uses a small test-local scanner instead of `da-parse` XML
 //! or lifting code.  The fixture bytes, entry order, and raw notes are the
 //! authority; candidate output is never used to manufacture expected values.
-use da_parse::{CitationFieldRole, NativeCitationOutcome, NativeCitationParser};
+use da_parse::{
+    CitationFieldRole, NativeCitationAnchorOutcome, NativeCitationAnchorScanner,
+    NativeCitationOutcome, NativeCitationParser, NativeReferenceListOutcome,
+    NativeReferenceSegmenter,
+};
 use sha2::{Digest, Sha256};
 use std::{fs, path::PathBuf};
 
@@ -44,6 +48,58 @@ fn digest(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(bytes);
     format!("{:x}", hasher.finalize())
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct OracleAnchor {
+    start: usize,
+    end: usize,
+    target_present: bool,
+}
+
+/// Independent literal inventory used as the anchor authority. It deliberately
+/// does not call the candidate scanner or any production XML helper.
+fn scan_bibr_anchors(xml: &str) -> Vec<OracleAnchor> {
+    let mut out = Vec::new();
+    let mut cursor = 0;
+    while let Some(relative) = xml[cursor..].find("<ref") {
+        let start = cursor + relative;
+        let Some(open_end_rel) = xml[start..].find('>') else {
+            break;
+        };
+        let open_end = start + open_end_rel;
+        let opening = &xml[start..=open_end];
+        let is_bibr = opening.contains("type=\"bibr\"") || opening.contains("type='bibr'");
+        if is_bibr {
+            let Some(close_rel) = xml[open_end + 1..].find("</ref>") else {
+                break;
+            };
+            let end = open_end + 1 + close_rel + "</ref>".len();
+            out.push(OracleAnchor {
+                start,
+                end,
+                target_present: opening.contains("target=\"") || opening.contains("target='"),
+            });
+            cursor = end;
+        } else {
+            cursor = open_end + 1;
+        }
+    }
+    out
+}
+
+fn oracle_adjacent_pairs(xml: &str, anchors: &[OracleAnchor]) -> Vec<(usize, usize)> {
+    anchors
+        .windows(2)
+        .enumerate()
+        .filter_map(|(index, pair)| {
+            let between = &xml[pair[0].end..pair[1].start];
+            between
+                .chars()
+                .all(|c| c.is_whitespace() || matches!(c, ';' | ','))
+                .then_some((index, index + 1))
+        })
+        .collect()
 }
 
 fn text_of(fragment: &str) -> String {
@@ -154,6 +210,83 @@ fn checksum_bound_population_and_order_are_exact() {
     assert_eq!(population.len(), 207);
     let joined = population.join("\x1f");
     assert_eq!(digest(joined.as_bytes()), ORDERED_RAW_DIGEST);
+}
+
+#[test]
+fn checksum_bound_anchor_population_preserves_order_state_spans_and_adjacency() {
+    let scanner = NativeCitationAnchorScanner::new();
+    let mut total = 0;
+    let mut targeted = 0;
+    let mut targetless = 0;
+    let mut adjacency = 0;
+    for (name, expected_checksum, _) in FIXTURES {
+        let bytes = fs::read(fixture_path(name)).unwrap();
+        assert_eq!(
+            digest(&bytes),
+            expected_checksum,
+            "fixture checksum changed: {name}"
+        );
+        let xml = String::from_utf8(bytes).expect("fixture is UTF-8");
+        let expected = scan_bibr_anchors(&xml);
+        let expected_pairs = oracle_adjacent_pairs(&xml, &expected);
+        let NativeCitationAnchorOutcome::Recognized {
+            anchors,
+            adjacent_pairs,
+        } = scanner.scan(&xml)
+        else {
+            panic!("candidate did not recognize anchors in {name}")
+        };
+        assert_eq!(
+            anchors.len(),
+            expected.len(),
+            "anchor population changed: {name}"
+        );
+        assert_eq!(adjacent_pairs, expected_pairs, "adjacency changed: {name}");
+        for (ordinal, (actual, wanted)) in anchors.iter().zip(expected.iter()).enumerate() {
+            assert_eq!(actual.ordinal, ordinal);
+            assert_eq!(
+                (actual.span.start, actual.span.end),
+                (wanted.start, wanted.end)
+            );
+            assert_eq!(actual.target_present, wanted.target_present);
+            assert_eq!(actual.source, &xml[wanted.start..wanted.end]);
+        }
+        total += expected.len();
+        targeted += expected
+            .iter()
+            .filter(|anchor| anchor.target_present)
+            .count();
+        targetless += expected
+            .iter()
+            .filter(|anchor| !anchor.target_present)
+            .count();
+        adjacency += expected_pairs.len();
+    }
+    assert_eq!((total, targeted, targetless), (380, 217, 163));
+    assert!(
+        adjacency > 0,
+        "the pinned corpus must contain adjacent fragmented occurrences"
+    );
+}
+
+#[test]
+fn reconstructed_raw_reference_lists_preserve_exact_source_population() {
+    for (name, _, expected_n) in FIXTURES {
+        let entries = scan_fixture(name);
+        let input: Vec<&str> = entries.iter().map(|entry| entry.raw.as_str()).collect();
+        let NativeReferenceListOutcome::Recognized { references } =
+            NativeReferenceSegmenter::new().segment(&input)
+        else {
+            panic!("candidate did not reconstruct {name}")
+        };
+        assert_eq!(references.len(), expected_n);
+        assert!(references.iter().enumerate().all(|(ordinal, reference)| {
+            reference.ordinal == ordinal
+                && reference.source == input[ordinal]
+                && reference.span.start == 0
+                && reference.span.end == input[ordinal].len()
+        }));
+    }
 }
 
 #[test]
