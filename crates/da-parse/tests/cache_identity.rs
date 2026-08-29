@@ -90,7 +90,7 @@ const FROZEN_SOURCE_HASH: &str =
 /// (date obligations added to the same three regression cases): the byte
 /// identity of the manifest follows each sanctioned DATA edit.
 const FROZEN_CORPUS_HASH: &str =
-    "sha256:defb48d6b2b820e297c7fba8e64b4a974a2beb422cddbe61ac44a52f4ad08b92";
+    "sha256:f3186d4d3f7277063ae7aa787a28bf3881ca749adacfa4b911d830bc53ac18bb";
 /// All three executed S01 cases run under the rich profile.
 const FROZEN_PROFILE_FINGERPRINT: &str = RICH_FP;
 
@@ -1405,6 +1405,99 @@ fn s06_batch_cache_vocabulary_stays_byte_pinned_for_the_data_ledger() {
     assert_eq!(PARSE_BATCH_SCHEMA_VERSION, 1);
     assert_eq!(PARSE_BATCH_CURSOR_SCHEMA_VERSION, 1);
     assert_eq!(PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION, 1);
+}
+
+// ───── S09/T05: the native personal-name shadow candidate never touches cache identity ─────
+
+#[test]
+fn s09_native_personal_name_shadow_stays_outside_cache_and_conservation_identity() {
+    use da_parse::{
+        CACHED_TEI_BACKEND_ID, GROBID_HTTP_BACKEND_ID, GrobidProfile,
+        NATIVE_PERSONAL_NAME_OUTCOME_SCHEMA_VERSION, NATIVE_PERSONAL_NAME_PARSER_ID,
+        NATIVE_PERSONAL_NAME_PARSER_VERSION, PROJECT_ARTICLE_STAGE_ID, RAW_TEI_STAGE_ID,
+        project_article_stage_key,
+    };
+
+    assert_eq!(
+        NATIVE_PERSONAL_NAME_PARSER_ID,
+        "da-parse.native_personal_name"
+    );
+    assert_eq!(NATIVE_PERSONAL_NAME_PARSER_VERSION, "1.0.0");
+    assert_eq!(
+        NATIVE_PERSONAL_NAME_OUTCOME_SCHEMA_VERSION,
+        "da-parse.native-personal-name.outcome/v1"
+    );
+    assert_eq!(RAW_TEI_STAGE_ID, "parse.raw_tei.v1");
+    assert_eq!(PROJECT_ARTICLE_STAGE_ID, "parse.project_article.v1");
+    assert_eq!(
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        "ParsedArticle@serde-v4-p0-tei-lift"
+    );
+    assert_eq!(GROBID_HTTP_BACKEND_ID, "grobid-http");
+    assert_eq!(CACHED_TEI_BACKEND_ID, "cached-tei");
+    assert_eq!(GrobidProfile::rich().configuration_fingerprint(), RICH_FP);
+    assert_eq!(
+        GrobidProfile::structural().configuration_fingerprint(),
+        STRUCTURAL_FP
+    );
+
+    let key = project_article_stage_key(
+        "reg.tei.hub-bibliography-2507.19457",
+        &"a".repeat(64),
+        &"b".repeat(64),
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+    );
+    assert!(!key.contains("native_personal_name") && !key.contains("PersonalName"));
+
+    let baseline = load_baseline();
+    let cases = baseline_cases(&baseline);
+    assert_eq!(
+        cases.len(),
+        3,
+        "native name evidence must not alter executed-case population"
+    );
+    for case in &cases {
+        assert!(case.get("native_personal_name").is_none());
+        assert!(case.get("native_personal_name_shadow").is_none());
+        assert!(case.get("conservation").is_some());
+    }
+    let shadow = baseline
+        .get("native_personal_name_shadow")
+        .expect("baseline must carry additive native personal-name evidence");
+    for (field, expected) in [
+        ("candidate_id", NATIVE_PERSONAL_NAME_PARSER_ID),
+        ("candidate_version", NATIVE_PERSONAL_NAME_PARSER_VERSION),
+        (
+            "outcome_schema_version",
+            NATIVE_PERSONAL_NAME_OUTCOME_SCHEMA_VERSION,
+        ),
+        ("observation_mode", "shadow"),
+        ("promotion_state", "candidate"),
+        ("rollback_target", "java-grobid-http@0.9.0-crf"),
+    ] {
+        assert_eq!(
+            shadow.get(field).and_then(|v| v.as_str()),
+            Some(expected),
+            "shadow field {field} drifted"
+        );
+    }
+    assert_eq!(
+        baseline
+            .pointer("/policy_locks/import_eligible")
+            .and_then(|v| v.as_bool()),
+        Some(false),
+        "candidate evidence cannot open the D127 import lock"
+    );
+    assert_eq!(
+        baseline
+            .pointer("/report_identity/promotion_state")
+            .and_then(|v| v.as_str()),
+        Some("candidate")
+    );
+    assert!(
+        baseline.get("conservation").is_some(),
+        "native name evidence must remain additive and preserve D299 conservation"
+    );
 }
 
 // ───── S08/T04: the native date shadow candidate never touches cache identity ─────

@@ -964,6 +964,144 @@ fn redb_scanner_fails_visible_on_synthetic_violations() {
     );
 }
 
+// ───── S09/T05: the native personal-name candidate stays a quarantined pure leaf ─────
+
+const NATIVE_PERSONAL_NAME_SURFACE: &str = "crates/da-parse/src/native_personal_name.rs";
+const NATIVE_PERSONAL_NAME_SIDE_CHANNEL_MARKERS: [&str; 22] = [
+    "std::env",
+    "env::var",
+    "var_os",
+    "std::fs",
+    "std::path",
+    "PathBuf",
+    "File::",
+    "std::net",
+    "TcpStream",
+    "reqwest",
+    "http",
+    "std::process",
+    "Command::",
+    "std::time",
+    "SystemTime",
+    "Instant",
+    "std::thread",
+    "std::sync",
+    "OnceLock",
+    "tracing",
+    "rand",
+    "println!",
+];
+const NATIVE_PERSONAL_NAME_SCOPE_CREEP_MARKERS: [&str; 10] = [
+    "TeiEnvelope",
+    "TeiLifter",
+    "TeiParseIr",
+    "ParserPort",
+    "ParsedArticle",
+    "ConservationEngine",
+    "Samyama",
+    "GraphStore",
+    "import_eligible",
+    "promotion_state",
+];
+const NATIVE_PERSONAL_NAME_COMPOSITION_SURFACES: [&str; 12] = [
+    "crates/da-parse/src/http.rs",
+    "crates/da-parse/src/parser.rs",
+    "crates/da-parse/src/lift.rs",
+    "crates/da-parse/src/ir.rs",
+    "crates/da-parse/src/projector.rs",
+    "crates/da-parse/src/envelope.rs",
+    "crates/da-parse/src/transport.rs",
+    "crates/da-parse/src/backend.rs",
+    "crates/da-parse/src/batch.rs",
+    "crates/da-parse/src/cache.rs",
+    "crates/da-parse/src/profile.rs",
+    "crates/da-parse/src/conservation.rs",
+];
+
+#[test]
+fn native_personal_name_module_is_pure_and_stays_out_of_runtime_composition() {
+    let text = read_text(NATIVE_PERSONAL_NAME_SURFACE);
+    assert!(
+        text.len() > 5000,
+        "positive control failed: {NATIVE_PERSONAL_NAME_SURFACE} looks truncated"
+    );
+    assert_eq!(
+        import_roots_of(&text),
+        BTreeSet::from(["serde".to_string()])
+    );
+    assert!(native_date_marker_hits(&text, &NATIVE_PERSONAL_NAME_SIDE_CHANNEL_MARKERS).is_empty());
+    assert!(native_date_marker_hits(&text, &NATIVE_PERSONAL_NAME_SCOPE_CREEP_MARKERS).is_empty());
+
+    let lib = read_text("crates/da-parse/src/lib.rs");
+    assert!(lib.contains("mod native_personal_name;"));
+    assert!(lib.contains("pub use native_personal_name::"));
+
+    let mut hits = Vec::new();
+    for rel in NATIVE_PERSONAL_NAME_COMPOSITION_SURFACES {
+        for (line_no, raw) in read_text(rel).lines().enumerate() {
+            if raw.contains("native_personal_name") || raw.contains("NativePersonalName") {
+                hits.push(format!(
+                    "[hidden-runtime-activation] {rel}:{}: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    let mut ports_files = Vec::new();
+    collect_rs_files(&repo_root().join("crates/da-ports/src"), &mut ports_files);
+    for file in ports_files {
+        let rel = file
+            .strip_prefix(repo_root())
+            .unwrap_or(&file)
+            .to_string_lossy()
+            .to_string();
+        let source = std::fs::read_to_string(&file)
+            .unwrap_or_else(|e| panic!("source unreadable {}: {e}", file.display()));
+        for (line_no, raw) in source.lines().enumerate() {
+            if raw.contains("native_personal_name") || raw.contains("NativePersonalName") {
+                hits.push(format!(
+                    "[hidden-runtime-activation] {rel}:{}: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    assert!(
+        hits.is_empty(),
+        "personal-name candidate leaked into runtime composition or da-ports:\n{}",
+        hits.join("\n")
+    );
+    assert!(
+        read_text("data/parse/grobid_compatibility.yaml").contains(
+            "crates/da-cli/examples/parse_compat_baseline.rs:native_personal_name_shadow"
+        )
+    );
+}
+
+#[test]
+fn native_personal_name_boundary_scanner_fails_visible_on_synthetic_violations() {
+    let synthetic = format!(
+        "use {}::GraphStore;\nlet path = {}::read_to_string(\"x\");\nlet env = {}::var(\"X\");\nfn {}() {{}}\n",
+        "samyama", "std::fs", "std::env", "ParserPort"
+    );
+    assert!(import_roots_of(&synthetic).contains("samyama"));
+    assert!(
+        native_date_marker_hits(&synthetic, &NATIVE_PERSONAL_NAME_SIDE_CHANNEL_MARKERS).len() >= 2
+    );
+    assert!(
+        !native_date_marker_hits(&synthetic, &NATIVE_PERSONAL_NAME_SCOPE_CREEP_MARKERS).is_empty()
+    );
+    assert!(
+        native_date_marker_hits(
+            "// ParserPort and std::fs are prose only\n",
+            &NATIVE_PERSONAL_NAME_SIDE_CHANNEL_MARKERS
+        )
+        .is_empty()
+    );
+}
+
 // ───── S08/T04: the native date shadow candidate stays a quarantined pure leaf ─────
 
 /// The S08 native date component surface. Since S08/T04 the gate additionally
