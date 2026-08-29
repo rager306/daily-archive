@@ -33,6 +33,7 @@ mod envelope;
 mod http;
 mod ir;
 mod lift;
+mod native_affiliation;
 mod native_date;
 mod native_personal_name;
 mod parser;
@@ -70,6 +71,13 @@ pub use envelope::{TeiEnvelope, TeiIdentity, TeiResultIdentity};
 pub use http::{GrobidHttpBackend, GrobidParser};
 pub use ir::TeiParseIr;
 pub use lift::TeiLifter;
+pub use native_affiliation::{
+    AffiliationComponentKind, AffiliationSpan, NATIVE_AFFILIATION_INPUT_BYTE_CAP,
+    NATIVE_AFFILIATION_OUTCOME_SCHEMA_VERSION, NATIVE_AFFILIATION_PARSER_ID,
+    NATIVE_AFFILIATION_PARSER_VERSION, NativeAffiliationAmbiguous, NativeAffiliationMalformed,
+    NativeAffiliationOutcome, NativeAffiliationParser, NativeAffiliationUnsupported,
+    RecognizedAffiliationComponent,
+};
 pub use native_date::{
     DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,
     NATIVE_DATE_PARSER_ID, NATIVE_DATE_PARSER_VERSION, NativeDateAmbiguous, NativeDateMalformed,
