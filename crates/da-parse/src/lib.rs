@@ -34,6 +34,7 @@ mod http;
 mod ir;
 mod lift;
 mod native_date;
+mod native_personal_name;
 mod parser;
 mod profile;
 mod projector;
@@ -73,6 +74,13 @@ pub use native_date::{
     DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,
     NATIVE_DATE_PARSER_ID, NATIVE_DATE_PARSER_VERSION, NativeDateAmbiguous, NativeDateMalformed,
     NativeDateOutcome, NativeDateParser, NativeDateUnsupported, RecognizedDate,
+};
+pub use native_personal_name::{
+    NATIVE_PERSONAL_NAME_INPUT_BYTE_CAP, NATIVE_PERSONAL_NAME_OUTCOME_SCHEMA_VERSION,
+    NATIVE_PERSONAL_NAME_PARSER_ID, NATIVE_PERSONAL_NAME_PARSER_VERSION,
+    NativePersonalNameAmbiguous, NativePersonalNameMalformed, NativePersonalNameOutcome,
+    NativePersonalNameParser, NativePersonalNameUnsupported, PersonalNameContext,
+    RecognizedPersonalName,
 };
 pub use parser::{ScholarlyParser, lift_and_project_envelope};
 pub use profile::GrobidProfile;
