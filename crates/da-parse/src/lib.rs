@@ -34,6 +34,7 @@ mod http;
 mod ir;
 mod lift;
 mod native_affiliation;
+mod native_citation;
 mod native_date;
 mod native_personal_name;
 mod parser;
@@ -79,6 +80,12 @@ pub use native_affiliation::{
     NativeAffiliationLinkOutcome, NativeAffiliationLinker, NativeAffiliationMalformed,
     NativeAffiliationNesting, NativeAffiliationOccurrence, NativeAffiliationOutcome,
     NativeAffiliationParser, NativeAffiliationUnsupported, RecognizedAffiliationComponent,
+};
+pub use native_citation::{
+    CitationField, CitationFieldRole, CitationSpan, NATIVE_CITATION_INPUT_BYTE_CAP,
+    NATIVE_CITATION_OUTCOME_SCHEMA_VERSION, NATIVE_CITATION_PARSER_ID,
+    NATIVE_CITATION_PARSER_VERSION, NativeCitationAmbiguous, NativeCitationMalformed,
+    NativeCitationOutcome, NativeCitationParser, NativeCitationUnsupported,
 };
 pub use native_date::{
     DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,
