@@ -122,7 +122,7 @@ const ANCHOR_ENTRY_IDS: [&str; 10] = [
 ];
 
 /// Allowed vocabulary for `required_evidence_fields`.
-const EVIDENCE_VOCAB: [&str; 11] = [
+const EVIDENCE_VOCAB: [&str; 12] = [
     "source_sha256",
     "source_path",
     "profile_fingerprint",
@@ -134,6 +134,7 @@ const EVIDENCE_VOCAB: [&str; 11] = [
     "latency_ms_when_executable",
     "known_regressions",
     "native_date_shadow",
+    "native_personal_name_shadow",
 ];
 
 /// Every case must request at least this evidence core.

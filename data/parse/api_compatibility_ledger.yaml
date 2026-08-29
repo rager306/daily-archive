@@ -426,6 +426,27 @@ entries:
       elevation requires an explicit user decision and a same-n strict parity
       receipt; per-occurrence evidence carries fixture id, ordinal, span and
       SHA-256 only, never display text or TEI fragments.
+  - id: parse.component.native_personal_name_shadow
+    kind: shadow_component
+    owner_crate: da-parse
+    visibility: public_fn
+    stability: internal_observable
+    entry_point: da_parse::NativePersonalNameParser::parse
+    request_shape: 'parse(context: PersonalNameContext, input: &str) -> NativePersonalNameOutcome (256-byte cap; Header/Citation required)'
+    result_shape: 'NativePersonalNameOutcome (closed wire da-parse.native-personal-name.outcome/v1; recognized fields plus closed empty/malformed/unsupported/ambiguous/oversized outcomes)'
+    error_shapes: []
+    async_behavior: synchronous_pure
+    request_fields: []
+    notes:
+      - 'Shadow candidate only (S09/T04): single parse-compat baseline native_personal_name_shadow block with independent header and citation denominators.'
+      - 'Rows carry only case/fixture identity, context, ordinal, bounded span and input/oracle/candidate hashes; raw and reconstructed names, TEI fragments and scholarly text are forbidden.'
+      - 'Pure component: no filesystem/env/clock/HTTP/tracing/graph access; Java GROBID remains baseline and rollback target; invention budget is zero.'
+      - 'registry_binding: rest.processHeaderNames and rest.processCitationNames'
+    compatibility_obligation: >-
+      Header and Citation must remain separate same-n populations. The candidate
+      stays shadow with promotion_state candidate and import_eligible false;
+      any promotion or runtime routing requires explicit decision and a fresh
+      strict parity receipt.
   - id: parse.profile.rich
     kind: profile_contract
     owner_crate: da-parse

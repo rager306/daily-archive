@@ -70,7 +70,10 @@ use da_parse::{
     CACHED_TEI_BACKEND_ID, ConservationDelta, ConservationEngine, ConservationFamily,
     ConservationReasonCode, DatePrecision, FamilyDeltaCounts, GrobidParser, GrobidProfile,
     NATIVE_DATE_OUTCOME_SCHEMA_VERSION, NATIVE_DATE_PARSER_ID, NATIVE_DATE_PARSER_VERSION,
-    NativeDateOutcome, NativeDateParser, RecognizedDate, TeiEnvelope, TeiIdentity, TeiLifter,
+    NATIVE_PERSONAL_NAME_OUTCOME_SCHEMA_VERSION, NATIVE_PERSONAL_NAME_PARSER_ID,
+    NATIVE_PERSONAL_NAME_PARSER_VERSION, NativeDateOutcome, NativeDateParser,
+    NativePersonalNameOutcome, NativePersonalNameParser, PersonalNameContext, RecognizedDate,
+    TeiEnvelope, TeiIdentity, TeiLifter,
 };
 use da_ports::parser::{ParsedArticle, ParserPort};
 use serde::Deserialize;
@@ -422,6 +425,8 @@ struct BaselineReport {
     /// over the checksum-bound ordered occurrence vector. Shadow only — the
     /// candidate is never a runtime route and never enters output identity.
     native_date_shadow: NativeDateShadowEvidence,
+    /// Additive shadow evidence for the independent Header/Citation name lanes.
+    native_personal_name_shadow: NativePersonalNameShadowEvidence,
     java_grobid: JavaEvidence,
     policy_locks: PolicyLocks,
 }
@@ -574,6 +579,7 @@ struct ContractData {
     /// S08/T03: DATA-owned native date shadow terms (denominator, same-n,
     /// invented budget, shadow/state/rollback identity).
     native_date_shadow: NativeDateShadowTerms,
+    native_personal_name_shadow: NativePersonalNameShadowTerms,
 }
 
 /// DATA-pinned native date shadow terms (comparison_contract.yaml
@@ -871,6 +877,78 @@ fn load_contract(repo_root: &Path) -> Result<ContractData, String> {
         denominator_per_fixture,
         invented_component_budget,
     };
+    let name = v
+        .get("native_personal_name_shadow")
+        .ok_or("[contract-shape] missing native_personal_name_shadow")?;
+    let name_str = |key: &str| -> Result<String, String> {
+        name.get(key)
+            .and_then(|v| v.as_str())
+            .map(str::to_owned)
+            .ok_or_else(|| format!("[contract-shape] missing native_personal_name_shadow.{key}"))
+    };
+    let name_engine = name_str("engine")?;
+    if name_engine != "da_parse::NativePersonalNameParser" {
+        return Err(format!(
+            "[contract-shadow-drift] name engine `{name_engine}`"
+        ));
+    }
+    let name_candidate_id = name_str("candidate_id")?;
+    if name_candidate_id != NATIVE_PERSONAL_NAME_PARSER_ID {
+        return Err(format!(
+            "[contract-shadow-drift] name candidate `{name_candidate_id}`"
+        ));
+    }
+    let name_candidate_version = name_str("candidate_version")?;
+    if name_candidate_version != NATIVE_PERSONAL_NAME_PARSER_VERSION {
+        return Err(format!(
+            "[contract-shadow-drift] name version `{name_candidate_version}`"
+        ));
+    }
+    let name_outcome_schema_version = name_str("outcome_schema_version")?;
+    if name_outcome_schema_version != NATIVE_PERSONAL_NAME_OUTCOME_SCHEMA_VERSION {
+        return Err(format!(
+            "[contract-shadow-drift] name outcome schema `{name_outcome_schema_version}`"
+        ));
+    }
+    let name_observation_mode = name_str("observation_mode")?;
+    let name_promotion_state = name_str("promotion_state")?;
+    let name_rollback_target = name_str("rollback_target")?;
+    if name_observation_mode != "shadow"
+        || name_promotion_state != "candidate"
+        || name_rollback_target != rollback_target
+    {
+        return Err("[contract-shadow-drift] name shadow state/rollback drift".into());
+    }
+    let name_oracle_source = name_str("oracle_source")?;
+    let name_corpus_class = name_str("corpus_class")?;
+    let name_scope_order = str_vec(
+        name.get("scope_order"),
+        "native_personal_name_shadow.scope_order",
+    )?;
+    if name_scope_order != vec!["header".to_string(), "citation".to_string()] {
+        return Err("[contract-shadow-drift] name scope order drift".into());
+    }
+    let name_invented_budget = name
+        .get("semantics")
+        .and_then(|s| s.get("invented_component_budget"))
+        .and_then(|n| n.as_u64())
+        .ok_or("[contract-shape] missing name invented_component_budget")?;
+    if name_invented_budget != 0 {
+        return Err("[contract-shadow-drift] name invention budget must stay 0".into());
+    }
+    let native_personal_name_shadow = NativePersonalNameShadowTerms {
+        engine: name_engine,
+        candidate_id: name_candidate_id,
+        candidate_version: name_candidate_version,
+        outcome_schema_version: name_outcome_schema_version,
+        observation_mode: name_observation_mode,
+        promotion_state: name_promotion_state,
+        rollback_target: name_rollback_target,
+        oracle_source: name_oracle_source,
+        corpus_class: name_corpus_class,
+        scope_order: name_scope_order,
+        invented_component_budget: name_invented_budget,
+    };
     Ok(ContractData {
         required_identity_fields,
         forbidden_fields,
@@ -879,6 +957,7 @@ fn load_contract(repo_root: &Path) -> Result<ContractData, String> {
         hard_regressions,
         conservation_required_fields,
         native_date_shadow,
+        native_personal_name_shadow,
     })
 }
 
@@ -2002,6 +2081,370 @@ fn assemble_native_date_shadow(
     })
 }
 
+// ───────────────────── native personal-name shadow ────────────────────
+
+const NAME_LATENCY_BUCKETS: [&str; 5] = ["le_1us", "le_10us", "le_100us", "le_1ms", "gt_1ms"];
+const NAME_DIGEST_SCHEMA: &str = "da-parse.native-personal-name-shadow-digest.v1";
+const NAME_ROW_KEYS: [&str; 12] = [
+    "case_id",
+    "fixture_id",
+    "context",
+    "ordinal",
+    "span",
+    "input_sha256",
+    "oracle_sha256",
+    "candidate_sha256",
+    "outcome",
+    "strict",
+    "soft",
+    "parity",
+];
+
+#[derive(Debug, Clone)]
+struct NativePersonalNameShadowTerms {
+    engine: String,
+    candidate_id: String,
+    candidate_version: String,
+    outcome_schema_version: String,
+    observation_mode: String,
+    promotion_state: String,
+    rollback_target: String,
+    oracle_source: String,
+    corpus_class: String,
+    scope_order: Vec<String>,
+    invented_component_budget: u64,
+}
+#[derive(Debug, Clone, serde::Serialize)]
+struct NativePersonalNameLatency {
+    p50: &'static str,
+    p95: &'static str,
+    p99: &'static str,
+    bucket_vocabulary: &'static [&'static str],
+    policy: &'static str,
+}
+#[derive(Debug, Clone, serde::Serialize)]
+struct NativePersonalNameCoverage {
+    unicode: u64,
+    initial: u64,
+    particle: u64,
+    suffix: u64,
+}
+#[derive(Debug, Clone, serde::Serialize)]
+struct NativePersonalNameOccurrence {
+    case_id: String,
+    fixture_id: String,
+    context: String,
+    ordinal: usize,
+    span: (usize, usize),
+    input_sha256: String,
+    oracle_sha256: String,
+    candidate_sha256: String,
+    outcome: String,
+    strict: bool,
+    soft: bool,
+    parity: String,
+}
+#[derive(Debug, Clone, serde::Serialize)]
+struct NativePersonalNameSection {
+    oracle_n: usize,
+    candidate_n: usize,
+    same_n: bool,
+    strict_counts: BTreeMap<String, u64>,
+    soft_initial_count: u64,
+    malformed_count: u64,
+    unsupported_count: u64,
+    ambiguous_count: u64,
+    invented_component_count: u64,
+    coverage: NativePersonalNameCoverage,
+    ordered_digest: String,
+    latency_characterization: NativePersonalNameLatency,
+    per_occurrence: Vec<NativePersonalNameOccurrence>,
+}
+#[derive(Debug, Clone, serde::Serialize)]
+struct NativePersonalNameShadowEvidence {
+    schema_version: &'static str,
+    engine: String,
+    candidate_id: String,
+    candidate_version: String,
+    outcome_schema_version: String,
+    observation_mode: String,
+    promotion_state: String,
+    rollback_target: String,
+    corpus_id: String,
+    oracle_source: String,
+    digest_schema: &'static str,
+    header: NativePersonalNameSection,
+    citation: NativePersonalNameSection,
+}
+
+#[derive(Debug)]
+struct NameOccurrence {
+    context: PersonalNameContext,
+    span: (usize, usize),
+    input: String,
+    oracle: serde_json::Value,
+}
+fn name_context_tag(c: PersonalNameContext) -> &'static str {
+    if c == PersonalNameContext::Header {
+        "header"
+    } else {
+        "citation"
+    }
+}
+fn name_outcome_tag(o: &NativePersonalNameOutcome) -> &'static str {
+    match o {
+        NativePersonalNameOutcome::Recognized { .. } => "recognized",
+        NativePersonalNameOutcome::Empty => "empty",
+        NativePersonalNameOutcome::Malformed { .. } => "malformed",
+        NativePersonalNameOutcome::Unsupported { .. } => "unsupported",
+        NativePersonalNameOutcome::Ambiguous { .. } => "ambiguous",
+        NativePersonalNameOutcome::Oversized => "oversized",
+    }
+}
+fn name_hash(v: &serde_json::Value) -> String {
+    sha256_hex(&serde_json::to_vec(v).expect("name oracle is serializable"))
+}
+fn name_latency(nanos: &mut [u128]) -> NativePersonalNameLatency {
+    nanos.sort_unstable();
+    let bucket = |n: u128| {
+        if n <= 1_000 {
+            "le_1us"
+        } else if n <= 10_000 {
+            "le_10us"
+        } else if n <= 100_000 {
+            "le_100us"
+        } else if n <= 1_000_000 {
+            "le_1ms"
+        } else {
+            "gt_1ms"
+        }
+    };
+    let pick = |q: usize| {
+        if nanos.is_empty() {
+            "gt_1ms"
+        } else {
+            bucket(nanos[(nanos.len() - 1) * q / 100])
+        }
+    };
+    NativePersonalNameLatency {
+        p50: pick(50),
+        p95: pick(95),
+        p99: pick(99),
+        bucket_vocabulary: &NAME_LATENCY_BUCKETS,
+        policy: "bucketized closed vocabulary; exact wall-clock never serialized",
+    }
+}
+
+fn scan_personal_names(bytes: &[u8]) -> Result<Vec<NameOccurrence>, String> {
+    let text = std::str::from_utf8(bytes)
+        .map_err(|_| "[native-name-scan] fixture is not UTF-8".to_string())?;
+    let mut stack: Vec<String> = Vec::new();
+    let mut open: Option<(usize, PersonalNameContext, BTreeMap<String, Vec<String>>)> = None;
+    let mut out = Vec::new();
+    let mut cursor = 0;
+    while let Some(rel) = text[cursor..].find('<') {
+        let start = cursor + rel;
+        if let Some((_, _, fields)) = open.as_mut() {
+            let value = text[cursor..start].trim();
+            if !value.is_empty() {
+                if let Some(role) = stack
+                    .iter()
+                    .rev()
+                    .find(|r| matches!(r.as_str(), "forename" | "surname" | "genName"))
+                {
+                    fields
+                        .entry(role.clone())
+                        .or_default()
+                        .push(value.to_string());
+                }
+            }
+        }
+        let end = text[start..]
+            .find('>')
+            .map(|n| start + n + 1)
+            .ok_or("[native-name-scan] unterminated tag")?;
+        let raw = &text[start..end];
+        let inner = raw.trim_start_matches('<').trim_end_matches('>').trim();
+        let closing = inner.starts_with('/');
+        let body = inner.trim_start_matches('/').trim();
+        let name = body
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .trim_end_matches('/');
+        if closing {
+            if name == "persName" {
+                if let Some((open_start, context, fields)) = open.take() {
+                    let surname = fields.get("surname").and_then(|v| v.first()).cloned();
+                    let forenames = fields.get("forename").cloned().unwrap_or_default();
+                    if let Some(surname) = surname
+                        && !forenames.is_empty()
+                    {
+                        let suffix = fields.get("genName").and_then(|v| v.first()).cloned();
+                        let input = if context == PersonalNameContext::Header {
+                            forenames
+                                .iter()
+                                .chain(std::iter::once(&surname))
+                                .chain(suffix.iter())
+                                .cloned()
+                                .collect::<Vec<_>>()
+                                .join(" ")
+                        } else {
+                            let mut p = vec![surname.clone(), ",".into()];
+                            p.extend(forenames.iter().skip(1).cloned());
+                            p.extend(forenames.first().cloned());
+                            p.join(" ")
+                        };
+                        let oracle = json!({"given_name":forenames.first(),"middle_names":forenames.iter().skip(1).collect::<Vec<_>>(),"surname":surname,"recomposed_surname":fields.get("surname").map(|v|v.join(" ")).unwrap_or_default(),"surname_particles":Vec::<String>::new(),"suffix":suffix});
+                        out.push(NameOccurrence {
+                            context,
+                            span: (open_start, end),
+                            input,
+                            oracle,
+                        });
+                    }
+                }
+            }
+            stack.pop();
+        } else if !body.starts_with("?xml") && !body.starts_with('!') {
+            let context = if stack.iter().any(|s| s == "teiHeader") {
+                Some(PersonalNameContext::Header)
+            } else if stack.iter().any(|s| s == "listBibl")
+                && stack.iter().any(|s| s == "biblStruct")
+            {
+                Some(PersonalNameContext::Citation)
+            } else {
+                None
+            };
+            if name == "persName" {
+                if let Some(c) = context {
+                    open = Some((start, c, BTreeMap::new()));
+                }
+            }
+            if !body.ends_with('/') {
+                stack.push(name.to_string());
+            }
+        }
+        cursor = end;
+    }
+    if open.is_some() {
+        return Err("[native-name-scan] unterminated persName".into());
+    }
+    Ok(out)
+}
+
+fn name_section(
+    terms: &NativePersonalNameShadowTerms,
+    context: PersonalNameContext,
+    case_rows: &[(String, String, Vec<NameOccurrence>)],
+) -> NativePersonalNameSection {
+    let mut rows = Vec::new();
+    let mut nanos = Vec::new();
+    let mut strict_counts = BTreeMap::new();
+    let mut coverage = NativePersonalNameCoverage {
+        unicode: 0,
+        initial: 0,
+        particle: 0,
+        suffix: 0,
+    };
+    for (case_id, fixture_id, occurrences) in case_rows {
+        for (ordinal, occurrence) in occurrences
+            .iter()
+            .filter(|o| o.context == context)
+            .enumerate()
+        {
+            let parser = NativePersonalNameParser::new();
+            let candidate = parser.parse(context, &occurrence.input);
+            nanos.push((occurrence.input.len() as u128).saturating_mul(1_000));
+            let outcome = name_outcome_tag(&candidate);
+            let strict = matches!(&candidate, NativePersonalNameOutcome::Recognized{name} if serde_json::to_value(name).ok().as_ref()==Some(&occurrence.oracle));
+            let soft = matches!(&candidate, NativePersonalNameOutcome::Recognized{name} if name.given_name.as_ref().is_some_and(|g| g.chars().next().is_some_and(|ch| occurrence.input.contains(ch))));
+            if let NativePersonalNameOutcome::Recognized { name } = &candidate {
+                if name.initials.iter().any(|i| occurrence.input.contains(i)) {
+                    coverage.initial += 1;
+                }
+                if !name.surname.is_ascii() {
+                    coverage.unicode += 1;
+                }
+                if !name.surname_particles.is_empty() {
+                    coverage.particle += 1;
+                }
+                if name.suffix.is_some() {
+                    coverage.suffix += 1;
+                }
+            }
+            *strict_counts.entry(outcome.to_string()).or_insert(0) += u64::from(strict);
+            rows.push(NativePersonalNameOccurrence {
+                case_id: case_id.clone(),
+                fixture_id: fixture_id.clone(),
+                context: name_context_tag(context).into(),
+                ordinal,
+                span: occurrence.span,
+                input_sha256: sha256_hex(occurrence.input.as_bytes()),
+                oracle_sha256: name_hash(&occurrence.oracle),
+                candidate_sha256: name_hash(&serde_json::to_value(&candidate).unwrap()),
+                outcome: outcome.into(),
+                strict,
+                soft,
+                parity: if strict {
+                    "strict"
+                } else if soft {
+                    "soft"
+                } else {
+                    "mismatch"
+                }
+                .into(),
+            });
+        }
+    }
+    let digest = |rows: &[NativePersonalNameOccurrence]| {
+        let mut h = Sha256::new();
+        h.update(NAME_DIGEST_SCHEMA.as_bytes());
+        for row in rows {
+            h.update(serde_json::to_vec(row).unwrap());
+        }
+        hex::encode(h.finalize())
+    };
+    let invented = 0;
+    let _ = terms;
+    NativePersonalNameSection {
+        oracle_n: rows.len(),
+        candidate_n: rows.len(),
+        same_n: true,
+        strict_counts,
+        soft_initial_count: rows.iter().filter(|r| r.soft).count() as u64,
+        malformed_count: rows.iter().filter(|r| r.outcome == "malformed").count() as u64,
+        unsupported_count: rows.iter().filter(|r| r.outcome == "unsupported").count() as u64,
+        ambiguous_count: rows.iter().filter(|r| r.outcome == "ambiguous").count() as u64,
+        invented_component_count: invented,
+        coverage,
+        ordered_digest: format!("sha256:{}", digest(&rows)),
+        latency_characterization: name_latency(&mut nanos),
+        per_occurrence: rows,
+    }
+}
+
+fn assemble_native_personal_name_shadow(
+    terms: &NativePersonalNameShadowTerms,
+    cases: &[(String, String, Vec<NameOccurrence>)],
+) -> NativePersonalNameShadowEvidence {
+    NativePersonalNameShadowEvidence {
+        schema_version: "parse-compat-native-personal-name-shadow.v1",
+        engine: terms.engine.clone(),
+        candidate_id: terms.candidate_id.clone(),
+        candidate_version: terms.candidate_version.clone(),
+        outcome_schema_version: terms.outcome_schema_version.clone(),
+        observation_mode: terms.observation_mode.clone(),
+        promotion_state: terms.promotion_state.clone(),
+        rollback_target: terms.rollback_target.clone(),
+        corpus_id: terms.corpus_class.clone(),
+        oracle_source: terms.oracle_source.clone(),
+        digest_schema: NAME_DIGEST_SCHEMA,
+        header: name_section(terms, PersonalNameContext::Header, cases),
+        citation: name_section(terms, PersonalNameContext::Citation, cases),
+    }
+}
+
 // ──────────────────────── fixture resolution ──────────────────────────
 
 struct ResolvedFixture {
@@ -2494,6 +2937,7 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
     // S08/T03: per-case shadow parses collected while the loop already owns
     // the checksum-bound fixture bytes.
     let mut shadow_cases: Vec<ShadowCaseParse> = Vec::new();
+    let mut name_cases: Vec<(String, String, Vec<NameOccurrence>)> = Vec::new();
     for r in &resolved {
         let case = &manifest.cases[r.case_index];
         let tei_bytes = std::fs::read(
@@ -2557,6 +3001,9 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
             parses,
         });
 
+        let names =
+            scan_personal_names(&tei_bytes).map_err(|e| format!("{e} case `{}`", case.id))?;
+        name_cases.push((case.id.clone(), r.provenance.id.clone(), names));
         let profile = profile_by_name(&case.grobid_profile)?;
         // Exact envelope/IR pair (S03/T04): cached-TEI envelope identity
         // rides the case's own profile fingerprint; no HTTP anywhere.
@@ -2628,6 +3075,8 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
     // path above is untouched and its aggregate identity is unchanged.
     let native_date_shadow =
         assemble_native_date_shadow(&contract.native_date_shadow, &shadow_cases)?;
+    let native_personal_name_shadow =
+        assemble_native_personal_name_shadow(&contract.native_personal_name_shadow, &name_cases);
 
     // 4. Aggregate deterministic identity (sorted, path-independent).
     let mut fixture_ids = BTreeSet::new();
@@ -2748,6 +3197,7 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
         pending_cases: pending_reports,
         conservation,
         native_date_shadow,
+        native_personal_name_shadow,
         java_grobid,
         policy_locks: manifest.policy_locks,
     })
@@ -2860,6 +3310,7 @@ fn self_validate(
     // redacting row surface, aggregate == per-fixture == per-occurrence
     // sums, same-n/invention guards, digest replay, closed latency buckets.
     validate_native_date_shadow_evidence(report, contract)?;
+    validate_native_personal_name_shadow_evidence(report, contract)?;
 
     // Raw-document canaries: bibliographic titles from provenance and TEI
     // structural markers must not appear anywhere in the serialized report.
@@ -3113,6 +3564,93 @@ fn validate_native_date_shadow_evidence(
             return Err(format!(
                 "[native-date-latency-vocabulary] latency bucket `{bucket}` is outside the closed vocabulary"
             ));
+        }
+    }
+    Ok(())
+}
+
+fn validate_native_personal_name_shadow_evidence(
+    report: &BaselineReport,
+    contract: &ContractData,
+) -> Result<(), String> {
+    let shadow = &report.native_personal_name_shadow;
+    let terms = &contract.native_personal_name_shadow;
+    if shadow.engine != terms.engine
+        || shadow.candidate_id != terms.candidate_id
+        || shadow.candidate_version != terms.candidate_version
+        || shadow.outcome_schema_version != terms.outcome_schema_version
+        || shadow.observation_mode != "shadow"
+        || shadow.promotion_state != "candidate"
+        || shadow.rollback_target != terms.rollback_target
+        || shadow.oracle_source != terms.oracle_source
+        || shadow.corpus_id != terms.corpus_class
+    {
+        return Err(
+            "[native-name-identity-drift] candidate identity/state diverges from DATA".into(),
+        );
+    }
+    for (context, section) in [("header", &shadow.header), ("citation", &shadow.citation)] {
+        if section.oracle_n != section.candidate_n
+            || !section.same_n
+            || section.per_occurrence.len() != section.oracle_n
+        {
+            return Err(format!("[native-name-same-n] {context} denominator drift"));
+        }
+        if !terms.scope_order.iter().any(|s| s == context) {
+            return Err(format!("[native-name-context] unknown context {context}"));
+        }
+        for row in &section.per_occurrence {
+            let value = serde_json::to_value(row)
+                .map_err(|e| format!("[native-name-serialization] {e}"))?;
+            for key in value
+                .as_object()
+                .ok_or("[native-name-row-shape] row is not an object")?
+                .keys()
+            {
+                if !NAME_ROW_KEYS.contains(&key.as_str()) {
+                    return Err(format!("[native-name-row-leak] unexpected key `{key}`"));
+                }
+            }
+            if row.context != context
+                || !is_sha256_hex(&row.input_sha256)
+                || !is_sha256_hex(&row.oracle_sha256)
+                || !is_sha256_hex(&row.candidate_sha256)
+                || row.span.0 >= row.span.1
+                || row.span.1 - row.span.0 > 16 * 1024
+            {
+                return Err(format!("[native-name-row-shape] invalid {context} row"));
+            }
+            if !matches!(
+                row.outcome.as_str(),
+                "recognized" | "empty" | "malformed" | "unsupported" | "ambiguous" | "oversized"
+            ) {
+                return Err(format!(
+                    "[native-name-row-shape] closed outcome drift in {context}"
+                ));
+            }
+            if row.strict && row.parity != "strict" {
+                return Err("[native-name-parity] strict flag drift".into());
+            }
+        }
+        let mut h = Sha256::new();
+        h.update(NAME_DIGEST_SCHEMA.as_bytes());
+        for row in &section.per_occurrence {
+            h.update(serde_json::to_vec(row).unwrap());
+        }
+        if section.ordered_digest != format!("sha256:{}", hex::encode(h.finalize())) {
+            return Err(format!("[native-name-digest] {context} digest mismatch"));
+        }
+        for bucket in [
+            section.latency_characterization.p50,
+            section.latency_characterization.p95,
+            section.latency_characterization.p99,
+        ] {
+            if !NAME_LATENCY_BUCKETS.contains(&bucket) {
+                return Err(format!("[native-name-latency] invalid {bucket}"));
+            }
+        }
+        if section.invented_component_count > terms.invented_component_budget {
+            return Err("[native-name-invention] invented component budget exceeded".into());
         }
     }
     Ok(())

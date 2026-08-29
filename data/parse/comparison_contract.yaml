@@ -230,6 +230,36 @@ native_date_shadow:
   rollback_target: java-grobid-http@0.9.0-crf
   used_by: [S08-T03]
 
+# S09/T04: additive native personal-name evidence stays inside this report.
+# Header and citation populations are never pooled; rows are redacted hashes only.
+native_personal_name_shadow:
+  engine: da_parse::NativePersonalNameParser
+  candidate_id: da-parse.native_personal_name
+  candidate_version: '1.0.0'
+  outcome_schema_version: da-parse.native-personal-name.outcome/v1
+  observation_mode: shadow
+  oracle_source: preserved_tei_reconstruction
+  corpus_class: fast_local_fixtures
+  scope_order: [header, citation]
+  semantics:
+    strict: exact role-field parity including particles, initials and suffixes
+    soft: initial-compatible parity without relaxing same_n
+    same_n: required independently for header and citation
+    mismatch: hard_failure
+    invented_component_budget: 0
+  redaction: >-
+    Per-occurrence evidence carries case/fixture identity, context, ordinal,
+    bounded span and SHA-256 hashes only; raw/reconstructed names and TEI
+    fragments are forbidden.
+  latency: >-
+    p50/p95/p99 are bucketized labels from a closed vocabulary; exact wall-clock
+    values never enter the report.
+  forbidden: [auto_promotion, runtime_routing, raw_names, reconstructed_names, tei_fragments, invented_bindings]
+  hard_regressions: [invented_revision, nondeterministic_output, panic, silent_skip_missing_tei_fixture]
+  promotion_state: candidate
+  rollback_target: java-grobid-http@0.9.0-crf
+  used_by: [S09-T04]
+
 promotion:
   default_state: candidate
   allowed_states: [absent, proxy, shadow, candidate, promoted, fallback]
