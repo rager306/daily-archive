@@ -27,16 +27,18 @@
 //!   callouts must never disappear;
 //! - legacy JSON predating S07 decodes with typed defaults (R085).
 //!
-//! T02/T03 extend this contract with lifted-output assertions (exact counts,
-//! order, byte-equality of the two public lift paths); T04 converts these
-//! families from `unsupported_this_cut` to conservation evidence.
+//! S07/T02 extends this contract with lifted-output assertions for the
+//! declared arXiv identity and the header authors (exact counts, order,
+//! digests, typed missingness, byte-equality of the two public lift paths);
+//! figures/callouts follow in T03, and T04 converts these families from
+//! `unsupported_this_cut` to conservation evidence.
 //!
 //! Reports are redacting by construction: nothing here prints raw TEI,
 //! author names, captions, quotes, URLs or physical paths.
 
 use std::path::{Path, PathBuf};
 
-use da_parse::{TeiLifter, TeiParseIr};
+use da_parse::{GrobidParser, GrobidProfile, TeiEnvelope, TeiIdentity, TeiLifter, TeiParseIr};
 use da_ports::parser::{
     CalloutUnresolvedReason, DeclaredArxivIdentity, DeclaredIdMissingReason, ExtractedFigure,
     FigureGraphicMissingReason, HeaderAuthor, ParsedArticle, VisualCallout, VisualCalloutKind,
@@ -206,11 +208,15 @@ fn declared_arxiv_idno(header: &str, case_id: &str) -> String {
 /// frozen bytes and cross-checked against the manifest notes.
 struct S07BytePins {
     header_authors: usize,
+    authors_with_forename: usize,
+    authors_with_surname: usize,
     non_table_figures: usize,
     table_wrappers: usize,
     total_figure_tags: usize,
     coords: usize,
     declared_idno_raw: &'static str,
+    declared_bare_id: &'static str,
+    declared_revision: Option<&'static str>,
     figure_refs: usize,
     figure_refs_without_target: usize,
     table_refs: usize,
@@ -222,11 +228,15 @@ fn pins_for(case_id: &str) -> S07BytePins {
     match case_id {
         "reg.tei.hub-bibliography-2507.19457" => S07BytePins {
             header_authors: 21,
+            authors_with_forename: 20,
+            authors_with_surname: 21,
             non_table_figures: 22,
             table_wrappers: 3,
             total_figure_tags: 25,
             coords: 1,
             declared_idno_raw: "arXiv:2507.19457v2[cs.CL]",
+            declared_bare_id: "2507.19457",
+            declared_revision: Some("v2"),
             figure_refs: 24,
             figure_refs_without_target: 10,
             table_refs: 5,
@@ -235,11 +245,15 @@ fn pins_for(case_id: &str) -> S07BytePins {
         },
         "reg.tei.rlm-2512.24601" => S07BytePins {
             header_authors: 4,
+            authors_with_forename: 4,
+            authors_with_surname: 4,
             non_table_figures: 29,
             table_wrappers: 2,
             total_figure_tags: 31,
             coords: 25,
             declared_idno_raw: "arXiv:2512.24601v3[cs.AI]",
+            declared_bare_id: "2512.24601",
+            declared_revision: Some("v3"),
             figure_refs: 25,
             figure_refs_without_target: 10,
             table_refs: 11,
@@ -248,11 +262,15 @@ fn pins_for(case_id: &str) -> S07BytePins {
         },
         "reg.tei.reca-bibliography-2605.26525" => S07BytePins {
             header_authors: 11,
+            authors_with_forename: 11,
+            authors_with_surname: 11,
             non_table_figures: 55,
             table_wrappers: 3,
             total_figure_tags: 58,
             coords: 34,
             declared_idno_raw: "arXiv:2605.26525v1[cs.CV]",
+            declared_bare_id: "2605.26525",
+            declared_revision: Some("v1"),
             figure_refs: 30,
             figure_refs_without_target: 5,
             table_refs: 11,
@@ -618,33 +636,322 @@ fn legacy_tei_parse_ir_json_decodes_with_s07_defaults() {
     assert!(ir.formulas.is_empty());
 }
 
-/// T01 boundary state: the additive wire fields exist and decode, but the
-/// single lifter does not populate them yet (S07 T02/T03 implement the
-/// lifters). Until then the families stay at typed emptiness — nothing is
-/// invented. T02/T03 replace the emptiness assertions here with exact
-/// lifted-output assertions (21/4/11 authors, 22/29/55 figures, 1/25/34
-/// coordinates, 29/36/41 callouts and the pinned declared idno values).
+// ─── S07/T02: lifted-output contract for the declared id + header authors ───
+
+/// S07/T02 lifted-output contract: the single pure lifter produces exactly
+/// the pinned declared identity (verbatim raw, parsed bare id, explicitly
+/// declared revision — never guessed, never defaulted) and exactly the
+/// header-scoped author count per fixture, with document order, declared
+/// decomposition coverage and digest-bound display names. Figures/callouts
+/// stay typed-empty (T03 families), and every previously accepted family
+/// keeps lifting unchanged.
 #[test]
-fn s07_families_stay_uninvented_until_the_lifter_implements() {
+fn t02_lifter_lifts_declared_id_and_header_authors_exactly_on_all_fixtures() {
     for fixture in preserved_bound_fixtures() {
         let case = &fixture.case_id;
-        let tei = as_tei(&fixture.bytes, case);
-        let ir = TeiLifter::lift_tei(tei, fixture.paper_id.clone(), "s07-t01-contract-hash");
-        assert!(
-            ir.declared_arxiv_id.is_none() && ir.declared_id_missingness.is_none(),
-            "{case}: declared identity must not be invented before T02"
+        let pins = pins_for(case);
+        let ir = TeiLifter::lift_tei(
+            as_tei(&fixture.bytes, case),
+            fixture.paper_id.clone(),
+            "s07-t02-contract-hash",
+        );
+
+        // Declared identity: exactly the oracle-extracted declared value,
+        // with the bare id and the explicitly declared revision.
+        let declared = ir
+            .declared_arxiv_id
+            .as_ref()
+            .unwrap_or_else(|| panic!("{case}: declared identity must lift"));
+        assert_eq!(declared.raw, pins.declared_idno_raw, "{case}: raw verbatim");
+        assert_eq!(declared.bare_id, pins.declared_bare_id, "{case}: bare id");
+        assert_eq!(
+            declared.revision.as_deref(),
+            pins.declared_revision,
+            "{case}: declared revision (declared v1 stays Some, absent stays None)"
+        );
+        assert_eq!(
+            declared.source_digest,
+            sha256_hex(pins.declared_idno_raw.as_bytes()),
+            "{case}: identity digest binds the declared value"
         );
         assert!(
-            ir.header_authors.is_empty(),
-            "{case}: header authors must not be invented before T02"
+            ir.declared_id_missingness.is_none(),
+            "{case}: usable idno carries no missingness"
         );
+
+        // Header authors: exactly the header-scoped count (the hundreds of
+        // bibliography persName entries never leak in), declared-only
+        // decomposition, non-empty tag-free display names, digest-bound.
+        assert_eq!(
+            ir.header_authors.len(),
+            pins.header_authors,
+            "{case}: header author count"
+        );
+        let with_fore = ir
+            .header_authors
+            .iter()
+            .filter(|a| a.forename.is_some())
+            .count();
+        let with_sur = ir
+            .header_authors
+            .iter()
+            .filter(|a| a.surname.is_some())
+            .count();
+        assert_eq!(with_fore, pins.authors_with_forename, "{case}: forenames");
+        assert_eq!(with_sur, pins.authors_with_surname, "{case}: surnames");
+        for author in &ir.header_authors {
+            assert!(!author.name.is_empty(), "{case}: no silent author drop");
+            assert!(
+                !author.name.contains('<'),
+                "{case}: display name is tag-free"
+            );
+            assert_eq!(
+                author.source_digest,
+                sha256_hex(author.name.as_bytes()),
+                "{case}: author digest binds the display name"
+            );
+        }
+
+        // Deterministic replay: a second lift is byte-equal on the wire.
+        let replay = TeiLifter::lift_tei(
+            as_tei(&fixture.bytes, case),
+            fixture.paper_id.clone(),
+            "s07-t02-contract-hash",
+        );
+        assert_eq!(
+            serde_json::to_vec(&replay).unwrap(),
+            serde_json::to_vec(&ir).unwrap(),
+            "{case}: two lifts are byte-equal"
+        );
+
+        // T03 boundary: figures/callouts stay typed-empty until T03.
         assert!(
             ir.figures.is_empty() && ir.visual_callouts.is_empty(),
             "{case}: figures/callouts must not be invented before T03"
         );
-        // The additive fields did not disturb the existing lift algorithm.
+        // Previously accepted families keep lifting (projection-level pins
+        // live in the real-TEI suite; byte-level baseline rotation is T05).
         assert!(!ir.title.is_empty(), "{case}: title still lifts");
+        assert!(!ir.abstract_text.is_empty(), "{case}: abstract still lifts");
+        assert!(!ir.body_text.is_empty(), "{case}: body still lifts");
         assert!(!ir.sections.is_empty(), "{case}: sections still lift");
         assert!(!ir.citations.is_empty(), "{case}: citations still lift");
+        assert_eq!(
+            ir.tables.len(),
+            pins.table_wrappers,
+            "{case}: table family unchanged by the S07 additions"
+        );
+        assert!(
+            ir.formula_missingness.is_none(),
+            "{case}: formula family unchanged by the S07 additions"
+        );
     }
+}
+
+/// The two public lift paths — the recorded `parse.stage.lift_tei`
+/// compatibility stage and the provider-neutral envelope path — share the
+/// single algorithm: serialized IRs are byte-equal, the lifted S07/T02
+/// families match field-for-field, and the projected articles are byte-equal
+/// on every fixture.
+#[test]
+fn t02_two_public_lift_paths_are_byte_equal_on_the_lifted_families() {
+    for fixture in preserved_bound_fixtures() {
+        let case = &fixture.case_id;
+        let bytes = fixture.bytes.clone();
+        let compat = GrobidParser::lift_tei(
+            as_tei(&bytes, case),
+            fixture.paper_id.clone(),
+            "s07-t02-contract-hash",
+        );
+        let envelope_ir = TeiLifter::new().lift(
+            &TeiEnvelope::new(bytes, TeiIdentity::cached_tei(GrobidProfile::rich())),
+            fixture.paper_id.clone(),
+            "s07-t02-contract-hash",
+        );
+        assert_eq!(
+            serde_json::to_vec(&compat).unwrap(),
+            serde_json::to_vec(&envelope_ir).unwrap(),
+            "{case}: serialized IR diverges between the two public lift paths"
+        );
+        assert_eq!(
+            compat.declared_arxiv_id, envelope_ir.declared_arxiv_id,
+            "{case}: declared identity matches across paths"
+        );
+        assert_eq!(
+            compat.header_authors, envelope_ir.header_authors,
+            "{case}: header authors match across paths"
+        );
+        let compat_article = GrobidParser::project_article(compat);
+        let envelope_article = GrobidParser::project_article(envelope_ir);
+        assert_eq!(
+            serde_json::to_vec(&compat_article).unwrap(),
+            serde_json::to_vec(&envelope_article).unwrap(),
+            "{case}: projected articles diverge between the two public lift paths"
+        );
+    }
+}
+
+/// Typed missingness stays honest on every malformed header shape, and
+/// malformed input stays TOTAL: no header at all, no arXiv idno (other idno
+/// types only), empty value, value without a parseable arXiv id, digit run
+/// that fails the modern id shape, unterminated element — each types the
+/// absence instead of guessing or panicking. A revision-less declared value
+/// keeps `revision: None` (never defaulted to v1), and namespace
+/// declarations plus attribute order never block the lift.
+#[test]
+fn t02_declared_id_missingness_is_honest_on_malformed_headers() {
+    // No header at all: total, typed absence (empty input too).
+    for tei in ["", "<TEI><text><body><p>x</p></body></text></TEI>"] {
+        let ir = TeiLifter::lift_tei(tei.to_string(), "p", "h");
+        assert!(ir.declared_arxiv_id.is_none(), "no header: no identity");
+        assert_eq!(
+            ir.declared_id_missingness,
+            Some(DeclaredIdMissingReason::NoIdno),
+            "no header: typed no_idno"
+        );
+        assert!(ir.header_authors.is_empty(), "no header: no authors");
+    }
+
+    // DOI-only header: the arXiv identity is absent, typed — never guessed
+    // from the DOI or the paper_id.
+    let doi_only = r#"<TEI><teiHeader><fileDesc><sourceDesc><biblStruct><idno type="DOI">10.1/x</idno></biblStruct></sourceDesc></fileDesc></teiHeader></TEI>"#;
+    let ir = TeiLifter::lift_tei(doi_only.to_string(), "p", "h");
+    assert!(ir.declared_arxiv_id.is_none());
+    assert_eq!(
+        ir.declared_id_missingness,
+        Some(DeclaredIdMissingReason::NoIdno)
+    );
+
+    // Empty idno value: declared but unusable → typed malformed.
+    let empty = r#"<TEI><teiHeader><title>T</title><idno type="arXiv">  </idno></teiHeader></TEI>"#;
+    let ir = TeiLifter::lift_tei(empty.to_string(), "p", "h");
+    assert!(ir.declared_arxiv_id.is_none());
+    assert_eq!(
+        ir.declared_id_missingness,
+        Some(DeclaredIdMissingReason::Malformed(
+            "declared arXiv idno is empty".to_string()
+        ))
+    );
+    assert_eq!(
+        ir.title, "T",
+        "malformed identity stays total for other families"
+    );
+
+    // Value without any parseable arXiv id: typed malformed, never repaired.
+    let garbage = r#"<TEI><teiHeader><idno type="arXiv">not-an-arxiv-id</idno></teiHeader></TEI>"#;
+    let ir = TeiLifter::lift_tei(garbage.to_string(), "p", "h");
+    assert!(ir.declared_arxiv_id.is_none());
+    assert_eq!(
+        ir.declared_id_missingness,
+        Some(DeclaredIdMissingReason::Malformed(
+            "declared arXiv idno carries no parseable arXiv id".to_string()
+        ))
+    );
+
+    // A digit run that fails the modern id shape (6-digit fraction) stays
+    // malformed — no partial repair.
+    let too_long = r#"<TEI><teiHeader><idno type="arXiv">2507.194571</idno></teiHeader></TEI>"#;
+    let ir = TeiLifter::lift_tei(too_long.to_string(), "p", "h");
+    assert!(ir.declared_arxiv_id.is_none());
+    assert!(matches!(
+        ir.declared_id_missingness,
+        Some(DeclaredIdMissingReason::Malformed(_))
+    ));
+
+    // Unterminated idno element: typed malformed.
+    let unterminated = r#"<TEI><teiHeader><idno type="arXiv">arXiv:2507.19457</teiHeader></TEI>"#;
+    let ir = TeiLifter::lift_tei(unterminated.to_string(), "p", "h");
+    assert!(ir.declared_arxiv_id.is_none());
+    assert_eq!(
+        ir.declared_id_missingness,
+        Some(DeclaredIdMissingReason::Malformed(
+            "declared arXiv idno element is unterminated".to_string()
+        ))
+    );
+
+    // Revision-less declared value: revision stays None — never guessed v1.
+    let revisionless =
+        r#"<TEI><teiHeader><idno type="arXiv">arXiv:2507.19457</idno></teiHeader></TEI>"#;
+    let ir = TeiLifter::lift_tei(revisionless.to_string(), "p", "h");
+    let declared = ir
+        .declared_arxiv_id
+        .expect("parseable declared value lifts");
+    assert_eq!(declared.raw, "arXiv:2507.19457");
+    assert_eq!(declared.bare_id, "2507.19457");
+    assert_eq!(declared.revision, None, "revision is never defaulted to v1");
+    assert!(ir.declared_id_missingness.is_none());
+
+    // Namespace declarations and attribute order never block the lift.
+    let namespaced = r#"<TEI><teiHeader><idno xmlns="http://arxiv.org/schemas/atomic" type="arXiv">arXiv:2507.19457v2</idno></teiHeader></TEI>"#;
+    let ir = TeiLifter::lift_tei(namespaced.to_string(), "p", "h");
+    let declared = ir
+        .declared_arxiv_id
+        .expect("namespaced declared value lifts");
+    assert_eq!(declared.bare_id, "2507.19457");
+    assert_eq!(declared.revision.as_deref(), Some("v2"));
+    assert!(ir.declared_id_missingness.is_none());
+}
+
+/// Header-only author scoping, document order, Unicode/incomplete names and
+/// count honesty: back-matter (bibliography) and body persName entries NEVER
+/// become authors, a plain-text `<author>` without persName is outside the
+/// declared family, an empty persName stays an empty-name entry, and
+/// decomposition comes only from declared forename/surname children (joined
+/// in document order — GROBID emits children without inter-element
+/// whitespace, so boundary-joined text is the display name).
+#[test]
+fn t02_header_authors_scoping_order_and_incomplete_names() {
+    let tei = concat!(
+        r#"<TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader xml:lang="en"><fileDesc><titleStmt>"#,
+        r#"<title>T</title>"#,
+        // Plain-text author without persName: outside the declared family.
+        r#"<author>Plain Text Author</author>"#,
+        // Full Unicode decomposition with two declared forenames.
+        r#"<author><persName><forename type="first">Mira</forename><forename type="middle">Ş</forename><surname>Öztürk-Güvenç</surname></persName></author>"#,
+        // Incomplete name: surname only — preserved, never dropped or split.
+        r#"<author><persName><surname>Mit</surname></persName></author>"#,
+        // Declared-empty entry: count honesty keeps the entry.
+        r#"<author><persName></persName></author>"#,
+        r#"</titleStmt></fileDesc></teiHeader>"#,
+        // Body persName (in-text) is not an author either.
+        r#"<text><body><p>mentioned <persName><forename>Inline</forename><surname>Body</surname></persName> here</p></body>"#,
+        // Bibliography persName entries (back matter) are citations.
+        r#"<back><listBibl>"#,
+        r#"<biblStruct><persName><forename>Bib</forename><surname>First</surname></persName></biblStruct>"#,
+        r#"<biblStruct><persName><forename>Bib</forename><surname>Second</surname></persName></biblStruct>"#,
+        r#"</listBibl></back></text></TEI>"#,
+    );
+    let ir = TeiLifter::lift_tei(tei.to_string(), "p", "h");
+    assert_eq!(
+        ir.header_authors.len(),
+        3,
+        "exactly the header persName entries lift"
+    );
+    // Document order is preserved and decomposition is declared-only.
+    assert_eq!(ir.header_authors[0].name, "Mira Ş Öztürk-Güvenç");
+    assert_eq!(ir.header_authors[0].forename.as_deref(), Some("Mira Ş"));
+    assert_eq!(
+        ir.header_authors[0].surname.as_deref(),
+        Some("Öztürk-Güvenç")
+    );
+    // Incomplete name: surname-only decomposition survives untouched.
+    assert_eq!(ir.header_authors[1].name, "Mit");
+    assert_eq!(ir.header_authors[1].forename, None);
+    assert_eq!(ir.header_authors[1].surname.as_deref(), Some("Mit"));
+    // Declared-empty persName stays an empty-name entry (count honesty).
+    assert_eq!(ir.header_authors[2].name, "");
+    assert_eq!(ir.header_authors[2].forename, None);
+    assert_eq!(ir.header_authors[2].surname, None);
+    // Bibliography and body persName entries are excluded from the family.
+    assert!(!ir.header_authors.iter().any(|a| a.name == "Bib First"));
+    assert!(!ir.header_authors.iter().any(|a| a.name == "Bib Second"));
+    assert!(!ir.header_authors.iter().any(|a| a.name == "Inline Body"));
+    assert!(
+        !ir.header_authors
+            .iter()
+            .any(|a| a.name == "Plain Text Author")
+    );
+    // Deterministic replay on the synthetic shape too.
+    let replay = TeiLifter::lift_tei(tei.to_string(), "p", "h");
+    assert_eq!(replay.header_authors, ir.header_authors);
 }

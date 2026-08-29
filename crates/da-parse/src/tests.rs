@@ -1020,7 +1020,7 @@ fn test_extract_formulas_coordinates_preserved() {
 }
 
 #[test]
-fn this_cut_ir_omits_authors_idno_and_non_table_figures() {
+fn s07_t02_boundary_typed_id_missingness_figures_stay_unlifted_until_t03() {
     let tei = concat!(
         r#"<TEI><teiHeader><fileDesc><titleStmt><title>T</title>"#,
         r#"<author>Alice</author></titleStmt>"#,
@@ -1034,10 +1034,12 @@ fn this_cut_ir_omits_authors_idno_and_non_table_figures() {
     assert_eq!(ir.abstract_text, "A");
     let article = GrobidParser::project_article(ir);
     let v = serde_json::to_value(&article).unwrap();
-    // S07/T01: the additive P0 families exist on the wire under their typed
-    // names with `#[serde(default)]`, but this cut does not INVENT values:
-    // titleStmt authors are not header_authors and a body figure is not
-    // lifted yet (T02/T03 implement the single lifter). Typed emptiness only.
+    // S07/T02: declared identity and header authors lift through the single
+    // pure lifter, header-scoped to `<persName>` only. This synthetic TEI has
+    // no persName (plain-text titleStmt `<author>` is outside the declared
+    // family — GROBID always emits persName) and no arXiv idno (only a DOI
+    // idno), so the honest lift output is typed emptiness for authors and
+    // typed `no_idno` missingness for the identity — never a guessed value.
     assert!(
         v.get("authors").is_none(),
         "no legacy-named authors field; the family is `header_authors`"
@@ -1049,7 +1051,7 @@ fn this_cut_ir_omits_authors_idno_and_non_table_figures() {
     assert_eq!(
         v.get("header_authors"),
         Some(&serde_json::Value::Array(vec![])),
-        "titleStmt `<author>` must not be invented into header_authors this cut"
+        "titleStmt plain-text `<author>` is outside the declared persName family"
     );
     assert_eq!(
         v.get("figures"),
@@ -1063,7 +1065,8 @@ fn this_cut_ir_omits_authors_idno_and_non_table_figures() {
     assert_eq!(v.get("declared_arxiv_id"), Some(&serde_json::Value::Null));
     assert_eq!(
         v.get("declared_id_missingness"),
-        Some(&serde_json::Value::Null)
+        Some(&serde_json::Value::String("no_idno".to_string())),
+        "header without an arXiv idno types the absence (R087), never guesses"
     );
     assert_eq!(article.layout_json, None);
     assert_eq!(article.page_text_missingness, None);

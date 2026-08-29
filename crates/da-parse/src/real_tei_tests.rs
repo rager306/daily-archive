@@ -334,10 +334,12 @@ fn test_real_grobid_tei_sections_and_citations() {
     test_real_grobid_tei_gepa_hub_bibliography_2507_19457();
 }
 
-/// T02: preserved TEI bytes still carry authors, article-level idno and
-/// non-table figures. This cut does not lift those families (see
-/// `this_cut_ir_omits_authors_idno_and_non_table_figures`); the pin is on
-/// the fixture, not on a new IR field.
+/// The preserved fixture bytes carry the P0 source material: header authors,
+/// article-level arXiv idno and non-table figures. Since S07/T02 the idno
+/// and header authors are LIFTED (see
+/// `test_real_tei_lifts_declared_id_and_header_authors_on_all_fixtures`);
+/// non-table figures follow in T03. This pin stays on the fixture bytes so
+/// the source material remains checksum-visible independent of lift behavior.
 #[test]
 fn test_preserved_tei_bytes_cover_authors_idno_and_figures() {
     let hub = load_preserved_tei("hub_2507.19457.tei.xml", HUB_SHA);
@@ -400,46 +402,158 @@ fn test_hub_restarted_numbering_yields_unique_path_ids() {
     );
 }
 
-/// S07/T01 boundary state: the additive P0 wire families exist on
-/// `ParsedArticle` under their typed names with serde defaults, but the
-/// single lifter does not populate them yet (S07 T02/T03) — the real hub
-/// TEI's header authors, declared idno and non-table figures stay at typed
-/// emptiness, never invented. No legacy-named `authors`/`idno` fields exist.
+/// S07/T02: the single pure lifter now lifts the declared arXiv identity and
+/// document-ordered header authors on all three checksum-bound fixtures.
+/// Pins: exactly the declared idno values (with their declared revisions —
+/// never guessed, never defaulted), exact header-author counts 21/4/11,
+/// decomposition coverage (hub carries one surname-only author — incomplete
+/// names survive without silent drop), 64-hex source digests, and the T03
+/// boundary (figures/callouts stay typed-empty until their families lift).
+/// No legacy-named `authors`/`idno` fields exist, and no author name is ever
+/// printed (redaction by construction).
 #[test]
-fn test_this_cut_ir_still_omits_authors_figures_idno_on_real_hub() {
-    let tei = load_preserved_tei("hub_2507.19457.tei.xml", HUB_SHA);
-    let ir = GrobidParser::lift_tei(tei, "2507.19457", "fixture");
-    let article = GrobidParser::project_article(ir);
-    let v = serde_json::to_value(&article).unwrap();
-    assert!(
-        v.get("authors").is_none(),
-        "no legacy-named authors field; the family is `header_authors`"
-    );
-    assert!(
-        v.get("idno").is_none(),
-        "no article-level idno; the family is `declared_arxiv_id`"
-    );
-    assert_eq!(
-        v.get("header_authors"),
-        Some(&serde_json::Value::Array(vec![])),
-        "hub header authors stay typed-empty until T02 lifts them"
-    );
-    assert_eq!(
-        v.get("figures"),
-        Some(&serde_json::Value::Array(vec![])),
-        "hub non-table figures stay typed-empty until T03 lifts them"
-    );
-    assert_eq!(
-        v.get("visual_callouts"),
-        Some(&serde_json::Value::Array(vec![]))
-    );
-    assert_eq!(v.get("declared_arxiv_id"), Some(&serde_json::Value::Null));
-    assert_eq!(
-        v.get("declared_id_missingness"),
-        Some(&serde_json::Value::Null)
-    );
-    assert!(!article.tables.is_empty(), "tables ARE lifted this cut");
-    assert!(!article.formulas.is_empty(), "formulas ARE lifted this cut");
+fn test_real_tei_lifts_declared_id_and_header_authors_on_all_fixtures() {
+    for (
+        name,
+        file,
+        sha,
+        paper_id,
+        expected_idno,
+        expected_bare,
+        expected_revision,
+        authors,
+        with_forename,
+        with_surname,
+    ) in [
+        (
+            "hub",
+            "hub_2507.19457.tei.xml",
+            HUB_SHA,
+            "2507.19457",
+            "arXiv:2507.19457v2[cs.CL]",
+            "2507.19457",
+            Some("v2"),
+            21usize,
+            20usize,
+            21usize,
+        ),
+        (
+            "rlm",
+            "rlm_2512.24601.tei.xml",
+            RLM_SHA,
+            "2512.24601",
+            "arXiv:2512.24601v3[cs.AI]",
+            "2512.24601",
+            Some("v3"),
+            4,
+            4,
+            4,
+        ),
+        (
+            "reca",
+            "reca_2605.26525v1.tei.xml",
+            RECA_SHA,
+            "2605.26525v1",
+            "arXiv:2605.26525v1[cs.CV]",
+            "2605.26525",
+            Some("v1"),
+            11,
+            11,
+            11,
+        ),
+    ] {
+        let tei = load_preserved_tei(file, sha);
+        let ir = GrobidParser::lift_tei(tei, paper_id, "fixture");
+        let article = GrobidParser::project_article(ir);
+
+        // Declared identity: exactly the declared value, verbatim, with the
+        // declared revision (declared v1 stays Some("v1") — never guessed).
+        let declared = article
+            .declared_arxiv_id
+            .as_ref()
+            .unwrap_or_else(|| panic!("{name}: declared arXiv identity must lift"));
+        assert_eq!(
+            declared.raw, expected_idno,
+            "{name}: raw declared value verbatim"
+        );
+        assert_eq!(declared.bare_id, expected_bare, "{name}: bare id");
+        assert_eq!(
+            declared.revision.as_deref(),
+            expected_revision,
+            "{name}: declared revision"
+        );
+        assert_eq!(
+            declared.source_digest,
+            hex::encode(Sha256::digest(expected_idno.as_bytes())),
+            "{name}: source digest binds the declared value"
+        );
+        assert!(
+            article.declared_id_missingness.is_none(),
+            "{name}: usable idno carries no missingness"
+        );
+
+        // Header authors: exact document-order count, decomposition coverage,
+        // non-empty display names and correct digests. Names are never
+        // printed — redaction by construction.
+        assert_eq!(
+            article.header_authors.len(),
+            authors,
+            "{name}: header author count (bibliography persName excluded)"
+        );
+        let with_fore = article
+            .header_authors
+            .iter()
+            .filter(|a| a.forename.is_some())
+            .count();
+        let with_sur = article
+            .header_authors
+            .iter()
+            .filter(|a| a.surname.is_some())
+            .count();
+        assert_eq!(with_fore, with_forename, "{name}: declared forenames");
+        assert_eq!(with_sur, with_surname, "{name}: declared surnames");
+        for author in &article.header_authors {
+            assert!(
+                !author.name.is_empty(),
+                "{name}: no silent drop of a declared author entry"
+            );
+            assert!(
+                !author.name.contains('<'),
+                "{name}: display name is tag-free"
+            );
+            assert_eq!(
+                author.source_digest,
+                hex::encode(Sha256::digest(author.name.as_bytes())),
+                "{name}: author digest binds the display name"
+            );
+        }
+        // Deterministic replay: a second lift is structurally identical.
+        let ir_again = GrobidParser::lift_tei(load_preserved_tei(file, sha), paper_id, "fixture");
+        assert_eq!(
+            ir_again.header_authors, article.header_authors,
+            "{name}: replay keeps order and content"
+        );
+        assert_eq!(
+            ir_again.declared_arxiv_id, article.declared_arxiv_id,
+            "{name}: replay keeps the declared identity"
+        );
+
+        // T03 boundary: figures/callouts stay typed-empty until their
+        // families lift; no legacy-named wire fields exist.
+        assert!(article.figures.is_empty(), "{name}: figures lift in T03");
+        assert!(
+            article.visual_callouts.is_empty(),
+            "{name}: visual callouts lift in T03"
+        );
+        let v = serde_json::to_value(&article).unwrap();
+        assert!(v.get("authors").is_none(), "{name}");
+        assert!(v.get("idno").is_none(), "{name}");
+        println!(
+            "{name}: declared id lifts (revision={:?}), {} header authors (forename {with_fore}/surname {with_sur}); figures stay T03-empty",
+            declared.revision,
+            article.header_authors.len()
+        );
+    }
 }
 
 /// T02: reca/rlm TEI carry GROBID `coords` on `<graphic>` (not on formulas

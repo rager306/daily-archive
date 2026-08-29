@@ -1,4 +1,6 @@
-//! TEI lift: title/body, sections, citations, tables, formulas.
+//! TEI lift: title/body, sections, citations, tables, formulas, plus the
+//! S07 P0 families lifted in document order (declared arXiv identity and
+//! header authors since S07/T02; figures/callouts follow in T03).
 //!
 //! Since M464-z84in2 S02/T02 the single lift algorithm is owned by the
 //! provider-neutral [`TeiLifter`]: a [`TeiEnvelope`] (verbatim raw TEI bytes
@@ -10,8 +12,8 @@
 
 use super::envelope::TeiEnvelope;
 use da_ports::parser::{
-    CharSpan, ExtractedFormula, ExtractedTable, FormulaMissingReason, FormulaRepresentation,
-    TableCell, TableMissingReason,
+    CharSpan, DeclaredArxivIdentity, DeclaredIdMissingReason, ExtractedFormula, ExtractedTable,
+    FormulaMissingReason, FormulaRepresentation, HeaderAuthor, TableCell, TableMissingReason,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -110,6 +112,12 @@ impl TeiLifter {
         let citations = Self::extract_citations(&tei_xml);
         let (tables, table_missingness) = Self::extract_tables(&tei_xml);
         let (formulas, formula_missingness) = Self::extract_formulas(&tei_xml);
+        // S07/T02 (M464-z84in2): declared arXiv identity and document-ordered
+        // header authors lift through this single pure algorithm, header-scoped
+        // so bibliography persName entries never become authors.
+        let (declared_arxiv_id, declared_id_missingness) =
+            Self::extract_declared_arxiv_id(&tei_xml);
+        let header_authors = Self::extract_header_authors(&tei_xml);
         crate::ir::TeiParseIr {
             tei_xml,
             paper_id: paper_id.into(),
@@ -122,12 +130,12 @@ impl TeiLifter {
             table_missingness,
             formulas,
             formula_missingness,
-            // S07 P0 families (M464-z84in2): the additive wire fields exist
-            // but the single lifter populates them in S07 T02/T03 — until
-            // then they stay at typed emptiness, never invented here.
-            declared_arxiv_id: None,
-            declared_id_missingness: None,
-            header_authors: Vec::new(),
+            // S07 P0 families (M464-z84in2): declared identity + header
+            // authors since T02; figures and visual callouts stay typed-empty
+            // until T03 adds their families — never invented here.
+            declared_arxiv_id,
+            declared_id_missingness,
+            header_authors,
             figures: Vec::new(),
             visual_callouts: Vec::new(),
             pdf_hash: pdf_hash.into(),
@@ -173,6 +181,267 @@ impl TeiLifter {
             }
         }
         String::new()
+    }
+
+    // ─── S07/T02 (M464-z84in2): declared arXiv identity + header authors ───
+
+    /// Borrowed TEI header region: `<teiHeader` up to (not including)
+    /// `</teiHeader>`, tolerant of namespace declarations and arbitrary
+    /// attributes on the opening tag. `None` when the TEI carries no header
+    /// at all (total, never panicking).
+    fn tei_header_region(tei: &str) -> Option<&str> {
+        let start = tei.find("<teiHeader")?;
+        let after = &tei[start..];
+        let end_rel = after.find("</teiHeader>")?;
+        Some(&after[..end_rel])
+    }
+
+    /// Extract the declared arXiv identity from the TEI header
+    /// (M464-z84in2 S07/T02).
+    ///
+    /// Declared-only semantics: the identity exists when the header carries
+    /// a usable `<idno type="arXiv">` value (GROBID emits the article's own
+    /// biblStruct idno, e.g. `arXiv:2507.19457v2[cs.CL]`). The first arXiv
+    /// idno in header document order wins; attribute order and extra
+    /// namespace declarations are tolerated. `raw` keeps the full declared
+    /// value verbatim; the revision suffix is carried ONLY when the value
+    /// explicitly declares one — never guessed, never defaulted to `v1`.
+    /// Every unusable shape surfaces as typed missingness (`no_idno` /
+    /// `malformed`) instead of a repaired value: missing or eroded identity
+    /// is never invented (R087).
+    pub(crate) fn extract_declared_arxiv_id(
+        tei: &str,
+    ) -> (
+        Option<DeclaredArxivIdentity>,
+        Option<DeclaredIdMissingReason>,
+    ) {
+        let Some(header) = Self::tei_header_region(tei) else {
+            return (None, Some(DeclaredIdMissingReason::NoIdno));
+        };
+        let mut search = 0usize;
+        while let Some(rel) = header[search..].find("<idno") {
+            let tag_start = search + rel;
+            let Some(tag_end_rel) = header[tag_start..].find('>') else {
+                break;
+            };
+            let open_tag = &header[tag_start..=tag_start + tag_end_rel];
+            let next = tag_start + tag_end_rel + 1;
+            if Self::extract_attr(open_tag, "type").as_deref() == Some("arXiv") {
+                let value_region = &header[next..];
+                let Some(value_end) = value_region.find("</idno>") else {
+                    return (
+                        None,
+                        Some(DeclaredIdMissingReason::Malformed(
+                            "declared arXiv idno element is unterminated".to_string(),
+                        )),
+                    );
+                };
+                let raw = &value_region[..value_end];
+                if raw.trim().is_empty() {
+                    return (
+                        None,
+                        Some(DeclaredIdMissingReason::Malformed(
+                            "declared arXiv idno is empty".to_string(),
+                        )),
+                    );
+                }
+                return match Self::parse_declared_arxiv_value(raw) {
+                    Some((bare_id, revision)) => (
+                        Some(DeclaredArxivIdentity {
+                            raw: raw.to_string(),
+                            bare_id,
+                            revision,
+                            source_digest: Self::source_digest(raw.as_bytes()),
+                        }),
+                        None,
+                    ),
+                    None => (
+                        None,
+                        Some(DeclaredIdMissingReason::Malformed(
+                            "declared arXiv idno carries no parseable arXiv id".to_string(),
+                        )),
+                    ),
+                };
+            }
+            search = next;
+        }
+        (None, Some(DeclaredIdMissingReason::NoIdno))
+    }
+
+    /// Parse the first modern arXiv id (`\d{4}\.\d{4,5}`) out of a declared
+    /// idno value, plus the explicitly declared revision suffix (`v\d+`)
+    /// when one directly follows (e.g. `arXiv:2507.19457v2[cs.CL]` →
+    /// `("2507.19457", Some("v2"))`). Bounded and deterministic: the first
+    /// match in value order wins, the fraction is greedy (4-or-5 digits) and
+    /// a candidate never starts inside a longer number. No match → `None`
+    /// (the caller emits typed `Malformed`; nothing is guessed).
+    fn parse_declared_arxiv_value(raw: &str) -> Option<(String, Option<String>)> {
+        let bytes = raw.as_bytes();
+        let n = bytes.len();
+        let mut i = 0usize;
+        while i < n {
+            let starts_number = bytes[i].is_ascii_digit()
+                && (i == 0 || !(bytes[i - 1].is_ascii_digit() || bytes[i - 1] == b'.'));
+            let head_ok = i + 4 < n
+                && bytes[i + 1].is_ascii_digit()
+                && bytes[i + 2].is_ascii_digit()
+                && bytes[i + 3].is_ascii_digit()
+                && bytes[i + 4] == b'.';
+            if starts_number && head_ok {
+                // Fraction: greedy 5 digits, then 4.
+                for frac in (4..=5usize).rev() {
+                    let frac_end = i + 5 + frac;
+                    if frac_end > n {
+                        continue;
+                    }
+                    let fraction_digits = (0..frac).all(|k| bytes[i + 5 + k].is_ascii_digit());
+                    if !fraction_digits {
+                        continue;
+                    }
+                    // A digit continuing the number rejects this split.
+                    if frac_end < n && bytes[frac_end].is_ascii_digit() {
+                        continue;
+                    }
+                    // Optional declared revision: `v` + digits, directly
+                    // adjacent to the id — never inferred from context.
+                    let revision = if frac_end + 1 < n
+                        && bytes[frac_end] == b'v'
+                        && bytes[frac_end + 1].is_ascii_digit()
+                    {
+                        let mut rev_end = frac_end + 2;
+                        while rev_end < n && bytes[rev_end].is_ascii_digit() {
+                            rev_end += 1;
+                        }
+                        Some(raw[frac_end..rev_end].to_string())
+                    } else {
+                        None
+                    };
+                    return Some((raw[i..frac_end].to_string(), revision));
+                }
+            }
+            i += 1;
+        }
+        None
+    }
+
+    /// Extract document-ordered header authors (M464-z84in2 S07/T02).
+    ///
+    /// Built ONLY from `<persName>` elements inside the TEI header — the
+    /// hundreds of bibliography `persName` entries in the back matter are
+    /// citations and never become authors. Order is source document order
+    /// (no sorting). Unicode and incomplete names survive verbatim (a
+    /// surname-only author stays surname-only); an empty persName stays an
+    /// empty-name entry — count honesty beats dropping. Decomposition is
+    /// taken only from declared `<forename>`/`<surname>` children, never
+    /// guessed from the display name.
+    pub(crate) fn extract_header_authors(tei: &str) -> Vec<HeaderAuthor> {
+        let Some(header) = Self::tei_header_region(tei) else {
+            return Vec::new();
+        };
+        let mut authors = Vec::new();
+        let mut search = 0usize;
+        while let Some(rel) = header[search..].find("<persName") {
+            let tag_start = search + rel;
+            let Some(tag_end_rel) = header[tag_start..].find('>') else {
+                break;
+            };
+            let open_end = tag_start + tag_end_rel;
+            let self_closing = header[..open_end].ends_with('/');
+            // Content runs to the closing tag; an unterminated persName
+            // (malformed TEI) stays total by extending to the header end —
+            // the entry is kept, never silently dropped.
+            let content_end = header[open_end + 1..]
+                .find("</persName>")
+                .map_or(header.len(), |end| open_end + 1 + end);
+            let content = if self_closing {
+                ""
+            } else {
+                &header[open_end + 1..content_end]
+            };
+            let name = Self::normalize_author_display_name(content);
+            authors.push(HeaderAuthor {
+                forename: Self::joined_declared_child_text(content, "forename"),
+                surname: Self::joined_declared_child_text(content, "surname"),
+                source_digest: Self::source_digest(name.as_bytes()),
+                name,
+            });
+            search = open_end + 1;
+        }
+        authors
+    }
+
+    /// Author display name: the persName text content with tags stripped,
+    /// single spaces inserted at element boundaries (GROBID emits child
+    /// elements without whitespace, e.g. `<forename>…</forename><surname>…
+    /// </surname>`), and internal whitespace runs normalized. Otherwise
+    /// verbatim — Unicode, diacritics and incomplete names are preserved,
+    /// never reordered or dropped.
+    fn normalize_author_display_name(content: &str) -> String {
+        Self::strip_xml_tags(&content.replace("><", "> <"))
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    /// Joined text of every declared `<child>` element inside a persName
+    /// content (document order, single-space separated). `None` when the
+    /// content declares no such child at all; `Some("")` when the child is
+    /// declared but empty — decomposition is only ever the declared one,
+    /// never guessed from the display name.
+    fn joined_declared_child_text(content: &str, child: &str) -> Option<String> {
+        let open_needle = format!("<{child}");
+        let close_needle = format!("</{child}>");
+        let mut parts: Vec<String> = Vec::new();
+        let mut found_any = false;
+        let mut search = 0usize;
+        while let Some(rel) = content[search..].find(&open_needle) {
+            let tag_start = search + rel;
+            // Element-name boundary: `<forename>` / `<forename type=...>`,
+            // never a longer element that merely starts with the same text.
+            let next_char = content[tag_start + open_needle.len()..].chars().next();
+            if !matches!(
+                next_char,
+                Some('>') | Some('/') | Some(' ') | Some('\t') | Some('\n') | Some('\r')
+            ) {
+                search = tag_start + open_needle.len();
+                continue;
+            }
+            found_any = true;
+            let Some(tag_end_rel) = content[tag_start..].find('>') else {
+                break;
+            };
+            let open_end = tag_start + tag_end_rel;
+            if content[..open_end].ends_with('/') {
+                // Declared-empty self-closing child.
+                search = open_end + 1;
+                continue;
+            }
+            let child_end = content[open_end + 1..]
+                .find(&close_needle)
+                .map_or(content.len(), |end| open_end + 1 + end);
+            let text = Self::strip_xml_tags(&content[open_end + 1..child_end]);
+            if !text.is_empty() {
+                parts.push(text);
+            }
+            search = open_end + 1;
+        }
+        if !found_any {
+            return None;
+        }
+        if parts.is_empty() {
+            return Some(String::new());
+        }
+        Some(parts.join(" "))
+    }
+
+    /// Deterministic SHA-256 hex digest over source content bytes — the
+    /// shared source-digest evidence convention (R087) used by tables,
+    /// formulas and the S07 P0 families.
+    fn source_digest(content: &[u8]) -> String {
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(content);
+        hex::encode(hasher.finalize())
     }
 
     /// Extract sections from TEI body.
