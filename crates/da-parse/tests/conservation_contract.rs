@@ -13,7 +13,15 @@
 //! - section / citation structure permutation → `reordered` with the stable
 //!   structure key and moved linkage positions;
 //! - coordinate deletion (given a lifted-owner coordinate produced by the real
-//!   lifter) → `coordinate_dropped` at the exact source ordinal.
+//!   lifter) → `coordinate_dropped` at the exact source ordinal;
+//! - header-author / figure / callout / declared-idno deletion (S07/T04:
+//!   lifted P0 families) → `observed_but_missing` (+ count mismatch) at the
+//!   exact source ordinal with a bounded span and a moved digest;
+//! - declared-idno malformed source (an arXiv idno value that parses to no
+//!   arXiv id) → typed lifter missingness and an `observed_but_missing` row;
+//! - figure-owned graphic-coordinate deletion → `coordinate_dropped` at the
+//!   exact figure-owned source ordinal without disturbing the figure's own
+//!   ordinal-aligned retention.
 //!
 //! Baseline semantics on preserved GROBID TEI (pinned, deterministic): this
 //! cut's lifter honestly loses a typed, stable minority — the header
@@ -23,6 +31,13 @@
 //! `loss_detected` with pinned per-reason counts, and replay equality is
 //! byte-identical. Injected losses are asserted relative to that pinned
 //! baseline.
+//!
+//! Since S07/T04 the lifted P0 families (header authors, non-table figures,
+//! the declared arXiv identity, figure/table callouts, figure-owned graphic
+//! coordinates) surface as exact retained rows instead of blanket
+//! `unsupported_this_cut` pins; unsupported remainders stay exact and typed
+//! for what the cut still does not lift: `<ptr>` links, `<note>` entries,
+//! non-arXiv header idnos (MD5) and non-callout cross references.
 //!
 //! Offline only: envelopes are served by [`da_parse::CachedTeiBackend`] (no
 //! HTTP), lifted by [`da_parse::TeiLifter`], compared by the stateless engine.
@@ -39,8 +54,9 @@ use std::path::{Path, PathBuf};
 
 use da_parse::{
     CACHED_TEI_BACKEND_ID, CachedTeiBackend, ConservationDelta, ConservationEngine,
-    ConservationFamily, ConservationReasonCode, ConservationVerdict, GrobidProfile, ParseBackend,
-    ParseBackendRequest, TeiEnvelope, TeiIdentity, TeiLifter, TeiParseIr,
+    ConservationFamily, ConservationReasonCode, ConservationSubtype, ConservationVerdict,
+    GrobidProfile, ParseBackend, ParseBackendRequest, TeiEnvelope, TeiIdentity, TeiLifter,
+    TeiParseIr,
 };
 use serde_yaml::Value;
 use sha2::{Digest, Sha256};
@@ -210,6 +226,15 @@ struct Pins {
     figures: usize,
     /// Exact TEI byte-level `coords` attribute pin.
     coordinates: Option<usize>,
+    /// Header `<idno type="arXiv">` occurrences (lifted as the declared
+    /// identity since S07/T02).
+    idnos_arxiv: usize,
+    /// Header idno occurrences of other types (MD5) — stay unsupported.
+    idnos_other: usize,
+    /// Source body/back non-bibr cross references (ref/xref outside bibl).
+    cross_refs: usize,
+    /// Visual callouts lifted since S07/T03 (figure + table refs).
+    visual_callouts: usize,
     /// Pinned this-cut loss: `<head>` occurrences the lifter does not emit
     /// (trailing caption heads). Frozen deterministic finding.
     section_missing: usize,
@@ -237,6 +262,10 @@ fn pins_for(paper_id: &str) -> Pins {
             section_missing: 1,
             citation_missing: 1,
             linkage_loss: 36,
+            idnos_arxiv: 1,
+            idnos_other: 1,
+            cross_refs: 31,
+            visual_callouts: 29,
         },
         // "4 header authors, 29 non-table figures, 2 tables, 25 coords
         // attributes in TEI bytes."
@@ -251,6 +280,10 @@ fn pins_for(paper_id: &str) -> Pins {
             section_missing: 8,
             citation_missing: 1,
             linkage_loss: 29,
+            idnos_arxiv: 1,
+            idnos_other: 1,
+            cross_refs: 38,
+            visual_callouts: 36,
         },
         // "Large bibliography pin: citations >= 70. 11 header authors, 55
         // non-table figures, 34 coords attributes in TEI bytes."
@@ -265,6 +298,10 @@ fn pins_for(paper_id: &str) -> Pins {
             section_missing: 0,
             citation_missing: 1,
             linkage_loss: 99,
+            idnos_arxiv: 1,
+            idnos_other: 1,
+            cross_refs: 41,
+            visual_callouts: 41,
         },
         other => panic!("FATAL: no manifest pins for paper {other}"),
     }
@@ -470,16 +507,11 @@ async fn preserved_source_inventory_is_complete_ordered_and_bounded() {
         }
         assert!(!ir.title.is_empty() && !ir.abstract_text.is_empty());
 
-        // Candidate inventory: IR-only — the S07 cut surfaces nowhere.
+        // Candidate inventory: IR-only. Since S07/T02–T03 the lifted P0
+        // families appear with exact lifted counts; the still-unlifted
+        // families (links, notes) never appear.
         let candidate = engine.candidate_inventory(&ir);
-        for family in [
-            ConservationFamily::Author,
-            ConservationFamily::ArticleIdno,
-            ConservationFamily::Link,
-            ConservationFamily::CrossReference,
-            ConservationFamily::Note,
-            ConservationFamily::Figure,
-        ] {
+        for family in [ConservationFamily::Link, ConservationFamily::Note] {
             assert_eq!(
                 candidate.count(family),
                 0,
@@ -493,9 +525,39 @@ async fn preserved_source_inventory_is_complete_ordered_and_bounded() {
             candidate.count(ConservationFamily::Section),
             ir.sections.len()
         );
-        // These fixtures carry coords attributes on <graphic> only, so the
-        // this-cut lift holds no typed coordinates yet.
-        assert_eq!(candidate.count(ConservationFamily::Coordinate), 0);
+        assert_eq!(
+            candidate.count(ConservationFamily::Author),
+            pins.authors,
+            "{case}: header authors lift 1:1 in document order",
+            case = fixture.case_id
+        );
+        assert_eq!(
+            candidate.count(ConservationFamily::Figure),
+            pins.figures,
+            "{case}: non-table figures lift 1:1 (no double-count)",
+            case = fixture.case_id
+        );
+        assert_eq!(
+            candidate.count(ConservationFamily::ArticleIdno),
+            pins.idnos_arxiv,
+            "{case}: the declared arXiv identity lifts",
+            case = fixture.case_id
+        );
+        assert_eq!(
+            candidate.count(ConservationFamily::CrossReference),
+            pins.visual_callouts,
+            "{case}: figure/table callouts lift",
+            case = fixture.case_id
+        );
+        // These fixtures carry coords attributes on <graphic> only, so every
+        // coordinate is figure-owned and lifts with its figure.
+        assert_eq!(
+            candidate.count(ConservationFamily::Coordinate),
+            pins.coordinates
+                .unwrap_or_else(|| source.count(ConservationFamily::Coordinate)),
+            "{case}: graphic coordinates lift with their figures",
+            case = fixture.case_id
+        );
 
         // Baseline delta: the honest pinned conservation findings of this cut.
         let delta = engine.compare(&envelope, &ir);
@@ -556,16 +618,10 @@ async fn preserved_source_inventory_is_complete_ordered_and_bounded() {
             case = fixture.case_id
         );
 
-        // Typed S07 gaps: every occurrence of a deliberately-not-lifted family
-        // gets an unsupported row; coordinates on <graphic> are unsupported.
-        for family in [
-            ConservationFamily::Author,
-            ConservationFamily::ArticleIdno,
-            ConservationFamily::Link,
-            ConservationFamily::CrossReference,
-            ConservationFamily::Note,
-            ConservationFamily::Figure,
-        ] {
+        // Typed S07 remainders: links and notes stay fully unsupported; the
+        // partially-lifted families keep exact unsupported remainders
+        // (non-arXiv header idnos, non-callout cross references).
+        for family in [ConservationFamily::Link, ConservationFamily::Note] {
             assert_eq!(
                 count_rows(&delta, family, ConservationReasonCode::UnsupportedThisCut),
                 source.count(family),
@@ -576,19 +632,97 @@ async fn preserved_source_inventory_is_complete_ordered_and_bounded() {
         assert_eq!(
             count_rows(
                 &delta,
+                ConservationFamily::ArticleIdno,
+                ConservationReasonCode::UnsupportedThisCut
+            ),
+            pins.idnos_other,
+            "{case}: non-arXiv header idnos stay typed unsupported",
+            case = fixture.case_id
+        );
+        assert_eq!(
+            count_rows(
+                &delta,
+                ConservationFamily::CrossReference,
+                ConservationReasonCode::UnsupportedThisCut
+            ),
+            pins.cross_refs - pins.visual_callouts,
+            "{case}: non-callout cross references stay typed unsupported",
+            case = fixture.case_id
+        );
+
+        // Lifted P0 families retain exactly (S07/T04): header authors,
+        // non-table figures, the declared arXiv identity, the visual callouts
+        // and every graphic coordinate are retained rows — never unsupported,
+        // never silently lost.
+        assert_eq!(
+            count_rows(
+                &delta,
+                ConservationFamily::Author,
+                ConservationReasonCode::Retained
+            ),
+            pins.authors,
+            "{case}: header authors retain",
+            case = fixture.case_id
+        );
+        assert_eq!(
+            count_rows(
+                &delta,
+                ConservationFamily::Figure,
+                ConservationReasonCode::Retained
+            ),
+            pins.figures,
+            "{case}: non-table figures retain",
+            case = fixture.case_id
+        );
+        assert_eq!(
+            count_rows(
+                &delta,
+                ConservationFamily::ArticleIdno,
+                ConservationReasonCode::Retained
+            ),
+            pins.idnos_arxiv,
+            "{case}: declared arXiv identity retains",
+            case = fixture.case_id
+        );
+        assert_eq!(
+            count_rows(
+                &delta,
+                ConservationFamily::CrossReference,
+                ConservationReasonCode::Retained
+            ),
+            pins.visual_callouts,
+            "{case}: visual callouts retain (unresolved state is not loss)",
+            case = fixture.case_id
+        );
+        assert_eq!(
+            count_rows(
+                &delta,
+                ConservationFamily::Coordinate,
+                ConservationReasonCode::Retained
+            ),
+            source.count(ConservationFamily::Coordinate),
+            "{}: every graphic coordinate retains",
+            fixture.case_id
+        );
+        assert_eq!(
+            count_rows(
+                &delta,
                 ConservationFamily::Coordinate,
                 ConservationReasonCode::UnsupportedThisCut
             ),
-            source.count(ConservationFamily::Coordinate),
-            "{}: not-yet-lifted coordinates are typed unsupported",
+            0,
+            "{}: lifted graphic coordinates are no longer typed unsupported",
             fixture.case_id
         );
-        assert!(
-            delta
-                .entries
-                .iter()
-                .all(|entry| entry.family != ConservationFamily::Coordinate
-                    || entry.reason == ConservationReasonCode::UnsupportedThisCut)
+        assert_eq!(
+            count_rows(
+                &delta,
+                ConservationFamily::Coordinate,
+                ConservationReasonCode::CoordinateDropped
+            ),
+            0,
+            "{}: pristine lift drops no coordinate",
+            fixture.case_id
         );
 
         // Completeness: every source occurrence of every family is rowed.
@@ -615,6 +749,11 @@ async fn preserved_source_inventory_is_complete_ordered_and_bounded() {
             ConservationFamily::CitationEntry,
             ConservationFamily::TableCell,
             ConservationFamily::Formula,
+            ConservationFamily::Author,
+            ConservationFamily::Figure,
+            ConservationFamily::ArticleIdno,
+            ConservationFamily::CrossReference,
+            ConservationFamily::Coordinate,
         ] {
             assert!(
                 delta.entries.iter().any(|entry| {
@@ -1054,5 +1193,297 @@ async fn preserved_injected_coordinate_loss_is_typed() {
                 && entry.reason == ConservationReasonCode::CoordinateDropped
                 && entry.source_ordinal == Some(expected_ordinal)
                 && entry.digest == coords_digest)
+    );
+}
+
+/// M5 — injected header-author deletion: dropping the last lifted header
+/// author adds an exact `observed_but_missing` row at the last source ordinal
+/// (with its bounded span) plus the family count mismatch, and moves the
+/// delta digest; the remaining authors stay retained.
+#[tokio::test]
+async fn preserved_injected_author_deletion_is_typed() {
+    let fixture = fixture_by_paper("2507.19457");
+    let engine = ConservationEngine::new();
+    let (envelope, mut ir) = load_pair(&fixture).await;
+    let pins = pins_for("2507.19457");
+    let baseline = engine.compare(&envelope, &ir);
+    assert_eq!(
+        count_rows(
+            &baseline,
+            ConservationFamily::Author,
+            ConservationReasonCode::Retained
+        ),
+        pins.authors
+    );
+
+    let last_ordinal = engine
+        .source_inventory(&envelope)
+        .count(ConservationFamily::Author) as u32
+        - 1;
+    ir.header_authors.pop();
+
+    let mutated = engine.compare(&envelope, &ir);
+    assert_eq!(mutated.verdict, ConservationVerdict::LossDetected);
+    assert_ne!(
+        mutated.delta_digest, baseline.delta_digest,
+        "{}: author deletion must change the digest",
+        fixture.case_id
+    );
+    assert!(
+        mutated
+            .entries
+            .iter()
+            .any(|entry| entry.family == ConservationFamily::Author
+                && entry.reason == ConservationReasonCode::ObservedButMissing
+                && entry.source_ordinal == Some(last_ordinal)
+                && entry.byte_range.is_some())
+    );
+    assert!(
+        count_rows(
+            &mutated,
+            ConservationFamily::Author,
+            ConservationReasonCode::CountMismatch
+        ) >= 1
+    );
+    assert_eq!(
+        count_rows(
+            &mutated,
+            ConservationFamily::Author,
+            ConservationReasonCode::Retained
+        ),
+        pins.authors - 1,
+        "{}: remaining authors stay retained",
+        fixture.case_id
+    );
+}
+
+/// M6 — injected declared-idno deletion: clearing the lifted identity adds an
+/// `observed_but_missing` row at the exact arXiv idno source ordinal while
+/// the non-arXiv header idno keeps its typed unsupported row; the digest
+/// moves.
+#[tokio::test]
+async fn preserved_injected_declared_idno_deletion_is_typed() {
+    let fixture = fixture_by_paper("2507.19457");
+    let engine = ConservationEngine::new();
+    let (envelope, mut ir) = load_pair(&fixture).await;
+    let pins = pins_for("2507.19457");
+    let baseline = engine.compare(&envelope, &ir);
+
+    let arxiv_ordinal = engine
+        .source_inventory(&envelope)
+        .families
+        .get(&ConservationFamily::ArticleIdno)
+        .and_then(|rows| {
+            rows.iter()
+                .find(|row| row.subtype == Some(ConservationSubtype::ArxivIdno))
+        })
+        .map(|row| row.ordinal)
+        .expect("fixture carries a declared arXiv idno");
+    ir.declared_arxiv_id = None;
+
+    let mutated = engine.compare(&envelope, &ir);
+    assert_ne!(
+        mutated.delta_digest, baseline.delta_digest,
+        "{}: idno deletion must change the digest",
+        fixture.case_id
+    );
+    assert!(
+        mutated
+            .entries
+            .iter()
+            .any(|entry| entry.family == ConservationFamily::ArticleIdno
+                && entry.reason == ConservationReasonCode::ObservedButMissing
+                && entry.source_ordinal == Some(arxiv_ordinal)
+                && entry.byte_range.is_some())
+    );
+    assert_eq!(
+        count_rows(
+            &mutated,
+            ConservationFamily::ArticleIdno,
+            ConservationReasonCode::UnsupportedThisCut
+        ),
+        pins.idnos_other
+    );
+}
+
+/// M7 — injected declared-idno malformed source: an arXiv idno whose value
+/// parses to no arXiv id yields typed missingness in the lifter (no invented
+/// identity) and an `observed_but_missing` conservation row; the digest moves
+/// relative to the pristine baseline.
+#[tokio::test]
+async fn preserved_injected_malformed_declared_idno_surfaces_as_loss() {
+    let fixture = fixture_by_paper("2507.19457");
+    let engine = ConservationEngine::new();
+    let (envelope, ir) = load_pair(&fixture).await;
+    let pristine = engine.compare(&envelope, &ir);
+    assert!(ir.declared_arxiv_id.is_some());
+
+    let declared = b"arXiv:2507.19457v2[cs.CL]";
+    let position = find_sub(envelope.raw_tei(), 0, declared).unwrap_or_else(|| {
+        panic!(
+            "{}: declared idno value missing from bytes",
+            fixture.case_id
+        )
+    });
+    let mut bytes = envelope.raw_tei().to_vec();
+    let replacement = b"arXiv:not-an-arxiv-id".to_vec();
+    bytes.splice(
+        position..position + declared.len(),
+        replacement.iter().copied(),
+    );
+    let mutated_envelope = TeiEnvelope::new(bytes, TeiIdentity::cached_tei(GrobidProfile::rich()));
+    let mutated_ir = TeiLifter::new().lift(
+        &mutated_envelope,
+        fixture.paper_id.clone(),
+        fixture.declared_sha256.clone(),
+    );
+    assert!(
+        mutated_ir.declared_arxiv_id.is_none(),
+        "{}: unusable declared value must not be repaired",
+        fixture.case_id
+    );
+    assert!(mutated_ir.declared_id_missingness.is_some());
+
+    let mutated = engine.compare(&mutated_envelope, &mutated_ir);
+    assert_ne!(mutated.delta_digest, pristine.delta_digest);
+    assert!(
+        mutated
+            .entries
+            .iter()
+            .any(|entry| entry.family == ConservationFamily::ArticleIdno
+                && entry.reason == ConservationReasonCode::ObservedButMissing),
+        "{}: malformed declared idno must surface as typed loss",
+        fixture.case_id
+    );
+}
+
+/// M8 — injected figure and callout deletion: dropping the last lifted
+/// non-table figure and the last visual callout adds exact
+/// `observed_but_missing` rows at their source ordinals and moves the digest.
+/// Unresolved callouts on the pristine fixture stay retained: typed candidate
+/// unresolved state is never manufactured into conservation loss.
+#[tokio::test]
+async fn preserved_injected_figure_and_callout_deletion_are_typed() {
+    let fixture = fixture_by_paper("2512.24601");
+    let engine = ConservationEngine::new();
+    let (envelope, mut ir) = load_pair(&fixture).await;
+    let pins = pins_for("2512.24601");
+    let pristine = engine.compare(&envelope, &ir);
+    assert_eq!(
+        count_rows(
+            &pristine,
+            ConservationFamily::CrossReference,
+            ConservationReasonCode::Retained
+        ),
+        pins.visual_callouts,
+        "{}: every lifted callout retains, unresolved ones included",
+        fixture.case_id
+    );
+
+    let source = engine.source_inventory(&envelope);
+    let figure_ordinal = source.count(ConservationFamily::Figure) as u32 - 1;
+    let last_callout_ordinal = source
+        .families
+        .get(&ConservationFamily::CrossReference)
+        .and_then(|rows| rows.iter().rev().find(|row| row.subtype.is_some()))
+        .map(|row| row.ordinal)
+        .expect("fixture carries visual callouts");
+
+    ir.figures.pop();
+    let figure_loss = engine.compare(&envelope, &ir);
+    assert_ne!(figure_loss.delta_digest, pristine.delta_digest);
+    assert!(
+        figure_loss
+            .entries
+            .iter()
+            .any(|entry| entry.family == ConservationFamily::Figure
+                && entry.reason == ConservationReasonCode::ObservedButMissing
+                && entry.source_ordinal == Some(figure_ordinal))
+    );
+
+    // Isolated callout deletion from a fresh pair: an exact missing row at
+    // the last lifted callout's source ordinal, distinct from both priors.
+    let (_, mut callout_ir) = load_pair(&fixture).await;
+    callout_ir.visual_callouts.pop();
+    let callout_loss = engine.compare(&envelope, &callout_ir);
+    assert_ne!(callout_loss.delta_digest, pristine.delta_digest);
+    assert_ne!(callout_loss.delta_digest, figure_loss.delta_digest);
+    assert!(
+        callout_loss
+            .entries
+            .iter()
+            .any(|entry| entry.family == ConservationFamily::CrossReference
+                && entry.reason == ConservationReasonCode::ObservedButMissing
+                && entry.source_ordinal == Some(last_callout_ordinal))
+    );
+}
+
+/// M9 — injected figure-owned coordinate loss: clearing a lifted figure's
+/// graphic coordinates reports `coordinate_dropped` at the exact figure-owned
+/// source ordinal without disturbing the figure's own retention (its ordinal
+/// alignment does not compare digests).
+#[tokio::test]
+async fn preserved_injected_figure_coordinate_loss_is_typed() {
+    let fixture = fixture_by_paper("2512.24601");
+    let engine = ConservationEngine::new();
+    let (envelope, mut ir) = load_pair(&fixture).await;
+    let pristine = engine.compare(&envelope, &ir);
+
+    let (figure_index, coords) = ir
+        .figures
+        .iter()
+        .enumerate()
+        .find_map(|(index, figure)| {
+            figure
+                .coordinates
+                .as_deref()
+                .map(|coords| (index, coords.to_string()))
+        })
+        .expect("fixture carries a graphic coordinate");
+    let coords_digest = sha256_hex(coords.as_bytes());
+    let expected_ordinal = engine
+        .source_inventory(&envelope)
+        .families
+        .get(&ConservationFamily::Coordinate)
+        .and_then(|rows| {
+            rows.iter().find(|row| {
+                row.owner_family == Some(ConservationFamily::Figure) && row.digest == coords_digest
+            })
+        })
+        .map(|row| row.ordinal)
+        .expect("figure-owned coordinate missing from source");
+
+    let figure_losses_before = count_rows(
+        &pristine,
+        ConservationFamily::Figure,
+        ConservationReasonCode::ObservedButMissing,
+    );
+    ir.figures[figure_index].coordinates = None;
+
+    let mutated = engine.compare(&envelope, &ir);
+    assert_eq!(mutated.verdict, ConservationVerdict::LossDetected);
+    assert_ne!(
+        mutated.delta_digest, pristine.delta_digest,
+        "{}: figure coordinate deletion must change the digest",
+        fixture.case_id
+    );
+    assert!(
+        mutated
+            .entries
+            .iter()
+            .any(|entry| entry.family == ConservationFamily::Coordinate
+                && entry.reason == ConservationReasonCode::CoordinateDropped
+                && entry.source_ordinal == Some(expected_ordinal)
+                && entry.digest == coords_digest)
+    );
+    assert_eq!(
+        count_rows(
+            &mutated,
+            ConservationFamily::Figure,
+            ConservationReasonCode::ObservedButMissing
+        ),
+        figure_losses_before,
+        "{}: figure retention is ordinal-aligned and unaffected by coord loss",
+        fixture.case_id
     );
 }

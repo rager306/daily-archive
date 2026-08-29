@@ -20,7 +20,7 @@
 //!   with bounded byte ranges.
 //!
 //! Family observation rules mirror the M463 lift matrix and the this-cut
-//! lifter semantics:
+//! lifter semantics (S07 T02/T03 extended the lift to the P0 families):
 //! - header region (before `<body`): first `<title>` → [`ConservationFamily::Title`],
 //!   first `<abstract>` → [`ConservationFamily::Abstract`], `<persName>` →
 //!   [`ConservationFamily::Author`], `<idno>` → [`ConservationFamily::ArticleIdno`];
@@ -33,11 +33,26 @@
 //!   `<cell>` → [`ConservationFamily::TableCell`], `<formula>` →
 //!   [`ConservationFamily::Formula`];
 //! - any element carrying a `coords` attribute → [`ConservationFamily::Coordinate`]
-//!   with the owning family recorded.
+//!   with the owning family recorded (`<graphic>` coords follow the enclosing
+//!   figure owner).
 //!
-//! Deliberately-not-lifted families (authors, article idno, non-table figures,
-//! links, cross references, notes — the S07 cut) surface as
-//! [`ConservationReasonCode::UnsupportedThisCut`] entries, never silently.
+//! Since S07/T02–T03 the lifter lifts the P0 families, so the engine compares
+//! them instead of typing them as gaps:
+//! - **fully lifted** ([`ConservationSubtype`]-free ordinal alignment):
+//!   [`ConservationFamily::Author`] (header persName) and
+//!   [`ConservationFamily::Figure`] (non-table figures) retain in document
+//!   order;
+//! - **partially lifted** (subtype-partitioned alignment): header
+//!   `<idno type="arXiv">` ([`ConservationSubtype::ArxivIdno`]) and body
+//!   `<ref type="figure|table">` callouts ([`ConservationSubtype::FigureRef`]
+//!   / [`ConservationSubtype::TableRef`]) retain; every other occurrence of
+//!   the same family stays `UnsupportedThisCut`;
+//! - figure-owned coordinates are lifted surfaces — they compare through the
+//!   digest pool alongside table/cell/formula coords.
+//!
+//! Deliberately-not-lifted families (`<ptr>` links, `<note>` entries, other
+//! idno/ref kinds) surface as [`ConservationReasonCode::UnsupportedThisCut`]
+//! entries, never silently.
 
 use std::collections::BTreeMap;
 
@@ -46,6 +61,7 @@ use sha2::{Digest as ShaDigest, Sha256};
 
 use crate::envelope::TeiEnvelope;
 use crate::ir::TeiParseIr;
+use da_ports::parser::VisualCalloutKind;
 
 // ─── Bounded byte range ─────────────────────────────────────────────────────
 
@@ -120,19 +136,36 @@ impl ConservationFamily {
         }
     }
 
-    /// Families the this-cut lifter intentionally does not lift (S07 cut).
-    /// Observed occurrences surface as `UnsupportedThisCut`, not loss.
+    /// Families the this-cut lifter does not lift at all (S07 cut): every
+    /// observed occurrence surfaces as `UnsupportedThisCut`, not loss.
+    /// Partially-lifted families (article idno, cross references) are decided
+    /// per observation via [`ConservationSubtype`]; Author and Figure are
+    /// fully lifted since S07/T02–T03.
     pub fn is_unsupported_this_cut(self) -> bool {
-        matches!(
-            self,
-            Self::Author
-                | Self::ArticleIdno
-                | Self::Link
-                | Self::CrossReference
-                | Self::Note
-                | Self::Figure
-        )
+        matches!(self, Self::Link | Self::Note)
     }
+}
+
+/// Closed discriminator for the occurrence classes a partially-lifted family
+/// splits into (M464-z84in2 S07/T04).
+///
+/// Source observations of [`ConservationFamily::ArticleIdno`] and
+/// [`ConservationFamily::CrossReference`] carry the subtype marking exactly
+/// those occurrences the lifter lifts, so candidate alignment can pair them
+/// in stable document order while every other occurrence of the family stays
+/// intentionally unsupported. `None` = the family's non-lifted class.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ConservationSubtype {
+    /// Header `<idno type="arXiv">` — lifted as the declared arXiv identity
+    /// (S07/T02).
+    ArxivIdno,
+    /// Body `<ref type="figure">` — lifted as a figure visual callout
+    /// (S07/T03).
+    FigureRef,
+    /// Body `<ref type="table">` — lifted as a table visual callout
+    /// (S07/T03).
+    TableRef,
 }
 
 /// Closed conservation reason vocabulary.
@@ -234,6 +267,11 @@ pub struct ConservationObservation {
     pub digest: String,
     /// Owning family for coordinate observations.
     pub owner_family: Option<ConservationFamily>,
+    /// Lifted-occurrence discriminator for partially-lifted families
+    /// (article idno, cross references). `None` = the family's non-lifted
+    /// class (stays `UnsupportedThisCut`) or a family without subtypes.
+    #[serde(default)]
+    pub subtype: Option<ConservationSubtype>,
     /// True when the source bytes were structurally malformed here.
     pub malformed: bool,
 }
@@ -340,9 +378,12 @@ impl ConservationEngine {
         scan_source(envelope.raw_tei())
     }
 
-    /// Inventory the candidate side from the current `TeiParseIr` only.
-    /// Authors, article idno, non-table figures and not-yet-lifted structures
-    /// are intentionally absent here (typed gaps, never invented IR).
+    /// Inventory the candidate side from the current `TeiParseIr` only
+    /// (typed gaps, never invented IR). Since S07/T02–T03 this includes the
+    /// lifted P0 families — header authors, the declared arXiv identity,
+    /// non-table figures with their graphic-owned coordinates and the
+    /// figure/table visual callouts. Still-not-lifted structures (links,
+    /// notes, other idno/ref kinds) stay intentionally absent.
     pub fn candidate_inventory(&self, ir: &TeiParseIr) -> ConservationInventory {
         let mut inv = ConservationInventory::default();
         if !ir.title.is_empty() {
@@ -352,6 +393,7 @@ impl ConservationEngine {
                 sha256_hex(ir.title.as_bytes()),
                 None,
                 false,
+                None,
             ));
         }
         if !ir.abstract_text.is_empty() {
@@ -361,6 +403,7 @@ impl ConservationEngine {
                 sha256_hex(ir.abstract_text.as_bytes()),
                 None,
                 false,
+                None,
             ));
         }
         for section in &ir.sections {
@@ -370,6 +413,7 @@ impl ConservationEngine {
                 sha256_hex(section.title.as_bytes()),
                 None,
                 false,
+                None,
             ));
         }
         for citation in &ir.citations {
@@ -379,6 +423,7 @@ impl ConservationEngine {
                 sha256_hex(citation.raw_text.as_bytes()),
                 None,
                 false,
+                None,
             ));
             for anchor in &citation.anchors {
                 inv.push(observation(
@@ -387,6 +432,7 @@ impl ConservationEngine {
                     sha256_hex(anchor.ref_id.as_bytes()),
                     None,
                     false,
+                    None,
                 ));
             }
         }
@@ -397,6 +443,7 @@ impl ConservationEngine {
                 sha256_hex(table.table_id.as_bytes()),
                 None,
                 false,
+                None,
             ));
             if let Some(coords) = table.coordinates.as_deref() {
                 inv.push(observation(
@@ -405,6 +452,7 @@ impl ConservationEngine {
                     sha256_hex(coords.as_bytes()),
                     Some(ConservationFamily::Table),
                     false,
+                    None,
                 ));
             }
             for cell in &table.cells {
@@ -414,6 +462,7 @@ impl ConservationEngine {
                     sha256_hex(cell.text.as_bytes()),
                     None,
                     false,
+                    None,
                 ));
                 if let Some(coords) = cell.coordinates.as_deref() {
                     inv.push(observation(
@@ -422,6 +471,7 @@ impl ConservationEngine {
                         sha256_hex(coords.as_bytes()),
                         Some(ConservationFamily::TableCell),
                         false,
+                        None,
                     ));
                 }
             }
@@ -433,6 +483,7 @@ impl ConservationEngine {
                 sha256_hex(formula.formula_id.as_bytes()),
                 None,
                 false,
+                None,
             ));
             if let Some(coords) = formula.coordinates.as_deref() {
                 inv.push(observation(
@@ -441,8 +492,67 @@ impl ConservationEngine {
                     sha256_hex(coords.as_bytes()),
                     Some(ConservationFamily::Formula),
                     false,
+                    None,
                 ));
             }
+        }
+        // S07/T04: the lifted P0 families are candidate evidence — header
+        // authors (document order), the declared arXiv identity, non-table
+        // figures with their graphic-owned coordinates, and the figure/table
+        // visual callouts.
+        for author in &ir.header_authors {
+            inv.push(observation(
+                ConservationFamily::Author,
+                None,
+                author.source_digest.clone(),
+                None,
+                false,
+                None,
+            ));
+        }
+        if let Some(declared) = &ir.declared_arxiv_id {
+            inv.push(observation(
+                ConservationFamily::ArticleIdno,
+                None,
+                declared.source_digest.clone(),
+                None,
+                false,
+                Some(ConservationSubtype::ArxivIdno),
+            ));
+        }
+        for figure in &ir.figures {
+            inv.push(observation(
+                ConservationFamily::Figure,
+                None,
+                figure.source_digest.clone(),
+                None,
+                false,
+                None,
+            ));
+            if let Some(coords) = figure.coordinates.as_deref() {
+                inv.push(observation(
+                    ConservationFamily::Coordinate,
+                    None,
+                    sha256_hex(coords.as_bytes()),
+                    Some(ConservationFamily::Figure),
+                    false,
+                    None,
+                ));
+            }
+        }
+        for callout in &ir.visual_callouts {
+            let subtype = match callout.kind {
+                VisualCalloutKind::Figure => Some(ConservationSubtype::FigureRef),
+                VisualCalloutKind::Table => Some(ConservationSubtype::TableRef),
+            };
+            inv.push(observation(
+                ConservationFamily::CrossReference,
+                None,
+                callout.source_digest.clone(),
+                None,
+                false,
+                subtype,
+            ));
         }
         inv
     }
@@ -525,12 +635,19 @@ impl ConservationEngine {
                 ConservationFamily::Coordinate => {
                     compare_coordinates(&clean, cand, &mut entries);
                 }
-                ConservationFamily::Author
-                | ConservationFamily::ArticleIdno
-                | ConservationFamily::Link
-                | ConservationFamily::CrossReference
-                | ConservationFamily::Note
-                | ConservationFamily::Figure => {
+                ConservationFamily::Author | ConservationFamily::Figure => {
+                    // Fully lifted since S07/T02–T03: document-order ordinal
+                    // alignment (no digest equality needed — the source and
+                    // candidate sides use different identity encodings).
+                    compare_ordinal_aligned(family, &clean, cand, &mut entries);
+                }
+                ConservationFamily::ArticleIdno | ConservationFamily::CrossReference => {
+                    // Partially lifted since S07/T02–T03: subtype-marked
+                    // occurrences align with the candidate inventory; every
+                    // other occurrence stays intentionally unsupported.
+                    compare_subtype_aligned(family, &clean, cand, &mut entries);
+                }
+                ConservationFamily::Link | ConservationFamily::Note => {
                     compare_unsupported(family, &clean, cand, &mut entries);
                 }
             }
@@ -655,6 +772,62 @@ fn compare_ordinal_aligned(
     }
 }
 
+/// Mixed-availability families (S07 partial lifts: `ArticleIdno`,
+/// `CrossReference`): source occurrences carrying a lifted subtype (declared
+/// arXiv idno, figure/table callout) are ordinal-aligned against the
+/// candidate inventory in stable document order — retained,
+/// `observed_but_missing`, `count_mismatch` — while occurrences without a
+/// lifted subtype (other idno types, other ref kinds) stay intentionally
+/// unsupported.
+fn compare_subtype_aligned(
+    family: ConservationFamily,
+    src: &[&ConservationObservation],
+    cand: &[ConservationObservation],
+    entries: &mut Vec<ConservationEntry>,
+) {
+    let lifted_total = src.iter().filter(|obs| obs.subtype.is_some()).count();
+    let mut cursor = 0usize;
+    for obs in src {
+        if obs.subtype.is_none() {
+            entries.push(ConservationEntry {
+                family,
+                reason: ConservationReasonCode::UnsupportedThisCut,
+                source_ordinal: Some(obs.ordinal),
+                candidate_ordinal: None,
+                byte_range: obs.byte_range,
+                expected: 0,
+                observed: 1,
+                structure_key: None,
+                digest: obs.digest.clone(),
+            });
+            continue;
+        }
+        if cursor < cand.len() {
+            entries.push(retained_entry_at(family, obs, obs.ordinal, cursor as u32));
+            cursor += 1;
+        } else {
+            entries.push(ConservationEntry {
+                family,
+                reason: ConservationReasonCode::ObservedButMissing,
+                source_ordinal: Some(obs.ordinal),
+                candidate_ordinal: None,
+                byte_range: obs.byte_range,
+                expected: lifted_total as u32,
+                observed: cand.len() as u32,
+                structure_key: None,
+                digest: obs.digest.clone(),
+            });
+        }
+    }
+    if lifted_total != cand.len() {
+        entries.push(count_mismatch_entry(
+            family,
+            lifted_total as u32,
+            cand.len() as u32,
+        ));
+    }
+}
+
 /// Digest-multiset alignment with positional preference: exact positional
 /// matches stay clean, digest matches at a different position additionally
 /// raise a `Reordered` structure observation, and unmatched source items get
@@ -722,9 +895,10 @@ fn compare_digest_aligned(
 }
 
 /// Coordinate alignment restricted to lifted surfaces: coords owned by
-/// Table/TableCell/Formula must appear in the candidate coords digest pool
-/// (matched → retained, unmatched → `CoordinateDropped`); coords owned by
-/// unsupported surfaces (non-table figures, unknown owners) are
+/// Table/TableCell/Formula — and figure-owned graphic coords since S07/T03 —
+/// must appear in the candidate coords digest pool (matched → retained,
+/// unmatched → `CoordinateDropped`); coords owned by unsupported surfaces
+/// (graphics outside any figure, notes, unknown owners) are
 /// `UnsupportedThisCut`.
 fn compare_coordinates(
     src: &[&ConservationObservation],
@@ -737,6 +911,7 @@ fn compare_coordinates(
             Some(ConservationFamily::Table)
                 | Some(ConservationFamily::TableCell)
                 | Some(ConservationFamily::Formula)
+                | Some(ConservationFamily::Figure)
         )
     };
     let mut used = vec![false; cand.len()];
@@ -873,6 +1048,7 @@ fn observation(
     digest: String,
     owner: Option<ConservationFamily>,
     malformed: bool,
+    subtype: Option<ConservationSubtype>,
 ) -> ConservationObservation {
     // raw_len is threaded through the scanner; this helper is used by the
     // candidate side (no range). Source-side observations construct directly.
@@ -883,6 +1059,7 @@ fn observation(
         byte_range,
         digest,
         owner_family: owner,
+        subtype,
         malformed,
     }
 }
@@ -1124,6 +1301,11 @@ struct Elem {
     attrs: String,
     malformed: bool,
     inside_bibl: bool,
+    /// Enclosing figure context: `None` = not inside a `<figure>`;
+    /// `Some(true)` = inside a `<figure type="table">` wrapper;
+    /// `Some(false)` = inside a non-table figure. Used to attribute
+    /// `<graphic>` coords to their enclosing figure owner.
+    inside_figure: Option<bool>,
 }
 
 /// Match open/close tokens into elements with a recovery stack. Unclosed
@@ -1144,6 +1326,11 @@ fn match_elements(tokens: &[TagTok], raw: &[u8]) -> Vec<Elem> {
         let inside_bibl = stack
             .iter()
             .any(|&si| tok_name(raw, &tokens[si]) == "biblStruct");
+        let inside_figure = stack.iter().rev().find_map(|&si| {
+            (tok_name(raw, &tokens[si]) == "figure").then(|| {
+                attr_value(&tok_attrs(raw, &tokens[si]), "type").as_deref() == Some("table")
+            })
+        });
         match tok.kind {
             TagKind::Open => stack.push(ti),
             TagKind::SelfClose => elements.push(Elem {
@@ -1153,6 +1340,7 @@ fn match_elements(tokens: &[TagTok], raw: &[u8]) -> Vec<Elem> {
                 attrs: tok_attrs(raw, tok),
                 malformed: !tok.complete,
                 inside_bibl,
+                inside_figure,
             }),
             TagKind::Close => {
                 let close_name = tok_name(raw, tok);
@@ -1175,6 +1363,7 @@ fn match_elements(tokens: &[TagTok], raw: &[u8]) -> Vec<Elem> {
                                 attrs: tok_attrs(raw, ut),
                                 malformed: true,
                                 inside_bibl,
+                                inside_figure,
                             });
                             stack.pop();
                         }
@@ -1186,6 +1375,7 @@ fn match_elements(tokens: &[TagTok], raw: &[u8]) -> Vec<Elem> {
                             attrs: tok_attrs(raw, ot),
                             malformed: false,
                             inside_bibl,
+                            inside_figure,
                         });
                         stack.pop();
                     }
@@ -1198,6 +1388,7 @@ fn match_elements(tokens: &[TagTok], raw: &[u8]) -> Vec<Elem> {
                             attrs: tok_attrs(raw, tok),
                             malformed: true,
                             inside_bibl,
+                            inside_figure,
                         });
                     }
                 }
@@ -1213,6 +1404,7 @@ fn match_elements(tokens: &[TagTok], raw: &[u8]) -> Vec<Elem> {
             attrs: tok_attrs(raw, ut),
             malformed: true,
             inside_bibl: false,
+            inside_figure: None,
         });
     }
     elements
@@ -1288,7 +1480,7 @@ fn scan_source(raw: &[u8]) -> ConservationInventory {
 
     for elem in &elements {
         let region_header = body_start.is_none_or(|bs| elem.span.0 < bs);
-        let family = classify_element(elem, region_header, &mut title_seen, &mut abstract_seen);
+        let classified = classify_element(elem, region_header, &mut title_seen, &mut abstract_seen);
 
         // Structural damage on elements outside every conservation family
         // (stray/unclosed structural containers, bare closes) must stay
@@ -1296,7 +1488,7 @@ fn scan_source(raw: &[u8]) -> ConservationInventory {
         // silently (R106: corruption can never disappear without a reason).
         // Well-formed sources produce no malformed elements, so this is a
         // no-op on every preserved fixture and lift baseline.
-        if family.is_none() && elem.malformed {
+        if classified.is_none() && elem.malformed {
             inv.push(ConservationObservation {
                 family: ConservationFamily::Malformed,
                 ordinal: 0,
@@ -1307,6 +1499,7 @@ fn scan_source(raw: &[u8]) -> ConservationInventory {
                 )),
                 digest: sha256_hex(&raw[elem.span.0.min(raw.len())..elem.span.1.min(raw.len())]),
                 owner_family: None,
+                subtype: None,
                 malformed: true,
             });
         }
@@ -1321,11 +1514,14 @@ fn scan_source(raw: &[u8]) -> ConservationInventory {
                 byte_range: Some(ByteRange::new(s, e, raw_len)),
                 digest: sha256_hex(coords.as_bytes()),
                 owner_family: owner,
+                subtype: None,
                 malformed: elem.malformed,
             });
         }
 
-        let Some(family) = family else { continue };
+        let Some((family, subtype)) = classified else {
+            continue;
+        };
         let digest = element_identity(family, elem, raw);
         inv.push(ConservationObservation {
             family,
@@ -1337,6 +1533,7 @@ fn scan_source(raw: &[u8]) -> ConservationInventory {
             )),
             digest,
             owner_family: None,
+            subtype,
             malformed: elem.malformed,
         });
     }
@@ -1353,6 +1550,7 @@ fn scan_source(raw: &[u8]) -> ConservationInventory {
             byte_range: Some(ByteRange::new(last.start, raw_len, raw_len)),
             digest: sha256_hex(&raw[last.start..raw_len]),
             owner_family: None,
+            subtype: None,
             malformed: true,
         });
     }
@@ -1365,52 +1563,66 @@ fn classify_element(
     region_header: bool,
     title_seen: &mut bool,
     abstract_seen: &mut bool,
-) -> Option<ConservationFamily> {
+) -> Option<(ConservationFamily, Option<ConservationSubtype>)> {
     let body = !region_header;
     match elem.name.as_str() {
         "title" if region_header && !elem.inside_bibl && !*title_seen => {
             *title_seen = true;
-            Some(ConservationFamily::Title)
+            Some((ConservationFamily::Title, None))
         }
         "abstract" if region_header && !*abstract_seen => {
             *abstract_seen = true;
-            Some(ConservationFamily::Abstract)
+            Some((ConservationFamily::Abstract, None))
         }
         // GROBID header authors/idnos live inside <sourceDesc><biblStruct>:
         // the header-region guard alone decides Author/ArticleIdno (the
         // manifest pins header authors by TEI bytes); bibliography persName
         // in the body stays unclassified because it is not in the header.
-        "persName" if region_header => Some(ConservationFamily::Author),
-        "idno" if region_header => Some(ConservationFamily::ArticleIdno),
+        // Since S07/T04 the declared `<idno type="arXiv">` is marked with
+        // its lifted subtype; other header idno types stay unsupported.
+        "persName" if region_header => Some((ConservationFamily::Author, None)),
+        "idno" if region_header => {
+            let subtype = (attr_value(&elem.attrs, "type").as_deref() == Some("arXiv"))
+                .then_some(ConservationSubtype::ArxivIdno);
+            Some((ConservationFamily::ArticleIdno, subtype))
+        }
         // Mirrors the flat-scan lifter semantics: every `<head>` in the body
         // is a section-window boundary (caption heads included).
-        "head" if body => Some(ConservationFamily::Section),
-        "biblStruct" => Some(ConservationFamily::CitationEntry),
+        "head" if body => Some((ConservationFamily::Section, None)),
+        "biblStruct" => Some((ConservationFamily::CitationEntry, None)),
         "ref" if body && !elem.inside_bibl => {
-            if attr_value(&elem.attrs, "type").as_deref() == Some("bibr") {
-                Some(ConservationFamily::CitationAnchor)
+            let ref_type = attr_value(&elem.attrs, "type");
+            if ref_type.as_deref() == Some("bibr") {
+                Some((ConservationFamily::CitationAnchor, None))
             } else {
-                Some(ConservationFamily::CrossReference)
+                // S07/T04: figure/table refs are the lifted visual-callout
+                // occurrences; every other ref kind stays unsupported.
+                let subtype = match ref_type.as_deref() {
+                    Some("figure") => Some(ConservationSubtype::FigureRef),
+                    Some("table") => Some(ConservationSubtype::TableRef),
+                    _ => None,
+                };
+                Some((ConservationFamily::CrossReference, subtype))
             }
         }
-        "xref" if body && !elem.inside_bibl => Some(ConservationFamily::CrossReference),
+        "xref" if body && !elem.inside_bibl => Some((ConservationFamily::CrossReference, None)),
         // GROBID emits link <ptr> elements inside <biblStruct> (relatedItem
         // URLs) — they are the document's observed link family; the header
         // region stays out of scope via the body guard.
-        "ptr" if body => Some(ConservationFamily::Link),
-        "note" if body && !elem.inside_bibl => Some(ConservationFamily::Note),
+        "ptr" if body => Some((ConservationFamily::Link, None)),
+        "note" if body && !elem.inside_bibl => Some((ConservationFamily::Note, None)),
         "figure" if body => {
             if attr_value(&elem.attrs, "type").as_deref() == Some("table") {
                 // Table wrapper: the `<table>` element itself is the observed
                 // Table family member (mirrors the lifter's table iteration).
                 None
             } else {
-                Some(ConservationFamily::Figure)
+                Some((ConservationFamily::Figure, None))
             }
         }
-        "table" if body => Some(ConservationFamily::Table),
-        "cell" => Some(ConservationFamily::TableCell),
-        "formula" => Some(ConservationFamily::Formula),
+        "table" if body => Some((ConservationFamily::Table, None)),
+        "cell" => Some((ConservationFamily::TableCell, None)),
+        "formula" => Some((ConservationFamily::Formula, None)),
         _ => None,
     }
 }
@@ -1424,6 +1636,16 @@ fn coordinate_owner(elem: &Elem) -> Option<ConservationFamily> {
                 Some(ConservationFamily::Figure)
             }
         }
+        "graphic" => match elem.inside_figure {
+            // S07/T03: the lifter reads figure coords from the graphic child,
+            // so a graphic's owner is its enclosing figure; a graphic inside
+            // a table wrapper belongs to the table surface; a graphic outside
+            // any figure stays ownerless (unsupported) rather than
+            // fabricating an owner.
+            Some(false) => Some(ConservationFamily::Figure),
+            Some(true) => Some(ConservationFamily::Table),
+            None => None,
+        },
         "table" => Some(ConservationFamily::Table),
         "cell" => Some(ConservationFamily::TableCell),
         "formula" => Some(ConservationFamily::Formula),
@@ -1531,14 +1753,18 @@ mod tests {
     }
 
     #[test]
-    fn matching_lift_is_conserved_and_keeps_intentional_gaps_typed() {
+    fn matching_lift_is_conserved_and_retains_lifted_header_authors() {
         let (envelope, ir) = fixture();
         let delta = ConservationEngine::new().compare(&envelope, &ir);
 
         assert_eq!(delta.verdict, ConservationVerdict::Conserved);
+        // The header persName is lifted since S07/T02: the author row is
+        // retained evidence, not an unsupported gap.
         assert!(delta.entries.iter().any(|entry| {
             entry.family == ConservationFamily::Author
-                && entry.reason == ConservationReasonCode::UnsupportedThisCut
+                && entry.reason == ConservationReasonCode::Retained
+                && entry.source_ordinal == Some(0)
+                && entry.candidate_ordinal == Some(0)
         }));
         assert!(delta.entries.iter().all(|entry| {
             entry

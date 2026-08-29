@@ -14,9 +14,12 @@
 //! - **replay invariants**: comparing the same envelope/IR pair twice yields
 //!   equal deltas, byte-identical serialization and an equal delta digest,
 //!   with entries in the documented total order;
-//! - **no silent loss**: deleting a lifted item or reordering section order
-//!   can never disappear without a typed reason (`observed_but_missing` /
-//!   `count_mismatch` / `reordered`) and always moves the delta digest;
+//! - **no silent loss**: deleting a lifted item (title, abstract, last
+//!   section, last citation, and — since S07/T04 — the last header author,
+//!   the declared arXiv identity, the last non-table figure, the last visual
+//!   callout, or a figure's graphic coordinates) can never disappear without
+//!   a typed reason (`observed_but_missing` / `count_mismatch` /
+//!   `coordinate_dropped`) and always moves the delta digest;
 //! - **malformed honesty**: structurally damaged source surfaces
 //!   `malformed_source` (verdict precedence) and never fabricates
 //!   preservation; verdicts stay consistent with entries;
@@ -269,15 +272,23 @@ fn malformed_kind_strategy() -> impl Strategy<Value = MalformedKind> {
 
 fn wellformed_tei(n_sections: usize, n_citations: usize) -> String {
     let mut tei = String::from(
-        "<TEI><teiHeader><fileDesc><titleStmt><title>Property title</title></titleStmt>\
-         </fileDesc><profileDesc><abstract>Property abstract.</abstract></profileDesc>\
+        "<TEI><teiHeader><fileDesc><titleStmt><title>Property title</title>\
+         <author><persName>Alpha One</persName></author>\
+         <author><persName>Beta Two</persName></author>\
+         <idno type=\"arXiv\">arXiv:2501.00001v1[q-bio.NC]</idno>\
+         </titleStmt></fileDesc><profileDesc><abstract>Property abstract.</abstract></profileDesc>\
          </teiHeader><text><body>",
     );
     for i in 0..n_sections {
         tei.push_str(&format!(
-            "<div><head>Section {i}</head><p>Body text {i}.</p></div>"
+            "<div><head>Section {i}</head><p>Body <ref type=\"figure\" target=\"#fig_0\">Figure 0</ref> text {i}.</p></div>"
         ));
     }
+    tei.push_str(
+        "<figure xml:id=\"fig_0\"><label>Figure 0</label><graphic coords=\"1,2,3,4\"/></figure>\
+         <figure xml:id=\"fig_1\"><label>Figure 1</label><graphic coords=\"5,6,7,8\"/></figure>\
+         <p>See <ref type=\"table\" target=\"#tab_9\">Table 9</ref>.</p>",
+    );
     tei.push_str("</body></text><back>");
     for i in 0..n_citations {
         tei.push_str(&format!(
@@ -294,6 +305,11 @@ enum DeletionTarget {
     Abstract,
     LastSection,
     LastCitation,
+    LastHeaderAuthor,
+    DeclaredId,
+    LastFigure,
+    LastCallout,
+    FigureCoordinates,
 }
 
 impl DeletionTarget {
@@ -303,6 +319,11 @@ impl DeletionTarget {
             Self::Abstract => ConservationFamily::Abstract,
             Self::LastSection => ConservationFamily::Section,
             Self::LastCitation => ConservationFamily::CitationEntry,
+            Self::LastHeaderAuthor => ConservationFamily::Author,
+            Self::DeclaredId => ConservationFamily::ArticleIdno,
+            Self::LastFigure => ConservationFamily::Figure,
+            Self::LastCallout => ConservationFamily::CrossReference,
+            Self::FigureCoordinates => ConservationFamily::Coordinate,
         }
     }
 
@@ -316,6 +337,25 @@ impl DeletionTarget {
             Self::LastCitation => {
                 ir.citations.pop();
             }
+            Self::LastHeaderAuthor => {
+                ir.header_authors.pop();
+            }
+            Self::DeclaredId => ir.declared_arxiv_id = None,
+            Self::LastFigure => {
+                ir.figures.pop();
+            }
+            Self::LastCallout => {
+                ir.visual_callouts.pop();
+            }
+            Self::FigureCoordinates => {
+                if let Some(figure) = ir
+                    .figures
+                    .iter_mut()
+                    .find(|figure| figure.coordinates.is_some())
+                {
+                    figure.coordinates = None;
+                }
+            }
         }
     }
 }
@@ -326,6 +366,11 @@ fn deletion_target_strategy() -> impl Strategy<Value = DeletionTarget> {
         1 => Just(DeletionTarget::Abstract),
         2 => Just(DeletionTarget::LastSection),
         2 => Just(DeletionTarget::LastCitation),
+        1 => Just(DeletionTarget::LastHeaderAuthor),
+        1 => Just(DeletionTarget::DeclaredId),
+        1 => Just(DeletionTarget::LastFigure),
+        1 => Just(DeletionTarget::LastCallout),
+        1 => Just(DeletionTarget::FigureCoordinates),
     ]
 }
 
@@ -385,9 +430,11 @@ proptest! {
         }
     }
 
-    /// Deleting a lifted item (title, abstract, last section, last citation)
-    /// can never vanish silently: a typed missing/mismatch reason must appear
-    /// for the exact family and the delta digest must move.
+    /// Deleting a lifted item (title, abstract, last section, last citation,
+    /// last header author, declared arXiv identity, last figure, last callout,
+    /// or a figure's graphic coordinates) can never vanish silently: a typed
+    /// missing/mismatch/dropped reason must appear for the exact family and
+    /// the delta digest must move.
     #[test]
     fn deletion_cannot_vanish_without_typed_reason(
         n_sections in 1usize..=5,
@@ -414,9 +461,11 @@ proptest! {
             after.entries.iter().any(|e| e.family == family
                 && matches!(
                     e.reason,
-                    ConservationReasonCode::ObservedButMissing | ConservationReasonCode::CountMismatch
+                    ConservationReasonCode::ObservedButMissing
+                        | ConservationReasonCode::CountMismatch
+                        | ConservationReasonCode::CoordinateDropped
                 )),
-            "deletion of {family:?} must leave a typed missing/mismatch reason"
+            "deletion of {family:?} must leave a typed loss reason"
         );
         prop_assert!(after.entries.iter().any(|e| e.reason.is_loss()));
         assert_report_shape(&envelope, &engine.source_inventory(&envelope), &after);

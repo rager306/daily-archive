@@ -62,7 +62,7 @@ pub use cache::{
 pub use conservation::{
     ByteRange, ConservationDelta, ConservationEngine, ConservationEntry, ConservationFamily,
     ConservationIdentity, ConservationInventory, ConservationObservation, ConservationReasonCode,
-    ConservationVerdict, FamilyDeltaCounts,
+    ConservationSubtype, ConservationVerdict, FamilyDeltaCounts,
 };
 pub use envelope::{TeiEnvelope, TeiIdentity, TeiResultIdentity};
 pub use http::{GrobidHttpBackend, GrobidParser};
