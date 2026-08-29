@@ -10,6 +10,13 @@ mod graph_query;
 mod health_report;
 mod load;
 mod load_journey;
+// The lib target exposes these modules as public API and its tests exercise
+// the full composition surface; the duplicate bin-module compilation does not
+// construct every config knob or accelerator helper directly.
+#[allow(dead_code)]
+mod parse_batch;
+#[allow(dead_code)]
+mod parse_config;
 // The lib target exposes this module as public API and its tests exercise the
 // production composition; the duplicate bin-module compilation does not call
 // every public composition constructor directly.
@@ -448,6 +455,11 @@ enum Commands {
     /// Universal article load plane (ADR-056): locator → ensure catalog assets → LoadReport.
     /// Bare id is catalog-first (offline). An HTTP locator is fetch intent (M461).
     Load(load::LoadArgs),
+
+    /// Bounded resumable parse batch (M464 S06/T04): manifest → typed
+    /// per-document outcomes + atomic versioned report, over the
+    /// provider-neutral ParseBackend (R116 composition root).
+    ParseBatch(parse_batch::ParseBatchArgs),
 }
 
 fn main() {
@@ -886,6 +898,12 @@ fn main() {
             if let Err(e) = rt.block_on(async { load::run_load(&args).await }) {
                 eprintln!("❌ load failed: {e}");
                 std::process::exit(1);
+            }
+        }
+        Commands::ParseBatch(args) => {
+            if let Err(e) = rt.block_on(async { parse_batch::run(&args).await }) {
+                eprintln!("❌ parse-batch failed: {e}");
+                std::process::exit(2);
             }
         }
     }

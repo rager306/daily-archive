@@ -17,6 +17,8 @@ pub mod load;
 pub mod load_journey;
 pub mod logging;
 pub mod materialization_progress;
+pub mod parse_batch;
+pub mod parse_config;
 pub mod production;
 pub mod snapshot_identity;
 pub mod snapshot_lineage;

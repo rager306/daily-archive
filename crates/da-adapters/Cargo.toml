@@ -48,10 +48,17 @@ samyama-sdk = { path = "/root/vendor-source/samyama-graph/crates/samyama-sdk" }
 # Enable with: cargo test -p da-adapters --features pdf-classifier
 pdf-inspector = { version = "0.1", optional = true }
 
+# D295: redb is allowed ONLY as a rebuildable cache-index/cursor
+# accelerator (never authoritative). Off by default; canonical terminal
+# result reports and FilePipelineCache payloads never depend on it.
+redb = { workspace = true, optional = true }
+
 [features]
 default = []
 # PDF OCR triage — pure Rust PDF classification (~10ms)
 pdf-classifier = ["dep:pdf-inspector"]
+# Rebuildable parse-batch cursor/manifest-index accelerator (D295, S06/T04).
+redb = ["dep:redb"]
 
 [dev-dependencies]
 httpmock = "0.7"

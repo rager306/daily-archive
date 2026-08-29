@@ -27,6 +27,8 @@ pub mod openai_compatible_llm;
 pub mod openai_multimodal_prompt;
 pub mod openalex_adapter;
 pub mod parse_cache;
+#[cfg(feature = "redb")]
+pub mod parse_cursor;
 pub mod pdffigures2;
 pub mod pipeline_cache;
 pub mod pipeline_ledger;
