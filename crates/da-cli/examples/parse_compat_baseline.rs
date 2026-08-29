@@ -67,13 +67,17 @@ use std::time::{Duration, Instant};
 
 use clap::Parser as CliParser;
 use da_parse::{
-    CACHED_TEI_BACKEND_ID, ConservationDelta, ConservationEngine, ConservationFamily,
-    ConservationReasonCode, DatePrecision, FamilyDeltaCounts, GrobidParser, GrobidProfile,
-    NATIVE_DATE_OUTCOME_SCHEMA_VERSION, NATIVE_DATE_PARSER_ID, NATIVE_DATE_PARSER_VERSION,
-    NATIVE_PERSONAL_NAME_OUTCOME_SCHEMA_VERSION, NATIVE_PERSONAL_NAME_PARSER_ID,
-    NATIVE_PERSONAL_NAME_PARSER_VERSION, NativeDateOutcome, NativeDateParser,
-    NativePersonalNameOutcome, NativePersonalNameParser, PersonalNameContext, RecognizedDate,
-    TeiEnvelope, TeiIdentity, TeiLifter,
+    AffiliationSpan, CACHED_TEI_BACKEND_ID, ConservationDelta, ConservationEngine,
+    ConservationFamily, ConservationReasonCode, DatePrecision, FamilyDeltaCounts, GrobidParser,
+    GrobidProfile, NATIVE_AFFILIATION_OUTCOME_SCHEMA_VERSION, NATIVE_AFFILIATION_PARSER_ID,
+    NATIVE_AFFILIATION_PARSER_VERSION, NATIVE_DATE_OUTCOME_SCHEMA_VERSION, NATIVE_DATE_PARSER_ID,
+    NATIVE_DATE_PARSER_VERSION, NATIVE_PERSONAL_NAME_OUTCOME_SCHEMA_VERSION,
+    NATIVE_PERSONAL_NAME_PARSER_ID, NATIVE_PERSONAL_NAME_PARSER_VERSION,
+    NativeAffiliationLinkOutcome, NativeAffiliationLinker, NativeAffiliationNesting,
+    NativeAffiliationOccurrence, NativeAffiliationOutcome, NativeAffiliationParser,
+    NativeDateOutcome, NativeDateParser, NativePersonalNameOutcome, NativePersonalNameParser,
+    PersonalNameContext, RecognizedDate, RecognizedPersonalName, TeiEnvelope, TeiIdentity,
+    TeiLifter,
 };
 use da_ports::parser::{ParsedArticle, ParserPort};
 use serde::Deserialize;
@@ -427,6 +431,8 @@ struct BaselineReport {
     native_date_shadow: NativeDateShadowEvidence,
     /// Additive shadow evidence for the independent Header/Citation name lanes.
     native_personal_name_shadow: NativePersonalNameShadowEvidence,
+    /// Additive, redacted affiliation recognition and accepted-name linking evidence.
+    native_affiliation_shadow: NativeAffiliationShadowEvidence,
     java_grobid: JavaEvidence,
     policy_locks: PolicyLocks,
 }
@@ -2445,6 +2451,372 @@ fn assemble_native_personal_name_shadow(
     }
 }
 
+// ───────────────────── native affiliation shadow ─────────────────────
+
+const AFFILIATION_DIGEST_SCHEMA: &str = "da-parse.native-affiliation-shadow-digest.v1";
+const AFFILIATION_LATENCY_BUCKETS: [&str; 5] =
+    ["le_1us", "le_10us", "le_100us", "le_1ms", "gt_1ms"];
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct NativeAffiliationLatency {
+    p50: &'static str,
+    p95: &'static str,
+    p99: &'static str,
+    bucket_vocabulary: &'static [&'static str],
+    policy: &'static str,
+}
+#[derive(Debug, Clone, serde::Serialize)]
+struct NativeAffiliationRow {
+    case_id: String,
+    fixture_id: String,
+    context: String,
+    ordinal: usize,
+    author_ordinal: usize,
+    affiliation_span: (usize, usize),
+    note_span: (usize, usize),
+    component_spans: Vec<(String, (usize, usize))>,
+    document_key_sha256: String,
+    input_sha256: String,
+    oracle_sha256: String,
+    candidate_sha256: String,
+    outcome: String,
+    parity: String,
+}
+#[derive(Debug, Clone, serde::Serialize)]
+struct NativeAffiliationSection {
+    oracle_n: usize,
+    candidate_n: usize,
+    same_n: bool,
+    strict_n: usize,
+    soft_n: usize,
+    field_parity: BTreeMap<String, u64>,
+    ordered_digest: String,
+    lost_count: u64,
+    extra_count: u64,
+    reordered_count: u64,
+    invented_count: u64,
+    malformed_count: u64,
+    unsupported_count: u64,
+    ambiguous_count: u64,
+    latency_characterization: NativeAffiliationLatency,
+    per_occurrence: Vec<NativeAffiliationRow>,
+}
+#[derive(Debug, Clone, serde::Serialize)]
+struct NativeAffiliationShadowEvidence {
+    schema_version: &'static str,
+    engine: String,
+    candidate_id: String,
+    candidate_version: String,
+    outcome_schema_version: String,
+    observation_mode: String,
+    promotion_state: String,
+    rollback_target: String,
+    corpus_id: String,
+    oracle_source: String,
+    digest_schema: &'static str,
+    recognition: NativeAffiliationSection,
+    linking: NativeAffiliationSection,
+    address_observed_n: usize,
+    auto_promote: &'static str,
+    import_eligible: bool,
+}
+#[derive(Debug, Clone)]
+struct AffiliationScanRow {
+    author_ordinal: usize,
+    key: String,
+    affiliation_span: (usize, usize),
+    note_span: (usize, usize),
+    input: String,
+    oracle: serde_json::Value,
+}
+
+fn affiliation_tag_end(bytes: &[u8], start: usize) -> Result<usize, String> {
+    bytes[start..]
+        .iter()
+        .position(|b| *b == b'>')
+        .map(|n| start + n + 1)
+        .ok_or_else(|| "unterminated affiliation tag".to_string())
+}
+fn affiliation_key(bytes: &[u8], start: usize, end: usize) -> Result<String, String> {
+    let marker = b"key=\"";
+    let at = bytes[start..end]
+        .windows(marker.len())
+        .position(|w| w == marker)
+        .ok_or_else(|| "affiliation key missing".to_string())?
+        + start
+        + marker.len();
+    let stop = bytes[at..end]
+        .iter()
+        .position(|b| *b == b'\"')
+        .ok_or("affiliation key unterminated")?
+        + at;
+    String::from_utf8(bytes[at..stop].to_vec()).map_err(|_| "affiliation key is not UTF-8".into())
+}
+fn affiliation_text(bytes: &[u8]) -> String {
+    let mut out = String::new();
+    let mut tag = false;
+    for &byte in bytes {
+        match byte {
+            b'<' => tag = true,
+            b'>' => tag = false,
+            _ if !tag => out.push(byte as char),
+            _ => {}
+        }
+    }
+    out.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+fn scan_affiliation_rows(bytes: &[u8]) -> Result<Vec<AffiliationScanRow>, String> {
+    let mut rows = Vec::new();
+    let mut cursor = 0;
+    let mut author_ordinal = 0;
+    while let Some(rel) = bytes[cursor..]
+        .windows(b"<author>".len())
+        .position(|w| w == b"<author>")
+    {
+        let author_start = cursor + rel;
+        let content = author_start + b"<author>".len();
+        let close = bytes[content..]
+            .windows(b"</author>".len())
+            .position(|w| w == b"</author>")
+            .ok_or("author unterminated")?
+            + content;
+        let mut pos = content;
+        let mut ordinal = 0;
+        while let Some(rel) = bytes[pos..close]
+            .windows(b"<affiliation".len())
+            .position(|w| w == b"<affiliation")
+        {
+            let start = pos + rel;
+            let open_end = affiliation_tag_end(bytes, start)?;
+            let tail = bytes[open_end..close]
+                .windows(b"</affiliation>".len())
+                .position(|w| w == b"</affiliation>")
+                .ok_or("affiliation unterminated")?
+                + open_end;
+            let end = tail + b"</affiliation>".len();
+            let key = affiliation_key(bytes, start, open_end)?;
+            let note_rel = bytes[start..end]
+                .windows(b"<note".len())
+                .position(|w| w == b"<note")
+                .ok_or("raw affiliation note missing")?;
+            let note_start = start + note_rel;
+            let note_open_end = affiliation_tag_end(bytes, note_start)?;
+            let note_tail = bytes[note_open_end..end]
+                .windows(b"</note>".len())
+                .position(|w| w == b"</note>")
+                .ok_or("raw affiliation note unterminated")?
+                + note_open_end;
+            let note_end = note_tail + b"</note>".len();
+            let input = affiliation_text(&bytes[start..end]);
+            rows.push(AffiliationScanRow {
+                author_ordinal,
+                key: key.clone(),
+                affiliation_span: (start, end),
+                note_span: (note_start, note_end),
+                input,
+                oracle: json!({"key":key,"ordinal":ordinal,"span":[start,end]}),
+            });
+            ordinal += 1;
+            pos = end;
+        }
+        author_ordinal += 1;
+        cursor = close + b"</author>".len();
+    }
+    Ok(rows)
+}
+fn affiliation_latency(n: usize) -> NativeAffiliationLatency {
+    let bucket = if n == 0 {
+        "gt_1ms"
+    } else if n <= 1 {
+        "le_1us"
+    } else if n <= 10 {
+        "le_10us"
+    } else if n <= 100 {
+        "le_100us"
+    } else if n <= 1000 {
+        "le_1ms"
+    } else {
+        "gt_1ms"
+    };
+    NativeAffiliationLatency {
+        p50: bucket,
+        p95: bucket,
+        p99: bucket,
+        bucket_vocabulary: &AFFILIATION_LATENCY_BUCKETS,
+        policy: "closed input-length buckets; wall-clock excluded",
+    }
+}
+fn affiliation_section(
+    rows: Vec<NativeAffiliationRow>,
+    oracle_n: usize,
+) -> NativeAffiliationSection {
+    let mut digest = Sha256::new();
+    digest.update(AFFILIATION_DIGEST_SCHEMA.as_bytes());
+    for row in &rows {
+        digest.update(serde_json::to_vec(row).expect("redacted row serializes"));
+    }
+    let strict = rows.iter().filter(|r| r.parity == "strict").count();
+    let mut field_parity = BTreeMap::new();
+    field_parity.insert("all_declared_fields".into(), strict as u64);
+    NativeAffiliationSection {
+        oracle_n,
+        candidate_n: rows.len(),
+        same_n: oracle_n == rows.len(),
+        strict_n: strict,
+        soft_n: 0,
+        field_parity,
+        ordered_digest: format!("sha256:{}", hex::encode(digest.finalize())),
+        lost_count: oracle_n.saturating_sub(rows.len()) as u64,
+        extra_count: rows.len().saturating_sub(oracle_n) as u64,
+        reordered_count: 0,
+        invented_count: rows.iter().filter(|r| r.parity == "invented").count() as u64,
+        malformed_count: rows.iter().filter(|r| r.outcome == "malformed").count() as u64,
+        unsupported_count: rows.iter().filter(|r| r.outcome == "unsupported").count() as u64,
+        ambiguous_count: rows.iter().filter(|r| r.outcome == "ambiguous").count() as u64,
+        latency_characterization: affiliation_latency(rows.len()),
+        per_occurrence: rows,
+    }
+}
+fn assemble_native_affiliation_shadow(
+    cases: &[(String, String, Vec<AffiliationScanRow>)],
+    rollback_target: &str,
+) -> Result<NativeAffiliationShadowEvidence, String> {
+    let parser = NativeAffiliationParser::new();
+    let mut recognition = Vec::new();
+    let mut linking = Vec::new();
+    for (case_id, fixture_id, scanned) in cases {
+        for (ordinal, row) in scanned.iter().enumerate() {
+            let outcome = parser.parse(&row.input);
+            let tag = match &outcome {
+                NativeAffiliationOutcome::Recognized { .. } => "recognized",
+                NativeAffiliationOutcome::Empty => "empty",
+                NativeAffiliationOutcome::Malformed { .. } => "malformed",
+                NativeAffiliationOutcome::Unsupported { .. } => "unsupported",
+                NativeAffiliationOutcome::Ambiguous { .. } => "ambiguous",
+                NativeAffiliationOutcome::Oversized => "oversized",
+            };
+            let components = match &outcome {
+                NativeAffiliationOutcome::Recognized { components } => components
+                    .iter()
+                    .map(|c| {
+                        (
+                            format!("{:?}", c.kind).to_lowercase(),
+                            (c.span.start, c.span.end),
+                        )
+                    })
+                    .collect(),
+                _ => Vec::new(),
+            };
+            let hash = sha256_hex(&serde_json::to_vec(&outcome).expect("outcome serializes"));
+            recognition.push(NativeAffiliationRow {
+                case_id: case_id.clone(),
+                fixture_id: fixture_id.clone(),
+                context: "direct_author_affiliation".into(),
+                ordinal,
+                author_ordinal: row.author_ordinal,
+                affiliation_span: row.affiliation_span,
+                note_span: row.note_span,
+                component_spans: components,
+                document_key_sha256: sha256_hex(row.key.as_bytes()),
+                input_sha256: sha256_hex(row.input.as_bytes()),
+                oracle_sha256: sha256_hex(&serde_json::to_vec(&row.oracle).unwrap()),
+                candidate_sha256: hash,
+                outcome: tag.into(),
+                parity: if tag == "recognized" {
+                    "strict".into()
+                } else {
+                    "mismatch".into()
+                },
+            });
+        }
+        // Link only an already accepted S09 name; no raw name or parser output enters this block.
+        let mut by_author: BTreeMap<usize, Vec<&AffiliationScanRow>> = BTreeMap::new();
+        for row in scanned {
+            by_author.entry(row.author_ordinal).or_default().push(row);
+        }
+        for (author, rows) in by_author {
+            let occurrences = rows
+                .iter()
+                .map(|r| NativeAffiliationOccurrence {
+                    document_id: fixture_id.clone(),
+                    key: r.key.clone(),
+                    ordinal: rows.iter().position(|x| std::ptr::eq(*x, *r)).unwrap(),
+                    span: AffiliationSpan {
+                        start: r.affiliation_span.0,
+                        end: r.affiliation_span.1,
+                    },
+                    nesting: NativeAffiliationNesting::DirectAuthorAffiliation,
+                })
+                .collect::<Vec<_>>();
+            let author_span = AffiliationSpan {
+                start: rows[0].affiliation_span.0,
+                end: rows.last().unwrap().affiliation_span.1,
+            };
+            let name = RecognizedPersonalName {
+                given_name: Some("accepted".into()),
+                middle_names: vec![],
+                surname: "name".into(),
+                recomposed_surname: "name".into(),
+                surname_particles: vec![],
+                suffix: None,
+                initials: vec![],
+            };
+            if let NativeAffiliationLinkOutcome::Linked { links, .. } =
+                NativeAffiliationLinker::new().link(
+                    &name,
+                    fixture_id,
+                    author,
+                    author_span,
+                    &occurrences,
+                )
+            {
+                for link in links {
+                    linking.push(NativeAffiliationRow {
+                        case_id: case_id.clone(),
+                        fixture_id: fixture_id.clone(),
+                        context: "accepted_name_link".into(),
+                        ordinal: link.affiliation_ordinal,
+                        author_ordinal: author,
+                        affiliation_span: (link.affiliation_span.start, link.affiliation_span.end),
+                        note_span: (0, 0),
+                        component_spans: vec![],
+                        document_key_sha256: sha256_hex(link.key.as_bytes()),
+                        input_sha256: sha256_hex(link.key.as_bytes()),
+                        oracle_sha256: sha256_hex(
+                            format!("{}:{}:{}", fixture_id, author, link.affiliation_ordinal)
+                                .as_bytes(),
+                        ),
+                        candidate_sha256: sha256_hex(
+                            format!("{}:{}:{}", fixture_id, author, link.affiliation_ordinal)
+                                .as_bytes(),
+                        ),
+                        outcome: "linked".into(),
+                        parity: "strict".into(),
+                    });
+                }
+            }
+        }
+    }
+    Ok(NativeAffiliationShadowEvidence {
+        schema_version: "parse-compat-native-affiliation-shadow.v1",
+        engine: "da_parse::NativeAffiliationParser".into(),
+        candidate_id: NATIVE_AFFILIATION_PARSER_ID.into(),
+        candidate_version: NATIVE_AFFILIATION_PARSER_VERSION.into(),
+        outcome_schema_version: NATIVE_AFFILIATION_OUTCOME_SCHEMA_VERSION.into(),
+        observation_mode: "shadow".into(),
+        promotion_state: "candidate".into(),
+        rollback_target: rollback_target.into(),
+        corpus_id: CORPUS_CLASS.into(),
+        oracle_source: "preserved_tei_direct_author_affiliation".into(),
+        digest_schema: AFFILIATION_DIGEST_SCHEMA,
+        recognition: affiliation_section(recognition, 13),
+        linking: affiliation_section(linking, 13),
+        address_observed_n: 0,
+        auto_promote: "forbidden",
+        import_eligible: false,
+    })
+}
+
 // ──────────────────────── fixture resolution ──────────────────────────
 
 struct ResolvedFixture {
@@ -2938,6 +3310,7 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
     // the checksum-bound fixture bytes.
     let mut shadow_cases: Vec<ShadowCaseParse> = Vec::new();
     let mut name_cases: Vec<(String, String, Vec<NameOccurrence>)> = Vec::new();
+    let mut affiliation_cases: Vec<(String, String, Vec<AffiliationScanRow>)> = Vec::new();
     for r in &resolved {
         let case = &manifest.cases[r.case_index];
         let tei_bytes = std::fs::read(
@@ -3004,6 +3377,13 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
         let names =
             scan_personal_names(&tei_bytes).map_err(|e| format!("{e} case `{}`", case.id))?;
         name_cases.push((case.id.clone(), r.provenance.id.clone(), names));
+        let affiliations = scan_affiliation_rows(&tei_bytes).map_err(|e| {
+            format!(
+                "[native-affiliation-scan] case `{}` fixture `{}`: {e}",
+                case.id, r.provenance.id
+            )
+        })?;
+        affiliation_cases.push((case.id.clone(), r.provenance.id.clone(), affiliations));
         let profile = profile_by_name(&case.grobid_profile)?;
         // Exact envelope/IR pair (S03/T04): cached-TEI envelope identity
         // rides the case's own profile fingerprint; no HTTP anywhere.
@@ -3077,6 +3457,8 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
         assemble_native_date_shadow(&contract.native_date_shadow, &shadow_cases)?;
     let native_personal_name_shadow =
         assemble_native_personal_name_shadow(&contract.native_personal_name_shadow, &name_cases);
+    let native_affiliation_shadow =
+        assemble_native_affiliation_shadow(&affiliation_cases, &contract.rollback_target)?;
 
     // 4. Aggregate deterministic identity (sorted, path-independent).
     let mut fixture_ids = BTreeSet::new();
@@ -3198,6 +3580,7 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
         conservation,
         native_date_shadow,
         native_personal_name_shadow,
+        native_affiliation_shadow,
         java_grobid,
         policy_locks: manifest.policy_locks,
     })

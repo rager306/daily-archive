@@ -71,6 +71,7 @@ cases:
       - conservation_delta
       - native_date_shadow
       - native_personal_name_shadow
+      - native_affiliation_shadow
     ledger_bindings:
       - rest.processFulltextDocument
       - dialect.teiCoordinates
@@ -82,12 +83,17 @@ cases:
       - rest.processDate
       - parse.component.native_date_shadow
       - parse.component.native_personal_name_shadow
+      - rest.processAffiliations
+      - parse.component.native_affiliation_shadow
     obligation_acknowledged: true
     notes:
+      - 'S10/T05: affiliation recognition/linking are separate 13/13 same-n populations; HUB is an explicit zero-link negative control.'
       - 'Behavioral floors: sections >= 80, citations >= 80, 3 tables, 24 formulas; 21 header authors and 22 non-table figures present in TEI bytes (lifted since S07 — counts bound by the baseline report).'
       - 'Since S08/T03: 80 ordered <date type="published"> occurrences (1+1+78) ride the native_date_shadow evidence; strict parity 80/80.'
   - id: reg.tei.rlm-2512.24601
     source_kind: preserved_grobid_tei
+    # S10/T05 binds this case to the additive redacted affiliation shadow;
+    # it remains an explicit zero-link control.
     fixture:
       path: crates/da-parse/tests/fixtures/preserved/rlm_2512.24601.tei.xml
       sha256: e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3
@@ -112,6 +118,7 @@ cases:
       - conservation_delta
       - native_date_shadow
       - native_personal_name_shadow
+      - native_affiliation_shadow
     ledger_bindings:
       - rest.processFulltextDocument
       - dialect.teiCoordinates
@@ -121,12 +128,16 @@ cases:
       - rest.processDate
       - parse.component.native_date_shadow
       - parse.component.native_personal_name_shadow
+      - rest.processAffiliations
+      - parse.component.native_affiliation_shadow
     obligation_acknowledged: true
     notes:
+      - 'S10/T05: RLM is an explicit zero-link negative control; affiliation denominator remains separate from names/dates.'
       - '4 header authors, 29 non-table figures, 2 tables, 25 coords attributes in TEI bytes.'
       - 'Since S08/T03: 50 ordered <date type="published"> occurrences (1+1+48) ride the native_date_shadow evidence; strict parity 50/50.'
   - id: reg.tei.reca-bibliography-2605.26525
     source_kind: preserved_grobid_tei
+    # S10/T05 includes this case in the independent 13-link oracle population.
     fixture:
       path: crates/da-parse/tests/fixtures/preserved/reca_2605.26525v1.tei.xml
       sha256: dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040
@@ -151,6 +162,7 @@ cases:
       - conservation_delta
       - native_date_shadow
       - native_personal_name_shadow
+      - native_affiliation_shadow
     ledger_bindings:
       - rest.processFulltextDocument
       - dialect.teiCoordinates
@@ -160,8 +172,11 @@ cases:
       - rest.processDate
       - parse.component.native_date_shadow
       - parse.component.native_personal_name_shadow
+      - rest.processAffiliations
+      - parse.component.native_affiliation_shadow
     obligation_acknowledged: true
     notes:
+      - 'S10/T05: ReCA contributes the frozen 13-link affiliation population; candidate and oracle are separately digest-bound.'
       - 'Large bibliography pin: citations >= 70. 11 header authors, 55 non-table figures, 34 coords attributes in TEI bytes.'
       - 'Since S08/T03: 43 ordered <date type="published"> occurrences (1+1+41) ride the native_date_shadow evidence; strict parity 43/43.'
   - id: reg.tei.compact-hub-structural-identity

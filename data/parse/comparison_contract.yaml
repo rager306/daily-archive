@@ -260,6 +260,46 @@ native_personal_name_shadow:
   rollback_target: java-grobid-http@0.9.0-crf
   used_by: [S09-T04]
 
+# S10/T05: affiliation recognition and accepted-name linking share one additive
+# redacted block, while their denominators and ordered digests remain separate.
+native_affiliation_shadow:
+  engine: da_parse::NativeAffiliationParser
+  linker: da_parse::NativeAffiliationLinker
+  candidate_id: da-parse.native_affiliation
+  candidate_version: '1.0.0'
+  outcome_schema_version: da-parse.native-affiliation.outcome/v1
+  observation_mode: shadow
+  promotion_state: candidate
+  rollback_target: java-grobid-http@0.9.0-crf
+  oracle_source: preserved_tei_direct_author_affiliation
+  corpus_class: fast_local_fixtures
+  recognition:
+    denominator:
+      total: 13
+      institution: 9
+      laboratory: 4
+    same_n: required
+    ordered_digest: required
+    counters: [lost, extra, reordered, invented]
+  linking:
+    denominator:
+      total: 13
+      linked_authors: 11
+      zero_link_authors: 25
+    accepted_name_only: true
+    same_n: required
+    ordered_digest: required
+    counters: [lost, extra, reordered, invented]
+  address:
+    observed_n: 0
+  redaction:
+    allowed: [fixture_id, case_id, context, ordinal, author_ordinal, bounded_spans, document_key_sha256, input_sha256, oracle_sha256, candidate_sha256, closed_outcome, parity]
+    forbidden: [raw_affiliation, organization_text, address_text, marker_text, reconstructed_name, tei_fragments]
+  latency: closed_input_length_buckets_only
+  forbidden: [auto_promotion, runtime_routing, invented_bindings, pooled_denominators]
+  hard_regressions: [invented_revision, nondeterministic_output, panic, silent_skip_missing_tei_fixture]
+  used_by: [S10-T05]
+
 promotion:
   default_state: candidate
   allowed_states: [absent, proxy, shadow, candidate, promoted, fallback]

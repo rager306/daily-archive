@@ -55,6 +55,13 @@
 # observation plus the sanctioned compatibility-note shrink of the
 # intentional-absence list (lift_tei entry).
 #
+# S10/T05: native affiliation recognition and accepted-name linking are observed
+# in one additive parse-compat block. The parser is text-only and the linker
+# accepts only an already recognized personal name; neither is runtime-wired.
+# Recognition/linking populations, counters and ordered digests stay separate;
+# raw affiliation, organization/address/marker text and TEI are forbidden.
+# ledger_version stays 1: this is additive observation only.
+#
 # S08/T03: the pure native scholarly-date shadow candidate (S08) is observed
 # as the additive parse.component.native_date_shadow entry below plus the
 # registry state transition rest.processDate absent -> shadow (versioned
@@ -426,6 +433,28 @@ entries:
       elevation requires an explicit user decision and a same-n strict parity
       receipt; per-occurrence evidence carries fixture id, ordinal, span and
       SHA-256 only, never display text or TEI fragments.
+  - id: parse.component.native_affiliation_shadow
+    kind: shadow_component
+    owner_crate: da-parse
+    visibility: public_fn
+    stability: internal_observable
+    entry_point: da_parse::NativeAffiliationParser::parse + da_parse::NativeAffiliationLinker::link
+    request_shape: 'recognition: parse(&self, input: &str); linking: link(&self, &RecognizedPersonalName, document_id, author ordinal/span, recognized occurrences)'
+    result_shape: 'single redacted native_affiliation_shadow block with separate recognition/linking same-n populations, bounded spans, hashes, closed outcomes and parity counters'
+    error_shapes: []
+    async_behavior: synchronous_pure
+    request_fields: []
+    notes:
+      - 'Shadow only (S10/T05): recognition accepts affiliation text only; linking accepts only accepted da_parse::RecognizedPersonalName and already recognized document-local occurrences.'
+      - 'The parse-compat baseline binds 13 recognition occurrences and 13 links; HUB/RLM remain explicit zero-link negative controls and address observed_n remains 0.'
+      - 'Rows are redacted identity/evidence only: raw affiliation, organization/address/marker text, reconstructed names and TEI fragments are forbidden.'
+      - 'No ParserPort, TeiLifter, TeiParseIr, ParsedArticle, HTTP, backend, transport, batch, cache or runtime route is changed.'
+      - 'registry_binding: rest.processAffiliations'
+    compatibility_obligation: >-
+      Recognition and accepted-name linking remain separate same-n populations;
+      candidate state stays shadow/candidate with invention budget zero and Java
+      GROBID as rollback. Any promotion or runtime route requires explicit
+      decision and a fresh strict parity receipt.
   - id: parse.component.native_personal_name_shadow
     kind: shadow_component
     owner_crate: da-parse

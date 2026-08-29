@@ -516,7 +516,7 @@ capabilities:
   - id: rest.processAffiliations
     group: 4
     kind: endpoint
-    state: absent
+    state: shadow
     product_scope: supporting
     promotion_state: candidate
     official:
@@ -527,17 +527,25 @@ capabilities:
       response_format: application/xml TEI affiliation
     implementation:
       crate: da-parse
-      surface: none
-      notes: Native affiliation parser and linker is S10.
+      surface: >-
+        none (candidate surface only: crates/da-parse/src/native_affiliation.rs;
+        pure NativeAffiliationParser and NativeAffiliationLinker, never wired
+        into ParserPort, TeiLifter, TeiParseIr, ParsedArticle or any runtime route)
+      notes: >-
+        S10/T05 observes one additive native_affiliation_shadow block inside
+        parse_compat_baseline. Recognition and accepted-name linking remain
+        separate same-n populations; Java GROBID remains oracle and rollback.
     baseline: java-grobid-http@0.9.0-crf
-    candidate: none
-    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
-    hard_regressions: [lost_references_or_links]
+    candidate: da-parse.native_affiliation@1.0.0
+    evidence_ref: crates/da-cli/examples/parse_compat_baseline.rs:native_affiliation_shadow
+    hard_regressions: [lost_references_or_links, nondeterministic_output]
     metrics:
       conservation: affiliation_org_count
       quality: org_addr_marker_accuracy
-      performance: p95_latency_ms
+      performance: deterministic_input_length_bucket
     rollback_target: java-grobid-http@0.9.0-crf
+    shadow_binding: parse.component.native_affiliation_shadow
+    invention_budget: 0
 
   - id: rest.processCitation
     group: 4
