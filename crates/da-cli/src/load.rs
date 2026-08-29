@@ -5,7 +5,9 @@
 use clap::Args;
 use da_adapters::{
     ArxivSourceAcquisition, CatalogHtmlAcquisition, FdApiEmbedder, FilePipelineCache, HtmlParser,
-    RuleBasedExtractor, context_conservation_policy::load_context_conservation_policy,
+    RuleBasedExtractor,
+    context_conservation_policy::load_context_conservation_policy,
+    parse_cache::{LegacyParseIdentityLookup, lookup_with_legacy_parse_identity},
     toc_unit_keys,
 };
 use da_application::{
@@ -691,60 +693,9 @@ fn parse_cache_key(source: SourceIdentity, is_html: bool, profile: GrobidProfile
     }
 }
 
-fn selected_source_sha(source: &SourceIdentity) -> Option<String> {
-    match source.selected_format {
-        SourceFormat::Pdf => source.pdf_sha256.clone(),
-        SourceFormat::Html => source.html_sha256.clone(),
-        SourceFormat::MetadataOnly => None,
-    }
-}
-
-/// Read the exact previous production parse key only for the semantics that
-/// form actually had: rich PDF-only or HTML-only collapsed source identity.
-/// Structural/custom profiles and dual-manifestation identities never reuse it.
-fn lookup_with_legacy_parse_identity(
-    cache: &FilePipelineCache,
-    canonical_key: &StageCacheKey,
-    is_html: bool,
-    profile: GrobidProfile,
-    now: &str,
-) -> Result<(CacheLookup, Option<String>), String> {
-    let legacy_configuration = if is_html {
-        if canonical_key.source.pdf_sha256.is_some() {
-            return Ok((CacheLookup::Miss, None));
-        }
-        "html-primary"
-    } else {
-        if profile != GrobidProfile::rich() || canonical_key.source.html_sha256.is_some() {
-            return Ok((CacheLookup::Miss, None));
-        }
-        "pdf-grobid"
-    };
-    let Some(selected_sha) = selected_source_sha(&canonical_key.source) else {
-        return Ok((CacheLookup::Miss, None));
-    };
-    let mut legacy_key = canonical_key.clone();
-    legacy_key.source.pdf_sha256 = if is_html {
-        None
-    } else {
-        Some(selected_sha.clone())
-    };
-    legacy_key.source.html_sha256 = if is_html {
-        Some(selected_sha.clone())
-    } else {
-        None
-    };
-    legacy_key.source.acquisition_fingerprint = selected_sha;
-    legacy_key.configuration_fingerprint = legacy_configuration.to_string();
-    let lookup = cache
-        .lookup(&legacy_key, now)
-        .map_err(|error| format!("legacy {legacy_configuration} parse cache lookup: {error}"))?;
-    if matches!(lookup, CacheLookup::Miss) {
-        Ok((lookup, None))
-    } else {
-        Ok((lookup, Some(legacy_configuration.to_string())))
-    }
-}
+// The legacy rich-PDF/HTML-only read fallback lives verbatim in
+// `da_adapters::parse_cache` (S06/T03) and is used unchanged below, so the
+// legacy identity and its reports stay byte-stable across the extraction.
 
 /// Parse primary content with optional PipelineCache (derived payload only).
 /// Returns (parsed, cache records, payload_sha256 for dependency keys).
@@ -772,7 +723,11 @@ async fn parse_with_cache(
             .map_err(|e| format!("parse cache lookup: {e}"))?;
         let (lookup, resolved_from) = match canonical_lookup {
             CacheLookup::Miss => {
-                lookup_with_legacy_parse_identity(cache, &key, is_html, profile, &now)?
+                let LegacyParseIdentityLookup {
+                    lookup,
+                    resolved_from,
+                } = lookup_with_legacy_parse_identity(cache, &key, is_html, profile, &now)?;
+                (lookup, resolved_from)
             }
             lookup => (lookup, None),
         };
@@ -2048,7 +2003,10 @@ mod tests {
         let cache = FilePipelineCache::new(root.join("cache"));
         let now = "2026-08-14T00:00:00Z";
         let structural_key = parse_cache_key(dual.clone(), false, GrobidProfile::structural());
-        let (lookup, resolved) = lookup_with_legacy_parse_identity(
+        let LegacyParseIdentityLookup {
+            lookup,
+            resolved_from: resolved,
+        } = lookup_with_legacy_parse_identity(
             &cache,
             &structural_key,
             false,
@@ -2060,7 +2018,10 @@ mod tests {
         assert_eq!(resolved, None);
 
         let rich_dual_key = parse_cache_key(dual, false, GrobidProfile::rich());
-        let (lookup, resolved) = lookup_with_legacy_parse_identity(
+        let LegacyParseIdentityLookup {
+            lookup,
+            resolved_from: resolved,
+        } = lookup_with_legacy_parse_identity(
             &cache,
             &rich_dual_key,
             false,

@@ -18,6 +18,13 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 const MANIFEST_FILE: &str = "manifest.json";
 const PAYLOAD_FILE: &str = "payload.bin";
+
+/// Identity error marker: the stored manifest belongs to different effective
+/// inputs than the requested key. `parse_cache.rs` maps this case to
+/// `CacheIntegrityCode::IdentityMismatch` (distinguishable from generic
+/// corruption).
+pub(crate) const MANIFEST_KEY_MISMATCH_MESSAGE: &str =
+    "manifest key does not match requested effective inputs";
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Clone)]
@@ -55,7 +62,24 @@ impl FilePipelineCache {
     fn entry_dir(&self, key: &StageCacheKey) -> PipelineCacheResult<PathBuf> {
         let article = Self::safe_component(&key.source.article_id, "article_id")?;
         let stage = Self::safe_component(&key.stage_id, "stage_id")?;
-        Ok(self.root.join(article).join(stage).join(key.key_sha256()?))
+        let key_sha = key.key_sha256()?;
+        let dir = self.root.join(&article).join(&stage).join(&key_sha);
+        // Fail closed on planted symlinks: no path component at or below the
+        // article directory may redirect reads or writes outside the cache.
+        for (label, component) in [
+            ("article_id", self.root.join(&article)),
+            ("stage_id", self.root.join(&article).join(&stage)),
+            ("key_sha256", dir.clone()),
+        ] {
+            if fs::symlink_metadata(&component)
+                .is_ok_and(|metadata| metadata.file_type().is_symlink())
+            {
+                return Err(PipelineCacheError::Contract(format!(
+                    "symlinked cache path component is never traversed: {label}"
+                )));
+            }
+        }
+        Ok(dir)
     }
 
     fn io(path: &Path, error: impl std::fmt::Display) -> PipelineCacheError {
@@ -123,7 +147,7 @@ impl PipelineCache for FilePipelineCache {
         if manifest.key != *key || manifest.key_sha256 != key.key_sha256()? {
             return Err(PipelineCacheError::InvalidManifest {
                 path: manifest_path.display().to_string(),
-                message: "manifest key does not match requested effective inputs".into(),
+                message: MANIFEST_KEY_MISMATCH_MESSAGE.into(),
             });
         }
 
@@ -425,5 +449,58 @@ mod tests {
             ),
             Err(PipelineCacheError::Contract(_))
         ));
+    }
+
+    #[cfg(unix)]
+    fn symlink_component(original: &Path, link: &Path) {
+        std::os::unix::fs::symlink(original, link).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn symlinked_article_component_fails_closed() {
+        let root = temp_root("symlink-article");
+        let target = temp_root("symlink-article-target");
+        fs::create_dir_all(&root).unwrap();
+        fs::create_dir_all(&target).unwrap();
+        symlink_component(&target, &root.join("2507.19457"));
+        let cache = FilePipelineCache::new(&root);
+        let k = key("parse");
+        // Reads fail closed too: a planted symlink is an error, not a miss.
+        assert!(matches!(
+            cache.lookup(&k, "2026-08-08T00:01:00Z"),
+            Err(PipelineCacheError::Contract(_))
+        ));
+        assert!(matches!(
+            cache.store_success(&k, b"payload", BTreeMap::new(), "2026-08-08T00:00:00Z"),
+            Err(PipelineCacheError::Contract(_))
+        ));
+        fs::remove_dir_all(root).unwrap();
+        fs::remove_dir_all(target).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn symlinked_key_component_fails_closed() {
+        let root = temp_root("symlink-key");
+        let cache = FilePipelineCache::new(&root);
+        let k = key("parse");
+        let target = temp_root("symlink-key-target");
+        fs::create_dir_all(&target).unwrap();
+        fs::create_dir_all(root.join("2507.19457/parse")).unwrap();
+        symlink_component(
+            &target,
+            &root.join("2507.19457/parse").join(k.key_sha256().unwrap()),
+        );
+        assert!(matches!(
+            cache.lookup(&k, "2026-08-08T00:01:00Z"),
+            Err(PipelineCacheError::Contract(_))
+        ));
+        assert!(matches!(
+            cache.store_success(&k, b"payload", BTreeMap::new(), "2026-08-08T00:00:00Z"),
+            Err(PipelineCacheError::Contract(_))
+        ));
+        fs::remove_dir_all(root).unwrap();
+        fs::remove_dir_all(target).unwrap();
     }
 }

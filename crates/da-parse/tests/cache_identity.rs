@@ -513,15 +513,21 @@ fn baseline_keeps_honest_typed_absences_and_no_raw_content() {
 fn production_cache_identity_strings_stay_pinned_in_their_source_surfaces() {
     // Quoted needles match the exact Rust string literals — a rename or
     // fingerprint bump cannot slip through a substring accident.
-    let pins: [(&str, &[&str]); 4] = [
+    // Since S06/T03 the legacy rich-PDF `pdf-grobid` lookup lives in
+    // `crates/da-adapters/src/parse_cache.rs` (extracted verbatim from
+    // load.rs and used unchanged by `da load`) and the pin moved with it.
+    let pins: [(&str, &[&str]); 5] = [
         (
             "crates/da-cli/src/load.rs",
             &[
                 "\"da_adapters::GrobidParser@load-v1\"",
                 "\"da_adapters::HtmlParser@load-v1\"",
                 "\"ParsedArticle.v1\"",
-                "\"pdf-grobid\"",
             ],
+        ),
+        (
+            "crates/da-adapters/src/parse_cache.rs",
+            &["\"pdf-grobid\"", "\"html-primary\""],
         ),
         (
             "crates/da-cli/src/load_journey.rs",
