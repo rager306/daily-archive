@@ -550,7 +550,7 @@ capabilities:
   - id: rest.processCitation
     group: 4
     kind: endpoint
-    state: absent
+    state: shadow
     product_scope: supporting
     promotion_state: candidate
     official:
@@ -563,22 +563,24 @@ capabilities:
       response_format: application/xml TEI biblStruct
     implementation:
       crate: da-parse
-      surface: none
-      notes: Native citation parser is S11.
+      surface: crates/da-cli/examples/parse_compat_baseline.rs:native_citation_shadow
+      notes: Native citation parser is S11; shadow-only and never runtime-wired.
     baseline: java-grobid-http@0.9.0-crf
-    candidate: none
-    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
-    hard_regressions: [lost_references_or_links, invented_revision]
+    candidate: da-parse.native_citation@1.0.0
+    evidence_ref: crates/da-cli/examples/parse_compat_baseline.rs:native_citation_shadow
+    hard_regressions: [lost_references_or_links, invented_revision, nondeterministic_output]
     metrics:
       conservation: biblstruct_count
       quality: citation_field_accuracy
       performance: p95_latency_ms
     rollback_target: java-grobid-http@0.9.0-crf
+    shadow_binding: parse.component.native_citation_shadow
+    invention_budget: 0
 
   - id: rest.processCitationListTEI
     group: 4
     kind: endpoint
-    state: absent
+    state: shadow
     product_scope: supporting
     promotion_state: candidate
     official:
@@ -590,17 +592,19 @@ capabilities:
       response_format: application/xml TEI listBibl
     implementation:
       crate: da-parse
-      surface: none
-      notes: Native reference segmentation and header composition is S12.
+      surface: crates/da-cli/examples/parse_compat_baseline.rs:native_citation_shadow
+      notes: Native reference segmentation is S11 shadow-only; S12 owns composition.
     baseline: java-grobid-http@0.9.0-crf
-    candidate: none
-    evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
-    hard_regressions: [lost_references_or_links, changed_reading_order]
+    candidate: da-parse.native_reference_segmenter@1.0.0
+    evidence_ref: crates/da-cli/examples/parse_compat_baseline.rs:native_citation_shadow
+    hard_regressions: [lost_references_or_links, changed_reading_order, nondeterministic_output]
     metrics:
       conservation: biblstruct_count
       quality: citation_list_order
       performance: p95_latency_ms
     rollback_target: java-grobid-http@0.9.0-crf
+    shadow_binding: parse.component.native_citation_shadow
+    invention_budget: 0
 
   # ------------------------------------------------------------------
   # Group 5 — coordinates and annotations

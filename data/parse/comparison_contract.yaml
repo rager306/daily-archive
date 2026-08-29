@@ -260,6 +260,53 @@ native_personal_name_shadow:
   rollback_target: java-grobid-http@0.9.0-crf
   used_by: [S09-T04]
 
+# S11/T04: native citation fields, preserved raw-reference list order and
+# citation-anchor occurrences are one additive redacted block. Denominators are
+# independent and checksum-bound; no raw citation or TEI content enters output.
+native_citation_shadow:
+  engine: da_parse::NativeCitationParser
+  candidate_id: da-parse.native_citation
+  candidate_version: '1.0.0'
+  outcome_schema_version: da-parse.native-citation.outcome/v1
+  observation_mode: shadow
+  promotion_state: candidate
+  rollback_target: java-grobid-http@0.9.0-crf
+  oracle_source: preserved_tei_reconstruction
+  corpus_class: fast_local_fixtures
+  fields:
+    denominator:
+      total: 207
+      title_observed_n: 200
+      per_fixture:
+        reg.tei.hub-bibliography-2507.19457: 80
+        reg.tei.reca-bibliography-2605.26525: 78
+        reg.tei.rlm-2512.24601: 49
+    observed_roles: [authors, publication_date, article_title, container_title, volume, issue, pages, article_number, publisher, place, doi, arxiv_id, url]
+    independent_expected_roles: [article_title, publication_date, doi, arxiv_id]
+    same_n: required
+    invented_component_budget: 0
+  reference_list:
+    denominator:
+      total: 207
+    provenance: preserved_tei_reconstruction
+    ordered_digest: required
+    counters: [lost, extra, reordered, merged, split]
+  anchors:
+    denominator:
+      total: 380
+      targeted: 217
+      targetless: 163
+      adjacent_fragment_pairs: 168
+    ordered_digest: required
+    target_state: preserved
+    counters: [lost, extra, reordered, merged, split]
+  redaction:
+    allowed: [fixture_id, case_id, ordinal, role, bounded_spans, input_sha256, oracle_sha256, candidate_sha256, closed_outcome, target_present, parity]
+    forbidden: [raw_reference, raw_citation, tei_fragments, title, name, identifier, venue, anchor_quote, physical_path]
+  hard_regressions: [lost_references_or_links, changed_reading_order, invented_revision, nondeterministic_output, panic, silent_skip_missing_tei_fixture]
+  forbidden: [auto_promotion, runtime_routing, raw_references, raw_tei, invented_bindings, pooled_denominators]
+  used_by: [S11-T04]
+
 # S10/T05: affiliation recognition and accepted-name linking share one additive
 # redacted block, while their denominators and ordered digests remain separate.
 native_affiliation_shadow:

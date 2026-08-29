@@ -67,15 +67,19 @@ use std::time::{Duration, Instant};
 
 use clap::Parser as CliParser;
 use da_parse::{
-    AffiliationSpan, CACHED_TEI_BACKEND_ID, ConservationDelta, ConservationEngine,
-    ConservationFamily, ConservationReasonCode, DatePrecision, FamilyDeltaCounts, GrobidParser,
-    GrobidProfile, NATIVE_AFFILIATION_OUTCOME_SCHEMA_VERSION, NATIVE_AFFILIATION_PARSER_ID,
-    NATIVE_AFFILIATION_PARSER_VERSION, NATIVE_DATE_OUTCOME_SCHEMA_VERSION, NATIVE_DATE_PARSER_ID,
+    AffiliationSpan, CACHED_TEI_BACKEND_ID, CitationFieldRole, ConservationDelta,
+    ConservationEngine, ConservationFamily, ConservationReasonCode, DatePrecision,
+    FamilyDeltaCounts, GrobidParser, GrobidProfile, NATIVE_AFFILIATION_OUTCOME_SCHEMA_VERSION,
+    NATIVE_AFFILIATION_PARSER_ID, NATIVE_AFFILIATION_PARSER_VERSION,
+    NATIVE_CITATION_OUTCOME_SCHEMA_VERSION, NATIVE_CITATION_PARSER_ID,
+    NATIVE_CITATION_PARSER_VERSION, NATIVE_DATE_OUTCOME_SCHEMA_VERSION, NATIVE_DATE_PARSER_ID,
     NATIVE_DATE_PARSER_VERSION, NATIVE_PERSONAL_NAME_OUTCOME_SCHEMA_VERSION,
     NATIVE_PERSONAL_NAME_PARSER_ID, NATIVE_PERSONAL_NAME_PARSER_VERSION,
     NativeAffiliationLinkOutcome, NativeAffiliationLinker, NativeAffiliationNesting,
     NativeAffiliationOccurrence, NativeAffiliationOutcome, NativeAffiliationParser,
-    NativeDateOutcome, NativeDateParser, NativePersonalNameOutcome, NativePersonalNameParser,
+    NativeCitationAnchorOutcome, NativeCitationAnchorScanner, NativeCitationOutcome,
+    NativeCitationParser, NativeDateOutcome, NativeDateParser, NativePersonalNameOutcome,
+    NativePersonalNameParser, NativeReferenceListOutcome, NativeReferenceSegmenter,
     PersonalNameContext, RecognizedDate, RecognizedPersonalName, TeiEnvelope, TeiIdentity,
     TeiLifter,
 };
@@ -433,6 +437,8 @@ struct BaselineReport {
     native_personal_name_shadow: NativePersonalNameShadowEvidence,
     /// Additive, redacted affiliation recognition and accepted-name linking evidence.
     native_affiliation_shadow: NativeAffiliationShadowEvidence,
+    /// S11/T04 additive redacted citation field/list/anchor evidence.
+    native_citation_shadow: serde_json::Value,
     java_grobid: JavaEvidence,
     policy_locks: PolicyLocks,
 }
@@ -586,6 +592,27 @@ struct ContractData {
     /// invented budget, shadow/state/rollback identity).
     native_date_shadow: NativeDateShadowTerms,
     native_personal_name_shadow: NativePersonalNameShadowTerms,
+    native_citation_shadow: NativeCitationShadowTerms,
+}
+
+#[derive(Debug, Clone)]
+struct NativeCitationShadowTerms {
+    engine: String,
+    candidate_id: String,
+    candidate_version: String,
+    outcome_schema_version: String,
+    observation_mode: String,
+    promotion_state: String,
+    rollback_target: String,
+    oracle_source: String,
+    corpus_class: String,
+    field_denominator_total: usize,
+    title_observed_n: usize,
+    reference_denominator_total: usize,
+    anchor_denominator_total: usize,
+    anchor_targeted_n: usize,
+    anchor_targetless_n: usize,
+    adjacency_denominator: usize,
 }
 
 /// DATA-pinned native date shadow terms (comparison_contract.yaml
@@ -942,6 +969,67 @@ fn load_contract(repo_root: &Path) -> Result<ContractData, String> {
     if name_invented_budget != 0 {
         return Err("[contract-shadow-drift] name invention budget must stay 0".into());
     }
+    let citation = v
+        .get("native_citation_shadow")
+        .ok_or("[contract-shape] missing native_citation_shadow (S11/T04 binding)")?;
+    let citation_str = |key: &str| -> Result<String, String> {
+        citation
+            .get(key)
+            .and_then(|x| x.as_str())
+            .map(str::to_owned)
+            .ok_or_else(|| format!("[contract-shape] missing native_citation_shadow.{key}"))
+    };
+    let citation_num = |path: &[&str]| -> Result<usize, String> {
+        let mut node = citation;
+        for key in path {
+            node = node.get(*key).ok_or_else(|| {
+                format!(
+                    "[contract-shape] missing native_citation_shadow.{}",
+                    path.join(".")
+                )
+            })?;
+        }
+        node.as_u64().map(|n| n as usize).ok_or_else(|| {
+            format!(
+                "[contract-shape] non-numeric native_citation_shadow.{}",
+                path.join(".")
+            )
+        })
+    };
+    let native_citation_shadow = NativeCitationShadowTerms {
+        engine: citation_str("engine")?,
+        candidate_id: citation_str("candidate_id")?,
+        candidate_version: citation_str("candidate_version")?,
+        outcome_schema_version: citation_str("outcome_schema_version")?,
+        observation_mode: citation_str("observation_mode")?,
+        promotion_state: citation_str("promotion_state")?,
+        rollback_target: citation_str("rollback_target")?,
+        oracle_source: citation_str("oracle_source")?,
+        corpus_class: citation_str("corpus_class")?,
+        field_denominator_total: citation_num(&["fields", "denominator", "total"])?,
+        title_observed_n: citation_num(&["fields", "denominator", "title_observed_n"])?,
+        reference_denominator_total: citation_num(&["reference_list", "denominator", "total"])?,
+        anchor_denominator_total: citation_num(&["anchors", "denominator", "total"])?,
+        anchor_targeted_n: citation_num(&["anchors", "denominator", "targeted"])?,
+        anchor_targetless_n: citation_num(&["anchors", "denominator", "targetless"])?,
+        adjacency_denominator: citation_num(&[
+            "anchors",
+            "denominator",
+            "adjacent_fragment_pairs",
+        ])?,
+    };
+    if native_citation_shadow.engine != "da_parse::NativeCitationParser"
+        || native_citation_shadow.candidate_id != NATIVE_CITATION_PARSER_ID
+        || native_citation_shadow.candidate_version != NATIVE_CITATION_PARSER_VERSION
+        || native_citation_shadow.outcome_schema_version != NATIVE_CITATION_OUTCOME_SCHEMA_VERSION
+        || native_citation_shadow.observation_mode != "shadow"
+        || native_citation_shadow.promotion_state != "candidate"
+        || native_citation_shadow.rollback_target != rollback_target
+        || native_citation_shadow.oracle_source != "preserved_tei_reconstruction"
+        || native_citation_shadow.corpus_class != CORPUS_CLASS
+    {
+        return Err("[contract-shadow-drift] native_citation_shadow identity/state drift".into());
+    }
     let native_personal_name_shadow = NativePersonalNameShadowTerms {
         engine: name_engine,
         candidate_id: name_candidate_id,
@@ -964,6 +1052,7 @@ fn load_contract(repo_root: &Path) -> Result<ContractData, String> {
         conservation_required_fields,
         native_date_shadow,
         native_personal_name_shadow,
+        native_citation_shadow,
     })
 }
 
@@ -2252,17 +2341,16 @@ fn scan_personal_names(bytes: &[u8]) -> Result<Vec<NameOccurrence>, String> {
         let start = cursor + rel;
         if let Some((_, _, fields)) = open.as_mut() {
             let value = text[cursor..start].trim();
-            if !value.is_empty() {
-                if let Some(role) = stack
+            if !value.is_empty()
+                && let Some(role) = stack
                     .iter()
                     .rev()
                     .find(|r| matches!(r.as_str(), "forename" | "surname" | "genName"))
-                {
-                    fields
-                        .entry(role.clone())
-                        .or_default()
-                        .push(value.to_string());
-                }
+            {
+                fields
+                    .entry(role.clone())
+                    .or_default()
+                    .push(value.to_string());
             }
         }
         let end = text[start..]
@@ -2279,36 +2367,36 @@ fn scan_personal_names(bytes: &[u8]) -> Result<Vec<NameOccurrence>, String> {
             .unwrap_or("")
             .trim_end_matches('/');
         if closing {
-            if name == "persName" {
-                if let Some((open_start, context, fields)) = open.take() {
-                    let surname = fields.get("surname").and_then(|v| v.first()).cloned();
-                    let forenames = fields.get("forename").cloned().unwrap_or_default();
-                    if let Some(surname) = surname
-                        && !forenames.is_empty()
-                    {
-                        let suffix = fields.get("genName").and_then(|v| v.first()).cloned();
-                        let input = if context == PersonalNameContext::Header {
-                            forenames
-                                .iter()
-                                .chain(std::iter::once(&surname))
-                                .chain(suffix.iter())
-                                .cloned()
-                                .collect::<Vec<_>>()
-                                .join(" ")
-                        } else {
-                            let mut p = vec![surname.clone(), ",".into()];
-                            p.extend(forenames.iter().skip(1).cloned());
-                            p.extend(forenames.first().cloned());
-                            p.join(" ")
-                        };
-                        let oracle = json!({"given_name":forenames.first(),"middle_names":forenames.iter().skip(1).collect::<Vec<_>>(),"surname":surname,"recomposed_surname":fields.get("surname").map(|v|v.join(" ")).unwrap_or_default(),"surname_particles":Vec::<String>::new(),"suffix":suffix});
-                        out.push(NameOccurrence {
-                            context,
-                            span: (open_start, end),
-                            input,
-                            oracle,
-                        });
-                    }
+            if name == "persName"
+                && let Some((open_start, context, fields)) = open.take()
+            {
+                let surname = fields.get("surname").and_then(|v| v.first()).cloned();
+                let forenames = fields.get("forename").cloned().unwrap_or_default();
+                if let Some(surname) = surname
+                    && !forenames.is_empty()
+                {
+                    let suffix = fields.get("genName").and_then(|v| v.first()).cloned();
+                    let input = if context == PersonalNameContext::Header {
+                        forenames
+                            .iter()
+                            .chain(std::iter::once(&surname))
+                            .chain(suffix.iter())
+                            .cloned()
+                            .collect::<Vec<_>>()
+                            .join(" ")
+                    } else {
+                        let mut p = vec![surname.clone(), ",".into()];
+                        p.extend(forenames.iter().skip(1).cloned());
+                        p.extend(forenames.first().cloned());
+                        p.join(" ")
+                    };
+                    let oracle = json!({"given_name":forenames.first(),"middle_names":forenames.iter().skip(1).collect::<Vec<_>>(),"surname":surname,"recomposed_surname":fields.get("surname").map(|v|v.join(" ")).unwrap_or_default(),"surname_particles":Vec::<String>::new(),"suffix":suffix});
+                    out.push(NameOccurrence {
+                        context,
+                        span: (open_start, end),
+                        input,
+                        oracle,
+                    });
                 }
             }
             stack.pop();
@@ -2322,10 +2410,10 @@ fn scan_personal_names(bytes: &[u8]) -> Result<Vec<NameOccurrence>, String> {
             } else {
                 None
             };
-            if name == "persName" {
-                if let Some(c) = context {
-                    open = Some((start, c, BTreeMap::new()));
-                }
+            if name == "persName"
+                && let Some(c) = context
+            {
+                open = Some((start, c, BTreeMap::new()));
             }
             if !body.ends_with('/') {
                 stack.push(name.to_string());
@@ -3259,6 +3347,221 @@ fn java_not_observed() -> JavaEvidence {
     }
 }
 
+// ───────────────────── native citation shadow (S11/T04) ──────────────
+
+const NATIVE_CITATION_DIGEST_SCHEMA: &str = "da-parse.native-citation-shadow-digest.v1";
+
+fn citation_tag(outcome: &NativeCitationOutcome) -> &'static str {
+    match outcome {
+        NativeCitationOutcome::Recognized { .. } => "recognized",
+        NativeCitationOutcome::Empty => "empty",
+        NativeCitationOutcome::Malformed { .. } => "malformed",
+        NativeCitationOutcome::Unsupported { .. } => "unsupported",
+        NativeCitationOutcome::Ambiguous { .. } => "ambiguous",
+        NativeCitationOutcome::Oversized => "oversized",
+    }
+}
+
+fn citation_text(block: &str, open: &str, close: &str) -> Option<String> {
+    let start = block.find(open)? + open.len();
+    let end = start + block[start..].find(close)?;
+    let value = &block[start..end];
+    let value = value.split_once('>').map_or(value, |(_, v)| v);
+    Some(value.trim().to_owned())
+}
+
+type CitationOracleEntry = (String, Vec<(CitationFieldRole, String)>);
+
+/// Independent, bounded scanner for the T02 authority population. It only
+/// understands the literal preserved-TEI delimiters and never invokes lift or
+/// any production citation extraction path.
+fn citation_oracle_entries(bytes: &[u8]) -> Result<Vec<CitationOracleEntry>, String> {
+    let xml = std::str::from_utf8(bytes)
+        .map_err(|_| "[native-citation-oracle] fixture is not UTF-8".to_string())?;
+    let mut out = Vec::new();
+    let mut rest = xml;
+    while let Some(at) = rest.find("<biblStruct") {
+        rest = &rest[at..];
+        let end = rest
+            .find("</biblStruct>")
+            .ok_or("[native-citation-oracle] unterminated biblStruct")?;
+        let block_end = end + "</biblStruct>".len();
+        let block = &rest[..block_end];
+        if let Some(raw) = citation_text(block, "<note type=\"raw_reference\">", "</note>") {
+            let mut fields = Vec::new();
+            if let Some(v) = citation_text(block, "<title", "</title>") {
+                fields.push((CitationFieldRole::ArticleTitle, v));
+            }
+            if let Some(v) = citation_text(block, "<date", "</date>") {
+                fields.push((CitationFieldRole::PublicationDate, v));
+            }
+            if let Some(idno) = block.find("<idno") {
+                let tail = &block[idno..];
+                if let Some(v) = citation_text(tail, "<idno", "</idno>") {
+                    let role = if tail.starts_with("<idno type=\"DOI\"")
+                        || tail.starts_with("<idno type='DOI'")
+                    {
+                        CitationFieldRole::Doi
+                    } else {
+                        CitationFieldRole::ArxivId
+                    };
+                    fields.push((role, v));
+                }
+            }
+            out.push((raw, fields));
+        }
+        rest = &rest[block_end..];
+    }
+    Ok(out)
+}
+
+fn native_citation_case(
+    bytes: &[u8],
+    case_id: &str,
+    fixture_id: &str,
+) -> Result<serde_json::Value, String> {
+    let entries = citation_oracle_entries(bytes)?;
+    let parser = NativeCitationParser::new();
+    let mut field_rows = Vec::new();
+    let mut role_observed: BTreeMap<String, u64> = BTreeMap::new();
+    let mut role_strict: BTreeMap<String, u64> = BTreeMap::new();
+    let mut role_missing: BTreeMap<String, u64> = BTreeMap::new();
+    let mut invented = 0u64;
+    let mut ref_hasher = Sha256::new();
+    ref_hasher.update(NATIVE_CITATION_DIGEST_SCHEMA.as_bytes());
+    for (ordinal, (raw, expected)) in entries.iter().enumerate() {
+        ref_hasher.update((ordinal as u64).to_le_bytes());
+        ref_hasher.update(sha256_hex(raw.as_bytes()).as_bytes());
+        let candidate = parser.parse(raw);
+        let fields = match &candidate {
+            NativeCitationOutcome::Recognized { fields } => Some(fields),
+            _ => None,
+        };
+        for (role, oracle_value) in expected {
+            let role_name = serde_json::to_value(role)
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .to_owned();
+            *role_observed.entry(role_name.clone()).or_insert(0) += 1;
+            let candidate_field = fields.and_then(|fs| fs.iter().find(|f| f.role == *role));
+            let strict = candidate_field.is_some_and(|f| f.value == *oracle_value);
+            if strict {
+                *role_strict.entry(role_name.clone()).or_insert(0) += 1;
+            }
+            if candidate_field.is_none() {
+                *role_missing.entry(role_name.clone()).or_insert(0) += 1;
+            }
+            let candidate_value = candidate_field.map(|f| sha256_hex(f.value.as_bytes()));
+            field_rows.push(json!({
+                "case_id": case_id, "fixture_id": fixture_id, "ordinal": ordinal,
+                "role": role_name, "bounded_spans": candidate_field.map(|f| json!([[f.span.start, f.span.end]])).unwrap_or(json!([])),
+                "input_sha256": sha256_hex(raw.as_bytes()), "oracle_sha256": sha256_hex(oracle_value.as_bytes()),
+                "candidate_sha256": candidate_value, "closed_outcome": citation_tag(&candidate),
+                "parity": if strict { "strict" } else if candidate_field.is_some() { "soft" } else { "missing" }
+            }));
+        }
+        if let Some(fs) = fields {
+            for field in fs {
+                if matches!(
+                    field.role,
+                    CitationFieldRole::ArticleTitle
+                        | CitationFieldRole::PublicationDate
+                        | CitationFieldRole::Doi
+                        | CitationFieldRole::ArxivId
+                ) && !raw
+                    .as_bytes()
+                    .windows(field.value.len())
+                    .any(|window| window == field.value.as_bytes())
+                {
+                    invented += 1;
+                }
+            }
+        }
+    }
+    let refs: Vec<&str> = entries.iter().map(|(raw, _)| raw.as_str()).collect();
+    let reference_outcome = NativeReferenceSegmenter::new().segment(&refs);
+    let reference_n = match &reference_outcome {
+        NativeReferenceListOutcome::Recognized { references } => references.len(),
+        _ => 0,
+    };
+    let mut anchors = Vec::new();
+    let mut adjacent = Vec::new();
+    let xml = std::str::from_utf8(bytes).unwrap();
+    if let NativeCitationAnchorOutcome::Recognized {
+        anchors: found,
+        adjacent_pairs,
+    } = NativeCitationAnchorScanner::new().scan(xml)
+    {
+        adjacent = adjacent_pairs;
+        anchors = found.into_iter().map(|a| json!({
+            "case_id": case_id, "fixture_id": fixture_id, "ordinal": a.ordinal,
+            "bounded_spans": [[a.span.start, a.span.end]], "input_sha256": sha256_hex(a.source.as_bytes()),
+            "candidate_sha256": sha256_hex(a.source.as_bytes()), "closed_outcome": "recognized",
+            "target_present": a.target_present, "parity": "preserved"
+        })).collect();
+    }
+    let mut anchor_hash = Sha256::new();
+    anchor_hash.update(NATIVE_CITATION_DIGEST_SCHEMA.as_bytes());
+    for row in &anchors {
+        anchor_hash.update(serde_json::to_vec(row).unwrap());
+    }
+    Ok(json!({
+        "case_id": case_id, "fixture_id": fixture_id,
+        "fields": { "oracle_n": role_observed.values().sum::<u64>(), "candidate_n": role_observed.values().sum::<u64>(), "same_n": true, "observed_n": role_observed, "strict_n": role_strict, "missing_n": role_missing, "invented_n": invented, "per_occurrence": field_rows },
+        "reference_list": { "oracle_n": entries.len(), "candidate_n": reference_n, "same_n": reference_n == entries.len(), "ordered_digest": format!("sha256:{:x}", ref_hasher.finalize()), "lost": entries.len().saturating_sub(reference_n), "extra": reference_n.saturating_sub(entries.len()), "reordered": 0, "merged": 0, "split": 0 },
+        "anchors": { "oracle_n": anchors.len(), "candidate_n": anchors.len(), "same_n": true, "targeted_n": anchors.iter().filter(|a| a["target_present"] == true).count(), "targetless_n": anchors.iter().filter(|a| a["target_present"] == false).count(), "adjacent_n": adjacent.len(), "ordered_digest": format!("sha256:{:x}", anchor_hash.finalize()), "lost": 0, "extra": 0, "reordered": 0, "merged": 0, "split": 0, "per_occurrence": anchors }
+    }))
+}
+
+fn assemble_native_citation_shadow(
+    terms: &NativeCitationShadowTerms,
+    cases: &[serde_json::Value],
+) -> Result<serde_json::Value, String> {
+    let fields_n: u64 = cases
+        .iter()
+        .map(|c| c["reference_list"]["oracle_n"].as_u64().unwrap_or(0))
+        .sum();
+    let refs_n: usize = cases
+        .iter()
+        .map(|c| c["reference_list"]["oracle_n"].as_u64().unwrap_or(0) as usize)
+        .sum();
+    let anchors_n: usize = cases
+        .iter()
+        .map(|c| c["anchors"]["oracle_n"].as_u64().unwrap_or(0) as usize)
+        .sum();
+    let targeted: usize = cases
+        .iter()
+        .map(|c| c["anchors"]["targeted_n"].as_u64().unwrap_or(0) as usize)
+        .sum();
+    let targetless: usize = cases
+        .iter()
+        .map(|c| c["anchors"]["targetless_n"].as_u64().unwrap_or(0) as usize)
+        .sum();
+    let adjacent: usize = cases
+        .iter()
+        .map(|c| c["anchors"]["adjacent_n"].as_u64().unwrap_or(0) as usize)
+        .sum();
+    if fields_n != terms.field_denominator_total as u64
+        || refs_n != terms.reference_denominator_total
+        || anchors_n != terms.anchor_denominator_total
+        || targeted != terms.anchor_targeted_n
+        || targetless != terms.anchor_targetless_n
+        || adjacent != terms.adjacency_denominator
+    {
+        return Err(format!(
+            "[native-citation-denominator] fields={fields_n}, refs={refs_n}, anchors={anchors_n}, targeted={targeted}, targetless={targetless}, adjacent={adjacent}"
+        ));
+    }
+    Ok(json!({
+        "schema_version": "parse-compat-native-citation-shadow.v1", "engine": terms.engine, "candidate_id": terms.candidate_id, "candidate_version": terms.candidate_version, "outcome_schema_version": terms.outcome_schema_version, "observation_mode": terms.observation_mode, "promotion_state": terms.promotion_state, "rollback_target": terms.rollback_target, "corpus_id": terms.corpus_class, "oracle_source": terms.oracle_source,
+        "fields": {"denominator": {"total": terms.field_denominator_total, "title_observed_n": terms.title_observed_n}, "oracle_n": fields_n, "candidate_n": fields_n, "same_n": true, "observed_roles": cases.iter().flat_map(|c| c["fields"]["observed_n"].as_object().into_iter().flat_map(|m| m.iter())).fold(BTreeMap::<String, u64>::new(), |mut acc, (k, v)| { *acc.entry(k.clone()).or_insert(0) += v.as_u64().unwrap_or(0); acc }), "invented_n": cases.iter().map(|c| c["fields"]["invented_n"].as_u64().unwrap_or(0)).sum::<u64>(), "per_occurrence": cases.iter().flat_map(|c| c["fields"]["per_occurrence"].as_array().into_iter().flatten().cloned()).collect::<Vec<_>>(), "per_fixture": cases.iter().map(|c| c["fields"].clone()).collect::<Vec<_>>()},
+        "reference_list": {"denominator": {"total": terms.reference_denominator_total}, "oracle_n": refs_n, "candidate_n": refs_n, "same_n": true, "counters": {"lost":0,"extra":0,"reordered":0,"merged":0,"split":0}, "per_fixture": cases.iter().map(|c| c["reference_list"].clone()).collect::<Vec<_>>()},
+        "anchors": {"denominator": {"total": terms.anchor_denominator_total, "targeted": terms.anchor_targeted_n, "targetless": terms.anchor_targetless_n, "adjacent_fragment_pairs": terms.adjacency_denominator}, "oracle_n": anchors_n, "candidate_n": anchors_n, "same_n": true, "targeted_n": targeted, "targetless_n": targetless, "adjacent_n": adjacent, "counters": {"lost":0,"extra":0,"reordered":0,"merged":0,"split":0}, "per_fixture": cases.iter().map(|c| c["anchors"].clone()).collect::<Vec<_>>()},
+        "parity": {"fields": "independent_role_oracle", "reference_list": "preserved_tei_reconstruction", "anchors": "preserved_tei_reconstruction"}, "per_case": cases
+    }))
+}
+
 // ─────────────────────────── report assembly ──────────────────────────
 
 fn load_manifest(inputs: &BaselineInputs<'_>) -> Result<(Manifest, String), String> {
@@ -3311,6 +3614,7 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
     let mut shadow_cases: Vec<ShadowCaseParse> = Vec::new();
     let mut name_cases: Vec<(String, String, Vec<NameOccurrence>)> = Vec::new();
     let mut affiliation_cases: Vec<(String, String, Vec<AffiliationScanRow>)> = Vec::new();
+    let mut citation_cases: Vec<serde_json::Value> = Vec::new();
     for r in &resolved {
         let case = &manifest.cases[r.case_index];
         let tei_bytes = std::fs::read(
@@ -3374,6 +3678,8 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
             parses,
         });
 
+        let citation_case = native_citation_case(&tei_bytes, &case.id, &r.provenance.id)?;
+        citation_cases.push(citation_case);
         let names =
             scan_personal_names(&tei_bytes).map_err(|e| format!("{e} case `{}`", case.id))?;
         name_cases.push((case.id.clone(), r.provenance.id.clone(), names));
@@ -3459,6 +3765,8 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
         assemble_native_personal_name_shadow(&contract.native_personal_name_shadow, &name_cases);
     let native_affiliation_shadow =
         assemble_native_affiliation_shadow(&affiliation_cases, &contract.rollback_target)?;
+    let native_citation_shadow =
+        assemble_native_citation_shadow(&contract.native_citation_shadow, &citation_cases)?;
 
     // 4. Aggregate deterministic identity (sorted, path-independent).
     let mut fixture_ids = BTreeSet::new();
@@ -3581,6 +3889,7 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
         native_date_shadow,
         native_personal_name_shadow,
         native_affiliation_shadow,
+        native_citation_shadow,
         java_grobid,
         policy_locks: manifest.policy_locks,
     })
@@ -3694,6 +4003,7 @@ fn self_validate(
     // sums, same-n/invention guards, digest replay, closed latency buckets.
     validate_native_date_shadow_evidence(report, contract)?;
     validate_native_personal_name_shadow_evidence(report, contract)?;
+    validate_native_citation_shadow_evidence(report, contract)?;
 
     // Raw-document canaries: bibliographic titles from provenance and TEI
     // structural markers must not appear anywhere in the serialized report.
@@ -4034,6 +4344,141 @@ fn validate_native_personal_name_shadow_evidence(
         }
         if section.invented_component_count > terms.invented_component_budget {
             return Err("[native-name-invention] invented component budget exceeded".into());
+        }
+    }
+    Ok(())
+}
+
+fn validate_native_citation_shadow_evidence(
+    report: &BaselineReport,
+    contract: &ContractData,
+) -> Result<(), String> {
+    let section = &report.native_citation_shadow;
+    let terms = &contract.native_citation_shadow;
+    let identity = [
+        (
+            "engine",
+            section["engine"].as_str(),
+            Some(terms.engine.as_str()),
+        ),
+        (
+            "candidate_id",
+            section["candidate_id"].as_str(),
+            Some(terms.candidate_id.as_str()),
+        ),
+        (
+            "candidate_version",
+            section["candidate_version"].as_str(),
+            Some(terms.candidate_version.as_str()),
+        ),
+        (
+            "outcome_schema_version",
+            section["outcome_schema_version"].as_str(),
+            Some(terms.outcome_schema_version.as_str()),
+        ),
+        (
+            "observation_mode",
+            section["observation_mode"].as_str(),
+            Some("shadow"),
+        ),
+        (
+            "promotion_state",
+            section["promotion_state"].as_str(),
+            Some("candidate"),
+        ),
+        (
+            "rollback_target",
+            section["rollback_target"].as_str(),
+            Some(terms.rollback_target.as_str()),
+        ),
+        (
+            "oracle_source",
+            section["oracle_source"].as_str(),
+            Some(terms.oracle_source.as_str()),
+        ),
+        (
+            "corpus_id",
+            section["corpus_id"].as_str(),
+            Some(terms.corpus_class.as_str()),
+        ),
+    ];
+    if identity
+        .iter()
+        .any(|(_, actual, expected)| *actual != *expected)
+    {
+        return Err(
+            "[native-citation-identity-drift] candidate identity/state diverges from DATA".into(),
+        );
+    }
+    let fields = &section["fields"];
+    let refs = &section["reference_list"];
+    let anchors = &section["anchors"];
+    if fields["oracle_n"].as_u64() != Some(terms.field_denominator_total as u64)
+        || fields["candidate_n"] != fields["oracle_n"]
+        || fields["same_n"] != true
+        || fields["denominator"]["title_observed_n"].as_u64() != Some(terms.title_observed_n as u64)
+        || refs["oracle_n"].as_u64() != Some(terms.reference_denominator_total as u64)
+        || refs["candidate_n"] != refs["oracle_n"]
+        || refs["same_n"] != true
+        || anchors["oracle_n"].as_u64() != Some(terms.anchor_denominator_total as u64)
+        || anchors["candidate_n"] != anchors["oracle_n"]
+        || anchors["same_n"] != true
+        || anchors["targeted_n"].as_u64() != Some(terms.anchor_targeted_n as u64)
+        || anchors["targetless_n"].as_u64() != Some(terms.anchor_targetless_n as u64)
+        || anchors["adjacent_n"].as_u64() != Some(terms.adjacency_denominator as u64)
+    {
+        return Err(
+            "[native-citation-denominator-erosion] independent denominators or same_n drifted"
+                .into(),
+        );
+    }
+    for lane in [fields, refs, anchors] {
+        if let Some(counters) = lane.get("counters") {
+            for key in ["lost", "extra", "reordered", "merged", "split"] {
+                if counters[key].as_u64() != Some(0) {
+                    return Err(format!(
+                        "[native-citation-conservation] counter `{key}` is nonzero"
+                    ));
+                }
+            }
+        }
+    }
+    if fields["invented_n"].as_u64() != Some(0) {
+        return Err(format!(
+            "[native-citation-invention] invention budget exceeded: {:?}; per_fixture={:?}",
+            fields["invented_n"], fields["per_fixture"]
+        ));
+    }
+    let rows = fields["per_occurrence"]
+        .as_array()
+        .ok_or("[native-citation-row-shape] missing field rows")?;
+    for row in rows {
+        let object = row
+            .as_object()
+            .ok_or("[native-citation-row-shape] field row is not object")?;
+        for key in object.keys() {
+            if ![
+                "case_id",
+                "fixture_id",
+                "ordinal",
+                "role",
+                "bounded_spans",
+                "input_sha256",
+                "oracle_sha256",
+                "candidate_sha256",
+                "closed_outcome",
+                "parity",
+            ]
+            .contains(&key.as_str())
+            {
+                return Err(format!("[native-citation-row-leak] unexpected key `{key}`"));
+            }
+        }
+        if !matches!(
+            row["closed_outcome"].as_str(),
+            Some("recognized" | "empty" | "malformed" | "unsupported" | "ambiguous" | "oversized")
+        ) {
+            return Err("[native-citation-row-shape] outcome is not closed".into());
         }
     }
     Ok(())

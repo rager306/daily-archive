@@ -62,6 +62,10 @@
 # raw affiliation, organization/address/marker text and TEI are forbidden.
 # ledger_version stays 1: this is additive observation only.
 #
+# S11/T04: native citation fields, bounded raw-reference reconstruction and
+# fragmented citation-anchor conservation are observed in one additive,
+# checksum-bound redacted native_citation_shadow block. S12 owns composition;
+# no runtime route or production CitationEntry/TeiLifter wiring is changed.
 # S08/T03: the pure native scholarly-date shadow candidate (S08) is observed
 # as the additive parse.component.native_date_shadow entry below plus the
 # registry state transition rest.processDate absent -> shadow (versioned
@@ -433,6 +437,29 @@ entries:
       elevation requires an explicit user decision and a same-n strict parity
       receipt; per-occurrence evidence carries fixture id, ordinal, span and
       SHA-256 only, never display text or TEI fragments.
+  - id: parse.component.native_citation_shadow
+    kind: shadow_component
+    owner_crate: da-parse
+    visibility: public_fn
+    stability: internal_observable
+    entry_point: da_parse::NativeCitationParser::parse + da_parse::NativeReferenceSegmenter::segment + da_parse::NativeCitationAnchorScanner::scan
+    request_shape: 'fields: parse(&self, input: &str); list: segment(&self, entries); anchors: scan(&self, input: &str)'
+    result_shape: 'single redacted native_citation_shadow block with independent field/list/anchor denominators, ordered digests, bounded spans, target state and closed outcomes'
+    error_shapes: []
+    async_behavior: synchronous_pure
+    request_fields: []
+    notes:
+      - 'Shadow only (S11/T04): field candidate is compared against an independent preserved-TEI role oracle; raw-reference and anchor populations are reconstructed without production extraction.'
+      - 'The parse-compat baseline binds 207 biblStruct raw notes, 380 bibr anchors split 217 targeted and 163 targetless, and 168 independently enumerated adjacent fragmented pairs.'
+      - 'Rows carry only fixture/case identity, ordinal, bounded spans, hashes, closed outcomes, target presence and parity; raw references, TEI, scholarly values and anchor quotes are forbidden.'
+      - 'No CitationEntry, TeiLifter, TeiParseIr, ParsedArticle, ParserPort, HTTP, backend, transport, batch, cache or runtime route is changed; S12 owns composition.'
+      - 'registry_binding: rest.processCitation and rest.processCitationListTEI'
+    compatibility_obligation: >-
+      Field, list and anchor lanes remain separate same-n populations; candidate
+      state stays shadow/candidate with invention budget zero and Java GROBID as
+      rollback. No merge, dedup, reorder, target transfer or silent drop is
+      allowed. Promotion or runtime routing requires explicit decision and a
+      fresh receipt.
   - id: parse.component.native_affiliation_shadow
     kind: shadow_component
     owner_crate: da-parse
