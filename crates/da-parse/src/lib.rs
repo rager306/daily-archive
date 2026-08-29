@@ -73,10 +73,12 @@ pub use ir::TeiParseIr;
 pub use lift::TeiLifter;
 pub use native_affiliation::{
     AffiliationComponentKind, AffiliationSpan, NATIVE_AFFILIATION_INPUT_BYTE_CAP,
-    NATIVE_AFFILIATION_OUTCOME_SCHEMA_VERSION, NATIVE_AFFILIATION_PARSER_ID,
-    NATIVE_AFFILIATION_PARSER_VERSION, NativeAffiliationAmbiguous, NativeAffiliationMalformed,
-    NativeAffiliationOutcome, NativeAffiliationParser, NativeAffiliationUnsupported,
-    RecognizedAffiliationComponent,
+    NATIVE_AFFILIATION_LINK_SCHEMA_VERSION, NATIVE_AFFILIATION_OUTCOME_SCHEMA_VERSION,
+    NATIVE_AFFILIATION_PARSER_ID, NATIVE_AFFILIATION_PARSER_VERSION, NativeAffiliationAmbiguous,
+    NativeAffiliationAuthorEvidence, NativeAffiliationLink, NativeAffiliationLinkError,
+    NativeAffiliationLinkOutcome, NativeAffiliationLinker, NativeAffiliationMalformed,
+    NativeAffiliationNesting, NativeAffiliationOccurrence, NativeAffiliationOutcome,
+    NativeAffiliationParser, NativeAffiliationUnsupported, RecognizedAffiliationComponent,
 };
 pub use native_date::{
     DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,

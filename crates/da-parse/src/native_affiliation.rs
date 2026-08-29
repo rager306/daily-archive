@@ -10,6 +10,8 @@ pub const NATIVE_AFFILIATION_PARSER_VERSION: &str = "1.0.0";
 pub const NATIVE_AFFILIATION_OUTCOME_SCHEMA_VERSION: &str =
     "da-parse.native-affiliation.outcome/v1";
 pub const NATIVE_AFFILIATION_INPUT_BYTE_CAP: usize = 512;
+pub const NATIVE_AFFILIATION_LINK_SCHEMA_VERSION: &str =
+    "da-parse.native-affiliation-link.outcome/v1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AffiliationSpan {
@@ -21,6 +23,152 @@ impl AffiliationSpan {
     fn new(start: usize, end: usize) -> Self {
         Self { start, end }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum NativeAffiliationNesting {
+    DirectAuthorAffiliation,
+}
+
+/// An affiliation already recognized by the independent affiliation surface.
+/// The linker never accepts raw text and therefore cannot invent its value.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NativeAffiliationOccurrence {
+    pub document_id: String,
+    pub key: String,
+    pub ordinal: usize,
+    pub span: AffiliationSpan,
+    pub nesting: NativeAffiliationNesting,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NativeAffiliationAuthorEvidence {
+    pub ordinal: usize,
+    pub span: AffiliationSpan,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NativeAffiliationLink {
+    pub key: String,
+    pub affiliation_ordinal: usize,
+    pub affiliation_span: AffiliationSpan,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "error", rename_all = "snake_case")]
+pub enum NativeAffiliationLinkError {
+    DuplicateKey { key: String },
+    MissingKey { ordinal: usize },
+    UnknownKey { key: String },
+    InvalidSpan { ordinal: usize },
+    Reordered { previous: usize, current: usize },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "snake_case")]
+pub enum NativeAffiliationLinkOutcome {
+    Linked {
+        author: NativeAffiliationAuthorEvidence,
+        links: Vec<NativeAffiliationLink>,
+    },
+    Error {
+        error: NativeAffiliationLinkError,
+    },
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct NativeAffiliationLinker;
+
+impl NativeAffiliationLinker {
+    pub const fn new() -> Self {
+        Self
+    }
+
+    pub fn link(
+        &self,
+        _name: &crate::RecognizedPersonalName,
+        document_id: &str,
+        author_ordinal: usize,
+        author_span: AffiliationSpan,
+        occurrences: &[NativeAffiliationOccurrence],
+    ) -> NativeAffiliationLinkOutcome {
+        if !valid_span(author_span) {
+            return NativeAffiliationLinkOutcome::Error {
+                error: NativeAffiliationLinkError::InvalidSpan {
+                    ordinal: author_ordinal,
+                },
+            };
+        }
+
+        let mut links = Vec::with_capacity(occurrences.len());
+        let mut previous_ordinal = None;
+        if document_id.is_empty() {
+            return link_error(NativeAffiliationLinkError::UnknownKey {
+                key: document_id.to_owned(),
+            });
+        }
+        for occurrence in occurrences {
+            if occurrence.document_id != document_id {
+                return link_error(NativeAffiliationLinkError::UnknownKey {
+                    key: occurrence.key.clone(),
+                });
+            }
+            if occurrence.key.is_empty() {
+                return link_error(NativeAffiliationLinkError::MissingKey {
+                    ordinal: occurrence.ordinal,
+                });
+            }
+            if !valid_span(occurrence.span) {
+                return link_error(NativeAffiliationLinkError::InvalidSpan {
+                    ordinal: occurrence.ordinal,
+                });
+            }
+            if occurrence.nesting != NativeAffiliationNesting::DirectAuthorAffiliation {
+                return link_error(NativeAffiliationLinkError::UnknownKey {
+                    key: occurrence.key.clone(),
+                });
+            }
+            if let Some(previous) = previous_ordinal
+                && occurrence.ordinal <= previous
+            {
+                return link_error(NativeAffiliationLinkError::Reordered {
+                    previous,
+                    current: occurrence.ordinal,
+                });
+            }
+            if links
+                .iter()
+                .any(|link: &NativeAffiliationLink| link.key == occurrence.key)
+            {
+                return link_error(NativeAffiliationLinkError::DuplicateKey {
+                    key: occurrence.key.clone(),
+                });
+            }
+            previous_ordinal = Some(occurrence.ordinal);
+            links.push(NativeAffiliationLink {
+                key: occurrence.key.clone(),
+                affiliation_ordinal: occurrence.ordinal,
+                affiliation_span: occurrence.span,
+            });
+        }
+
+        NativeAffiliationLinkOutcome::Linked {
+            author: NativeAffiliationAuthorEvidence {
+                ordinal: author_ordinal,
+                span: author_span,
+            },
+            links,
+        }
+    }
+}
+
+fn valid_span(span: AffiliationSpan) -> bool {
+    span.start < span.end
+}
+
+fn link_error(error: NativeAffiliationLinkError) -> NativeAffiliationLinkOutcome {
+    NativeAffiliationLinkOutcome::Error { error }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
