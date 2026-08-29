@@ -1703,3 +1703,145 @@ fn native_affiliation_boundary_scanner_fails_visible_on_synthetic_violations() {
         .is_empty()
     );
 }
+
+// ───── S11/T05: citation parsing remains a quarantined, pure shadow leaf ─────
+
+const NATIVE_CITATION_SURFACE: &str = "crates/da-parse/src/native_citation.rs";
+const NATIVE_CITATION_RUNTIME_SURFACES: [&str; 12] = [
+    "crates/da-parse/src/http.rs",
+    "crates/da-parse/src/parser.rs",
+    "crates/da-parse/src/lift.rs",
+    "crates/da-parse/src/ir.rs",
+    "crates/da-parse/src/projector.rs",
+    "crates/da-parse/src/envelope.rs",
+    "crates/da-parse/src/transport.rs",
+    "crates/da-parse/src/backend.rs",
+    "crates/da-parse/src/batch.rs",
+    "crates/da-parse/src/cache.rs",
+    "crates/da-parse/src/profile.rs",
+    "crates/da-parse/src/conservation.rs",
+];
+const NATIVE_CITATION_SIDE_CHANNEL_MARKERS: [&str; 25] = [
+    "std::env",
+    "env::var",
+    "var_os",
+    "std::fs",
+    "std::path",
+    "PathBuf",
+    "File::",
+    "std::net",
+    "TcpStream",
+    "reqwest",
+    "std::process",
+    "Command::",
+    "std::time",
+    "SystemTime",
+    "Instant",
+    "std::thread",
+    "std::sync",
+    "OnceLock",
+    "tracing",
+    "log::",
+    "println!",
+    "eprintln!",
+    "rand",
+    "tokio",
+    "std::collections",
+];
+const NATIVE_CITATION_SCOPE_CREEP_MARKERS: [&str; 20] = [
+    "TeiEnvelope",
+    "TeiLifter",
+    "TeiParseIr",
+    "ParserPort",
+    "ParsedArticle",
+    "projector",
+    "Grobid",
+    "GraphStore",
+    "Samyama",
+    "Conservation",
+    "import_eligible",
+    "promotion_state",
+    "da_application",
+    "da_adapters",
+    "CitationEntry",
+    "extract_citations",
+    "SONA",
+    "ruVLLM",
+    "RVF",
+    "redb",
+];
+
+#[test]
+fn native_citation_is_pure_and_never_enters_runtime_or_ports() {
+    let text = read_text(NATIVE_CITATION_SURFACE);
+    assert!(
+        text.len() > 10_000,
+        "citation surface unexpectedly truncated"
+    );
+    let imports = import_roots_of(&text);
+    assert_eq!(
+        imports,
+        BTreeSet::from(["crate".to_string(), "serde".to_string()])
+    );
+    assert!(native_date_marker_hits(&text, &NATIVE_CITATION_SIDE_CHANNEL_MARKERS).is_empty());
+    assert!(native_date_marker_hits(&text, &NATIVE_CITATION_SCOPE_CREEP_MARKERS).is_empty());
+
+    let lib = read_text("crates/da-parse/src/lib.rs");
+    assert!(lib.contains("mod native_citation;"));
+    assert!(lib.contains("pub use native_citation::"));
+    let registry = read_text("data/parse/grobid_compatibility.yaml");
+    assert!(registry.contains("native_citation_shadow"));
+
+    let mut hits = Vec::new();
+    for rel in NATIVE_CITATION_RUNTIME_SURFACES {
+        for (line_no, raw) in read_text(rel).lines().enumerate() {
+            if raw.contains("native_citation") || raw.contains("NativeCitation") {
+                hits.push(format!(
+                    "[hidden-runtime-activation] {rel}:{}: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    let mut ports_files = Vec::new();
+    collect_rs_files(&repo_root().join("crates/da-ports/src"), &mut ports_files);
+    for file in ports_files {
+        let rel = file
+            .strip_prefix(repo_root())
+            .unwrap_or(&file)
+            .to_string_lossy();
+        for (line_no, raw) in std::fs::read_to_string(&file)
+            .expect("port source readable")
+            .lines()
+            .enumerate()
+        {
+            if raw.contains("native_citation") || raw.contains("NativeCitation") {
+                hits.push(format!(
+                    "[hidden-runtime-activation] {rel}:{}: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    assert!(
+        hits.is_empty(),
+        "citation candidate leaked into runtime composition or da-ports:\n{}",
+        hits.join("\n")
+    );
+}
+
+#[test]
+fn native_citation_boundary_scanner_fails_visible_on_synthetic_violations() {
+    let synthetic = "use std::fs::File;\nuse serde::Serialize;\nlet x = std::env::var(\"X\");\nfn x() { ParserPort::new(); }\n";
+    assert!(native_date_marker_hits(synthetic, &NATIVE_CITATION_SIDE_CHANNEL_MARKERS).len() >= 3);
+    assert!(!native_date_marker_hits(synthetic, &NATIVE_CITATION_SCOPE_CREEP_MARKERS).is_empty());
+    assert!(
+        native_date_marker_hits(
+            "// std::fs and ParserPort are prose only\n",
+            &NATIVE_CITATION_SIDE_CHANNEL_MARKERS
+        )
+        .is_empty()
+    );
+}

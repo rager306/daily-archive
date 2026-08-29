@@ -90,7 +90,7 @@ const FROZEN_SOURCE_HASH: &str =
 /// (date obligations added to the same three regression cases): the byte
 /// identity of the manifest follows each sanctioned DATA edit.
 const FROZEN_CORPUS_HASH: &str =
-    "sha256:bf84fcc62ee2f663ec82fd944e5b747e329cfef0b04e6f98fbd71cf9e3c5fc34";
+    "sha256:ffb5f055074523f40a67ce7d459e530d7ee4cecfdb8c68c9e6b032449b713b1d";
 /// All three executed S01 cases run under the rich profile.
 const FROZEN_PROFILE_FINGERPRINT: &str = RICH_FP;
 
@@ -1827,4 +1827,116 @@ fn s10_native_affiliation_shadow_stays_outside_cache_and_conservation_identity()
             .and_then(|v| v.as_str()),
         Some("candidate")
     );
+}
+
+// ───── S11/T05: native citation shadow cannot rotate cache identity ─────
+
+#[test]
+fn s11_native_citation_shadow_stays_outside_cache_identity_and_policy_locks() {
+    use da_parse::{
+        NATIVE_CITATION_ANCHOR_SCANNER_ID, NATIVE_CITATION_OUTCOME_SCHEMA_VERSION,
+        NATIVE_CITATION_PARSER_ID, NATIVE_CITATION_PARSER_VERSION, NATIVE_REFERENCE_SEGMENTER_ID,
+    };
+
+    assert_eq!(NATIVE_CITATION_PARSER_ID, "da-parse.native_citation");
+    assert_eq!(NATIVE_CITATION_PARSER_VERSION, "1.0.0");
+    assert_eq!(
+        NATIVE_CITATION_OUTCOME_SCHEMA_VERSION,
+        "da-parse.native-citation.outcome/v1"
+    );
+    assert_eq!(
+        NATIVE_REFERENCE_SEGMENTER_ID,
+        "da-parse.native_reference_segmenter"
+    );
+    assert_eq!(
+        NATIVE_CITATION_ANCHOR_SCANNER_ID,
+        "da-parse.native_citation_anchor_scanner"
+    );
+    assert_eq!(RAW_TEI_STAGE_ID, "parse.raw_tei.v1");
+    assert_eq!(PROJECT_ARTICLE_STAGE_ID, "parse.project_article.v1");
+    assert_eq!(
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        "ParsedArticle@serde-v4-p0-tei-lift"
+    );
+    assert_eq!(GrobidProfile::rich().configuration_fingerprint(), RICH_FP);
+    assert_eq!(
+        GrobidProfile::structural().configuration_fingerprint(),
+        STRUCTURAL_FP
+    );
+
+    let key = project_article_stage_key(
+        "reg.tei.hub-bibliography-2507.19457",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+    );
+    assert!(
+        !key.contains("native_citation")
+            && !key.contains("NativeCitation")
+            && !key.contains("reference_segmenter")
+            && !key.contains("anchor_scanner"),
+        "citation shadow identity must not enter the production stage key"
+    );
+
+    let baseline = load_baseline();
+    let shadow = baseline
+        .get("native_citation_shadow")
+        .expect("citation evidence must be present as one additive shadow block");
+    for (field, expected) in [
+        ("candidate_id", NATIVE_CITATION_PARSER_ID),
+        ("candidate_version", NATIVE_CITATION_PARSER_VERSION),
+        (
+            "outcome_schema_version",
+            NATIVE_CITATION_OUTCOME_SCHEMA_VERSION,
+        ),
+        ("observation_mode", "shadow"),
+        ("promotion_state", "candidate"),
+        ("rollback_target", "java-grobid-http@0.9.0-crf"),
+    ] {
+        assert_eq!(shadow.get(field).and_then(|v| v.as_str()), Some(expected));
+    }
+    assert_eq!(
+        baseline
+            .pointer("/policy_locks/import_eligible")
+            .and_then(|v| v.as_bool()),
+        Some(false)
+    );
+    assert_eq!(
+        baseline
+            .pointer("/policy_locks/llm_promotion")
+            .and_then(|v| v.as_str()),
+        Some("forbidden")
+    );
+    assert!(
+        baseline.get("conservation").is_some(),
+        "D299 conservation must remain additive"
+    );
+
+    let cases = baseline_cases(&baseline);
+    assert_eq!(
+        cases.len(),
+        3,
+        "citation shadow must not alter executed-case population"
+    );
+    for case in cases {
+        assert!(case.get("native_citation_shadow").is_none());
+        assert!(case.get("native_citation").is_none());
+        assert!(case.get("conservation").is_some());
+    }
+
+    for banned in [
+        "raw_reference",
+        "source_text",
+        "citation_text",
+        "anchor_quote",
+        "tei_fragment",
+        "source_text",
+        "citation_text",
+        "anchor_quote",
+    ] {
+        assert!(
+            !shadow.to_string().contains(banned),
+            "redacted shadow leaked `{banned}`"
+        );
+    }
 }
