@@ -102,6 +102,51 @@ fn assert_conservation(terminals: &[Terminal<Receipt, &'static str>], expected: 
 }
 
 #[test]
+fn runtime_metrics_are_observed_not_configured_echoes() {
+    // T05-F02 regression guard: the reported queue/in-flight high-water gauges
+    // must be genuine runtime observations bounded by the configured limits,
+    // never copies of those limits (and never zero while work was admitted).
+    let topology = topology();
+    let jobs = (0..8).collect::<Vec<_>>();
+    let report = run_bounded(config(2, 2), &topology, jobs.clone(), |ordinal, scratch| {
+        scratch.allocate(ordinal % 3 + 1).map_err(|_| "scratch")?;
+        Ok::<_, &'static str>(Receipt {
+            ordinal,
+            unit_key: format!("unit-{ordinal:02}"),
+            semantic: format!("semantic-{ordinal}"),
+            pages: 1,
+            tokens: 1,
+            spans: 1,
+            coordinates: 1,
+        })
+    })
+    .expect("valid bounded config");
+    assert_eq!(report.admitted, jobs.len());
+    assert_conservation(&report.terminals, jobs.len());
+
+    let metrics = &report.metrics;
+    assert!(
+        metrics.input_queue_high_water >= 1,
+        "input queue high-water must reflect observed dispatch"
+    );
+    assert!(
+        metrics.result_queue_high_water >= 1,
+        "result queue high-water must reflect observed publication"
+    );
+    assert!(
+        metrics.in_flight_high_water >= 1,
+        "in-flight high-water must reflect observed unresolved work"
+    );
+    // Configured capacities were queue=2, workers=2: a reserve-before-send
+    // gauge may transiently overshoot the channel by the number of parked
+    // senders, but never beyond queue + workers.
+    assert!(metrics.input_queue_high_water <= 2 + 2);
+    assert!(metrics.result_queue_high_water <= 2 + 2);
+    // max_in_flight=2 bounds admitted-but-unresolved units at all times.
+    assert!(metrics.in_flight_high_water <= 2);
+}
+
+#[test]
 fn every_worker_count_and_bounded_queue_preserve_semantic_receipts() {
     let topology = topology();
     assert_eq!(topology.physical_cores, 2);

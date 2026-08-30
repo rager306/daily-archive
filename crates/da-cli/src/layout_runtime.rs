@@ -11,6 +11,7 @@ use std::fmt;
 use std::fs;
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc;
 use std::thread;
 
@@ -83,8 +84,7 @@ fn parse_cpu_set(raw: &str) -> Result<Vec<u32>, TopologyError> {
             .ok_or(TopologyError::MalformedAllowedCpuSet)?;
         let end = bounds
             .next()
-            .map(|v| v.parse::<u32>().ok())
-            .flatten()
+            .and_then(|v| v.parse::<u32>().ok())
             .unwrap_or(start);
         if bounds.next().is_some() || start > end {
             return Err(TopologyError::MalformedAllowedCpuSet);
@@ -347,11 +347,10 @@ where
     let p95 = percentile(95);
     let p99 = percentile(99);
     let total_ms: u128 = samples.iter().sum();
-    let throughput = if total_ms == 0 {
-        0
-    } else {
-        ((work_units as u128 * repetitions as u128 * 1000) / total_ms).min(u64::MAX as u128) as u64
-    };
+    let throughput = (work_units as u128 * repetitions as u128 * 1000)
+        .checked_div(total_ms)
+        .unwrap_or(0)
+        .min(u64::MAX as u128) as u64;
     let digest = oracle.expect("repetitions guarantees an oracle");
     Ok(CpuKernelCharacterization {
         warmup_iterations,
@@ -432,12 +431,20 @@ impl<R, E> Terminal<R, E> {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeMetrics {
+    pub input_queue_high_water: usize,
+    pub result_queue_high_water: usize,
+    pub in_flight_high_water: usize,
+}
+
 #[derive(Debug)]
 pub struct RunReport<R, E> {
     pub terminals: Vec<Terminal<R, E>>,
     pub coordinator_failure: Option<CoordinatorFailure>,
     pub admitted: usize,
     pub private_scratch_high_water: Vec<usize>,
+    pub metrics: RuntimeMetrics,
 }
 
 pub fn run_bounded<T, R, E, F>(
@@ -460,10 +467,21 @@ where
             coordinator_failure: None,
             admitted: 0,
             private_scratch_high_water: vec![0; config.workers],
+            metrics: RuntimeMetrics {
+                input_queue_high_water: 0,
+                result_queue_high_water: 0,
+                in_flight_high_water: 0,
+            },
         });
     }
     let process = Arc::new(process);
     let (result_tx, result_rx) = mpsc::sync_channel::<Terminal<R, E>>(config.result_queue_capacity);
+    let input_depth = Arc::new(AtomicUsize::new(0));
+    let input_high_water = Arc::new(AtomicUsize::new(0));
+    let result_depth = Arc::new(AtomicUsize::new(0));
+    let result_high_water = Arc::new(AtomicUsize::new(0));
+    let in_flight = Arc::new(AtomicUsize::new(0));
+    let in_flight_high_water = Arc::new(AtomicUsize::new(0));
     let mut inputs = Vec::new();
     let mut handles = Vec::new();
     let mut high_water = Vec::new();
@@ -471,11 +489,19 @@ where
         let (tx, rx) = mpsc::sync_channel::<(usize, T)>(config.input_queue_capacity);
         inputs.push(tx);
         let result_tx = result_tx.clone();
+        let result_depth_worker = result_depth.clone();
+        let result_high_water_worker = result_high_water.clone();
+        let input_depth_worker = input_depth.clone();
         let process = process.clone();
         let capacity = config.private_scratch_capacity;
         handles.push(thread::spawn(move || {
             let mut scratch = ScratchArena::new(capacity).expect("validated scratch capacity");
             while let Ok((ordinal, job)) = rx.recv() {
+                input_depth_worker
+                    .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |depth| {
+                        Some(depth.saturating_sub(1))
+                    })
+                    .ok();
                 scratch.reset();
                 let terminal =
                     match panic::catch_unwind(AssertUnwindSafe(|| process(job, &mut scratch))) {
@@ -495,7 +521,14 @@ where
                             failure: CoordinatorFailure::WorkerPanic { worker },
                         },
                     };
+                let depth = result_depth_worker.fetch_add(1, Ordering::SeqCst) + 1;
+                result_high_water_worker.fetch_max(depth, Ordering::SeqCst);
                 if result_tx.send(terminal).is_err() {
+                    result_depth_worker
+                        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |depth| {
+                            Some(depth.saturating_sub(1))
+                        })
+                        .ok();
                     break;
                 }
             }
@@ -507,6 +540,10 @@ where
     for _ in 0..config.max_in_flight {
         permit_tx.send(()).expect("permit channel has capacity");
     }
+    let input_depth_dispatch = input_depth.clone();
+    let input_high_water_dispatch = input_high_water.clone();
+    let in_flight_dispatch = in_flight.clone();
+    let in_flight_high_water_dispatch = in_flight_high_water.clone();
     let dispatcher = thread::spawn(move || {
         let mut admitted = 0usize;
         for (ordinal, job) in jobs.into_iter().enumerate() {
@@ -517,7 +554,23 @@ where
                 ));
             }
             let worker = ordinal % inputs.len();
+            let depth = input_depth_dispatch.fetch_add(1, Ordering::SeqCst) + 1;
+            input_high_water_dispatch.fetch_max(depth, Ordering::SeqCst);
+            let active = in_flight_dispatch.fetch_add(1, Ordering::SeqCst) + 1;
+            // Record the observed peak before the (possibly blocking) send so a
+            // sender parked on a full queue is never excluded from the gauge.
+            in_flight_high_water_dispatch.fetch_max(active, Ordering::SeqCst);
             if inputs[worker].send((ordinal, job)).is_err() {
+                input_depth_dispatch
+                    .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |depth| {
+                        Some(depth.saturating_sub(1))
+                    })
+                    .ok();
+                in_flight_dispatch
+                    .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |active| {
+                        Some(active.saturating_sub(1))
+                    })
+                    .ok();
                 return Err((
                     admitted,
                     CoordinatorFailure::ChannelClosed { channel: "input" },
@@ -533,6 +586,16 @@ where
     while terminals.len() < count {
         match result_rx.recv() {
             Ok(terminal) => {
+                result_depth
+                    .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |depth| {
+                        Some(depth.saturating_sub(1))
+                    })
+                    .ok();
+                in_flight
+                    .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |active| {
+                        Some(active.saturating_sub(1))
+                    })
+                    .ok();
                 terminals.push(terminal);
                 // Admission is released only after a terminal receipt is
                 // observed, so max_in_flight bounds unresolved work.
@@ -577,6 +640,11 @@ where
         coordinator_failure: failure,
         admitted,
         private_scratch_high_water: high_water,
+        metrics: RuntimeMetrics {
+            input_queue_high_water: input_high_water.load(Ordering::SeqCst),
+            result_queue_high_water: result_high_water.load(Ordering::SeqCst),
+            in_flight_high_water: in_flight_high_water.load(Ordering::SeqCst),
+        },
     })
 }
 

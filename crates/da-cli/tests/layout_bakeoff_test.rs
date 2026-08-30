@@ -146,6 +146,68 @@ fn bakeoff_emits_one_redacted_receipt_per_lane_and_replays_semantics() {
     assert_eq!(first_report["optimization"]["selection_forbidden"], true);
     assert!(first_report["optimization"]["scalar_oracle_digest"].is_string());
     assert!(first_report["optimization"]["semantic_digest"].is_string());
+    // Honest evidence binding: exact source identity, real argv digest (not a
+    // constant), full runtime-config fingerprint, and a declared-only clean-tree
+    // flag (binding proof lives in the durable evidence reference).
+    assert_eq!(first_report["report_state"], "final");
+    let binding = &first_report["evidence_binding"];
+    assert!(
+        binding["tested_source_revision"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:"),
+        "tested_source_revision must be an exact digest of the tested binary"
+    );
+    assert_eq!(binding["declared_clean_tree"], false);
+    assert!(
+        binding["command_digest"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:")
+    );
+    assert!(
+        binding["runtime_config_fingerprint"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:"),
+    );
+    assert!(
+        binding["configuration_fingerprint"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:")
+    );
+    assert!(
+        binding["topology_fingerprint"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:")
+    );
+    // F02 regression guard: queue/in-flight gauges are runtime observations,
+    // never echoes of configured capacities.
+    let metrics = &first_report["metrics"];
+    let in_hw = metrics["input_queue_high_water"].as_u64().unwrap();
+    let out_hw = metrics["result_queue_high_water"].as_u64().unwrap();
+    let in_flight_hw = metrics["max_observed_in_flight"].as_u64().unwrap();
+    assert!(
+        (1..=4).contains(&in_hw),
+        "input high-water {in_hw} out of observed bounds"
+    );
+    assert!(
+        (1..=4).contains(&out_hw),
+        "result high-water {out_hw} out of observed bounds"
+    );
+    assert_eq!(
+        in_flight_hw, 1,
+        "in-flight high-water must respect max_in_flight=1"
+    );
+    // CPU matrix rows must be scoped to in-process lanes only (no pdfalto
+    // subprocess attribution to CPU scaling).
+    for row in first_report["worker_matrix"].as_array().unwrap() {
+        assert_eq!(row["lane_scope"], "cpu_in_process");
+        assert!(row["latency_p50_ms"].is_u64());
+        assert_ne!(row["breakpoint"], "inconclusive");
+    }
     assert!(
         first_report
             .to_string()
