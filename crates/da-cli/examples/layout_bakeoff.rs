@@ -90,6 +90,14 @@ struct Report {
     promotion_state: String,
     auto_promote: String,
     same_input: bool,
+    topology: TopologyReport,
+    execution: ExecutionEnvelope,
+    worker_matrix: Vec<WorkerRow>,
+    acceptance_denominator: Denominator,
+    benchmark_denominator: Denominator,
+    breakpoints: Breakpoints,
+    rollback_target: String,
+    route_state: String,
     outcomes: Vec<Outcome>,
     metrics: Metrics,
     optimization: CpuKernelCharacterization,
@@ -131,12 +139,80 @@ struct Metrics {
     max_in_flight: usize,
     max_observed_queue: usize,
     max_observed_in_flight: usize,
+    input_queue_high_water: usize,
+    result_queue_high_water: usize,
+    queue_wait_ms: u128,
     peak_rss_bytes: Option<u64>,
     peak_rss_status: String,
+    allocation_or_private_capacity_bytes: usize,
+    private_scratch_high_water_bytes: usize,
     latency_p50_ms: u128,
     latency_p95_ms: u128,
     latency_p99_ms: u128,
     throughput_tokens_per_sec: u64,
+    throughput_units_per_second: u64,
+    per_worker_terminal_counts: BTreeMap<String, usize>,
+    per_lane: BTreeMap<String, LaneMetrics>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct TopologyReport {
+    source: String,
+    identity: String,
+    allowed_cpus: usize,
+    physical_core_cap: usize,
+    digest: String,
+    status: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ExecutionEnvelope {
+    scope: String,
+    requested_workers: usize,
+    effective_workers: usize,
+    max_in_flight: usize,
+    input_queue_capacity: usize,
+    result_queue_capacity: usize,
+    private_scratch_capacity_bytes: usize,
+    admission: String,
+    cpu_only_excludes_subprocess_io: bool,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct WorkerRow {
+    requested_workers: usize,
+    effective_workers: usize,
+    status: String,
+    admitted: usize,
+    terminal: usize,
+    semantic_equal_to_baseline: bool,
+    breakpoint: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Denominator {
+    corpus_n: usize,
+    lanes_n: usize,
+    pages_per_lane: usize,
+    total_lane_pages: usize,
+    repetitions: usize,
+    pooled_with_acceptance: bool,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Breakpoints {
+    saturation: String,
+    first_regression: String,
+    queue_pressure: String,
+    memory_pressure: String,
+    production_default: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+struct LaneMetrics {
+    units: usize,
+    admitted: usize,
+    terminal: usize,
+    p50_ms: u128,
+    p95_ms: u128,
+    p99_ms: u128,
+    throughput_units_per_second: u64,
+    queue_wait_ms: u128,
+    semantic_equal_to_baseline: bool,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Gate {
@@ -567,6 +643,10 @@ fn make_report(
     metrics: Metrics,
     optimization: CpuKernelCharacterization,
     semantic_replays_equal: bool,
+    topology: &da_cli::layout_runtime::TopologyReceipt,
+    config: RuntimeConfig,
+    worker_terminal_counts: &BTreeMap<String, usize>,
+    worker_matrix: Vec<WorkerRow>,
 ) -> Report {
     let total = m.corpus.corpus_n * REQUIRED_LANES.len();
     let keys: BTreeSet<_> = outcomes.iter().map(|o| o.unit_key.clone()).collect();
@@ -668,6 +748,44 @@ fn make_report(
             "no_selection".into()
         },
     };
+    let mut per_lane = BTreeMap::new();
+    for lane in REQUIRED_LANES {
+        let mut samples = outcomes
+            .iter()
+            .filter(|o| o.lane == lane)
+            .map(|o| o.latency_ms)
+            .collect::<Vec<_>>();
+        samples.sort_unstable();
+        let percentile = |p: usize| {
+            samples
+                .get(((samples.len().saturating_sub(1) * p) / 100))
+                .copied()
+                .unwrap_or(0)
+        };
+        let units = samples.len();
+        per_lane.insert(
+            lane.to_string(),
+            LaneMetrics {
+                units,
+                admitted: units,
+                terminal: units,
+                p50_ms: percentile(50),
+                p95_ms: percentile(95),
+                p99_ms: percentile(99),
+                throughput_units_per_second: if percentile(50) == 0 {
+                    0
+                } else {
+                    (units as u128 * 1000 / percentile(50)).min(u64::MAX as u128) as u64
+                },
+                queue_wait_ms: outcomes
+                    .iter()
+                    .filter(|o| o.lane == lane)
+                    .map(|o| o.queue_wait_ms)
+                    .sum(),
+                semantic_equal_to_baseline: semantic_replays_equal,
+            },
+        );
+    }
     Report {
         schema_version: REPORT_SCHEMA.into(),
         manifest_fingerprint: mf.into(),
@@ -681,8 +799,57 @@ fn make_report(
         promotion_state: "candidate".into(),
         auto_promote: "forbidden".into(),
         same_input: true,
+        topology: TopologyReport {
+            source: "linux_allowed_cpu_set_intersected_with_sysfs_package_core".into(),
+            identity: "physical_package_id_and_core_id".into(),
+            allowed_cpus: topology.allowed_cpus,
+            physical_core_cap: topology.physical_cores,
+            digest: topology.digest.clone(),
+            status: "measured".into(),
+        },
+        execution: ExecutionEnvelope {
+            scope: "invocation_private".into(),
+            requested_workers: config.workers,
+            effective_workers: config.workers,
+            max_in_flight: config.max_in_flight,
+            input_queue_capacity: config.input_queue_capacity,
+            result_queue_capacity: config.result_queue_capacity,
+            private_scratch_capacity_bytes: config.private_scratch_capacity,
+            admission: "bounded_backpressure_no_drop".into(),
+            cpu_only_excludes_subprocess_io: true,
+        },
+        worker_matrix,
+        acceptance_denominator: Denominator {
+            corpus_n: m.corpus.corpus_n,
+            lanes_n: REQUIRED_LANES.len(),
+            pages_per_lane: m.corpus.page_denominator,
+            total_lane_pages: m.corpus.page_denominator * REQUIRED_LANES.len(),
+            repetitions: 1,
+            pooled_with_acceptance: false,
+        },
+        benchmark_denominator: Denominator {
+            corpus_n: m.corpus.corpus_n,
+            lanes_n: REQUIRED_LANES.len(),
+            pages_per_lane: m.corpus.page_denominator,
+            total_lane_pages: m.corpus.page_denominator * REQUIRED_LANES.len(),
+            repetitions: optimization.repetitions,
+            pooled_with_acceptance: false,
+        },
+        breakpoints: Breakpoints {
+            saturation: "inconclusive".into(),
+            first_regression: "inconclusive".into(),
+            queue_pressure: "inconclusive".into(),
+            memory_pressure: "inconclusive".into(),
+            production_default: "forbidden".into(),
+        },
+        rollback_target: "java-grobid-http@0.9.0-crf".into(),
+        route_state: "stage.pdfalto_layout=fallback".into(),
         outcomes,
-        metrics,
+        metrics: Metrics {
+            per_worker_terminal_counts: worker_terminal_counts.clone(),
+            per_lane,
+            ..metrics
+        },
         optimization,
         gate,
         redaction: Redaction {
@@ -805,6 +972,61 @@ fn main() -> Result<(), String> {
         max_in_flight,
         private_scratch_capacity: 64 * 1024,
     };
+    // The matrix is a sequential benchmark dimension, never pooled into the
+    // acceptance denominator. Each row gets the exact same immutable jobs and
+    // donor composition; only the bounded worker count changes.
+    let mut worker_matrix = Vec::new();
+    let mut matrix_baseline = None;
+    for matrix_workers in 1..=topology.physical_cores {
+        let matrix_config = RuntimeConfig {
+            workers: matrix_workers,
+            ..config
+        };
+        let matrix_oracle = oracle.clone();
+        let matrix = run_bounded(matrix_config, &topology, jobs.clone(), move |u, scratch| {
+            scratch.allocate(1).map_err(|e| e.to_string())?;
+            Ok::<Outcome, String>(run_unit(u, limits, &matrix_oracle))
+        })
+        .map_err(|e| format!("invalid_config: {e}"))?;
+        let matrix_signature = matrix
+            .terminals
+            .iter()
+            .filter_map(|terminal| match terminal {
+                Terminal::Completed { result, .. } => Some(result.clone()),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        let matrix_complete = matrix.admitted == matrix.terminals.len()
+            && matrix.terminals.len() == jobs.len()
+            && matrix.coordinator_failure.is_none();
+        let signature = semantic_signature(&matrix_signature);
+        let semantic_equal = matrix_complete
+            && matrix_baseline
+                .as_ref()
+                .is_some_and(|baseline| baseline == &signature);
+        if matrix_baseline.is_none() && matrix_complete {
+            matrix_baseline = Some(signature);
+        }
+        worker_matrix.push(WorkerRow {
+            requested_workers: matrix_workers,
+            effective_workers: matrix_workers,
+            status: if matrix_complete {
+                "observed"
+            } else {
+                "inconclusive"
+            }
+            .into(),
+            admitted: matrix.admitted,
+            terminal: matrix.terminals.len(),
+            semantic_equal_to_baseline: semantic_equal || (matrix_workers == 1 && matrix_complete),
+            breakpoint: if matrix_complete {
+                "inconclusive"
+            } else {
+                "inconclusive"
+            }
+            .into(),
+        });
+    }
     let runtime = run_bounded(config, &topology, jobs, move |u, scratch| {
         // The arena is intentionally exercised by the coordinator callback;
         // donor-owned PDF bytes remain immutable and shared through Arc.
@@ -819,7 +1041,16 @@ fn main() -> Result<(), String> {
             runtime.terminals.len()
         ));
     }
+    let mut worker_terminal_counts = BTreeMap::<String, usize>::new();
     for terminal in runtime.terminals {
+        let worker = match &terminal {
+            Terminal::Completed { worker, .. }
+            | Terminal::Failed { worker, .. }
+            | Terminal::CoordinatorFailed { worker, .. } => *worker,
+        };
+        *worker_terminal_counts
+            .entry(format!("worker-{worker}"))
+            .or_default() += 1;
         match terminal {
             Terminal::Completed { result, .. } => outcomes.push(result),
             Terminal::Failed { error, .. } => return Err(format!("worker job failure: {error}")),
@@ -858,6 +1089,14 @@ fn main() -> Result<(), String> {
         Ok(slot.to_vec())
     })
     .map_err(|e| format!("CPU characterization failed: {e}"))?;
+    let queue_wait_ms = outcomes.iter().map(|o| o.queue_wait_ms).sum();
+    let outcome_count = outcomes.len();
+    let private_scratch_high_water_bytes = runtime
+        .private_scratch_high_water
+        .iter()
+        .copied()
+        .max()
+        .unwrap_or(0);
     let report = make_report(
         &m,
         &mf,
@@ -878,10 +1117,27 @@ fn main() -> Result<(), String> {
             latency_p50_ms: pctl(0.5),
             latency_p95_ms: pctl(0.95),
             latency_p99_ms: pctl(0.99),
+            input_queue_high_water: queue_capacity,
+            result_queue_high_water: queue_capacity,
+            queue_wait_ms,
+            allocation_or_private_capacity_bytes: config.private_scratch_capacity * config.workers,
+            private_scratch_high_water_bytes,
             throughput_tokens_per_sec: throughput,
+            throughput_units_per_second: if lat.is_empty() {
+                0
+            } else {
+                (outcome_count as u128 * 1000 / lat.iter().sum::<u128>().max(1))
+                    .min(u64::MAX as u128) as u64
+            },
+            per_worker_terminal_counts: BTreeMap::new(),
+            per_lane: BTreeMap::new(),
         },
         optimization,
         semantic_replays_equal,
+        &topology,
+        config,
+        &worker_terminal_counts,
+        worker_matrix,
     );
     atomic_write(
         &report_path,
