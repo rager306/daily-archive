@@ -1091,11 +1091,12 @@ capabilities:
     implementation:
       crate: da-parse
       surface: crates/da-parse/src/lift.rs (title/idno/authors lifted since S07)
-      notes: P0 idno/authors LIFTED since S07 (declared-only revision, document-ordered header authors); native header composition S12.
-    baseline: java-grobid-header
-    candidate: da-parse@lift-partial
-    evidence_ref: crates/da-parse/src/lift.rs
-    hard_regressions: [invented_revision]
+      notes: P0 idno/authors LIFTED since S07 (declared-only revision, document-ordered header authors); native header composition S12 is independently selectable and remains shadow-only.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: da-parse.native_header_reference_composition@1.0.0:header
+    evidence_ref: crates/da-parse/src/native_composition.rs
+    shadow_binding: parse.component.native_header_reference_composition_shadow
+    hard_regressions: [invented_revision, nondeterministic_output, panic, silent_skip_missing_tei_fixture]
     metrics:
       conservation: header_field_presence
       quality: title_author_date_accuracy
@@ -1116,11 +1117,12 @@ capabilities:
     implementation:
       crate: da-parse
       surface: crates/da-parse/src/lift.rs (listBibl characterization)
-      notes: Native citation/reference heads are S11-S12.
-    baseline: java-grobid-references
-    candidate: da-parse@lift-partial
-    evidence_ref: crates/da-parse/src/lift.rs
-    hard_regressions: [lost_references_or_links]
+      notes: Native citation/reference heads are S11-S12; native reference composition S12 is independently selectable and remains shadow-only.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: da-parse.native_header_reference_composition@1.0.0:references
+    evidence_ref: crates/da-parse/src/native_composition.rs
+    shadow_binding: parse.component.native_header_reference_composition_shadow
+    hard_regressions: [lost_references_or_links, changed_reading_order, nondeterministic_output, panic, silent_skip_missing_tei_fixture]
     metrics:
       conservation: biblstruct_count
       quality: citation_field_accuracy

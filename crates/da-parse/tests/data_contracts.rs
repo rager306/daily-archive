@@ -122,7 +122,7 @@ const ANCHOR_ENTRY_IDS: [&str; 10] = [
 ];
 
 /// Allowed vocabulary for `required_evidence_fields`.
-const EVIDENCE_VOCAB: [&str; 14] = [
+const EVIDENCE_VOCAB: [&str; 15] = [
     "source_sha256",
     "source_path",
     "profile_fingerprint",
@@ -137,6 +137,7 @@ const EVIDENCE_VOCAB: [&str; 14] = [
     "native_personal_name_shadow",
     "native_affiliation_shadow",
     "native_citation_shadow",
+    "native_header_reference_composition_shadow",
 ];
 
 /// Every case must request at least this evidence core.
@@ -4039,6 +4040,201 @@ fn s07_reintroducing_the_retired_fingerprint_fails_the_tagged_checks() {
         "[registry-batch-cache-drift]",
         &errs,
         "registry reverted to the retired projection fingerprint",
+    );
+}
+
+// ─────────────── S12/T03: native composition DATA gates ───────────────
+
+const NATIVE_COMPOSITION_ID: &str = "parse.component.native_header_reference_composition_shadow";
+const NATIVE_COMPOSITION_CANDIDATE: &str = "da-parse.native_header_reference_composition@1.0.0";
+const NATIVE_COMPOSITION_ROLLBACK: &str = "java-grobid-http@0.9.0-crf";
+
+fn validate_native_composition_shadow(
+    registry: &serde_yaml::Value,
+    manifest: &RegressionManifest,
+    contract: &serde_yaml::Value,
+    ledger: &LedgerFile,
+) -> Vec<String> {
+    let mut errs = Vec::new();
+    let Some(shadow) = contract.get("native_header_reference_composition_shadow") else {
+        return vec!["[native-composition-contract-lost] composition contract missing".into()];
+    };
+    for key in [
+        "native_date_shadow",
+        "native_personal_name_shadow",
+        "native_affiliation_shadow",
+        "native_citation_shadow",
+    ] {
+        if !shadow["component_receipts"]["required"]
+            .as_sequence()
+            .is_some_and(|xs| xs.iter().any(|x| x.as_str() == Some(key)))
+        {
+            errs.push(format!(
+                "[native-composition-component-missing] `{key}` receipt missing"
+            ));
+        }
+    }
+    if shadow["observation_mode"].as_str() != Some("shadow")
+        || shadow["promotion_state"].as_str() != Some("candidate")
+        || shadow["auto_promote"].as_str() != Some("forbidden")
+    {
+        errs.push(
+            "[native-composition-policy-drift] shadow/candidate/forbidden policy changed".into(),
+        );
+    }
+    for lane in ["header", "references"] {
+        if shadow["rollback"][lane].as_str() != Some(NATIVE_COMPOSITION_ROLLBACK) {
+            errs.push(format!(
+                "[native-composition-rollback-drift] {lane} rollback changed"
+            ));
+        }
+        if shadow["lanes"][lane]["candidate_state"].as_str() != Some("candidate") {
+            errs.push(format!(
+                "[native-composition-state-drift] {lane} candidate state changed"
+            ));
+        }
+    }
+    let forbidden = shadow["forbidden"]
+        .as_sequence()
+        .cloned()
+        .unwrap_or_default();
+    for key in [
+        "raw_text",
+        "raw_tei",
+        "pooled_denominators",
+        "invented_stage",
+        "auto_promotion",
+    ] {
+        if !forbidden.iter().any(|x| x.as_str() == Some(key)) {
+            errs.push(format!(
+                "[native-composition-forbidden-drift] `{key}` missing"
+            ));
+        }
+    }
+    for (lane, expected) in [("header", 35_i64), ("references", 207_i64)] {
+        let denominator = if lane == "references" {
+            shadow["lanes"][lane]["references_denominator"].as_i64()
+        } else {
+            shadow["lanes"][lane]["denominator"].as_i64()
+        };
+        if denominator != Some(expected) {
+            errs.push(format!(
+                "[native-composition-denominator-erosion] {lane} denominator changed"
+            ));
+        }
+        let regressions = shadow["lanes"][lane]["hard_regressions"]
+            .as_sequence()
+            .cloned()
+            .unwrap_or_default();
+        for required in if lane == "header" {
+            vec!["invented_revision", "nondeterministic_output"]
+        } else {
+            vec!["lost_references_or_links", "changed_reading_order"]
+        } {
+            if !regressions.iter().any(|x| x.as_str() == Some(required)) {
+                errs.push(format!(
+                    "[native-composition-regression-drift] {lane} lost `{required}`"
+                ));
+            }
+        }
+    }
+    if shadow["lanes"]["references"]["anchors_denominator"].as_i64() != Some(380)
+        || shadow["lanes"]["references"]["targeted_anchors"].as_i64() != Some(217)
+        || shadow["lanes"]["references"]["targetless_anchors"].as_i64() != Some(163)
+        || shadow["lanes"]["references"]["fragmented_adjacency"].as_i64() != Some(168)
+    {
+        errs.push(
+            "[native-composition-denominator-erosion] reference anchor topology changed".into(),
+        );
+    }
+    let ids: HashSet<&str> = ledger.entries.iter().map(|e| e.id.as_str()).collect();
+    if !ids.contains(NATIVE_COMPOSITION_ID) {
+        errs.push(
+            "[native-composition-ledger-binding-missing] shadow component entry missing".into(),
+        );
+    }
+    for stage in ["stage.header_composition", "stage.reference_segmentation"] {
+        let Some(cap) = registry["capabilities"]
+            .as_sequence()
+            .and_then(|xs| xs.iter().find(|x| x["id"].as_str() == Some(stage)))
+        else {
+            errs.push(format!(
+                "[native-composition-stage-missing] `{stage}` missing"
+            ));
+            continue;
+        };
+        if cap["candidate"].as_str()
+            != Some(&format!(
+                "{NATIVE_COMPOSITION_CANDIDATE}:{}",
+                if stage.ends_with("header_composition") {
+                    "header"
+                } else {
+                    "references"
+                }
+            ))
+            || cap["baseline"].as_str() != Some(NATIVE_COMPOSITION_ROLLBACK)
+            || cap["rollback_target"].as_str() != Some(NATIVE_COMPOSITION_ROLLBACK)
+        {
+            errs.push(format!("[native-composition-stage-binding-drift] `{stage}` must bind versioned candidate and Java rollback"));
+        }
+    }
+    for case in manifest
+        .cases
+        .iter()
+        .filter(|c| c.binding_status == BindingStatus::Bound)
+    {
+        if !case
+            .required_evidence_fields
+            .iter()
+            .any(|x| x == "native_header_reference_composition_shadow")
+            || !case
+                .ledger_bindings
+                .iter()
+                .any(|x| x == NATIVE_COMPOSITION_ID)
+        {
+            errs.push(format!(
+                "[native-composition-obligation-missing] case `{}`",
+                case.id
+            ));
+        }
+    }
+    errs
+}
+
+#[test]
+fn native_composition_shadow_data_contracts_hold() {
+    let registry = load_registry_value();
+    let manifest: RegressionManifest = expect_loaded(REGRESSION_REL_PATH);
+    let contract: serde_yaml::Value = load_yaml(COMPARISON_CONTRACT_REL).expect("contract");
+    let ledger: LedgerFile = expect_loaded(LEDGER_REL_PATH);
+    let errs = validate_native_composition_shadow(&registry, &manifest, &contract, &ledger);
+    assert!(
+        errs.is_empty(),
+        "native composition DATA violations:\n{}",
+        errs.join("\n")
+    );
+}
+
+#[test]
+fn rejects_native_composition_promotion_and_denominator_pooling() {
+    let registry = load_registry_value();
+    let manifest: RegressionManifest = expect_loaded(REGRESSION_REL_PATH);
+    let ledger: LedgerFile = expect_loaded(LEDGER_REL_PATH);
+    let mut contract: serde_yaml::Value = load_yaml(COMPARISON_CONTRACT_REL).expect("contract");
+    contract["native_header_reference_composition_shadow"]["promotion_state"] =
+        serde_yaml::Value::String("promoted".into());
+    contract["native_header_reference_composition_shadow"]["forbidden"] =
+        serde_yaml::Value::Sequence(vec![]);
+    let errs = validate_native_composition_shadow(&registry, &manifest, &contract, &ledger);
+    negative(
+        "[native-composition-policy-drift]",
+        &errs,
+        "promotion and forbidden policy erosion",
+    );
+    negative(
+        "[native-composition-forbidden-drift]",
+        &errs,
+        "pooled denominator/raw content guard",
     );
 }
 

@@ -413,6 +413,30 @@ entries:
       - 'Reached through the S02 composition da_parse::ScholarlyParser::lift_and_project as well as the GrobidParser facade; pure projection semantics are unchanged. Since S07/T05 the ParsedArticle wire carries the additive P0 lift families (declared arXiv identity + typed missingness, header_authors, figures, visual_callouts — all #[serde(default)], legacy payloads keep decoding per R085) and the projection schema fingerprint rotated to ParsedArticle@serde-v4-p0-tei-lift: projection-stage cache entries only, raw-TEI stage keys and every D204 identity stay frozen.'
       - 'registry_binding: stage.tei_lift'
     compatibility_obligation: Projection must remain total and allocation-safe over any TeiParseIr and preserve the ports ParsedArticle field semantics consumed downstream by ingest.
+  # S12/T03 additive composition observation; header and references remain
+  # independently selectable and component receipts are never pooled.
+  - id: parse.component.native_header_reference_composition_shadow
+    kind: shadow_component
+    owner_crate: da-parse
+    visibility: public_fn
+    stability: internal_observable
+    entry_point: da_parse::compose_header + da_parse::compose_references
+    request_shape: 'typed S08-S11 outcomes only; no reparsing or raw text input'
+    result_shape: 'redacted NativeHeaderCandidate and NativeReferencesCandidate with closed receipts'
+    error_shapes: [rejected_incomplete_components, invalid_spans, duplicate_ordinals, oversized_collection]
+    async_behavior: synchronous_pure
+    request_fields: []
+    notes:
+      - 'Shadow candidate only: header and references are separate lanes and may fall back independently to Java GROBID.'
+      - 'Component receipts remain separate: date 173, names header 35/citation 2198, affiliation recognition/linking 13/13, references 207 and anchors 380 (217 targeted, 163 targetless, 168 fragmented adjacency).'
+      - 'Rows contain only fixture identity, ordinals, bounded spans and digests; raw text, TEI, names, affiliations, citations and references are forbidden.'
+      - 'No ParserPort, TeiLifter, TeiParseIr, ParsedArticle, HTTP, backend, transport, cache, graph or runtime route is changed.'
+      - 'registry_binding: stage.header_composition and stage.reference_segmentation'
+    compatibility_obligation: >-
+      Header and references remain independently selectable; component
+      denominators and ordered digests are preserved without pooling or erosion.
+      Candidate state remains shadow/candidate, auto-promotion is forbidden and
+      Java GROBID remains the rollback target for each lane.
   - id: parse.component.native_date_shadow
     kind: shadow_component
     owner_crate: da-parse

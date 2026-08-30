@@ -307,6 +307,46 @@ native_citation_shadow:
   forbidden: [auto_promotion, runtime_routing, raw_references, raw_tei, invented_bindings, pooled_denominators]
   used_by: [S11-T04]
 
+# S12/T03: header and reference composition is one additive, independently
+# selectable shadow contract. Component populations remain separate and the
+# composer never reparses or serializes raw scholarly material.
+native_header_reference_composition_shadow:
+  engine: da_parse::native_composition
+  candidate_id: da-parse.native_header_reference_composition
+  candidate_version: '1.0.0'
+  outcome_schema_version: da-parse.native-composition.outcome/v1
+  observation_mode: shadow
+  promotion_state: candidate
+  auto_promote: forbidden
+  rollback:
+    header: java-grobid-http@0.9.0-crf
+    references: java-grobid-http@0.9.0-crf
+  independently_selectable_lanes: [header, references]
+  component_receipts:
+    required: [native_date_shadow, native_personal_name_shadow, native_affiliation_shadow, native_citation_shadow]
+    same_n: required_per_component
+    ordered_digest: required_per_component
+    denominator_policy: no_pooling_or_erosion
+  lanes:
+    header:
+      denominator: 35
+      strict_n: 0
+      soft_n: 35
+      candidate_state: candidate
+      hard_regressions: [invented_revision, nondeterministic_output, panic, silent_skip_missing_tei_fixture]
+    references:
+      references_denominator: 207
+      anchors_denominator: 380
+      targeted_anchors: 217
+      targetless_anchors: 163
+      fragmented_adjacency: 168
+      candidate_state: candidate
+      hard_regressions: [lost_references_or_links, changed_reading_order, nondeterministic_output, panic, silent_skip_missing_tei_fixture]
+  forbidden: [auto_promotion, runtime_routing, raw_text, raw_tei, raw_names, raw_references, pooled_denominators, invented_stage, invented_bindings]
+  hard_regressions: [invented_revision, lost_references_or_links, changed_reading_order, nondeterministic_output, panic, silent_skip_missing_tei_fixture]
+  evidence: [native_header_reference_composition_shadow]
+  used_by: [S12-T03]
+
 # S10/T05: affiliation recognition and accepted-name linking share one additive
 # redacted block, while their denominators and ordered digests remain separate.
 native_affiliation_shadow:
