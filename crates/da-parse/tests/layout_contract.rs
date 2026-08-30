@@ -62,9 +62,25 @@ fn malformed_geometry_order_and_utf8_fail_closed() {
     let span = LayoutSpan::present(1, 2).unwrap();
     assert!(span.validate_against("é").is_err());
 
-    let mut doc = document(vec![token(0, 0, 10.0), token(1, 1, 40.0)]);
-    doc.pages[0].tokens[1].source_ordinal = 0;
-    assert!(doc.validate().is_err());
+    let mut adjacent = document(vec![token(0, 0, 10.0), token(1, 1, 40.0)]);
+    adjacent.pages[0].tokens[1].source_ordinal = 0;
+    assert!(adjacent.validate().is_err());
+
+    let non_adjacent = LayoutPage::new(
+        0,
+        612.0,
+        792.0,
+        0,
+        None,
+        vec![token(0, 0, 10.0), token(2, 1, 40.0), token(0, 2, 70.0)],
+    );
+    assert!(matches!(
+        non_adjacent,
+        Err(da_parse::LayoutError::DuplicateOrdinal {
+            page: 0,
+            ordinal: 0
+        })
+    ));
 }
 
 #[test]

@@ -19,6 +19,8 @@ pub mod fs_schema_objects;
 pub mod grobid_parser;
 pub mod html_parser;
 pub mod http_fetch;
+#[cfg(feature = "pdf-layout")]
+pub mod layout_donors;
 pub mod memory_pipeline_cache;
 pub mod negative_memory;
 pub use figure_quote_policy::load_figure_quote_policy;
@@ -65,6 +67,11 @@ pub use catalog_mutation::FilesystemCatalogMutation;
 pub use fd_embedder::FdApiEmbedder;
 pub use grobid_parser::{GrobidParser, GrobidProfile};
 pub use html_parser::HtmlParser;
+#[cfg(feature = "pdf-layout")]
+pub use layout_donors::{
+    LayoutDonor, LayoutDonorError, LayoutDonorLimits, PdfInspectorLayoutDonor, PdfaltoLayoutDonor,
+    parse_pdfalto_xml, reorder_with_xy_cut,
+};
 
 pub use openalex_adapter::OpenAlexHttpAdapter;
 #[cfg(feature = "pdf-classifier")]

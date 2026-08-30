@@ -136,6 +136,16 @@ fn looks_like_tick(l: &LineBox) -> bool {
 }
 
 /// Split one page's lines into ordered regions.
+/// Reconstruct reading order while retaining every positioned line.
+///
+/// Unlike [`split_page`], this is the bakeoff seam: it does not classify,
+/// drop, merge, or convert lines to strings. The returned vector is a
+/// permutation of the input and therefore preserves provider identity and
+/// geometry for the neutral adapter.
+pub fn order_lines(lines: &[LineBox], cfg: &XyCutConfig) -> Vec<LineBox> {
+    recursive_segment(lines, cfg)
+}
+
 pub fn split_page(
     lines: &[LineBox],
     page_width: f32,

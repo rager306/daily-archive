@@ -272,28 +272,21 @@ impl LayoutPage {
             }
         }
         let mut previous = None;
-        let mut previous_source = None;
+        let mut source_ordinals = std::collections::BTreeSet::new();
         for t in &self.tokens {
             if t.page_ordinal != self.page_ordinal || !t.bbox.within(self.width, self.height) {
                 return Err(LayoutError::OutOfPage);
             }
-            if let Some(prev) = previous_source
-                && t.source_ordinal <= prev
-            {
-                return Err(if t.source_ordinal == prev {
-                    LayoutError::DuplicateOrdinal {
-                        page: self.page_ordinal,
-                        ordinal: prev,
-                    }
-                } else {
-                    LayoutError::NonMonotonicOrdinal {
-                        page: self.page_ordinal,
-                        previous: prev,
-                        next: t.source_ordinal,
-                    }
+            // source_ordinal is extraction identity and may be a permutation
+            // in a reordered donor view, but it must remain unique across the
+            // whole page. A neighbour-only check would allow [0, 2, 0] and a
+            // map-based donor adapter could then silently overwrite a token.
+            if !source_ordinals.insert(t.source_ordinal) {
+                return Err(LayoutError::DuplicateOrdinal {
+                    page: self.page_ordinal,
+                    ordinal: t.source_ordinal,
                 });
             }
-            previous_source = Some(t.source_ordinal);
             if let Some(prev) = previous
                 && t.token_ordinal <= prev
             {
