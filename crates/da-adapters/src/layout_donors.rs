@@ -396,7 +396,7 @@ impl LayoutDonor for PdfInspectorLayoutDonor {
                 origin: CoordinateOrigin::BottomLeft,
             })
         });
-        let parsed = document_from_items(
+        document_from_items(
             pdf_bytes,
             document_id,
             provider(self.id(), self.version()),
@@ -404,8 +404,7 @@ impl LayoutDonor for PdfInspectorLayoutDonor {
             &BTreeMap::new(),
             limits,
             false,
-        );
-        parsed
+        )
     }
 }
 
