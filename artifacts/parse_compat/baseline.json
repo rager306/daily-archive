@@ -22,7 +22,7 @@
     ],
     "output_hash": "sha256:3d1f0a537766de0f8003b34498b8685611a8c7df218c79c1055020cd403bdea7",
     "corpus_id": "fast_local_fixtures",
-    "corpus_hash": "sha256:ffb5f055074523f40a67ce7d459e530d7ee4cecfdb8c68c9e6b032449b713b1d",
+    "corpus_hash": "sha256:4efa37384c849e3ab20071f574876afc5cbf26ac9b8ef40e5a09d52c5c93118b",
     "corpus_n": 3,
     "same_n": true,
     "same_n_meaning": "all executed bound cases and (when selected) java observations bind the identical tracked fixture set; the native_date_shadow candidate additionally evaluates the identical checksum-bound ordered published-date occurrence vector (denominator pinned by the comparison contract)",
@@ -187,7 +187,8 @@
         "parse.component.native_affiliation_shadow",
         "rest.processCitation",
         "rest.processCitationListTEI",
-        "parse.component.native_citation_shadow"
+        "parse.component.native_citation_shadow",
+        "parse.component.native_header_reference_composition_shadow"
       ],
       "obligation_acknowledged": true,
       "family_counts": {
@@ -11129,7 +11130,8 @@
         "parse.component.native_affiliation_shadow",
         "rest.processCitation",
         "rest.processCitationListTEI",
-        "parse.component.native_citation_shadow"
+        "parse.component.native_citation_shadow",
+        "parse.component.native_header_reference_composition_shadow"
       ],
       "obligation_acknowledged": true,
       "family_counts": {
@@ -19215,7 +19217,8 @@
         "parse.component.native_affiliation_shadow",
         "rest.processCitation",
         "rest.processCitationListTEI",
-        "parse.component.native_citation_shadow"
+        "parse.component.native_citation_shadow",
+        "parse.component.native_header_reference_composition_shadow"
       ],
       "obligation_acknowledged": true,
       "family_counts": {
@@ -108484,6 +108487,578 @@
     },
     "rollback_target": "java-grobid-http@0.9.0-crf",
     "schema_version": "parse-compat-native-citation-shadow.v1"
+  },
+  "native_header_reference_composition_shadow": {
+    "auto_promote": "forbidden",
+    "candidate_id": "da-parse.native_header_reference_composition",
+    "candidate_version": "1.0.0",
+    "closed_counters": {
+      "incomplete": 1,
+      "invented": 0,
+      "rejected": 2
+    },
+    "component_identities": {
+      "native_affiliation_shadow": {
+        "candidate_id": "da-parse.native_affiliation",
+        "candidate_version": "1.0.0",
+        "engine": "da_parse::NativeAffiliationParser",
+        "observation_mode": "shadow",
+        "outcome_schema_version": "da-parse.native-affiliation.outcome/v1",
+        "promotion_state": "candidate",
+        "rollback_target": "java-grobid-http@0.9.0-crf"
+      },
+      "native_citation_shadow": {
+        "candidate_id": "da-parse.native_citation",
+        "candidate_version": "1.0.0",
+        "engine": "da_parse::NativeCitationParser",
+        "observation_mode": "shadow",
+        "outcome_schema_version": "da-parse.native-citation.outcome/v1",
+        "promotion_state": "candidate",
+        "rollback_target": "java-grobid-http@0.9.0-crf"
+      },
+      "native_date_shadow": {
+        "candidate_id": "da-parse.native_date",
+        "candidate_version": "1.0.0",
+        "engine": "da_parse::NativeDateParser",
+        "observation_mode": "shadow",
+        "outcome_schema_version": "da-parse.native-date.outcome/v1",
+        "promotion_state": "candidate",
+        "rollback_target": "java-grobid-http@0.9.0-crf"
+      },
+      "native_personal_name_shadow": {
+        "candidate_id": "da-parse.native_personal_name",
+        "candidate_version": "1.0.0",
+        "engine": "da_parse::NativePersonalNameParser",
+        "observation_mode": "shadow",
+        "outcome_schema_version": "da-parse.native-personal-name.outcome/v1",
+        "promotion_state": "candidate",
+        "rollback_target": "java-grobid-http@0.9.0-crf"
+      }
+    },
+    "component_receipts": {
+      "affiliation": {
+        "address_observed_n": 0,
+        "exactly_one_three_link": 1,
+        "linked_authors": 11,
+        "linking_total": 13,
+        "recognition_total": 13,
+        "zero_link_authors": 25
+      },
+      "anchors": {
+        "fragmented_adjacency": 168,
+        "targeted": 217,
+        "targetless": 163,
+        "total": 380
+      },
+      "citation_names": {
+        "soft_initial_n": 2196,
+        "strict_n": 0,
+        "total": 2198,
+        "unsupported_n": 2
+      },
+      "date": {
+        "total": 173
+      },
+      "denominator_policy": "no_pooling_or_erosion",
+      "header": {
+        "accepted_total": 35,
+        "raw_total": 36,
+        "rejected_or_incomplete": 1,
+        "soft_initial_n": 35,
+        "strict_n": 0
+      },
+      "ordered_digest": "required_per_component",
+      "references": {
+        "total": 207
+      },
+      "required": [
+        "native_date_shadow",
+        "native_personal_name_shadow",
+        "native_affiliation_shadow",
+        "native_citation_shadow"
+      ],
+      "same_n": "required_per_component"
+    },
+    "composition_ordered_digest": "sha256:e86b3880929d651cd4cdd3c164ebf90b86efd263f89c699e9f5bc86857168f3d",
+    "engine": "da_parse::native_composition",
+    "evidence": [
+      "native_header_reference_composition_shadow"
+    ],
+    "forbidden": [
+      "auto_promotion",
+      "runtime_routing",
+      "raw_text",
+      "raw_tei",
+      "raw_names",
+      "raw_references",
+      "pooled_denominators",
+      "invented_stage",
+      "invented_bindings"
+    ],
+    "hard_regressions": [
+      "invented_revision",
+      "lost_references_or_links",
+      "changed_reading_order",
+      "nondeterministic_output",
+      "panic",
+      "silent_skip_missing_tei_fixture"
+    ],
+    "independently_selectable_lanes": [
+      "header",
+      "references"
+    ],
+    "lanes": {
+      "header": {
+        "candidate_state": "candidate",
+        "denominator": 35,
+        "hard_regressions": [
+          "invented_revision",
+          "nondeterministic_output",
+          "panic",
+          "silent_skip_missing_tei_fixture"
+        ],
+        "soft_n": 35,
+        "strict_n": 0
+      },
+      "references": {
+        "anchors_denominator": 380,
+        "candidate_state": "candidate",
+        "fragmented_adjacency": 168,
+        "hard_regressions": [
+          "lost_references_or_links",
+          "changed_reading_order",
+          "nondeterministic_output",
+          "panic",
+          "silent_skip_missing_tei_fixture"
+        ],
+        "references_denominator": 207,
+        "targeted_anchors": 217,
+        "targetless_anchors": 163
+      }
+    },
+    "observation_mode": "shadow",
+    "ordered_digests": {
+      "affiliation_linking": "sha256:d29514fc044b55d2ccf9f495538c41e00d5e19111079f31b3f2066a032b7d2ec",
+      "affiliation_recognition": "sha256:b36020987eeb47e254d085c14ee68247d20d1c747f52d38446678f37048198e5",
+      "anchors": null,
+      "citation_fields": null,
+      "date": "sha256:308836b1fd5e2640711b7c67c1c048677881ba69c004bf27a5491817a4b1da10",
+      "names_citation": "sha256:fda4fbda74375028ef4f2f1c07dfd405822d65e7c5fdf10b731ea18ad5ce9194",
+      "names_header": "sha256:fd7105f7cb22d490d2c4831f20cbb6404884d81050d8f2f7d0aa99834f7a479f",
+      "references": null
+    },
+    "outcome_schema_version": "da-parse.native-composition.outcome/v1",
+    "per_fixture_receipts": {
+      "affiliation": {
+        "linking": {
+          "ambiguous_count": 0,
+          "candidate_n": 13,
+          "extra_count": 0,
+          "field_parity": {
+            "all_declared_fields": 13
+          },
+          "invented_count": 0,
+          "latency_characterization": {
+            "bucket_vocabulary": [
+              "le_1us",
+              "le_10us",
+              "le_100us",
+              "le_1ms",
+              "gt_1ms"
+            ],
+            "p50": "le_100us",
+            "p95": "le_100us",
+            "p99": "le_100us",
+            "policy": "closed input-length buckets; wall-clock excluded"
+          },
+          "lost_count": 0,
+          "malformed_count": 0,
+          "oracle_n": 13,
+          "ordered_digest": "sha256:d29514fc044b55d2ccf9f495538c41e00d5e19111079f31b3f2066a032b7d2ec",
+          "reordered_count": 0,
+          "same_n": true,
+          "soft_n": 0,
+          "strict_n": 13,
+          "unsupported_count": 0
+        },
+        "recognition": {
+          "ambiguous_count": 0,
+          "candidate_n": 13,
+          "extra_count": 0,
+          "field_parity": {
+            "all_declared_fields": 13
+          },
+          "invented_count": 0,
+          "latency_characterization": {
+            "bucket_vocabulary": [
+              "le_1us",
+              "le_10us",
+              "le_100us",
+              "le_1ms",
+              "gt_1ms"
+            ],
+            "p50": "le_100us",
+            "p95": "le_100us",
+            "p99": "le_100us",
+            "policy": "closed input-length buckets; wall-clock excluded"
+          },
+          "lost_count": 0,
+          "malformed_count": 0,
+          "oracle_n": 13,
+          "ordered_digest": "sha256:b36020987eeb47e254d085c14ee68247d20d1c747f52d38446678f37048198e5",
+          "reordered_count": 0,
+          "same_n": true,
+          "soft_n": 0,
+          "strict_n": 13,
+          "unsupported_count": 0
+        }
+      },
+      "citation": {
+        "anchors": {
+          "adjacent_n": 168,
+          "candidate_n": 380,
+          "counters": {
+            "extra": 0,
+            "lost": 0,
+            "merged": 0,
+            "reordered": 0,
+            "split": 0
+          },
+          "denominator": {
+            "adjacent_fragment_pairs": 168,
+            "targeted": 217,
+            "targetless": 163,
+            "total": 380
+          },
+          "oracle_n": 380,
+          "per_fixture": [
+            {
+              "adjacent_n": 43,
+              "candidate_n": 123,
+              "extra": 0,
+              "lost": 0,
+              "merged": 0,
+              "oracle_n": 123,
+              "ordered_digest": "sha256:613f7f59a633746671061c53fece3a256a57d7fc51293ca6c0aed57a4fe2e4b4",
+              "reordered": 0,
+              "same_n": true,
+              "split": 0,
+              "targeted_n": 87,
+              "targetless_n": 36
+            },
+            {
+              "adjacent_n": 32,
+              "candidate_n": 99,
+              "extra": 0,
+              "lost": 0,
+              "merged": 0,
+              "oracle_n": 99,
+              "ordered_digest": "sha256:80e513db0d6cb731b1f02cb39ac08e8e1845f9a394297ea2478e78a8eb9e2790",
+              "reordered": 0,
+              "same_n": true,
+              "split": 0,
+              "targeted_n": 71,
+              "targetless_n": 28
+            },
+            {
+              "adjacent_n": 93,
+              "candidate_n": 158,
+              "extra": 0,
+              "lost": 0,
+              "merged": 0,
+              "oracle_n": 158,
+              "ordered_digest": "sha256:bb19d98cb1bca928d3837979c446042f4c00bc0264cb019df99cfb4b2de70097",
+              "reordered": 0,
+              "same_n": true,
+              "split": 0,
+              "targeted_n": 59,
+              "targetless_n": 99
+            }
+          ],
+          "same_n": true,
+          "targeted_n": 217,
+          "targetless_n": 163
+        },
+        "fields": {
+          "candidate_n": 207,
+          "denominator": {
+            "title_observed_n": 200,
+            "total": 207
+          },
+          "invented_n": 0,
+          "observed_roles": {
+            "article_title": 200,
+            "arxiv_id": 27,
+            "doi": 60,
+            "publication_date": 167
+          },
+          "oracle_n": 207,
+          "per_fixture": [
+            {
+              "candidate_n": 185,
+              "invented_n": 0,
+              "missing_n": {
+                "article_title": 78,
+                "arxiv_id": 1,
+                "doi": 6,
+                "publication_date": 9
+              },
+              "observed_n": {
+                "article_title": 78,
+                "arxiv_id": 23,
+                "doi": 6,
+                "publication_date": 78
+              },
+              "oracle_n": 185,
+              "same_n": true,
+              "strict_n": {
+                "publication_date": 39
+              }
+            },
+            {
+              "candidate_n": 95,
+              "invented_n": 0,
+              "missing_n": {
+                "article_title": 45,
+                "doi": 1,
+                "publication_date": 3
+              },
+              "observed_n": {
+                "article_title": 45,
+                "arxiv_id": 1,
+                "doi": 1,
+                "publication_date": 48
+              },
+              "oracle_n": 95,
+              "same_n": true,
+              "strict_n": {
+                "publication_date": 41
+              }
+            },
+            {
+              "candidate_n": 174,
+              "invented_n": 0,
+              "missing_n": {
+                "article_title": 77,
+                "arxiv_id": 1,
+                "doi": 53,
+                "publication_date": 14
+              },
+              "observed_n": {
+                "article_title": 77,
+                "arxiv_id": 3,
+                "doi": 53,
+                "publication_date": 41
+              },
+              "oracle_n": 174,
+              "same_n": true,
+              "strict_n": {
+                "publication_date": 23
+              }
+            }
+          ],
+          "same_n": true
+        },
+        "reference_list": {
+          "candidate_n": 207,
+          "counters": {
+            "extra": 0,
+            "lost": 0,
+            "merged": 0,
+            "reordered": 0,
+            "split": 0
+          },
+          "denominator": {
+            "total": 207
+          },
+          "oracle_n": 207,
+          "per_fixture": [
+            {
+              "candidate_n": 80,
+              "extra": 0,
+              "lost": 0,
+              "merged": 0,
+              "oracle_n": 80,
+              "ordered_digest": "sha256:a1179e5a1f1c0e1c47cbf6ae4a7b1ef91feaeaf2268c154bf72ea26b50d574ed",
+              "reordered": 0,
+              "same_n": true,
+              "split": 0
+            },
+            {
+              "candidate_n": 49,
+              "extra": 0,
+              "lost": 0,
+              "merged": 0,
+              "oracle_n": 49,
+              "ordered_digest": "sha256:821ecc1adb3191fd51cca7bd5fb2a409ee7c1e8b102ffbdc875d6cf7d4589b91",
+              "reordered": 0,
+              "same_n": true,
+              "split": 0
+            },
+            {
+              "candidate_n": 78,
+              "extra": 0,
+              "lost": 0,
+              "merged": 0,
+              "oracle_n": 78,
+              "ordered_digest": "sha256:fd6ec97167a243de31582efbba205da3a051108d8e99efcbd27ec6b89623eedc",
+              "reordered": 0,
+              "same_n": true,
+              "split": 0
+            }
+          ],
+          "same_n": true
+        }
+      },
+      "date": {
+        "per_fixture": [
+          {
+            "candidate_n": 80,
+            "case_id": "reg.tei.hub-bibliography-2507.19457",
+            "fixture_id": "hub_2507.19457",
+            "invented_component_count": 0,
+            "malformed_count": 0,
+            "oracle_n": 80,
+            "outcome_counts": {
+              "recognized": 80
+            },
+            "same_n": true,
+            "scope_counts": {
+              "bibliography_date": 78,
+              "header_article_date": 1,
+              "header_bibliography_date": 1
+            },
+            "soft_n": 80,
+            "strict_n": 80,
+            "unsupported_count": 0
+          },
+          {
+            "candidate_n": 50,
+            "case_id": "reg.tei.rlm-2512.24601",
+            "fixture_id": "rlm_2512.24601",
+            "invented_component_count": 0,
+            "malformed_count": 0,
+            "oracle_n": 50,
+            "outcome_counts": {
+              "recognized": 50
+            },
+            "same_n": true,
+            "scope_counts": {
+              "bibliography_date": 48,
+              "header_article_date": 1,
+              "header_bibliography_date": 1
+            },
+            "soft_n": 50,
+            "strict_n": 50,
+            "unsupported_count": 0
+          },
+          {
+            "candidate_n": 43,
+            "case_id": "reg.tei.reca-bibliography-2605.26525",
+            "fixture_id": "reca_2605.26525v1",
+            "invented_component_count": 0,
+            "malformed_count": 0,
+            "oracle_n": 43,
+            "outcome_counts": {
+              "recognized": 43
+            },
+            "same_n": true,
+            "scope_counts": {
+              "bibliography_date": 41,
+              "header_article_date": 1,
+              "header_bibliography_date": 1
+            },
+            "soft_n": 43,
+            "strict_n": 43,
+            "unsupported_count": 0
+          }
+        ]
+      },
+      "names": {
+        "citation": {
+          "ambiguous_count": 0,
+          "candidate_n": 2198,
+          "coverage": {
+            "initial": 140,
+            "particle": 0,
+            "suffix": 0,
+            "unicode": 11
+          },
+          "invented_component_count": 0,
+          "latency_characterization": {
+            "bucket_vocabulary": [
+              "le_1us",
+              "le_10us",
+              "le_100us",
+              "le_1ms",
+              "gt_1ms"
+            ],
+            "p50": "le_100us",
+            "p95": "le_100us",
+            "p99": "le_100us",
+            "policy": "bucketized closed vocabulary; exact wall-clock never serialized"
+          },
+          "malformed_count": 0,
+          "oracle_n": 2198,
+          "ordered_digest": "sha256:fda4fbda74375028ef4f2f1c07dfd405822d65e7c5fdf10b731ea18ad5ce9194",
+          "same_n": true,
+          "soft_initial_count": 2196,
+          "strict_counts": {
+            "recognized": 0,
+            "unsupported": 0
+          },
+          "unsupported_count": 2
+        },
+        "header": {
+          "ambiguous_count": 0,
+          "candidate_n": 35,
+          "coverage": {
+            "initial": 5,
+            "particle": 0,
+            "suffix": 0,
+            "unicode": 0
+          },
+          "invented_component_count": 0,
+          "latency_characterization": {
+            "bucket_vocabulary": [
+              "le_1us",
+              "le_10us",
+              "le_100us",
+              "le_1ms",
+              "gt_1ms"
+            ],
+            "p50": "le_100us",
+            "p95": "le_100us",
+            "p99": "le_100us",
+            "policy": "bucketized closed vocabulary; exact wall-clock never serialized"
+          },
+          "malformed_count": 0,
+          "oracle_n": 35,
+          "ordered_digest": "sha256:fd7105f7cb22d490d2c4831f20cbb6404884d81050d8f2f7d0aa99834f7a479f",
+          "same_n": true,
+          "soft_initial_count": 35,
+          "strict_counts": {
+            "recognized": 0
+          },
+          "unsupported_count": 0
+        }
+      }
+    },
+    "policy_locks": {
+      "auto_promote": "forbidden",
+      "graph_mutation": "forbidden",
+      "import_eligible": false,
+      "raw_scholarly_content": "forbidden"
+    },
+    "promotion_state": "candidate",
+    "rollback": {
+      "header": "java-grobid-http@0.9.0-crf",
+      "references": "java-grobid-http@0.9.0-crf"
+    },
+    "schema_version": "parse-compat-native-header-reference-composition-shadow.v1",
+    "used_by": [
+      "S12-T03"
+    ]
   },
   "java_grobid": {
     "selected": false,

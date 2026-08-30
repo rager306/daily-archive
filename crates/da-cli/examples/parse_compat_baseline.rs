@@ -439,6 +439,10 @@ struct BaselineReport {
     native_affiliation_shadow: NativeAffiliationShadowEvidence,
     /// S11/T04 additive redacted citation field/list/anchor evidence.
     native_citation_shadow: serde_json::Value,
+    /// S12 additive composition evidence. This is a typed, redacted summary
+    /// assembled from the four already-emitted component shadows; it is never
+    /// a second parse or candidate payload.
+    native_header_reference_composition_shadow: serde_json::Value,
     java_grobid: JavaEvidence,
     policy_locks: PolicyLocks,
 }
@@ -593,6 +597,7 @@ struct ContractData {
     native_date_shadow: NativeDateShadowTerms,
     native_personal_name_shadow: NativePersonalNameShadowTerms,
     native_citation_shadow: NativeCitationShadowTerms,
+    native_composition_shadow: NativeCompositionContract,
 }
 
 #[derive(Debug, Clone)]
@@ -613,6 +618,41 @@ struct NativeCitationShadowTerms {
     anchor_targeted_n: usize,
     anchor_targetless_n: usize,
     adjacency_denominator: usize,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NativeCompositionContract {
+    engine: String,
+    candidate_id: String,
+    candidate_version: String,
+    outcome_schema_version: String,
+    observation_mode: String,
+    promotion_state: String,
+    auto_promote: String,
+    rollback: BTreeMap<String, String>,
+    independently_selectable_lanes: Vec<String>,
+    component_receipts: NativeCompositionReceipts,
+    lanes: BTreeMap<String, serde_yaml::Value>,
+    forbidden: Vec<String>,
+    hard_regressions: Vec<String>,
+    evidence: Vec<String>,
+    used_by: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NativeCompositionReceipts {
+    required: Vec<String>,
+    same_n: String,
+    ordered_digest: String,
+    denominator_policy: String,
+    date: BTreeMap<String, usize>,
+    header: BTreeMap<String, usize>,
+    citation_names: BTreeMap<String, usize>,
+    affiliation: BTreeMap<String, usize>,
+    references: BTreeMap<String, usize>,
+    anchors: BTreeMap<String, usize>,
 }
 
 /// DATA-pinned native date shadow terms (comparison_contract.yaml
@@ -1053,6 +1093,12 @@ fn load_contract(repo_root: &Path) -> Result<ContractData, String> {
         native_date_shadow,
         native_personal_name_shadow,
         native_citation_shadow,
+        native_composition_shadow: serde_yaml::from_value(
+            v.get("native_header_reference_composition_shadow")
+                .ok_or("[contract-shape] missing native_header_reference_composition_shadow")?
+                .clone(),
+        )
+        .map_err(|e| format!("[contract-shape] malformed native composition shadow: {e}"))?,
     })
 }
 
@@ -3767,6 +3813,13 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
         assemble_native_affiliation_shadow(&affiliation_cases, &contract.rollback_target)?;
     let native_citation_shadow =
         assemble_native_citation_shadow(&contract.native_citation_shadow, &citation_cases)?;
+    let native_header_reference_composition_shadow = assemble_native_composition_shadow(
+        &contract.native_composition_shadow,
+        &native_date_shadow,
+        &native_personal_name_shadow,
+        &native_affiliation_shadow,
+        &native_citation_shadow,
+    )?;
 
     // 4. Aggregate deterministic identity (sorted, path-independent).
     let mut fixture_ids = BTreeSet::new();
@@ -3890,6 +3943,7 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
         native_personal_name_shadow,
         native_affiliation_shadow,
         native_citation_shadow,
+        native_header_reference_composition_shadow,
         java_grobid,
         policy_locks: manifest.policy_locks,
     })
@@ -4004,6 +4058,7 @@ fn self_validate(
     validate_native_date_shadow_evidence(report, contract)?;
     validate_native_personal_name_shadow_evidence(report, contract)?;
     validate_native_citation_shadow_evidence(report, contract)?;
+    validate_native_composition_shadow(report, contract)?;
 
     // Raw-document canaries: bibliographic titles from provenance and TEI
     // structural markers must not appear anywhere in the serialized report.
@@ -4046,6 +4101,280 @@ fn raw_content_canaries(provenance: &Provenance) -> Vec<String> {
 /// S08/T03: shadow evidence validation — identity binding to the DATA
 /// terms, closed per-occurrence surface, aggregate == per-fixture sums,
 /// denominator/same-n/invention guards and digest replay.
+fn composition_identity(value: &serde_json::Value) -> serde_json::Value {
+    json!({
+        "engine": value.get("engine").cloned().unwrap_or(serde_json::Value::Null),
+        "candidate_id": value.get("candidate_id").cloned().unwrap_or(serde_json::Value::Null),
+        "candidate_version": value.get("candidate_version").cloned().unwrap_or(serde_json::Value::Null),
+        "outcome_schema_version": value.get("outcome_schema_version").cloned().unwrap_or(serde_json::Value::Null),
+        "observation_mode": value.get("observation_mode").cloned().unwrap_or(serde_json::Value::Null),
+        "promotion_state": value.get("promotion_state").cloned().unwrap_or(serde_json::Value::Null),
+        "rollback_target": value.get("rollback_target").cloned().unwrap_or(serde_json::Value::Null),
+    })
+}
+
+fn strip_occurrence_payload(value: &serde_json::Value) -> serde_json::Value {
+    match value {
+        serde_json::Value::Object(map) => serde_json::Value::Object(
+            map.iter()
+                .filter(|(key, _)| key.as_str() != "per_occurrence")
+                .map(|(key, value)| (key.clone(), strip_occurrence_payload(value)))
+                .collect(),
+        ),
+        serde_json::Value::Array(items) => {
+            serde_json::Value::Array(items.iter().map(strip_occurrence_payload).collect())
+        }
+        _ => value.clone(),
+    }
+}
+
+fn compact_receipts(value: &serde_json::Value, keys: &[&str]) -> serde_json::Value {
+    let object = value.as_object();
+    let mut result = serde_json::Map::new();
+    for key in keys {
+        if let Some(value) = object.and_then(|map| map.get(*key)) {
+            result.insert((*key).to_string(), strip_occurrence_payload(value));
+        }
+    }
+    serde_json::Value::Object(result)
+}
+
+/// Assemble the single S12 report sibling from already-produced component
+/// evidence.  Deliberately copies no per-occurrence payload: those rows may
+/// contain candidate hashes and spans, while this composition receipt only
+/// needs closed denominators, identities and ordered digests.
+fn assemble_native_composition_shadow(
+    terms: &NativeCompositionContract,
+    date: &NativeDateShadowEvidence,
+    names: &NativePersonalNameShadowEvidence,
+    affiliations: &NativeAffiliationShadowEvidence,
+    citation: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let date_value = serde_json::to_value(date).map_err(|e| format!("[serialization] {e}"))?;
+    let names_value = serde_json::to_value(names).map_err(|e| format!("[serialization] {e}"))?;
+    let affiliations_value =
+        serde_json::to_value(affiliations).map_err(|e| format!("[serialization] {e}"))?;
+    let components = [
+        ("native_date_shadow", &date_value),
+        ("native_personal_name_shadow", &names_value),
+        ("native_affiliation_shadow", &affiliations_value),
+        ("native_citation_shadow", citation),
+    ];
+    for (name, value) in components {
+        let identity = composition_identity(value);
+        if identity["observation_mode"].as_str() != Some("shadow")
+            || identity["promotion_state"].as_str() != Some("candidate")
+            || identity["rollback_target"].as_str()
+                != terms.rollback.get("header").map(String::as_str)
+        {
+            return Err(format!(
+                "[native-composition-state] component `{name}` is not shadow/candidate/rollback-bound"
+            ));
+        }
+    }
+    if terms.independently_selectable_lanes != ["header", "references"] {
+        return Err(
+            "[native-composition-lanes] header and references must remain independently selectable"
+                .into(),
+        );
+    }
+    if terms.auto_promote != "forbidden" {
+        return Err("[native-composition-policy] auto_promote must remain forbidden".into());
+    }
+    let digest_inputs = json!({
+        "date": date_value.get("aggregate_digest"),
+        "names_header": names_value["header"].get("ordered_digest"),
+        "names_citation": names_value["citation"].get("ordered_digest"),
+        "affiliation_recognition": affiliations_value["recognition"].get("ordered_digest"),
+        "affiliation_linking": affiliations_value["linking"].get("ordered_digest"),
+        "citation_fields": citation["fields"].get("ordered_digest"),
+        "references": citation["reference_list"].get("ordered_digest"),
+        "anchors": citation["anchors"].get("ordered_digest"),
+    });
+    let ordered_digest = format!(
+        "sha256:{}",
+        sha256_hex(&serde_json::to_vec(&digest_inputs).expect("digest inputs serialize"))
+    );
+    let component_identities = components
+        .iter()
+        .map(|(name, value)| (name.to_string(), composition_identity(value)))
+        .collect::<serde_json::Map<_, _>>();
+    let lane_header = terms
+        .lanes
+        .get("header")
+        .ok_or("[native-composition-contract] header lane missing")?;
+    let lane_references = terms
+        .lanes
+        .get("references")
+        .ok_or("[native-composition-contract] references lane missing")?;
+    let value = json!({
+        "schema_version": "parse-compat-native-header-reference-composition-shadow.v1",
+        "engine": terms.engine,
+        "candidate_id": terms.candidate_id,
+        "candidate_version": terms.candidate_version,
+        "outcome_schema_version": terms.outcome_schema_version,
+        "observation_mode": terms.observation_mode,
+        "promotion_state": terms.promotion_state,
+        "auto_promote": terms.auto_promote,
+        "rollback": terms.rollback,
+        "independently_selectable_lanes": terms.independently_selectable_lanes,
+        "component_identities": component_identities,
+        "component_receipts": {
+            "required": terms.component_receipts.required,
+            "same_n": terms.component_receipts.same_n,
+            "ordered_digest": terms.component_receipts.ordered_digest,
+            "denominator_policy": terms.component_receipts.denominator_policy,
+            "date": terms.component_receipts.date,
+            "header": terms.component_receipts.header,
+            "citation_names": terms.component_receipts.citation_names,
+            "affiliation": terms.component_receipts.affiliation,
+            "references": terms.component_receipts.references,
+            "anchors": terms.component_receipts.anchors,
+        },
+        "lanes": {
+            "header": lane_header,
+            "references": lane_references,
+        },
+        "per_fixture_receipts": {
+            "date": compact_receipts(&date_value, &["per_fixture"]),
+            "names": compact_receipts(&names_value, &["header", "citation"]),
+            "affiliation": compact_receipts(&affiliations_value, &["recognition", "linking"]),
+            "citation": compact_receipts(citation, &["fields", "reference_list", "anchors"]),
+        },
+        "ordered_digests": digest_inputs,
+        "composition_ordered_digest": ordered_digest,
+        "closed_counters": {
+            "incomplete": terms.component_receipts.header.get("rejected_or_incomplete").copied().unwrap_or(0),
+            "rejected": terms.component_receipts.citation_names.get("unsupported_n").copied().unwrap_or(0),
+            "invented": 0,
+        },
+        "policy_locks": {
+            "auto_promote": terms.auto_promote,
+            "import_eligible": false,
+            "graph_mutation": "forbidden",
+            "raw_scholarly_content": "forbidden",
+        },
+        "forbidden": terms.forbidden,
+        "hard_regressions": terms.hard_regressions,
+        "evidence": terms.evidence,
+        "used_by": terms.used_by,
+    });
+    Ok(value)
+}
+
+fn validate_native_composition_shadow(
+    report: &BaselineReport,
+    contract: &ContractData,
+) -> Result<(), String> {
+    let section = &report.native_header_reference_composition_shadow;
+    let terms = &contract.native_composition_shadow;
+    let required = [
+        "schema_version",
+        "engine",
+        "candidate_id",
+        "candidate_version",
+        "outcome_schema_version",
+        "observation_mode",
+        "promotion_state",
+        "auto_promote",
+        "rollback",
+        "independently_selectable_lanes",
+        "component_identities",
+        "component_receipts",
+        "lanes",
+        "per_fixture_receipts",
+        "ordered_digests",
+        "composition_ordered_digest",
+        "closed_counters",
+        "policy_locks",
+        "forbidden",
+        "hard_regressions",
+        "evidence",
+    ];
+    for key in required {
+        if section.get(key).is_none() {
+            return Err(format!("[native-composition-shape] missing `{key}`"));
+        }
+    }
+    for (key, expected) in [
+        ("engine", terms.engine.as_str()),
+        ("candidate_id", terms.candidate_id.as_str()),
+        ("candidate_version", terms.candidate_version.as_str()),
+        (
+            "outcome_schema_version",
+            terms.outcome_schema_version.as_str(),
+        ),
+        ("observation_mode", terms.observation_mode.as_str()),
+        ("promotion_state", terms.promotion_state.as_str()),
+        ("auto_promote", terms.auto_promote.as_str()),
+    ] {
+        if section[key].as_str() != Some(expected) {
+            return Err(format!("[native-composition-identity] `{key}` drifted"));
+        }
+    }
+    if section["rollback"] != serde_json::to_value(&terms.rollback).unwrap()
+        || section["independently_selectable_lanes"]
+            != serde_json::to_value(&terms.independently_selectable_lanes).unwrap()
+        || section["component_receipts"]["required"]
+            != serde_json::to_value(&terms.component_receipts.required).unwrap()
+    {
+        return Err(
+            "[native-composition-policy] rollback, lane selection, or required receipts drifted"
+                .into(),
+        );
+    }
+    if section["lanes"].get("header").is_none() || section["lanes"].get("references").is_none() {
+        return Err("[native-composition-lanes] header and references must remain separate".into());
+    }
+    let receipts = &section["component_receipts"];
+    for (name, expected) in [
+        ("date", &terms.component_receipts.date),
+        ("header", &terms.component_receipts.header),
+        ("citation_names", &terms.component_receipts.citation_names),
+        ("affiliation", &terms.component_receipts.affiliation),
+        ("references", &terms.component_receipts.references),
+        ("anchors", &terms.component_receipts.anchors),
+    ] {
+        if receipts[name] != serde_json::to_value(expected).unwrap() {
+            return Err(format!(
+                "[native-composition-receipts] `{name}` drifted or pooled"
+            ));
+        }
+    }
+    let forbidden_keys = [
+        "source",
+        "value",
+        "raw_reference",
+        "raw_citation",
+        "raw_name",
+        "raw_text",
+        "raw_tei",
+        "tei_xml",
+    ];
+    let mut keys = Vec::new();
+    collect_object_keys(section, &mut keys);
+    if keys
+        .iter()
+        .any(|key| forbidden_keys.iter().any(|forbidden| key == forbidden))
+    {
+        return Err("[native-composition-redaction] raw scholarly field leaked".into());
+    }
+    let mut receipt_keys = Vec::new();
+    collect_object_keys(&section["per_fixture_receipts"], &mut receipt_keys);
+    if receipt_keys.iter().any(|key| key == "per_occurrence") {
+        return Err(format!(
+            "[native-composition-redaction] per-fixture receipts include occurrence payloads: {receipt_keys:?}"
+        ));
+    }
+    if section["policy_locks"]["import_eligible"] != false
+        || section["policy_locks"]["graph_mutation"] != "forbidden"
+        || section["policy_locks"]["raw_scholarly_content"] != "forbidden"
+    {
+        return Err("[native-composition-policy] quarantine locks are open".into());
+    }
+    Ok(())
+}
+
 fn validate_native_date_shadow_evidence(
     report: &BaselineReport,
     contract: &ContractData,
