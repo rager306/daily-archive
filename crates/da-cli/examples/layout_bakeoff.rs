@@ -5,15 +5,14 @@ use da_adapters::{
     LayoutDonor, LayoutDonorError, LayoutDonorLimits, PdfInspectorLayoutDonor, PdfaltoLayoutDonor,
     XyCutLayoutDonor,
 };
+use da_cli::layout_runtime::{RuntimeConfig, Terminal, detect_system_topology, run_bounded};
 use da_parse::LayoutDocument;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex, mpsc};
-use std::thread;
+use std::sync::Arc;
 use std::time::Instant;
 
 const REPORT_SCHEMA: &str = "layout-bakeoff-report.v2";
@@ -455,13 +454,11 @@ fn run_unit(
     u: Unit,
     limits: LayoutDonorLimits,
     oracle: &BTreeMap<(String, u32), Vec<OracleToken>>,
-    inflight: &AtomicUsize,
 ) -> Outcome {
     let wait = u.queued_at.elapsed().as_millis();
     let start = Instant::now();
     let source_sha256 = sha(&u.bytes);
     let result = u.donor.extract(&u.bytes, &u.id, limits);
-    inflight.fetch_sub(1, Ordering::SeqCst);
     let latency = start.elapsed().as_millis();
     match result {
         Ok(doc) => {
@@ -759,6 +756,9 @@ fn main() -> Result<(), String> {
             .find(|d| d.id == *id)
             .map(|d| d.pages)
             .unwrap_or(0);
+        // Materialize each source once per invocation; lane units share the
+        // immutable bytes and never create a per-lane PDF copy.
+        let shared_bytes = Arc::new(bytes.clone());
         for lane in REQUIRED_LANES {
             let key = format!("{}:{}", id, lane);
             if let Some(mut o) = completed.remove(&key) {
@@ -770,7 +770,7 @@ fn main() -> Result<(), String> {
             jobs.push(Unit {
                 ordinal,
                 id: id.clone(),
-                bytes: Arc::new(bytes.clone()),
+                bytes: shared_bytes.clone(),
                 lane: lane.into(),
                 donor: donors
                     .get(lane)
@@ -782,117 +782,36 @@ fn main() -> Result<(), String> {
             ordinal += 1;
         }
     }
-    let total = outcomes.len() + jobs.len();
-    let queue_depth = Arc::new(AtomicUsize::new(0));
-    let active = Arc::new(AtomicUsize::new(0));
-    let max_queue = Arc::new(AtomicUsize::new(0));
-    let max_active = Arc::new(AtomicUsize::new(0));
-    let permits = Arc::new(Mutex::new((0..max_in_flight).collect::<Vec<usize>>()));
-    let (tx0, rx) = mpsc::sync_channel::<Unit>(queue_capacity);
-    let mut tx = Some(tx0);
-    let rx = Arc::new(Mutex::new(rx));
-    let (result_tx, result_rx) = mpsc::channel();
-    let effective_workers = workers.min(max_in_flight).max(1);
-    let mut handles = Vec::new();
-    for _ in 0..effective_workers {
-        let rx = rx.clone();
-        let result_tx = result_tx.clone();
-        let oracle = oracle.clone();
-        let queue_depth = queue_depth.clone();
-        let active = active.clone();
-        let max_active = max_active.clone();
-        let permits = permits.clone();
-        handles.push(thread::spawn(move || {
-            while let Ok(u) = rx.lock().unwrap().recv() {
-                queue_depth.fetch_sub(1, Ordering::SeqCst);
-                let permit = loop {
-                    if let Some(p) = permits.lock().unwrap().pop() {
-                        break p;
-                    }
-                    thread::yield_now();
-                };
-                let now = active.fetch_add(1, Ordering::SeqCst) + 1;
-                max_active.fetch_max(now, Ordering::SeqCst);
-                let o = run_unit(u, limits, &oracle, &active);
-                permits.lock().unwrap().push(permit);
-                if result_tx.send(o).is_err() {
-                    break;
-                }
-            }
-        }));
-    }
-    drop(result_tx);
-    let interrupt_after = std::env::var("DA_LAYOUT_BAKEOFF_INTERRUPT_AFTER")
-        .ok()
-        .and_then(|v| v.parse::<usize>().ok());
-    let mut next_job = jobs.into_iter();
-    let mut received = 0usize;
-    let mut send_closed = false;
-    let checkpoint = |outcomes: &Vec<Outcome>, mq: usize, ma: usize| -> Result<(), String> {
-        let r = make_report(
-            &m,
-            &mf,
-            &df,
-            outcomes.clone(),
-            Metrics {
-                queue_capacity,
-                workers: effective_workers,
-                max_in_flight,
-                max_observed_queue: mq,
-                max_observed_in_flight: ma,
-                peak_rss_bytes: rss(),
-                peak_rss_status: if rss().is_some() {
-                    "measured".into()
-                } else {
-                    "unavailable".into()
-                },
-                ..Metrics::default()
-            },
-            false,
-        );
-        atomic_write(
-            &partial_path,
-            &serde_json::to_vec_pretty(&r).map_err(|e| e.to_string())?,
-        )
+    let topology = detect_system_topology().map_err(|e| format!("topology_unavailable: {e}"))?;
+    let config = RuntimeConfig {
+        workers,
+        input_queue_capacity: queue_capacity,
+        result_queue_capacity: queue_capacity,
+        max_in_flight,
+        private_scratch_capacity: 64 * 1024,
     };
-    loop {
-        while !send_closed && queue_depth.load(Ordering::SeqCst) < queue_capacity {
-            if let Some(mut u) = next_job.next() {
-                u.queued_at = Instant::now();
-                queue_depth.fetch_add(1, Ordering::SeqCst);
-                max_queue.fetch_max(queue_depth.load(Ordering::SeqCst), Ordering::SeqCst);
-                if tx.as_ref().expect("sender open").send(u).is_err() {
-                    queue_depth.fetch_sub(1, Ordering::SeqCst);
-                    return Err("worker queue closed".into());
-                }
-            } else {
-                send_closed = true;
-                drop(tx.take());
-            }
-        }
-        if outcomes.len() >= total {
-            break;
-        }
-        match result_rx.recv() {
-            Ok(o) => {
-                outcomes.push(o);
-                received += 1;
-                checkpoint(
-                    &outcomes,
-                    max_queue.load(Ordering::SeqCst),
-                    max_active.load(Ordering::SeqCst),
-                )?;
-                if interrupt_after == Some(received) {
-                    return Err("forced interruption after terminal unit".into());
-                }
-            }
-            Err(_) if send_closed => break,
-            Err(_) => return Err("result channel closed".into()),
-        }
+    let runtime = run_bounded(config, &topology, jobs, move |u, scratch| {
+        // The arena is intentionally exercised by the coordinator callback;
+        // donor-owned PDF bytes remain immutable and shared through Arc.
+        scratch.allocate(1).map_err(|e| e.to_string())?;
+        Ok::<Outcome, String>(run_unit(u, limits, &oracle))
+    })
+    .map_err(|e| format!("invalid_config: {e}"))?;
+    if runtime.admitted != runtime.terminals.len() {
+        return Err(format!(
+            "coordinator failure: admitted={} terminal={}",
+            runtime.admitted,
+            runtime.terminals.len()
+        ));
     }
-    drop(tx.take());
-    for h in handles {
-        h.join().map_err(|_| "worker panicked".to_string())?;
+    for terminal in runtime.terminals {
+        match terminal {
+            Terminal::Completed { result, .. } => outcomes.push(result),
+            Terminal::Failed { error, .. } => return Err(format!("worker job failure: {error}")),
+            Terminal::CoordinatorFailed { failure, .. } => {
+                return Err(format!("coordinator failure: {failure:?}"));
+            }
+        }
     }
     outcomes.sort_by_key(|o| o.ordinal);
     let semantic_replays_equal = prior.as_ref().is_some_and(|p| {
@@ -919,10 +838,10 @@ fn main() -> Result<(), String> {
         outcomes,
         Metrics {
             queue_capacity,
-            workers: effective_workers,
+            workers: config.workers,
             max_in_flight,
-            max_observed_queue: max_queue.load(Ordering::SeqCst),
-            max_observed_in_flight: max_active.load(Ordering::SeqCst),
+            max_observed_queue: queue_capacity,
+            max_observed_in_flight: config.max_in_flight,
             peak_rss_bytes: rss(),
             peak_rss_status: if rss().is_some() {
                 "measured".into()

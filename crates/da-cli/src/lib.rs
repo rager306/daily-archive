@@ -13,6 +13,8 @@ pub mod gold_graph;
 pub mod graph_query;
 pub mod graph_tasks;
 pub mod health_report;
+#[cfg(feature = "pdf-layout")]
+pub mod layout_runtime;
 pub mod load;
 pub mod load_journey;
 pub mod logging;
