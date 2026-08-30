@@ -373,11 +373,16 @@ impl LayoutDonor for PdfInspectorLayoutDonor {
             }
         })?;
         let mut next = BTreeMap::<u32, u32>::new();
-        let converted = items.into_iter().map(|i| {
+        let converted = items.into_iter().filter_map(|i| {
+            // pdf-inspector may expose zero-area bookkeeping spans; they are
+            // not positioned tokens and must not poison the neutral lattice.
+            if i.width == 0.0 || i.height == 0.0 {
+                return None;
+            }
             let n = next.entry(i.page).or_insert(0);
             let source_ordinal = *n;
             *n += 1;
-            PositionedItem {
+            Some(PositionedItem {
                 page: i.page,
                 source_ordinal,
                 text: i.text,
@@ -389,9 +394,9 @@ impl LayoutDonor for PdfInspectorLayoutDonor {
                 italic: i.is_italic,
                 font_size: Some(i.font_size as f64),
                 origin: CoordinateOrigin::BottomLeft,
-            }
+            })
         });
-        document_from_items(
+        let parsed = document_from_items(
             pdf_bytes,
             document_id,
             provider(self.id(), self.version()),
@@ -399,7 +404,8 @@ impl LayoutDonor for PdfInspectorLayoutDonor {
             &BTreeMap::new(),
             limits,
             false,
-        )
+        );
+        parsed
     }
 }
 
@@ -520,7 +526,9 @@ pub fn parse_pdfalto_xml(
     let mut ordinal = BTreeMap::<u32, u32>::new();
     loop {
         match reader.read_event_into(&mut buf) {
-            Ok(Event::Start(e)) if e.name().as_ref().eq_ignore_ascii_case(b"page") => {
+            Ok(Event::Start(e)) | Ok(Event::Empty(e))
+                if e.name().as_ref().eq_ignore_ascii_case(b"page") =>
+            {
                 page += 1;
                 if page as usize > limits.max_pages {
                     return Err(LayoutDonorError::Oversize {
@@ -745,6 +753,12 @@ pub fn parse_pdfalto_xml(
                         detail: "pdfalto String geometry missing".into(),
                     });
                 };
+                // pdfalto emits zero-area bookkeeping strings on some pages;
+                // they are not positioned text tokens. Preserve fail-closed
+                // behavior for negative/non-finite geometry below.
+                if width == 0.0 || height == 0.0 {
+                    continue;
+                }
                 let n = ordinal.entry(page).or_insert(0);
                 page_items.push(PositionedItem {
                     page,

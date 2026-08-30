@@ -29,6 +29,7 @@ struct Manifest {
     schema_version: String,
     corpus: Corpus,
     lanes: LaneConfig,
+    oracle: Option<OracleSpec>,
 }
 #[derive(Debug, Deserialize)]
 struct Corpus {
@@ -36,7 +37,6 @@ struct Corpus {
     corpus_n: usize,
     page_denominator: usize,
     documents: Vec<DocumentSpec>,
-    oracle: Option<OracleSpec>,
 }
 #[derive(Debug, Deserialize)]
 struct DocumentSpec {
@@ -68,6 +68,8 @@ struct OracleReceipt {
 }
 #[derive(Debug, Clone, Deserialize)]
 struct OracleToken {
+    page_ordinal: u32,
+    token_ordinal: u32,
     bbox_72dpi_top_left: [f64; 4],
     token_digest: String,
 }
@@ -111,6 +113,7 @@ struct Outcome {
     duplicate_tokens: usize,
     reordered_tokens: usize,
     oracle_receipts: usize,
+    oracle_token_receipts: usize,
     oracle_order_inversions: Option<usize>,
     oracle_bbox_mismatches: Option<usize>,
     semantic_hash: Option<String>,
@@ -171,6 +174,12 @@ fn fingerprint(m: &Manifest, inputs: &[(String, Vec<u8>)]) -> String {
     let mut h = Sha256::new();
     h.update(m.schema_version.as_bytes());
     h.update(m.corpus.id.as_bytes());
+    if let Some(oracle) = &m.oracle {
+        h.update(oracle.fixture.as_bytes());
+        if let Ok(bytes) = fs::read(&oracle.fixture) {
+            h.update(sha(&bytes).as_bytes());
+        }
+    }
     for (id, b) in inputs {
         h.update(id.as_bytes());
         h.update(sha(b).as_bytes());
@@ -334,29 +343,41 @@ fn load_manifest(path: &Path) -> Result<LoadedManifest, String> {
     if pages != m.corpus.page_denominator {
         return Err("page denominator mismatch".into());
     }
+    if let Some(oracle) = &m.oracle {
+        fs::read(&oracle.fixture).map_err(|e| format!("oracle read: {e}"))?;
+    }
     Ok((m, out))
 }
 fn load_oracle(m: &Manifest) -> Result<BTreeMap<(String, u32), Vec<OracleToken>>, String> {
-    let Some(s) = &m.corpus.oracle else {
+    let Some(s) = &m.oracle else {
         return Ok(BTreeMap::new());
     };
     let raw = fs::read(&s.fixture).map_err(|e| format!("oracle read: {e}"))?;
     let f: OracleFile = serde_yaml::from_slice(&raw).map_err(|e| format!("oracle schema: {e}"))?;
     let mut out = BTreeMap::new();
     for r in f.receipts {
-        if r.page_count != r.page_ordinals.len() {
+        if r.page_count != r.page_ordinals.len()
+            || r.page_ordinals.iter().copied().ne(0..r.page_count as u32)
+        {
             return Err(format!(
                 "oracle page denominator mismatch for {}",
                 r.document_id
             ));
         }
-        for page in r.page_ordinals {
-            let tokens = if page == 0 {
-                r.token_receipts.clone()
-            } else {
-                Vec::new()
-            };
-            if out.insert((r.document_id.clone(), page), tokens).is_some() {
+        // The independent fixture uses zero-based physical page indexes while
+        // LayoutDocument conserves the donors' one-based page identity.
+        for fixture_page in r.page_ordinals {
+            let document_page = fixture_page + 1;
+            let tokens = r
+                .token_receipts
+                .iter()
+                .filter(|token| token.page_ordinal == fixture_page)
+                .cloned()
+                .collect();
+            if out
+                .insert((r.document_id.clone(), document_page), tokens)
+                .is_some()
+            {
                 return Err("duplicate oracle page".into());
             }
         }
@@ -373,13 +394,15 @@ fn measure(
     usize,
     usize,
     usize,
+    usize,
     Option<usize>,
     Option<usize>,
 ) {
     let mut spans = 0;
     let mut valid = 0;
     let mut reordered = 0;
-    let mut receipts = 0;
+    let mut page_receipts = 0;
+    let mut token_receipts = 0;
     let mut bbox = 0;
     let mut inv = 0;
     let mut expected = 0;
@@ -387,7 +410,8 @@ fn measure(
     for p in &doc.pages {
         let mut prev = None;
         if let Some(rows) = oracle.get(&(doc.document_id.clone(), p.page_ordinal)) {
-            receipts += rows.len();
+            page_receipts += 1;
+            token_receipts += rows.len();
             expected += rows.len();
             seen_pages += 1;
         }
@@ -402,7 +426,7 @@ fn measure(
             }
             prev = Some(t.source_ordinal);
             if let Some(rows) = oracle.get(&(doc.document_id.clone(), p.page_ordinal))
-                && let Some(o) = rows.get(t.token_ordinal as usize)
+                && let Some(o) = rows.iter().find(|row| row.token_ordinal == t.token_ordinal)
             {
                 let b = [t.bbox.x_min, t.bbox.y_min, t.bbox.x_max, t.bbox.y_max];
                 if b.iter()
@@ -421,7 +445,8 @@ fn measure(
         expected.saturating_sub(doc.pages.iter().map(|p| p.tokens.len()).sum()),
         0,
         reordered,
-        receipts,
+        page_receipts,
+        token_receipts,
         if seen_pages > 0 { Some(inv) } else { None },
         if seen_pages > 0 { Some(bbox) } else { None },
     )
@@ -441,7 +466,8 @@ fn run_unit(
     match result {
         Ok(doc) => {
             let tokens = doc.pages.iter().map(|p| p.tokens.len()).sum();
-            let (spans, valid, lost, extra, reordered, receipts, inv, bbox) = measure(&doc, oracle);
+            let (spans, valid, lost, extra, reordered, receipts, token_receipts, inv, bbox) =
+                measure(&doc, oracle);
             let hash = doc.digest().ok();
             Outcome {
                 ordinal: u.ordinal,
@@ -466,6 +492,7 @@ fn run_unit(
                 duplicate_tokens: 0,
                 reordered_tokens: reordered,
                 oracle_receipts: receipts,
+                oracle_token_receipts: token_receipts,
                 oracle_order_inversions: inv,
                 oracle_bbox_mismatches: bbox,
                 semantic_hash: hash,
@@ -494,6 +521,7 @@ fn run_unit(
             duplicate_tokens: 0,
             reordered_tokens: 0,
             oracle_receipts: 0,
+            oracle_token_receipts: 0,
             oracle_order_inversions: None,
             oracle_bbox_mismatches: None,
             semantic_hash: None,
@@ -566,7 +594,7 @@ fn make_report(
                 })
         })
         && total_lane_pages == m.corpus.page_denominator * REQUIRED_LANES.len();
-    let hard: Vec<String> = outcomes
+    let mut hard: Vec<String> = outcomes
         .iter()
         .filter(|o| o.status != "ok")
         .map(|o| {
@@ -578,12 +606,38 @@ fn make_report(
             )
         })
         .collect();
+    for outcome in outcomes.iter().filter(|o| o.status == "ok") {
+        if outcome.lost_tokens > 0 || outcome.extra_tokens > 0 || outcome.duplicate_tokens > 0 {
+            hard.push(format!(
+                "{}:{}:conservation:{}:{}:{}",
+                outcome.document_id,
+                outcome.lane,
+                outcome.lost_tokens,
+                outcome.extra_tokens,
+                outcome.duplicate_tokens
+            ));
+        }
+        if outcome.oracle_receipts != outcome.expected_pages {
+            hard.push(format!(
+                "{}:{}:oracle_pages:{}/{}",
+                outcome.document_id, outcome.lane, outcome.oracle_receipts, outcome.expected_pages
+            ));
+        }
+    }
     let conservation = outcomes.iter().all(|o| {
-        o.status == "ok" && o.coordinate_coverage == "complete" && o.duplicate_tokens == 0
+        o.status == "ok"
+            && o.coordinate_coverage == "complete"
+            && o.lost_tokens == 0
+            && o.extra_tokens == 0
+            && o.duplicate_tokens == 0
     });
-    let oracle_complete = outcomes
-        .iter()
-        .all(|o| o.status != "ok" || o.oracle_receipts > 0);
+    let oracle_complete = m.oracle.is_some()
+        && outcomes.iter().all(|o| {
+            o.status == "ok"
+                && o.oracle_receipts == o.expected_pages
+                && o.oracle_order_inversions.is_some()
+                && o.oracle_bbox_mismatches.is_some()
+        });
     let gate = Gate {
         exact_same_n: outcomes.len() == total,
         exact_unique_unit_keys: exact_unique,
@@ -852,6 +906,10 @@ fn main() -> Result<(), String> {
             .copied()
             .unwrap_or(0)
     };
+    let throughput = outcomes
+        .iter()
+        .filter_map(|outcome| outcome.throughput_tokens_per_sec)
+        .sum();
     let report = make_report(
         &m,
         &mf,
@@ -871,7 +929,7 @@ fn main() -> Result<(), String> {
             },
             latency_p50_ms: pctl(0.5),
             latency_p95_ms: pctl(0.95),
-            throughput_tokens_per_sec: 0,
+            throughput_tokens_per_sec: throughput,
         },
         semantic_replays_equal,
     );
@@ -907,6 +965,7 @@ struct SemanticReceipt<'a> {
     duplicate_tokens: usize,
     reordered_tokens: usize,
     oracle_receipts: usize,
+    oracle_token_receipts: usize,
     oracle_order_inversions: &'a Option<usize>,
     oracle_bbox_mismatches: &'a Option<usize>,
 }
@@ -932,6 +991,7 @@ fn semantic_signature(outcomes: &[Outcome]) -> String {
             duplicate_tokens: o.duplicate_tokens,
             reordered_tokens: o.reordered_tokens,
             oracle_receipts: o.oracle_receipts,
+            oracle_token_receipts: o.oracle_token_receipts,
             oracle_order_inversions: &o.oracle_order_inversions,
             oracle_bbox_mismatches: &o.oracle_bbox_mismatches,
         })
@@ -952,13 +1012,13 @@ mod tests {
                 corpus_n: 0,
                 page_denominator: 0,
                 documents: vec![],
-                oracle: None,
             },
             lanes: LaneConfig {
                 required: REQUIRED_LANES.iter().map(|x| x.to_string()).collect(),
                 same_input: true,
                 all_lanes_required: true,
             },
+            oracle: None,
         };
         assert_eq!(fingerprint(&m, &[]), fingerprint(&m, &[]));
         assert_eq!(REQUIRED_LANES.len(), 3);

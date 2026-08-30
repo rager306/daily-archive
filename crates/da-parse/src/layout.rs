@@ -11,7 +11,7 @@ use std::fmt;
 pub const LAYOUT_SCHEMA_VERSION: u16 = 1;
 const MAX_DOCUMENT_ID: usize = 256;
 const MAX_PROVIDER_FIELD: usize = 128;
-const MAX_TOKENS: usize = 10_000;
+const MAX_TOKENS: usize = 100_000;
 const MAX_PAGES: usize = 10_000;
 const MAX_SPAN: u32 = 16 * 1024 * 1024;
 
