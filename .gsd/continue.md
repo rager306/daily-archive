@@ -69,6 +69,27 @@ S13 predecessor: sha256 59377965ae2509fc6ed879baebe86ca5f55a21a4ab25d1f2d7b6a450
 3 documents · 3 lanes · 202 pages/lane · 606 total lane-pages · 9 base outcomes
 ```
 
+
+## ⚠️ READ FIRST — constraints for the T05 verify stage (run #4)
+
+- **NEVER rerun the canonical measurement**: `layout_bakeoff --manifest
+  data/parse/layout_bakeoff.yaml --report artifacts/parse_compat/layout_bakeoff.json`
+  is FORBIDDEN (D313 quota consumed; D314). The canonical artifact
+  (sha256 bce56fe5ab62aefb606a2dfdef970a79fa4fcc3c62bb7437fde60e3abebae72e,
+  gate candidate_evidence_complete, replays_equal=true) is committed at
+  f2a23c440 and was restored after run #3 mistakenly overwrote it. Any run
+  that rewrites this file must be treated as a defect.
+- **Test order matters**: `layout_bakeoff_test` needs the prebuilt runner.
+  Run `cargo build -p da-cli --features pdf-layout --example layout_bakeoff`
+  FIRST, then `LAYOUT_BAKEOFF_BIN=/root/daily-archive/target/debug/examples/layout_bakeoff
+  cargo test -p da-cli --features pdf-layout --test layout_bakeoff_test -- --test-threads=1`.
+  "prebuilt runner missing" means the build step was skipped, not a code bug.
+- **T05 is STAGED** (attempt 53d7a6ae, result e9f5d3d6, nextStage=verify).
+  Do the host verification ONLY: read-only artifact checks
+  (`node .gsd/exec/t05-verify.mjs` → 12/12) + summary quality, then finalize.
+  Evidence ref to publish: `gsd_exec f6e2aba0-3453-4ab2-8d0c-f64b9cfa7c79`.
+  No promotion/selection language anywhere.
+
 ## Required next action (headless Luna auto)
 
 The locked auto must NOT rerun measurements (D313 quota consumed; replays
