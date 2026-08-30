@@ -556,7 +556,6 @@ fn measure(
         // one page beyond its first occurrence. Defined from the produced
         // document alone, so the counter is observable even without oracle rows.
         let mut seen_ordinals = std::collections::BTreeSet::new();
-        let mut matched_on_page = 0usize;
         for t in &p.tokens {
             if !seen_ordinals.insert(t.token_ordinal) {
                 duplicates += 1;
@@ -579,7 +578,6 @@ fn measure(
             if let Some(rows) = oracle.get(&(doc.document_id.clone(), p.page_ordinal))
                 && let Some(o) = rows.iter().find(|row| row.token_ordinal == t.token_ordinal)
             {
-                matched_on_page += 1;
                 let b = [t.bbox.x_min, t.bbox.y_min, t.bbox.x_max, t.bbox.y_max];
                 if b.iter()
                     .zip(o.bbox_72dpi_top_left)
@@ -590,9 +588,14 @@ fn measure(
                 }
             }
         }
-        // Extra tokens: produced tokens the oracle does not match on that
-        // page. On pages without oracle rows every produced token is extra.
-        extra += p.tokens.len().saturating_sub(matched_on_page);
+        // Extra tokens are a PAGE-TOPOLOGY signal (D312): tokens produced on
+        // pages the oracle does not define. Token-level surplus on known
+        // pages is canary-diagnostic (sparse oracle), never a conservation
+        // violation, and stays visible through the bbox/digest mismatch and
+        // duplicate counters instead.
+        if !oracle.contains_key(&(doc.document_id.clone(), p.page_ordinal)) {
+            extra += p.tokens.len();
+        }
     }
     (
         spans,
