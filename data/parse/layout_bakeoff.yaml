@@ -70,3 +70,85 @@ acceptance:
   promoted_state: forbidden
   no_silent_skips: true
   checksum_and_denominator_drift: fail_visible
+
+# S14: bounded CPU/SMP is additive candidate evidence. This block is the
+# single DATA authority for topology, admission, memory, measurements and
+# optimization verdicts; it never changes the production layout stage.
+cpu_smp_candidate:
+  schema_version: cpu-smp-candidate.v1
+  candidate_id: da-cli.layout_cpu_smp
+  observation_mode: benchmark_only
+  production_route: stage.pdfalto_layout
+  production_route_state: fallback
+  topology:
+    source: linux_allowed_cpu_set_intersected_with_sysfs_package_core
+    allowed_cpu_set: '/proc/self/status: Cpus_allowed_list'
+    sysfs_identity: '/sys/devices/system/cpu/cpuN/topology/{physical_package_id,core_id}'
+    identity_key: physical_package_id_and_core_id
+    unsupported_outcome: topology_unavailable
+    logical_cpu_fallback: forbidden
+    numa_claim: forbidden
+    hostname_or_physical_paths_in_report: forbidden
+  execution:
+    scope: invocation_private
+    workers: positive_integer
+    worker_matrix: 1..=physical_core_cap
+    requested_above_cap: fail_before_spawn
+    silent_clamp: forbidden
+    max_in_flight: positive_integer
+    input_queue_capacity: positive_integer_bounded
+    result_queue_capacity: positive_integer_bounded
+    full_queue_behavior: backpressure
+    drop_on_full: forbidden
+    global_pool: forbidden
+    immutable_shared_source: required
+    per_worker_scratch: bounded_private_reusable
+    scratch_reset_accounting: required
+    unsafe_project_code: forbidden
+  terminal_receipts:
+    admitted_equals_terminal: required
+    exactly_one_per_admitted_unit: required
+    duplicate_or_missing: hard_failure
+    worker_panic: typed_coordinator_failure
+    channel_closure: typed_coordinator_failure
+    interruption: typed_coordinator_failure
+    failure_vocabulary: [topology_unavailable, invalid_config, over_core_cap, worker_panic, channel_closed, interrupted, semantic_mismatch]
+  denominators:
+    acceptance:
+      corpus_n: 3
+      lanes_n: 3
+      pages_per_lane: 202
+      total_lane_pages: 606
+      fixed: true
+    benchmark:
+      repetitions: positive_integer
+      separate_from_acceptance: true
+      pooled_with_acceptance: forbidden
+  metrics:
+    required: [p50_ms, p95_ms, p99_ms, throughput_units_per_second, process_rss_bytes, allocation_or_private_capacity_bytes, queue_wait_ms, in_flight, input_queue_high_water, result_queue_high_water]
+    cpu_only_separate_from_subprocess_io: required
+    per_worker_terminal_counts: required
+    per_lane_metrics: required
+  breakpoints:
+    verdicts: [not_observed, saturation, first_regression, queue_pressure, memory_pressure, inconclusive]
+    closed: true
+    data_defined: true
+    production_default: forbidden
+  optimization:
+    arena_pattern_evaluation: safe_offset_bounded_reuse_only
+    evaluated_patterns: [safe_offset_bounded_reuse, successful_admission_accounting]
+    rejected_patterns: [unsafe_bump_arena, fake_numa_binding, global_pool, drop_on_full_queue, pending_before_push_accounting]
+    simd_state: [not_applicable, measured_rejected, measured_retained]
+    simd_selection: forbidden
+    safe_rust_only: true
+    scalar_oracle: required
+    retained_requires_data_thresholds: true
+  redaction:
+    allowed: [digests, counters, timings, bounded_status, topology_digest]
+    forbidden: [raw_pdf, raw_text, raw_tei, images, token_text, executable, physical_path, hostname, topology_path]
+  promotion:
+    state: candidate
+    selected: forbidden
+    promoted: forbidden
+    auto_promote: forbidden
+    rollback_target: java-grobid-http@0.9.0-crf

@@ -445,6 +445,68 @@ cache:
   mode_changes_performance_not_semantics: true
   historical_identities_readable: true
 
+# S14: bounded SMP candidate evidence remains in this comparison ledger; it is
+# not a second report authority and cannot promote or select a production lane.
+cpu_smp_candidate:
+  schema_version: cpu-smp-candidate.v1
+  manifest_binding: data/parse/layout_bakeoff.yaml
+  requirement_ids: [R085, R106, R109, R113, R117]
+  topology:
+    source: linux_allowed_cpu_set_intersected_with_sysfs_package_core
+    identity: physical_package_id_and_core_id
+    unavailable_state: topology_unavailable
+    logical_cpu_substitution: forbidden
+    numa_claim: forbidden
+  execution:
+    scope: invocation_private
+    worker_matrix: 1..=physical_core_cap
+    requested_above_cap: fail_before_spawn
+    silent_clamp: forbidden
+    input_queue: bounded
+    result_queue: bounded
+    full_queue: backpressure
+    drop_on_full: forbidden
+    global_pool: forbidden
+    private_worker_scratch: bounded_reusable
+    unsafe_project_code: forbidden
+  denominators:
+    acceptance:
+      corpus_n: 3
+      lanes_n: 3
+      pages_per_lane: 202
+      total_lane_pages: 606
+      fixed: true
+    benchmark:
+      repetitions: positive_integer
+      separate_from_acceptance: true
+      pooled: forbidden
+  terminal_receipts:
+    admitted_equals_terminal: required
+    exactly_one_per_admitted_unit: required
+    failure_vocabulary: [topology_unavailable, invalid_config, over_core_cap, worker_panic, channel_closed, interrupted, semantic_mismatch]
+  metrics:
+    required: [p50_ms, p95_ms, p99_ms, throughput_units_per_second, process_rss_bytes, allocation_or_private_capacity_bytes, queue_wait_ms, input_queue_high_water, result_queue_high_water]
+    per_worker_terminal_counts: required
+    per_lane: required
+    cpu_only_excludes_subprocess_io: required
+  breakpoints:
+    verdicts: [not_observed, saturation, first_regression, queue_pressure, memory_pressure, inconclusive]
+    closed: true
+    data_defined: true
+  optimization:
+    states: [not_applicable, measured_rejected, measured_retained]
+    safe_rust_only: true
+    scalar_oracle: required
+    selection: forbidden
+  redaction:
+    forbidden: [raw_pdf, raw_text, raw_tei, images, token_text, executable, physical_path, hostname, topology_path]
+  promotion:
+    state: candidate
+    selected: forbidden
+    promoted: forbidden
+    auto_promote: forbidden
+    rollback_target: java-grobid-http@0.9.0-crf
+
 observability:
   report_path: artifacts/parse_compat/
   first_emitter: crates/da-cli/examples/parse_compat_baseline.rs
