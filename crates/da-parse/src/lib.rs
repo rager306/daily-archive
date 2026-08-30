@@ -32,6 +32,7 @@ mod conservation;
 mod envelope;
 mod http;
 mod ir;
+mod layout;
 mod lift;
 mod native_affiliation;
 mod native_citation;
@@ -72,6 +73,10 @@ pub use conservation::{
 pub use envelope::{TeiEnvelope, TeiIdentity, TeiResultIdentity};
 pub use http::{GrobidHttpBackend, GrobidParser};
 pub use ir::TeiParseIr;
+pub use layout::{
+    LAYOUT_SCHEMA_VERSION, LayoutBBox, LayoutDocument, LayoutError, LayoutPage, LayoutProvider,
+    LayoutSpan, LayoutSpanAbsence, LayoutStyleHints, LayoutToken, LayoutTokenKind,
+};
 pub use lift::TeiLifter;
 pub use native_affiliation::{
     AffiliationComponentKind, AffiliationSpan, NATIVE_AFFILIATION_INPUT_BYTE_CAP,
