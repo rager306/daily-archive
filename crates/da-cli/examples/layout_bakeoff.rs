@@ -5,7 +5,10 @@ use da_adapters::{
     LayoutDonor, LayoutDonorError, LayoutDonorLimits, PdfInspectorLayoutDonor, PdfaltoLayoutDonor,
     XyCutLayoutDonor,
 };
-use da_cli::layout_runtime::{RuntimeConfig, Terminal, detect_system_topology, run_bounded};
+use da_cli::layout_runtime::{
+    CpuKernelCharacterization, RuntimeConfig, Terminal, characterize_cpu_kernel,
+    detect_system_topology, run_bounded,
+};
 use da_parse::LayoutDocument;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -89,6 +92,7 @@ struct Report {
     same_input: bool,
     outcomes: Vec<Outcome>,
     metrics: Metrics,
+    optimization: CpuKernelCharacterization,
     gate: Gate,
     redaction: Redaction,
 }
@@ -131,6 +135,7 @@ struct Metrics {
     peak_rss_status: String,
     latency_p50_ms: u128,
     latency_p95_ms: u128,
+    latency_p99_ms: u128,
     throughput_tokens_per_sec: u64,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -154,6 +159,10 @@ struct Redaction {
     tei_xml: bool,
     page_images: bool,
     physical_paths: bool,
+    token_text: bool,
+    executable: bool,
+    hostname: bool,
+    topology_path: bool,
 }
 #[derive(Clone)]
 struct Unit {
@@ -556,6 +565,7 @@ fn make_report(
     df: &str,
     outcomes: Vec<Outcome>,
     metrics: Metrics,
+    optimization: CpuKernelCharacterization,
     semantic_replays_equal: bool,
 ) -> Report {
     let total = m.corpus.corpus_n * REQUIRED_LANES.len();
@@ -673,6 +683,7 @@ fn make_report(
         same_input: true,
         outcomes,
         metrics,
+        optimization,
         gate,
         redaction: Redaction {
             raw_pdf: false,
@@ -680,6 +691,10 @@ fn make_report(
             tei_xml: false,
             page_images: false,
             physical_paths: false,
+            token_text: false,
+            executable: false,
+            hostname: false,
+            topology_path: false,
         },
     }
 }
@@ -831,6 +846,18 @@ fn main() -> Result<(), String> {
         .iter()
         .filter_map(|outcome| outcome.throughput_tokens_per_sec)
         .sum();
+    // Characterize only the in-process receipt/digest kernel. Donor
+    // subprocess and filesystem time is intentionally excluded from this
+    // optimization evidence and remains in the lane outcomes above.
+    let characterization_input = semantic_signature(&outcomes).into_bytes();
+    let work_units = outcomes.len() as u64;
+    let optimization = characterize_cpu_kernel(1, 5, 64 * 1024, work_units, move |scratch| {
+        let size = characterization_input.len();
+        let slot = scratch.allocate(size)?;
+        slot.copy_from_slice(&characterization_input);
+        Ok(slot.to_vec())
+    })
+    .map_err(|e| format!("CPU characterization failed: {e}"))?;
     let report = make_report(
         &m,
         &mf,
@@ -850,8 +877,10 @@ fn main() -> Result<(), String> {
             },
             latency_p50_ms: pctl(0.5),
             latency_p95_ms: pctl(0.95),
+            latency_p99_ms: pctl(0.99),
             throughput_tokens_per_sec: throughput,
         },
+        optimization,
         semantic_replays_equal,
     );
     atomic_write(

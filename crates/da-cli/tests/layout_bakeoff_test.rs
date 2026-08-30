@@ -130,6 +130,22 @@ fn bakeoff_emits_one_redacted_receipt_per_lane_and_replays_semantics() {
     assert_eq!(first_report["redaction"]["raw_text"], false);
     assert_eq!(first_report["redaction"]["tei_xml"], false);
     assert_eq!(first_report["redaction"]["physical_paths"], false);
+    assert_eq!(first_report["redaction"]["token_text"], false);
+    assert_eq!(first_report["redaction"]["executable"], false);
+    assert_eq!(first_report["redaction"]["hostname"], false);
+    assert_eq!(first_report["redaction"]["topology_path"], false);
+    assert_eq!(first_report["optimization"]["cpu_only"], true);
+    assert_eq!(
+        first_report["optimization"]["subprocess_io_included"],
+        false
+    );
+    assert_eq!(
+        first_report["optimization"]["optimization_state"],
+        "not_applicable"
+    );
+    assert_eq!(first_report["optimization"]["selection_forbidden"], true);
+    assert!(first_report["optimization"]["scalar_oracle_digest"].is_string());
+    assert!(first_report["optimization"]["semantic_digest"].is_string());
     assert!(
         first_report
             .to_string()

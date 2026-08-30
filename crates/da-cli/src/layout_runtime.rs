@@ -4,6 +4,7 @@
 //! routes remain outside it. All mutable scratch belongs to one worker and all
 //! channels are bounded, so admission applies backpressure rather than dropping.
 
+use serde::{Deserialize, Serialize};
 use sha2::Digest;
 use std::collections::BTreeSet;
 use std::fmt;
@@ -240,6 +241,159 @@ impl ScratchArena {
     }
     pub fn reset(&mut self) {
         self.offset = 0;
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OptimizationState {
+    NotApplicable,
+    MeasuredRejected,
+    MeasuredRetained,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct KernelPercentiles {
+    pub p50_ms: u128,
+    pub p95_ms: u128,
+    pub p99_ms: u128,
+}
+
+/// Redacted, CPU-only characterization of an in-process kernel. The kernel
+/// returns receipt bytes, never document text; the digest is independently
+/// computed here so worker/report code cannot manufacture the oracle.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CpuKernelCharacterization {
+    pub warmup_iterations: usize,
+    pub repetitions: usize,
+    pub samples: usize,
+    pub percentiles: KernelPercentiles,
+    pub throughput_units_per_second: u64,
+    pub allocation_or_private_capacity_bytes: usize,
+    pub private_scratch_high_water_bytes: usize,
+    pub semantic_digest: String,
+    pub scalar_oracle_digest: String,
+    pub cpu_only: bool,
+    pub subprocess_io_included: bool,
+    pub optimization_state: OptimizationState,
+    pub optimization_reason: String,
+    pub selection_forbidden: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CharacterizationError {
+    NonPositive(&'static str),
+    ScratchExhausted(ScratchError),
+    SemanticMismatch { expected: String, observed: String },
+}
+impl fmt::Display for CharacterizationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "invalid CPU characterization: {self:?}")
+    }
+}
+impl std::error::Error for CharacterizationError {}
+
+/// Run a deterministic scalar CPU kernel after warmup. Timing is observational
+/// evidence only; it never chooses a production route. `work_units` is kept
+/// separate from acceptance denominators and is used solely for throughput.
+pub fn characterize_cpu_kernel<F>(
+    warmup_iterations: usize,
+    repetitions: usize,
+    scratch_capacity: usize,
+    work_units: u64,
+    mut scalar_kernel: F,
+) -> Result<CpuKernelCharacterization, CharacterizationError>
+where
+    F: FnMut(&mut ScratchArena) -> Result<Vec<u8>, ScratchError>,
+{
+    if repetitions == 0 {
+        return Err(CharacterizationError::NonPositive("repetitions"));
+    }
+    if scratch_capacity == 0 {
+        return Err(CharacterizationError::NonPositive("scratch_capacity"));
+    }
+    let mut scratch = ScratchArena::new(scratch_capacity)
+        .map_err(|_| CharacterizationError::NonPositive("scratch_capacity"))?;
+    for _ in 0..warmup_iterations {
+        scratch.reset();
+        scalar_kernel(&mut scratch).map_err(CharacterizationError::ScratchExhausted)?;
+    }
+    let mut samples = Vec::with_capacity(repetitions);
+    let mut oracle: Option<String> = None;
+    let mut observed_capacity = 0;
+    for _ in 0..repetitions {
+        scratch.reset();
+        let started = std::time::Instant::now();
+        let receipt =
+            scalar_kernel(&mut scratch).map_err(CharacterizationError::ScratchExhausted)?;
+        let elapsed = started.elapsed().as_millis();
+        let digest = format!("sha256:{:x}", sha2::Sha256::digest(&receipt));
+        if let Some(expected) = &oracle {
+            if expected != &digest {
+                return Err(CharacterizationError::SemanticMismatch {
+                    expected: expected.clone(),
+                    observed: digest,
+                });
+            }
+        } else {
+            oracle = Some(digest);
+        }
+        observed_capacity = observed_capacity.max(scratch.high_water());
+        samples.push(elapsed);
+    }
+    samples.sort_unstable();
+    let percentile = |p: usize| samples[((samples.len() - 1) * p) / 100];
+    let p50 = percentile(50);
+    let p95 = percentile(95);
+    let p99 = percentile(99);
+    let total_ms: u128 = samples.iter().sum();
+    let throughput = if total_ms == 0 {
+        0
+    } else {
+        ((work_units as u128 * repetitions as u128 * 1000) / total_ms).min(u64::MAX as u128) as u64
+    };
+    let digest = oracle.expect("repetitions guarantees an oracle");
+    Ok(CpuKernelCharacterization {
+        warmup_iterations,
+        repetitions,
+        samples: samples.len(),
+        percentiles: KernelPercentiles { p50_ms: p50, p95_ms: p95, p99_ms: p99 },
+        throughput_units_per_second: throughput,
+        allocation_or_private_capacity_bytes: scratch.capacity(),
+        private_scratch_high_water_bytes: observed_capacity,
+        semantic_digest: digest.clone(),
+        scalar_oracle_digest: digest,
+        cpu_only: true,
+        subprocess_io_included: false,
+        optimization_state: OptimizationState::NotApplicable,
+        optimization_reason: "no dense numeric hot kernel was selected; scalar CPU path retained as measurement oracle".into(),
+        selection_forbidden: true,
+    })
+}
+
+/// Apply DATA-gated SIMD disposition without silently selecting a candidate.
+pub fn gate_simd_candidate(
+    dense_numeric_kernel_found: bool,
+    semantic_equal: bool,
+    repeated_cpu_improvement: bool,
+    full_pipeline_p95_regressed: bool,
+) -> (OptimizationState, &'static str) {
+    if !dense_numeric_kernel_found {
+        return (
+            OptimizationState::NotApplicable,
+            "no dense numeric hot kernel measured",
+        );
+    }
+    if semantic_equal && repeated_cpu_improvement && !full_pipeline_p95_regressed {
+        (
+            OptimizationState::MeasuredRetained,
+            "safe candidate met repeated CPU and full-pipeline thresholds",
+        )
+    } else {
+        (
+            OptimizationState::MeasuredRejected,
+            "candidate failed semantic, repeatability, or full-pipeline regression gate",
+        )
     }
 }
 
@@ -534,6 +688,92 @@ mod tests {
         assert_eq!(report.admitted, 4);
         assert_eq!(report.terminals.len(), 4);
         assert_eq!(report.private_scratch_high_water, vec![3, 3]);
+    }
+
+    #[test]
+    fn cpu_characterization_is_scalar_only_repeated_and_redacted() {
+        let report = characterize_cpu_kernel(2, 5, 16, 4, |scratch| {
+            let slot = scratch.allocate(4)?;
+            slot.copy_from_slice(&[1, 2, 3, 4]);
+            Ok(slot.to_vec())
+        })
+        .unwrap();
+        assert_eq!(report.warmup_iterations, 2);
+        assert_eq!(report.repetitions, 5);
+        assert_eq!(report.samples, 5);
+        assert_eq!(report.scalar_oracle_digest, report.semantic_digest);
+        assert_eq!(report.private_scratch_high_water_bytes, 4);
+        assert_eq!(report.allocation_or_private_capacity_bytes, 16);
+        assert!(report.cpu_only);
+        assert!(!report.subprocess_io_included);
+        assert_eq!(report.optimization_state, OptimizationState::NotApplicable);
+        assert!(report.selection_forbidden);
+        assert!(report.percentiles.p50_ms <= report.percentiles.p95_ms);
+        assert!(report.percentiles.p95_ms <= report.percentiles.p99_ms);
+    }
+
+    #[test]
+    fn cpu_characterization_rejects_semantic_drift_and_invalid_bounds() {
+        assert!(matches!(
+            characterize_cpu_kernel(0, 0, 8, 1, |_| Ok(vec![1])),
+            Err(CharacterizationError::NonPositive("repetitions"))
+        ));
+        assert!(matches!(
+            characterize_cpu_kernel(0, 1, 0, 1, |_| Ok(vec![1])),
+            Err(CharacterizationError::NonPositive("scratch_capacity"))
+        ));
+        let mut n = 0;
+        assert!(matches!(
+            characterize_cpu_kernel(0, 2, 8, 1, |_| {
+                n += 1;
+                Ok(vec![n])
+            }),
+            Err(CharacterizationError::SemanticMismatch { .. })
+        ));
+        assert!(matches!(
+            characterize_cpu_kernel(0, 1, 2, 1, |scratch| {
+                scratch.allocate(3).map(|_| vec![1])
+            }),
+            Err(CharacterizationError::ScratchExhausted(_))
+        ));
+    }
+
+    #[test]
+    fn simd_gate_is_closed_and_never_selects_without_all_evidence() {
+        assert_eq!(
+            gate_simd_candidate(false, true, true, false),
+            (
+                OptimizationState::NotApplicable,
+                "no dense numeric hot kernel measured"
+            )
+        );
+        assert_eq!(
+            gate_simd_candidate(true, true, false, false).0,
+            OptimizationState::MeasuredRejected
+        );
+        assert_eq!(
+            gate_simd_candidate(true, true, true, true).0,
+            OptimizationState::MeasuredRejected
+        );
+        assert_eq!(
+            gate_simd_candidate(true, true, true, false).0,
+            OptimizationState::MeasuredRetained
+        );
+    }
+
+    #[test]
+    fn characterization_types_roundtrip_without_selection_or_raw_payload() {
+        let report = characterize_cpu_kernel(0, 1, 8, 1, |scratch| {
+            scratch.allocate(2).unwrap().copy_from_slice(&[7, 9]);
+            Ok(vec![7, 9])
+        })
+        .unwrap();
+        let json = serde_json::to_string(&report).unwrap();
+        assert!(json.contains("not_applicable"));
+        assert!(json.contains("selection_forbidden"));
+        assert!(!json.contains("raw_pdf"));
+        let restored: CpuKernelCharacterization = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored, report);
     }
 
     #[test]
