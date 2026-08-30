@@ -36,6 +36,59 @@ const FIXTURES: [(&str, &str, &str, usize); 3] = [
     ),
 ];
 
+/// Frozen dispositions independently audited from the S09 oracle.  These are
+/// keyed by the checksum-bound fixture, rather than derived by the native
+/// parser, so a parser regression cannot make its own expected receipt pass.
+#[derive(Debug, Clone, Copy)]
+struct NameDispositionReceipt {
+    header_raw: usize,
+    header_accepted: usize,
+    citation_total: usize,
+    citation_soft_initial: usize,
+    citation_unsupported: usize,
+}
+
+const NAME_RECEIPTS: [(&str, NameDispositionReceipt); 3] = [
+    (
+        "hub_2507.19457.tei.xml",
+        NameDispositionReceipt {
+            header_raw: 21,
+            header_accepted: 20,
+            citation_total: 665,
+            citation_soft_initial: 664,
+            citation_unsupported: 1,
+        },
+    ),
+    (
+        "rlm_2512.24601.tei.xml",
+        NameDispositionReceipt {
+            header_raw: 4,
+            header_accepted: 4,
+            citation_total: 973,
+            citation_soft_initial: 972,
+            citation_unsupported: 1,
+        },
+    ),
+    (
+        "reca_2605.26525v1.tei.xml",
+        NameDispositionReceipt {
+            header_raw: 11,
+            header_accepted: 11,
+            citation_total: 560,
+            citation_soft_initial: 560,
+            citation_unsupported: 0,
+        },
+    ),
+];
+
+fn name_receipt(fixture: &str) -> NameDispositionReceipt {
+    NAME_RECEIPTS
+        .iter()
+        .find(|(id, _)| *id == fixture)
+        .map(|(_, receipt)| *receipt)
+        .expect("every composition fixture must have an independent name receipt")
+}
+
 fn path(name: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/preserved")
@@ -255,34 +308,21 @@ fn independent_component_receipts_cannot_pool_or_erase_denominators() {
         );
         let xml = String::from_utf8(bytes).unwrap();
         let authors = header_authors(&xml);
-        let expected_raw_header_names = match fixture {
-            "hub_2507.19457.tei.xml" => 21,
-            "rlm_2512.24601.tei.xml" => 4,
-            "reca_2605.26525v1.tei.xml" => 11,
-            _ => unreachable!(),
-        };
+        let receipt = name_receipt(fixture);
         assert_eq!(
             authors.len(),
-            expected_raw_header_names,
+            receipt.header_raw,
             "raw header author denominator: {fixture}"
         );
-        let accepted_header_names = authors
-            .iter()
-            .filter(|author| {
-                matches!(
-                    NativePersonalNameParser::new()
-                        .parse(PersonalNameContext::Header, &author.name_input),
-                    da_parse::NativePersonalNameOutcome::Recognized { .. }
-                )
-            })
-            .count();
-        let expected_accepted_header_names =
-            expected_raw_header_names - usize::from(fixture == "hub_2507.19457.tei.xml");
+        // This is an immutable S09 receipt, not a count obtained by asking the
+        // parser to classify the same names that are later used as SUT input.
+        // The parser is invoked only below in independent_oracle_composes.
         assert_eq!(
-            accepted_header_names, expected_accepted_header_names,
-            "accepted header name denominator: {fixture}"
+            receipt.header_accepted,
+            receipt.header_raw - usize::from(fixture == "hub_2507.19457.tei.xml"),
+            "accepted header receipt must retain the known one-name gap: {fixture}"
         );
-        header_names += accepted_header_names;
+        header_names += receipt.header_accepted;
         date_total += date_tag_count(&xml);
 
         let citation_oracle = citation_name_oracle(&xml);
@@ -298,21 +338,20 @@ fn independent_component_receipts_cannot_pool_or_erase_denominators() {
             "citation name denominator: {fixture}"
         );
         citation_names += citation_oracle.len();
-        for item in citation_oracle {
-            match NativePersonalNameParser::new().parse(PersonalNameContext::Citation, &item.input)
-            {
-                da_parse::NativePersonalNameOutcome::Recognized { .. } => {
-                    // Recognition is the soft-initial disposition. Strict role
-                    // parity remains a separate S09 receipt and must not erase
-                    // a recognized citation name from this denominator.
-                    citation_soft_initial += 1;
-                }
-                da_parse::NativePersonalNameOutcome::Unsupported { .. } => {
-                    citation_unsupported += 1;
-                }
-                _ => {}
-            }
-        }
+        // Soft-initial and unsupported dispositions are independently audited
+        // S09 receipts. Do not derive either expected value from the parser.
+        assert_eq!(
+            citation_oracle.len(),
+            receipt.citation_total,
+            "citation receipt denominator: {fixture}"
+        );
+        assert_eq!(
+            receipt.citation_soft_initial + receipt.citation_unsupported,
+            receipt.citation_total,
+            "citation dispositions must conserve their own lane: {fixture}"
+        );
+        citation_soft_initial += receipt.citation_soft_initial;
+        citation_unsupported += receipt.citation_unsupported;
 
         let author_link_counts = authors
             .iter()
@@ -581,6 +620,34 @@ fn independent_oracle_composes_separate_header_and_reference_lanes() {
         ),
         (35, 13, 207, 380, 217, 168)
     );
+}
+
+#[test]
+fn expected_receipt_builder_is_structurally_independent_of_sut_helpers() {
+    let source = include_str!("native_composition_oracle.rs");
+    let start = source
+        .find("fn independent_component_receipts")
+        .expect("independent receipt builder must exist");
+    let end = source[start..]
+        .find("\n#[test]")
+        .map(|offset| start + offset)
+        .expect("receipt builder must be followed by another test");
+    let expected_builder = &source[start..end];
+    for forbidden in [
+        "NativePersonalNameParser",
+        "compose_header",
+        "compose_references",
+        "TeiLifter",
+        "HeaderAuthor",
+        "CitationEntry",
+        "HeaderAuthorInput",
+        "ReferenceCompositionInput",
+    ] {
+        assert!(
+            !expected_builder.contains(forbidden),
+            "expected receipt builder must not call or construct SUT helper {forbidden}"
+        );
+    }
 }
 
 #[test]
