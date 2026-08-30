@@ -1,0 +1,72 @@
+schema_version: layout-bakeoff.v1
+adr_ref: ADR-075
+contract_id: layout-token-donor-bakeoff
+requirement_ids: [R085, R106, R108, R113, R117]
+policy_locks:
+  import_eligible: false
+  auto_promote: forbidden
+  promotion_state: candidate_only
+  graph_mutation: forbidden
+  raw_payloads: forbidden
+corpus:
+  id: s13-same-input-pdf-corpus
+  corpus_n: 3
+  page_denominator: 202
+  source_root: data/sources
+  source_identity_rule: >-
+    arXiv versionless identity is canonical; versioned assets are retained as
+    provenance only when their checksum or declared revision is distinct.
+  documents:
+    - id: hub-2507.19457
+      arxiv_id: 2507.19457
+      revision: v2
+      source_pdf: data/sources/arxiv/cs-cl/2507.19457/source/2507.19457.pdf
+      sha256: ab3a5139bac83f192ad67529368d77b84b0d807e95a8e4fd0daa8d45fd046bec
+      pages: 96
+      page_classes: [two_column, full_width_title, figure_heavy, table_formula, callout, rotation_crop, ocr_risk]
+      supporting_s07_case: reg.tei.hub-bibliography-2507.19457
+    - id: rlm-2512.24601
+      arxiv_id: 2512.24601
+      revision: v3
+      source_pdf: data/sources/arxiv/cs-ai/2512.24601/source/original.pdf
+      sha256: 8567362c22768d9b50d4a4a8d63bb28dda2c2b2051be30d67f70f645170429ca
+      pages: 43
+      page_classes: [two_column, full_width_title, figure_heavy, table_formula, callout, rotation_crop, ocr_risk]
+      supporting_s07_case: reg.tei.rlm-2512.24601
+    - id: reca-2605.26525v1
+      arxiv_id: 2605.26525
+      revision: v1
+      source_pdf: data/sources/arxiv/cs-cv/2605.26525v1/source/2605.26525v1.pdf
+      sha256: a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8
+      pages: 63
+      page_classes: [two_column, full_width_title, figure_heavy, table_formula, callout, rotation_crop, ocr_risk]
+      supporting_s07_case: reg.tei.reca-bibliography-2605.26525
+lanes:
+  required: [pdfalto, pdf_inspector_positioned, raw_positioned, xy_cut_positioned]
+  same_input: true
+  all_lanes_required: true
+  donor_identity_rule: >-
+    Each lane receives the exact source_pdf and source_sha256 above; ordering
+    is separate from extraction and every token remains conserved.
+  unavailable_outcomes: [missing, checksum_mismatch, malformed, unsupported, timeout, nonzero, oversize, encrypted, truncated]
+oracle:
+  fixture: crates/da-parse/tests/fixtures/layout_oracle.yaml
+  independent: true
+  no_donor_helpers: true
+  no_tei_lifter: true
+  fields: [document_id, page_ordinal, token_ordinal, bbox_72dpi_top_left, role, token_digest]
+  forbidden_fields: [raw_text, pdf_bytes, tei_xml, page_image, physical_path]
+  denominator_rule: exactly_one_receipt_per_document_page_lane
+  hard_failures: [same_n_mismatch, missing_receipt, duplicate_ordinal, invalid_bbox, origin_drift, silent_skip]
+supporting_conservation:
+  source: data/parse/regression_cases.yaml
+  cases: [reg.tei.hub-bibliography-2507.19457, reg.tei.rlm-2512.24601, reg.tei.reca-bibliography-2605.26525]
+  not_pdf_truth: true
+  fields: [figures, graphic_coordinates, callouts, tables, formulas]
+acceptance:
+  no_winner_encoded: true
+  promotion_state: candidate
+  selected_state: forbidden
+  promoted_state: forbidden
+  no_silent_skips: true
+  checksum_and_denominator_drift: fail_visible
