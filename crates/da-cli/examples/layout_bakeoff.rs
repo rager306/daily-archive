@@ -92,6 +92,8 @@ struct Report {
     same_input: bool,
     topology: TopologyReport,
     execution: ExecutionEnvelope,
+    #[serde(default)]
+    representative_donor_composition: RepresentativeDonorComposition,
     worker_matrix: Vec<WorkerRow>,
     acceptance_denominator: Denominator,
     benchmark_denominator: Denominator,
@@ -182,6 +184,14 @@ struct ExecutionEnvelope {
     private_scratch_capacity_bytes: usize,
     admission: String,
     cpu_only_excludes_subprocess_io: bool,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+struct RepresentativeDonorComposition {
+    scope: String,
+    worker_counts: Vec<usize>,
+    lanes: Vec<String>,
+    cpu_matrix_excludes_subprocess_io: bool,
+    acceptance_denominator_separate: bool,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct WorkerRow {
@@ -902,6 +912,13 @@ fn make_report(
             private_scratch_capacity_bytes: config.private_scratch_capacity,
             admission: "bounded_backpressure_no_drop".into(),
             cpu_only_excludes_subprocess_io: true,
+        },
+        representative_donor_composition: RepresentativeDonorComposition {
+            scope: "single_configured_invocation".into(),
+            worker_counts: vec![config.workers],
+            lanes: REQUIRED_LANES.iter().map(|lane| (*lane).into()).collect(),
+            cpu_matrix_excludes_subprocess_io: true,
+            acceptance_denominator_separate: true,
         },
         worker_matrix,
         acceptance_denominator: Denominator {

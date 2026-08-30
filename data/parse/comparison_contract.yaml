@@ -469,6 +469,21 @@ cpu_smp_candidate:
     global_pool: forbidden
     private_worker_scratch: bounded_reusable
     unsafe_project_code: forbidden
+  donor_composition:
+    scope: representative_counts_only
+    representative_worker_counts: [1, physical_core_cap]
+    cpu_matrix_excludes_subprocess_io: required
+    acceptance_denominator_separate: required
+  evidence_binding:
+    tested_source_revision: required_sha256
+    clean_tree_assertion: required
+    command_digest: required_sha256
+    runtime_config_fingerprint: required_sha256
+    configuration_fingerprint: required_sha256
+    topology_fingerprint: required_sha256
+    durable_evidence_ref: required
+    plaintext_command: forbidden
+    physical_paths: forbidden
   denominators:
     acceptance:
       corpus_n: 3

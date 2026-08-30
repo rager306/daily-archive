@@ -183,6 +183,18 @@ fn bakeoff_emits_one_redacted_receipt_per_lane_and_replays_semantics() {
             .unwrap()
             .starts_with("sha256:")
     );
+    assert!(binding["durable_evidence_ref"].is_null());
+    let composition = &first_report["representative_donor_composition"];
+    assert_eq!(composition["scope"], "single_configured_invocation");
+    assert_eq!(composition["cpu_matrix_excludes_subprocess_io"], true);
+    assert_eq!(composition["acceptance_denominator_separate"], true);
+    assert_eq!(composition["lanes"].as_array().unwrap().len(), 3);
+    assert_eq!(first_report["acceptance_denominator"]["corpus_n"], 1);
+    assert_eq!(first_report["acceptance_denominator"]["lanes_n"], 3);
+    assert_eq!(
+        first_report["benchmark_denominator"]["pooled_with_acceptance"],
+        false
+    );
     // F02 regression guard: queue/in-flight gauges are runtime observations,
     // never echoes of configured capacities.
     let metrics = &first_report["metrics"];
