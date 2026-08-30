@@ -90,7 +90,7 @@ const FROZEN_SOURCE_HASH: &str =
 /// (date obligations added to the same three regression cases): the byte
 /// identity of the manifest follows each sanctioned DATA edit.
 const FROZEN_CORPUS_HASH: &str =
-    "sha256:ffb5f055074523f40a67ce7d459e530d7ee4cecfdb8c68c9e6b032449b713b1d";
+    "sha256:4efa37384c849e3ab20071f574876afc5cbf26ac9b8ef40e5a09d52c5c93118b";
 /// All three executed S01 cases run under the rich profile.
 const FROZEN_PROFILE_FINGERPRINT: &str = RICH_FP;
 
@@ -1829,7 +1829,143 @@ fn s10_native_affiliation_shadow_stays_outside_cache_and_conservation_identity()
     );
 }
 
-// ───── S11/T05: native citation shadow cannot rotate cache identity ─────
+// ───── S12/T05: composition shadow is additive, redacted, and identity-neutral ─────
+#[test]
+fn s12_native_composition_shadow_stays_top_level_and_quarantined() {
+    let baseline = load_baseline();
+    let shadow = baseline
+        .get("native_header_reference_composition_shadow")
+        .expect("composition evidence must be present as one top-level sibling");
+    assert_eq!(
+        shadow.get("candidate_id").and_then(|v| v.as_str()),
+        Some("da-parse.native_header_reference_composition")
+    );
+    assert_eq!(
+        shadow.get("candidate_version").and_then(|v| v.as_str()),
+        Some("1.0.0")
+    );
+    assert_eq!(
+        shadow
+            .get("outcome_schema_version")
+            .and_then(|v| v.as_str()),
+        Some("da-parse.native-composition.outcome/v1")
+    );
+    assert_eq!(
+        shadow.get("observation_mode").and_then(|v| v.as_str()),
+        Some("shadow")
+    );
+    assert_eq!(
+        shadow.get("promotion_state").and_then(|v| v.as_str()),
+        Some("candidate")
+    );
+    assert_eq!(
+        shadow.get("auto_promote").and_then(|v| v.as_str()),
+        Some("forbidden")
+    );
+    assert_eq!(
+        shadow.get("independently_selectable_lanes"),
+        Some(&json!(["header", "references"]))
+    );
+    assert_eq!(
+        shadow.pointer("/rollback/header").and_then(|v| v.as_str()),
+        Some("java-grobid-http@0.9.0-crf")
+    );
+    assert_eq!(
+        shadow
+            .pointer("/rollback/references")
+            .and_then(|v| v.as_str()),
+        Some("java-grobid-http@0.9.0-crf")
+    );
+
+    for (pointer, expected) in [
+        ("/component_receipts/date/total", 173),
+        ("/component_receipts/header/raw_total", 36),
+        ("/component_receipts/header/accepted_total", 35),
+        ("/component_receipts/header/rejected_or_incomplete", 1),
+        ("/component_receipts/citation_names/total", 2198),
+        ("/component_receipts/citation_names/unsupported_n", 2),
+        ("/component_receipts/affiliation/recognition_total", 13),
+        ("/component_receipts/affiliation/linking_total", 13),
+        ("/component_receipts/affiliation/zero_link_authors", 25),
+        ("/component_receipts/references/total", 207),
+        ("/component_receipts/anchors/total", 380),
+        ("/component_receipts/anchors/targeted", 217),
+        ("/component_receipts/anchors/targetless", 163),
+        ("/component_receipts/anchors/fragmented_adjacency", 168),
+    ] {
+        assert_eq!(
+            shadow.pointer(pointer).and_then(|v| v.as_u64()),
+            Some(expected),
+            "receipt drift at {pointer}"
+        );
+    }
+    assert_eq!(
+        shadow
+            .pointer("/component_receipts/denominator_policy")
+            .and_then(|v| v.as_str()),
+        Some("no_pooling_or_erosion")
+    );
+    assert_eq!(
+        baseline
+            .pointer("/policy_locks/import_eligible")
+            .and_then(|v| v.as_bool()),
+        Some(false)
+    );
+    assert_eq!(
+        baseline
+            .pointer("/policy_locks/graph_mutation")
+            .and_then(|v| v.as_str()),
+        Some("forbidden")
+    );
+    assert_eq!(
+        baseline
+            .pointer("/report_identity/promotion_state")
+            .and_then(|v| v.as_str()),
+        Some("candidate")
+    );
+    assert_eq!(
+        baseline
+            .as_object()
+            .unwrap()
+            .keys()
+            .filter(|k| k.as_str() == "native_header_reference_composition_shadow")
+            .count(),
+        1
+    );
+    for case in baseline_cases(&baseline) {
+        assert!(
+            case.get("native_header_reference_composition_shadow")
+                .is_none()
+        );
+        assert!(case.get("native_composition").is_none());
+    }
+    for banned in [
+        "The title of this article",
+        "raw scholarly paragraph",
+        "<teiHeader>",
+        "Example University",
+        "Alice Smith",
+        "doi:10.",
+        "[1] Reference text",
+    ] {
+        assert!(
+            !shadow.to_string().contains(banned),
+            "composition shadow leaked `{banned}`"
+        );
+    }
+    let key = project_article_stage_key(
+        "reg.tei.hub-bibliography-2507.19457",
+        &"a".repeat(32),
+        &"b".repeat(32),
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+    );
+    assert!(!key.contains("native_composition"));
+    assert_eq!(GrobidProfile::rich().configuration_fingerprint(), RICH_FP);
+    assert_eq!(
+        GrobidProfile::structural().configuration_fingerprint(),
+        STRUCTURAL_FP
+    );
+}
 
 #[test]
 fn s11_native_citation_shadow_stays_outside_cache_identity_and_policy_locks() {

@@ -1845,3 +1845,101 @@ fn native_citation_boundary_scanner_fails_visible_on_synthetic_violations() {
         .is_empty()
     );
 }
+
+// ───── S12/T05: composition remains a quarantined, pure leaf ─────
+
+#[test]
+fn native_composition_is_pure_and_has_independent_entry_points() {
+    const SURFACE: &str = "crates/da-parse/src/native_composition.rs";
+    let text = read_text(SURFACE);
+    assert!(
+        text.len() > 10_000,
+        "composition source unexpectedly truncated"
+    );
+    assert_eq!(
+        import_roots_of(&text),
+        BTreeSet::from(["crate".to_string(), "serde".to_string()]),
+        "composition may import only sanctioned typed leaves and serde"
+    );
+    let forbidden = [
+        "std::env",
+        "std::fs",
+        "std::path",
+        "PathBuf",
+        "std::net",
+        "reqwest",
+        "std::process",
+        "Command::",
+        "std::time",
+        "std::thread",
+        "std::sync",
+        "tokio",
+        "tracing",
+        "log::",
+        "println!",
+        "eprintln!",
+        "rand",
+        "ParserPort",
+        "ScholarlyParser",
+        "GrobidParser",
+        "TeiLifter",
+        "TeiParseIr",
+        "ParsedArticle",
+        "projector",
+        "GraphStore",
+        "Samyama",
+        "SONA",
+        "ruVLLM",
+        "RVF",
+        "redb",
+        "http://",
+        "https://",
+    ];
+    let hits = native_date_marker_hits(&text, &forbidden);
+    assert!(
+        hits.is_empty(),
+        "composition acquired a runtime side channel or forbidden coupling:\n{}",
+        hits.join("\n")
+    );
+    assert!(text.contains("pub fn compose_header"));
+    assert!(text.contains("pub fn compose_references"));
+    assert!(
+        !text.contains("compose_header(input: ReferenceCompositionInput")
+            && !text.contains("compose_references(input: HeaderCompositionInput"),
+        "header and references must remain independently typed/selectable"
+    );
+
+    let lib = read_text("crates/da-parse/src/lib.rs");
+    assert!(lib.contains("mod native_composition;"));
+    assert!(lib.contains("pub use native_composition::"));
+    let mut hits = Vec::new();
+    for rel in [
+        "crates/da-parse/src/parser.rs",
+        "crates/da-parse/src/http.rs",
+        "crates/da-parse/src/lift.rs",
+        "crates/da-parse/src/ir.rs",
+        "crates/da-parse/src/projector.rs",
+        "crates/da-parse/src/cache.rs",
+        "crates/da-parse/src/transport.rs",
+        "crates/da-parse/src/backend.rs",
+        "crates/da-parse/src/batch.rs",
+    ] {
+        for (line_no, raw) in read_text(rel).lines().enumerate() {
+            if raw.contains("native_composition")
+                || raw.contains("compose_header")
+                || raw.contains("compose_references")
+            {
+                hits.push(format!(
+                    "[hidden-composition-activation] {rel}:{}: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    assert!(
+        hits.is_empty(),
+        "composition leaked into runtime/parser/cache surfaces:\n{}",
+        hits.join("\n")
+    );
+}
