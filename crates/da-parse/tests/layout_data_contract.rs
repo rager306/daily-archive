@@ -99,8 +99,7 @@ fn same_input_manifest_binds_three_pdf_sources_and_exact_pages() {
     let expected_lanes: BTreeSet<_> = [
         "pdfalto",
         "pdf_inspector_positioned",
-        "raw_positioned",
-        "xy_cut_positioned",
+        "pdf_inspector_positioned_xy_cut",
     ]
     .into_iter()
     .collect();

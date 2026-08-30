@@ -70,7 +70,7 @@ pub use html_parser::HtmlParser;
 #[cfg(feature = "pdf-layout")]
 pub use layout_donors::{
     LayoutDonor, LayoutDonorError, LayoutDonorLimits, PdfInspectorLayoutDonor, PdfaltoLayoutDonor,
-    parse_pdfalto_xml, reorder_with_xy_cut,
+    XyCutLayoutDonor, parse_pdfalto_xml, reorder_with_xy_cut,
 };
 
 pub use openalex_adapter::OpenAlexHttpAdapter;
