@@ -100,7 +100,7 @@ fn unknown_schema_does_not_deserialize() {
 #[test]
 fn limits_reject_oversize_documents() {
     let mut doc = document(vec![token(0, 0, 10.0)]);
-    doc.pages[0].tokens = (0..10_001).map(|i| token(i, i, 10.0)).collect();
+    doc.pages[0].tokens = (0..100_001).map(|i| token(i, i, 10.0)).collect();
     for item in &mut doc.pages[0].tokens {
         item.page_ordinal = 0;
     }
