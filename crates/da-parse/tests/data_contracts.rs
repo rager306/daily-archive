@@ -4074,6 +4074,39 @@ fn validate_native_composition_shadow(
             ));
         }
     }
+    // These are deliberately independent paths.  A generic component ID is
+    // not enough to prove that composition conserved each leaf denominator.
+    let required_receipts = [
+        ("date", "total", 173_i64),
+        ("header", "raw_total", 36),
+        ("header", "accepted_total", 35),
+        ("header", "rejected_or_incomplete", 1),
+        ("header", "strict_n", 0),
+        ("header", "soft_initial_n", 35),
+        ("citation_names", "total", 2198),
+        ("citation_names", "strict_n", 0),
+        ("citation_names", "soft_initial_n", 2196),
+        ("citation_names", "unsupported_n", 2),
+        ("affiliation", "recognition_total", 13),
+        ("affiliation", "linking_total", 13),
+        ("affiliation", "linked_authors", 11),
+        ("affiliation", "zero_link_authors", 25),
+        ("affiliation", "exactly_one_three_link", 1),
+        ("affiliation", "address_observed_n", 0),
+        ("references", "total", 207),
+        ("anchors", "total", 380),
+        ("anchors", "targeted", 217),
+        ("anchors", "targetless", 163),
+        ("anchors", "fragmented_adjacency", 168),
+    ];
+    for (receipt, field, expected) in required_receipts {
+        let actual = shadow["component_receipts"][receipt][field].as_i64();
+        if actual != Some(expected) {
+            errs.push(format!(
+                "[native-composition-subreceipt-drift] component_receipts.{receipt}.{field} must stay {expected}, got {actual:?}"
+            ));
+        }
+    }
     if shadow["observation_mode"].as_str() != Some("shadow")
         || shadow["promotion_state"].as_str() != Some("candidate")
         || shadow["auto_promote"].as_str() != Some("forbidden")
@@ -4235,6 +4268,70 @@ fn rejects_native_composition_promotion_and_denominator_pooling() {
         "[native-composition-forbidden-drift]",
         &errs,
         "pooled denominator/raw content guard",
+    );
+}
+
+#[test]
+fn rejects_native_composition_subreceipt_removal_and_change() {
+    let registry = load_registry_value();
+    let manifest: RegressionManifest = expect_loaded(REGRESSION_REL_PATH);
+    let ledger: LedgerFile = expect_loaded(LEDGER_REL_PATH);
+    let receipts = [
+        ("date", "total", 173_i64),
+        ("header", "raw_total", 36),
+        ("header", "accepted_total", 35),
+        ("header", "rejected_or_incomplete", 1),
+        ("header", "strict_n", 0),
+        ("header", "soft_initial_n", 35),
+        ("citation_names", "total", 2198),
+        ("citation_names", "strict_n", 0),
+        ("citation_names", "soft_initial_n", 2196),
+        ("citation_names", "unsupported_n", 2),
+        ("affiliation", "recognition_total", 13),
+        ("affiliation", "linking_total", 13),
+        ("affiliation", "linked_authors", 11),
+        ("affiliation", "zero_link_authors", 25),
+        ("affiliation", "exactly_one_three_link", 1),
+        ("affiliation", "address_observed_n", 0),
+        ("references", "total", 207),
+        ("anchors", "total", 380),
+        ("anchors", "targeted", 217),
+        ("anchors", "targetless", 163),
+        ("anchors", "fragmented_adjacency", 168),
+    ];
+
+    for (receipt, field, expected) in receipts {
+        let mut removed: serde_yaml::Value = load_yaml(COMPARISON_CONTRACT_REL).expect("contract");
+        removed["native_header_reference_composition_shadow"]["component_receipts"][receipt]
+            [field] = serde_yaml::Value::Null;
+        let errs = validate_native_composition_shadow(&registry, &manifest, &removed, &ledger);
+        negative(
+            "[native-composition-subreceipt-drift]",
+            &errs,
+            &format!("removed component_receipts.{receipt}.{field}"),
+        );
+
+        let mut changed: serde_yaml::Value = load_yaml(COMPARISON_CONTRACT_REL).expect("contract");
+        changed["native_header_reference_composition_shadow"]["component_receipts"][receipt]
+            [field] = serde_yaml::Value::Number((expected + 1).into());
+        let errs = validate_native_composition_shadow(&registry, &manifest, &changed, &ledger);
+        negative(
+            "[native-composition-subreceipt-drift]",
+            &errs,
+            &format!("changed component_receipts.{receipt}.{field}"),
+        );
+    }
+
+    // A pooled citation/header denominator is not an acceptable substitute
+    // for the separately named receipts above.
+    let mut pooled: serde_yaml::Value = load_yaml(COMPARISON_CONTRACT_REL).expect("contract");
+    pooled["native_header_reference_composition_shadow"]["component_receipts"]["citation_names"]
+        ["total"] = serde_yaml::Value::Number(35.into());
+    let errs = validate_native_composition_shadow(&registry, &manifest, &pooled, &ledger);
+    negative(
+        "[native-composition-subreceipt-drift]",
+        &errs,
+        "pooled citation names into accepted header denominator",
     );
 }
 
