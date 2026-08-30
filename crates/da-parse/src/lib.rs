@@ -35,6 +35,7 @@ mod ir;
 mod lift;
 mod native_affiliation;
 mod native_citation;
+mod native_composition;
 mod native_date;
 mod native_personal_name;
 mod parser;
@@ -90,6 +91,15 @@ pub use native_citation::{
     NativeCitationMalformed, NativeCitationOutcome, NativeCitationParser,
     NativeCitationUnsupported, NativeReference, NativeReferenceListError,
     NativeReferenceListOutcome, NativeReferenceSegmenter, NativeReferenceSegmenterLimits,
+};
+pub use native_composition::{
+    ComponentDisposition, ComponentReceipt, CompositionComponent, CompositionError,
+    CompositionSpan, HeaderAuthor, HeaderAuthorInput, HeaderCandidate, HeaderCompositionCandidate,
+    HeaderCompositionInput, HeaderCompositionOutcome, NATIVE_COMPOSITION_MAX_AFFILIATIONS,
+    NATIVE_COMPOSITION_MAX_ANCHORS, NATIVE_COMPOSITION_MAX_AUTHORS, NATIVE_COMPOSITION_MAX_FIELDS,
+    NATIVE_COMPOSITION_MAX_REFERENCES, NATIVE_COMPOSITION_SCHEMA_VERSION, ReferenceCandidate,
+    ReferenceCompositionCandidate, ReferenceCompositionInput, ReferenceCompositionOutcome,
+    compose_header, compose_references,
 };
 pub use native_date::{
     DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,
