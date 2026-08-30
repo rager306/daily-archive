@@ -688,6 +688,8 @@ fn make_report(
 }
 
 fn main() -> Result<(), String> {
+    // ADR-052 composition root: .env-backed rolling JSON logging.
+    let _log_guard = da_cli::logging::init_pipeline_logging("layout_bakeoff");
     let (
         manifest_path,
         report_path,
