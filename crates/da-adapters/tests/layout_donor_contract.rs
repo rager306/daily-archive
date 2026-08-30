@@ -96,6 +96,51 @@ fn xy_cut_is_lossless_and_keeps_source_order_separate() {
 }
 
 #[test]
+fn xy_cut_rejects_non_adjacent_duplicate_source_ordinals_without_loss() {
+    let xml = br#"<doc><page width="612" height="792"><text x="10" y="20" width="30" height="8">a</text><text x="50" y="20" width="30" height="8">b</text><text x="90" y="20" width="30" height="8">c</text></page></doc>"#;
+    let mut document =
+        parse_pdfalto_xml(xml, b"pdf", "paper", LayoutDonorLimits::default()).unwrap();
+    document.pages[0].tokens[2].source_ordinal = document.pages[0].tokens[0].source_ordinal;
+    let result = reorder_with_xy_cut(document);
+    assert!(
+        matches!(result, Err(LayoutDonorError::Malformed { detail }) if detail.contains("duplicate source"))
+    );
+}
+
+#[test]
+fn pdfalto_uses_authoritative_geometry_rotation_crop_and_ignores_unknown_attributes() {
+    let xml = br#"<alto><page width="612" height="1000" rotation="90" crop_x="10" crop_y="20" crop_width="100" crop_height="200" label="not-a-number"><text x="10" y="20" width="30" height="8">bottom-left</text></page></alto>"#;
+    let document = parse_pdfalto_xml(xml, b"pdf", "paper", LayoutDonorLimits::default()).unwrap();
+    let page = &document.pages[0];
+    assert_eq!(
+        (page.width, page.height, page.rotation),
+        (612.0, 1000.0, 90)
+    );
+    assert_eq!(page.crop_box.unwrap().y_min, 780.0);
+    assert_eq!(page.tokens[0].bbox.y_min, 972.0);
+    assert_eq!(page.tokens[0].bbox.y_max, 980.0);
+}
+
+#[test]
+fn pdfalto_rejects_invalid_rotation_and_out_of_page_crop() {
+    let unsupported = parse_pdfalto_xml(
+        br#"<doc><page width="612" height="792" rotation="45"></page></doc>"#,
+        b"pdf",
+        "paper",
+        LayoutDonorLimits::default(),
+    );
+    assert!(
+        matches!(unsupported, Err(LayoutDonorError::Malformed { detail }) if detail.contains("rotation"))
+    );
+
+    let crop = parse_pdfalto_xml(
+        br#"<doc><page width="612" height="792" crop_x="600" crop_y="0" crop_width="20" crop_height="10"></page></doc>"#,
+        b"pdf", "paper", LayoutDonorLimits::default(),
+    );
+    assert!(matches!(crop, Err(LayoutDonorError::Malformed { detail }) if detail.contains("crop")));
+}
+
+#[test]
 fn malformed_and_limits_are_typed_and_external_donor_does_not_fallback() {
     let bad = parse_pdfalto_xml(
         br#"<page width="612" height="792"><text x="nan" y="1" width="2" height="3">x</text>"#,

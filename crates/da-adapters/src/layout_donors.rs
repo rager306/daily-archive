@@ -107,10 +107,16 @@ pub fn reorder_with_xy_cut(
             .collect();
         let ordered =
             da_domain::xy_cut::order_lines(&lines, &da_domain::xy_cut::XyCutConfig::default());
+        let original_len = original.len();
         let mut by_source: BTreeMap<u32, LayoutToken> = original
             .into_iter()
             .map(|token| (token.source_ordinal, token))
             .collect();
+        if by_source.len() != original_len {
+            return Err(LayoutDonorError::Malformed {
+                detail: "XY-Cut input has duplicate source identity".into(),
+            });
+        }
         let mut tokens = Vec::with_capacity(ordered.len());
         for (ordinal, line) in ordered.into_iter().enumerate() {
             let source = line
@@ -201,6 +207,7 @@ fn document_from_items(
     items: impl IntoIterator<Item = PositionedItem>,
     page_geometry: &BTreeMap<u32, PageGeometry>,
     limits: LayoutDonorLimits,
+    require_page_geometry: bool,
 ) -> Result<LayoutDocument, LayoutDonorError> {
     let mut by_page: BTreeMap<u32, Vec<PositionedItem>> = BTreeMap::new();
     for item in items {
@@ -235,6 +242,11 @@ fn document_from_items(
     for page in page_ids {
         let mut items = by_page.remove(&page).unwrap_or_default();
         items.sort_by_key(|i| i.source_ordinal);
+        if require_page_geometry && !page_geometry.contains_key(&page) {
+            return Err(LayoutDonorError::Malformed {
+                detail: "authoritative page geometry missing".into(),
+            });
+        }
         let fallback_width = items.iter().map(|i| i.x + i.width).fold(1.0_f64, f64::max);
         let fallback_height = items.iter().map(|i| i.y + i.height).fold(1.0_f64, f64::max);
         let geometry = page_geometry.get(&page).copied().unwrap_or(PageGeometry {
@@ -252,6 +264,11 @@ fn document_from_items(
                 return Err(LayoutDonorError::Oversize {
                     resource: "tokens",
                     limit: limits.max_tokens,
+                });
+            }
+            if item.x + item.width > width || item.y + item.height > height {
+                return Err(LayoutDonorError::Malformed {
+                    detail: "item geometry exceeds authoritative page bounds".into(),
                 });
             }
             let bbox = match item.origin {
@@ -381,6 +398,7 @@ impl LayoutDonor for PdfInspectorLayoutDonor {
             converted,
             &BTreeMap::new(),
             limits,
+            false,
         )
     }
 }
@@ -567,13 +585,39 @@ pub fn parse_pdfalto_xml(
                         .ok_or_else(|| LayoutDonorError::Malformed {
                             detail: "pdfalto page width/height missing".into(),
                         })?;
-                if !width.is_finite() || !height.is_finite() || width <= 0.0 || height <= 0.0 {
+                if !width.is_finite()
+                    || !height.is_finite()
+                    || width <= 0.0
+                    || height <= 0.0
+                    || width > 100_000.0
+                    || height > 100_000.0
+                {
                     return Err(LayoutDonorError::Malformed {
-                        detail: "invalid pdfalto page geometry".into(),
+                        detail: "invalid or oversized pdfalto page geometry".into(),
+                    });
+                }
+                if !matches!(rotation, 0 | 90 | 180 | 270) {
+                    return Err(LayoutDonorError::Malformed {
+                        detail: "unsupported pdfalto page rotation".into(),
                     });
                 }
                 let crop_box = match crop {
                     [Some(x), Some(y), Some(w), Some(h)] => {
+                        if !x.is_finite()
+                            || !y.is_finite()
+                            || !w.is_finite()
+                            || !h.is_finite()
+                            || x < 0.0
+                            || y < 0.0
+                            || w <= 0.0
+                            || h <= 0.0
+                            || x + w > width
+                            || y + h > height
+                        {
+                            return Err(LayoutDonorError::Malformed {
+                                detail: "invalid or out-of-page pdfalto crop geometry".into(),
+                            });
+                        }
                         Some(LayoutBBox::new(x, height - (y + h), x + w, height - y)?)
                     }
                     [None, None, None, None] => None,
@@ -766,6 +810,7 @@ pub fn parse_pdfalto_xml(
         all,
         &page_geometry,
         limits,
+        true,
     )
 }
 
