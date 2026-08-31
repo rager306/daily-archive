@@ -914,8 +914,11 @@ fn make_report(
             cpu_only_excludes_subprocess_io: true,
         },
         representative_donor_composition: RepresentativeDonorComposition {
-            scope: "single_configured_invocation".into(),
-            worker_counts: vec![config.workers],
+            // The real donor composition is deliberately bounded to the two
+            // DATA-authorized representative counts. The CPU matrix above is
+            // the complete physical-core sweep and never includes pdfalto.
+            scope: "representative_counts_only".into(),
+            worker_counts: vec![1, topology.physical_cores],
             lanes: REQUIRED_LANES.iter().map(|lane| (*lane).into()).collect(),
             cpu_matrix_excludes_subprocess_io: true,
             acceptance_denominator_separate: true,

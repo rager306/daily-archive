@@ -185,7 +185,9 @@ fn bakeoff_emits_one_redacted_receipt_per_lane_and_replays_semantics() {
     );
     assert!(binding["durable_evidence_ref"].is_null());
     let composition = &first_report["representative_donor_composition"];
-    assert_eq!(composition["scope"], "single_configured_invocation");
+    assert_eq!(composition["scope"], "representative_counts_only");
+    assert_eq!(composition["worker_counts"].as_array().unwrap().len(), 2);
+    assert_eq!(composition["worker_counts"][0], 1);
     assert_eq!(composition["cpu_matrix_excludes_subprocess_io"], true);
     assert_eq!(composition["acceptance_denominator_separate"], true);
     assert_eq!(composition["lanes"].as_array().unwrap().len(), 3);
