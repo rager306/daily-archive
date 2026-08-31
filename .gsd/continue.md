@@ -70,7 +70,12 @@ S13 predecessor: sha256 59377965ae2509fc6ed879baebe86ca5f55a21a4ab25d1f2d7b6a450
 ```
 
 
-## 🛑 ENGINE BLOCKER (2026-08-31 10:1x) — S14/T05 finalization frozen
+## 🛑 ENGINE BLOCKER (обновлено 2026-08-31 12:4x) — S14/T05 finalization frozen
+
+Дополнительный цикл auto-run9: executor снова записал BLOCKER (attempt
+d6bf8008, nextStage=route, "awaiting recovery routing") — 5-й escalation-цикл.
+Все прочие пути и полный boot-hang задокументированы в
+`.gsd/runtime/M464-T05-ENGINE-BLOCKER.md`. РЕШЕНИЕ ЗА ФРЕЙМВОРКОМ/ЮЗЕРОМ.
 
 T05 delivered+verified, but CANNOT be finalized by any current path — closed
 loop reproduced and documented in `.gsd/runtime/M464-T05-ENGINE-BLOCKER.md`:
