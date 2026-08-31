@@ -70,7 +70,15 @@ S13 predecessor: sha256 59377965ae2509fc6ed879baebe86ca5f55a21a4ab25d1f2d7b6a450
 ```
 
 
-## 🛑 ENGINE BLOCKER (обновлено 2026-08-31 12:4x) — S14/T05 finalization frozen
+## 🛑 ENGINE BLOCKER (финал 2026-08-31 13:5x) — S14/T05 finalization frozen
+
+Cycle closed after 7 runs + forensics + doctor fix: БД терминальна (0 running,
+все settled), headless boot-hang систематичен (не flock/нагрузка). Forensics:
+«сломана только lifecycle-книга, не код». ПРОДОЛЖЕНИЕ: TUI `/gsd auto
+M464-z84in2` в интерактивной сессии ИЛИ апстрим-фикс gsd-pi (3 пункта в
+M464-T05-ENGINE-BLOCKER.md). При удачном dispatch: SOFT escalation
+(continueWithDefault=true) закрывает T05; далее S15–S19 skip-never-planned →
+UAT → validate → gates → complete (план в forensics-совете).
 
 Дополнительный цикл auto-run9: executor снова записал BLOCKER (attempt
 d6bf8008, nextStage=route, "awaiting recovery routing") — 5-й escalation-цикл.
