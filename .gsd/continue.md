@@ -82,14 +82,29 @@ paths until gsd-pi upstream fix. Canonical artifact intact:
 bce56fe5… committed f2a23c440; evidence f6e2aba0 (12/12); all suites green;
 governor PASS. Milestone M464 stays active; S15–S19 unplanned.
 
-## 🚫 HARD RULE (run #5, overrides everything below)
+## ✅ FINALIZATION RULE (run #6+, supersedes the older HARD RULE)
 
-**The executing agent MUST NOT call `gsd_task_complete` for T05.** The task is
-already STAGED (attempt 53d7a6ae, nextStage=verify). Calling it again routes
-completion through escalation, which the durable completion adapter does not
-support — this aborted runs #4 twice ("Canonical Task completion escalation is
-not yet supported"). Do your verification/summary work, leave the staged state
-in place, and END. The supervisor unit-closeout finalizes the unit.
+Verify work is already done (gsd_exec ba583273 = t05-verify 12/12; artifact
+untouched). To FINALIZE T05 call `gsd_task_complete` ONCE with a SOFT
+escalation — this is REQUIRED and safe (workflow-tool-executors completes the
+task for soft escalations):
+```json
+"escalation": {
+  "continueWithDefault": true,
+  "question": "Finalize staged T05 with recorded evidence?",
+  "options": [
+    {"id": "complete_with_evidence", "label": "Complete", "description": "...", "tradeoffs": "..."},
+    {"id": "reverify_first", "label": "Reverify", "description": "...", "tradeoffs": "..."}
+  ],
+  "recommendation": "complete_with_evidence",
+  "recommendationRationale": "..."
+}
+```
+MANDATORY: `continueWithDefault: true` (hard-blocker `false` throws
+"escalation not yet supported"), exactly 2-4 options each with unique `id`,
+`label`, `description`, `tradeoffs`; `recommendation` = one of the option ids.
+Evidence ref for the summary: `gsd_exec f6e2aba0-3453-4ab2-8d0c-f64b9cfa7c79`.
+NEVER rerun layout_bakeoff measurements (D313/D314).
 
 ## ⚠️ READ FIRST — constraints for the T05 verify stage (run #4)
 
