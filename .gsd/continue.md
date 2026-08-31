@@ -70,6 +70,18 @@ S13 predecessor: sha256 59377965ae2509fc6ed879baebe86ca5f55a21a4ab25d1f2d7b6a450
 ```
 
 
+## 🛑 ENGINE BLOCKER (2026-08-31 10:1x) — S14/T05 finalization frozen
+
+T05 delivered+verified, but CANNOT be finalized by any current path — closed
+loop reproduced and documented in `.gsd/runtime/M464-T05-ENGINE-BLOCKER.md`:
+completion (no running Attempt) → recovery-resume (already-resumed guard) →
+host-verify (latest attempt failed, not staged-success) → settle (wrong
+outcome class) → skip (inversion of the same requirement). Headless auto/next
+additionally hang in bootstrap (5/5 runs after 04:00). DO NOT retry these
+paths until gsd-pi upstream fix. Canonical artifact intact:
+bce56fe5… committed f2a23c440; evidence f6e2aba0 (12/12); all suites green;
+governor PASS. Milestone M464 stays active; S15–S19 unplanned.
+
 ## 🚫 HARD RULE (run #5, overrides everything below)
 
 **The executing agent MUST NOT call `gsd_task_complete` for T05.** The task is
