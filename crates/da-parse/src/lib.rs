@@ -39,6 +39,7 @@ mod native_citation;
 mod native_composition;
 mod native_date;
 mod native_personal_name;
+mod native_segmentation;
 mod parser;
 mod profile;
 mod projector;
@@ -117,6 +118,13 @@ pub use native_personal_name::{
     NativePersonalNameAmbiguous, NativePersonalNameMalformed, NativePersonalNameOutcome,
     NativePersonalNameParser, NativePersonalNameUnsupported, PersonalNameContext,
     RecognizedPersonalName,
+};
+pub use native_segmentation::{
+    DocumentRegion, LexemeRow, MAX_LEXEME_BYTES, MAX_PAGES as NATIVE_SEGMENTATION_MAX_PAGES,
+    MAX_REGIONS as NATIVE_SEGMENTATION_MAX_REGIONS, MAX_SECTION_DEPTH,
+    MAX_SECTIONS as NATIVE_SEGMENTATION_MAX_SECTIONS, MAX_TOKENS as NATIVE_SEGMENTATION_MAX_TOKENS,
+    NATIVE_SEGMENTATION_SCHEMA_VERSION, NativeSegmenter, SectionReceipt, SegmentationConfig,
+    SegmentationError, SegmentationLimits, SegmentationOutcome, TokenAssignment, segment_document,
 };
 pub use parser::{ScholarlyParser, lift_and_project_envelope};
 pub use profile::GrobidProfile;
