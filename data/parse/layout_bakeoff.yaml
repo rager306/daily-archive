@@ -113,6 +113,21 @@ cpu_smp_candidate:
     channel_closure: typed_coordinator_failure
     interruption: typed_coordinator_failure
     failure_vocabulary: [topology_unavailable, invalid_config, over_core_cap, worker_panic, channel_closed, interrupted, semantic_mismatch]
+  donor_composition:
+    scope: representative_counts_only
+    representative_worker_counts: [1, physical_core_cap]
+    cpu_matrix_excludes_subprocess_io: required
+    acceptance_denominator_separate: required
+  evidence_binding:
+    tested_source_revision: required_sha256
+    clean_tree_assertion: required
+    command_digest: required_sha256
+    runtime_config_fingerprint: required_sha256
+    configuration_fingerprint: required_sha256
+    topology_fingerprint: required_sha256
+    durable_evidence_ref: required
+    plaintext_command: forbidden
+    physical_paths: forbidden
   denominators:
     acceptance:
       corpus_n: 3
