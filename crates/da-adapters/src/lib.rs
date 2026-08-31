@@ -69,8 +69,9 @@ pub use grobid_parser::{GrobidParser, GrobidProfile};
 pub use html_parser::HtmlParser;
 #[cfg(feature = "pdf-layout")]
 pub use layout_donors::{
-    LayoutDonor, LayoutDonorError, LayoutDonorLimits, PdfInspectorLayoutDonor, PdfaltoLayoutDonor,
-    XyCutLayoutDonor, parse_pdfalto_xml, reorder_with_xy_cut,
+    LayoutDonor, LayoutDonorError, LayoutDonorLimits, LayoutShadowObservation,
+    PdfInspectorLayoutDonor, PdfaltoLayoutDonor, XyCutLayoutDonor, parse_pdfalto_xml,
+    parse_pdfalto_xml_shadow, reorder_shadow_with_xy_cut, reorder_with_xy_cut,
 };
 
 pub use openalex_adapter::OpenAlexHttpAdapter;

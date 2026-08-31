@@ -82,6 +82,165 @@ pub trait LayoutDonor: Send + Sync {
         document_id: &str,
         limits: LayoutDonorLimits,
     ) -> Result<LayoutDocument, LayoutDonorError>;
+
+    /// Additive invocation-local lexical observation. Existing layout-only
+    /// donors keep the neutral API and reject this optional surface.
+    #[cfg(feature = "pdf-layout")]
+    fn extract_shadow(
+        &self,
+        _pdf_bytes: &[u8],
+        _document_id: &str,
+        _limits: LayoutDonorLimits,
+    ) -> Result<LayoutShadowObservation, LayoutDonorError> {
+        Err(LayoutDonorError::Malformed {
+            detail: "layout donor has no shadow lexical observation".into(),
+        })
+    }
+}
+
+/// Invocation-local lexical evidence paired with the unchanged neutral layout.
+///
+/// The text is intentionally private and is never serialized or included in
+/// diagnostics. Consumers can pass this value directly to `da_parse`'s native
+/// segmentation API while the shipped S13 layout schema remains unchanged.
+#[cfg(feature = "pdf-layout")]
+#[derive(Clone, PartialEq)]
+pub struct LayoutShadowObservation {
+    pub document: LayoutDocument,
+    pub lexemes: Vec<da_parse::LexemeRow>,
+}
+
+#[cfg(feature = "pdf-layout")]
+impl fmt::Debug for LayoutShadowObservation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("LayoutShadowObservation")
+            .field("document", &self.document)
+            .field("lexeme_count", &self.lexemes.len())
+            .finish()
+    }
+}
+
+#[cfg(feature = "pdf-layout")]
+fn observation_from_items(
+    pdf_bytes: &[u8],
+    document_id: &str,
+    provider: LayoutProvider,
+    items: Vec<PositionedItem>,
+    page_geometry: &BTreeMap<u32, PageGeometry>,
+    limits: LayoutDonorLimits,
+    require_page_geometry: bool,
+) -> Result<LayoutShadowObservation, LayoutDonorError> {
+    let document = document_from_items(
+        pdf_bytes,
+        document_id,
+        provider.clone(),
+        items.clone(),
+        page_geometry,
+        limits,
+        require_page_geometry,
+    )?;
+    let mut ordered = items;
+    ordered.sort_by_key(|item| (item.page, item.source_ordinal));
+    let mut lexeme_bytes = 0usize;
+    let lexemes = ordered
+        .into_iter()
+        .map(|item| {
+            lexeme_bytes = lexeme_bytes.saturating_add(item.text.len());
+            da_parse::LexemeRow::new(
+                document_id,
+                &provider.id,
+                item.page,
+                item.source_ordinal,
+                sha256_hex(item.text.as_bytes()),
+                item.text,
+            )
+        })
+        .collect::<Vec<_>>();
+    if lexeme_bytes > limits.max_output_bytes {
+        return Err(LayoutDonorError::Oversize {
+            resource: "lexeme_bytes",
+            limit: limits.max_output_bytes,
+        });
+    }
+    Ok(LayoutShadowObservation { document, lexemes })
+}
+
+#[cfg(feature = "pdf-layout")]
+fn validate_shadow_lexemes(observation: &LayoutShadowObservation) -> Result<(), LayoutDonorError> {
+    let tokens = observation
+        .document
+        .pages
+        .iter()
+        .flat_map(|page| page.tokens.iter())
+        .map(|token| ((token.page_ordinal, token.source_ordinal), token))
+        .collect::<BTreeMap<_, _>>();
+    if tokens.len()
+        != observation
+            .document
+            .pages
+            .iter()
+            .map(|page| page.tokens.len())
+            .sum::<usize>()
+        || observation.lexemes.len() != tokens.len()
+    {
+        return Err(LayoutDonorError::Malformed {
+            detail: "shadow lexical observation has duplicate or missing rows".into(),
+        });
+    }
+    let mut seen = BTreeMap::new();
+    for row in &observation.lexemes {
+        let key = (row.page_ordinal, row.source_ordinal);
+        if seen.insert(key, ()).is_some() {
+            return Err(LayoutDonorError::Malformed {
+                detail: "shadow lexical observation has duplicate identity".into(),
+            });
+        }
+        let token = tokens
+            .get(&key)
+            .ok_or_else(|| LayoutDonorError::Malformed {
+                detail: "shadow lexical observation has unmatched identity".into(),
+            })?;
+        if row.document_id != observation.document.document_id
+            || row.provider_id != token.provider.id
+            || row.text_digest != token.text_digest
+        {
+            return Err(LayoutDonorError::Malformed {
+                detail: "shadow lexical observation digest or lineage mismatch".into(),
+            });
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "pdf-layout")]
+pub fn reorder_shadow_with_xy_cut(
+    mut observation: LayoutShadowObservation,
+) -> Result<LayoutShadowObservation, LayoutDonorError> {
+    validate_shadow_lexemes(&observation)?;
+    observation.document = reorder_with_xy_cut(observation.document)?;
+    let mut by_key = observation
+        .lexemes
+        .into_iter()
+        .map(|row| ((row.page_ordinal, row.source_ordinal), row))
+        .collect::<BTreeMap<_, _>>();
+    let mut lexemes = Vec::new();
+    for page in &observation.document.pages {
+        for token in &page.tokens {
+            let row = by_key
+                .remove(&(token.page_ordinal, token.source_ordinal))
+                .ok_or_else(|| LayoutDonorError::Malformed {
+                    detail: "XY-Cut lexical observation lost token identity".into(),
+                })?;
+            lexemes.push(row);
+        }
+    }
+    if !by_key.is_empty() {
+        return Err(LayoutDonorError::Malformed {
+            detail: "XY-Cut lexical observation has unmatched rows".into(),
+        });
+    }
+    observation.lexemes = lexemes;
+    Ok(observation)
 }
 
 /// Apply XY-Cut to an already positioned document without dropping or
@@ -163,9 +322,28 @@ impl XyCutLayoutDonor {
     pub fn new(base: Box<dyn LayoutDonor>) -> Self {
         Self { base }
     }
+
+    pub fn extract_shadow(
+        &self,
+        pdf_bytes: &[u8],
+        document_id: &str,
+        limits: LayoutDonorLimits,
+    ) -> Result<LayoutShadowObservation, LayoutDonorError> {
+        let observation = self.base.extract_shadow(pdf_bytes, document_id, limits)?;
+        reorder_shadow_with_xy_cut(observation)
+    }
 }
 #[cfg(feature = "pdf-layout")]
 impl LayoutDonor for XyCutLayoutDonor {
+    fn extract_shadow(
+        &self,
+        pdf_bytes: &[u8],
+        document_id: &str,
+        limits: LayoutDonorLimits,
+    ) -> Result<LayoutShadowObservation, LayoutDonorError> {
+        XyCutLayoutDonor::extract_shadow(self, pdf_bytes, document_id, limits)
+    }
+
     fn id(&self) -> &'static str {
         "xy-cut-positioned"
     }
@@ -354,7 +532,66 @@ impl Default for PdfInspectorLayoutDonor {
     }
 }
 #[cfg(feature = "pdf-layout")]
+impl PdfInspectorLayoutDonor {
+    pub fn extract_shadow(
+        &self,
+        pdf_bytes: &[u8],
+        document_id: &str,
+        limits: LayoutDonorLimits,
+    ) -> Result<LayoutShadowObservation, LayoutDonorError> {
+        let items = pdf_inspector::extract_text_with_positions_mem(pdf_bytes).map_err(|e| {
+            LayoutDonorError::Malformed {
+                detail: e.to_string(),
+            }
+        })?;
+        let mut next = BTreeMap::<u32, u32>::new();
+        let converted = items
+            .into_iter()
+            .filter_map(|i| {
+                if i.width == 0.0 || i.height == 0.0 {
+                    return None;
+                }
+                let n = next.entry(i.page).or_insert(0);
+                let source_ordinal = *n;
+                *n += 1;
+                Some(PositionedItem {
+                    page: i.page,
+                    source_ordinal,
+                    text: i.text,
+                    x: i.x as f64,
+                    y: i.y as f64,
+                    width: i.width as f64,
+                    height: i.height as f64,
+                    bold: i.is_bold,
+                    italic: i.is_italic,
+                    font_size: Some(i.font_size as f64),
+                    origin: CoordinateOrigin::BottomLeft,
+                })
+            })
+            .collect();
+        observation_from_items(
+            pdf_bytes,
+            document_id,
+            provider(self.id(), self.version()),
+            converted,
+            &BTreeMap::new(),
+            limits,
+            false,
+        )
+    }
+}
+#[cfg(feature = "pdf-layout")]
 impl LayoutDonor for PdfInspectorLayoutDonor {
+    #[cfg(feature = "pdf-layout")]
+    fn extract_shadow(
+        &self,
+        pdf_bytes: &[u8],
+        document_id: &str,
+        limits: LayoutDonorLimits,
+    ) -> Result<LayoutShadowObservation, LayoutDonorError> {
+        PdfInspectorLayoutDonor::extract_shadow(self, pdf_bytes, document_id, limits)
+    }
+
     fn id(&self) -> &'static str {
         "pdf-inspector-positioned"
     }
@@ -367,44 +604,9 @@ impl LayoutDonor for PdfInspectorLayoutDonor {
         document_id: &str,
         limits: LayoutDonorLimits,
     ) -> Result<LayoutDocument, LayoutDonorError> {
-        let items = pdf_inspector::extract_text_with_positions_mem(pdf_bytes).map_err(|e| {
-            LayoutDonorError::Malformed {
-                detail: e.to_string(),
-            }
-        })?;
-        let mut next = BTreeMap::<u32, u32>::new();
-        let converted = items.into_iter().filter_map(|i| {
-            // pdf-inspector may expose zero-area bookkeeping spans; they are
-            // not positioned tokens and must not poison the neutral lattice.
-            if i.width == 0.0 || i.height == 0.0 {
-                return None;
-            }
-            let n = next.entry(i.page).or_insert(0);
-            let source_ordinal = *n;
-            *n += 1;
-            Some(PositionedItem {
-                page: i.page,
-                source_ordinal,
-                text: i.text,
-                x: i.x as f64,
-                y: i.y as f64,
-                width: i.width as f64,
-                height: i.height as f64,
-                bold: i.is_bold,
-                italic: i.is_italic,
-                font_size: Some(i.font_size as f64),
-                origin: CoordinateOrigin::BottomLeft,
-            })
-        });
-        document_from_items(
-            pdf_bytes,
-            document_id,
-            provider(self.id(), self.version()),
-            converted,
-            &BTreeMap::new(),
-            limits,
-            false,
-        )
+        Ok(self
+            .extract_shadow(pdf_bytes, document_id, limits)?
+            .document)
     }
 }
 
@@ -421,9 +623,94 @@ impl PdfaltoLayoutDonor {
             executable: executable.into(),
         }
     }
+
+    /// Run the explicit pdfalto lane while retaining bounded lexical evidence
+    /// in memory. This is deliberately separate from `LayoutDonor::extract`.
+    pub fn extract_shadow(
+        &self,
+        pdf_bytes: &[u8],
+        document_id: &str,
+        limits: LayoutDonorLimits,
+    ) -> Result<LayoutShadowObservation, LayoutDonorError> {
+        use std::io::Write;
+        use std::process::{Command, Stdio};
+        let dir = std::env::temp_dir();
+        let stem = format!(
+            "daily-archive-layout-shadow-{}-{}",
+            std::process::id(),
+            Sha256::digest(pdf_bytes)[..8]
+                .iter()
+                .map(|b| format!("{b:02x}"))
+                .collect::<String>()
+        );
+        let input = dir.join(format!("{stem}.pdf"));
+        let output = dir.join(format!("{stem}.xml"));
+        let result = (|| {
+            let mut file = std::fs::File::create(&input)?;
+            file.write_all(pdf_bytes)?;
+            file.sync_all()?;
+            let mut child = Command::new(&self.executable)
+                .arg(&input)
+                .arg(&output)
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn()
+                .map_err(|e| {
+                    if e.kind() == std::io::ErrorKind::NotFound {
+                        LayoutDonorError::Unavailable {
+                            executable: self.executable.display().to_string(),
+                        }
+                    } else {
+                        LayoutDonorError::Io(e)
+                    }
+                })?;
+            let started = std::time::Instant::now();
+            loop {
+                if let Some(status) = child.try_wait()? {
+                    if !status.success() {
+                        return Err(LayoutDonorError::NonZero {
+                            status: status.code(),
+                        });
+                    }
+                    break;
+                }
+                if started.elapsed().as_millis() >= limits.timeout_ms as u128 {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return Err(LayoutDonorError::Timeout {
+                        timeout_ms: limits.timeout_ms,
+                    });
+                }
+                std::thread::sleep(std::time::Duration::from_millis(2));
+            }
+            let metadata = std::fs::metadata(&output)?;
+            if metadata.len() > limits.max_output_bytes as u64 {
+                return Err(LayoutDonorError::Oversize {
+                    resource: "xml_output",
+                    limit: limits.max_output_bytes,
+                });
+            }
+            let xml = std::fs::read(&output)?;
+            if xml.is_empty() {
+                return Err(LayoutDonorError::Truncated);
+            }
+            parse_pdfalto_xml_shadow(&xml, pdf_bytes, document_id, limits)
+        })();
+        let _ = std::fs::remove_file(&input);
+        let _ = std::fs::remove_file(&output);
+        result
+    }
 }
 #[cfg(feature = "pdf-layout")]
 impl LayoutDonor for PdfaltoLayoutDonor {
+    fn extract_shadow(
+        &self,
+        pdf_bytes: &[u8],
+        document_id: &str,
+        limits: LayoutDonorLimits,
+    ) -> Result<LayoutShadowObservation, LayoutDonorError> {
+        PdfaltoLayoutDonor::extract_shadow(self, pdf_bytes, document_id, limits)
+    }
     fn id(&self) -> &'static str {
         "pdfalto"
     }
@@ -513,6 +800,17 @@ pub fn parse_pdfalto_xml(
     document_id: &str,
     limits: LayoutDonorLimits,
 ) -> Result<LayoutDocument, LayoutDonorError> {
+    Ok(parse_pdfalto_xml_shadow(xml, pdf_bytes, document_id, limits)?.document)
+}
+
+/// Shadow variant of [`parse_pdfalto_xml`] retaining invocation-local lexemes.
+#[cfg(feature = "pdf-layout")]
+pub fn parse_pdfalto_xml_shadow(
+    xml: &[u8],
+    pdf_bytes: &[u8],
+    document_id: &str,
+    limits: LayoutDonorLimits,
+) -> Result<LayoutShadowObservation, LayoutDonorError> {
     use quick_xml::Reader;
     use quick_xml::events::Event;
     let mut reader = Reader::from_reader(xml);
@@ -816,7 +1114,7 @@ pub fn parse_pdfalto_xml(
         buf.clear();
     }
     all.extend(page_items);
-    document_from_items(
+    observation_from_items(
         pdf_bytes,
         document_id,
         provider("pdfalto", "unknown"),
