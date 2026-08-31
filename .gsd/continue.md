@@ -70,6 +70,15 @@ S13 predecessor: sha256 59377965ae2509fc6ed879baebe86ca5f55a21a4ab25d1f2d7b6a450
 ```
 
 
+## 🚫 HARD RULE (run #5, overrides everything below)
+
+**The executing agent MUST NOT call `gsd_task_complete` for T05.** The task is
+already STAGED (attempt 53d7a6ae, nextStage=verify). Calling it again routes
+completion through escalation, which the durable completion adapter does not
+support — this aborted runs #4 twice ("Canonical Task completion escalation is
+not yet supported"). Do your verification/summary work, leave the staged state
+in place, and END. The supervisor unit-closeout finalizes the unit.
+
 ## ⚠️ READ FIRST — constraints for the T05 verify stage (run #4)
 
 - **NEVER rerun the canonical measurement**: `layout_bakeoff --manifest
