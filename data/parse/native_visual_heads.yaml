@@ -1,0 +1,92 @@
+schema_version: native-visual-heads.v1
+adr_ref: ADR-075
+contract_id: native-visual-heads-shadow
+source_authority:
+  manifest: data/parse/layout_bakeoff.yaml
+  source_identity_field: corpus.documents[].sha256
+  page_topology_field: corpus.page_denominator
+  exact_document_count: 3
+  exact_sha256_binding: required
+  page_denominator: 202
+  lane_page_denominator: 606
+lanes:
+  required_ids: [pdfalto, pdf_inspector_positioned, pdf_inspector_positioned_xy_cut]
+  pages_per_lane: 202
+  total_lane_pages: 606
+  same_input: required
+  unsupported_is_terminal: true
+heads:
+  closed_labels: [figure, table, formula]
+  independent_authorities: required
+  pooled_score: forbidden
+  denominator_per_head: required
+  metric_rows_per_head: required
+  link_receipts_are_source_bound_only: true
+  fulltext_composition: forbidden
+metrics:
+  rows: [admitted, terminal, caption_conservation, content_conservation, callout_conservation, geometry_conservation]
+  denominators: [document, lane, page, head]
+  pooled_metrics: forbidden
+  missing_head_denominator: hard_failure
+  unknown_label: hard_failure
+source_documents:
+  - id: hub-2507.19457
+    sha256: ab3a5139bac83f192ad67529368d77b84b0d807e95a8e4fd0daa8d45fd046bec
+    pages: 96
+  - id: rlm-2512.24601
+    sha256: 8567362c22768d9b50d4a4a8d63bb28dda2c2b2051be30d67f70f645170429ca
+    pages: 43
+  - id: reca-2605.26525v1
+    sha256: a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8
+    pages: 63
+oracle:
+  fixture: crates/da-parse/tests/fixtures/native_visual_oracle.yaml
+  independent_review: required
+  representation: digest_only
+  row_identity: document_page_head_ordinal
+  coordinate_dialect: top_left_72dpi_points
+  bbox: [x, y, width, height]
+  finite_non_negative: required
+  absence: typed_closed_value
+  digest: sha256_lower_hex_64
+  expected_fields: [document_id, lane_id, page_ordinal, head, head_ordinal, bbox_72dpi, caption_digest, content_digest, callout_digest]
+  forbidden_fields: [raw_text, raw_pdf, pdf_bytes, tei_xml, image, page_image, assets, physical_path, hostname, executable]
+  supporting_only: [preserved_java_tei, pdffigures2_fixture]
+  supporting_never_truth: [graph, pdf_geometry, production_parse]
+limits:
+  max_pages_per_lane: 202
+  max_heads_per_page: 128
+  max_receipts_per_head: 4096
+  max_digest_bytes: 64
+thresholds:
+  caption_conservation: exact
+  content_conservation: exact
+  callout_conservation: exact
+  geometry_conservation: exact
+  same_n: exact
+  replay: exact
+failure_taxonomy:
+  closed: true
+  values: [unsupported, not_observed, missing_identity, checksum_mismatch, malformed_bbox, invalid_digest, duplicate_receipt, missing_receipt, oversize, interrupted]
+gates:
+  state: shadow
+  promotion_state: candidate
+  auto_promote: forbidden
+  donor_selection: forbidden
+  import_eligible: false
+  graph_mutation: forbidden
+  fulltext_composition: forbidden
+  s14_durable_evidence_mutation: forbidden
+  java_rollback_target: java-grobid-http@0.9.0-crf
+replay:
+  same_n_required: true
+  semantic_replays: 2
+  worker_one_equals_fixture_cap: required
+  checksum_drift: visible_failure
+  absent_signal_not_empty_success: required
+mutations:
+  required: [pooled_score, missing_head_denominator, unknown_label, typed_absence, checksum_drift, raw_payload_leakage, promotion, s14_evidence_mutation]
+redaction:
+  recursive: true
+  raw_payloads: forbidden
+  allowed: [identities, digests, counters, bboxes, typed_status]

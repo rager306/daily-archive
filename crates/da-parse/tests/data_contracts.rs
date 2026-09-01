@@ -1407,13 +1407,15 @@ fn validate_registry_config_keys(registry: &serde_yaml::Value) -> Vec<String> {
 /// The observation ledger tree stays exactly the sanctioned data/parse file
 /// set — no parallel ledger tree may appear (R113/R117).
 fn data_parse_tree_errs(entries: Vec<(String, bool)>) -> Vec<String> {
-    const SANCTIONED: [&str; 6] = [
+    const SANCTIONED: [&str; 8] = [
         "SCHEMA.yaml",
         "api_compatibility_ledger.yaml",
         "comparison_contract.yaml",
         "grobid_compatibility.yaml",
         "regression_cases.yaml",
         "layout_bakeoff.yaml",
+        "document_segmentation.yaml",
+        "native_visual_heads.yaml",
     ];
     let mut errs = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
@@ -3808,6 +3810,8 @@ fn rejects_parallel_ledger_tree_and_raw_content() {
         ("grobid_compatibility.yaml".to_string(), false),
         ("regression_cases.yaml".to_string(), false),
         ("layout_bakeoff.yaml".to_string(), false),
+        ("document_segmentation.yaml".to_string(), false),
+        ("native_visual_heads.yaml".to_string(), false),
         ("parse_ledger_v2.yaml".to_string(), false),
     ]);
     negative(
