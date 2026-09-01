@@ -90,7 +90,7 @@ const FROZEN_SOURCE_HASH: &str =
 /// (date obligations added to the same three regression cases): the byte
 /// identity of the manifest follows each sanctioned DATA edit.
 const FROZEN_CORPUS_HASH: &str =
-    "sha256:4efa37384c849e3ab20071f574876afc5cbf26ac9b8ef40e5a09d52c5c93118b";
+    "sha256:cd7a35fb089b6facb33c0caf70f89522ac7bf2c664182ad81ed6d84532c628fd";
 /// All three executed S01 cases run under the rich profile.
 const FROZEN_PROFILE_FINGERPRINT: &str = RICH_FP;
 

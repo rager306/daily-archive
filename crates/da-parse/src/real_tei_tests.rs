@@ -802,6 +802,56 @@ fn test_real_tei_lifts_figures_and_visual_callouts_on_all_fixtures() {
     }
 }
 
+/// S16/T05: preserved Java TEI remains a supporting comparison only. Its
+/// family denominators are frozen independently from the local PDF oracle and
+/// native-head receipts; missing coordinates remain typed rather than being
+/// inferred from TEI geometry.
+#[test]
+fn test_preserved_java_visual_family_denominators_are_exact_and_source_bound() {
+    let mut figures = 0usize;
+    let mut tables = 0usize;
+    let mut formulas = 0usize;
+    let mut callouts = 0usize;
+    for (file, sha, paper_id) in [
+        ("hub_2507.19457.tei.xml", HUB_SHA, "2507.19457"),
+        ("rlm_2512.24601.tei.xml", RLM_SHA, "2512.24601"),
+        ("reca_2605.26525v1.tei.xml", RECA_SHA, "2605.26525v1"),
+    ] {
+        let ir = GrobidParser::lift_tei(load_preserved_tei(file, sha), paper_id, "fixture");
+        figures += ir.figures.len();
+        tables += ir.tables.len();
+        formulas += ir.formulas.len();
+        callouts += ir.visual_callouts.len();
+        assert!(
+            ir.figures
+                .iter()
+                .all(|figure| figure.source_digest.len() == 64)
+        );
+        assert!(
+            ir.tables
+                .iter()
+                .all(|table| table.source_digest.len() == 64)
+        );
+        assert!(
+            ir.formulas
+                .iter()
+                .all(|formula| formula.source_digest.len() == 64)
+        );
+        assert!(
+            ir.visual_callouts
+                .iter()
+                .all(|callout| callout.source_digest.len() == 64)
+        );
+    }
+    assert_eq!(figures, 106, "preserved Java figure denominator drifted");
+    assert_eq!(tables, 8, "preserved Java table denominator drifted");
+    assert_eq!(formulas, 38, "preserved Java formula denominator drifted");
+    assert_eq!(
+        callouts, 106,
+        "preserved Java figure/table callout denominator drifted"
+    );
+}
+
 /// T02: reca/rlm TEI carry GROBID `coords` on `<graphic>` (not on formulas
 /// or tables in this probe). This cut does not lift graphics; the pin is on
 /// the fixture bytes so later visual-head slices have source-bound coords.

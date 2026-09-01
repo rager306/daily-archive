@@ -2109,3 +2109,141 @@ fn native_composition_is_pure_and_has_independent_entry_points() {
         hits.join("\n")
     );
 }
+
+// ───── S16/T05: native visual heads and observations remain shadow-only ─────
+
+#[test]
+fn native_visual_heads_and_observations_are_pure_and_quarantined() {
+    let head_surface = read_text("crates/da-parse/src/native_visual.rs");
+    assert!(
+        head_surface.len() > 10_000,
+        "native visual head source truncated"
+    );
+    assert_eq!(
+        import_roots_of(&head_surface),
+        BTreeSet::from(["crate".to_string(), "serde".to_string(), "std".to_string()]),
+        "native heads may use only typed geometry, serde, and deterministic collections"
+    );
+    let observation_surface = read_text("crates/da-adapters/src/layout_visual.rs");
+    assert!(
+        observation_surface.len() > 8_000,
+        "visual observation seam source truncated"
+    );
+    let forbidden = [
+        "std::env",
+        "std::fs",
+        "std::path",
+        "PathBuf",
+        "std::net",
+        "reqwest",
+        "std::process",
+        "Command::",
+        "std::time",
+        "SystemTime",
+        "Instant",
+        "std::thread",
+        "std::sync",
+        "tokio",
+        "tracing",
+        "log::",
+        "println!",
+        "eprintln!",
+        "rand",
+        "ParserPort",
+        "TeiLifter",
+        "TeiParseIr",
+        "ParsedArticle",
+        "GraphStore",
+        "Samyama",
+        "compose_header",
+        "compose_references",
+        "http://",
+        "https://",
+        "pdftotext",
+        "pdffigures2",
+    ];
+    for (surface, text) in [
+        ("native visual heads", head_surface.as_str()),
+        ("visual observation seam", observation_surface.as_str()),
+    ] {
+        let hits = native_date_marker_hits(text, &forbidden);
+        assert!(
+            hits.is_empty(),
+            "{surface} acquired forbidden coupling:\n{}",
+            hits.join("\n")
+        );
+    }
+    for required in [
+        "detect_figure_heads",
+        "detect_table_heads",
+        "detect_formula_heads",
+        "NativeVisualAbsence",
+        "NativeVisualError",
+    ] {
+        assert!(
+            head_surface.contains(required),
+            "native head API lost {required}"
+        );
+    }
+    assert!(observation_surface.contains("terminal_absence"));
+    assert!(observation_surface.contains("source_pdf_sha256"));
+
+    let runtime_surfaces = [
+        "crates/da-parse/src/http.rs",
+        "crates/da-parse/src/parser.rs",
+        "crates/da-parse/src/lift.rs",
+        "crates/da-parse/src/ir.rs",
+        "crates/da-parse/src/projector.rs",
+        "crates/da-parse/src/envelope.rs",
+        "crates/da-parse/src/transport.rs",
+        "crates/da-parse/src/backend.rs",
+        "crates/da-parse/src/batch.rs",
+        "crates/da-parse/src/cache.rs",
+        "crates/da-ports/src/lib.rs",
+        "crates/da-ports/src/parser.rs",
+        "crates/da-application/src/lib.rs",
+        "crates/da-cli/src/main.rs",
+    ];
+    let mut leaked = Vec::new();
+    for rel in runtime_surfaces {
+        for (line_no, raw) in read_text(rel).lines().enumerate() {
+            if raw.contains("native_visual")
+                || raw.contains("NativeVisual")
+                || raw.contains("layout_visual")
+                || raw.contains("VisualObservation")
+            {
+                leaked.push(format!("{rel}:{}: {}", line_no + 1, raw.trim()));
+            }
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "native visual capability leaked into runtime/parser/cache surfaces:\n{}",
+        leaked.join("\n")
+    );
+
+    let lib = read_text("crates/da-parse/src/lib.rs");
+    assert!(lib.contains("mod native_visual;"));
+    assert!(lib.contains("pub use native_visual::"));
+    let layout = read_text("crates/da-parse/src/layout.rs");
+    assert!(layout.contains("LAYOUT_SCHEMA_VERSION"));
+    let compat = read_text("data/parse/grobid_compatibility.yaml");
+    assert!(compat.contains("native_visual_shadow:"));
+    assert!(compat.contains("java_tei: supporting_only"));
+    assert!(compat.contains("local_pdf_oracle: independent_pdf_geometry_truth"));
+    assert!(compat.contains("native_head_scores: shadow_only"));
+}
+
+#[test]
+fn native_visual_quarantine_scanner_fails_visible_on_synthetic_violations() {
+    let synthetic = "use std::fs::File;\nfn run() { println!(\"x\"); }\nParserPort::new();\n";
+    let hits = native_date_marker_hits(synthetic, &["std::fs", "println!", "ParserPort"]);
+    assert_eq!(hits.len(), 3);
+    assert!(
+        native_date_marker_hits(
+            "// std::fs and ParserPort are prose\n",
+            &["std::fs", "ParserPort"]
+        )
+        .is_empty()
+    );
+}
