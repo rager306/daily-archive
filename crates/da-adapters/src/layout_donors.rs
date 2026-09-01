@@ -239,6 +239,9 @@ pub fn reorder_shadow_with_xy_cut(
             detail: "XY-Cut lexical observation has unmatched rows".into(),
         });
     }
+    // Keep the lexical sidecar in the document's admitted order. XY-Cut
+    // changes only that order while source identity remains the stable join
+    // key; the native validator accepts this exact order or the source order.
     observation.lexemes = lexemes;
     Ok(observation)
 }

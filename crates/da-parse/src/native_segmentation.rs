@@ -431,7 +431,7 @@ fn validate_sidecar(
     provider: &str,
 ) -> Result<(), SegmentationError> {
     let mut keys = std::collections::BTreeSet::new();
-    let mut previous = std::collections::BTreeMap::<u32, u32>::new();
+    let mut row_keys = Vec::with_capacity(rows.len());
     for row in rows {
         if row.document_id != doc.document_id {
             return Err(SegmentationError::DocumentMismatch);
@@ -451,16 +451,7 @@ fn validate_sidecar(
                 source: row.source_ordinal,
             });
         }
-        if previous
-            .get(&row.page_ordinal)
-            .is_some_and(|p| *p >= row.source_ordinal)
-        {
-            return Err(SegmentationError::MalformedOrder {
-                page: row.page_ordinal,
-                source: row.source_ordinal,
-            });
-        }
-        previous.insert(row.page_ordinal, row.source_ordinal);
+        row_keys.push((row.page_ordinal, row.source_ordinal));
     }
     let token_keys: std::collections::BTreeSet<_> = doc
         .pages
@@ -474,6 +465,23 @@ fn validate_sidecar(
         })
         .map(|token| (token.page_ordinal, token.source_ordinal))
         .collect();
+    let document_order = doc
+        .pages
+        .iter()
+        .flat_map(|page| page.tokens.iter())
+        .filter(|token| {
+            !matches!(
+                token.kind,
+                LayoutTokenKind::Formula | LayoutTokenKind::Image
+            )
+        })
+        .map(|token| (token.page_ordinal, token.source_ordinal))
+        .collect::<Vec<_>>();
+    let source_order = token_keys.iter().copied().collect::<Vec<_>>();
+    if row_keys != source_order && row_keys != document_order {
+        let (page, source) = document_order.first().copied().unwrap_or((0, 0));
+        return Err(SegmentationError::MalformedOrder { page, source });
+    }
     for row in rows {
         if !token_keys.contains(&(row.page_ordinal, row.source_ordinal)) {
             return Err(SegmentationError::InvalidLexeme);
