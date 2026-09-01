@@ -21,6 +21,8 @@ pub mod html_parser;
 pub mod http_fetch;
 #[cfg(feature = "pdf-layout")]
 pub mod layout_donors;
+#[cfg(feature = "pdf-layout")]
+pub mod layout_visual;
 pub mod memory_pipeline_cache;
 pub mod negative_memory;
 pub use figure_quote_policy::load_figure_quote_policy;
@@ -72,6 +74,11 @@ pub use layout_donors::{
     LayoutDonor, LayoutDonorError, LayoutDonorLimits, LayoutShadowObservation,
     PdfInspectorLayoutDonor, PdfaltoLayoutDonor, XyCutLayoutDonor, parse_pdfalto_xml,
     parse_pdfalto_xml_shadow, reorder_shadow_with_xy_cut, reorder_with_xy_cut,
+};
+#[cfg(feature = "pdf-layout")]
+pub use layout_visual::{
+    MAX_VISUAL_PRIMITIVES, VISUAL_OBSERVATION_SCHEMA_VERSION, VisualAbsenceReason, VisualError,
+    VisualObservation, VisualPrimitive, VisualPrimitiveKind, VisualPrimitiveState, VisualProvider,
 };
 
 pub use openalex_adapter::OpenAlexHttpAdapter;

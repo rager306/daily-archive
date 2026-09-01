@@ -3,6 +3,9 @@
 //! This module is deliberately shadow-only: it produces the neutral layout
 //! contract and never selects a parser route or writes graph/cache state.
 
+use crate::layout_visual::{
+    VisualAbsenceReason, VisualObservation, VisualPrimitive, VisualPrimitiveKind, VisualProvider,
+};
 use da_parse::{
     LayoutBBox, LayoutDocument, LayoutError, LayoutPage, LayoutProvider, LayoutSpan,
     LayoutStyleHints, LayoutToken, LayoutTokenKind,
@@ -108,6 +111,9 @@ pub trait LayoutDonor: Send + Sync {
 pub struct LayoutShadowObservation {
     pub document: LayoutDocument,
     pub lexemes: Vec<da_parse::LexemeRow>,
+    /// Bounded visual evidence from this invocation, kept separate from the
+    /// neutral lexical layout and absent when the upstream signal is missing.
+    pub visual: VisualObservation,
 }
 
 #[cfg(feature = "pdf-layout")]
@@ -116,6 +122,7 @@ impl fmt::Debug for LayoutShadowObservation {
         f.debug_struct("LayoutShadowObservation")
             .field("document", &self.document)
             .field("lexeme_count", &self.lexemes.len())
+            .field("visual", &self.visual)
             .finish()
     }
 }
@@ -162,7 +169,22 @@ fn observation_from_items(
             limit: limits.max_output_bytes,
         });
     }
-    Ok(LayoutShadowObservation { document, lexemes })
+    let visual = VisualObservation::terminal_absence(
+        &document,
+        crate::layout_visual::VisualProvider::new(provider.id.clone(), provider.version.clone())
+            .map_err(|error| LayoutDonorError::Malformed {
+                detail: format!("visual provider: {error}"),
+            })?,
+        VisualAbsenceReason::NotObserved,
+    )
+    .map_err(|error| LayoutDonorError::Malformed {
+        detail: format!("visual observation: {error}"),
+    })?;
+    Ok(LayoutShadowObservation {
+        document,
+        lexemes,
+        visual,
+    })
 }
 
 #[cfg(feature = "pdf-layout")]
@@ -243,6 +265,12 @@ pub fn reorder_shadow_with_xy_cut(
     // changes only that order while source identity remains the stable join
     // key; the native validator accepts this exact order or the source order.
     observation.lexemes = lexemes;
+    observation
+        .visual
+        .validate(&observation.document)
+        .map_err(|error| LayoutDonorError::Malformed {
+            detail: format!("visual observation: {error}"),
+        })?;
     Ok(observation)
 }
 
@@ -1117,7 +1145,7 @@ pub fn parse_pdfalto_xml_shadow(
         buf.clear();
     }
     all.extend(page_items);
-    observation_from_items(
+    let observation = observation_from_items(
         pdf_bytes,
         document_id,
         provider("pdfalto", "unknown"),
@@ -1125,7 +1153,219 @@ pub fn parse_pdfalto_xml_shadow(
         &page_geometry,
         limits,
         true,
-    )
+    )?;
+    let visual = parse_pdfalto_visual_observation(
+        xml,
+        &observation.document,
+        VisualProvider::new("pdfalto", "unknown").map_err(|error| LayoutDonorError::Malformed {
+            detail: format!("visual provider: {error}"),
+        })?,
+        limits,
+    )?;
+    Ok(LayoutShadowObservation {
+        visual,
+        ..observation
+    })
+}
+
+/// Retain only explicit pdfalto-compatible visual observations. Text elements
+/// are deliberately ignored: lexical content is owned by the neutral layout
+/// and cannot be promoted to detector coverage. The parser accepts common
+/// ALTO-like geometry aliases, but requires a source content digest (or an
+/// inline content value that is hashed immediately) for observed primitives.
+#[cfg(feature = "pdf-layout")]
+fn parse_pdfalto_visual_observation(
+    xml: &[u8],
+    document: &LayoutDocument,
+    provider: VisualProvider,
+    limits: LayoutDonorLimits,
+) -> Result<VisualObservation, LayoutDonorError> {
+    use quick_xml::Reader;
+    use quick_xml::events::Event;
+
+    let mut reader = Reader::from_reader(xml);
+    let mut buffer = Vec::new();
+    let mut page = 0u32;
+    let mut primitives = Vec::new();
+    let mut ordinals = BTreeMap::<u32, u32>::new();
+    loop {
+        match reader.read_event_into(&mut buffer) {
+            Ok(Event::Start(event)) if event.name().as_ref().eq_ignore_ascii_case(b"page") => {
+                page = page.saturating_add(1);
+            }
+            Ok(Event::Start(event)) | Ok(Event::Empty(event)) => {
+                let name = event.name();
+                let kind = match visual_kind(name.as_ref()) {
+                    Some(kind) => kind,
+                    None => {
+                        buffer.clear();
+                        continue;
+                    }
+                };
+                let mut values = [None; 4];
+                let mut digest = None;
+                let mut inline_content = None;
+                let mut bottom_left = false;
+                for attribute in event.attributes() {
+                    let attribute = attribute.map_err(|error| LayoutDonorError::Malformed {
+                        detail: error.to_string(),
+                    })?;
+                    let key = attribute.key.as_ref();
+                    if key.eq_ignore_ascii_case(b"content_digest")
+                        || key.eq_ignore_ascii_case(b"digest")
+                        || key.eq_ignore_ascii_case(b"data_digest")
+                    {
+                        digest = Some(
+                            attribute
+                                .unescape_value()
+                                .map_err(|error| LayoutDonorError::Malformed {
+                                    detail: error.to_string(),
+                                })?
+                                .into_owned(),
+                        );
+                        continue;
+                    }
+                    if key.eq_ignore_ascii_case(b"content") {
+                        inline_content = Some(
+                            attribute
+                                .unescape_value()
+                                .map_err(|error| LayoutDonorError::Malformed {
+                                    detail: error.to_string(),
+                                })?
+                                .into_owned(),
+                        );
+                        continue;
+                    }
+                    if key.eq_ignore_ascii_case(b"origin") {
+                        let origin = attribute.unescape_value().map_err(|error| {
+                            LayoutDonorError::Malformed {
+                                detail: error.to_string(),
+                            }
+                        })?;
+                        bottom_left = origin.eq_ignore_ascii_case("bottom_left");
+                        continue;
+                    }
+                    let slot = if key.eq_ignore_ascii_case(b"x")
+                        || key.eq_ignore_ascii_case(b"x0")
+                        || key.eq_ignore_ascii_case(b"hpos")
+                    {
+                        Some(0)
+                    } else if key.eq_ignore_ascii_case(b"y")
+                        || key.eq_ignore_ascii_case(b"y0")
+                        || key.eq_ignore_ascii_case(b"vpos")
+                    {
+                        Some(1)
+                    } else if key.eq_ignore_ascii_case(b"width") || key.eq_ignore_ascii_case(b"w") {
+                        Some(2)
+                    } else if key.eq_ignore_ascii_case(b"height") || key.eq_ignore_ascii_case(b"h")
+                    {
+                        Some(3)
+                    } else {
+                        None
+                    };
+                    let Some(slot) = slot else { continue };
+                    let raw = std::str::from_utf8(&attribute.value).map_err(|error| {
+                        LayoutDonorError::Malformed {
+                            detail: error.to_string(),
+                        }
+                    })?;
+                    values[slot] =
+                        Some(
+                            raw.parse::<f64>()
+                                .map_err(|error| LayoutDonorError::Malformed {
+                                    detail: error.to_string(),
+                                })?,
+                        );
+                }
+                let [Some(x), Some(y), Some(width), Some(height)] = values else {
+                    return Err(LayoutDonorError::Malformed {
+                        detail: "visual primitive geometry missing".into(),
+                    });
+                };
+                let page_doc = document
+                    .pages
+                    .iter()
+                    .find(|candidate| candidate.page_ordinal == page)
+                    .ok_or_else(|| LayoutDonorError::Malformed {
+                        detail: "visual primitive page identity missing".into(),
+                    })?;
+                let bbox = if bottom_left {
+                    LayoutBBox::from_bottom_left(x, y, x + width, y + height, page_doc.height)
+                } else {
+                    LayoutBBox::new(x, y, x + width, y + height)
+                }
+                .map_err(LayoutDonorError::InvalidLayout)?;
+                let content_digest = digest
+                    .or_else(|| inline_content.map(|content| sha256_hex(content.as_bytes())))
+                    .ok_or_else(|| LayoutDonorError::Malformed {
+                        detail: "visual primitive content digest missing".into(),
+                    })?;
+                let source_ordinal = ordinals.entry(page).or_insert(0);
+                let primitive = VisualPrimitive::observed(
+                    document,
+                    provider.clone(),
+                    page,
+                    *source_ordinal,
+                    kind,
+                    bbox,
+                    content_digest,
+                )
+                .map_err(|error| LayoutDonorError::Malformed {
+                    detail: format!("visual primitive: {error}"),
+                })?;
+                *source_ordinal += 1;
+                primitives.push(primitive);
+                if primitives.len() > crate::layout_visual::MAX_VISUAL_PRIMITIVES
+                    || primitives.len() > limits.max_tokens
+                {
+                    return Err(LayoutDonorError::Oversize {
+                        resource: "visual_primitives",
+                        limit: crate::layout_visual::MAX_VISUAL_PRIMITIVES.min(limits.max_tokens),
+                    });
+                }
+            }
+            Ok(Event::Eof) => break,
+            Err(error) => {
+                return Err(LayoutDonorError::Malformed {
+                    detail: error.to_string(),
+                });
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+    if primitives.is_empty() {
+        VisualObservation::terminal_absence(document, provider, VisualAbsenceReason::NotObserved)
+            .map_err(|error| LayoutDonorError::Malformed {
+                detail: format!("visual observation: {error}"),
+            })
+    } else {
+        VisualObservation::new(document, primitives).map_err(|error| LayoutDonorError::Malformed {
+            detail: format!("visual observation: {error}"),
+        })
+    }
+}
+
+#[cfg(feature = "pdf-layout")]
+fn visual_kind(name: &[u8]) -> Option<VisualPrimitiveKind> {
+    if name.eq_ignore_ascii_case(b"image")
+        || name.eq_ignore_ascii_case(b"illustration")
+        || name.eq_ignore_ascii_case(b"figure")
+    {
+        Some(VisualPrimitiveKind::Image)
+    } else if name.eq_ignore_ascii_case(b"graphic")
+        || name.eq_ignore_ascii_case(b"graphicalelement")
+    {
+        Some(VisualPrimitiveKind::Graphic)
+    } else if name.eq_ignore_ascii_case(b"table") {
+        Some(VisualPrimitiveKind::Table)
+    } else if name.eq_ignore_ascii_case(b"formula") || name.eq_ignore_ascii_case(b"equation") {
+        Some(VisualPrimitiveKind::Formula)
+    } else if name.eq_ignore_ascii_case(b"rect") || name.eq_ignore_ascii_case(b"rectangle") {
+        Some(VisualPrimitiveKind::Rect)
+    } else {
+        None
+    }
 }
 
 #[cfg(test)]
