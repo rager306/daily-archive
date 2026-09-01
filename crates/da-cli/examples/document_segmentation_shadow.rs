@@ -31,7 +31,6 @@ struct LayoutManifest {
 }
 #[derive(Debug, Deserialize)]
 struct LayoutCorpus {
-    id: String,
     corpus_n: usize,
     page_denominator: usize,
     documents: Vec<LayoutDocument>,
@@ -41,7 +40,6 @@ struct LayoutDocument {
     id: String,
     source_pdf: String,
     sha256: String,
-    pages: usize,
 }
 #[derive(Debug, Deserialize)]
 struct SegmentationManifest {
@@ -84,7 +82,6 @@ struct GenreLabel {
 #[derive(Debug, Deserialize)]
 struct EvaluationSpec {
     required_rows: usize,
-    matrix_axes: Vec<String>,
     pooled_metrics: String,
 }
 #[derive(Debug, Deserialize)]
@@ -440,6 +437,7 @@ fn parse_args() -> (PathBuf, PathBuf, PathBuf, Option<PathBuf>, usize, usize) {
     (layout, segmentation, report, pdfalto, workers, queue)
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("document_segmentation_shadow");
     let (layout_path, segmentation_path, report_path, pdfalto_path, workers, queue) = parse_args();
     let layout_bytes = fs::read(&layout_path)?;
     let layout: LayoutManifest = serde_yaml::from_slice(&layout_bytes)?;
@@ -494,9 +492,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut source_fingerprint = Sha256::new();
     for document in &layout.corpus.documents {
         let source_pdf = PathBuf::from(&document.source_pdf);
-        let source_pdf = if source_pdf.is_absolute() {
-            source_pdf
-        } else if source_pdf.is_file() {
+        let source_pdf = if source_pdf.is_absolute() || source_pdf.is_file() {
             source_pdf
         } else {
             let root = layout_path

@@ -730,6 +730,7 @@ fn rss() -> Option<u64> {
             .map(|kb| kb * 1024)
     })
 }
+#[allow(clippy::too_many_arguments)]
 fn make_report(
     m: &Manifest,
     mf: &str,

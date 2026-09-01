@@ -1849,6 +1849,172 @@ fn native_citation_boundary_scanner_fails_visible_on_synthetic_violations() {
 // ───── S12/T05: composition remains a quarantined, pure leaf ─────
 
 #[test]
+fn native_segmentation_is_pure_and_quarantined_from_runtime_surfaces() {
+    const SURFACE: &str = "crates/da-parse/src/native_segmentation.rs";
+    let text = read_text(SURFACE);
+    assert!(
+        text.len() > 15_000,
+        "native segmentation source unexpectedly truncated"
+    );
+    assert_eq!(
+        import_roots_of(&text),
+        BTreeSet::from([
+            "crate".to_string(),
+            "serde".to_string(),
+            "sha2".to_string(),
+            "std".to_string()
+        ]),
+        "segmentation may use only its typed layout, serde, hashing, and formatting leaves"
+    );
+    let forbidden = [
+        "std::env",
+        "std::fs",
+        "std::path",
+        "PathBuf",
+        "std::net",
+        "reqwest",
+        "std::process",
+        "Command::",
+        "std::time",
+        "SystemTime",
+        "Instant",
+        "std::thread",
+        "std::sync",
+        "tokio",
+        "tracing",
+        "log::",
+        "println!",
+        "eprintln!",
+        "rand",
+        "ParserPort",
+        "TeiLifter",
+        "TeiParseIr",
+        "ParsedArticle",
+        "GraphStore",
+        "Samyama",
+        "compose_header",
+        "compose_references",
+        "http://",
+        "https://",
+    ];
+    let hits = native_date_marker_hits(&text, &forbidden);
+    assert!(
+        hits.is_empty(),
+        "native segmentation acquired a side effect or forbidden coupling:\n{}",
+        hits.join("\n")
+    );
+    assert!(text.contains("pub fn segment_document"));
+    for forbidden_output in [
+        "FigureHead",
+        "TableHead",
+        "FormulaHead",
+        "VisualCaption",
+        "Callout",
+    ] {
+        assert!(
+            !text.contains(forbidden_output),
+            "segmentation grew visual output type {forbidden_output}"
+        );
+    }
+
+    let runtime_surfaces = [
+        "crates/da-parse/src/http.rs",
+        "crates/da-parse/src/parser.rs",
+        "crates/da-parse/src/lift.rs",
+        "crates/da-parse/src/ir.rs",
+        "crates/da-parse/src/projector.rs",
+        "crates/da-parse/src/envelope.rs",
+        "crates/da-parse/src/transport.rs",
+        "crates/da-parse/src/backend.rs",
+        "crates/da-parse/src/batch.rs",
+        "crates/da-parse/src/cache.rs",
+        "crates/da-parse/src/profile.rs",
+        "crates/da-parse/src/conservation.rs",
+        "crates/da-ports/src/lib.rs",
+        "crates/da-ports/src/parser.rs",
+        "crates/da-application/src/lib.rs",
+        "crates/da-adapters/src/lib.rs",
+        "crates/da-cli/src/main.rs",
+    ];
+    let mut leaked = Vec::new();
+    for rel in runtime_surfaces {
+        for (line_no, raw) in read_text(rel).lines().enumerate() {
+            if raw.contains("native_segmentation")
+                || raw.contains("NativeSegmenter")
+                || raw.contains("segment_document")
+            {
+                leaked.push(format!("{rel}:{}: {}", line_no + 1, raw.trim()));
+            }
+        }
+    }
+    let mut ports = Vec::new();
+    collect_rs_files(&repo_root().join("crates/da-ports/src"), &mut ports);
+    for file in ports {
+        let rel = file
+            .strip_prefix(repo_root())
+            .unwrap_or(&file)
+            .display()
+            .to_string();
+        for (line_no, raw) in std::fs::read_to_string(&file)
+            .expect("port source readable")
+            .lines()
+            .enumerate()
+        {
+            if raw.contains("native_segmentation")
+                || raw.contains("NativeSegmenter")
+                || raw.contains("segment_document")
+            {
+                leaked.push(format!("{rel}:{}: {}", line_no + 1, raw.trim()));
+            }
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "native segmentation leaked into runtime or ParserPort surfaces:\n{}",
+        leaked.join("\n")
+    );
+
+    let cli_src = read_text("crates/da-cli/src/main.rs");
+    assert!(!cli_src.contains("native_segmentation") && !cli_src.contains("NativeSegmenter"));
+    let registry = serde_yaml::from_str::<serde_yaml::Value>(&read_text(
+        "data/parse/grobid_compatibility.yaml",
+    ))
+    .expect("compatibility registry");
+    let stage = registry
+        .get("capabilities")
+        .and_then(|v| v.as_sequence())
+        .expect("capabilities")
+        .iter()
+        .find(|v| v.get("id").and_then(|v| v.as_str()) == Some("stage.document_segmentation"))
+        .expect("Java segmentation stage");
+    assert_eq!(
+        stage.get("state").and_then(|v| v.as_str()),
+        Some("fallback")
+    );
+    assert_eq!(
+        stage.get("baseline").and_then(|v| v.as_str()),
+        Some("java-grobid-segmentation")
+    );
+    assert_eq!(
+        stage.get("candidate").and_then(|v| v.as_str()),
+        Some("none")
+    );
+}
+
+#[test]
+fn native_segmentation_boundary_scanner_fails_visible_on_synthetic_violations() {
+    let synthetic = "use std::fs::File;\nuse serde::Serialize;\nfn compose_header() {}\n";
+    assert!(!native_date_marker_hits(synthetic, &["std::fs", "compose_header"]).is_empty());
+    assert!(
+        native_date_marker_hits(
+            "// std::fs and compose_header are prose\n",
+            &["std::fs", "compose_header"]
+        )
+        .is_empty()
+    );
+}
+
+#[test]
 fn native_composition_is_pure_and_has_independent_entry_points() {
     const SURFACE: &str = "crates/da-parse/src/native_composition.rs";
     let text = read_text(SURFACE);

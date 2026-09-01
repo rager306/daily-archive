@@ -20,6 +20,73 @@ fn runner() -> PathBuf {
         })
 }
 
+fn assert_redacted(value: &Value, path: &str, in_redaction: bool) {
+    match value {
+        Value::Object(object) => {
+            for (key, child) in object {
+                let child_path = format!("{path}.{key}");
+                let key_is_sensitive = [
+                    "raw_text",
+                    "raw_pdf",
+                    "pdf_bytes",
+                    "tei_xml",
+                    "images",
+                    "page_image",
+                    "physical_paths",
+                    "hostname",
+                    "executable",
+                    "figure_head",
+                    "table_head",
+                    "formula_head",
+                    "caption",
+                    "callout",
+                    "fulltext",
+                    "parsed_article",
+                    "graph_payload",
+                ]
+                .contains(&key.as_str());
+                if key_is_sensitive && !in_redaction && key != "redaction" {
+                    panic!("sensitive report field escaped redaction block at {child_path}");
+                }
+                if in_redaction && key_is_sensitive {
+                    assert!(
+                        child == &Value::Bool(false),
+                        "redaction marker must be false at {child_path}"
+                    );
+                }
+                assert_redacted(child, &child_path, in_redaction || key == "redaction");
+            }
+        }
+        Value::Array(items) => {
+            for (index, child) in items.iter().enumerate() {
+                assert_redacted(child, &format!("{path}[{index}]"), in_redaction);
+            }
+        }
+        Value::String(text) => {
+            for marker in [
+                "data/sources",
+                "file://",
+                "/root/",
+                ".pdf",
+                "<tei",
+                "<TEI",
+                "FigureHead",
+                "TableHead",
+                "FormulaHead",
+                "VisualCaption",
+                "Callout",
+                "ParsedArticle",
+            ] {
+                assert!(
+                    !text.contains(marker),
+                    "forbidden report marker `{marker}` at {path}"
+                );
+            }
+        }
+        _ => {}
+    }
+}
+
 #[test]
 fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
     let dir = tempdir().expect("temporary report directory");
@@ -82,12 +149,18 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
     ] {
         assert_eq!(redaction[key], false, "redaction flag {key}");
     }
+    assert_redacted(&value, "$", false);
+    assert_eq!(value["gate"]["no_selection"], true);
+    assert_eq!(value["policy"]["selection"], "forbidden");
     assert!(
         !text.contains("data/sources")
             && !text.contains(".pdf")
             && !text.contains("/root/")
-            && !text.contains("file://"),
-        "durable report leaked forbidden source or host details"
+            && !text.contains("file://")
+            && !text.contains("ParsedArticle")
+            && !text.contains("fulltext")
+            && !text.contains("graph_payload"),
+        "durable report leaked forbidden source, host, or downstream payload"
     );
 
     let outcomes = value["outcomes"].as_array().expect("outcomes");

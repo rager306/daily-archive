@@ -477,29 +477,41 @@ fn validate_sidecar(
         })
         .map(|token| (token.page_ordinal, token.source_ordinal))
         .collect::<Vec<_>>();
-    let source_order = token_keys.iter().copied().collect::<Vec<_>>();
-    if row_keys != source_order && row_keys != document_order {
-        let (page, source) = document_order.first().copied().unwrap_or((0, 0));
-        return Err(SegmentationError::MalformedOrder { page, source });
+
+    // Resolve the join by identity before validating either admitted order.
+    // This keeps typed sidecar failures specific: an incomplete or extra
+    // sidecar must not be reported as an ordering error merely because its
+    // key sequence cannot match a complete document sequence.
+    for (page, source) in &document_order {
+        if !keys.contains(&(*page, *source)) {
+            return Err(SegmentationError::MissingLexeme {
+                page: *page,
+                source: *source,
+            });
+        }
     }
     for row in rows {
         if !token_keys.contains(&(row.page_ordinal, row.source_ordinal)) {
             return Err(SegmentationError::InvalidLexeme);
         }
     }
+
+    let source_order = token_keys.iter().copied().collect::<Vec<_>>();
+    if row_keys != source_order && row_keys != document_order {
+        let (page, source) = document_order.first().copied().unwrap_or((0, 0));
+        return Err(SegmentationError::MalformedOrder { page, source });
+    }
     for page in &doc.pages {
         for t in &page.tokens {
             if matches!(t.kind, LayoutTokenKind::Formula | LayoutTokenKind::Image) {
                 continue;
             }
-            let Some(row) = rows.iter().find(|row| {
-                row.page_ordinal == t.page_ordinal && row.source_ordinal == t.source_ordinal
-            }) else {
-                return Err(SegmentationError::MissingLexeme {
-                    page: t.page_ordinal,
-                    source: t.source_ordinal,
-                });
-            };
+            let row = rows
+                .iter()
+                .find(|row| {
+                    row.page_ordinal == t.page_ordinal && row.source_ordinal == t.source_ordinal
+                })
+                .expect("sidecar coverage checked above");
             if row.text_digest != t.text_digest {
                 return Err(SegmentationError::DigestMismatch {
                     page: t.page_ordinal,
