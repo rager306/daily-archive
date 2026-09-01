@@ -40,6 +40,7 @@ mod native_composition;
 mod native_date;
 mod native_personal_name;
 mod native_segmentation;
+mod native_visual;
 mod parser;
 mod profile;
 mod projector;
@@ -125,6 +126,14 @@ pub use native_segmentation::{
     MAX_SECTIONS as NATIVE_SEGMENTATION_MAX_SECTIONS, MAX_TOKENS as NATIVE_SEGMENTATION_MAX_TOKENS,
     NATIVE_SEGMENTATION_SCHEMA_VERSION, NativeSegmenter, SectionReceipt, SegmentationConfig,
     SegmentationError, SegmentationLimits, SegmentationOutcome, TokenAssignment, segment_document,
+};
+pub use native_visual::{
+    FigureHeadReceipt, FormulaHeadReceipt, MAX_DIGEST_BYTES, MAX_PRIMITIVES, MAX_RECEIPTS,
+    NATIVE_VISUAL_SCHEMA_VERSION, NativeTableCellReceipt, NativeVisualAbsence, NativeVisualConfig,
+    NativeVisualDigestReceipt, NativeVisualError, NativeVisualHead, NativeVisualHeadOutcome,
+    NativeVisualKind, NativeVisualMetrics, NativeVisualObservation, NativeVisualPrimitive,
+    NativeVisualProvider, TableHeadReceipt, detect_figure_heads, detect_formula_heads,
+    detect_table_heads,
 };
 pub use parser::{ScholarlyParser, lift_and_project_envelope};
 pub use profile::GrobidProfile;
