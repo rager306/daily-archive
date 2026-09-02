@@ -14,6 +14,7 @@ pub const LEARNING_CONTRACT_VERSION: &str = "parse-learning.v1";
 pub const MAX_ID_LEN: usize = 128;
 pub const MAX_RECEIPT_BYTES: usize = 64 * 1024;
 const RVF_RECORD_SCHEMA_VERSION: u16 = 1;
+pub const MAX_TRAINING_SAMPLES: usize = 10_000;
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum LearningContractError {
@@ -145,6 +146,46 @@ pub struct CandidateReceipt {
     pub promotion_state: PromotionState,
     pub deployed: bool,
 }
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReasoningBankReceipt {
+    pub schema_version: u16,
+    pub input_digest: Sha256Digest,
+    pub patterns_digest: Sha256Digest,
+    pub pattern_count: u32,
+    pub config_digest: Sha256Digest,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CandidateManifest {
+    pub receipt: CandidateReceipt,
+    pub rank: u8,
+    pub hidden_dim: u32,
+    pub train_count: u32,
+    pub validation_count: u32,
+    pub train_quality: f32,
+    pub validation_quality: f32,
+    pub validation_gap: f32,
+    pub weights_digest: Sha256Digest,
+}
+impl CandidateManifest {
+    pub fn validate(&self) -> Result<(), LearningContractError> {
+        self.receipt.validate()?;
+        if !(1..=2).contains(&self.rank)
+            || self.hidden_dim == 0
+            || self.train_count == 0
+            || self.validation_count == 0
+            || !self.train_quality.is_finite()
+            || !self.validation_quality.is_finite()
+            || !self.validation_gap.is_finite()
+        {
+            return Err(LearningContractError::InvalidBound);
+        }
+        Ok(())
+    }
+}
 impl CandidateReceipt {
     pub fn validate(&self) -> Result<(), LearningContractError> {
         if self.schema_version != RVF_SCHEMA_VERSION {
@@ -189,6 +230,14 @@ pub enum RvfRecord {
         schema_version: u16,
         record: TrajectoryRecord,
     },
+    ReasoningBank {
+        schema_version: u16,
+        receipt: ReasoningBankReceipt,
+    },
+    Candidate {
+        schema_version: u16,
+        manifest: CandidateManifest,
+    },
 }
 impl RvfRecord {
     pub fn trajectory(record: TrajectoryRecord) -> Self {
@@ -210,13 +259,31 @@ impl RvfRecord {
                 {
                     return Err(LearningContractError::InvalidIdentity);
                 }
-                Ok(())
+            }
+            Self::ReasoningBank {
+                schema_version,
+                receipt,
+            } => {
+                if *schema_version != RVF_RECORD_SCHEMA_VERSION || receipt.pattern_count == 0 {
+                    return Err(LearningContractError::InvalidBound);
+                }
+            }
+            Self::Candidate {
+                schema_version,
+                manifest,
+            } => {
+                if *schema_version != RVF_RECORD_SCHEMA_VERSION {
+                    return Err(LearningContractError::UnsupportedVersion);
+                }
+                manifest.validate()?;
             }
         }
+        Ok(())
     }
     pub fn trajectory_record(&self) -> &TrajectoryRecord {
         match self {
             Self::Trajectory { record, .. } => record,
+            _ => panic!("not a trajectory record"),
         }
     }
 }

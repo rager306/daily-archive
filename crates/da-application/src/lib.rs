@@ -76,8 +76,13 @@ pub mod fsm_policy_fallback;
 pub mod html_parsed_stage;
 pub mod navigation_stage;
 pub mod parse_grammar;
+pub mod parse_policy_training;
 pub mod pdf_toc_stage;
 pub mod sona_bridge;
+pub use da_ports::CandidateManifest;
+pub use parse_policy_training::{
+    PersistedCandidate, TrainingConfig, TrainingError, TrainingOutcome, train_microlora_candidate,
+};
 pub mod structural_elements_stage;
 pub mod summaries_agent_stage;
 pub mod tei_figures_stage;

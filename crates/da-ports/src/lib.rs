@@ -73,11 +73,11 @@ pub use pdf_classification::{
 };
 
 pub use parse_learning::{
-    CVF_SCHEMA_VERSION, CandidateReceipt, CheckpointReceipt, CriticReceipt, CvfEvent,
-    ExperienceReceipt, LEARNING_CONTRACT_VERSION, LearningContractError, LearningLineage,
-    LearningStorageConfig, MAX_LEARNING_CAPACITY, MAX_RECEIPT_BYTES, PromotionState,
-    RVF_SCHEMA_VERSION, RvfAppendReceipt, RvfExperienceStore, RvfRecord, RvfStoreError,
-    Sha256Digest, SplitIdentity, reject_raw_content,
+    CVF_SCHEMA_VERSION, CandidateManifest, CandidateReceipt, CheckpointReceipt, CriticReceipt,
+    CvfEvent, ExperienceReceipt, LEARNING_CONTRACT_VERSION, LearningContractError, LearningLineage,
+    LearningStorageConfig, MAX_LEARNING_CAPACITY, MAX_RECEIPT_BYTES, MAX_TRAINING_SAMPLES,
+    PromotionState, RVF_SCHEMA_VERSION, ReasoningBankReceipt, RvfAppendReceipt, RvfExperienceStore,
+    RvfRecord, RvfStoreError, Sha256Digest, SplitIdentity, reject_raw_content,
 };
 
 pub use parser::{

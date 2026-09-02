@@ -143,11 +143,16 @@ impl LearningIndex {
         let mut policy = std::collections::BTreeSet::new();
         let mut split = std::collections::BTreeSet::new();
         for (sequence, record) in records.iter().enumerate() {
+            let RvfRecord::Trajectory {
+                record: trajectory, ..
+            } = record
+            else {
+                continue;
+            };
             let digest = Sha256Digest::new(hex::encode(Sha256::digest(
                 serde_json::to_vec(record).map_err(|_| LearningIndexError::CorruptIndex)?,
             )))
             .map_err(|_| LearningIndexError::CorruptIndex)?;
-            let trajectory = record.trajectory_record();
             let event = IndexedEvent {
                 sequence: sequence as u64,
                 record_digest: digest,
@@ -303,10 +308,28 @@ fn receipt_to_index(receipt: &ExperienceReceipt, records: &[RvfRecord]) -> Learn
         schema_version: receipt.schema_version,
         generation: receipt.generation,
         experience_digest: receipt.ordered_digest.clone(),
-        event_count: records.len() as u64,
-        corpus_count: 1.min(records.len() as u64),
-        policy_count: 1.min(records.len() as u64),
-        split_count: 1.min(records.len() as u64),
+        event_count: records
+            .iter()
+            .filter(|record| matches!(record, RvfRecord::Trajectory { .. }))
+            .count() as u64,
+        corpus_count: 1.min(
+            records
+                .iter()
+                .filter(|record| matches!(record, RvfRecord::Trajectory { .. }))
+                .count() as u64,
+        ),
+        policy_count: 1.min(
+            records
+                .iter()
+                .filter(|record| matches!(record, RvfRecord::Trajectory { .. }))
+                .count() as u64,
+        ),
+        split_count: 1.min(
+            records
+                .iter()
+                .filter(|record| matches!(record, RvfRecord::Trajectory { .. }))
+                .count() as u64,
+        ),
     }
 }
 fn temp_path(path: &Path) -> PathBuf {

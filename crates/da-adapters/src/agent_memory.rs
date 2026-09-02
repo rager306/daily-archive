@@ -57,9 +57,11 @@ impl CvfAgentMemory {
             .read_all()
             .map_err(|e| AgentMemoryError::Io(e.to_string()))?;
         for record in &records {
-            container
-                .tick(&trajectory_deltas(record.trajectory_record()))
-                .map_err(|e| AgentMemoryError::Io(e.to_string()))?;
+            if let RvfRecord::Trajectory { record, .. } = record {
+                container
+                    .tick(&trajectory_deltas(record))
+                    .map_err(|e| AgentMemoryError::Io(e.to_string()))?;
+            }
         }
         Ok(Self {
             container,
@@ -76,7 +78,10 @@ impl CvfAgentMemory {
             .map(|records| {
                 records
                     .into_iter()
-                    .map(|r| r.trajectory_record().clone())
+                    .filter_map(|r| match r {
+                        RvfRecord::Trajectory { record, .. } => Some(record),
+                        RvfRecord::ReasoningBank { .. } | RvfRecord::Candidate { .. } => None,
+                    })
                     .collect()
             })
             .map_err(|e| AgentMemoryError::Io(e.to_string()))
