@@ -767,7 +767,7 @@ capabilities:
   - id: learning.ruvllm_ablation
     group: 6
     kind: learning_surface
-    state: absent
+    state: candidate
     product_scope: supporting
     promotion_state: candidate
     official:
@@ -778,9 +778,10 @@ capabilities:
       - {name: backend_error, required: false, type: structured}
       response_format: critic verdict + ablation table; candidate only
     implementation:
-      crate: da-parse
-      surface: none
-      notes: Critic must not write graph state. Serving runtime stays outside da-parse.
+      crate: da-application
+      surface: parse_learning_evaluation::aggregate_same_n_ablation
+      feature: learning-evaluation
+      notes: Offline typed aggregation accepts independent redacted ruVLLM receipts; serving runtime stays outside da-parse and no route or graph state is writable.
     baseline: none
     candidate: ruvllm-critic@versioned
     evidence_ref: doc/adr/ADR-075-scholarly-parse-plane-staged-platform.md

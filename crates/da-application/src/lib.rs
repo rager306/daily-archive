@@ -76,10 +76,15 @@ pub mod fsm_policy_fallback;
 pub mod html_parsed_stage;
 pub mod navigation_stage;
 pub mod parse_grammar;
+pub mod parse_learning_evaluation;
 pub mod parse_policy_training;
 pub mod pdf_toc_stage;
 pub mod sona_bridge;
 pub use da_ports::CandidateManifest;
+pub use parse_learning_evaluation::{
+    ABLATION_SCHEMA_VERSION, AblationReport, CRITIC_SCHEMA_VERSION, CriticObservation,
+    CriticStatus, EvaluationError, FrozenEvalCase, aggregate_same_n_ablation,
+};
 pub use parse_policy_training::{
     PersistedCandidate, TrainingConfig, TrainingError, TrainingOutcome, train_microlora_candidate,
 };
