@@ -393,24 +393,22 @@ fn chrono_now() -> String {
         .unwrap_or_default()
 }
 
-/// SONA pattern extraction from CVF trajectories (M452 S01).
-/// Reads trajectory.jsonl for the given paper, builds ReasoningBank,
-/// prints extracted patterns with quality metrics.
+/// SONA pattern extraction from canonical RVF experience (M464/S17/T02).
+/// Legacy JSONL is intentionally not a hidden fallback: `CvfAgentMemory`
+/// performs the explicit read-only migration when opening the namespace.
 pub fn run_sona_analyze(pid: &str) -> anyhow::Result<()> {
-    let traj_path = std::path::Path::new("data/agent_memory")
-        .join(pid)
-        .join("trajectory.jsonl");
-    let text = std::fs::read_to_string(&traj_path)
-        .map_err(|e| anyhow::anyhow!("trajectory {}: {e}", traj_path.display()))?;
-
-    let records: Vec<serde_json::Value> = text
-        .lines()
-        .filter(|l| !l.trim().is_empty())
-        .filter_map(|l| serde_json::from_str(l).ok())
+    let mem_dir = std::path::Path::new("data/agent_memory").join(pid);
+    let memory = da_adapters::agent_memory::CvfAgentMemory::open(mem_dir)
+        .map_err(|e| anyhow::anyhow!("RVF memory {pid}: {e}"))?;
+    let records: Vec<serde_json::Value> = memory
+        .read_trajectories()
+        .map_err(|e| anyhow::anyhow!("RVF read {pid}: {e}"))?
+        .into_iter()
+        .map(|record| serde_json::to_value(record).expect("TrajectoryRecord serializes"))
         .collect();
 
     if records.is_empty() {
-        println!("sona-analyze: no trajectories found for {pid}");
+        println!("sona-analyze: no canonical RVF trajectories found for {pid}");
         return Ok(());
     }
 

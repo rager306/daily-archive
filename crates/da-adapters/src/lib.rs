@@ -33,6 +33,7 @@ pub mod openalex_adapter;
 pub mod parse_cache;
 #[cfg(feature = "redb")]
 pub mod parse_cursor;
+pub mod parse_experience_rvf;
 pub mod pdffigures2;
 pub mod pipeline_cache;
 pub mod pipeline_ledger;
@@ -82,6 +83,7 @@ pub use layout_visual::{
 };
 
 pub use openalex_adapter::OpenAlexHttpAdapter;
+pub use parse_experience_rvf::RvfFileStore;
 #[cfg(feature = "pdf-classifier")]
 pub use pdf_classifier::PdfInspectorClassifier;
 pub use pdffigures2::PdfFigures2Adapter;

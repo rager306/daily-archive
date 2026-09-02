@@ -2,6 +2,7 @@
 //! The port deliberately carries identities and bounded receipts, never raw
 //! PDF, TEI, prompts, completions, or provider-specific payloads.
 
+use crate::agent_memory::TrajectoryRecord;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::path::{Component, Path, PathBuf};
@@ -12,6 +13,7 @@ pub const RVF_SCHEMA_VERSION: u16 = 1;
 pub const LEARNING_CONTRACT_VERSION: &str = "parse-learning.v1";
 pub const MAX_ID_LEN: usize = 128;
 pub const MAX_RECEIPT_BYTES: usize = 64 * 1024;
+const RVF_RECORD_SCHEMA_VERSION: u16 = 1;
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum LearningContractError {
@@ -176,6 +178,82 @@ pub struct CriticReceipt {
     pub metric_digest: Sha256Digest,
     pub failure_count: u64,
     pub producer: String,
+}
+
+/// Canonical RVF journal entry. The adapter frames these records on disk;
+/// callers never need to know the framing or legacy JSONL representation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub enum RvfRecord {
+    Trajectory {
+        schema_version: u16,
+        record: TrajectoryRecord,
+    },
+}
+impl RvfRecord {
+    pub fn trajectory(record: TrajectoryRecord) -> Self {
+        Self::Trajectory {
+            schema_version: RVF_RECORD_SCHEMA_VERSION,
+            record,
+        }
+    }
+    pub fn validate(&self) -> Result<(), LearningContractError> {
+        match self {
+            Self::Trajectory {
+                schema_version,
+                record,
+            } => {
+                if *schema_version != RVF_RECORD_SCHEMA_VERSION
+                    || record.task_id.is_empty()
+                    || record.paper_id.is_empty()
+                    || record.model.is_empty()
+                {
+                    return Err(LearningContractError::InvalidIdentity);
+                }
+                Ok(())
+            }
+        }
+    }
+    pub fn trajectory_record(&self) -> &TrajectoryRecord {
+        match self {
+            Self::Trajectory { record, .. } => record,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RvfAppendReceipt {
+    pub sequence: u64,
+    pub record_digest: Sha256Digest,
+    pub ordered_digest: Sha256Digest,
+    pub duplicate: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+pub enum RvfStoreError {
+    #[error("RVF I/O failure: {0}")]
+    Io(String),
+    #[error("RVF record is truncated at byte {offset}")]
+    Truncated { offset: u64 },
+    #[error("RVF record is corrupt at byte {offset}")]
+    Corrupt { offset: u64 },
+    #[error("RVF record is unknown or unsupported")]
+    UnknownRecord,
+    #[error("RVF record exceeds the bounded size")]
+    RecordTooLarge,
+    #[error("RVF contract: {0}")]
+    Contract(#[from] LearningContractError),
+}
+
+/// Persistent experience boundary. RVF is authoritative; indexes and legacy
+/// files are intentionally absent from this interface.
+pub trait RvfExperienceStore: Send + Sync {
+    fn append(&mut self, record: RvfRecord) -> Result<RvfAppendReceipt, RvfStoreError>;
+    fn read_all(&self) -> Result<Vec<RvfRecord>, RvfStoreError>;
+    fn verify(&self) -> Result<ExperienceReceipt, RvfStoreError>;
+    fn checkpoint(&self) -> Result<CheckpointReceipt, RvfStoreError>;
+    fn migrate_legacy_jsonl(&mut self, path: &std::path::Path) -> Result<u64, RvfStoreError>;
 }
 
 pub const MAX_LEARNING_CAPACITY: usize = 1_000_000;
