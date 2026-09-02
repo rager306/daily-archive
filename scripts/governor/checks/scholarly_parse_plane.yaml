@@ -1,0 +1,90 @@
+# S19/T01 binding DATA contract for the staged native scholarly parse plane.
+# This is deliberately narrower than the parse API ledger and promotion FSM:
+# it binds shipped source/data/artifact identities and fail-closed locks.
+schema_version: scholarly-parse-plane.v1
+policy_id: scholarly_parse_plane
+dimension: scholarly_parse_plane
+severity: high
+anchor: "ADR-075, D127, D204, R091, R111, R112, R113, R115, R116, R117"
+closed_taxonomy:
+  dispositions: [passed, fallback, rejected, unsupported, not_observed, invalid_evidence, stale]
+  violations:
+    - forbidden_dependency
+    - authoritative_redb
+    - memory_only_rvf
+    - hardcoded_physical_default
+    - cache_fingerprint_collision
+    - missing_rollback
+    - auto_promote
+    - deployed
+    - promotion_receipt
+    - production_route
+    - graph_write
+    - import_leak
+    - schema_vocabulary_drift
+    - missing_integration_evidence
+planes:
+  dependency_boundary:
+    required_evidence: [source_path, source_sha256, forbidden_dependencies]
+    forbidden_dependencies: [da-application->da-adapters, kg-*->da-*]
+  persistence_authority:
+    required_evidence: [source_path, source_sha256, authoritative_store, rvf_role]
+    authoritative_store: samyama
+    rvf_role: candidate_evidence_only
+  configuration_ownership:
+    required_evidence: [source_path, source_sha256, owner, physical_defaults]
+    owner: data_and_typed_config
+    physical_defaults: forbidden
+  cache_identity:
+    required_evidence: [source_path, source_sha256, raw_stage_identity, projector_stage_identity, profile_fingerprint, collision_policy]
+    collision_policy: forbidden
+    required_identity_components: [paper_id, pdf_sha256, raw_payload_sha256, projector_schema_fingerprint, profile_fingerprint]
+  promotion_quarantine:
+    required_evidence: [source_path, source_sha256, promotion_state, auto_promote, deployed, promotion_receipt, production_route, graph_write, import_eligible]
+    promotion_state: candidate
+    auto_promote: forbidden
+    deployed: false
+    promotion_receipt: forbidden
+    production_route: forbidden
+    graph_write: forbidden
+    import_eligible: false
+bindings:
+  source_data:
+    - path: data/parse/native_fulltext_composition.yaml
+      sha256: 75ba80b3c2698a765b9ef68b9c4946d3df2128032a41a4c838269707a3fc9a74
+    - path: data/parse/comparison_contract.yaml
+      sha256: 4b0cf7096641a2b2d8a4221f3116532c94767de049f562fb2a7f19b00c20ab28
+    - path: data/parse/api_compatibility_ledger.yaml
+      sha256: 7ea0eb7c9e8520268d69948d10291a800c8bdae4f825a51a95130739dc70e05b
+  canonical_artifacts:
+    - path: artifacts/parse_compat/native_fulltext_composition_shadow.json
+      sha256: 335143530641f5b7c1072b4199b425b7ca9f2ac1da6be02d00477b5162331e28
+  shared_promotion_contract: scripts/governor/checks/promotion_evidence_contract.yaml
+  rollback_target: java-grobid-http@0.9.0-crf
+  integration_evidence:
+    - path: data/parse/comparison_contract.yaml
+      identity: parse-comparison.v1
+    - path: artifacts/parse_compat/native_fulltext_composition_shadow.json
+      identity: native-fulltext-composition-shadow.v1
+locks:
+  import_eligible: false
+  production_route: forbidden
+  graph_write: forbidden
+  auto_promote: forbidden
+  deployed: false
+  promotion_receipt: forbidden
+  raw_payload: forbidden
+  physical_path: forbidden
+redaction:
+  forbidden: [raw_tei, pdf_bytes, body_text, text, hostname, physical_path, secret]
+fixtures:
+  positive:
+    path: governor/fixtures/scholarly_parse_plane/contract.positive.json
+    expect: clean
+  negative:
+    path: governor/fixtures/scholarly_parse_plane/violations.negative.json
+    expect:
+      require_violations: [forbidden_dependency, authoritative_redb, memory_only_rvf, hardcoded_physical_default, cache_fingerprint_collision, missing_rollback, auto_promote, deployed, promotion_receipt, production_route, graph_write, import_leak, schema_vocabulary_drift, missing_integration_evidence]
+      each_label_isolated: true
+      severity: high
+      no_promotion: true
