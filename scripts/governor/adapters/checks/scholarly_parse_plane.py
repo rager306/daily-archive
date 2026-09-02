@@ -57,6 +57,8 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
         return value.get("disposition") not in set((contract.get("closed_taxonomy") or {}).get("dispositions", []))
     if label == "missing_integration_evidence":
         return not value.get("integration_evidence")
+    if label in {"acceptance_evidence_missing", "acceptance_evidence_substitution", "acceptance_role_drift", "acceptance_same_n_drift", "acceptance_lock_erosion"}:
+        return bool(value.get("acceptance_mutation"))
     return bool(plane) and bool(value)
 
 
@@ -104,6 +106,37 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             else:
                 if observed != expected:
                     flag("evidence_substitution", "integration", relative, expected, observed)
+
+    # S20 acceptance is a separate typed surface: the manifest records
+    # official identities and missingness, while the report records only the
+    # bounded local proxy. Never infer execution from a catalogue row.
+    manifest_path = root / "data/parse/acceptance_manifest.yaml"
+    report_path = root / "artifacts/parse_compat/acceptance_evidence.json"
+    try:
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+        acceptance = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, yaml.YAMLError) as error:
+        flag("acceptance_evidence_missing", "integration", "artifacts/parse_compat/acceptance_evidence.json", "manifest and report", str(error))
+    else:
+        classes = {"publisher_acceptance", "layout_omnidocbench"}
+        manifest_classes = manifest.get("classes") or {}
+        report_classes = acceptance.get("classes") or {}
+        if manifest.get("schema_version") != "parse-acceptance.v1" or acceptance.get("schema_version") != "parse-acceptance-evidence.v1" or set(manifest_classes) != classes or set(report_classes) != classes:
+            flag("acceptance_role_drift", "integration", report_path.relative_to(root), sorted(classes), {"manifest": sorted(manifest_classes), "report": sorted(report_classes)})
+        for name in sorted(classes):
+            spec = manifest_classes.get(name) or {}
+            observed = report_classes.get(name) or {}
+            rows = [row for row in spec.get("rows", []) if isinstance(row, dict)]
+            proxy_rows = [row for row in (spec.get("local_proxy") or {}).get("rows", []) if isinstance(row, dict)]
+            expected = {"bound_n": sum(row.get("state") == "bound" for row in rows), "catalogued_n": sum(row.get("state") == "catalogued" for row in rows), "bytes_absent_n": sum(row.get("state") == "bytes_absent" for row in rows)}
+            actual = {key: observed.get(key) for key in expected}
+            expected_execution = len(proxy_rows)
+            if actual != expected or observed.get("same_n") is not True or observed.get("executed_n") != expected_execution:
+                flag("acceptance_same_n_drift", name, report_path.relative_to(root), {**expected, "same_n": True, "executed_n": expected_execution}, {**actual, "same_n": observed.get("same_n"), "executed_n": observed.get("executed_n")})
+            if observed.get("comparison_kind") != spec.get("comparison_kind") or (name == "layout_omnidocbench" and acceptance.get("conservation", {}).get("tei_oracle") not in {None, "java_grobid_compatibility"}):
+                flag("acceptance_role_drift", name, report_path.relative_to(root), spec.get("comparison_kind"), observed.get("comparison_kind"))
+        if acceptance.get("manifest_id") != manifest.get("manifest_id") or acceptance.get("locks", {}).get("import_eligible") is not False or acceptance.get("locks", {}).get("auto_promote") != "forbidden" or acceptance.get("locks", {}).get("production_route") != "forbidden":
+            flag("acceptance_lock_erosion", "promotion_quarantine", report_path.relative_to(root), "candidate-only locks", acceptance.get("locks"))
 
     shared = root / str((contract.get("bindings") or {}).get("shared_promotion_contract", ""))
     if not shared.is_file():

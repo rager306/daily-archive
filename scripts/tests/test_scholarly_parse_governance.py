@@ -47,6 +47,11 @@ REQUIRED_VIOLATIONS = {
     "import_leak",
     "schema_vocabulary_drift",
     "missing_integration_evidence",
+    "acceptance_evidence_missing",
+    "acceptance_evidence_substitution",
+    "acceptance_role_drift",
+    "acceptance_same_n_drift",
+    "acceptance_lock_erosion",
 }
 
 

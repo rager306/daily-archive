@@ -313,6 +313,16 @@ The checker is governance evidence, not authorization: it never creates a
 Promotion receipt, reloads a Wasm policy, writes the graph, imports data, or
 activates a production route.
 
+S20 makes the acceptance boundary explicit. `publisher_acceptance` and
+`layout_omnidocbench` are bound to the schema-versioned acceptance manifest and
+its redacted evidence report. The report executes only the three-document local
+proxy: official publisher bytes and OmniDocBench bytes remain catalogued or
+`bytes_absent`, never silently skipped or relabeled as executed. OmniDocBench is
+used for layout/Markdown topology only and is not a TEI conservation oracle;
+Java GROBID remains the TEI oracle and rollback target. A green report does not
+authorize import, graph writes, production routing, or promotion; the candidate
+and quarantine locks remain unchanged.
+
 ## 8. References
 
 - Research synthesis:

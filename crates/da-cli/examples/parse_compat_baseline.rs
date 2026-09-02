@@ -3931,8 +3931,18 @@ fn build_baseline_report(inputs: &BaselineInputs<'_>) -> Result<BaselineReport, 
         corpus_classes: json!({
             "used": CORPUS_ID,
             "location": "crates/da-parse/tests/fixtures/",
-            "publisher_acceptance": "not_added — later slices; never fetched or executed by this command",
-            "layout_omnidocbench": "not_added — later slices",
+            "publisher_acceptance": {
+                "manifest": "data/parse/acceptance_manifest.yaml#classes.publisher_acceptance",
+                "acceptance_evidence": "artifacts/parse_compat/acceptance_evidence.json#classes.publisher_acceptance",
+                "executed_as": CORPUS_ID,
+                "remote_bytes": "bytes_absent; not fetched or executed"
+            },
+            "layout_omnidocbench": {
+                "manifest": "data/parse/acceptance_manifest.yaml#classes.layout_omnidocbench",
+                "acceptance_evidence": "artifacts/parse_compat/acceptance_evidence.json#classes.layout_omnidocbench",
+                "executed_as": CORPUS_ID,
+                "remote_bytes": "bytes_absent; layout/Markdown only"
+            },
             "entity_f1_supporting": "not_used_as_parse_proof (supporting evidence only)"
         }),
         report_identity: identity,
