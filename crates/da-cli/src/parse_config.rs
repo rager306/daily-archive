@@ -25,6 +25,7 @@ use std::num::NonZeroUsize;
 use std::path::{Component, Path, PathBuf};
 
 use da_parse::{CacheMode, ParseBatchLimits};
+use da_ports::{LearningContractError, LearningStorageConfig};
 
 // ---------------------------------------------------------------------------
 // Closed env-key vocabulary (documented in data/parse/grobid_compatibility.yaml
@@ -52,6 +53,10 @@ pub const DA_PARSE_QUEUE_CAPACITY_KEY: &str = "DA_PARSE_QUEUE_CAPACITY";
 pub const DA_PARSE_REDB_INDEX_ENABLED_KEY: &str = "DA_PARSE_REDB_INDEX_ENABLED";
 /// redb accelerator file path (required only when enabled).
 pub const DA_PARSE_REDB_INDEX_PATH_KEY: &str = "DA_PARSE_REDB_INDEX_PATH";
+/// Canonical RVF experience store path (learning state is owned by the CLI).
+pub const DA_PARSE_LEARNING_RVF_PATH_KEY: &str = "DA_PARSE_LEARNING_RVF_PATH";
+/// Rebuildable learning redb index path.
+pub const DA_PARSE_LEARNING_REDB_INDEX_PATH_KEY: &str = "DA_PARSE_LEARNING_REDB_INDEX_PATH";
 
 // ---------------------------------------------------------------------------
 // Composition-root defaults + closed resource caps (overflow protection)
@@ -70,6 +75,12 @@ pub const DEFAULT_BATCH_DOCUMENTS: usize = 1000;
 pub const DEFAULT_WORKERS: usize = 4;
 /// Default admission queue capacity.
 pub const DEFAULT_QUEUE_CAPACITY: usize = 64;
+/// Default canonical RVF experience path.
+pub const DEFAULT_LEARNING_RVF_PATH: &str = "artifacts/parse-learning/experience.rvf";
+/// Default rebuildable learning index path.
+pub const DEFAULT_LEARNING_REDB_INDEX_PATH: &str = "artifacts/parse-learning/index.redb";
+pub const DEFAULT_LEARNING_RVF_CAPACITY: usize = 100_000;
+pub const DEFAULT_LEARNING_REDB_CAPACITY: usize = 100_000;
 
 /// Upper resource caps (overflow protection at the composition root).
 pub const MAX_WORKERS: usize = 64;
@@ -191,6 +202,12 @@ pub enum ParseConfigError {
         max_in_flight: usize,
         queue_capacity: usize,
     },
+    /// Learning RVF and rebuildable index paths overlap.
+    LearningPathOverlaps,
+    /// Learning storage capacity is outside the closed safe bound.
+    LearningInvalidBound,
+    /// A learning contract invariant failed before I/O.
+    LearningInvalidContract,
 }
 
 impl std::fmt::Display for ParseConfigError {
@@ -240,6 +257,17 @@ impl std::fmt::Display for ParseConfigError {
                 formatter,
                 "max-in-flight ({max_in_flight}) must not exceed queue-capacity ({queue_capacity})"
             ),
+            Self::LearningPathOverlaps => write!(
+                formatter,
+                "learning RVF and redb index paths must not overlap"
+            ),
+            Self::LearningInvalidBound => write!(
+                formatter,
+                "learning storage capacity is outside the safe bound"
+            ),
+            Self::LearningInvalidContract => {
+                write!(formatter, "learning contract validation failed")
+            }
         }
     }
 }
@@ -274,6 +302,10 @@ pub struct ParseRuntimeOverrides {
     pub redb_enabled: Option<bool>,
     /// `--redb-index-path`
     pub redb_path: Option<PathBuf>,
+    /// `--learning-rvf-path`, canonical RVF authority.
+    pub learning_rvf_path: Option<PathBuf>,
+    /// `--learning-redb-index-path`, rebuildable accelerator only.
+    pub learning_redb_path: Option<PathBuf>,
 }
 
 /// The resolved, closed-validated composition config. All physical
@@ -289,6 +321,7 @@ pub struct ParseRuntimeConfig {
     queue_capacity: NonZeroUsize,
     max_in_flight: NonZeroUsize,
     redb: ParseRedbIndexConfig,
+    learning: LearningStorageConfig,
 }
 
 impl ParseRuntimeConfig {
@@ -336,6 +369,11 @@ impl ParseRuntimeConfig {
     /// redb accelerator settings.
     pub const fn redb(&self) -> &ParseRedbIndexConfig {
         &self.redb
+    }
+
+    /// Canonical RVF plus optional rebuildable learning index.
+    pub const fn learning_storage(&self) -> &LearningStorageConfig {
+        &self.learning
     }
 
     /// The batch limits these knobs project onto the provider-neutral API
@@ -502,6 +540,37 @@ pub fn resolve(
         },
     };
 
+    // Learning storage is a separate physical namespace. It is validated
+    // here, before any adapter or file is opened; the inner layers receive
+    // only this typed value, never environment keys or defaults.
+    let learning_rvf_path = match override_path_for(
+        overrides.learning_rvf_path.as_deref(),
+        "--learning-rvf-path",
+    )? {
+        Some(path) => path,
+        None => match read_env(env, DA_PARSE_LEARNING_RVF_PATH_KEY)? {
+            Some(path) => PathBuf::from(path),
+            None => PathBuf::from(DEFAULT_LEARNING_RVF_PATH),
+        },
+    };
+    let learning_redb_path = match override_path_for(
+        overrides.learning_redb_path.as_deref(),
+        "--learning-redb-index-path",
+    )? {
+        Some(path) => Some(path),
+        None => match read_env(env, DA_PARSE_LEARNING_REDB_INDEX_PATH_KEY)? {
+            Some(path) => Some(PathBuf::from(path)),
+            None => Some(PathBuf::from(DEFAULT_LEARNING_REDB_INDEX_PATH)),
+        },
+    };
+    let learning = LearningStorageConfig {
+        rvf_path: learning_rvf_path,
+        redb_index_path: learning_redb_path,
+        rvf_capacity: DEFAULT_LEARNING_RVF_CAPACITY,
+        redb_capacity: DEFAULT_LEARNING_REDB_CAPACITY,
+    };
+    learning.validate().map_err(map_learning_error)?;
+
     Ok(ParseRuntimeConfig {
         backend,
         grobid_url,
@@ -512,6 +581,7 @@ pub fn resolve(
         queue_capacity,
         max_in_flight,
         redb,
+        learning,
     })
 }
 
@@ -546,12 +616,25 @@ fn override_string(
 }
 
 fn override_path(value: Option<&Path>) -> Result<Option<PathBuf>, ParseConfigError> {
+    override_path_for(value, "--redb-index-path")
+}
+
+fn override_path_for(
+    value: Option<&Path>,
+    key: &'static str,
+) -> Result<Option<PathBuf>, ParseConfigError> {
     match value {
-        Some(path) if path.as_os_str().is_empty() => Err(ParseConfigError::BlankValue {
-            key: "--redb-index-path",
-        }),
+        Some(path) if path.as_os_str().is_empty() => Err(ParseConfigError::BlankValue { key }),
         Some(path) => Ok(Some(path.to_path_buf())),
         None => Ok(None),
+    }
+}
+
+fn map_learning_error(error: LearningContractError) -> ParseConfigError {
+    match error {
+        LearningContractError::PathOverlap => ParseConfigError::LearningPathOverlaps,
+        LearningContractError::InvalidBound => ParseConfigError::LearningInvalidBound,
+        _ => ParseConfigError::LearningInvalidContract,
     }
 }
 

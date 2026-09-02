@@ -21,6 +21,7 @@ pub mod llm_client;
 pub mod multimodal_llm;
 pub mod negative_memory;
 pub mod openalex;
+pub mod parse_learning;
 pub mod parser;
 pub mod path_config;
 pub mod paths;
@@ -69,6 +70,13 @@ pub use openalex::{OpenAlexAuthor, OpenAlexClient, OpenAlexConcept, OpenAlexTopi
 pub mod pdf_classification;
 pub use pdf_classification::{
     ClassificationError, ClassificationResult, NullClassifier, PdfClassificationPort,
+};
+
+pub use parse_learning::{
+    CVF_SCHEMA_VERSION, CandidateReceipt, CheckpointReceipt, CriticReceipt, CvfEvent,
+    ExperienceReceipt, LEARNING_CONTRACT_VERSION, LearningContractError, LearningLineage,
+    LearningStorageConfig, MAX_LEARNING_CAPACITY, MAX_RECEIPT_BYTES, PromotionState,
+    RVF_SCHEMA_VERSION, Sha256Digest, SplitIdentity, reject_raw_content,
 };
 
 pub use parser::{

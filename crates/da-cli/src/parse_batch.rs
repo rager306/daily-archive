@@ -109,6 +109,14 @@ pub struct ParseBatchArgs {
     /// (env DA_PARSE_REDB_INDEX_PATH).
     #[arg(long)]
     pub redb_index_path: Option<PathBuf>,
+
+    /// Canonical RVF learning experience path.
+    #[arg(long)]
+    pub learning_rvf_path: Option<PathBuf>,
+
+    /// Rebuildable learning redb index path.
+    #[arg(long)]
+    pub learning_redb_index_path: Option<PathBuf>,
 }
 
 impl ParseBatchArgs {
@@ -137,6 +145,8 @@ impl ParseBatchArgs {
                 .redb_index
                 .clone()
                 .or_else(|| self.redb_index_path.clone()),
+            learning_rvf_path: self.learning_rvf_path.clone(),
+            learning_redb_path: self.learning_redb_index_path.clone(),
         })
     }
 }

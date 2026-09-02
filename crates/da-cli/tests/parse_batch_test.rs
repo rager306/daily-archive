@@ -365,6 +365,8 @@ fn args_for(h: &Harness, resume: bool) -> ParseBatchArgs {
         redb_index: None,
         no_redb: false,
         redb_index_path: None,
+        learning_rvf_path: None,
+        learning_redb_index_path: None,
     }
 }
 
