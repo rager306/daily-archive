@@ -991,6 +991,11 @@ class TrajectoryService:
         from governor.adapters.schema_hierarchy_checker import check_schema_hierarchy
         drift_flags.extend(check_schema_hierarchy(self.root))
 
+        # S19: source-bound staged scholarly parse governance. The adapter
+        # validates only declared DATA/artifact identities and typed fixture
+        # fields; it runs in both active and closeout reports.
+        drift_flags.extend(self._check_scholarly_parse_plane())
+
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
         milestone_ctx = self._build_milestone_context()
@@ -1559,6 +1564,11 @@ class TrajectoryService:
                 _flag("html_structure_honesty_readiness_marker_missing",
                       f"readiness surface missing honesty markers: {missing}")
         return flags
+
+    def _check_scholarly_parse_plane(self) -> list[DriftFlag]:
+        """Run the S19 source-bound parse-plane adapter."""
+        from governor.adapters.checks.scholarly_parse_plane import _check_scholarly_parse_plane
+        return _check_scholarly_parse_plane(self.root)
 
     def _check_promotion_evidence_contract(self) -> list[DriftFlag]:
         """Evaluate the data-driven promotion evidence contract (PIR-015).

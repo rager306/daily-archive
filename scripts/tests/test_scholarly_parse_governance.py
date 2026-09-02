@@ -11,10 +11,14 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import shutil
 from pathlib import Path
 
 import pytest
 import yaml
+
+from governor.adapters.checks.scholarly_parse_plane import _check_scholarly_parse_plane
+from governor.application.trajectory_service import TrajectoryService
 
 ROOT = Path(__file__).resolve().parents[2]
 POLICY_PATH = ROOT / "scripts/governor/checks/scholarly_parse_plane.yaml"
@@ -188,3 +192,67 @@ def test_fixtures_negative_schema_is_yaml_policy_compatible():
     assert negative_spec["each_label_isolated"] is True
     assert set(negative_spec["require_violations"]) == REQUIRED_VIOLATIONS
     assert policy["redaction"]["forbidden"]
+
+
+def _copy_checker_surface(destination: Path) -> None:
+    """Build a tracked-only synthetic root for report-level mutations."""
+    policy = _load(POLICY_PATH)
+    paths = {
+        "scripts/governor/checks/scholarly_parse_plane.yaml",
+        "scripts/governor/checks/promotion_evidence_contract.yaml",
+        str(policy["fixtures"]["positive"]["path"]),
+        str(policy["fixtures"]["negative"]["path"]),
+    }
+    for binding in _source_bindings(policy):
+        paths.add(binding["path"])
+    for relative in paths:
+        source = ROOT / relative
+        target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+
+
+def test_checker_clean_root_has_no_s19_flags():
+    assert _check_scholarly_parse_plane(ROOT) == []
+
+
+@pytest.mark.parametrize("label", sorted(REQUIRED_VIOLATIONS))
+def test_checker_localizes_each_synthetic_mutation_to_high_severity_flag(tmp_path: Path, label: str):
+    _copy_checker_surface(tmp_path)
+    negative_path = tmp_path / NEGATIVE_PATH.relative_to(ROOT)
+    records = _load(negative_path)
+    record = next(item for item in records if item["violation"] == label)
+    clean_payloads = {
+        "missing_rollback": {"rollback": {"target": "java-grobid-http@0.9.0-crf"}},
+        "missing_integration_evidence": {"integration_evidence": [{"path": "x", "identity": "y"}]},
+        "schema_vocabulary_drift": {"disposition": "passed"},
+    }
+    record["record"] = clean_payloads.get(label, {})
+    # Mutate the typed record so the labelled violation no longer fires; the
+    # checker must report that exact code, not a generic repository scan hit.
+    negative_path.write_text(json.dumps(records), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == f"scholarly_parse_plane_{label}"]
+    assert matching
+    assert all(item.severity == "high" for item in matching)
+    assert all(f"plane=" in item.evidence and "requirements=" in item.evidence for item in matching)
+
+
+def test_checker_registration_is_present_for_active_and_closeout_reports():
+    source = (ROOT / "scripts/governor/application/trajectory_service.py").read_text(encoding="utf-8")
+    assert "drift_flags.extend(self._check_scholarly_parse_plane())" in source
+    build_report = source[source.index("    def build_report"):source.index("    def _build_dimensions")]
+    assert "def build_report(self, phase: str = \"preflight\")" in build_report
+    assert "phase=phase" in build_report
+    assert "_check_scholarly_parse_plane" in build_report
+
+
+def test_checker_does_not_replace_independent_promotion_contract():
+    source = (ROOT / "scripts/governor/application/trajectory_service.py").read_text(encoding="utf-8")
+    assert "drift_flags.extend(self._check_promotion_evidence_contract())" in source
+    assert "promotion_evidence_contract.yaml" in source
+    # S19 consumes the shared contract path; it does not define Promotion FSM
+    # transitions or copy the promotion validator into the parse-plane adapter.
+    checker_source = (ROOT / "scripts/governor/adapters/checks/scholarly_parse_plane.py").read_text(encoding="utf-8")
+    assert "shared_promotion_contract" in checker_source
+    assert "PromotionDecision" not in checker_source

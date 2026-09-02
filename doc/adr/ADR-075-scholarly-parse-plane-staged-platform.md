@@ -288,7 +288,32 @@ implementation slices from API ledger and fixtures through native fulltext,
 persistent learning and governor closure. Completion evidence is recorded
 through GSD lifecycle tools, not manual edits to planning artifacts.
 
-## 7. References
+## 7. Executable governance traceability
+
+The binding executable contract is
+`scripts/governor/checks/scholarly_parse_plane.yaml`, with its source-bound
+positive and isolated negative fixtures under
+`governor/fixtures/scholarly_parse_plane/`. The adapter
+`scripts/governor/adapters/checks/scholarly_parse_plane.py` is registered by
+`TrajectoryService.build_report`, so the same check runs for both active and
+closeout trajectory reports.
+
+The checker proves repository-relative source and canonical-artifact identity,
+Cargo/persistence/configuration/cache/quarantine evidence, rollback identity,
+closed wire vocabulary, and required integration evidence. It reports typed
+high-severity flags containing the plane, violation code, evidence path,
+requirement anchor, and expected/observed state; it does not scan comments or
+negative fixtures as source code and it does not duplicate the shared
+promotion FSM.
+
+Closure remains candidate-only: `candidate`, `deployed=false`,
+`auto_promote=forbidden`, `promotion_receipt=forbidden`,
+`import_eligible=false`, `production_route=forbidden`, and `graph_write=forbidden`.
+The checker is governance evidence, not authorization: it never creates a
+Promotion receipt, reloads a Wasm policy, writes the graph, imports data, or
+activates a production route.
+
+## 8. References
 
 - Research synthesis:
   `doc/research/m463-grobid-rust-ruvector-platform.md`
