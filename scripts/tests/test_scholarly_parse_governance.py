@@ -212,6 +212,37 @@ def _copy_checker_surface(destination: Path) -> None:
         shutil.copy2(source, target)
 
 
+def test_canonical_shadow_report_uses_closed_snake_case_taxonomy():
+    report = _load(ROOT / "artifacts/parse_compat/native_fulltext_composition_shadow.json")
+    dispositions = {
+        item["disposition"]
+        for outcome in report["outcomes"]
+        for item in outcome["dispositions"]
+    }
+    components = {
+        item["component"]
+        for outcome in report["outcomes"]
+        for item in outcome["dispositions"]
+    }
+    assert dispositions <= set(_load(ROOT / "data/parse/native_fulltext_composition.yaml")["dispositions"])
+    assert components == set(_load(ROOT / "data/parse/native_fulltext_composition.yaml")["component_ids"])
+    assert not dispositions & {"invalidevidence", "notobserved"}
+    assert not components & {"documentsegmentation", "learningpolicy"}
+
+
+def test_taxonomy_mutation_is_rejected_by_exact_wire_assertion():
+    report = _load(ROOT / "artifacts/parse_compat/native_fulltext_composition_shadow.json")
+    mutated = copy.deepcopy(report)
+    mutated["outcomes"][0]["dispositions"][0]["component"] = "documentsegmentation"
+    allowed = set(_load(ROOT / "data/parse/native_fulltext_composition.yaml")["component_ids"])
+    observed = {
+        item["component"]
+        for outcome in mutated["outcomes"]
+        for item in outcome["dispositions"]
+    }
+    assert not observed <= allowed
+
+
 def test_checker_clean_root_has_no_s19_flags():
     assert _check_scholarly_parse_plane(ROOT) == []
 

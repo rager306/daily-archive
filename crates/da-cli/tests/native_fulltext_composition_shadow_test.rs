@@ -1,7 +1,7 @@
 #![cfg(feature = "pdf-layout")]
 
 use serde_json::Value;
-use std::{fs, path::PathBuf, process::Command};
+use std::{collections::HashSet, fs, path::PathBuf, process::Command};
 use tempfile::tempdir;
 
 fn runner() -> PathBuf {
@@ -160,6 +160,38 @@ fn source_bound_shadow_report_is_terminal_replayed_and_quarantined() {
                 .as_array()
                 .is_some_and(|items| items.len() == 7)
     }));
+    let components: HashSet<&str> = outcomes[0]["dispositions"]
+        .as_array()
+        .expect("component dispositions")
+        .iter()
+        .map(|item| item["component"].as_str().expect("component wire name"))
+        .collect();
+    assert_eq!(
+        components,
+        HashSet::from([
+            "header",
+            "references",
+            "document_segmentation",
+            "figure",
+            "table",
+            "formula",
+            "learning_policy",
+        ])
+    );
+    let dispositions: HashSet<&str> = outcomes[0]["dispositions"]
+        .as_array()
+        .expect("component dispositions")
+        .iter()
+        .map(|item| item["disposition"].as_str().expect("disposition wire name"))
+        .collect();
+    assert_eq!(
+        dispositions,
+        HashSet::from(["passed", "invalid_evidence", "unsupported", "not_observed"])
+    );
+    assert!(!text.contains("documentsegmentation"));
+    assert!(!text.contains("invalidevidence"));
+    assert!(!text.contains("notobserved"));
+    assert!(!text.contains("learningpolicy"));
     assert_redacted(&value, "$");
     assert!(
         !text.contains("<TEI") && !text.contains("body bytes") && !text.contains("Reference one")

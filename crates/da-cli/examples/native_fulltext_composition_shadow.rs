@@ -159,6 +159,31 @@ struct Job {
 fn digest(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
 }
+
+fn component_wire_name(component: FulltextComponent) -> &'static str {
+    match component {
+        FulltextComponent::Header => "header",
+        FulltextComponent::References => "references",
+        FulltextComponent::DocumentSegmentation => "document_segmentation",
+        FulltextComponent::Figure => "figure",
+        FulltextComponent::Table => "table",
+        FulltextComponent::Formula => "formula",
+        FulltextComponent::LearningPolicy => "learning_policy",
+    }
+}
+
+fn disposition_wire_name(disposition: AdmissionDisposition) -> &'static str {
+    match disposition {
+        AdmissionDisposition::Passed => "passed",
+        AdmissionDisposition::Fallback => "fallback",
+        AdmissionDisposition::Rejected => "rejected",
+        AdmissionDisposition::Unsupported => "unsupported",
+        AdmissionDisposition::NotObserved => "not_observed",
+        AdmissionDisposition::InvalidEvidence => "invalid_evidence",
+        AdmissionDisposition::Stale => "stale",
+    }
+}
+
 fn fixture() -> Fixture {
     serde_yaml::from_str(FIXTURE).expect("frozen fixture")
 }
@@ -318,9 +343,9 @@ fn run(jobs: Vec<Job>, workers: usize, capacity: usize) -> (Vec<Outcome>, Execut
                 .components
                 .iter()
                 .map(|m| Disposition {
-                    component: format!("{:?}", m.component).to_lowercase(),
+                    component: component_wire_name(m.component).into(),
                     producer: m.producer.clone(),
-                    disposition: format!("{:?}", m.disposition).to_lowercase(),
+                    disposition: disposition_wire_name(m.disposition).into(),
                     evidence_digest: m.evidence_digest.clone(),
                     byte_count: m.byte_count,
                     truncated: m.truncated,
