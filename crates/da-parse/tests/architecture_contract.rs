@@ -2110,6 +2110,163 @@ fn native_composition_is_pure_and_has_independent_entry_points() {
     );
 }
 
+// ───── S18/T05: native fulltext composition remains pure and quarantined ─────
+
+#[test]
+fn native_fulltext_composition_is_pure_and_stays_outside_every_runtime_route() {
+    const SURFACE: &str = "crates/da-parse/src/native_fulltext_composition.rs";
+    let text = read_text(SURFACE);
+    assert!(
+        text.len() > 10_000,
+        "native fulltext composition source unexpectedly truncated"
+    );
+    assert_eq!(
+        import_roots_of(&text),
+        BTreeSet::from([
+            "crate".to_string(),
+            "serde".to_string(),
+            "sha2".to_string(),
+            "std".to_string()
+        ]),
+        "fulltext composer may import only typed leaves, hashing, serde and formatting"
+    );
+    let forbidden = [
+        "std::env",
+        "std::fs",
+        "std::path",
+        "PathBuf",
+        "std::net",
+        "reqwest",
+        "std::process",
+        "Command::",
+        "std::time",
+        "SystemTime",
+        "Instant",
+        "std::thread",
+        "std::sync",
+        "tokio",
+        "tracing",
+        "log::",
+        "println!",
+        "eprintln!",
+        "rand",
+        "ParserPort",
+        "ScholarlyParser",
+        "GrobidParser",
+        "TeiLifter",
+        "TeiParseIr",
+        "ParsedArticle",
+        "GraphStore",
+        "Samyama",
+        "SONA",
+        "ruVLLM",
+        "RVF",
+        "redb",
+        "da_adapters",
+        "http://",
+        "https://",
+    ];
+    let hits = native_date_marker_hits(&text, &forbidden);
+    assert!(
+        hits.is_empty(),
+        "native fulltext composer acquired a side channel or forbidden coupling:\\n{}",
+        hits.join("\\n")
+    );
+    for required in [
+        "pub fn compose_native_fulltext",
+        "NativeFulltextCompositionInput",
+        "NativeFulltextCompositionError",
+        "NATIVE_FULLTEXT_FALLBACK_TARGET",
+    ] {
+        assert!(text.contains(required), "fulltext composer lost {required}");
+    }
+
+    // The composer is a public shadow API, but none of the runtime seams may
+    // mention it. This includes both parse-plane stages and every composition
+    // root that could otherwise turn candidate evidence into a route.
+    let runtime_dirs = [
+        "crates/da-parse/src",
+        "crates/da-ports/src",
+        "crates/da-application/src",
+        "crates/da-adapters/src",
+        "crates/da-cli/src",
+    ];
+    let mut files = Vec::new();
+    for dir in runtime_dirs {
+        collect_rs_files(&repo_root().join(dir), &mut files);
+    }
+    let mut leaked = Vec::new();
+    for file in files {
+        let rel = file
+            .strip_prefix(repo_root())
+            .unwrap_or(&file)
+            .to_string_lossy()
+            .to_string();
+        // lib.rs is the sanctioned public re-export boundary. It exposes
+        // the shadow API without wiring it into ParserPort or production
+        // composition; all other runtime files must remain unaware.
+        if rel == SURFACE || rel == "crates/da-parse/src/lib.rs" {
+            continue;
+        }
+        for (line_no, raw) in std::fs::read_to_string(&file)
+            .expect("runtime source readable")
+            .lines()
+            .enumerate()
+        {
+            if raw.contains("native_fulltext_composition")
+                || raw.contains("NativeFulltext")
+                || raw.contains("compose_native_fulltext")
+            {
+                leaked.push(format!("{rel}:{}: {}", line_no + 1, raw.trim()));
+            }
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "native fulltext candidate leaked into runtime or production composition roots:\\n{}",
+        leaked.join("\\n")
+    );
+
+    // The immutable compatibility authority keeps the current honest state:
+    // Java remains the rollback for every component and candidate evidence is
+    // not allowed to mutate graph/import or become a promotion decision.
+    let registry = serde_yaml::from_str::<serde_yaml::Value>(&read_text(
+        "data/parse/grobid_compatibility.yaml",
+    ))
+    .expect("compatibility registry");
+    let capability = registry["capabilities"]
+        .as_sequence()
+        .expect("capabilities")
+        .iter()
+        .find(|v| {
+            v.get("id").and_then(|id| id.as_str())
+                == Some("parse.component.native_fulltext_composition_shadow")
+        })
+        .expect("S18 fulltext shadow capability");
+    assert_eq!(capability["state"].as_str(), Some("shadow"));
+    assert_eq!(capability["promotion_state"].as_str(), Some("candidate"));
+    assert_eq!(
+        capability["baseline"].as_str(),
+        Some("java-grobid-http@0.9.0-crf")
+    );
+    assert_eq!(registry["import_eligible"].as_bool(), Some(false));
+    assert_eq!(registry["auto_promote"].as_str(), Some("forbidden"));
+}
+
+#[test]
+fn native_fulltext_boundary_scanner_fails_visible_on_synthetic_violations() {
+    let synthetic = "use std::fs::File;\\nuse da_adapters::x;\\nfn run() { ParserPort::new(); }\\n";
+    let hits = native_date_marker_hits(synthetic, &["std::fs", "da_adapters", "ParserPort"]);
+    assert_eq!(hits.len(), 3);
+    assert!(
+        native_date_marker_hits(
+            "// std::fs and ParserPort are prose only\\n",
+            &["std::fs", "ParserPort"]
+        )
+        .is_empty()
+    );
+}
+
 // ───── S16/T05: native visual heads and observations remain shadow-only ─────
 
 #[test]

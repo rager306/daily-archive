@@ -377,6 +377,7 @@ fn canonical(mut outcomes: Vec<Outcome>) -> Vec<Outcome> {
     outcomes
 }
 fn main() {
+    let _log_guard = da_cli::logging::init_pipeline_logging("native_fulltext_composition_shadow");
     let args = Args::parse();
     let f = Arc::new(fixture());
     assert_eq!(
