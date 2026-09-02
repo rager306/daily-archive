@@ -5,6 +5,7 @@ use chrono::{TimeZone, Utc};
 use da_application::{GraphScheduler, SchedulerRunner, SchedulerTaskDisposition};
 use da_domain::scheduler::RetryPolicy;
 use da_ports::FixedClock;
+use da_ports::doi_prefix::doi_prefix_for;
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::openalex::{OpenAlexClient, OpenAlexError, OpenAlexResult, OpenAlexWork};
 
@@ -35,10 +36,14 @@ impl OpenAlexClient for FixedOpenAlex {
 }
 
 fn work() -> OpenAlexWork {
+    let doi = format!(
+        "https://doi.org/{}arxiv.2507.19457",
+        doi_prefix_for("arxiv").expect("arxiv DOI DATA fixture")
+    );
     OpenAlexWork {
         id: "https://openalex.org/W123".into(),
         title: "GEPA".into(),
-        doi: Some("https://doi.org/10.48550/arxiv.2507.19457".into()),
+        doi: Some(doi),
         publication_date: Some("2025-07-25".into()),
         cited_by_count: 42,
         primary_topic: None,
@@ -140,7 +145,13 @@ async fn successful_enrichment_and_completion_share_one_store() {
             .get_node_property_string(paper, "doi")
             .await
             .as_deref(),
-        Some("https://doi.org/10.48550/arxiv.2507.19457")
+        Some(
+            format!(
+                "https://doi.org/{}arxiv.2507.19457",
+                doi_prefix_for("arxiv").expect("arxiv DOI DATA fixture")
+            )
+            .as_str(),
+        )
     );
     assert_eq!(
         store.get_node_property_int(paper, "cited_by_count").await,

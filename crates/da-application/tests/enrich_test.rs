@@ -4,6 +4,7 @@
 
 use async_trait::async_trait;
 use da_application::EnrichUseCase;
+use da_ports::doi_prefix::doi_prefix_for;
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::openalex::{
     OpenAlexAuthor, OpenAlexAuthorship, OpenAlexClient, OpenAlexConcept, OpenAlexError,
@@ -30,10 +31,14 @@ impl OpenAlexClient for MockOpenAlex {
 }
 
 fn make_mock_work() -> OpenAlexWork {
+    let doi = format!(
+        "https://doi.org/{}arxiv.2401.00001",
+        doi_prefix_for("arxiv").expect("arxiv DOI DATA fixture")
+    );
     OpenAlexWork {
         id: "https://openalex.org/W123".to_string(),
         title: "Test Paper Title".to_string(),
-        doi: Some("https://doi.org/10.48550/arxiv.2401.00001".to_string()),
+        doi: Some(doi),
         publication_date: Some("2024-01-01".to_string()),
         cited_by_count: 5,
         primary_topic: Some(OpenAlexTopic {

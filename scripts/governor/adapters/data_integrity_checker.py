@@ -58,6 +58,8 @@ def check_data_integrity(root: Path) -> list[DriftFlag]:
             flags.extend(_check_textbook_manifests(root, rule, _flag))
         elif rule_id == "canonical_edge_contract_path":
             flags.extend(_check_canonical_edge_contract_path(root, rule, _flag))
+        elif rule_id == "no_hardcoded_arxiv_doi_prefix":
+            flags.extend(_check_hardcoded_arxiv_doi_prefix(root, rule, _flag))
 
     return flags
 
@@ -133,6 +135,41 @@ def _check_canonical_edge_contract_path(root: Path, rule: dict, _flag) -> list[D
             "active files reference " + ", ".join(sorted(legacy_readers))
             + f" with {legacy_rel} — use {canonical_rel}",
         ))
+    return flags
+
+
+def _check_hardcoded_arxiv_doi_prefix(root: Path, rule: dict, _flag) -> list[DriftFlag]:
+    """Reject the compiled arXiv DOI prefix in production Rust source."""
+    literal = rule.get("literal")
+    scan = rule.get("scan")
+    if not isinstance(literal, str) or not literal or not isinstance(scan, str) or not scan:
+        return [_flag(
+            "data_integrity_arxiv_doi_rule_invalid",
+            "no_hardcoded_arxiv_doi_prefix requires a non-empty scan and literal",
+        )]
+
+    excluded_dirs = set(rule.get("exclude_dirs", []))
+    flags: list[DriftFlag] = []
+    scan_path = root / scan
+    if not scan_path.exists() or scan_path.is_symlink():
+        return flags
+    candidates = [scan_path] if scan_path.is_file() else _bounded_files(scan_path, excluded_dirs)
+    for candidate in candidates:
+        if candidate.suffix != ".rs" or candidate.is_symlink():
+            continue
+        rel_parts = candidate.relative_to(root).parts
+        if any(part in excluded_dirs for part in rel_parts):
+            continue
+        try:
+            text = candidate.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if literal in text:
+            line_num = text[:text.index(literal)].count("\n") + 1
+            flags.append(_flag(
+                "data_integrity_hardcoded_arxiv_doi_prefix",
+                f"{candidate.relative_to(root)}:{line_num} contains '{literal}' — resolve arXiv DOI prefix from DOI DATA",
+            ))
     return flags
 
 

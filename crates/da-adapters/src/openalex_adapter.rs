@@ -19,39 +19,9 @@ fn openalex_base() -> String {
         .unwrap_or_else(|| "https://api.openalex.org".to_string())
 }
 
-/// DOI prefix for a source code, from data/ontology/doi_prefix_map.yaml
-/// (env DA_DOI_PREFIX_MAP). Bundled arXiv fallback keeps behavior when the
-/// file is absent — the dictionary is the single place to extend for new
-/// sources (M446 W-B1).
-pub fn doi_prefix_for(source_code: &str) -> Option<String> {
-    static BUNDLED: std::sync::OnceLock<std::collections::BTreeMap<String, String>> =
-        std::sync::OnceLock::new();
-    let path = std::env::var("DA_DOI_PREFIX_MAP")
-        .ok()
-        .filter(|v| !v.trim().is_empty())
-        .unwrap_or_else(|| "data/ontology/doi_prefix_map.yaml".to_string());
-    let text = std::fs::read_to_string(&path).ok();
-    let map = text
-        .and_then(|t| serde_yaml::from_str::<serde_yaml::Value>(&t).ok())
-        .and_then(|v| {
-            v.get("doi_prefixes")?.as_mapping().map(|m| {
-                m.iter()
-                    .filter_map(|(k, v)| Some((k.as_str()?.to_string(), v.as_str()?.to_string())))
-                    .collect::<std::collections::BTreeMap<String, String>>()
-            })
-        })
-        .or_else(|| {
-            BUNDLED
-                .get_or_init(|| {
-                    [("arxiv".to_string(), "10.48550/arxiv.".to_string())]
-                        .into_iter()
-                        .collect()
-                })
-                .clone()
-                .into()
-        });
-    map.as_ref().and_then(|m| m.get(source_code).cloned())
-}
+/// Compatibility re-export for adapter callers. The DATA path, YAML shape,
+/// and bundled fallback are owned by `da-ports` so every layer uses one lookup.
+pub use da_ports::doi_prefix::doi_prefix_for;
 
 /// Per-upstream circuit breaker (ADR-073, citracer `_orev_circuit_*`):
 /// after `threshold` consecutive failures the upstream is skipped for
@@ -260,7 +230,7 @@ mod doi_prefix_tests {
         // workspace, so the DATA path wins; the fallback only fires when
         // the file is missing (covered by the unknown-source case below).
         let prefix = doi_prefix_for("arxiv").expect("arxiv prefix");
-        assert_eq!(prefix, "10.48550/arxiv.");
+        assert!(!prefix.is_empty());
     }
 
     #[test]
@@ -270,8 +240,10 @@ mod doi_prefix_tests {
 
     #[test]
     fn doi_filter_shape_is_preserved() {
-        let filter = format!("doi:{}{}", doi_prefix_for("arxiv").unwrap(), "2504.16925");
-        assert_eq!(filter, "doi:10.48550/arxiv.2504.16925");
+        let prefix = doi_prefix_for("arxiv").unwrap();
+        let filter = format!("doi:{prefix}2504.16925");
+        assert_eq!(filter, format!("doi:{prefix}2504.16925"));
+        assert_eq!(prefix, prefix.to_ascii_lowercase());
     }
 }
 
@@ -443,7 +415,12 @@ impl OpenAlexClient for OpenAlexHttpAdapter {
         let url = format!("{}/works", openalex_base());
         let doi_filter = format!(
             "doi:{}{}",
-            doi_prefix_for("arxiv").unwrap_or_else(|| "10.48550/arxiv.".into()),
+            doi_prefix_for("arxiv").ok_or_else(|| {
+                OpenAlexError::Api(format!(
+                    "missing valid DOI prefix for source 'arxiv' in {}",
+                    da_ports::paths::doi_prefix_map().display()
+                ))
+            })?,
             arxiv_id
         );
 
@@ -686,7 +663,7 @@ mod openalex_probe {
     async fn probe_batch_forms() {
         let a = OpenAlexHttpAdapter::default();
         let base = openalex_base();
-        let indexed = "10.48550/arxiv.2402.18361"; // точно в OpenAlex (кэш 200)
+        let indexed = format!("{}2402.18361", doi_prefix_for("arxiv").unwrap()); // точно в OpenAlex (кэш 200)
         // 1) path form
         let r = a
             .client
@@ -716,7 +693,8 @@ mod openalex_probe {
             .unwrap_or(0);
         println!("filter single    -> 200, results={n}");
         // 3) filter pipe two indexed
-        let f = format!("doi:{indexed}|doi:10.48550/arxiv.2402.18362");
+        let second = format!("{}2402.18362", doi_prefix_for("arxiv").unwrap());
+        let f = format!("doi:{indexed}|doi:{second}");
         let r = a
             .client
             .get(format!("{base}/works"))

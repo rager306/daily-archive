@@ -2273,9 +2273,15 @@ pub fn run_fetch_openalex(args: &[String]) -> anyhow::Result<()> {
         return Ok(());
     }
 
+    let doi_prefix = da_ports::doi_prefix::doi_prefix_for("arxiv").ok_or_else(|| {
+        anyhow::anyhow!(
+            "fetch-openalex: missing valid DOI prefix for source 'arxiv' in {}",
+            da_ports::paths::doi_prefix_map().display()
+        )
+    })?;
     let dois: Vec<String> = pending
         .iter()
-        .map(|pid| format!("10.48550/arXiv.{pid}"))
+        .map(|pid| format!("{doi_prefix}{pid}"))
         .collect();
 
     let adapter = OpenAlexHttpAdapter::default();

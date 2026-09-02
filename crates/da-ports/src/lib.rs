@@ -11,6 +11,7 @@ pub mod assurance;
 pub mod cache_payload;
 pub mod catalog;
 pub mod clock;
+pub mod doi_prefix;
 pub mod embedder;
 pub mod evidence_store;
 pub mod extractor;

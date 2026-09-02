@@ -6,6 +6,7 @@
 use da_domain::enriched_authors::{
     EnrichedAuthor, WorkAuthorship, bind_authors, parse_tei_authors,
 };
+use da_ports::doi_prefix::doi_prefix_for;
 use da_ports::schema_objects::{SchemaObjectStore, SchemaObjectStoreError};
 
 #[derive(Debug, thiserror::Error)]
@@ -56,9 +57,15 @@ pub fn build_enriched_layer(
     let tei = parsed.get("tei_xml").and_then(|v| v.as_str()).unwrap_or("");
     let tei_authors = parse_tei_authors(tei);
 
-    let endpoint = "api.openalex.org/works/doi:10.48550/arXiv.{pid}".to_string();
+    let doi_prefix = doi_prefix_for("arxiv").ok_or_else(|| {
+        EnrichedLayerError::Work(format!(
+            "missing valid DOI prefix for source 'arxiv' in {}",
+            da_ports::paths::doi_prefix_map().display()
+        ))
+    })?;
+    let endpoint = format!("api.openalex.org/works/doi:{doi_prefix}{paper_id}");
     let prov = serde_json::json!({
-        "endpoint": endpoint.replace("{pid}", paper_id),
+        "endpoint": endpoint,
         "fetched_at": obs.fetched_at,
         "http_status": obs.http_status,
         "cache_key": format!("openalex_work:{paper_id}"),

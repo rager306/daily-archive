@@ -454,7 +454,7 @@ mod tests {
                     status: "fetched".into(),
                     payload_sha256: Some(digest("oa")),
                     work_id: Some("https://openalex.org/W1".into()),
-                    doi: Some("10.48550/arxiv.2606.06036".into()),
+                    doi: Some("10.1234/arxiv.2606.06036".into()),
                     title: Some("Memory is Reconstructed, Not Retrieved".into()),
                     authors: vec!["A".into()],
                     cited_by_count: Some(0),

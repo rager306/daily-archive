@@ -3034,6 +3034,26 @@ def test_data_integrity_canonical_edge_contract_historical_text_is_allowed():
     assert not any(f.flag == "data_integrity_edge_contract_legacy_reader" for f in flags)
 
 
+def test_data_integrity_arxiv_doi_literal_in_production_rust_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_data_integrity_contract(service.root)
+    _write(service.root / "crates/da-test/src/openalex.rs", 'const DOI: &str = "10.48550/arxiv.";\\n')
+    from governor.adapters.data_integrity_checker import check_data_integrity
+    flags = check_data_integrity(service.root)
+    assert any(f.flag == "data_integrity_hardcoded_arxiv_doi_prefix" for f in flags)
+
+
+def test_data_integrity_arxiv_doi_literal_in_test_rust_is_ignored():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_data_integrity_contract(service.root)
+    _write(service.root / "crates/da-test/tests/openalex.rs", 'const DOI: &str = "10.48550/arxiv.";\\n')
+    from governor.adapters.data_integrity_checker import check_data_integrity
+    flags = check_data_integrity(service.root)
+    assert not any(f.flag == "data_integrity_hardcoded_arxiv_doi_prefix" for f in flags)
+
+
 def test_data_integrity_canonical_edge_contract_rule_malformed_is_flagged():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
@@ -3253,6 +3273,8 @@ def _run_all_tests() -> int:
         test_data_integrity_canonical_edge_contract_legacy_reader_is_flagged,
         test_data_integrity_canonical_edge_contract_historical_text_is_allowed,
         test_data_integrity_canonical_edge_contract_rule_malformed_is_flagged,
+        test_data_integrity_arxiv_doi_literal_in_production_rust_is_flagged,
+        test_data_integrity_arxiv_doi_literal_in_test_rust_is_ignored,
     ]
     passed = 0
     failed = 0
