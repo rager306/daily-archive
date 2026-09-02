@@ -1231,6 +1231,36 @@ capabilities:
       performance: lift_latency_ms
     rollback_target: preserved-java-tei
 
+  # S18/T01 additive fulltext composition authority. Native substitution is
+  # receipt-bound and remains shadow-only; S15/S16 manifests stay immutable.
+  - id: parse.component.native_fulltext_composition_shadow
+    group: 3
+    kind: internal_stage
+    state: shadow
+    product_scope: required
+    promotion_state: candidate
+    official:
+      identity: source-bound native fulltext TEI composition
+      request_fields: []
+      response_format: redacted candidate TeiEnvelope plus manifest
+    implementation:
+      crate: da-parse
+      surface: crates/da-parse/src/native_fulltext_composition.rs
+      notes: >-
+        S18 shadow-only orchestration. Header and references are independently
+        selectable; all other components retain Java fallback until their own
+        exact passing receipt exists. No ParserPort or production route.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: da-parse.native_fulltext_composition@1.0.0
+    evidence_ref: data/parse/native_fulltext_composition.yaml
+    hard_regressions: [terminal_receipt_as_pass, denominator_erosion, unknown_stratum, checksum_drift, schema_drift, stale_evidence, pooled_winner, missing_rollback, self_promotion, import, raw_payload, physical_path]
+    metrics:
+      conservation: byte_and_family_conservation
+      quality: per_component_admission_matrix
+      performance: not_gated
+    rollback_target: java-grobid-http@0.9.0-crf
+    registry_binding: parse.component.native_fulltext_composition_shadow
+
 # S16 additive shadow contract. This records comparison identity only; it does
 # not add a ParserPort route, alter the Java fallback, or authorize promotion.
 native_visual_shadow:

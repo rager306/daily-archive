@@ -506,6 +506,30 @@ entries:
       candidate state stays shadow/candidate with invention budget zero and Java
       GROBID as rollback. Any promotion or runtime route requires explicit
       decision and a fresh strict parity receipt.
+  # S18/T01 additive source-bound fulltext composition observation. It is not
+  # a second authority and does not rewrite S12/S15/S16 ownership records.
+  - id: parse.component.native_fulltext_composition_shadow
+    kind: shadow_component
+    owner_crate: da-parse
+    visibility: internal_observable
+    stability: internal_observable
+    entry_point: da_parse::native_fulltext_composition::compose_native_fulltext
+    request_shape: 'typed source-bound TeiEnvelope plus component receipts; no raw leaf reparsing'
+    result_shape: 'redacted candidate TeiEnvelope and per-component admission manifest'
+    error_shapes: [invalid_evidence, stale_identity, ambiguous_splice, oversized_candidate]
+    async_behavior: synchronous_pure
+    request_fields: []
+    notes:
+      - 'Header and references are independently selectable; segmentation and visual components remain Java fallback under current S15/S16 gates.'
+      - 'S12 denominators, S15 9 terminal lane receipts, S16 27 visual receipts and S17 candidate lineage remain separate immutable evidence; no pooled winner.'
+      - 'Native substitution requires exact source/profile/schema/artifact identity and an independently passing receipt; terminal is not pass.'
+      - 'No ParserPort, TeiLifter, ParsedArticle, HTTP, cache rotation, graph/import or production route is changed; import_eligible=false.'
+      - 'Rows contain only redacted identity/digest/byte-accounting fields; raw TEI/PDF/text and physical paths are forbidden.'
+      - 'registry_binding: parse.component.native_fulltext_composition_shadow'
+    compatibility_obligation: >-
+      Java GROBID remains the fulltext rollback target
+      (java-grobid-http@0.9.0-crf); incomplete, unsupported, stale or invalid
+      evidence must produce explicit fallback rather than native substitution.
   - id: parse.component.native_personal_name_shadow
     kind: shadow_component
     owner_crate: da-parse

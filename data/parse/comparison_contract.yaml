@@ -434,6 +434,141 @@ native_affiliation_shadow:
   hard_regressions: [invented_revision, nondeterministic_output, panic, silent_skip_missing_tei_fixture]
   used_by: [S10-T05]
 
+# S18/T01: source-bound native fulltext composition authority. This is an
+# additive shadow contract; it does not rewrite S12/S15/S16 evidence owners.
+native_fulltext_composition_shadow:
+  schema_version: native-fulltext-composition.v1
+  engine: da_parse::native_fulltext_composition
+  candidate_id: da-parse.native_fulltext_composition
+  candidate_version: '1.0.0'
+  observation_mode: shadow
+  promotion_state: candidate
+  auto_promote: forbidden
+  import_eligible: false
+  production_route: forbidden
+  graph_mutation: forbidden
+  rollback_target: java-grobid-http@0.9.0-crf
+  rollback:
+    fulltext: java-grobid-http@0.9.0-crf
+    header: java-grobid-http@0.9.0-crf
+    references: java-grobid-http@0.9.0-crf
+    segmentation: java-grobid-http@0.9.0-crf
+    visual: java-grobid-http@0.9.0-crf
+  component_ids: [header, references, document_segmentation, figure, table, formula, learning_policy]
+  dispositions: [passed, fallback, rejected, unsupported, not_observed, invalid_evidence, stale]
+  strata:
+    lanes: [header, references, document_segmentation]
+    domains: [computer_science, physics, mathematics]
+    genres: [research_article, survey, proceedings]
+    closed: true
+  admission:
+    native_substitution_requires: [exact_source_identity, exact_schema_version, exact_artifact_sha256, passing_receipt]
+    terminal_receipt_is_pass: false
+    pooled_winner: forbidden
+    independently_selectable_lanes: [header, references]
+    output_affecting_learning: false
+    current_matrix:
+      header: passed
+      references: passed
+      document_segmentation: fallback
+      figure: fallback
+      table: fallback
+      formula: fallback
+      learning_policy: not_observed
+    fallback_target: java-grobid-http@0.9.0-crf
+  source_evidence:
+    s12_named_denominators:
+      date_total: 173
+      header_raw_total: 36
+      header_accepted_total: 35
+      header_rejected_or_incomplete: 1
+      citation_names_total: 2198
+      affiliation_recognition_total: 13
+      affiliation_linking_total: 13
+      references_total: 207
+      anchors_total: 380
+      anchors_targeted: 217
+      anchors_targetless: 163
+      anchors_fragmented_adjacency: 168
+    s15_shared_intersection:
+      documents: 3
+      lanes: 3
+      terminal_lane_receipts: 9
+      source: immutable_s15_manifest
+    s16_shared_intersection:
+      documents: 3
+      lanes: 3
+      visual_receipts: 27
+      source: immutable_s16_manifest
+    s17_lineage:
+      source: immutable_s17_candidate_lineage
+      output_affecting: false
+      live_ruvllm_receipt: not_observed
+  component_receipts:
+    header:
+      producer: S12
+      disposition: passed
+      source_hash: required_sha256
+      schema_version: native-composition.outcome/v1
+      artifact_sha256: required_sha256
+      evidence_state: passing
+      fallback_target: java-grobid-http@0.9.0-crf
+    references:
+      producer: S12
+      disposition: passed
+      source_hash: required_sha256
+      schema_version: native-composition.outcome/v1
+      artifact_sha256: required_sha256
+      evidence_state: passing
+      fallback_target: java-grobid-http@0.9.0-crf
+    document_segmentation:
+      producer: S15
+      disposition: fallback
+      source_hash: required_sha256
+      schema_version: native-segmentation.v1
+      artifact_sha256: required_sha256
+      evidence_state: invalid_evidence
+      fallback_target: java-grobid-http@0.9.0-crf
+    figure:
+      producer: S16
+      disposition: fallback
+      source_hash: required_sha256
+      schema_version: native-visual-heads.v1
+      artifact_sha256: required_sha256
+      evidence_state: unsupported
+      fallback_target: java-grobid-http@0.9.0-crf
+    table:
+      producer: S16
+      disposition: fallback
+      source_hash: required_sha256
+      schema_version: native-visual-heads.v1
+      artifact_sha256: required_sha256
+      evidence_state: not_observed
+      fallback_target: java-grobid-http@0.9.0-crf
+    formula:
+      producer: S16
+      disposition: fallback
+      source_hash: required_sha256
+      schema_version: native-visual-heads.v1
+      artifact_sha256: required_sha256
+      evidence_state: unsupported
+      fallback_target: java-grobid-http@0.9.0-crf
+    learning_policy:
+      producer: S17
+      disposition: not_observed
+      source_hash: required_sha256
+      schema_version: candidate-lineage.v1
+      artifact_sha256: required_sha256
+      evidence_state: not_observed
+      output_affecting: false
+      fallback_target: java-grobid-http@0.9.0-crf
+  hard_regressions: [terminal_receipt_as_pass, denominator_erosion, unknown_stratum, checksum_drift, schema_drift, stale_evidence, pooled_winner, missing_rollback, promotion, import, raw_payload, physical_path]
+  redaction:
+    allowed: [component_id, producer, disposition, lane, domain, genre, source_hash, artifact_sha256, evidence_digest, byte_count, truncated, fallback_target]
+    forbidden: [raw_tei, tei_xml, pdf_bytes, body_text, text, captions, references, physical_path, hostname, executable, secret]
+  forbidden: [production_route, graph_write, import, promotion, auto_promote, pooled_winner, raw_payload, physical_path]
+  used_by: [S18-T01, S18-T02, S18-T03, S18-T04, S18-T05]
+
 promotion:
   default_state: candidate
   allowed_states: [absent, proxy, shadow, candidate, promoted, fallback]

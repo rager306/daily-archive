@@ -122,7 +122,7 @@ const ANCHOR_ENTRY_IDS: [&str; 10] = [
 ];
 
 /// Allowed vocabulary for `required_evidence_fields`.
-const EVIDENCE_VOCAB: [&str; 15] = [
+const EVIDENCE_VOCAB: [&str; 16] = [
     "source_sha256",
     "source_path",
     "profile_fingerprint",
@@ -138,6 +138,7 @@ const EVIDENCE_VOCAB: [&str; 15] = [
     "native_affiliation_shadow",
     "native_citation_shadow",
     "native_header_reference_composition_shadow",
+    "native_fulltext_composition_shadow",
 ];
 
 /// Every case must request at least this evidence core.
@@ -1407,7 +1408,7 @@ fn validate_registry_config_keys(registry: &serde_yaml::Value) -> Vec<String> {
 /// The observation ledger tree stays exactly the sanctioned data/parse file
 /// set — no parallel ledger tree may appear (R113/R117).
 fn data_parse_tree_errs(entries: Vec<(String, bool)>) -> Vec<String> {
-    const SANCTIONED: [&str; 8] = [
+    const SANCTIONED: [&str; 9] = [
         "SCHEMA.yaml",
         "api_compatibility_ledger.yaml",
         "comparison_contract.yaml",
@@ -1416,6 +1417,7 @@ fn data_parse_tree_errs(entries: Vec<(String, bool)>) -> Vec<String> {
         "layout_bakeoff.yaml",
         "document_segmentation.yaml",
         "native_visual_heads.yaml",
+        "native_fulltext_composition.yaml",
     ];
     let mut errs = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
