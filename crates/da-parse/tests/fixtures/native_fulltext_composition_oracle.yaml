@@ -1,0 +1,22 @@
+schema_version: da-parse.native-fulltext-composition-oracle/v1
+case_id: frozen-hybrid-fixture
+source_sha256: 2240a3c97abf08b8895b84f8db81058e879e990d89810a8d26e83d0e18b6c080
+profile_fingerprint: profile=fixture
+config_fingerprint: config=oracle-fixture
+java_backend: grobid-http
+rollback_target: java-grobid-http@0.9.0-crf
+source_xml: '<TEI><teiHeader><fileDesc><titleStmt><title>Java title</title></titleStmt></fileDesc></teiHeader><text><body><div><head>First section</head><p>body bytes <ref type="figure" target="#fig-1">Fig. 1</ref></p></div><div><head>Second section</head><figure xml:id="fig-1"><figDesc>Caption</figDesc><graphic coords="1,2,3,4"/></figure></div></body><listBibl><biblStruct xml:id="ref-1"><title>Reference one</title></biblStruct></listBibl></text></TEI>'
+expected:
+  source_families: [title, section, figure, coordinate, citation_entry]
+  section_order: [First section, Second section]
+  reference_ids: [ref-1]
+  figure_ids: [fig-1]
+  coordinate_values:
+    - '1,2,3,4'
+  native_components: [header, references]
+  fallback_components: [document_segmentation, figure, table, formula, learning_policy]
+  denominators:
+    s12_named: 3
+    s15_terminal: 9
+    s16_visual_heads: 27
+  s17_output_affecting: false
