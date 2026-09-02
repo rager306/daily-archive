@@ -178,6 +178,7 @@ fn tei_path_from_ref(root: &Path, reference: &str) -> Result<String> {
 }
 
 fn main() -> Result<()> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("acceptance_evidence");
     let args = Args::parse();
     let repo = root();
     let manifest: Manifest =
