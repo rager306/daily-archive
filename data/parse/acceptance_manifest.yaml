@@ -1,0 +1,114 @@
+schema_version: parse-acceptance.v1
+adr_ref: ADR-075
+manifest_id: scholarly-parse-acceptance-s20
+requirement_ids: [R085, R091, R105, R107, R109, R110, R113, R114, R116, R117]
+policy_locks:
+  import_eligible: false
+  auto_promote: forbidden
+  production_route: forbidden
+  fallback_target: java-grobid-http@0.9.0-crf
+comparison_rules:
+  allowed_classes: [publisher_acceptance, layout_omnidocbench]
+  allowed_row_states: [bound, catalogued, bytes_absent]
+  allowed_comparison_kinds: [tei_family, layout_markdown]
+  missing_behavior: fail_visible
+  same_n: required
+  catalogued_bytes_are_executed: false
+  omnidocbench_is_tei_oracle: false
+classes:
+  publisher_acceptance:
+    comparison_kind: tei_family
+    purpose: official publisher-style GROBID acceptance identities; local proxy is not a publisher identity
+    authority: https://huggingface.co/datasets/sciencialab/grobid-evaluation
+    license: CC-BY
+    expected_structure: article_directory_with_pdf_and_gold_jats_xml
+    rows:
+      - id: PMC_sample_1943
+        state: bytes_absent
+        identity: sciencialab/grobid-evaluation/PMC_sample_1943
+        dataset_id: sciencialab/grobid-evaluation
+        source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
+        expected_n: 1943
+        gold_format: jats_nxml
+      - id: biorxiv-10k-test-2000
+        state: bytes_absent
+        identity: sciencialab/grobid-evaluation/biorxiv-10k-test-2000
+        dataset_id: sciencialab/grobid-evaluation
+        source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
+        expected_n: 2000
+        gold_format: jats_xml
+      - id: PLOS_1000
+        state: bytes_absent
+        identity: sciencialab/grobid-evaluation/PLOS_1000
+        dataset_id: sciencialab/grobid-evaluation
+        source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
+        expected_n: 1000
+        gold_format: jats_xml
+      - id: eLife_984
+        state: bytes_absent
+        identity: sciencialab/grobid-evaluation/eLife_984
+        dataset_id: sciencialab/grobid-evaluation
+        source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
+        expected_n: 984
+        gold_format: jats_xml
+    local_proxy:
+      proxy_of: scholarly_pdf_plus_java_tei
+      same_n: true
+      rows:
+        - id: hub-2507.19457
+          state: bound
+          identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.hub-2507.19457
+          pdf_path: data/sources/arxiv/cs-cl/2507.19457/source/2507.19457.pdf
+          pdf_sha256: ab3a5139bac83f192ad67529368d77b84b0d807e95a8e4fd0daa8d45fd046bec
+          tei_ref: data/parse/regression_cases.yaml#cases.reg.tei.hub-bibliography-2507.19457
+          tei_sha256: 985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b79e7ec4
+        - id: rlm-2512.24601
+          state: bound
+          identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.rlm-2512.24601
+          pdf_path: data/sources/arxiv/cs-ai/2512.24601/source/original.pdf
+          pdf_sha256: 8567362c22768d9b50d4a4a8d63bb28dda2c2b2051be30d67f70f645170429ca
+          tei_ref: data/parse/regression_cases.yaml#cases.reg.tei.rlm-2512.24601
+          tei_sha256: e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3
+        - id: reca-2605.26525v1
+          state: bound
+          identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.reca-2605.26525v1
+          pdf_path: data/sources/arxiv/cs-cv/2605.26525v1/source/2605.26525v1.pdf
+          pdf_sha256: a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8
+          tei_ref: data/parse/regression_cases.yaml#cases.reg.tei.reca-bibliography-2605.26525
+          tei_sha256: dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040
+        
+  layout_omnidocbench:
+    comparison_kind: layout_markdown
+    purpose: scientific OmniDocBench layout and Markdown comparison only; never TEI conservation
+    authority: https://huggingface.co/datasets/opendatalab/OmniDocBench
+    license: Apache-2.0
+    expected_structure: pdf_pages_with_json_block_and_span_annotations
+    rows:
+      - id: omnidocbench-scientific
+        state: bytes_absent
+        identity: opendatalab/OmniDocBench/data_source=academic_literature,research_report
+        dataset_id: opendatalab/OmniDocBench
+        source_url: https://huggingface.co/datasets/opendatalab/OmniDocBench
+        expected_n: 1651
+        filter: data_source in [academic_literature, research_report]
+        gold_format: json_annotations
+    local_proxy:
+      proxy_of: scientific_layout_pages
+      same_n: true
+      page_denominator: 202
+      document_denominator: 3
+      oracle_ref: crates/da-parse/tests/fixtures/layout_oracle.yaml
+      source_ref: data/parse/layout_bakeoff.yaml#corpus
+      rows:
+        - id: hub-2507.19457
+          state: bound
+          identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.hub-2507.19457
+          page_count: 96
+        - id: rlm-2512.24601
+          state: bound
+          identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.rlm-2512.24601
+          page_count: 43
+        - id: reca-2605.26525v1
+          state: bound
+          identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.reca-2605.26525v1
+          page_count: 63

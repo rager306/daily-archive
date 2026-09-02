@@ -99,6 +99,7 @@ const REGRESSION_REL_PATH: &str = "data/parse/regression_cases.yaml";
 const REGISTRY_REL_PATH: &str = "data/parse/grobid_compatibility.yaml";
 /// Comparison contract carrying the S08/T03 native date shadow DATA terms.
 const COMPARISON_CONTRACT_REL: &str = "data/parse/comparison_contract.yaml";
+const ACCEPTANCE_REL_PATH: &str = "data/parse/acceptance_manifest.yaml";
 
 /// Canonical cache/configuration fingerprints (D204). The positive tests bind
 /// these strings to the LIVE API values, so any future drift in
@@ -410,6 +411,89 @@ struct RegressionManifest {
     profile_fingerprint_binding_required: bool,
     cache_key_separation_rule: String,
     cases: Vec<Case>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AcceptancePolicyLocks {
+    import_eligible: bool,
+    auto_promote: String,
+    production_route: String,
+    fallback_target: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AcceptanceRules {
+    allowed_classes: Vec<String>,
+    allowed_row_states: Vec<String>,
+    allowed_comparison_kinds: Vec<String>,
+    missing_behavior: String,
+    same_n: String,
+    catalogued_bytes_are_executed: bool,
+    omnidocbench_is_tei_oracle: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AcceptanceRow {
+    id: String,
+    state: String,
+    identity: Option<String>,
+    dataset_id: Option<String>,
+    source_url: Option<String>,
+    expected_n: Option<u64>,
+    gold_format: Option<String>,
+    filter: Option<String>,
+    identity_ref: Option<String>,
+    pdf_path: Option<String>,
+    pdf_sha256: Option<String>,
+    tei_ref: Option<String>,
+    tei_sha256: Option<String>,
+    page_count: Option<u64>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AcceptanceProxy {
+    proxy_of: String,
+    same_n: bool,
+    rows: Vec<AcceptanceRow>,
+    page_denominator: Option<u64>,
+    document_denominator: Option<u64>,
+    oracle_ref: Option<String>,
+    source_ref: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AcceptanceClass {
+    comparison_kind: String,
+    purpose: String,
+    authority: String,
+    license: String,
+    expected_structure: String,
+    rows: Vec<AcceptanceRow>,
+    local_proxy: AcceptanceProxy,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AcceptanceClasses {
+    publisher_acceptance: AcceptanceClass,
+    layout_omnidocbench: AcceptanceClass,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AcceptanceManifest {
+    schema_version: String,
+    adr_ref: String,
+    manifest_id: String,
+    requirement_ids: Vec<String>,
+    policy_locks: AcceptancePolicyLocks,
+    comparison_rules: AcceptanceRules,
+    classes: AcceptanceClasses,
 }
 
 // Custom Deserialize for ProfileName (string-tagged).
@@ -1408,7 +1492,7 @@ fn validate_registry_config_keys(registry: &serde_yaml::Value) -> Vec<String> {
 /// The observation ledger tree stays exactly the sanctioned data/parse file
 /// set — no parallel ledger tree may appear (R113/R117).
 fn data_parse_tree_errs(entries: Vec<(String, bool)>) -> Vec<String> {
-    const SANCTIONED: [&str; 9] = [
+    const SANCTIONED: [&str; 10] = [
         "SCHEMA.yaml",
         "api_compatibility_ledger.yaml",
         "comparison_contract.yaml",
@@ -1418,6 +1502,7 @@ fn data_parse_tree_errs(entries: Vec<(String, bool)>) -> Vec<String> {
         "document_segmentation.yaml",
         "native_visual_heads.yaml",
         "native_fulltext_composition.yaml",
+        "acceptance_manifest.yaml",
     ];
     let mut errs = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
@@ -2242,7 +2327,439 @@ fn validate_manifest(m: &RegressionManifest, refs: &ValidationRefs) -> Vec<Strin
     errs
 }
 
+fn acceptance_sha256(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+}
+
+fn valid_acceptance_id(id: &str) -> bool {
+    !id.is_empty()
+        && id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'.' || b == b'-' || b == b'_')
+}
+
+fn validate_acceptance_row(
+    row: &AcceptanceRow,
+    class: &str,
+    proxy: bool,
+    require_pdf: bool,
+    require_tei: bool,
+) -> Vec<String> {
+    let mut errs = Vec::new();
+    let ctx = format!("{class} row `{}`", row.id);
+    if !valid_acceptance_id(&row.id) {
+        errs.push(format!("[acceptance-bad-id] {ctx}"));
+    }
+    match row.state.as_str() {
+        "bound" => {
+            if require_pdf {
+                let Some(path) = row.pdf_path.as_deref() else {
+                    errs.push(format!("[acceptance-bound-path-missing] {ctx}"));
+                    return errs;
+                };
+                if !proxy
+                    || !path.starts_with("data/")
+                    || path.starts_with('/')
+                    || path.contains("..")
+                {
+                    errs.push(format!("[acceptance-path-escape] {ctx}"));
+                }
+                let Some(sha) = row.pdf_sha256.as_deref() else {
+                    errs.push(format!("[acceptance-bound-without-sha256] {ctx}"));
+                    return errs;
+                };
+                if !acceptance_sha256(sha) {
+                    errs.push(format!("[acceptance-bad-sha256] {ctx}"));
+                } else if let Ok(bytes) = std::fs::read(repo_root().join(path)) {
+                    if hex::encode(Sha256::digest(&bytes)) != sha {
+                        errs.push(format!("[acceptance-sha256-mismatch] {ctx}"));
+                    }
+                } else {
+                    errs.push(format!("[acceptance-missing-bound-bytes] {ctx}"));
+                }
+            }
+            if proxy && row.identity_ref.as_deref().unwrap_or("").is_empty() {
+                errs.push(format!("[acceptance-missing-authority-ref] {ctx}"));
+            }
+            if require_tei {
+                if let Some(tei) = row.tei_ref.as_deref() {
+                    if !tei.starts_with("data/parse/") || row.tei_sha256.as_deref().is_none() {
+                        errs.push(format!("[acceptance-tei-binding-invalid] {ctx}"));
+                    }
+                    if let Some(sha) = row.tei_sha256.as_deref()
+                        && !acceptance_sha256(sha)
+                    {
+                        errs.push(format!("[acceptance-bad-sha256] {ctx} tei"));
+                    }
+                } else {
+                    errs.push(format!("[acceptance-tei-ref-missing] {ctx}"));
+                }
+            }
+        }
+        "catalogued" | "bytes_absent" => {
+            if row.pdf_sha256.is_some() || row.tei_sha256.is_some() {
+                errs.push(format!("[acceptance-premature-sha256] {ctx}"));
+            }
+            if proxy {
+                errs.push(format!("[acceptance-remote-in-proxy] {ctx}"));
+            }
+            if row.identity.as_deref().unwrap_or("").is_empty()
+                || row.dataset_id.as_deref().unwrap_or("").is_empty()
+                || row.source_url.as_deref().unwrap_or("").is_empty()
+            {
+                errs.push(format!("[acceptance-catalogue-identity-missing] {ctx}"));
+            }
+        }
+        _ => errs.push(format!("[acceptance-unknown-row-state] {ctx}")),
+    }
+    errs
+}
+
+fn validate_acceptance_manifest(m: &AcceptanceManifest) -> Vec<String> {
+    let mut errs = Vec::new();
+    if m.schema_version != "parse-acceptance.v1" {
+        errs.push("[acceptance-schema-version-drift] expected parse-acceptance.v1".into());
+    }
+    if m.adr_ref != "ADR-075" || m.manifest_id != "scholarly-parse-acceptance-s20" {
+        errs.push("[acceptance-identity-drift] manifest identity is not sanctioned".into());
+    }
+    if m.requirement_ids
+        != [
+            "R085", "R091", "R105", "R107", "R109", "R110", "R113", "R114", "R116", "R117",
+        ]
+    {
+        errs.push("[acceptance-requirement-binding-drift] requirement set changed".into());
+    }
+    if m.policy_locks.import_eligible
+        || m.policy_locks.auto_promote != "forbidden"
+        || m.policy_locks.production_route != "forbidden"
+        || m.policy_locks.fallback_target != "java-grobid-http@0.9.0-crf"
+    {
+        errs.push("[acceptance-hard-lock-violation] acceptance policy locks eroded".into());
+    }
+    let rules = &m.comparison_rules;
+    if rules.allowed_classes != ["publisher_acceptance", "layout_omnidocbench"]
+        || rules.allowed_row_states != ["bound", "catalogued", "bytes_absent"]
+        || rules.allowed_comparison_kinds != ["tei_family", "layout_markdown"]
+    {
+        errs.push("[acceptance-taxonomy-drift] closed acceptance taxonomy changed".into());
+    }
+    if rules.missing_behavior != "fail_visible"
+        || rules.same_n != "required"
+        || rules.catalogued_bytes_are_executed
+        || rules.omnidocbench_is_tei_oracle
+    {
+        errs.push("[acceptance-semantics-violation] fail-visible or role semantics eroded".into());
+    }
+
+    let publisher = &m.classes.publisher_acceptance;
+    if publisher.comparison_kind != "tei_family" {
+        errs.push("[acceptance-comparison-kind-drift] publisher must use tei_family".into());
+    }
+    if publisher.purpose
+        != "official publisher-style GROBID acceptance identities; local proxy is not a publisher identity"
+        || publisher.authority != "https://huggingface.co/datasets/sciencialab/grobid-evaluation"
+        || publisher.license != "CC-BY"
+        || publisher.expected_structure != "article_directory_with_pdf_and_gold_jats_xml"
+    {
+        errs.push("[acceptance-publisher-authority-drift] publisher metadata changed".into());
+    }
+    for row in &publisher.rows {
+        errs.extend(validate_acceptance_row(
+            row,
+            "publisher_acceptance",
+            false,
+            false,
+            false,
+        ));
+        if row.state != "bytes_absent" {
+            errs.push(format!(
+                "[acceptance-remote-must-be-absent] publisher row `{}`",
+                row.id
+            ));
+        }
+        if row.expected_n.unwrap_or(0) == 0
+            || !matches!(row.gold_format.as_deref(), Some("jats_nxml" | "jats_xml"))
+            || row.filter.is_some()
+        {
+            errs.push(format!(
+                "[acceptance-publisher-shape-drift] publisher row `{}`",
+                row.id
+            ));
+        }
+    }
+    if publisher.rows.len() != 4 {
+        errs.push(
+            "[acceptance-publisher-denominator-drift] expected four official identities".into(),
+        );
+    }
+    let layout = &m.classes.layout_omnidocbench;
+    if layout.comparison_kind != "layout_markdown" {
+        errs.push("[acceptance-omnidocbench-as-tei] layout class must be layout_markdown".into());
+    }
+    if layout.purpose
+        != "scientific OmniDocBench layout and Markdown comparison only; never TEI conservation"
+        || layout.authority != "https://huggingface.co/datasets/opendatalab/OmniDocBench"
+        || layout.license != "Apache-2.0"
+        || layout.expected_structure != "pdf_pages_with_json_block_and_span_annotations"
+    {
+        errs.push("[acceptance-layout-authority-drift] OmniDocBench metadata changed".into());
+    }
+    for row in &layout.rows {
+        errs.extend(validate_acceptance_row(
+            row,
+            "layout_omnidocbench",
+            false,
+            false,
+            false,
+        ));
+        if row.state != "bytes_absent" {
+            errs.push(format!(
+                "[acceptance-remote-must-be-absent] layout row `{}`",
+                row.id
+            ));
+        }
+        if row.expected_n != Some(1651)
+            || row.gold_format.as_deref() != Some("json_annotations")
+            || row.filter.as_deref()
+                != Some("data_source in [academic_literature, research_report]")
+        {
+            errs.push(format!(
+                "[acceptance-layout-shape-drift] layout row `{}`",
+                row.id
+            ));
+        }
+    }
+    if layout.local_proxy.proxy_of != "scientific_layout_pages"
+        || !layout.local_proxy.same_n
+        || layout.local_proxy.page_denominator != Some(202)
+        || layout.local_proxy.document_denominator != Some(3)
+        || layout.local_proxy.oracle_ref.as_deref()
+            != Some("crates/da-parse/tests/fixtures/layout_oracle.yaml")
+        || layout.local_proxy.source_ref.as_deref() != Some("data/parse/layout_bakeoff.yaml#corpus")
+    {
+        errs.push(
+            "[acceptance-layout-proxy-drift] layout proxy must bind independent 202-page oracle"
+                .into(),
+        );
+    }
+    if layout
+        .local_proxy
+        .oracle_ref
+        .as_deref()
+        .is_some_and(|p| !repo_root().join(p).is_file())
+    {
+        errs.push("[acceptance-missing-layout-oracle] independent oracle is absent".into());
+    }
+    let publisher_proxy = &publisher.local_proxy;
+    if publisher_proxy.proxy_of != "scholarly_pdf_plus_java_tei" || !publisher_proxy.same_n {
+        errs.push(
+            "[acceptance-tei-proxy-drift] publisher proxy must preserve same-n TEI identity".into(),
+        );
+    }
+    if publisher_proxy.rows.len() != 3 || layout.local_proxy.rows.len() != 3 {
+        errs.push(
+            "[acceptance-same-n-mismatch] local proxy denominator must be exactly three".into(),
+        );
+    }
+    for row in &publisher_proxy.rows {
+        errs.extend(validate_acceptance_row(
+            row,
+            "local_proxy",
+            true,
+            true,
+            true,
+        ));
+    }
+    for row in &layout.local_proxy.rows {
+        errs.extend(validate_acceptance_row(
+            row,
+            "local_proxy",
+            true,
+            false,
+            false,
+        ));
+    }
+    let total_pages: u64 = layout
+        .local_proxy
+        .rows
+        .iter()
+        .filter_map(|r| r.page_count)
+        .sum();
+    if total_pages != 202 {
+        errs.push(format!(
+            "[acceptance-page-denominator-mismatch] expected 202, got {total_pages}"
+        ));
+    }
+    if !publisher_proxy
+        .rows
+        .iter()
+        .all(|r| layout.local_proxy.rows.iter().any(|l| l.id == r.id))
+    {
+        errs.push("[acceptance-same-n-mismatch] TEI and layout proxy identities differ".into());
+    }
+    errs
+}
+
+fn authority_record<'a>(value: &'a serde_yaml::Value, id: &str) -> Option<&'a serde_yaml::Mapping> {
+    match value {
+        serde_yaml::Value::Mapping(map) => {
+            if map.get("id").and_then(serde_yaml::Value::as_str) == Some(id) {
+                return Some(map);
+            }
+            map.values().find_map(|child| authority_record(child, id))
+        }
+        serde_yaml::Value::Sequence(items) => {
+            items.iter().find_map(|child| authority_record(child, id))
+        }
+        _ => None,
+    }
+}
+
+fn authority_lookup(reference: &str, id: &str) -> serde_yaml::Mapping {
+    let path = reference.split('#').next().expect("authority path");
+    let value: serde_yaml::Value = load_yaml(path).expect("authority YAML must load");
+    authority_record(&value, id)
+        .cloned()
+        .unwrap_or_else(|| panic!("authority record `{id}` missing from `{path}`"))
+}
+
 // ───────────────────────────── positives ──────────────────────────────
+
+#[test]
+fn acceptance_manifest_loads_and_passes_contract_validation() {
+    let manifest: AcceptanceManifest = expect_loaded(ACCEPTANCE_REL_PATH);
+    let errs = validate_acceptance_manifest(&manifest);
+    assert!(
+        errs.is_empty(),
+        "acceptance manifest contract violations:\n{}",
+        errs.join("\n")
+    );
+}
+
+#[test]
+fn acceptance_manifest_references_resolve_to_original_authorities() {
+    let manifest: AcceptanceManifest = expect_loaded(ACCEPTANCE_REL_PATH);
+    for row in &manifest.classes.publisher_acceptance.local_proxy.rows {
+        let record = authority_lookup(row.identity_ref.as_deref().unwrap(), &row.id);
+        assert_eq!(
+            record.get("source_pdf").and_then(serde_yaml::Value::as_str),
+            row.pdf_path.as_deref()
+        );
+        assert_eq!(
+            record.get("sha256").and_then(serde_yaml::Value::as_str),
+            row.pdf_sha256.as_deref()
+        );
+
+        let reference = row.tei_ref.as_deref().unwrap();
+        let id = reference
+            .split('#')
+            .nth(1)
+            .unwrap()
+            .trim_start_matches("cases.");
+        let tei_record = authority_lookup(reference, id);
+        let fixture = tei_record
+            .get("fixture")
+            .expect("regression fixture authority");
+        assert_eq!(
+            fixture.get("sha256").and_then(serde_yaml::Value::as_str),
+            row.tei_sha256.as_deref()
+        );
+    }
+    for row in &manifest.classes.layout_omnidocbench.local_proxy.rows {
+        let record = authority_lookup(row.identity_ref.as_deref().unwrap(), &row.id);
+        assert_eq!(
+            record.get("pages").and_then(serde_yaml::Value::as_u64),
+            row.page_count
+        );
+    }
+}
+
+#[test]
+fn acceptance_manifest_preserves_remote_absence_and_local_same_n() {
+    let manifest: AcceptanceManifest = expect_loaded(ACCEPTANCE_REL_PATH);
+    assert!(
+        manifest
+            .classes
+            .publisher_acceptance
+            .rows
+            .iter()
+            .all(|row| row.state == "bytes_absent" && row.pdf_sha256.is_none())
+    );
+    assert_eq!(
+        manifest.classes.publisher_acceptance.local_proxy.rows.len(),
+        3
+    );
+    assert_eq!(
+        manifest.classes.layout_omnidocbench.local_proxy.rows.len(),
+        3
+    );
+    assert_eq!(
+        manifest
+            .classes
+            .layout_omnidocbench
+            .local_proxy
+            .page_denominator,
+        Some(202)
+    );
+}
+
+#[test]
+fn acceptance_manifest_rejects_isolated_mutations() {
+    let valid: AcceptanceManifest = expect_loaded(ACCEPTANCE_REL_PATH);
+
+    let mut missing = valid.clone();
+    missing.classes.publisher_acceptance.local_proxy.rows[0].pdf_path =
+        Some("data/sources/does-not-exist.pdf".into());
+    negative(
+        "[acceptance-missing-bound-bytes]",
+        &validate_acceptance_manifest(&missing),
+        "missing bound bytes",
+    );
+
+    let mut drift = valid.clone();
+    drift.classes.publisher_acceptance.local_proxy.rows[0].pdf_sha256 = Some("a".repeat(64));
+    negative(
+        "[acceptance-sha256-mismatch]",
+        &validate_acceptance_manifest(&drift),
+        "checksum drift",
+    );
+
+    let mut premature = valid.clone();
+    premature.classes.publisher_acceptance.rows[0].pdf_sha256 = Some("a".repeat(64));
+    negative(
+        "[acceptance-premature-sha256]",
+        &validate_acceptance_manifest(&premature),
+        "remote checksum substitution",
+    );
+
+    let mut same_n = valid.clone();
+    same_n.classes.layout_omnidocbench.local_proxy.rows.pop();
+    negative(
+        "[acceptance-same-n-mismatch]",
+        &validate_acceptance_manifest(&same_n),
+        "same-n erosion",
+    );
+
+    let mut role = valid.clone();
+    role.classes.layout_omnidocbench.comparison_kind = "tei_family".into();
+    negative(
+        "[acceptance-omnidocbench-as-tei]",
+        &validate_acceptance_manifest(&role),
+        "OmniDocBench used as TEI oracle",
+    );
+
+    let mut locks = valid;
+    locks.policy_locks.import_eligible = true;
+    negative(
+        "[acceptance-hard-lock-violation]",
+        &validate_acceptance_manifest(&locks),
+        "import lock erosion",
+    );
+}
 
 #[test]
 fn ledger_loads_and_passes_contract_validation() {
