@@ -19,6 +19,12 @@ pub struct RvfFileStore {
 }
 
 impl RvfFileStore {
+    /// Whether the canonical RVF file exists. This is intentionally exposed
+    /// only as a preflight signal; callers still must run `verify`.
+    pub fn exists(&self) -> bool {
+        self.path.exists()
+    }
+
     pub fn open(path: PathBuf, lineage: LearningLineage) -> Result<Self, RvfStoreError> {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).map_err(|e| RvfStoreError::Io(e.to_string()))?;

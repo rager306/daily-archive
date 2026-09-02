@@ -34,6 +34,8 @@ pub mod parse_cache;
 #[cfg(feature = "redb")]
 pub mod parse_cursor;
 pub mod parse_experience_rvf;
+#[cfg(feature = "redb")]
+pub mod parse_learning_index;
 pub mod pdffigures2;
 pub mod pipeline_cache;
 pub mod pipeline_ledger;
