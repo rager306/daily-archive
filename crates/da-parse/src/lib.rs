@@ -38,6 +38,7 @@ mod native_affiliation;
 mod native_citation;
 mod native_composition;
 mod native_date;
+mod native_fulltext_composition;
 mod native_personal_name;
 mod native_segmentation;
 mod native_visual;
@@ -112,6 +113,15 @@ pub use native_date::{
     DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,
     NATIVE_DATE_PARSER_ID, NATIVE_DATE_PARSER_VERSION, NativeDateAmbiguous, NativeDateMalformed,
     NativeDateOutcome, NativeDateParser, NativeDateUnsupported, RecognizedDate,
+};
+pub use native_fulltext_composition::{
+    AdmissionDisposition, FulltextAdmissionReceipt, FulltextComponent, FulltextComponentManifest,
+    FulltextCompositionIdentity, NATIVE_FULLTEXT_COMPOSITION_SCHEMA_VERSION,
+    NATIVE_FULLTEXT_FALLBACK_TARGET, NATIVE_FULLTEXT_MAX_COMPONENT_BYTES,
+    NATIVE_FULLTEXT_MAX_JAVA_BYTES, NATIVE_FULLTEXT_MAX_XML_DEPTH, NativeFulltextCandidate,
+    NativeFulltextCompositionError, NativeFulltextCompositionInput,
+    NativeFulltextCompositionOutcome, NativeFulltextManifest, S17LineageReceipt,
+    compose_native_fulltext,
 };
 pub use native_personal_name::{
     NATIVE_PERSONAL_NAME_INPUT_BYTE_CAP, NATIVE_PERSONAL_NAME_OUTCOME_SCHEMA_VERSION,
