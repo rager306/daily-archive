@@ -5,6 +5,7 @@ All rules are DATA-driven from data_integrity.yaml:
   2. no_nested_data_dirs: detect data/X/X nesting
   3. cache_invalidation_bound: verify stage contracts bind config sha
   4. artifact_lifecycle_gc: flag stale artifact dirs
+  5. canonical_edge_contract_path: enforce the ontology edge-contract DATA path
 """
 
 from __future__ import annotations
@@ -55,8 +56,97 @@ def check_data_integrity(root: Path) -> list[DriftFlag]:
             flags.extend(_check_artifact_gc(root, rule, _flag))
         elif rule_id == "textbook_manifest_required":
             flags.extend(_check_textbook_manifests(root, rule, _flag))
+        elif rule_id == "canonical_edge_contract_path":
+            flags.extend(_check_canonical_edge_contract_path(root, rule, _flag))
 
     return flags
+
+
+def _check_canonical_edge_contract_path(root: Path, rule: dict, _flag) -> list[DriftFlag]:
+    """Keep edge-contract DATA canonical and reject active legacy readers.
+
+    The scan is intentionally bounded by the rule's paths and never follows
+    symlinked directories or files. Historical ADR prose is outside the scan;
+    the explicit allowlist also protects any permitted historical marker.
+    """
+    flags: list[DriftFlag] = []
+    canonical_value = rule.get("canonical_path")
+    legacy_parts = rule.get("legacy_path_parts")
+    scan = rule.get("scan")
+    if (
+        not isinstance(canonical_value, str)
+        or not isinstance(legacy_parts, list)
+        or not legacy_parts
+        or not all(isinstance(part, str) and part for part in legacy_parts)
+        or not isinstance(scan, list)
+        or not scan
+    ):
+        return [_flag(
+            "data_integrity_edge_contract_rule_invalid",
+            "canonical_edge_contract_path requires a canonical_path, non-empty legacy_path_parts, and a non-empty scan list",
+        )]
+    canonical_rel = canonical_value
+    legacy_rel = "/".join(legacy_parts)
+    if canonical_rel == legacy_rel:
+        return [_flag(
+            "data_integrity_edge_contract_rule_invalid",
+            "canonical_edge_contract_path requires distinct canonical_path and legacy_path_parts",
+        )]
+    canonical = root / canonical_rel
+    legacy = root / legacy_rel
+
+    if not canonical.is_file() or canonical.is_symlink():
+        flags.append(_flag(
+            "data_integrity_edge_contract_canonical_missing",
+            f"{canonical_rel} is missing or is not a regular file — restore the canonical ontology DATA file",
+        ))
+    if legacy.exists() or legacy.is_symlink():
+        flags.append(_flag(
+            "data_integrity_edge_contract_orphan_present",
+            f"{legacy_rel} exists — remove the legacy edge-contract file",
+        ))
+
+    excluded = set(rule.get("exclude_paths", []))
+    excluded_dirs = set(rule.get("exclude_dirs", []))
+    allowlist = [str(marker) for marker in rule.get("historical_allowlist", [])]
+    legacy_readers: list[str] = []
+
+    for scan_entry in scan:
+        scan_path = root / str(scan_entry)
+        if scan_path.is_symlink() or not scan_path.exists():
+            continue
+        candidates = [scan_path] if scan_path.is_file() else _bounded_files(scan_path, excluded_dirs)
+        for candidate in candidates:
+            rel = candidate.relative_to(root).as_posix()
+            if rel in excluded or candidate.is_symlink():
+                continue
+            try:
+                text = candidate.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            if legacy_rel in text and not any(marker in text for marker in allowlist):
+                legacy_readers.append(rel)
+
+    if legacy_readers:
+        flags.append(_flag(
+            "data_integrity_edge_contract_legacy_reader",
+            "active files reference " + ", ".join(sorted(legacy_readers))
+            + f" with {legacy_rel} — use {canonical_rel}",
+        ))
+    return flags
+
+
+def _bounded_files(directory: Path, excluded_dirs: set[str]) -> list[Path]:
+    """Return regular files below *directory* without following symlinks."""
+    files: list[Path] = []
+    for current, dir_names, file_names in os.walk(directory, followlinks=False):
+        dir_names[:] = [name for name in dir_names if name not in excluded_dirs]
+        current_path = Path(current)
+        for name in file_names:
+            candidate = current_path / name
+            if not candidate.is_symlink() and candidate.is_file():
+                files.append(candidate)
+    return files
 
 
 def _check_textbook_manifests(root: Path, rule: dict, _flag) -> list[DriftFlag]:

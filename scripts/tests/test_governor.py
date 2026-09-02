@@ -2986,6 +2986,68 @@ def test_data_integrity_cache_binding_missing_is_flagged():
     assert any(f.flag == "data_integrity_cache_binding_missing" for f in flags)
 
 
+def _prepare_edge_contract_fixture(root: Path) -> None:
+    _copy_data_integrity_contract(root)
+    _write(root / "data/ontology/edge_contracts.yaml", "schema_version: edge-contracts.v1\n")
+
+
+def test_data_integrity_canonical_edge_contract_path_is_clean():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _prepare_edge_contract_fixture(service.root)
+    from governor.adapters.data_integrity_checker import check_data_integrity
+    flags = check_data_integrity(service.root)
+    assert not any(f.flag.startswith("data_integrity_edge_contract_") for f in flags)
+
+
+def test_data_integrity_canonical_edge_contract_orphan_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _prepare_edge_contract_fixture(service.root)
+    legacy_path = "data/" + "edge_contracts.yaml"
+    _write(service.root / legacy_path, "legacy: true\n")
+    from governor.adapters.data_integrity_checker import check_data_integrity
+    flags = check_data_integrity(service.root)
+    assert any(f.flag == "data_integrity_edge_contract_orphan_present" for f in flags)
+
+
+def test_data_integrity_canonical_edge_contract_legacy_reader_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _prepare_edge_contract_fixture(service.root)
+    legacy_path = "data/" + "edge_contracts.yaml"
+    _write(service.root / "crates/da-test/src/reader.rs",
+           f'const PATH: &str = "{legacy_path}";\n')
+    from governor.adapters.data_integrity_checker import check_data_integrity
+    flags = check_data_integrity(service.root)
+    assert any(f.flag == "data_integrity_edge_contract_legacy_reader" for f in flags)
+
+
+def test_data_integrity_canonical_edge_contract_historical_text_is_allowed():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _prepare_edge_contract_fixture(service.root)
+    _write(service.root / "scripts/migrate_data_layout_m447.sh",
+           "# ADR-067 migration may mention data/" + "edge_contracts.yaml\n")
+    from governor.adapters.data_integrity_checker import check_data_integrity
+    flags = check_data_integrity(service.root)
+    assert not any(f.flag == "data_integrity_edge_contract_legacy_reader" for f in flags)
+
+
+def test_data_integrity_canonical_edge_contract_rule_malformed_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_data_integrity_contract(service.root)
+    contract_path = service.root / "scripts/governor/checks/data_integrity.yaml"
+    contract = yaml.safe_load(contract_path.read_text())
+    edge_rule = next(rule for rule in contract["rules"] if rule["id"] == "canonical_edge_contract_path")
+    edge_rule["scan"] = []
+    _write(contract_path, yaml.safe_dump(contract))
+    from governor.adapters.data_integrity_checker import check_data_integrity
+    flags = check_data_integrity(service.root)
+    assert any(f.flag == "data_integrity_edge_contract_rule_invalid" for f in flags)
+
+
 def _copy_graph_semantics_contract(root: Path) -> None:
     repo = _scripts_dir.parent
     rel = "scripts/governor/checks/graph_semantics.yaml"
@@ -3186,6 +3248,11 @@ def _run_all_tests() -> int:
         test_data_integrity_w3_namespace_url_is_allowed,
         test_data_integrity_nested_dir_is_caught,
         test_data_integrity_cache_binding_missing_is_flagged,
+        test_data_integrity_canonical_edge_contract_path_is_clean,
+        test_data_integrity_canonical_edge_contract_orphan_is_flagged,
+        test_data_integrity_canonical_edge_contract_legacy_reader_is_flagged,
+        test_data_integrity_canonical_edge_contract_historical_text_is_allowed,
+        test_data_integrity_canonical_edge_contract_rule_malformed_is_flagged,
     ]
     passed = 0
     failed = 0

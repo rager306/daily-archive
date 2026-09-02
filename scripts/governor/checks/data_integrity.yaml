@@ -35,3 +35,22 @@ rules:
   description: Every textbook must have a textbook_manifest.json
   check: textbook_manifest
   scan: data/sources/textbook/
+- id: canonical_edge_contract_path
+  description: Edge contracts have one canonical ontology DATA path; legacy readers and orphan files are forbidden
+  canonical_path: data/ontology/edge_contracts.yaml
+  legacy_path_parts:
+  - data
+  - edge_contracts.yaml
+  scan:
+  - crates/
+  - scripts/
+  - data/path_config.yaml
+  exclude_dirs:
+  - tests
+  - examples
+  - benches
+  exclude_paths:
+  - scripts/governor/checks/data_integrity.yaml
+  - scripts/governor/adapters/data_integrity_checker.py
+  historical_allowlist:
+  - ADR-067
