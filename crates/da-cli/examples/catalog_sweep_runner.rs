@@ -24,7 +24,7 @@ use da_parse::{GrobidParser, GrobidProfile, PROJECT_ARTICLE_SCHEMA_FINGERPRINT};
 use da_ports::pipeline_cache::{PipelineCache, SourceIdentity};
 use da_ports::pipeline_stage::{PipelineStageExecutor, StageContract};
 use kg_pipeline::PipelineBuilder;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::io::Write;
@@ -69,11 +69,11 @@ struct Args {
     catalog_root: PathBuf,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct PaperSweepRecord {
     paper_id: String,
     category: String,
-    outcome: &'static str, // ok | failed | skipped_source
+    outcome: String, // ok | failed | skipped_source
     source_sha256: Option<String>,
     metrics: Option<ArticleMetrics>,
     deviations: Vec<DeviationKind>,
@@ -81,7 +81,7 @@ struct PaperSweepRecord {
     elapsed_ms: u128,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct SweepReport {
     schema_version: String,
     thresholds_file: PathBuf,
@@ -95,6 +95,19 @@ fn sha256_of(bytes: &[u8]) -> String {
     let mut h = Sha256::new();
     h.update(bytes);
     h.finalize().iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// Restore typed rows from the previous report so bounded runs accumulate
+/// evidence instead of retaining only a skip-set and dropping prior records.
+fn resume_papers(bytes: Option<&[u8]>, force: bool) -> Result<BTreeMap<String, PaperSweepRecord>> {
+    if force {
+        return Ok(BTreeMap::new());
+    }
+    bytes
+        .map(|bytes| serde_json::from_slice::<SweepReport>(bytes).map(|report| report.papers))
+        .transpose()
+        .map(Option::unwrap_or_default)
+        .map_err(Into::into)
 }
 
 /// Walk both supported local catalog layouts and build one audited inventory
@@ -270,7 +283,7 @@ fn fail_record(entry: &CatalogEntry, stage: &str, message: String) -> PaperSweep
     PaperSweepRecord {
         paper_id: entry.paper_id.clone(),
         category: entry.category.clone(),
-        outcome: "failed",
+        outcome: "failed".into(),
         source_sha256: entry.source_sha256.clone(),
         metrics: None,
         deviations: vec![DeviationKind::Stage {
@@ -479,7 +492,7 @@ async fn process_one(
     PaperSweepRecord {
         paper_id: entry.paper_id.clone(),
         category: entry.category.clone(),
-        outcome: "ok",
+        outcome: "ok".into(),
         source_sha256: entry.source_sha256.clone(),
         metrics: Some(metrics),
         deviations,
@@ -551,19 +564,13 @@ async fn main() -> Result<()> {
         .filter(|e| e.source_deviation.is_some())
         .collect();
 
-    // Resume needs only the set of already-processed article ids; the fresh
-    // run rewrites the whole report with typed records.
-    let done_ids: std::collections::BTreeSet<String> = if args.report.exists() && !args.force {
-        let bytes = std::fs::read(&args.report)?;
-        let prev: serde_json::Value = serde_json::from_slice(&bytes)?;
-        prev["papers"]
-            .as_object()
-            .map(|m| m.keys().cloned().collect())
-            .unwrap_or_default()
+    let previous_report = if args.report.exists() {
+        Some(std::fs::read(&args.report)?)
     } else {
-        Default::default()
+        None
     };
-    let mut papers: BTreeMap<String, PaperSweepRecord> = BTreeMap::new();
+    let mut papers = resume_papers(previous_report.as_deref(), args.force)?;
+    let done_ids: std::collections::BTreeSet<String> = papers.keys().cloned().collect();
 
     // Typed source anomalies — no pipeline run possible.
     for entry in &source_anomalies {
@@ -572,7 +579,7 @@ async fn main() -> Result<()> {
             .or_insert_with(|| PaperSweepRecord {
                 paper_id: entry.paper_id.clone(),
                 category: entry.category.clone(),
-                outcome: "skipped_source",
+                outcome: "skipped_source".into(),
                 source_sha256: entry.source_sha256.clone(),
                 metrics: None,
                 deviations: vec![DeviationKind::Source(
@@ -714,6 +721,34 @@ mod tests {
             in_gold: false,
             source_deviation: None,
         }
+    }
+
+    #[test]
+    fn bounded_resume_preserves_previous_typed_rows() {
+        let previous = PaperSweepRecord {
+            paper_id: "1111.1111".into(),
+            category: "cs-cl".into(),
+            outcome: "ok".into(),
+            source_sha256: Some("abc".into()),
+            metrics: None,
+            deviations: Vec::new(),
+            failure: None,
+            elapsed_ms: 7,
+        };
+        let report = SweepReport {
+            schema_version: "catalog-sweep.v1".into(),
+            thresholds_file: PathBuf::from("thresholds.yaml"),
+            total_catalog: 1,
+            gold_count: 0,
+            processed_target: 1,
+            papers: [(previous.paper_id.clone(), previous)].into(),
+        };
+        let bytes = serde_json::to_vec(&report).unwrap();
+
+        let resumed = resume_papers(Some(&bytes), false).unwrap();
+        assert_eq!(resumed.len(), 1);
+        assert_eq!(resumed["1111.1111"].outcome, "ok");
+        assert!(resume_papers(Some(&bytes), true).unwrap().is_empty());
     }
 
     #[test]
