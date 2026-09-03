@@ -23,8 +23,6 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 use da_adapters::{FilePipelineCache, SamyamaGraphStore};
-#[cfg(feature = "pdf-classifier")]
-use da_application::catalog_materialization::arxiv_stamp_revision;
 use da_application::catalog_materialization::{
     PaperMaterializeEvent, PaperMaterializeFsm, PaperMaterializeState, RunMaterializeEvent,
     RunMaterializeFsm, RunMaterializeState, SKIP_AMBIGUOUS_PARSE_KEYS, SKIP_ASSET_MISSING,
@@ -239,12 +237,34 @@ mod recovery {
             papers: Vec::with_capacity(targets.len()),
         };
         for (paper_id, category) in targets {
-            let pdf = args
+            // Coverage paper_ids may carry a version suffix (e.g.
+            // `2605.26525v1`) while the stamp matcher needs the bare id
+            // (`2605.26525`); the asset directory keeps the full id.
+            // Strip only a trailing `vN` (N = digits); arXiv bare ids
+            // never end with `vN`, so this cannot mis-split a bare id.
+            let stamp_id = paper_id
+                .rsplit_once('v')
+                .filter(|(bare, suffix)| {
+                    !suffix.is_empty()
+                        && suffix.bytes().all(|b| b.is_ascii_digit())
+                        && bare.bytes().any(|b| b.is_ascii_digit())
+                })
+                .map(|(bare, _)| bare)
+                .unwrap_or(paper_id.as_str());
+            // The local corpus contains both canonical nested sources and
+            // legacy flat assets (e.g. `unknown/<id>/<id>.pdf`). Prefer
+            // nested when both exist, mirroring the run path.
+            let article_root = args
                 .catalog_root
                 .join(category.as_deref().unwrap_or("unknown"))
-                .join(&paper_id)
-                .join("source")
-                .join(format!("{paper_id}.pdf"));
+                .join(&paper_id);
+            let pdf = [
+                article_root.join("source").join(format!("{paper_id}.pdf")),
+                article_root.join(format!("{paper_id}.pdf")),
+            ]
+            .into_iter()
+            .find(|path| path.is_file())
+            .unwrap_or_else(|| article_root.join("source").join(format!("{paper_id}.pdf")));
             let record = match std::fs::read(&pdf) {
                 Ok(bytes) => {
                     // The first two pages carry the arXiv stamp when present.
@@ -253,7 +273,7 @@ mod recovery {
                     {
                         Ok(result) => {
                             let markdown = result.markdown.unwrap_or_default();
-                            match arxiv_stamp_revision(&markdown, &paper_id) {
+                            match arxiv_stamp_revision(&markdown, stamp_id) {
                                 Some(revision) => {
                                     tracing::info!(paper = %paper_id, revision, source = "pdf_stamp", "revision recovered");
                                     report.totals.recovered += 1;
