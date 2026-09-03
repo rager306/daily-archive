@@ -665,6 +665,20 @@ impl RuleBasedExtractor {
         i
     }
 
+    /// Clamp an externally computed byte span to valid UTF-8 boundaries.
+    ///
+    /// Several extractors search a lowercased projection. Unicode lowercase
+    /// expansion can shift those byte offsets relative to the original text;
+    /// callers must never slice the original with the raw projected offsets.
+    fn safe_span(text: &str, start: usize, end: usize) -> (usize, usize) {
+        let start = Self::snap_down(text, start);
+        let mut end = end.min(text.len());
+        while end < text.len() && !text.is_char_boundary(end) {
+            end += 1;
+        }
+        (start, end.max(start))
+    }
+
     fn word_boundary(text: &str, start: usize, end: usize) -> bool {
         let before_ok = start == 0
             || !text
@@ -1465,6 +1479,7 @@ impl Extractor for RuleBasedExtractor {
                     if self.label_is_junk(&label) {
                         continue;
                     }
+                    let (char_start, char_end) = Self::safe_span(text, char_start, char_end);
                     entities.push(ExtractedEntity {
                         label,
                         entity_type: entity_type.clone(),
@@ -1472,8 +1487,7 @@ impl Extractor for RuleBasedExtractor {
                         section_ordinal: Some(section_ordinal),
                         char_start,
                         char_end,
-                        surface: text[char_start.min(text.len())..char_end.min(text.len())]
-                            .to_string(),
+                        surface: text[char_start..char_end].to_string(),
                     });
                 }
             }
@@ -1504,6 +1518,7 @@ impl Extractor for RuleBasedExtractor {
                 let key = (label.to_lowercase(), "method".to_string());
                 if !seen.contains(&key) {
                     seen.insert(key);
+                    let (char_start, char_end) = Self::safe_span(&scan_text, char_start, char_end);
                     entities.push(ExtractedEntity {
                         label,
                         entity_type: EntityType::Method,
@@ -1511,9 +1526,7 @@ impl Extractor for RuleBasedExtractor {
                         section_ordinal: Some(section_ordinal),
                         char_start,
                         char_end,
-                        surface: scan_text
-                            [char_start.min(scan_text.len())..char_end.min(scan_text.len())]
-                            .to_string(),
+                        surface: scan_text[char_start..char_end].to_string(),
                     });
                 }
             }
@@ -1751,6 +1764,7 @@ impl Extractor for RuleBasedExtractor {
                 if !seen.contains(&key) {
                     prose_total += 1;
                     seen.insert(key);
+                    let (char_start, char_end) = Self::safe_span(&scan_text, char_start, char_end);
                     entities.push(ExtractedEntity {
                         label,
                         entity_type: EntityType::Metric,
@@ -1758,9 +1772,7 @@ impl Extractor for RuleBasedExtractor {
                         section_ordinal: Some(section_ordinal),
                         char_start,
                         char_end,
-                        surface: scan_text
-                            [char_start.min(scan_text.len())..char_end.min(scan_text.len())]
-                            .to_string(),
+                        surface: scan_text[char_start..char_end].to_string(),
                     });
                 }
             }
@@ -1771,6 +1783,7 @@ impl Extractor for RuleBasedExtractor {
                 let key = (label.to_lowercase(), "method".to_string());
                 if !seen.contains(&key) {
                     seen.insert(key);
+                    let (char_start, char_end) = Self::safe_span(&scan_text, char_start, char_end);
                     entities.push(ExtractedEntity {
                         label,
                         entity_type: EntityType::Method,
@@ -1778,9 +1791,7 @@ impl Extractor for RuleBasedExtractor {
                         section_ordinal: Some(section_ordinal),
                         char_start,
                         char_end,
-                        surface: scan_text
-                            [char_start.min(scan_text.len())..char_end.min(scan_text.len())]
-                            .to_string(),
+                        surface: scan_text[char_start..char_end].to_string(),
                     });
                 }
             }
@@ -1801,16 +1812,15 @@ impl Extractor for RuleBasedExtractor {
                 let lower = scan_text.to_lowercase();
                 if let Some(pos) = lower.find(&name.to_lowercase()) {
                     seen.insert(key);
+                    let (char_start, char_end) = Self::safe_span(&scan_text, pos, pos + name.len());
                     entities.push(ExtractedEntity {
                         label: name.clone(),
                         entity_type: EntityType::Method,
                         section_title: title.clone(),
                         section_ordinal: Some(ordinal),
-                        char_start: pos,
-                        char_end: pos + name.len(),
-                        surface: scan_text
-                            [pos.min(scan_text.len())..(pos + name.len()).min(scan_text.len())]
-                            .to_string(),
+                        char_start,
+                        char_end,
+                        surface: scan_text[char_start..char_end].to_string(),
                     });
                 }
                 let _ = env_id;
@@ -1836,21 +1846,19 @@ impl Extractor for RuleBasedExtractor {
                 let scan_text = format!("{} {}", title, text);
                 let lower = scan_text.to_lowercase();
                 if let Some(pos) = lower.find(&keyword) {
-                    let end = (pos + raw.chars().count()).min(scan_text.len());
-                    if scan_text.is_char_boundary(end) {
-                        seen.insert(key.clone());
-                        entities.push(ExtractedEntity {
-                            label: raw.clone(),
-                            entity_type: EntityType::Method,
-                            section_title: title.clone(),
-                            section_ordinal: Some(section_ordinal),
-                            char_start: pos,
-                            char_end: end,
-                            surface: scan_text[pos..end].to_string(),
-                        });
-                        placed = true;
-                        break;
-                    }
+                    let (char_start, char_end) = Self::safe_span(&scan_text, pos, pos + raw.len());
+                    seen.insert(key.clone());
+                    entities.push(ExtractedEntity {
+                        label: raw.clone(),
+                        entity_type: EntityType::Method,
+                        section_title: title.clone(),
+                        section_ordinal: Some(section_ordinal),
+                        char_start,
+                        char_end,
+                        surface: scan_text[char_start..char_end].to_string(),
+                    });
+                    placed = true;
+                    break;
                 }
             }
             if !placed {
@@ -1873,16 +1881,16 @@ impl Extractor for RuleBasedExtractor {
                 let lower = scan_text.to_lowercase();
                 if let Some(pos) = lower.find(&label.to_lowercase()) {
                     seen.insert(key);
+                    let (char_start, char_end) =
+                        Self::safe_span(&scan_text, pos, pos + label.len());
                     entities.push(ExtractedEntity {
                         label: label.clone(),
                         entity_type: EntityType::Method,
                         section_title: title.clone(),
                         section_ordinal: Some(ordinal),
-                        char_start: pos,
-                        char_end: pos + label.len(),
-                        surface: scan_text
-                            [pos.min(scan_text.len())..(pos + label.len()).min(scan_text.len())]
-                            .to_string(),
+                        char_start,
+                        char_end,
+                        surface: scan_text[char_start..char_end].to_string(),
                     });
                 }
             }
@@ -1902,16 +1910,16 @@ impl Extractor for RuleBasedExtractor {
                 for (section_ordinal, (title, text)) in sections.iter().enumerate() {
                     let scan_text = format!("{} {}", title, text);
                     if let Some(pos) = scan_text.to_lowercase().find(&term) {
+                        let (char_start, char_end) =
+                            Self::safe_span(&scan_text, pos, pos + term.len());
                         entities.push(ExtractedEntity {
                             label: term.clone(),
                             entity_type: EntityType::Method,
                             section_title: title.clone(),
                             section_ordinal: Some(section_ordinal),
-                            char_start: pos,
-                            char_end: pos + term.len(),
-                            surface: scan_text
-                                [pos.min(scan_text.len())..(pos + term.len()).min(scan_text.len())]
-                                .to_string(),
+                            char_start,
+                            char_end,
+                            surface: scan_text[char_start..char_end].to_string(),
                         });
                         placed = true;
                         break;
@@ -2415,6 +2423,36 @@ mod tests {
         );
         // Introduction should produce no entities
         assert!(!entities.iter().any(|e| e.section_title == "Introduction"));
+    }
+
+    #[test]
+    fn test_safe_span_encloses_multibyte_character() {
+        let text = "a•b";
+        let inside_bullet = text.find('•').unwrap() + 1;
+        let (start, end) = RuleBasedExtractor::safe_span(text, inside_bullet, inside_bullet + 1);
+        assert!(text.is_char_boundary(start));
+        assert!(text.is_char_boundary(end));
+        assert_eq!(&text[start..end], "•");
+    }
+
+    #[tokio::test]
+    async fn test_extract_unicode_offsets_are_valid_boundaries() {
+        let extractor = RuleBasedExtractor::new();
+        // Minimal excerpt from 2005.14165: the bullet begins at byte 333 in
+        // the full section and previously produced start=334, inside `•`.
+        let sections = vec![(
+            "Word Scrambling and Manipulation Tasks".to_string(),
+            "The five tasks are:• Cycle letters in word (CL) - The model recovers the original word."
+                .to_string(),
+        )];
+        let entities = extractor.extract(&sections).await.unwrap();
+        assert!(
+            entities.iter().any(|entity| entity.label == "CL"),
+            "the acronym definition remains extractable"
+        );
+        for entity in &entities {
+            assert!(entity.char_start <= entity.char_end);
+        }
     }
 
     #[tokio::test]
