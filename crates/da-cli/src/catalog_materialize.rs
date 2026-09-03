@@ -405,14 +405,14 @@ fn lookup_payload(
     }
 }
 
-/// Load parse + extraction + embedding artifacts for one paper.
+/// Load parse + extraction artifacts for an extraction-only probe.
 ///
-/// Every failure is typed ([`LoadArtifactsError`]); a corrupted payload is
-/// a `PayloadCorrupt`, never a panic.
-pub fn load_paper_artifacts(
+/// Every failure is typed ([`LoadArtifactsError`]); embedding is deliberately
+/// not part of this path because T01 runs with FD_API disabled.
+pub fn load_paper_parse_and_extraction(
     cache: &dyn PipelineCache,
     paper_id: &str,
-) -> std::result::Result<PaperArtifacts, LoadArtifactsError> {
+) -> std::result::Result<(ParsedArticle, Vec<ExtractedEntity>), LoadArtifactsError> {
     let parse_key = unique_success_entry(
         cache,
         paper_id,
@@ -438,6 +438,18 @@ pub fn load_paper_artifacts(
             stage: STAGE_EXTRACTION,
             message: e.to_string(),
         })?;
+    Ok((parsed, entities))
+}
+
+/// Load parse + extraction + embedding artifacts for one paper.
+///
+/// Every failure is typed ([`LoadArtifactsError`]); a corrupted payload is
+/// a `PayloadCorrupt`, never a panic.
+pub fn load_paper_artifacts(
+    cache: &dyn PipelineCache,
+    paper_id: &str,
+) -> std::result::Result<PaperArtifacts, LoadArtifactsError> {
+    let (parsed, entities) = load_paper_parse_and_extraction(cache, paper_id)?;
 
     let embed_key = unique_success_entry(
         cache,

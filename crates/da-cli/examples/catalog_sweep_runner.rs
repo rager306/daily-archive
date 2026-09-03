@@ -47,7 +47,7 @@ struct Args {
     #[arg(long, default_value_t = 4)]
     workers: usize,
     /// Include the embed stage (FD_API).
-    #[arg(long, default_value_t = true)]
+    #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
     include_embedding: bool,
     /// Process only the first N pending articles (smoke runs).
     #[arg(long)]
@@ -58,6 +58,10 @@ struct Args {
     /// GROBID request timeout seconds.
     #[arg(long, default_value_t = 300)]
     grobid_timeout_seconds: u64,
+    /// Restrict the sweep to explicitly requested canonical paper IDs.
+    /// Repeat the flag for multiple papers; duplicates and unknown IDs fail closed.
+    #[arg(long = "paper-id")]
+    paper_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -107,11 +111,15 @@ fn build_inventory(
             .and_then(|n| n.to_str())
             .unwrap_or("unknown")
             .to_string();
-        let mut article_dirs: Vec<PathBuf> = std::fs::read_dir(&cat_dir)?
-            .filter_map(Result::ok)
-            .map(|e| e.path())
-            .filter(|p| p.is_dir())
-            .collect();
+        let mut article_dirs: Vec<PathBuf> = match std::fs::read_dir(&cat_dir) {
+            Ok(entries) => entries
+                .filter_map(Result::ok)
+                .map(|e| e.path())
+                .filter(|p| p.is_dir())
+                .collect(),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(error) => return Err(error.into()),
+        };
         article_dirs.sort();
         for art in article_dirs {
             let Some(paper_id) = art.file_name().and_then(|n| n.to_str()) else {
@@ -156,6 +164,45 @@ fn build_inventory(
         }
     }
     Ok(out)
+}
+
+/// Select an explicit, deterministic subset of an inventory.
+///
+/// An explicit selector is intentionally strict: duplicate requested IDs and
+/// IDs absent from the catalog are errors rather than silently becoming a
+/// partial sweep. Inventory duplicates are also rejected because a canonical
+/// paper must not be processed through two category roots.
+fn select_inventory(
+    inventory: Vec<CatalogEntry>,
+    requested_ids: &[String],
+) -> Result<Vec<CatalogEntry>> {
+    if requested_ids.is_empty() {
+        return Ok(inventory);
+    }
+
+    let mut requested = std::collections::BTreeSet::new();
+    for id in requested_ids {
+        if !requested.insert(id) {
+            anyhow::bail!("duplicate --paper-id: {id}");
+        }
+    }
+
+    // Ignore unrelated inventory duplication: explicit selection must fail
+    // only when a requested canonical ID has multiple catalog candidates.
+    let mut selected = Vec::with_capacity(requested_ids.len());
+    for id in requested_ids {
+        let matches: Vec<&CatalogEntry> = inventory
+            .iter()
+            .filter(|entry| entry.paper_id == *id)
+            .collect();
+        match matches.as_slice() {
+            [] => anyhow::bail!("unknown --paper-id: {id}"),
+            [entry] => selected.push((*entry).clone()),
+            _ => anyhow::bail!("duplicate catalog paper ID: {id}"),
+        }
+    }
+    selected.sort_by(|a, b| a.paper_id.cmp(&b.paper_id));
+    Ok(selected)
 }
 
 fn fail_record(entry: &CatalogEntry, stage: &str, message: String) -> PaperSweepRecord {
@@ -406,18 +453,31 @@ async fn main() -> Result<()> {
         SweepThresholds::load(&args.thresholds).map_err(|e| anyhow::anyhow!("thresholds: {e}"))?,
     );
 
-    let manifest_path = PathBuf::from("artifacts/gold_corpus/gold_corpus_manifest.json");
-    let manifest_bytes = std::fs::read(&manifest_path)?;
-    let manifest: serde_json::Value = serde_json::from_slice(&manifest_bytes)?;
-    let gold_ids: std::collections::BTreeSet<String> = manifest["records"]
-        .as_array()
-        .expect("manifest records")
-        .iter()
-        .filter_map(|r| r["paper_id"].as_str().map(String::from))
-        .collect();
-
-    let catalog_root = PathBuf::from("data/sources/arxiv/article_catalog/arxiv");
-    let inventory = build_inventory(&catalog_root, &gold_ids)?;
+    // Explicit target sweeps are source-bound and intentionally independent of
+    // the historical gold-fixture manifest. Full sweeps retain the gold
+    // exclusion when a manifest is available, but never make target recovery
+    // depend on an archived path that is absent from this checkout.
+    let (catalog_root, gold_ids) = if args.paper_ids.is_empty() {
+        let manifest_path = PathBuf::from("artifacts/gold_corpus/gold_corpus_manifest.json");
+        let manifest_bytes = std::fs::read(&manifest_path)?;
+        let manifest: serde_json::Value = serde_json::from_slice(&manifest_bytes)?;
+        let gold_ids = manifest["records"]
+            .as_array()
+            .expect("manifest records")
+            .iter()
+            .filter_map(|r| r["paper_id"].as_str().map(String::from))
+            .collect();
+        (
+            PathBuf::from("data/sources/arxiv/article_catalog/arxiv"),
+            gold_ids,
+        )
+    } else {
+        (
+            PathBuf::from("data/sources/arxiv"),
+            std::collections::BTreeSet::new(),
+        )
+    };
+    let inventory = select_inventory(build_inventory(&catalog_root, &gold_ids)?, &args.paper_ids)?;
     let with_pdf: Vec<CatalogEntry> = inventory
         .iter()
         .filter(|e| e.pdf_path.is_some() && e.source_deviation.is_none())
@@ -575,4 +635,62 @@ async fn main() -> Result<()> {
         started.elapsed().as_secs()
     );
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn entry(id: &str) -> CatalogEntry {
+        CatalogEntry {
+            paper_id: id.into(),
+            category: "test".into(),
+            pdf_path: None,
+            html_path: None,
+            source_sha256: None,
+            in_gold: false,
+            source_deviation: None,
+        }
+    }
+
+    #[test]
+    fn explicit_selector_is_sorted_and_repeatable() {
+        let selected = select_inventory(
+            vec![entry("b"), entry("a"), entry("c")],
+            &["c".into(), "a".into()],
+        )
+        .expect("selection should succeed");
+        assert_eq!(
+            selected
+                .iter()
+                .map(|e| e.paper_id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["a", "c"]
+        );
+    }
+
+    #[test]
+    fn explicit_selector_rejects_unknown_id() {
+        let error = select_inventory(vec![entry("known")], &["missing".into()])
+            .expect_err("unknown IDs must fail closed");
+        assert!(error.to_string().contains("unknown --paper-id: missing"));
+    }
+
+    #[test]
+    fn explicit_selector_rejects_duplicate_requested_id() {
+        let error = select_inventory(vec![entry("known")], &["known".into(), "known".into()])
+            .expect_err("duplicate IDs must fail closed");
+        assert!(error.to_string().contains("duplicate --paper-id: known"));
+    }
+
+    #[test]
+    fn explicit_selector_rejects_duplicate_inventory_id() {
+        let error = select_inventory(vec![entry("known"), entry("known")], &["known".into()])
+            .expect_err("duplicate catalog IDs must fail closed");
+        assert!(
+            error
+                .to_string()
+                .contains("duplicate catalog paper ID: known")
+        );
+    }
 }

@@ -6,7 +6,7 @@
 
 use anyhow::Result;
 use da_adapters::{FilePipelineCache, RuleBasedExtractor};
-use da_cli::catalog_materialize::load_paper_artifacts;
+use da_cli::catalog_materialize::load_paper_parse_and_extraction;
 use da_ports::extractor::Extractor;
 
 #[tokio::main]
@@ -16,9 +16,8 @@ async fn main() -> Result<()> {
         .nth(1)
         .ok_or_else(|| anyhow::anyhow!("usage: extract_probe <paper_id>"))?;
     let cache = FilePipelineCache::new("artifacts/catalog_sweep/pipeline_cache");
-    let artifacts = load_paper_artifacts(&cache, &paper_id)?;
-    let sections: Vec<(String, String)> = artifacts
-        .parsed
+    let (parsed, _cached_entities) = load_paper_parse_and_extraction(&cache, &paper_id)?;
+    let sections: Vec<(String, String)> = parsed
         .sections
         .iter()
         .map(|s| (s.title.clone(), s.text.clone()))
