@@ -5,6 +5,7 @@ pub mod agent_run;
 pub mod audit_fields;
 pub mod background_tasks;
 pub mod batch_ids;
+pub mod catalog_drift;
 pub mod catalog_materialize;
 pub mod catalog_regression;
 pub mod catalog_sweep;
