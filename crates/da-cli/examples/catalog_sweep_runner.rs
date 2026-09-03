@@ -62,6 +62,11 @@ struct Args {
     /// Repeat the flag for multiple papers; duplicates and unknown IDs fail closed.
     #[arg(long = "paper-id")]
     paper_ids: Vec<String>,
+    /// Catalog root to scan. For explicit paper IDs this may point at a
+    /// bounded source tree such as data/sources/arxiv; full sweeps use the
+    /// canonical article-catalog root by default.
+    #[arg(long, default_value = "data/sources/arxiv/article_catalog/arxiv")]
+    catalog_root: PathBuf,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -459,23 +464,25 @@ async fn main() -> Result<()> {
     // depend on an archived path that is absent from this checkout.
     let (catalog_root, gold_ids) = if args.paper_ids.is_empty() {
         let manifest_path = PathBuf::from("artifacts/gold_corpus/gold_corpus_manifest.json");
-        let manifest_bytes = std::fs::read(&manifest_path)?;
-        let manifest: serde_json::Value = serde_json::from_slice(&manifest_bytes)?;
-        let gold_ids = manifest["records"]
-            .as_array()
-            .expect("manifest records")
-            .iter()
-            .filter_map(|r| r["paper_id"].as_str().map(String::from))
-            .collect();
-        (
-            PathBuf::from("data/sources/arxiv/article_catalog/arxiv"),
-            gold_ids,
-        )
+        let gold_ids = match std::fs::read(&manifest_path) {
+            Ok(manifest_bytes) => {
+                let manifest: serde_json::Value = serde_json::from_slice(&manifest_bytes)?;
+                manifest["records"]
+                    .as_array()
+                    .ok_or_else(|| anyhow::anyhow!("manifest records missing"))?
+                    .iter()
+                    .filter_map(|r| r["paper_id"].as_str().map(String::from))
+                    .collect()
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                eprintln!("gold manifest absent; continuing with empty gold exclusion");
+                std::collections::BTreeSet::new()
+            }
+            Err(error) => return Err(error.into()),
+        };
+        (args.catalog_root.clone(), gold_ids)
     } else {
-        (
-            PathBuf::from("data/sources/arxiv"),
-            std::collections::BTreeSet::new(),
-        )
+        (args.catalog_root.clone(), std::collections::BTreeSet::new())
     };
     let inventory = select_inventory(build_inventory(&catalog_root, &gold_ids)?, &args.paper_ids)?;
     let with_pdf: Vec<CatalogEntry> = inventory
@@ -651,6 +658,27 @@ mod tests {
             in_gold: false,
             source_deviation: None,
         }
+    }
+
+    #[test]
+    fn cli_uses_canonical_catalog_root_by_default() {
+        let args =
+            Args::try_parse_from(["catalog_sweep_runner"]).expect("default arguments should parse");
+        assert_eq!(
+            args.catalog_root,
+            PathBuf::from("data/sources/arxiv/article_catalog/arxiv")
+        );
+    }
+
+    #[test]
+    fn cli_preserves_explicit_broad_catalog_root() {
+        let args = Args::try_parse_from([
+            "catalog_sweep_runner",
+            "--catalog-root",
+            "data/sources/arxiv",
+        ])
+        .expect("explicit catalog root should parse");
+        assert_eq!(args.catalog_root, PathBuf::from("data/sources/arxiv"));
     }
 
     #[test]
