@@ -110,8 +110,13 @@ pub struct RegressionReport {
 }
 
 impl RegressionReport {
+    /// Additions are serialized as an explicit observation, but a corpus may
+    /// legitimately grow. Only findings that can indicate loss or corruption
+    /// block acceptance.
     pub fn is_clean(&self) -> bool {
-        self.regressions.is_empty()
+        self.regressions
+            .iter()
+            .all(|finding| matches!(finding, RegressionFinding::PapersAdded { .. }))
     }
 }
 
@@ -280,6 +285,7 @@ mod tests {
             r.regressions[0],
             RegressionFinding::PapersAdded { count: 1, .. }
         ));
+        assert!(r.is_clean(), "paper additions are non-fatal observations");
     }
 
     #[test]

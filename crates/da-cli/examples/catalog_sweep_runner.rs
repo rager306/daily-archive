@@ -97,13 +97,15 @@ fn sha256_of(bytes: &[u8]) -> String {
     h.finalize().iter().map(|b| format!("{b:02x}")).collect()
 }
 
-/// Walk the canonical catalog and build inventory entries for articles that
-/// are not part of the gold corpus.
+/// Walk both supported local catalog layouts and build one audited inventory
+/// entry per canonical paper ID. Identical assets are deduplicated by SHA-256;
+/// the sole allowed conflicting duplicate is a typed category versus the
+/// `mixed-source` bucket, where the typed category wins deterministically.
 fn build_inventory(
     root: &Path,
     gold_ids: &std::collections::BTreeSet<String>,
 ) -> Result<Vec<CatalogEntry>> {
-    let mut out = Vec::new();
+    let mut candidates: BTreeMap<String, Vec<CatalogEntry>> = BTreeMap::new();
     let mut category_dirs: Vec<PathBuf> = std::fs::read_dir(root)?
         .filter_map(Result::ok)
         .map(|e| e.path())
@@ -116,15 +118,15 @@ fn build_inventory(
             .and_then(|n| n.to_str())
             .unwrap_or("unknown")
             .to_string();
-        let mut article_dirs: Vec<PathBuf> = match std::fs::read_dir(&cat_dir) {
-            Ok(entries) => entries
-                .filter_map(Result::ok)
-                .map(|e| e.path())
-                .filter(|p| p.is_dir())
-                .collect(),
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
-            Err(error) => return Err(error.into()),
-        };
+        let mut article_dirs: Vec<PathBuf> = std::fs::read_dir(&cat_dir)
+            .map(|entries| {
+                entries
+                    .filter_map(Result::ok)
+                    .map(|e| e.path())
+                    .filter(|p| p.is_dir())
+                    .collect()
+            })
+            .unwrap_or_default();
         article_dirs.sort();
         for art in article_dirs {
             let Some(paper_id) = art.file_name().and_then(|n| n.to_str()) else {
@@ -135,38 +137,92 @@ fn build_inventory(
                 continue;
             }
             let source_dir = art.join("source");
-            let pdf_path = [source_dir.join(format!("{paper_id}.pdf"))]
+            let flat_pdf = art.join(format!("{paper_id}.pdf"));
+            let pdf_path = [source_dir.join(format!("{paper_id}.pdf")), flat_pdf]
                 .into_iter()
                 .find(|p| p.is_file());
             let html_path = [
                 source_dir.join(format!("{paper_id}.html")),
                 source_dir.join("abs.html"),
+                art.join(format!("{paper_id}.html")),
+                art.join("abs.html"),
             ]
             .into_iter()
             .find(|p| p.is_file());
-            let source_deviation = if !source_dir.exists() {
-                Some(da_cli::catalog_sweep::SourceDeviation::NoSourceDir)
-            } else if pdf_path.is_none() && html_path.is_none() {
-                Some(da_cli::catalog_sweep::SourceDeviation::EmptySource)
-            } else if pdf_path.is_none() {
-                Some(da_cli::catalog_sweep::SourceDeviation::NoPdf)
-            } else {
-                None
-            };
+            let source_deviation =
+                if !source_dir.exists() && pdf_path.is_none() && html_path.is_none() {
+                    Some(da_cli::catalog_sweep::SourceDeviation::NoSourceDir)
+                } else if pdf_path.is_none() && html_path.is_none() {
+                    Some(da_cli::catalog_sweep::SourceDeviation::EmptySource)
+                } else if pdf_path.is_none() {
+                    Some(da_cli::catalog_sweep::SourceDeviation::NoPdf)
+                } else {
+                    None
+                };
             let source_sha256 = pdf_path
                 .as_ref()
                 .and_then(|p| std::fs::read(p).ok())
                 .map(|bytes| sha256_of(&bytes));
-            out.push(CatalogEntry {
-                paper_id,
-                category: category.clone(),
-                pdf_path,
-                html_path,
-                source_sha256,
-                in_gold: false,
-                source_deviation,
-            });
+            candidates
+                .entry(paper_id.clone())
+                .or_default()
+                .push(CatalogEntry {
+                    paper_id,
+                    category: category.clone(),
+                    pdf_path,
+                    html_path,
+                    source_sha256,
+                    in_gold: false,
+                    source_deviation,
+                });
         }
+    }
+
+    let mut out = Vec::with_capacity(candidates.len());
+    for (paper_id, mut entries) in candidates {
+        entries.sort_by(|a, b| {
+            a.category.cmp(&b.category).then_with(|| {
+                a.pdf_path
+                    .as_ref()
+                    .map(|p| p.display().to_string())
+                    .cmp(&b.pdf_path.as_ref().map(|p| p.display().to_string()))
+            })
+        });
+        let hashes: std::collections::BTreeSet<&str> = entries
+            .iter()
+            .filter_map(|e| e.source_sha256.as_deref())
+            .collect();
+        if hashes.len() > 1 {
+            let typed: Vec<&CatalogEntry> = entries
+                .iter()
+                .filter(|e| e.category != "mixed-source")
+                .collect();
+            let mixed: Vec<&CatalogEntry> = entries
+                .iter()
+                .filter(|e| e.category == "mixed-source")
+                .collect();
+            if typed.len() == 1 && mixed.len() == 1 {
+                entries.retain(|e| e.category != "mixed-source");
+            } else {
+                anyhow::bail!(
+                    "conflicting catalog assets for {paper_id}: categories/SHA do not match typed-vs-mixed policy"
+                );
+            }
+        }
+        // Prefer a typed category, then nested source layout, while retaining
+        // deterministic ordering for identical SHA duplicates.
+        entries.sort_by_key(|e| {
+            (
+                e.category == "mixed-source",
+                !e.pdf_path.as_ref().is_some_and(|p| {
+                    p.parent()
+                        .and_then(Path::file_name)
+                        .is_some_and(|n| n == "source")
+                }),
+                e.category.clone(),
+            )
+        });
+        out.push(entries.remove(0));
     }
     Ok(out)
 }

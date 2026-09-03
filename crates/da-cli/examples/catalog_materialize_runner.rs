@@ -608,12 +608,20 @@ async fn run_materialization(args: &Args) -> Result<()> {
 
         // Manifestation evidence: the canonical catalog asset behind the
         // cached parse. Missing asset → typed skip, never a phantom write.
-        let asset = args
+        let article_root = args
             .catalog_root
             .join(category.as_deref().unwrap_or("unknown"))
-            .join(&paper_id)
-            .join("source")
-            .join(format!("{paper_id}.pdf"));
+            .join(&paper_id);
+        // The local corpus contains both canonical nested sources and legacy
+        // flat assets. Prefer nested when both exist; the sweep inventory has
+        // already audited identity and SHA conflicts before this lookup.
+        let asset = [
+            article_root.join("source").join(format!("{paper_id}.pdf")),
+            article_root.join(format!("{paper_id}.pdf")),
+        ]
+        .into_iter()
+        .find(|path| path.is_file())
+        .unwrap_or_else(|| article_root.join("source").join(format!("{paper_id}.pdf")));
         let asset_meta = match std::fs::metadata(&asset) {
             Ok(meta) => meta,
             Err(_) => {
