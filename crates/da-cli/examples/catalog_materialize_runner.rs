@@ -452,7 +452,20 @@ async fn run_materialization(args: &Args) -> Result<()> {
                 if outcome == "recovered"
                     && let Some(revision) = row.get("revision").and_then(|v| v.as_u64())
                 {
-                    revisions.insert(paper.to_string(), revision as u32);
+                    // Recovery paper_ids may carry a version suffix
+                    // (`2605.26525v1`) while the materializer requires
+                    // versionless canonical ids. Normalize to the bare id;
+                    // arXiv bare ids never end with `vN`.
+                    let bare = paper
+                        .rsplit_once('v')
+                        .filter(|(b, s)| {
+                            !s.is_empty()
+                                && s.bytes().all(|c| c.is_ascii_digit())
+                                && b.bytes().any(|c| c.is_ascii_digit())
+                        })
+                        .map(|(b, _)| b)
+                        .unwrap_or(paper);
+                    revisions.insert(bare.to_string(), revision as u32);
                 }
             }
         }
@@ -509,6 +522,25 @@ async fn run_materialization(args: &Args) -> Result<()> {
             .with_context(|| format!("parse prior run report {}", run_report_path.display()))?;
         if let Some(papers) = prior.get("papers").and_then(|p| p.as_array()) {
             for paper in papers {
+                // Stale version-suffixed rows (e.g. `2605.26525v1`) from a
+                // pre-normalization run must not survive resume: the
+                // recovery merge now addresses their bare canonical ids,
+                // so keeping them would double-count failures the fixed
+                // run no longer produces.
+                let stale_suffixed =
+                    paper
+                        .get("paper_id")
+                        .and_then(|v| v.as_str())
+                        .is_some_and(|id| {
+                            id.rsplit_once('v').is_some_and(|(b, s)| {
+                                !s.is_empty()
+                                    && s.bytes().all(|c| c.is_ascii_digit())
+                                    && b.bytes().any(|c| c.is_ascii_digit())
+                            })
+                        });
+                if stale_suffixed {
+                    continue;
+                }
                 let completed = paper
                     .get("state")
                     .and_then(|s| s.as_str())
@@ -519,15 +551,22 @@ async fn run_materialization(args: &Args) -> Result<()> {
                 prior_records.push(paper.clone());
             }
         }
-        if let Some(t) = prior.get("totals") {
-            prior_totals.completed =
-                t.get("completed").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-            prior_totals.skipped = t.get("skipped").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-            prior_totals.failed = t.get("failed").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-            prior_totals.replay_noop_violations = t
-                .get("replay_noop_violations")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0) as usize;
+        // Recompute prior totals from the retained records (after stale
+        // suffixed-row filtering) instead of copying the stored totals, so
+        // a fixed rerun is not penalized for failures it no longer has.
+        for record in &prior_records {
+            match record.get("state").and_then(|s| s.as_str()) {
+                Some("completed") => prior_totals.completed += 1,
+                Some("failed") => prior_totals.failed += 1,
+                _ => prior_totals.skipped += 1,
+            }
+            if record
+                .get("replay_noop")
+                .and_then(|v| v.as_bool())
+                .is_some_and(|v| !v)
+            {
+                prior_totals.replay_noop_violations += 1;
+            }
         }
         let before = targets.len();
         targets.retain(|(id, _, _)| !prior_ids.contains(id));
