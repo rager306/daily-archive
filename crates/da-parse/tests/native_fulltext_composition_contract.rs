@@ -141,6 +141,62 @@ fn accepted_header_and_references_are_independent_and_other_families_fallback() 
             == 5
     );
     assert_eq!(candidate.manifest.java_fallback_bytes, XML.len());
+    let java_body = tei_element_bytes(XML.as_bytes(), "body").expect("java body");
+    let out_body = tei_element_bytes(candidate.envelope.raw_tei(), "body").expect("out body");
+    assert_eq!(
+        java_body, out_body,
+        "header/reference splice must not rewrite Java body bytes"
+    );
+}
+
+#[test]
+fn body_bytes_stay_java_when_only_one_lane_splices() {
+    for (header, references) in [
+        (
+            AdmissionDisposition::Passed,
+            AdmissionDisposition::Unsupported,
+        ),
+        (
+            AdmissionDisposition::Unsupported,
+            AdmissionDisposition::Passed,
+        ),
+        (
+            AdmissionDisposition::Unsupported,
+            AdmissionDisposition::Unsupported,
+        ),
+    ] {
+        let NativeFulltextCompositionOutcome::Accepted(candidate) =
+            compose_native_fulltext(input(XML, header, references))
+        else {
+            panic!("expected candidate")
+        };
+        assert_eq!(
+            tei_element_bytes(XML.as_bytes(), "body").unwrap(),
+            tei_element_bytes(candidate.envelope.raw_tei(), "body").unwrap()
+        );
+    }
+}
+
+#[test]
+fn listbibl_inside_body_is_changed_reading_order_and_keeps_java_envelope() {
+    let nested = "<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>body bytes</p><listBibl><biblStruct xml:id=\"java-ref\">Java ref</biblStruct></listBibl></body></text></TEI>";
+    let result = compose_native_fulltext(input(
+        nested,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Passed,
+    ));
+    match result {
+        NativeFulltextCompositionOutcome::Rejected { fallback, error } => {
+            assert!(matches!(
+                error,
+                NativeFulltextCompositionError::ChangedReadingOrder
+            ));
+            assert_eq!(fallback.raw_tei(), nested.as_bytes());
+        }
+        NativeFulltextCompositionOutcome::Accepted(_) => {
+            panic!("body-overlapping listBibl must not splice")
+        }
+    }
 }
 
 #[test]

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-04 — M465-sqt7w0/S05 W4: Java body bytes survive splice, overlap is hard fail
+
+Reuse compose_native_fulltext. Only admitted header/reference subtrees splice.
+Exact <body> bytes after splice equal Java. listBibl inside body is
+ChangedReadingOrder and returns the original envelope. DATA independently_selectable
+stays header,references; segmentation/visual stay fallback. Governor adds
+body_java_fallback and reading_order_change. Java production_route. No graph.
+D127 false.
+
+Green: native_fulltext_composition_contract 6; native_fulltext_composition_data_contract 2;
+architecture_contract 38; test_scholarly_parse_governance 75.
+
 ## 2026-09-04 — M465-sqt7w0/S04 W3: bibliography segment then fields then compose
 
 Reuse NativeReferenceSegmenter, NativeCitationParser, and compose_references.

@@ -127,6 +127,7 @@ pub enum NativeFulltextCompositionError {
     UnbalancedXml,
     AmbiguousSplice(String),
     InvalidUtf8,
+    ChangedReadingOrder,
 }
 impl fmt::Display for NativeFulltextCompositionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -216,6 +217,13 @@ fn compose_inner(
             return Err(NativeFulltextCompositionError::AmbiguousSplice(
                 "overlap".into(),
             ));
+        }
+    }
+    if let Ok(body) = ranges.unique("body") {
+        for (range, _, _, _) in &replacements {
+            if range.0 < body.1 && range.1 > body.0 {
+                return Err(NativeFulltextCompositionError::ChangedReadingOrder);
+            }
         }
     }
     for (range, fragment, component, receipt) in replacements.into_iter().rev() {
@@ -529,4 +537,15 @@ impl XmlDocument {
     fn reference_range(&self) -> Result<(usize, usize), NativeFulltextCompositionError> {
         self.unique("listBibl")
     }
+}
+
+/// Exact element bytes from TEI, using the same unique-range parser as composition.
+pub fn tei_element_bytes<'a>(
+    xml: &'a [u8],
+    name: &str,
+) -> Result<&'a [u8], NativeFulltextCompositionError> {
+    let text = std::str::from_utf8(xml).map_err(|_| NativeFulltextCompositionError::InvalidUtf8)?;
+    let ranges = XmlDocument::parse(text)?;
+    let (start, end) = ranges.unique(name)?;
+    Ok(&xml[start..end])
 }

@@ -1,15 +1,13 @@
-# continue — M465 S04 W3 shipped; S01–S03 skip-delivered; next S05 body accounting
+# continue — M465 S05 W4 shipped; S01–S04 skip-delivered; next S06 visual heads
 
-## Active state (updated 2026-09-04 after M465/S04 W3)
+## Active state (updated 2026-09-04 after M465/S05 W4)
 
-Parse-plane: S01 fc9dfae6a, S02 8d28e01fc, S03 1d912a61c, S04 bibliography
-sequence implemented. run_reference_sequence is segment then fields then
-compose; empty/lost reference cannot invent a candidate. Citation names are
-shadow via PersonalNameContext::Citation. Consolidation stays Java/profile.rs
-with structural off. Graph frozen (R118). Next is S05 W4 body accounting:
-native_fulltext_composition may substitute admitted header/reference subtrees;
-body bytes stay Java; reading-order change fails.
-Do not treat 9-lane segmentation report as 202-page pass.
+Parse-plane: S01 fc9dfae6a, S02 8d28e01fc, S03 1d912a61c, S04 08fc194e0, S05
+body accounting implemented. compose_native_fulltext keeps exact Java <body>
+bytes; listBibl inside body is ChangedReadingOrder. Independently selectable
+lane is still header+references only. Graph frozen (R118). Next is S06 W5
+independent visual heads with typed absence (missing Image tokens are not
+zero figures). Do not treat 9-lane segmentation report as 202-page pass.
 Product: `M446-rw9a2p` S03 still 23/25, pending T24/T25.
 Branch `feat/da-parse`.
 

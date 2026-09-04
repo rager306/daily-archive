@@ -92,6 +92,11 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
         return receipts != ["References", "CitationFields", "Anchors"] and bool(receipts)
     if label == "lost_references":
         return int(value.get("recognized") or 0) != int(value.get("entries") or 0) and str(value.get("status") or "") in {"accepted", "pass"}
+    if label == "body_java_fallback":
+        selectable = [str(item) for item in (value.get("independently_selectable") or [])]
+        return selectable != ["header", "references"] and bool(selectable)
+    if label == "reading_order_change":
+        return value.get("body_overlap") is True and str(value.get("status") or "") in {"accepted", "pass"}
     return bool(plane) and bool(value)
 
 
@@ -264,6 +269,33 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             {"state": "fallback", "surface": "profile.rs"},
             {"state": consolidation.get("state"), "surface": cons_surface},
         )
+
+    fulltext_path = root / "data/parse/native_fulltext_composition.yaml"
+    try:
+        fulltext = yaml.safe_load(fulltext_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as error:
+        flag("body_java_fallback", "integration", "data/parse/native_fulltext_composition.yaml", "valid YAML", str(error))
+        fulltext = {}
+    admission = fulltext.get("admission") or {}
+    selectable = [str(item) for item in (admission.get("independently_selectable") or [])]
+    if selectable != ["header", "references"]:
+        flag(
+            "body_java_fallback",
+            "integration",
+            "data/parse/native_fulltext_composition.yaml#admission.independently_selectable",
+            ["header", "references"],
+            selectable,
+        )
+    matrix = admission.get("current_matrix") or {}
+    for family in ("document_segmentation", "figure", "table", "formula"):
+        if str(matrix.get(family) or "") == "passed":
+            flag(
+                "body_java_fallback",
+                "integration",
+                f"data/parse/native_fulltext_composition.yaml#admission.current_matrix.{family}",
+                "fallback",
+                matrix.get(family),
+            )
 
     stamp = ((registry.get("defaults") or {}).get("policy_stamp") or {})
     sources = set(stamp.get("closed_sources") or [])

@@ -123,7 +123,7 @@ pub use native_fulltext_composition::{
     NATIVE_FULLTEXT_MAX_JAVA_BYTES, NATIVE_FULLTEXT_MAX_XML_DEPTH, NativeFulltextCandidate,
     NativeFulltextCompositionError, NativeFulltextCompositionInput,
     NativeFulltextCompositionOutcome, NativeFulltextManifest, S17LineageReceipt,
-    compose_native_fulltext,
+    compose_native_fulltext, tei_element_bytes,
 };
 pub use native_personal_name::{
     NATIVE_PERSONAL_NAME_INPUT_BYTE_CAP, NATIVE_PERSONAL_NAME_OUTCOME_SCHEMA_VERSION,

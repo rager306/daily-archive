@@ -62,6 +62,8 @@ REQUIRED_VIOLATIONS = {
     "invented_author",
     "bibliography_sequence",
     "lost_references",
+    "body_java_fallback",
+    "reading_order_change",
 }
 
 

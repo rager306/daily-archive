@@ -125,6 +125,15 @@ fn authority_errors(v: &Value) -> Vec<String> {
     {
         e.push("terminal-as-pass".into());
     }
+    if seq(v, &["admission", "independently_selectable"]) != ["header", "references"] {
+        e.push("independently selectable must stay header and references".into());
+    }
+    let matrix = v.get("admission").and_then(|x| x.get("current_matrix"));
+    for family in ["document_segmentation", "figure", "table", "formula"] {
+        if text(matrix.unwrap_or(&Value::Null), &[family]).as_deref() != Some("fallback") {
+            e.push(format!("matrix:{family} must stay fallback"));
+        }
+    }
     if text(v, &["admission", "pooled_winner"]).as_deref() != Some("forbidden") {
         e.push("pooling".into());
     }
