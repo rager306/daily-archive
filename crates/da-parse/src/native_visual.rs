@@ -329,6 +329,24 @@ fn digest_at(items: &[NativeVisualDigestReceipt], p: &NativeVisualPrimitive) -> 
         .find(|r| r.page_ordinal == p.page_ordinal && r.source_ordinal == p.source_ordinal)
         .and_then(|r| r.digest.clone())
 }
+fn not_observed() -> NativeVisualHeadOutcome {
+    NativeVisualHeadOutcome::Terminal {
+        reason: NativeVisualAbsence::NotObserved,
+        metrics: metrics(0, 1, 0, 0, 0),
+    }
+}
+fn terminal_if_absent(
+    input: &NativeVisualObservation,
+    no_items: bool,
+) -> Option<NativeVisualHeadOutcome> {
+    if let Some(reason) = input.lane_absence {
+        return Some(NativeVisualHeadOutcome::Terminal {
+            reason,
+            metrics: metrics(0, 1, 0, 0, 0),
+        });
+    }
+    no_items.then(not_observed)
+}
 fn metrics(
     admitted: usize,
     terminal: usize,
@@ -355,11 +373,8 @@ pub fn detect_figure_heads(
         &[NativeVisualKind::Image, NativeVisualKind::Graphic],
         config,
     )?;
-    if let Some(reason) = input.lane_absence {
-        return Ok(NativeVisualHeadOutcome::Terminal {
-            reason,
-            metrics: metrics(0, 0, 0, 0, 0),
-        });
+    if let Some(outcome) = terminal_if_absent(input, items.is_empty()) {
+        return Ok(outcome);
     }
     let mut receipts = Vec::with_capacity(items.len());
     for (n, p) in items.iter().enumerate() {
@@ -375,6 +390,9 @@ pub fn detect_figure_heads(
             caption_digest: digest_at(&input.figure_captions, p),
             callout_digest: digest_at(&input.figure_callouts, p),
         });
+    }
+    if receipts.is_empty() {
+        return Ok(not_observed());
     }
     let captions = receipts
         .iter()
@@ -404,11 +422,8 @@ pub fn detect_table_heads(
         &[NativeVisualKind::Table, NativeVisualKind::Rect],
         config,
     )?;
-    if let Some(reason) = input.lane_absence {
-        return Ok(NativeVisualHeadOutcome::Terminal {
-            reason,
-            metrics: metrics(0, 1, 0, 0, 0),
-        });
+    if let Some(outcome) = terminal_if_absent(input, items.is_empty()) {
+        return Ok(outcome);
     }
     let mut receipts = Vec::with_capacity(items.len());
     for (n, p) in items.iter().enumerate() {
@@ -425,6 +440,9 @@ pub fn detect_table_heads(
             callout_digest: digest_at(&input.table_callouts, p),
             cells: input.table_cells.clone(),
         });
+    }
+    if receipts.is_empty() {
+        return Ok(not_observed());
     }
     let captions = receipts
         .iter()
@@ -450,11 +468,8 @@ pub fn detect_formula_heads(
     config: NativeVisualConfig,
 ) -> Result<NativeVisualHeadOutcome, NativeVisualError> {
     let items = head_items(input, &[NativeVisualKind::Formula], config)?;
-    if let Some(reason) = input.lane_absence {
-        return Ok(NativeVisualHeadOutcome::Terminal {
-            reason,
-            metrics: metrics(0, 0, 0, 0, 0),
-        });
+    if let Some(outcome) = terminal_if_absent(input, items.is_empty()) {
+        return Ok(outcome);
     }
     let mut receipts = Vec::with_capacity(items.len());
     for (n, p) in items.iter().enumerate() {
@@ -470,6 +485,9 @@ pub fn detect_formula_heads(
             equation_label_digest: digest_at(&input.formula_labels, p),
             callout_digest: digest_at(&input.formula_callouts, p),
         });
+    }
+    if receipts.is_empty() {
+        return Ok(not_observed());
     }
     let labels = receipts
         .iter()

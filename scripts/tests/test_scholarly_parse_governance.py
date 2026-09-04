@@ -64,6 +64,8 @@ REQUIRED_VIOLATIONS = {
     "lost_references",
     "body_java_fallback",
     "reading_order_change",
+    "typed_visual_absence",
+    "zero_count_from_absence",
 }
 
 

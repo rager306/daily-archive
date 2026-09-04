@@ -1,13 +1,13 @@
-# continue — M465 S05 W4 shipped; S01–S04 skip-delivered; next S06 visual heads
+# continue — M465 S06 W5 shipped; S01–S05 skip-delivered; next S07 policy SMP
 
-## Active state (updated 2026-09-04 after M465/S05 W4)
+## Active state (updated 2026-09-04 after M465/S06 W5)
 
 Parse-plane: S01 fc9dfae6a, S02 8d28e01fc, S03 1d912a61c, S04 08fc194e0, S05
-body accounting implemented. compose_native_fulltext keeps exact Java <body>
-bytes; listBibl inside body is ChangedReadingOrder. Independently selectable
-lane is still header+references only. Graph frozen (R118). Next is S06 W5
-independent visual heads with typed absence (missing Image tokens are not
-zero figures). Do not treat 9-lane segmentation report as 202-page pass.
+6603d6781, S06 visual heads implemented. Missing Image is Terminal NotObserved,
+not zero figures. Heads stay independent. Graph frozen (R118). Next is S07 W6:
+policy SMP on the cascade; TEI byte-stable across worker counts; at most one
+family candidate-promote with deployed=false. Do not treat 9-lane segmentation
+report as 202-page pass.
 Product: `M446-rw9a2p` S03 still 23/25, pending T24/T25.
 Branch `feat/da-parse`.
 

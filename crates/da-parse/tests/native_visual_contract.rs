@@ -117,6 +117,67 @@ fn overlapping_figure_and_table_regions_do_not_pool_or_hide_each_other() {
 }
 
 #[test]
+fn missing_image_is_typed_absence_not_zero_figures() {
+    let mut input = observation();
+    input
+        .primitives
+        .retain(|p| p.kind != NativeVisualKind::Image);
+    input.figure_captions.clear();
+    input.figure_callouts.clear();
+    let figure = detect_figure_heads(&input, Default::default()).unwrap();
+    assert!(
+        matches!(
+            figure,
+            NativeVisualHeadOutcome::Terminal {
+                reason: NativeVisualAbsence::NotObserved,
+                ..
+            }
+        ),
+        "missing Image must be Terminal, not Figure with zero receipts: {figure:?}"
+    );
+    assert!(matches!(
+        detect_table_heads(&input, Default::default()).unwrap(),
+        NativeVisualHeadOutcome::Table { .. }
+    ));
+    assert!(matches!(
+        detect_formula_heads(&input, Default::default()).unwrap(),
+        NativeVisualHeadOutcome::Formula { .. }
+    ));
+
+    let mut empty = observation();
+    empty.primitives.clear();
+    empty.figure_captions.clear();
+    empty.figure_callouts.clear();
+    empty.table_captions.clear();
+    empty.table_callouts.clear();
+    empty.table_cells.clear();
+    empty.formula_labels.clear();
+    empty.formula_callouts.clear();
+    empty.lane_absence = None;
+    assert!(matches!(
+        detect_figure_heads(&empty, Default::default()).unwrap(),
+        NativeVisualHeadOutcome::Terminal {
+            reason: NativeVisualAbsence::NotObserved,
+            ..
+        }
+    ));
+    assert!(matches!(
+        detect_table_heads(&empty, Default::default()).unwrap(),
+        NativeVisualHeadOutcome::Terminal {
+            reason: NativeVisualAbsence::NotObserved,
+            ..
+        }
+    ));
+    assert!(matches!(
+        detect_formula_heads(&empty, Default::default()).unwrap(),
+        NativeVisualHeadOutcome::Terminal {
+            reason: NativeVisualAbsence::NotObserved,
+            ..
+        }
+    ));
+}
+
+#[test]
 fn unsupported_lane_is_terminal_for_each_head() {
     let mut input = observation();
     input.primitives.clear();

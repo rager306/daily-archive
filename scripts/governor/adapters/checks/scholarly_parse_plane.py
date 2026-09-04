@@ -97,6 +97,14 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
         return selectable != ["header", "references"] and bool(selectable)
     if label == "reading_order_change":
         return value.get("body_overlap") is True and str(value.get("status") or "") in {"accepted", "pass"}
+    if label == "typed_visual_absence":
+        if "absent_signal_not_empty_success" not in value:
+            return False
+        return str(value.get("absent_signal_not_empty_success") or "") not in {"required", "true"}
+    if label == "zero_count_from_absence":
+        if "outcome" not in value and "receipts" not in value:
+            return False
+        return str(value.get("outcome") or "").lower() in {"figure", "table", "formula"} and int(value.get("receipts") or 0) == 0 and str(value.get("status") or "") in {"pass", "accepted"}
     return bool(plane) and bool(value)
 
 
@@ -296,6 +304,40 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "fallback",
                 matrix.get(family),
             )
+
+    visual = by_id.get("stage.figure_table_formula") or {}
+    visual_surface = str((visual.get("implementation") or {}).get("surface") or "").strip()
+    if visual.get("state") != "shadow" or "native_visual.rs" not in visual_surface:
+        flag(
+            "typed_visual_absence",
+            "integration",
+            "data/parse/grobid_compatibility.yaml#stage.figure_table_formula",
+            {"state": "shadow", "surface": "crates/da-parse/src/native_visual.rs"},
+            {"state": visual.get("state"), "surface": visual_surface},
+        )
+    visual_heads_path = root / "data/parse/native_visual_heads.yaml"
+    try:
+        visual_heads = yaml.safe_load(visual_heads_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as error:
+        flag("typed_visual_absence", "integration", "data/parse/native_visual_heads.yaml", "valid YAML", str(error))
+        visual_heads = {}
+    replay = visual_heads.get("replay") or {}
+    if replay.get("absent_signal_not_empty_success") not in {True, "required", "true"}:
+        flag(
+            "typed_visual_absence",
+            "integration",
+            "data/parse/native_visual_heads.yaml#replay.absent_signal_not_empty_success",
+            "required",
+            replay.get("absent_signal_not_empty_success"),
+        )
+    if str((visual_heads.get("gates") or {}).get("fulltext_composition") or "") not in {"forbidden", "false"}:
+        flag(
+            "zero_count_from_absence",
+            "integration",
+            "data/parse/native_visual_heads.yaml#gates.fulltext_composition",
+            "forbidden",
+            (visual_heads.get("gates") or {}).get("fulltext_composition"),
+        )
 
     stamp = ((registry.get("defaults") or {}).get("policy_stamp") or {})
     sources = set(stamp.get("closed_sources") or [])

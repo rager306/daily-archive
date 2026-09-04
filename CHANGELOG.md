@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-04 — M465-sqt7w0/S06 W5: missing Image is typed absence not zero figures
+
+Reuse detect_figure_heads/table/formula. An observation without Image/Graphic
+returns Terminal NotObserved, not Figure with empty receipts. Table and Formula
+stay independent on the same observation. Ledger stage.figure_table_formula is
+shadow with native_visual.rs. Governor adds typed_visual_absence and
+zero_count_from_absence. Fulltext composition stays forbidden. Java
+production_route. No graph. D127 false.
+
+Green: native_visual_contract 6; architecture_contract 38;
+test_scholarly_parse_governance 79.
+
 ## 2026-09-04 — M465-sqt7w0/S05 W4: Java body bytes survive splice, overlap is hard fail
 
 Reuse compose_native_fulltext. Only admitted header/reference subtrees splice.
