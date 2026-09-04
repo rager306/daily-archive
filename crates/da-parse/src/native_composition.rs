@@ -8,9 +8,11 @@
 use crate::{
     AffiliationSpan, CitationField, NativeAffiliationAuthorEvidence, NativeAffiliationLink,
     NativeAffiliationLinkOutcome, NativeAffiliationOutcome, NativeAffiliationParser,
-    NativeCitationAnchor, NativeCitationAnchorOutcome, NativeCitationOutcome, NativeDateOutcome,
-    NativeDateParser, NativePersonalNameOutcome, NativePersonalNameParser, NativeReference,
-    NativeReferenceListOutcome, PersonalNameContext, RecognizedDate, RecognizedPersonalName,
+    NativeCitationAnchor, NativeCitationAnchorOutcome, NativeCitationAnchorScanner,
+    NativeCitationOutcome, NativeCitationParser, NativeDateOutcome, NativeDateParser,
+    NativePersonalNameOutcome, NativePersonalNameParser, NativeReference,
+    NativeReferenceListOutcome, NativeReferenceSegmenter, PersonalNameContext, RecognizedDate,
+    RecognizedPersonalName,
 };
 use serde::{Deserialize, Serialize};
 
@@ -403,6 +405,61 @@ pub fn compose_header(input: HeaderCompositionInput) -> HeaderCompositionOutcome
             ],
         },
     }
+}
+
+/// Ordered W3 bibliography sequence: segment, then fields, then compose.
+/// A lost or empty middle reference must not invent a ReferenceCandidate.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReferenceSequenceInput<'a> {
+    pub entries: Vec<&'a str>,
+    pub body_text: Option<&'a str>,
+}
+
+pub fn run_reference_sequence(input: ReferenceSequenceInput<'_>) -> ReferenceCompositionOutcome {
+    let references = NativeReferenceSegmenter::new().segment(&input.entries);
+    match &references {
+        NativeReferenceListOutcome::Recognized { references } => {
+            if references.len() != input.entries.len() {
+                return reject_ref(CompositionError::RejectedComponent {
+                    component: CompositionComponent::References,
+                });
+            }
+        }
+        NativeReferenceListOutcome::Empty => {
+            return reject_ref(CompositionError::EmptyComponent {
+                component: CompositionComponent::References,
+            });
+        }
+        NativeReferenceListOutcome::Oversized => {
+            return reject_ref(CompositionError::OversizedComponent {
+                component: CompositionComponent::References,
+            });
+        }
+        NativeReferenceListOutcome::Truncated => {
+            return reject_ref(CompositionError::TruncatedComponent {
+                component: CompositionComponent::References,
+            });
+        }
+        NativeReferenceListOutcome::Malformed { .. } => {
+            return reject_ref(CompositionError::RejectedComponent {
+                component: CompositionComponent::References,
+            });
+        }
+    }
+    let fields = input
+        .entries
+        .iter()
+        .map(|entry| NativeCitationParser::new().parse(entry))
+        .collect();
+    let anchors = match input.body_text {
+        Some(body) => NativeCitationAnchorScanner::new().scan(body),
+        None => NativeCitationAnchorOutcome::Empty,
+    };
+    compose_references(ReferenceCompositionInput {
+        references,
+        fields,
+        anchors,
+    })
 }
 
 pub fn compose_references(input: ReferenceCompositionInput) -> ReferenceCompositionOutcome {

@@ -87,6 +87,11 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
         return receipts != ["Date", "Names", "Affiliations"] and bool(receipts)
     if label == "invented_author":
         return value.get("name_outcome") in {"empty", "malformed"} and int(value.get("authors") or 0) > 0
+    if label == "bibliography_sequence":
+        receipts = [str(item) for item in (value.get("receipts") or [])]
+        return receipts != ["References", "CitationFields", "Anchors"] and bool(receipts)
+    if label == "lost_references":
+        return int(value.get("recognized") or 0) != int(value.get("entries") or 0) and str(value.get("status") or "") in {"accepted", "pass"}
     return bool(plane) and bool(value)
 
 
@@ -224,6 +229,41 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 {"invention_budget": 0},
                 {"invention_budget": budget},
             )
+
+    bibliography_ids = (
+        "rest.processCitationNames",
+        "rest.processCitation",
+        "rest.processCitationListTEI",
+        "stage.reference_segmentation",
+    )
+    expected_biblio = {
+        "rest.processCitationNames": "crates/da-parse/src/native_personal_name.rs",
+        "rest.processCitation": "crates/da-parse/src/native_citation.rs",
+        "rest.processCitationListTEI": "crates/da-parse/src/native_citation.rs",
+        "stage.reference_segmentation": "crates/da-parse/src/native_composition.rs",
+    }
+    for cap_id in bibliography_ids:
+        cap = by_id.get(cap_id) or {}
+        impl = cap.get("implementation") or {}
+        surface = str(impl.get("surface") or "").strip()
+        if cap.get("state") != "shadow" or not surface.startswith("crates/da-parse/src/"):
+            flag(
+                "bibliography_sequence",
+                "integration",
+                f"data/parse/grobid_compatibility.yaml#{cap_id}",
+                {"state": "shadow", "surface": expected_biblio.get(cap_id)},
+                {"state": cap.get("state"), "surface": surface},
+            )
+    consolidation = by_id.get("stage.bibliographic_consolidation") or {}
+    cons_surface = str((consolidation.get("implementation") or {}).get("surface") or "")
+    if consolidation.get("state") not in {"fallback", "proxy"} or "profile.rs" not in cons_surface:
+        flag(
+            "bibliography_sequence",
+            "integration",
+            "data/parse/grobid_compatibility.yaml#stage.bibliographic_consolidation",
+            {"state": "fallback", "surface": "profile.rs"},
+            {"state": consolidation.get("state"), "surface": cons_surface},
+        )
 
     stamp = ((registry.get("defaults") or {}).get("policy_stamp") or {})
     sources = set(stamp.get("closed_sources") or [])

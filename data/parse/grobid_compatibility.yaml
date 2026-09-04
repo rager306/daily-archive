@@ -498,7 +498,7 @@ capabilities:
   - id: rest.processCitationNames
     group: 4
     kind: endpoint
-    state: absent
+    state: shadow
     product_scope: supporting
     promotion_state: candidate
     official:
@@ -509,8 +509,8 @@ capabilities:
       response_format: application/xml TEI persName sequence
     implementation:
       crate: da-parse
-      surface: none
-      notes: Citation-name dialect differs from header names; S09/S11.
+      surface: crates/da-parse/src/native_personal_name.rs
+      notes: Citation-name dialect is W3 shadow via PersonalNameContext::Citation. Java processReferences remains production_route.
     baseline: java-grobid-http@0.9.0-crf
     candidate: da-parse.native_personal_name@1.0.0
     evidence_ref: crates/da-cli/examples/parse_compat_baseline.rs:native_personal_name_shadow
@@ -570,8 +570,8 @@ capabilities:
       response_format: application/xml TEI biblStruct
     implementation:
       crate: da-parse
-      surface: crates/da-cli/examples/parse_compat_baseline.rs:native_citation_shadow
-      notes: Native citation parser is S11; shadow-only and never runtime-wired.
+      surface: crates/da-parse/src/native_citation.rs
+      notes: NativeCitationParser is W3 shadow. Observation example remains parse_compat_baseline native_citation_shadow.
     baseline: java-grobid-http@0.9.0-crf
     candidate: da-parse.native_citation@1.0.0
     evidence_ref: crates/da-cli/examples/parse_compat_baseline.rs:native_citation_shadow
@@ -599,8 +599,8 @@ capabilities:
       response_format: application/xml TEI listBibl
     implementation:
       crate: da-parse
-      surface: crates/da-cli/examples/parse_compat_baseline.rs:native_citation_shadow
-      notes: Native reference segmentation is S11 shadow-only; S12 owns composition.
+      surface: crates/da-parse/src/native_citation.rs
+      notes: NativeReferenceSegmenter is W3 shadow. Observation example remains parse_compat_baseline native_citation_shadow.
     baseline: java-grobid-http@0.9.0-crf
     candidate: da-parse.native_reference_segmenter@1.0.0
     evidence_ref: crates/da-cli/examples/parse_compat_baseline.rs:native_citation_shadow
@@ -1114,7 +1114,7 @@ capabilities:
   - id: stage.reference_segmentation
     group: 3
     kind: internal_stage
-    state: fallback
+    state: shadow
     product_scope: required
     promotion_state: candidate
     official:
@@ -1124,8 +1124,8 @@ capabilities:
       response_format: TEI listBibl
     implementation:
       crate: da-parse
-      surface: crates/da-parse/src/lift.rs (listBibl characterization)
-      notes: Native citation/reference heads are S11-S12; native reference composition S12 is independently selectable and remains shadow-only.
+      surface: crates/da-parse/src/native_composition.rs
+      notes: run_reference_sequence is W3 shadow (segment then fields then compose). Java processReferences remains production_route. TeiLifter still characterises Java listBibl.
     baseline: java-grobid-http@0.9.0-crf
     candidate: da-parse.native_header_reference_composition@1.0.0:references
     evidence_ref: crates/da-parse/src/native_composition.rs

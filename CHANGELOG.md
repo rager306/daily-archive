@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-04 — M465-sqt7w0/S04 W3: bibliography segment then fields then compose
+
+Reuse NativeReferenceSegmenter, NativeCitationParser, and compose_references.
+Ledger citation names/citation/list/reference_segmentation are shadow with crate
+surfaces (were absent or a CLI example). run_reference_sequence is segment then
+fields then compose; empty list or empty middle segment cannot invent a
+ReferenceCandidate. Structural profile still has consolidate_citations=false.
+Governor adds bibliography_sequence and lost_references. Java production_route.
+No graph. D127 false. Patent citation endpoints stay absent.
+
+Green: native_composition_contract 10; architecture_contract 38; data_contracts 74;
+test_scholarly_parse_governance 71.
+
 ## 2026-09-04 — M465-sqt7w0/S03 W2: header sequence date then name then affiliation
 
 Reuse NativeDateParser, NativePersonalNameParser, NativeAffiliationParser,

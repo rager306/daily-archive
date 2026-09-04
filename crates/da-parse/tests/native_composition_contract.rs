@@ -4,7 +4,8 @@ use da_parse::{
     NativeAffiliationLinkOutcome, NativeAffiliationParser, NativeCitationAnchorOutcome,
     NativeCitationAnchorScanner, NativeCitationParser, NativeDateOutcome, NativeDateParser,
     NativePersonalNameParser, NativeReference, NativeReferenceListOutcome,
-    ReferenceCompositionInput, compose_header, compose_references, run_header_sequence,
+    ReferenceCompositionInput, ReferenceSequenceInput, compose_header, compose_references,
+    run_header_sequence, run_reference_sequence,
 };
 
 fn header() -> HeaderCompositionInput {
@@ -220,6 +221,56 @@ fn references_are_independent_and_preserve_order_fields_and_anchor_adjacency() {
     assert_eq!(composition.candidate.anchors.len(), 2);
     assert_eq!(composition.candidate.adjacent_pairs, vec![(0, 1)]);
     assert!(!composition.candidate.fields.is_empty());
+}
+
+#[test]
+fn reference_sequence_is_segment_then_fields_then_compose() {
+    let result = run_reference_sequence(ReferenceSequenceInput {
+        entries: vec!["Smith, J. Example Title. 2024."],
+        body_text: Some("<ref type=\"bibr\">A</ref>"),
+    });
+    let da_parse::ReferenceCompositionOutcome::Accepted { composition } = result else {
+        panic!("expected accepted bibliography sequence")
+    };
+    let order: Vec<_> = composition.receipts.iter().map(|r| r.component).collect();
+    assert_eq!(
+        order,
+        vec![
+            CompositionComponent::References,
+            CompositionComponent::CitationFields,
+            CompositionComponent::Anchors,
+        ]
+    );
+    assert_eq!(composition.candidate.references.len(), 1);
+}
+
+#[test]
+fn lost_or_empty_reference_is_hard_fail_and_does_not_invent_candidate() {
+    let empty = run_reference_sequence(ReferenceSequenceInput {
+        entries: vec![],
+        body_text: None,
+    });
+    assert!(matches!(
+        empty,
+        da_parse::ReferenceCompositionOutcome::Rejected {
+            error: CompositionError::EmptyComponent {
+                component: CompositionComponent::References
+            }
+        }
+    ));
+
+    let hole = run_reference_sequence(ReferenceSequenceInput {
+        entries: vec!["Smith, J. Example Title. 2024.", "   "],
+        body_text: None,
+    });
+    assert!(matches!(
+        hole,
+        da_parse::ReferenceCompositionOutcome::Rejected {
+            error: CompositionError::RejectedComponent {
+                component: CompositionComponent::References
+            }
+        }
+    ));
 }
 
 #[test]

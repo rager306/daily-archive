@@ -60,6 +60,8 @@ REQUIRED_VIOLATIONS = {
     "region_coverage",
     "header_sequence",
     "invented_author",
+    "bibliography_sequence",
+    "lost_references",
 }
 
 

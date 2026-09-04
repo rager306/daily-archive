@@ -108,7 +108,8 @@ pub use native_composition::{
     NATIVE_COMPOSITION_MAX_AUTHORS, NATIVE_COMPOSITION_MAX_FIELDS,
     NATIVE_COMPOSITION_MAX_REFERENCES, NATIVE_COMPOSITION_SCHEMA_VERSION, ReferenceCandidate,
     ReferenceCompositionCandidate, ReferenceCompositionInput, ReferenceCompositionOutcome,
-    compose_header, compose_references, run_header_sequence,
+    ReferenceSequenceInput, compose_header, compose_references, run_header_sequence,
+    run_reference_sequence,
 };
 pub use native_date::{
     DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,

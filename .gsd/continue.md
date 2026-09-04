@@ -1,12 +1,14 @@
-# continue — M465 S03 W2 shipped; S01–S02 skip-delivered; next S04 bibliography
+# continue — M465 S04 W3 shipped; S01–S03 skip-delivered; next S05 body accounting
 
-## Active state (updated 2026-09-04 after M465/S03 W2)
+## Active state (updated 2026-09-04 after M465/S04 W3)
 
-Parse-plane: S01 fc9dfae6a, S02 8d28e01fc, S03 header sequence implemented.
-Ledger header atoms are shadow with crate surfaces. run_header_sequence is
-date then name then affiliation then compose; empty date or empty name cannot
-invent a HeaderCandidate. Graph frozen (R118). Next is S04 W3 bibliography
-(segment then fields then compose_references; citation names still absent).
+Parse-plane: S01 fc9dfae6a, S02 8d28e01fc, S03 1d912a61c, S04 bibliography
+sequence implemented. run_reference_sequence is segment then fields then
+compose; empty/lost reference cannot invent a candidate. Citation names are
+shadow via PersonalNameContext::Citation. Consolidation stays Java/profile.rs
+with structural off. Graph frozen (R118). Next is S05 W4 body accounting:
+native_fulltext_composition may substitute admitted header/reference subtrees;
+body bytes stay Java; reading-order change fails.
 Do not treat 9-lane segmentation report as 202-page pass.
 Product: `M446-rw9a2p` S03 still 23/25, pending T24/T25.
 Branch `feat/da-parse`.
