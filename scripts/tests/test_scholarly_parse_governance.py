@@ -56,6 +56,8 @@ REQUIRED_VIOLATIONS = {
     "backend_identity",
     "policy_stamp",
     "silent_loss",
+    "lexical_visual_mix",
+    "region_coverage",
 }
 
 

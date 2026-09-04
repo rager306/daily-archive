@@ -1043,7 +1043,7 @@ capabilities:
   - id: stage.pdfalto_layout
     group: 2
     kind: internal_stage
-    state: fallback
+    state: shadow
     product_scope: required
     promotion_state: candidate
     official:
@@ -1054,8 +1054,8 @@ capabilities:
       response_format: LayoutToken lattice
     implementation:
       crate: da-parse
-      surface: none
-      notes: Java cascade via processFulltextDocument. Native LayoutToken bake-off is S13.
+      surface: crates/da-parse/src/layout.rs
+      notes: Java cascade remains production via processFulltextDocument. Native LayoutToken lattice is W1 shadow (layout.rs + layout_donors.rs). Lexical donors must not emit Image/Formula.
     baseline: java-grobid-pdfalto
     candidate: none
     evidence_ref: https://grobid.readthedocs.io/en/latest/Principles/
@@ -1069,7 +1069,7 @@ capabilities:
   - id: stage.document_segmentation
     group: 2
     kind: internal_stage
-    state: fallback
+    state: shadow
     product_scope: required
     promotion_state: candidate
     official:
@@ -1079,8 +1079,8 @@ capabilities:
       response_format: header/body/references/annex labels
     implementation:
       crate: da-parse
-      surface: none
-      notes: Native segmentation is S15. Java remains fallback.
+      surface: crates/da-parse/src/native_segmentation.rs
+      notes: Native segmentation is W1 shadow. Java remains production_route. Exactly one region per admitted token including opaque Image/Formula.
     baseline: java-grobid-segmentation
     candidate: none
     evidence_ref: https://grobid.readthedocs.io/en/latest/Principles/

@@ -395,15 +395,7 @@ fn sha256_hex(bytes: impl AsRef<[u8]>) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 fn token_kind(text: &str) -> LayoutTokenKind {
-    if text.chars().all(char::is_whitespace) {
-        LayoutTokenKind::Whitespace
-    } else if text.chars().all(|c| c.is_ascii_punctuation()) {
-        LayoutTokenKind::Punctuation
-    } else if text.chars().all(|c| !c.is_alphanumeric()) {
-        LayoutTokenKind::Symbol
-    } else {
-        LayoutTokenKind::Word
-    }
+    LayoutTokenKind::from_lexical_text(text)
 }
 fn provider(id: &'static str, version: &'static str) -> LayoutProvider {
     LayoutProvider::new(id, version, DEFAULT_CONFIG_FINGERPRINT.to_owned())

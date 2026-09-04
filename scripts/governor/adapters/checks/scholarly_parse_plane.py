@@ -72,6 +72,13 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
         return "none" not in sources or value.get("production_consult") != "parse-pdf"
     if label == "silent_loss":
         return value.get("verdict") == "PASS" and value.get("no_silent_loss") is not True
+    if label == "lexical_visual_mix":
+        kinds = {str(item) for item in (value.get("lexical_token_kinds") or [])}
+        return bool(kinds & {"Image", "Formula", "image", "formula"})
+    if label == "region_coverage":
+        if value.get("status") not in {"pass", "success"}:
+            return False
+        return value.get("admitted_tokens") != value.get("assigned_tokens")
     return bool(plane) and bool(value)
 
 
@@ -177,6 +184,48 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     sources = set(stamp.get("closed_sources") or [])
     if "none" not in sources or "wasm" not in sources or "native_fallback" not in sources or stamp.get("production_consult") != "parse-pdf":
         flag("policy_stamp", "integration", "data/parse/grobid_compatibility.yaml#defaults.policy_stamp", {"closed_sources": ["wasm", "native_fallback", "none"], "production_consult": "parse-pdf"}, stamp)
+
+    segmentation_path = root / "data/parse/document_segmentation.yaml"
+    try:
+        segmentation = yaml.safe_load(segmentation_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as error:
+        flag("lexical_visual_mix", "integration", "data/parse/document_segmentation.yaml", "valid YAML", str(error))
+        segmentation = {}
+    lexical_kinds = {
+        str(item) for item in ((segmentation.get("regions") or {}).get("lexical_token_kinds") or [])
+    }
+    visual_in_lexical = lexical_kinds & {"Image", "Formula", "image", "formula"}
+    if visual_in_lexical or not lexical_kinds:
+        flag(
+            "lexical_visual_mix",
+            "integration",
+            "data/parse/document_segmentation.yaml#regions.lexical_token_kinds",
+            {"lexical_token_kinds": ["Word", "Whitespace", "Punctuation", "Symbol"]},
+            {"lexical_token_kinds": sorted(lexical_kinds), "visual_mix": sorted(visual_in_lexical)},
+        )
+
+    shadow_path = root / "artifacts/parse_compat/document_segmentation_shadow.json"
+    try:
+        shadow = json.loads(shadow_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        # Typed absence: no successful outcome to audit. Unsupported lanes stay silent.
+        shadow = {}
+    for outcome in shadow.get("outcomes") or []:
+        if not isinstance(outcome, dict):
+            continue
+        status = str(outcome.get("status") or "")
+        if status not in {"pass", "success"}:
+            continue
+        admitted = outcome.get("admitted_tokens")
+        assigned = outcome.get("assigned_tokens")
+        if admitted != assigned:
+            flag(
+                "region_coverage",
+                "integration",
+                f"artifacts/parse_compat/document_segmentation_shadow.json#{outcome.get('document_id')}:{outcome.get('lane')}",
+                {"assigned_tokens": admitted},
+                {"status": status, "admitted_tokens": admitted, "assigned_tokens": assigned},
+            )
 
     shared = root / str((contract.get("bindings") or {}).get("shared_promotion_contract", ""))
     if not shared.is_file():

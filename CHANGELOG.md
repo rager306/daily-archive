@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-04 — M465-sqt7w0/S02 W1: lexical lattice honesty, one region per token
+
+Reuse, not a new parser. LayoutTokenKind::from_lexical_text never returns
+Image or Formula. NativeSegmenter assigns exactly one closed region per
+admitted token including opaque visuals. Ledger stages pdfalto_layout and
+document_segmentation are shadow with real surfaces (were fallback/none).
+Governor adds lexical_visual_mix and region_coverage. Existing 9-lane
+segmentation report stays mixed pass/unsupported; unsupported is typed
+absence, not a fake 202-page green. Java production_route. No graph.
+
+Green: layout_contract 8; native_segmentation_contract 5; data_contracts 74;
+test_scholarly_parse_governance 63.
+
 ## 2026-09-04 — M465-sqt7w0/S01 W0: honest GROBID probes, measured conservation, policy stamp
 
 ADR-076 / D321: three automata, graph frozen, M464 was platform-only.

@@ -153,6 +153,29 @@ pub enum LayoutTokenKind {
     Image,
     Other,
 }
+impl LayoutTokenKind {
+    /// Classify a lexical donor string. Image/Formula/Other never come from text.
+    pub fn from_lexical_text(text: &str) -> Self {
+        if text.is_empty() || text.chars().all(char::is_whitespace) {
+            Self::Whitespace
+        } else if text.chars().all(|c| c.is_ascii_punctuation()) {
+            Self::Punctuation
+        } else if text.chars().all(|c| !c.is_alphanumeric()) {
+            Self::Symbol
+        } else {
+            Self::Word
+        }
+    }
+    pub fn is_lexical(self) -> bool {
+        matches!(
+            self,
+            Self::Word | Self::Whitespace | Self::Punctuation | Self::Symbol
+        )
+    }
+    pub fn is_visual(self) -> bool {
+        matches!(self, Self::Image | Self::Formula)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LayoutProvider {

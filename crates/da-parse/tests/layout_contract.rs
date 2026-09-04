@@ -98,6 +98,61 @@ fn unknown_schema_does_not_deserialize() {
 }
 
 #[test]
+fn from_lexical_text_never_emits_image_or_formula() {
+    let samples = [
+        "Hello", " ", "\t\n", "", ",", "...", "α", "42", "$$", "→", "image", "formula",
+    ];
+    for sample in samples {
+        let kind = LayoutTokenKind::from_lexical_text(sample);
+        assert!(
+            kind.is_lexical(),
+            "{sample:?} classified as {kind:?} must stay lexical"
+        );
+        assert!(
+            !matches!(
+                kind,
+                LayoutTokenKind::Image | LayoutTokenKind::Formula | LayoutTokenKind::Other
+            ),
+            "{sample:?} leaked visual kind {kind:?}"
+        );
+    }
+    assert_eq!(
+        LayoutTokenKind::from_lexical_text("Hello"),
+        LayoutTokenKind::Word
+    );
+    assert_eq!(
+        LayoutTokenKind::from_lexical_text(" "),
+        LayoutTokenKind::Whitespace
+    );
+    assert_eq!(
+        LayoutTokenKind::from_lexical_text(","),
+        LayoutTokenKind::Punctuation
+    );
+    assert_eq!(
+        LayoutTokenKind::from_lexical_text("α"),
+        LayoutTokenKind::Word
+    );
+    assert_eq!(
+        LayoutTokenKind::from_lexical_text("→"),
+        LayoutTokenKind::Symbol
+    );
+}
+
+#[test]
+fn visual_kinds_are_not_lexical() {
+    assert!(!LayoutTokenKind::Image.is_lexical());
+    assert!(!LayoutTokenKind::Formula.is_lexical());
+    assert!(!LayoutTokenKind::Other.is_lexical());
+    assert!(LayoutTokenKind::Image.is_visual());
+    assert!(LayoutTokenKind::Formula.is_visual());
+    assert!(!LayoutTokenKind::Word.is_visual());
+    assert!(LayoutTokenKind::Word.is_lexical());
+    assert!(LayoutTokenKind::Whitespace.is_lexical());
+    assert!(LayoutTokenKind::Punctuation.is_lexical());
+    assert!(LayoutTokenKind::Symbol.is_lexical());
+}
+
+#[test]
 fn limits_reject_oversize_documents() {
     let mut doc = document(vec![token(0, 0, 10.0)]);
     doc.pages[0].tokens = (0..100_001).map(|i| token(i, i, 10.0)).collect();

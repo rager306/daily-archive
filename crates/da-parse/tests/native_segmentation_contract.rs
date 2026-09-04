@@ -19,10 +19,10 @@ fn token(page: u32, source: u32, ordinal: u32, text: &str, y: f64) -> LayoutToke
         LayoutBBox::new(20.0, y, 80.0, y + 10.0).unwrap(),
         digest(text),
         LayoutSpan::absent(da_parse::LayoutSpanAbsence::NotAvailable),
-        if text == "[formula]" {
-            LayoutTokenKind::Formula
-        } else {
-            LayoutTokenKind::Word
+        match text {
+            "[formula]" => LayoutTokenKind::Formula,
+            "[image]" => LayoutTokenKind::Image,
+            _ => LayoutTokenKind::from_lexical_text(text),
         },
         LayoutStyleHints::default(),
         provider(),
@@ -119,6 +119,62 @@ fn rejects_unmatched_sidecar_and_invalid_bounds() {
         segment_document(&doc, &lexemes(&["Title"]), config),
         Err(SegmentationError::InvalidConfig)
     ));
+}
+
+#[test]
+fn mixed_word_formula_image_assigns_exactly_one_region_per_token() {
+    let tokens = vec![
+        token(0, 0, 0, "Title", 20.0),
+        token(0, 1, 1, "[formula]", 40.0),
+        token(0, 2, 2, "body", 60.0),
+        token(0, 3, 3, "[image]", 80.0),
+    ];
+    let doc = LayoutDocument::new(
+        "fixture-doc",
+        "b".repeat(64),
+        vec![LayoutPage::new(0, 200.0, 300.0, 0, None, tokens).unwrap()],
+    )
+    .unwrap();
+    let rows = vec![
+        LexemeRow::new(
+            "fixture-doc",
+            "fixture-donor",
+            0,
+            0,
+            digest("Title"),
+            "Title",
+        ),
+        LexemeRow::new("fixture-doc", "fixture-donor", 0, 2, digest("body"), "body"),
+    ];
+    // Sidecar covers lexical tokens only; visual kinds stay opaque.
+    let outcome = segment_document(&doc, &rows, SegmentationConfig::default()).unwrap();
+    let admitted = doc.pages.iter().map(|p| p.tokens.len()).sum::<usize>();
+    assert_eq!(outcome.assignments.len(), admitted);
+    assert_eq!(admitted, 4);
+    let keys: Vec<_> = outcome
+        .assignments
+        .iter()
+        .map(|a| (a.source_ordinal, a.region))
+        .collect();
+    assert_eq!(keys.len(), 4);
+    assert_eq!(keys[0].0, 0);
+    assert_eq!(keys[1].0, 1);
+    assert_eq!(keys[2].0, 2);
+    assert_eq!(keys[3].0, 3);
+    for assignment in &outcome.assignments {
+        assert!(matches!(
+            assignment.region,
+            DocumentRegion::Header
+                | DocumentRegion::Body
+                | DocumentRegion::References
+                | DocumentRegion::Annex
+                | DocumentRegion::PageFurniture
+        ));
+    }
+    assert!(doc.pages[0].tokens[1].kind.is_visual());
+    assert!(doc.pages[0].tokens[3].kind.is_visual());
+    assert!(doc.pages[0].tokens[0].kind.is_lexical());
+    assert!(doc.pages[0].tokens[2].kind.is_lexical());
 }
 
 #[test]

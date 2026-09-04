@@ -1,11 +1,14 @@
-# continue — M465 S01 W0 shipped; M446 S03 still pending T24/T25
+# continue — M465 S02 W1 shipped; S01 skip-delivered; M446 S03 still pending T24/T25
 
-## Active state (updated 2026-09-04 after M465/S01 W0)
+## Active state (updated 2026-09-04 after M465/S02 W1)
 
-Parse-plane: `M465-sqt7w0` S01 W0 implemented (health/version probes, additive
-TeiIdentity version, measured conservation FAIL/loss_detected, policy_stamp
-none vs wasm, governor W0 gates). Graph still frozen (R118). Next parse slice
-is S02 lattice — do not start until this commit is in.
+Parse-plane: `M465-sqt7w0` S01 skip-delivered (code in fc9dfae6a). S02 W1
+implemented: lexical kinds cannot be Image/Formula, one region per token
+including opaque visuals, ledger stages pdfalto_layout and
+document_segmentation are shadow with real surfaces, governor
+lexical_visual_mix + region_coverage. Graph frozen (R118). Next is S03 W2
+header atoms. Do not treat 9-lane shadow report as 202-page pass (pdfalto
+unsupported; inspector lanes assigned==admitted).
 Product: `M446-rw9a2p` S03 still 23/25, pending T24 index bench + T25 arch gate.
 Branch `feat/da-parse`.
 
