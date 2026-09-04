@@ -60,7 +60,10 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
     if label in {"acceptance_evidence_missing", "acceptance_evidence_substitution", "acceptance_role_drift", "acceptance_same_n_drift", "acceptance_lock_erosion"}:
         return bool(value.get("acceptance_mutation"))
     if label == "ledger_surface":
-        return value.get("state") in {"proxy", "shadow"} and value.get("surface") in {None, "", "none"}
+        surface = str(value.get("surface") or "").strip().lower()
+        return value.get("state") in {"proxy", "shadow"} and (
+            not surface or surface == "none" or surface.startswith("none")
+        )
     if label == "backend_identity":
         return "health_state" in value and (
             value.get("health_state") != "proxy" or value.get("version_state") != "proxy"
@@ -79,6 +82,11 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
         if value.get("status") not in {"pass", "success"}:
             return False
         return value.get("admitted_tokens") != value.get("assigned_tokens")
+    if label == "header_sequence":
+        receipts = [str(item) for item in (value.get("receipts") or [])]
+        return receipts != ["Date", "Names", "Affiliations"] and bool(receipts)
+    if label == "invented_author":
+        return value.get("name_outcome") in {"empty", "malformed"} and int(value.get("authors") or 0) > 0
     return bool(plane) and bool(value)
 
 
@@ -177,9 +185,46 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             flag("backend_identity", "integration", f"data/parse/grobid_compatibility.yaml#{cap_id}", {"state": "proxy", "surface": "http.rs"}, {"state": cap.get("state"), "surface": surface})
     for cap in caps:
         state = str(cap.get("state") or "")
-        surface = str((cap.get("implementation") or {}).get("surface") or "")
-        if state in {"proxy", "shadow"} and surface in {"", "none"}:
-            flag("ledger_surface", "integration", f"data/parse/grobid_compatibility.yaml#{cap.get('id')}", {"state": state, "surface": "non-empty"}, {"state": state, "surface": surface})
+        surface = str((cap.get("implementation") or {}).get("surface") or "").strip()
+        surface_l = surface.lower()
+        if state in {"proxy", "shadow"} and (
+            not surface or surface_l == "none" or surface_l.startswith("none")
+        ):
+            flag("ledger_surface", "integration", f"data/parse/grobid_compatibility.yaml#{cap.get('id')}", {"state": state, "surface": "crate path"}, {"state": state, "surface": surface})
+    header_ids = (
+        "rest.processDate",
+        "rest.processHeaderNames",
+        "rest.processAffiliations",
+        "stage.header_composition",
+    )
+    expected_surfaces = {
+        "rest.processDate": "crates/da-parse/src/native_date.rs",
+        "rest.processHeaderNames": "crates/da-parse/src/native_personal_name.rs",
+        "rest.processAffiliations": "crates/da-parse/src/native_affiliation.rs",
+        "stage.header_composition": "crates/da-parse/src/native_composition.rs",
+    }
+    for cap_id in header_ids:
+        cap = by_id.get(cap_id) or {}
+        impl = cap.get("implementation") or {}
+        surface = str(impl.get("surface") or "").strip()
+        if cap.get("state") != "shadow" or not surface.startswith("crates/da-parse/src/"):
+            flag(
+                "header_sequence",
+                "integration",
+                f"data/parse/grobid_compatibility.yaml#{cap_id}",
+                {"state": "shadow", "surface": expected_surfaces.get(cap_id)},
+                {"state": cap.get("state"), "surface": surface},
+            )
+        budget = cap.get("invention_budget")
+        if cap_id == "rest.processHeaderNames" and budget not in {0, "0", None}:
+            flag(
+                "invented_author",
+                "integration",
+                f"data/parse/grobid_compatibility.yaml#{cap_id}",
+                {"invention_budget": 0},
+                {"invention_budget": budget},
+            )
+
     stamp = ((registry.get("defaults") or {}).get("policy_stamp") or {})
     sources = set(stamp.get("closed_sources") or [])
     if "none" not in sources or "wasm" not in sources or "native_fallback" not in sources or stamp.get("production_consult") != "parse-pdf":

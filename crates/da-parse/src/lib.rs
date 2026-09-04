@@ -103,11 +103,12 @@ pub use native_citation::{
 pub use native_composition::{
     ComponentDisposition, ComponentReceipt, CompositionComponent, CompositionError,
     CompositionSpan, HeaderAuthor, HeaderAuthorInput, HeaderCandidate, HeaderCompositionCandidate,
-    HeaderCompositionInput, HeaderCompositionOutcome, NATIVE_COMPOSITION_MAX_AFFILIATIONS,
-    NATIVE_COMPOSITION_MAX_ANCHORS, NATIVE_COMPOSITION_MAX_AUTHORS, NATIVE_COMPOSITION_MAX_FIELDS,
+    HeaderCompositionInput, HeaderCompositionOutcome, HeaderSequenceInput,
+    NATIVE_COMPOSITION_MAX_AFFILIATIONS, NATIVE_COMPOSITION_MAX_ANCHORS,
+    NATIVE_COMPOSITION_MAX_AUTHORS, NATIVE_COMPOSITION_MAX_FIELDS,
     NATIVE_COMPOSITION_MAX_REFERENCES, NATIVE_COMPOSITION_SCHEMA_VERSION, ReferenceCandidate,
     ReferenceCompositionCandidate, ReferenceCompositionInput, ReferenceCompositionOutcome,
-    compose_header, compose_references,
+    compose_header, compose_references, run_header_sequence,
 };
 pub use native_date::{
     DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,

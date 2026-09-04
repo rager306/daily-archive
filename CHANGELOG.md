@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-04 — M465-sqt7w0/S03 W2: header sequence date then name then affiliation
+
+Reuse NativeDateParser, NativePersonalNameParser, NativeAffiliationParser,
+and compose_header. Ledger surfaces that hid none behind prose now point at
+native_date.rs, native_personal_name.rs, native_affiliation.rs, and
+native_composition.rs (shadow). run_header_sequence stops on empty date and
+rejects empty or foreign authors. Governor ledger_surface treats none-prefix
+prose as missing; header_sequence and invented_author gates added.
+Architecture proxy set includes W0 health/version. Java production_route.
+No graph. D127 false.
+
+Green: native_composition_contract 8; architecture_contract 38; data_contracts 74;
+test_scholarly_parse_governance 67.
+
 ## 2026-09-04 — M465-sqt7w0/S02 W1: lexical lattice honesty, one region per token
 
 Reuse, not a new parser. LayoutTokenKind::from_lexical_text never returns

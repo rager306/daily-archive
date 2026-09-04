@@ -448,10 +448,7 @@ capabilities:
       response_format: application/xml TEI date
     implementation:
       crate: da-parse
-      surface: >-
-        none (candidate surface only: crates/da-parse/src/native_date.rs — pure
-        NativeDateParser, never wired into ParserPort, TeiLifter, TeiParseIr,
-        ParsedArticle, the projector or any runtime route)
+      surface: crates/da-parse/src/native_date.rs
       notes: >-
         S08/T03 shipped the versioned shadow candidate da-parse.native_date@1.0.0
         (wire da-parse.native-date.outcome/v1). It is observed ONLY as additive
@@ -473,7 +470,7 @@ capabilities:
   - id: rest.processHeaderNames
     group: 4
     kind: endpoint
-    state: absent
+    state: shadow
     product_scope: supporting
     promotion_state: candidate
     official:
@@ -484,8 +481,8 @@ capabilities:
       response_format: application/xml TEI persName sequence
     implementation:
       crate: da-parse
-      surface: none
-      notes: Native personal-name parser is S09.
+      surface: crates/da-parse/src/native_personal_name.rs
+      notes: Native personal-name parser is W2 shadow. Citation-name dialect stays S04.
     baseline: java-grobid-http@0.9.0-crf
     candidate: da-parse.native_personal_name@1.0.0
     evidence_ref: crates/da-cli/examples/parse_compat_baseline.rs:native_personal_name_shadow
@@ -540,10 +537,7 @@ capabilities:
       response_format: application/xml TEI affiliation
     implementation:
       crate: da-parse
-      surface: >-
-        none (candidate surface only: crates/da-parse/src/native_affiliation.rs;
-        pure NativeAffiliationParser and NativeAffiliationLinker, never wired
-        into ParserPort, TeiLifter, TeiParseIr, ParsedArticle or any runtime route)
+      surface: crates/da-parse/src/native_affiliation.rs
       notes: >-
         S10/T05 observes one additive native_affiliation_shadow block inside
         parse_compat_baseline. Recognition and accepted-name linking remain
@@ -1094,7 +1088,7 @@ capabilities:
   - id: stage.header_composition
     group: 3
     kind: internal_stage
-    state: fallback
+    state: shadow
     product_scope: required
     promotion_state: candidate
     official:
@@ -1104,8 +1098,8 @@ capabilities:
       response_format: TEI teiHeader
     implementation:
       crate: da-parse
-      surface: crates/da-parse/src/lift.rs (title/idno/authors lifted since S07)
-      notes: P0 idno/authors LIFTED since S07 (declared-only revision, document-ordered header authors); native header composition S12 is independently selectable and remains shadow-only.
+      surface: crates/da-parse/src/native_composition.rs
+      notes: Native compose_header is W2 shadow. Java processHeaderDocument remains production_route. TeiLifter still lifts Java header; this surface is not ingest.
     baseline: java-grobid-http@0.9.0-crf
     candidate: da-parse.native_header_reference_composition@1.0.0:header
     evidence_ref: crates/da-parse/src/native_composition.rs

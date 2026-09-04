@@ -1,10 +1,10 @@
 use da_parse::{
     AffiliationSpan, CompositionComponent, CompositionError, CompositionSpan, HeaderAuthorInput,
-    HeaderCompositionInput, NativeAffiliationAuthorEvidence, NativeAffiliationLinkOutcome,
-    NativeAffiliationParser, NativeCitationAnchorOutcome, NativeCitationAnchorScanner,
-    NativeCitationParser, NativeDateOutcome, NativeDateParser, NativePersonalNameParser,
-    NativeReference, NativeReferenceListOutcome, ReferenceCompositionInput, compose_header,
-    compose_references,
+    HeaderCompositionInput, HeaderSequenceInput, NativeAffiliationAuthorEvidence,
+    NativeAffiliationLinkOutcome, NativeAffiliationParser, NativeCitationAnchorOutcome,
+    NativeCitationAnchorScanner, NativeCitationParser, NativeDateOutcome, NativeDateParser,
+    NativePersonalNameParser, NativeReference, NativeReferenceListOutcome,
+    ReferenceCompositionInput, compose_header, compose_references, run_header_sequence,
 };
 
 fn header() -> HeaderCompositionInput {
@@ -39,6 +39,89 @@ fn header_composes_typed_leaf_values_and_keeps_zero_link_author() {
     assert_eq!(composition.candidate.authors[0].ordinal, 0);
     assert!(composition.candidate.authors[0].affiliations.is_empty());
     assert_eq!(composition.receipts.len(), 3);
+}
+
+#[test]
+fn header_sequence_is_date_then_name_then_affiliation() {
+    let result = run_header_sequence(HeaderSequenceInput {
+        date_text: "2024-02-29",
+        name_texts: vec!["J. Smith"],
+        affiliation_texts: vec!["University of Example"],
+    });
+    let da_parse::HeaderCompositionOutcome::Accepted { composition } = result else {
+        panic!("expected accepted sequence")
+    };
+    let order: Vec<_> = composition.receipts.iter().map(|r| r.component).collect();
+    assert_eq!(
+        order,
+        vec![
+            CompositionComponent::Date,
+            CompositionComponent::Names,
+            CompositionComponent::Affiliations,
+        ]
+    );
+    assert_eq!(composition.candidate.date.year, 2024);
+    assert_eq!(composition.candidate.authors.len(), 1);
+}
+
+#[test]
+fn header_sequence_stops_on_empty_date_and_does_not_invent_authors() {
+    let result = run_header_sequence(HeaderSequenceInput {
+        date_text: "   ",
+        name_texts: vec!["J. Smith"],
+        affiliation_texts: vec!["University of Example"],
+    });
+    assert!(matches!(
+        result,
+        da_parse::HeaderCompositionOutcome::Rejected {
+            error: CompositionError::EmptyComponent {
+                component: CompositionComponent::Date
+            }
+        }
+    ));
+}
+
+#[test]
+fn invented_or_empty_author_is_rejected() {
+    let empty_name = run_header_sequence(HeaderSequenceInput {
+        date_text: "2024-02-29",
+        name_texts: vec![""],
+        affiliation_texts: vec!["University of Example"],
+    });
+    assert!(matches!(
+        empty_name,
+        da_parse::HeaderCompositionOutcome::Rejected {
+            error: CompositionError::EmptyComponent {
+                component: CompositionComponent::Names
+            }
+        }
+    ));
+
+    let mut input = header();
+    input.authors[0].name = da_parse::NativePersonalNameOutcome::Empty;
+    assert!(matches!(
+        compose_header(input),
+        da_parse::HeaderCompositionOutcome::Rejected {
+            error: CompositionError::EmptyComponent {
+                component: CompositionComponent::Names
+            }
+        }
+    ));
+
+    let mut foreign = header();
+    foreign.authors[0].affiliations = NativeAffiliationLinkOutcome::Linked {
+        author: NativeAffiliationAuthorEvidence {
+            ordinal: 9,
+            span: AffiliationSpan { start: 0, end: 4 },
+        },
+        links: vec![],
+    };
+    assert!(matches!(
+        compose_header(foreign),
+        da_parse::HeaderCompositionOutcome::Rejected {
+            error: CompositionError::ForeignAffiliationLink { author: 0, .. }
+        }
+    ));
 }
 
 #[test]

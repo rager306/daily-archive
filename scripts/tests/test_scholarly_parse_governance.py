@@ -58,6 +58,8 @@ REQUIRED_VIOLATIONS = {
     "silent_loss",
     "lexical_visual_mix",
     "region_coverage",
+    "header_sequence",
+    "invented_author",
 }
 
 

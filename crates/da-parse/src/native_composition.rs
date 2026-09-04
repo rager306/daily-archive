@@ -6,10 +6,11 @@
 //! composition are separate entry points so a caller can select Java fallback
 //! independently for either lane.
 use crate::{
-    CitationField, NativeAffiliationLink, NativeAffiliationLinkOutcome, NativeAffiliationOutcome,
+    AffiliationSpan, CitationField, NativeAffiliationAuthorEvidence, NativeAffiliationLink,
+    NativeAffiliationLinkOutcome, NativeAffiliationOutcome, NativeAffiliationParser,
     NativeCitationAnchor, NativeCitationAnchorOutcome, NativeCitationOutcome, NativeDateOutcome,
-    NativePersonalNameOutcome, NativeReference, NativeReferenceListOutcome, RecognizedDate,
-    RecognizedPersonalName,
+    NativeDateParser, NativePersonalNameOutcome, NativePersonalNameParser, NativeReference,
+    NativeReferenceListOutcome, PersonalNameContext, RecognizedDate, RecognizedPersonalName,
 };
 use serde::{Deserialize, Serialize};
 
@@ -169,6 +170,90 @@ pub enum ReferenceCompositionOutcome {
     Rejected {
         error: CompositionError,
     },
+}
+
+/// Ordered W2 header sequence: date, then names, then affiliations, then compose.
+/// A failed earlier atom must not invent a HeaderCandidate.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HeaderSequenceInput<'a> {
+    pub date_text: &'a str,
+    pub name_texts: Vec<&'a str>,
+    pub affiliation_texts: Vec<&'a str>,
+}
+
+pub fn run_header_sequence(input: HeaderSequenceInput<'_>) -> HeaderCompositionOutcome {
+    let date = NativeDateParser::new().parse(input.date_text);
+    match &date {
+        NativeDateOutcome::Recognized { .. } => {}
+        NativeDateOutcome::Empty => {
+            return reject(CompositionError::EmptyComponent {
+                component: CompositionComponent::Date,
+            });
+        }
+        NativeDateOutcome::Oversized => {
+            return reject(CompositionError::OversizedComponent {
+                component: CompositionComponent::Date,
+            });
+        }
+        _ => {
+            return reject(CompositionError::RejectedComponent {
+                component: CompositionComponent::Date,
+            });
+        }
+    }
+    if input.name_texts.is_empty() {
+        return reject(CompositionError::EmptyComponent {
+            component: CompositionComponent::Names,
+        });
+    }
+    let mut authors = Vec::with_capacity(input.name_texts.len());
+    let mut cursor = 0usize;
+    for (ordinal, name_text) in input.name_texts.iter().enumerate() {
+        let name = NativePersonalNameParser::new().parse(PersonalNameContext::Header, name_text);
+        match &name {
+            NativePersonalNameOutcome::Recognized { .. } => {}
+            NativePersonalNameOutcome::Empty => {
+                return reject(CompositionError::EmptyComponent {
+                    component: CompositionComponent::Names,
+                });
+            }
+            NativePersonalNameOutcome::Oversized => {
+                return reject(CompositionError::OversizedComponent {
+                    component: CompositionComponent::Names,
+                });
+            }
+            _ => {
+                return reject(CompositionError::RejectedComponent {
+                    component: CompositionComponent::Names,
+                });
+            }
+        }
+        let start = cursor;
+        let end = start + name_text.len().max(1);
+        cursor = end + 1;
+        authors.push(HeaderAuthorInput {
+            ordinal,
+            span: CompositionSpan { start, end },
+            name,
+            affiliations: NativeAffiliationLinkOutcome::Linked {
+                author: NativeAffiliationAuthorEvidence {
+                    ordinal,
+                    span: AffiliationSpan { start: 0, end: 1 },
+                },
+                links: vec![],
+            },
+        });
+    }
+    let affiliation_components = input
+        .affiliation_texts
+        .iter()
+        .map(|text| NativeAffiliationParser::new().parse(text))
+        .collect();
+    compose_header(HeaderCompositionInput {
+        date,
+        authors,
+        affiliation_components,
+    })
 }
 
 pub fn compose_header(input: HeaderCompositionInput) -> HeaderCompositionOutcome {

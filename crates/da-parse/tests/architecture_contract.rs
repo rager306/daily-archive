@@ -799,6 +799,8 @@ fn parse_registry_keeps_d127_import_lock_candidate_identity_and_proxy_set() {
         .collect();
     let expected: BTreeSet<String> = [
         "rest.isalive",
+        "rest.health",
+        "rest.version",
         "rest.processFulltextDocument",
         "rest.processHeaderDocument",
         "rest.processReferences",
@@ -809,7 +811,7 @@ fn parse_registry_keeps_d127_import_lock_candidate_identity_and_proxy_set() {
     .collect();
     assert_eq!(
         proxy_ids, expected,
-        "the sanctioned proxy set must stay exactly these five capabilities"
+        "the sanctioned proxy set is Java live ops plus W0 health/version probes"
     );
 }
 
@@ -1989,7 +1991,8 @@ fn native_segmentation_is_pure_and_quarantined_from_runtime_surfaces() {
         .expect("Java segmentation stage");
     assert_eq!(
         stage.get("state").and_then(|v| v.as_str()),
-        Some("fallback")
+        Some("shadow"),
+        "W1 native segmentation is shadow with a real surface, not a silent fallback"
     );
     assert_eq!(
         stage.get("baseline").and_then(|v| v.as_str()),

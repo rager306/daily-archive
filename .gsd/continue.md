@@ -1,15 +1,14 @@
-# continue — M465 S02 W1 shipped; S01 skip-delivered; M446 S03 still pending T24/T25
+# continue — M465 S03 W2 shipped; S01–S02 skip-delivered; next S04 bibliography
 
-## Active state (updated 2026-09-04 after M465/S02 W1)
+## Active state (updated 2026-09-04 after M465/S03 W2)
 
-Parse-plane: `M465-sqt7w0` S01 skip-delivered (code in fc9dfae6a). S02 W1
-implemented: lexical kinds cannot be Image/Formula, one region per token
-including opaque visuals, ledger stages pdfalto_layout and
-document_segmentation are shadow with real surfaces, governor
-lexical_visual_mix + region_coverage. Graph frozen (R118). Next is S03 W2
-header atoms. Do not treat 9-lane shadow report as 202-page pass (pdfalto
-unsupported; inspector lanes assigned==admitted).
-Product: `M446-rw9a2p` S03 still 23/25, pending T24 index bench + T25 arch gate.
+Parse-plane: S01 fc9dfae6a, S02 8d28e01fc, S03 header sequence implemented.
+Ledger header atoms are shadow with crate surfaces. run_header_sequence is
+date then name then affiliation then compose; empty date or empty name cannot
+invent a HeaderCandidate. Graph frozen (R118). Next is S04 W3 bibliography
+(segment then fields then compose_references; citation names still absent).
+Do not treat 9-lane segmentation report as 202-page pass.
+Product: `M446-rw9a2p` S03 still 23/25, pending T24/T25.
 Branch `feat/da-parse`.
 
 ```text
