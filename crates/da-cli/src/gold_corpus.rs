@@ -194,12 +194,21 @@ fn resolve_source(
             .iter()
             .map(|path| file_sha256(path))
             .collect::<Result<std::collections::BTreeSet<_>, _>>()?;
-        let canonical = exact_pdfs
-            .iter()
-            .filter(|path| category_component_is_canonical(path))
-            .collect::<Vec<_>>();
-        if hashes.len() == 1 && canonical.len() == 1 {
-            return Ok(Some((CanonicalSourceKind::Pdf, (*canonical[0]).clone())));
+        // Byte-identical duplicates are the same bytes under two catalog
+        // roots (e.g. cs-ro vs mixed-source). Resolve deterministically to
+        // the lexicographically smallest canonical path (else smallest
+        // overall) to keep evaluation reproducible without physical deletion
+        // (MEM696). Real content conflicts (hashes.len() > 1) stay fail-closed.
+        if hashes.len() == 1 {
+            let mut ranked: Vec<PathBuf> = exact_pdfs.iter().map(|path| (**path).clone()).collect();
+            ranked.sort();
+            if let Some(chosen) = ranked
+                .iter()
+                .find(|path| category_component_is_canonical(path.as_path()))
+            {
+                return Ok(Some((CanonicalSourceKind::Pdf, chosen.clone())));
+            }
+            return Ok(Some((CanonicalSourceKind::Pdf, ranked[0].clone())));
         }
         return Err(format!(
             "ambiguous exact PDF sources for '{paper_id}': {}",
