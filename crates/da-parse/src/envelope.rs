@@ -117,16 +117,20 @@ pub struct TeiIdentity {
     backend_id: String,
     profile_fingerprint: String,
     result: Option<TeiResultIdentity>,
+    /// Java GROBID `/api/version` string when probed (ADR-076 W0 / R121).
+    /// Absent keeps historical identities byte-identical.
+    backend_version: Option<String>,
 }
 
 impl TeiIdentity {
     /// Build an identity from a stable backend id and a profile fingerprint
-    /// (pre-S05 shape: no endpoint result component).
+    /// (pre-S05 shape: no endpoint result component, no backend version).
     pub fn new(backend_id: impl Into<String>, profile_fingerprint: impl Into<String>) -> Self {
         Self {
             backend_id: backend_id.into(),
             profile_fingerprint: profile_fingerprint.into(),
             result: None,
+            backend_version: None,
         }
     }
 
@@ -169,6 +173,23 @@ impl TeiIdentity {
     /// pre-S05 identities).
     pub fn result(&self) -> Option<&TeiResultIdentity> {
         self.result.as_ref()
+    }
+
+    /// Stamp the Java GROBID version string (T02). Empty/whitespace is ignored
+    /// so a failed probe cannot invent an identity component. Profile
+    /// fingerprint is unchanged (D204 pins).
+    pub fn with_backend_version(mut self, version: impl Into<String>) -> Self {
+        let version = version.into();
+        let trimmed = version.trim();
+        if !trimmed.is_empty() {
+            self.backend_version = Some(trimmed.to_string());
+        }
+        self
+    }
+
+    /// Probed backend version when stamped.
+    pub fn backend_version(&self) -> Option<&str> {
+        self.backend_version.as_deref()
     }
 }
 

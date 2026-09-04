@@ -59,6 +59,19 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
         return not value.get("integration_evidence")
     if label in {"acceptance_evidence_missing", "acceptance_evidence_substitution", "acceptance_role_drift", "acceptance_same_n_drift", "acceptance_lock_erosion"}:
         return bool(value.get("acceptance_mutation"))
+    if label == "ledger_surface":
+        return value.get("state") in {"proxy", "shadow"} and value.get("surface") in {None, "", "none"}
+    if label == "backend_identity":
+        return "health_state" in value and (
+            value.get("health_state") != "proxy" or value.get("version_state") != "proxy"
+        )
+    if label == "policy_stamp":
+        if "closed_sources" not in value and "production_consult" not in value:
+            return False
+        sources = set(value.get("closed_sources") or [])
+        return "none" not in sources or value.get("production_consult") != "parse-pdf"
+    if label == "silent_loss":
+        return value.get("verdict") == "PASS" and value.get("no_silent_loss") is not True
     return bool(plane) and bool(value)
 
 
@@ -137,6 +150,33 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 flag("acceptance_role_drift", name, report_path.relative_to(root), spec.get("comparison_kind"), observed.get("comparison_kind"))
         if acceptance.get("manifest_id") != manifest.get("manifest_id") or acceptance.get("locks", {}).get("import_eligible") is not False or acceptance.get("locks", {}).get("auto_promote") != "forbidden" or acceptance.get("locks", {}).get("production_route") != "forbidden":
             flag("acceptance_lock_erosion", "promotion_quarantine", report_path.relative_to(root), "candidate-only locks", acceptance.get("locks"))
+        conservation = acceptance.get("conservation") or {}
+        if acceptance.get("verdict") == "PASS" and conservation.get("no_silent_loss") is not True:
+            flag("silent_loss", "integration", report_path.relative_to(root), {"verdict": "PASS", "no_silent_loss": True}, {"verdict": acceptance.get("verdict"), "no_silent_loss": conservation.get("no_silent_loss")})
+
+    registry_path = root / "data/parse/grobid_compatibility.yaml"
+    try:
+        registry = yaml.safe_load(registry_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as error:
+        flag("backend_identity", "integration", "data/parse/grobid_compatibility.yaml", "valid YAML", str(error))
+        registry = {}
+    caps = [c for c in (registry.get("capabilities") or []) if isinstance(c, dict)]
+    by_id = {str(c.get("id")): c for c in caps}
+    for cap_id in ("rest.health", "rest.version"):
+        cap = by_id.get(cap_id) or {}
+        impl = cap.get("implementation") or {}
+        surface = str(impl.get("surface") or "")
+        if cap.get("state") != "proxy" or surface in {"", "none"}:
+            flag("backend_identity", "integration", f"data/parse/grobid_compatibility.yaml#{cap_id}", {"state": "proxy", "surface": "http.rs"}, {"state": cap.get("state"), "surface": surface})
+    for cap in caps:
+        state = str(cap.get("state") or "")
+        surface = str((cap.get("implementation") or {}).get("surface") or "")
+        if state in {"proxy", "shadow"} and surface in {"", "none"}:
+            flag("ledger_surface", "integration", f"data/parse/grobid_compatibility.yaml#{cap.get('id')}", {"state": state, "surface": "non-empty"}, {"state": state, "surface": surface})
+    stamp = ((registry.get("defaults") or {}).get("policy_stamp") or {})
+    sources = set(stamp.get("closed_sources") or [])
+    if "none" not in sources or "wasm" not in sources or "native_fallback" not in sources or stamp.get("production_consult") != "parse-pdf":
+        flag("policy_stamp", "integration", "data/parse/grobid_compatibility.yaml#defaults.policy_stamp", {"closed_sources": ["wasm", "native_fallback", "none"], "production_consult": "parse-pdf"}, stamp)
 
     shared = root / str((contract.get("bindings") or {}).get("shared_promotion_contract", ""))
     if not shared.is_file():

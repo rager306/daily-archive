@@ -66,7 +66,7 @@ pub use cache::{
     PROJECT_ARTICLE_STAGE_ID, ParseArtifactCache, ParseCacheDispositions, ParseCacheFailure,
     ParseCacheStage, ProjectArticlePayload, RAW_TEI_PAYLOAD_SCHEMA_VERSION, RAW_TEI_STAGE_ID,
     RawStageRead, RawTeiEnvelopePayload, TwoStageParseCache, project_article_stage_key,
-    raw_tei_stage_key,
+    raw_tei_stage_key, raw_tei_stage_key_with_backend_version,
 };
 pub use conservation::{
     ByteRange, ConservationDelta, ConservationEngine, ConservationEntry, ConservationFamily,
@@ -74,7 +74,7 @@ pub use conservation::{
     ConservationSubtype, ConservationVerdict, FamilyDeltaCounts,
 };
 pub use envelope::{TeiEnvelope, TeiIdentity, TeiResultIdentity};
-pub use http::{GrobidHttpBackend, GrobidParser};
+pub use http::{GrobidHttpBackend, GrobidParser, HealthProbe, ProbeFailure, VersionProbe};
 pub use ir::TeiParseIr;
 pub use layout::{
     LAYOUT_SCHEMA_VERSION, LayoutBBox, LayoutDocument, LayoutError, LayoutPage, LayoutProvider,

@@ -497,6 +497,35 @@ pub fn raw_tei_stage_key(request: &ParseBackendRequest) -> String {
     format!("{}:{}", RAW_TEI_STAGE_ID, hex::encode(hasher.finalize()))
 }
 
+/// Same as [`raw_tei_stage_key`] plus an optional backend version segment.
+/// `None` is byte-identical to [`raw_tei_stage_key`] so unstamped parses keep
+/// historical keys. A probed Java version is a content-key input (R121).
+pub fn raw_tei_stage_key_with_backend_version(
+    request: &ParseBackendRequest,
+    backend_version: Option<&str>,
+) -> String {
+    match backend_version.map(str::trim).filter(|v| !v.is_empty()) {
+        None => raw_tei_stage_key(request),
+        Some(version) => {
+            let mut hasher = Sha256::new();
+            hasher.update(RAW_TEI_STAGE_KEY_DOMAIN);
+            write_key_segment(
+                &mut hasher,
+                b"endpoint",
+                request.endpoint().as_str().as_bytes(),
+            );
+            write_key_segment(
+                &mut hasher,
+                b"dialect",
+                crate::batch::endpoint_dialect_wire(request).as_bytes(),
+            );
+            write_key_segment(&mut hasher, b"pdf_bytes", request.pdf_bytes());
+            write_key_segment(&mut hasher, b"backend_version", version.as_bytes());
+            format!("{}:{}", RAW_TEI_STAGE_ID, hex::encode(hasher.finalize()))
+        }
+    }
+}
+
 /// Projection stage key: the verified raw payload SHA (post-checksum), the
 /// source bytes SHA, the logical paper id and the projector schema
 /// fingerprint — every input the projection output depends on, and nothing
@@ -606,6 +635,10 @@ pub struct RawTeiEnvelopePayload {
     backend_id: String,
     profile_fingerprint: String,
     result_identity: Option<String>,
+    /// Java GROBID version when the envelope carried one (ADR-076 T02).
+    /// Omitted on the wire when absent so historical payloads still decode.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    backend_version: Option<String>,
     payload_sha256: String,
     tei_xml_hex: String,
 }
@@ -621,6 +654,7 @@ impl RawTeiEnvelopePayload {
             backend_id: envelope.identity().backend_id().to_string(),
             profile_fingerprint: envelope.identity().profile_fingerprint().to_string(),
             result_identity: Some(stamped_result.canonical()),
+            backend_version: envelope.identity().backend_version().map(str::to_string),
             payload_sha256: sha256_hex(envelope.raw_tei()),
             tei_xml_hex: hex::encode(envelope.raw_tei()),
         }
@@ -674,7 +708,10 @@ impl RawTeiEnvelopePayload {
                 ));
             }
         }
-        let identity = TeiIdentity::new(payload.backend_id, payload.profile_fingerprint);
+        let mut identity = TeiIdentity::new(payload.backend_id, payload.profile_fingerprint);
+        if let Some(version) = payload.backend_version {
+            identity = identity.with_backend_version(version);
+        }
         Ok((
             TeiEnvelope::new(tei_bytes, identity),
             payload.payload_sha256.clone(),

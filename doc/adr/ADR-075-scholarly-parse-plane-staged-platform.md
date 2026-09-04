@@ -1,10 +1,11 @@
 # ADR-075: Scholarly Parse Plane as a Staged Native Rust Platform
 
-- Status: Accepted
+- Status: Accepted (amended 2026-09-04 by ADR-076 / D321)
 - Date: 2026-08-27
+- Updated: 2026-09-04 (M464 closed the platform, not the Java cascade; sequencing lives in ADR-076)
 - Deciders: repository owner + agent
-- Decisions: D294 (active learning; corrects D293) and D295 (persistence boundary)
-- Milestone: M463-snmgcd
+- Decisions: D294 (active learning; corrects D293), D295 (persistence boundary), D321 (three automata + graph freeze; ADR-076)
+- Milestone: M463-snmgcd (research), M464-z84in2 (platform), M465-sqt7w0 (cascade honesty waves)
 - Tags: da-parse, grobid, tei, rust, ruvector, sona, microlora, ruvllm, smp, simd
 
 ## 0. One-line decision
@@ -14,6 +15,21 @@ Java GROBID as oracle/fallback while native Rust stages replace the cascade
 incrementally; ruVector CPU/SMP patterns accelerate deterministic batches, and
 SONA/MicroLoRA/EWC++ plus ruVLLM are active learning and evaluation paths whose
 artifacts remain candidates until explicit promotion.**
+
+M464 shipped those seams. It did **not** move `production_route` off Java.
+Honesty sequencing, three-automata separation, graph freeze, and waves W0–W6
+are binding in ADR-076 / D321 / R118–R124. Do not read this ADR as native
+GROBID in production.
+
+## LLM Reading Notes
+
+- Binding here: crate ownership, Java oracle/fallback, conservation-first
+  per-stage promotion, no JVM/SONA/ruVLLM/Samyama inside `da-parse`.
+- Not authorized here: treating M464 complete as cascade retirement.
+- Read ADR-076 before implementing native heads or writing the graph.
+- Extraction F1 is supporting evidence, not the parse oracle.
+- `production_route=forbidden` until an explicit family promotion plus a
+  later ingest authorization.
 
 ## 1. Context
 
@@ -283,10 +299,14 @@ Governor must:
 - require this ADR and research evidence for staged-platform readiness;
 - include negative fixtures proving violations are caught.
 
-M463 retains research evidence. M464-z84in2 owns nineteen fine-grained
-implementation slices from API ledger and fixtures through native fulltext,
-persistent learning and governor closure. Completion evidence is recorded
-through GSD lifecycle tools, not manual edits to planning artifacts.
+M463 retains research evidence. M464-z84in2 owned the platform slices
+(API ledger, fixtures, dual cache, batch, shadow leaves, governor SHA bind,
+acceptance proxy). That milestone is complete as **platform** evidence.
+Internal cascade stages remain Java `fallback`; required `health`/`version`
+clients were still absent at M464 close. M465-sqt7w0 / ADR-076 owns cascade
+honesty waves W0–W6 and forbids graph writes until those receipts exist.
+Completion evidence is recorded through GSD lifecycle tools, not manual
+edits to planning artifacts.
 
 ## 7. Executable governance traceability
 
@@ -325,6 +345,7 @@ and quarantine locks remain unchanged.
 
 ## 8. References
 
+- Sequencing and honesty (binding): ADR-076
 - Research synthesis:
   `doc/research/m463-grobid-rust-ruvector-platform.md`
 - Full CE evidence:

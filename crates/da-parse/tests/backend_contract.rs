@@ -22,8 +22,8 @@ use std::time::Duration;
 use da_parse::{
     CACHED_TEI_BACKEND_ID, CachedTeiBackend, Consolidation, CoordinateFamily, CoordinateSet,
     FailureCode, FailurePhase, FulltextDialectV1, GROBID_HTTP_BACKEND_ID, GrobidHttpBackend,
-    GrobidProfile, LimitKind, PageWindow, ParseBackend, ParseBackendRequest, RetryAfter,
-    TeiEnvelope,
+    GrobidParser, GrobidProfile, LimitKind, PageWindow, ParseBackend, ParseBackendRequest,
+    ProbeFailure, RetryAfter, TeiEnvelope,
 };
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -53,6 +53,10 @@ struct RecordedRequest {
 enum ResponsePlan {
     /// `200 OK` with an `application/xml` body.
     Xml(Vec<u8>),
+    /// `200 OK` with an `application/json` body (health/version probes).
+    Json(Vec<u8>),
+    /// `200 OK` with a `text/plain` body (plain GROBID version string).
+    Plain(Vec<u8>),
     /// Status with a reason phrase and no extra headers.
     Status(u16, &'static str),
     /// Status plus explicit response headers (Retry-After contract).
@@ -86,19 +90,41 @@ async fn serve_connection(mut stream: tokio::net::TcpStream, plan: ResponsePlan,
         return;
     };
     log.lock().expect("request log lock").push(request);
-    let (status, reason, headers, body, delay) = match plan {
-        ResponsePlan::Xml(body) => (200u16, "OK", Vec::new(), body, None),
-        ResponsePlan::Status(code, reason) => (code, reason, Vec::new(), Vec::new(), None),
+    let (status, reason, headers, body, delay, content_type) = match plan {
+        ResponsePlan::Xml(body) => (
+            200u16,
+            "OK",
+            Vec::new(),
+            body,
+            None,
+            "application/xml; charset=utf-8",
+        ),
+        ResponsePlan::Json(body) => (200u16, "OK", Vec::new(), body, None, "application/json"),
+        ResponsePlan::Plain(body) => (200u16, "OK", Vec::new(), body, None, "text/plain"),
+        ResponsePlan::Status(code, reason) => (
+            code,
+            reason,
+            Vec::new(),
+            Vec::new(),
+            None,
+            "application/xml",
+        ),
         ResponsePlan::StatusWithHeaders(code, reason, headers) => {
-            (code, reason, headers, Vec::new(), None)
+            (code, reason, headers, Vec::new(), None, "application/xml")
         }
-        ResponsePlan::Delayed(body, delay) => (200u16, "OK", Vec::new(), body, Some(delay)),
+        ResponsePlan::Delayed(body, delay) => (
+            200u16,
+            "OK",
+            Vec::new(),
+            body,
+            Some(delay),
+            "application/xml; charset=utf-8",
+        ),
     };
     if let Some(delay) = delay {
         tokio::time::sleep(delay).await;
     }
-    let mut head =
-        format!("HTTP/1.1 {status} {reason}\r\nContent-Type: application/xml; charset=utf-8\r\n");
+    let mut head = format!("HTTP/1.1 {status} {reason}\r\nContent-Type: {content_type}\r\n");
     for (name, value) in headers {
         head.push_str(&format!("{name}: {value}\r\n"));
     }
@@ -735,5 +761,89 @@ async fn request_and_envelope_stay_free_of_physical_paths() {
     assert!(
         !debug_shape.contains('/') && !debug_shape.contains(".."),
         "identity debug output must not embed path-like material: {debug_shape}"
+    );
+}
+
+#[tokio::test]
+async fn http_backend_health_probe_accepts_json_object() {
+    let (addr, log) = spawn_grobid_stub(ResponsePlan::Json(br#"{"status":"UP"}"#.to_vec())).await;
+    let backend = GrobidHttpBackend::new(Some(&format!("http://{addr}")));
+    let probe = backend.probe_health().await.expect("health json object");
+    assert_eq!(probe.status, 200);
+    let requests = log.lock().expect("request log lock");
+    assert_eq!(requests.len(), 1);
+    assert_eq!(requests[0].method, "GET");
+    assert_eq!(requests[0].path, "/api/health");
+    assert_eq!(
+        backend.identity().profile_fingerprint(),
+        GrobidProfile::rich().configuration_fingerprint(),
+        "health probe must not alter cache identity"
+    );
+}
+
+#[tokio::test]
+async fn http_backend_health_probe_rejects_non_object_and_outage() {
+    let (addr, _) = spawn_grobid_stub(ResponsePlan::Xml(b"<html>nope</html>".to_vec())).await;
+    let backend = GrobidHttpBackend::new(Some(&format!("http://{addr}")));
+    assert_eq!(
+        backend.probe_health().await.expect_err("xml is not health"),
+        ProbeFailure::InvalidResponse
+    );
+
+    let (addr, _) = spawn_grobid_stub(ResponsePlan::Status(503, "Service Unavailable")).await;
+    let backend = GrobidHttpBackend::new(Some(&format!("http://{addr}")));
+    assert_eq!(
+        backend.probe_health().await.expect_err("503"),
+        ProbeFailure::Unavailable
+    );
+
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
+    let addr = listener.local_addr().expect("addr");
+    drop(listener);
+    let backend = GrobidHttpBackend::new(Some(&format!("http://{addr}")));
+    assert_eq!(
+        backend.probe_health().await.expect_err("connect"),
+        ProbeFailure::Unavailable
+    );
+}
+
+#[tokio::test]
+async fn http_backend_version_probe_accepts_json_and_plain() {
+    let json = br#"{"name":"grobid","version":"0.9.0-crf","revision":"abc"}"#;
+    let (addr, log) = spawn_grobid_stub(ResponsePlan::Json(json.to_vec())).await;
+    let backend = GrobidHttpBackend::new(Some(&format!("http://{addr}")));
+    let probe = backend.probe_version().await.expect("version json");
+    assert_eq!(probe.version, "0.9.0-crf");
+    assert_eq!(probe.name.as_deref(), Some("grobid"));
+    assert_eq!(probe.revision.as_deref(), Some("abc"));
+    assert_eq!(
+        log.lock().expect("log").last().unwrap().path,
+        "/api/version"
+    );
+
+    let (addr, _) = spawn_grobid_stub(ResponsePlan::Plain(b"0.9.0-crf\n".to_vec())).await;
+    let backend = GrobidHttpBackend::new(Some(&format!("http://{addr}")));
+    let probe = backend.probe_version().await.expect("plain version");
+    assert_eq!(probe.version, "0.9.0-crf");
+    assert!(probe.name.is_none());
+
+    let facade = GrobidParser::new(Some(&format!("http://{addr}")));
+    let _ = facade.probe_version().await;
+}
+
+#[tokio::test]
+async fn http_backend_version_probe_rejects_empty_and_html() {
+    let (addr, _) = spawn_grobid_stub(ResponsePlan::Plain(b"   ".to_vec())).await;
+    let backend = GrobidHttpBackend::new(Some(&format!("http://{addr}")));
+    assert_eq!(
+        backend.probe_version().await.expect_err("blank"),
+        ProbeFailure::InvalidResponse
+    );
+
+    let (addr, _) = spawn_grobid_stub(ResponsePlan::Xml(b"<TEI/>".to_vec())).await;
+    let backend = GrobidHttpBackend::new(Some(&format!("http://{addr}")));
+    assert_eq!(
+        backend.probe_version().await.expect_err("xml"),
+        ProbeFailure::InvalidResponse
     );
 }

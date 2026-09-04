@@ -1,5 +1,6 @@
 //! Offline, checksum-bound acceptance evidence for the staged scholarly parse plane.
-//! This command never fetches, parses, invokes Java/layout donors, or writes graph state.
+//! Never fetches, never calls Java/HTTP, never writes graph state.
+//! Local TeiLifter + ConservationEngine measure no_silent_loss on preserved TEI.
 use anyhow::{Context, Result, bail};
 use clap::Parser;
 use serde::Deserialize;
@@ -13,6 +14,24 @@ use std::{
 
 const FALLBACK: &str = "java-grobid-http@0.9.0-crf";
 const PDF_IDS: [&str; 3] = ["hub-2507.19457", "rlm-2512.24601", "reca-2605.26525v1"];
+const RICH_FP: &str = "profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula";
+const PROXY_TEI: [(&str, &str, &str); 3] = [
+    (
+        "hub-2507.19457",
+        "crates/da-parse/tests/fixtures/preserved/hub_2507.19457.tei.xml",
+        "985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b79e7ec4",
+    ),
+    (
+        "rlm-2512.24601",
+        "crates/da-parse/tests/fixtures/preserved/rlm_2512.24601.tei.xml",
+        "e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3",
+    ),
+    (
+        "reca-2605.26525v1",
+        "crates/da-parse/tests/fixtures/preserved/reca_2605.26525v1.tei.xml",
+        "dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040",
+    ),
+];
 
 #[derive(Parser, Debug)]
 #[command(
@@ -108,6 +127,33 @@ struct ProxyRow {
     tei_sha256: Option<String>,
     #[serde(default)]
     page_count: Option<u64>,
+}
+
+fn measure_proxy_conservation(repo: &Path) -> Result<(bool, bool, Vec<Value>)> {
+    use da_parse::{ConservationEngine, TeiEnvelope, TeiIdentity, TeiLifter};
+    let engine = ConservationEngine::new();
+    let lifter = TeiLifter::new();
+    let mut docs = Vec::new();
+    let mut all_conserved = true;
+    let mut any_loss = false;
+    for (id, rel, expected_sha) in PROXY_TEI {
+        check_hash(repo, rel, expected_sha, "checksum_drift")?;
+        let path = resolve(repo, rel)?;
+        let bytes = fs::read(&path)?;
+        let envelope = TeiEnvelope::new(bytes, TeiIdentity::new("grobid-http", RICH_FP));
+        let ir = lifter.lift(&envelope, id, (*expected_sha).to_string());
+        let delta = engine.compare(&envelope, &ir);
+        let conserved = delta.no_silent_loss();
+        all_conserved &= conserved;
+        any_loss |= delta.loss_visible();
+        docs.push(json!({
+            "id": id,
+            "verdict": delta.verdict.as_str(),
+            "no_silent_loss": conserved,
+            "delta_digest": delta.delta_digest,
+        }));
+    }
+    Ok((all_conserved, any_loss, docs))
 }
 
 fn digest(path: &Path) -> Result<String> {
@@ -332,14 +378,16 @@ fn main() -> Result<()> {
     {
         bail!("role_mismatch: baseline");
     }
-    let report = json!({"schema_version":"parse-acceptance-evidence.v1","manifest_id":"scholarly-parse-acceptance-s20","verdict":"PASS","classes":classes,"same_n":{"publisher_acceptance":true,"layout_omnidocbench":true},"conservation":{"source":"parse_compat_baseline","no_silent_loss":false,"loss_visible":true,"tei_oracle":"java_grobid_compatibility"},"layout":{"documents":3,"pages":202,"topology":"independent_layout_oracle","same_n":true},"token_canary":{"status":"diagnostic_only","executed":false},"missing_failures":["remote_bytes_absent"],"locks":{"import_eligible":false,"auto_promote":"forbidden","production_route":"forbidden","fallback_target":FALLBACK,"promotion_state":"candidate"},"redaction":{"raw_pdf":false,"raw_tei":false,"raw_text":false,"hostnames":false,"absolute_paths":false,"secrets":false}});
+    let (no_silent_loss, loss_visible, conservation_docs) = measure_proxy_conservation(&repo)?;
+    let verdict = if no_silent_loss { "PASS" } else { "FAIL" };
+    let report = json!({"schema_version":"parse-acceptance-evidence.v1","manifest_id":"scholarly-parse-acceptance-s20","verdict":verdict,"classes":classes,"same_n":{"publisher_acceptance":true,"layout_omnidocbench":true},"conservation":{"source":"preserved_tei_lift","no_silent_loss":no_silent_loss,"loss_visible":loss_visible,"tei_oracle":"java_grobid_compatibility","documents":conservation_docs},"layout":{"documents":3,"pages":202,"topology":"independent_layout_oracle","same_n":true},"token_canary":{"status":"diagnostic_only","executed":false},"missing_failures":["remote_bytes_absent"],"locks":{"import_eligible":false,"auto_promote":"forbidden","production_route":"forbidden","fallback_target":FALLBACK,"promotion_state":"candidate"},"redaction":{"raw_pdf":false,"raw_tei":false,"raw_text":false,"hostnames":false,"absolute_paths":false,"secrets":false}});
     if let Some(parent) = args.report.parent() {
         fs::create_dir_all(parent)?;
     }
     let bytes = serde_json::to_vec_pretty(&report)?;
     fs::write(&args.report, &bytes)?;
     println!(
-        "acceptance_evidence verdict=PASS report={}",
+        "acceptance_evidence verdict={verdict} no_silent_loss={no_silent_loss} report={}",
         args.report.display()
     );
     Ok(())

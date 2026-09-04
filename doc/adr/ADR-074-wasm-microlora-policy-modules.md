@@ -2,7 +2,7 @@
 
 - Status: Accepted (W1 record + W2 patterns + W3 host shipped; training path active)
 - Date: 2026-08-25
-- Updated: 2026-08-27 (D294: D136 is not a blanket SONA or LoRA lock)
+- Updated: 2026-08-27 (D294: D136 is not a blanket SONA or LoRA lock); 2026-09-04 (ADR-076: parse-pdf stamp, demo CLI is not closure)
 - Deciders: repo owner + agent
 - Tags: wasm, microlora, sona, fsm, self-learning, policy-modules, sandbox, hot-swap
 - Sources: ruvector/crates/sona (1638 nodes), ruvector rvf-* family,
@@ -15,6 +15,23 @@ active implementation and experimentation scope. Earlier text incorrectly
 expanded the DSPy-specific D136 note into a blanket LoRA prohibition.
 Training and candidate packaging may proceed; automatic production promotion
 remains forbidden and requires frozen evaluation plus explicit acceptance.
+
+### 2026-09-04 amendment (ADR-076 / D321 / R119)
+
+A WASM or native policy host reachable only via `da source sona-policy` is a
+demo. Process closure is `parse-pdf` (and the FSM parsed-stage) consulting
+`grammar_route`, stamping `policy_hash` or explicit `policy=none`, and
+fail-open to the DATA default. Policy outputs are closed route/budget/retry
+enums; they must not emit TEI fields. `summary_depth` is not a parse-wave
+decision. XY-Cut must not invent a missing CLI — stamp intent, keep
+`parse-pdf` (MEM930). Learning artifacts stay candidate, `deployed=false`,
+`import_eligible=false`. `da-parse` must not depend on SONA/ruVLLM.
+
+## LLM Reading Notes
+
+- Binding: versioned WASM at named DecisionPoints; fail-open; hashed.
+- Not authorized: treating the sona-policy CLI as production consult.
+- Parse sequencing and graph freeze: ADR-076. Promotion still explicit.
 
 ## 0. One-line Decision
 

@@ -360,6 +360,22 @@ pub struct ConservationDelta {
     pub delta_digest: String,
 }
 
+impl ConservationDelta {
+    /// True only when every observed family is accounted without introduced loss.
+    /// `LossDetected` is visible, not silent — but it is still not conservation.
+    pub fn no_silent_loss(&self) -> bool {
+        self.verdict == ConservationVerdict::Conserved
+    }
+
+    /// True when the engine recorded introduced loss or malformed source.
+    pub fn loss_visible(&self) -> bool {
+        matches!(
+            self.verdict,
+            ConservationVerdict::LossDetected | ConservationVerdict::MalformedSource
+        )
+    }
+}
+
 // ─── Engine ─────────────────────────────────────────────────────────────────
 
 /// Stateless conservation comparator.
@@ -1758,6 +1774,8 @@ mod tests {
         let delta = ConservationEngine::new().compare(&envelope, &ir);
 
         assert_eq!(delta.verdict, ConservationVerdict::Conserved);
+        assert!(delta.no_silent_loss());
+        assert!(!delta.loss_visible());
         // The header persName is lifted since S07/T02: the author row is
         // retained evidence, not an unsupported gap.
         assert!(delta.entries.iter().any(|entry| {
@@ -1780,6 +1798,8 @@ mod tests {
         let delta = ConservationEngine::new().compare(&envelope, &ir);
 
         assert_eq!(delta.verdict, ConservationVerdict::LossDetected);
+        assert!(!delta.no_silent_loss());
+        assert!(delta.loss_visible());
         assert!(delta.entries.iter().any(|entry| {
             entry.family == ConservationFamily::Section
                 && entry.reason == ConservationReasonCode::ObservedButMissing

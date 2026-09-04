@@ -1042,6 +1042,7 @@ use da_parse::{
     CacheIntegrityCode, PROJECT_ARTICLE_SCHEMA_FINGERPRINT, PROJECT_ARTICLE_STAGE_ID,
     ParseCacheStage, ProjectArticlePayload, RAW_TEI_PAYLOAD_SCHEMA_VERSION, RAW_TEI_STAGE_ID,
     RawTeiEnvelopePayload, project_article_stage_key, raw_tei_stage_key,
+    raw_tei_stage_key_with_backend_version,
 };
 
 fn s06_fulltext_request(paper: &str, bytes: Vec<u8>) -> da_parse::ParseBackendRequest {
@@ -1105,6 +1106,11 @@ fn s06_raw_stage_payload_identity_is_versioned_and_verbatim() {
             .expect("intact payload verifies");
     assert_eq!(verified.raw_tei(), b"<TEI>verbatim bytes</TEI>");
     assert_eq!(sha, sha256_hex(b"<TEI>verbatim bytes</TEI>"));
+    assert!(
+        wire.get("backend_version").is_none(),
+        "unstamped version must be omitted from historical raw payload wire: {wire}"
+    );
+    assert!(verified.identity().backend_version().is_none());
 
     // Foreign schema version fails closed (corruption, not a miss).
     let mut foreign = wire.clone();
@@ -1114,6 +1120,34 @@ fn s06_raw_stage_payload_identity_is_versioned_and_verbatim() {
             .unwrap_err();
     assert_eq!(error.code(), CacheIntegrityCode::ManifestCorrupt);
     assert_eq!(error.stage(), ParseCacheStage::RawTei);
+}
+
+#[test]
+fn backend_version_is_omitted_until_stamped_then_restored() {
+    let request = s06_fulltext_request("paper-key", b"source-a".to_vec());
+    assert_eq!(
+        raw_tei_stage_key(&request),
+        raw_tei_stage_key_with_backend_version(&request, None)
+    );
+    assert_eq!(
+        raw_tei_stage_key(&request),
+        raw_tei_stage_key_with_backend_version(&request, Some("   "))
+    );
+    let versioned = raw_tei_stage_key_with_backend_version(&request, Some("0.9.0-crf"));
+    assert_ne!(raw_tei_stage_key(&request), versioned);
+    assert!(versioned.starts_with(RAW_TEI_STAGE_ID));
+
+    let result = da_parse::TeiResultIdentity::fulltext(FulltextDialectV1::legacy_rich());
+    let identity = da_parse::TeiIdentity::new("identity-gate-backend", RICH_FP)
+        .with_backend_version("0.9.0-crf");
+    let envelope =
+        da_parse::TeiEnvelope::new("<TEI/>", identity.clone().with_result(result.clone()));
+    let payload = RawTeiEnvelopePayload::build(&envelope, &result);
+    let wire = serde_json::to_value(&payload).unwrap();
+    assert_eq!(wire["backend_version"], json!("0.9.0-crf"));
+    let (verified, _) =
+        RawTeiEnvelopePayload::decode_and_verify(&payload.encode(), &result).expect("verify");
+    assert_eq!(verified.identity().backend_version(), Some("0.9.0-crf"));
 }
 
 #[test]

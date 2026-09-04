@@ -40,11 +40,28 @@ pub(crate) fn stamp_parse_grammar(
     m: &mut serde_yaml::Mapping,
     profile: &str,
     route: &str,
-    hash: &str,
+    policy_source: &str,
+    policy_hash: &str,
 ) {
     m.insert("grammar_profile".into(), profile.into());
     m.insert("grammar_route".into(), route.into());
-    m.insert("policy_hash".into(), hash.into());
+    m.insert("policy_source".into(), policy_source.into());
+    m.insert("policy_hash".into(), policy_hash.into());
+}
+
+fn stamp_from_grammar(
+    m: &mut serde_yaml::Mapping,
+    g: &da_application::parse_grammar::ParseGrammarDecision,
+) {
+    let (source, hash) = match &g.source {
+        da_domain::fsm_policy::PolicySource::Wasm { sha256 } => ("wasm", sha256.as_str()),
+        da_domain::fsm_policy::PolicySource::Native => ("native_fallback", g.policy_hash.as_str()),
+    };
+    stamp_parse_grammar(m, &g.grammar_profile, g.route.as_str(), source, hash);
+}
+
+fn stamp_policy_none(m: &mut serde_yaml::Mapping) {
+    stamp_parse_grammar(m, "arxiv_pdf_dot", "unavailable", "none", "none");
 }
 
 fn features_from_env_and_cache(
@@ -1757,10 +1774,8 @@ pub fn run_parse_pdf(
     m.insert("schema_version".into(), "article-manifest.v1".into());
     m.insert("paper_id".into(), paper_id.into());
     match &grammar {
-        Some(g) => {
-            stamp_parse_grammar(&mut m, &g.grammar_profile, g.route.as_str(), &g.policy_hash)
-        }
-        None => stamp_parse_grammar(&mut m, "arxiv_pdf_dot", "unavailable", "native"),
+        Some(g) => stamp_from_grammar(&mut m, g),
+        None => stamp_policy_none(&mut m),
     }
     m.insert("lifecycle".into(), "parsed".into());
     let ev_raw = serde_yaml::Mapping::from_iter([
@@ -2499,13 +2514,8 @@ fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
         draft.insert("schema_version".into(), "article-manifest.v1".into());
         draft.insert("paper_id".into(), serde_yaml::Value::from(paper_id));
         match consult_parse_grammar_cli(paper_id, None, None, None) {
-            Ok(g) => stamp_parse_grammar(
-                &mut draft,
-                &g.grammar_profile,
-                g.route.as_str(),
-                &g.policy_hash,
-            ),
-            Err(_) => stamp_parse_grammar(&mut draft, "arxiv_pdf_dot", "unavailable", "native"),
+            Ok(g) => stamp_from_grammar(&mut draft, &g),
+            Err(_) => stamp_policy_none(&mut draft),
         }
         draft.insert("lifecycle".into(), "raw".into());
         let raw_event = serde_yaml::Mapping::from_iter([
@@ -3208,7 +3218,7 @@ mod tests {
     #[test]
     fn stamp_parse_grammar_writes_profile_route_hash() {
         let mut m = serde_yaml::Mapping::new();
-        stamp_parse_grammar(&mut m, "page_outline", "page_outline", "abc123");
+        stamp_parse_grammar(&mut m, "page_outline", "page_outline", "wasm", "abc123");
         assert_eq!(
             m.get("grammar_profile").and_then(|v| v.as_str()),
             Some("page_outline")
@@ -3218,8 +3228,22 @@ mod tests {
             Some("page_outline")
         );
         assert_eq!(
+            m.get("policy_source").and_then(|v| v.as_str()),
+            Some("wasm")
+        );
+        assert_eq!(
             m.get("policy_hash").and_then(|v| v.as_str()),
             Some("abc123")
+        );
+        let mut none = serde_yaml::Mapping::new();
+        stamp_policy_none(&mut none);
+        assert_eq!(
+            none.get("policy_source").and_then(|v| v.as_str()),
+            Some("none")
+        );
+        assert_eq!(
+            none.get("policy_hash").and_then(|v| v.as_str()),
+            Some("none")
         );
     }
 

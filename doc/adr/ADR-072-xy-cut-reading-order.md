@@ -1,6 +1,6 @@
 # ADR-072: XY-Cut Reading-Order Reconstruction for TOC-less PDF Pages
 
-- Status: Accepted
+- Status: Accepted (amended 2026-09-04 by ADR-076: XY-Cut is a layout lane, not a product parser CLI)
 - Date: 2026-08-24
 - Deciders: repo owner + agent (M451)
 - Tags: pdf-parsing, reading-order, layout-analysis, xy-cut, data-driven
@@ -11,6 +11,8 @@
 ## 0. One-line Decision
 
 **Implement deterministic XY-Cut reading-order reconstruction as a pure function over neutral line boxes (da-domain/xy_cut.rs), ported from opendataloader's XYCutPlusPlusSorter with dedoc's block-boundary discipline for paragraph merging — used to classify pages of PDFs lacking authorial TOC bookmarks and as the figure-zone extractor for complex typesetting.**
+
+Under ADR-076 this is a layout **lane** in the GROBID-honest parse workflow (W1), not a product parser and not a new CLI. Stamp `grammar_route` intent on `parse-pdf`; do not invent `parse-xy-cut`.
 
 ## 1. Context
 

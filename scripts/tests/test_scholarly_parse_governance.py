@@ -52,6 +52,10 @@ REQUIRED_VIOLATIONS = {
     "acceptance_role_drift",
     "acceptance_same_n_drift",
     "acceptance_lock_erosion",
+    "ledger_surface",
+    "backend_identity",
+    "policy_stamp",
+    "silent_loss",
 }
 
 

@@ -44,6 +44,37 @@ fn profile_fingerprints_bind_semantics_and_exclude_timeout() {
 }
 
 #[test]
+fn tei_identity_backend_version_is_additive() {
+    let base = TeiIdentity::grobid_http(GrobidProfile::structural());
+    assert!(base.backend_version().is_none());
+    assert_eq!(base, TeiIdentity::grobid_http(GrobidProfile::structural()));
+    let stamped = base.clone().with_backend_version("0.9.0-crf");
+    assert_eq!(stamped.backend_version(), Some("0.9.0-crf"));
+    assert_ne!(stamped, base);
+    assert_eq!(
+        stamped.profile_fingerprint(),
+        GrobidProfile::structural().configuration_fingerprint(),
+        "version must not rewrite the D204 profile fingerprint"
+    );
+    assert_eq!(
+        base.clone().with_backend_version("   "),
+        base,
+        "whitespace-only version must not invent an identity component"
+    );
+    let http = GrobidHttpBackend::new(Some("http://127.0.0.1:1"));
+    assert!(http.identity().backend_version().is_none());
+    let with_ver = http.clone().with_backend_version("0.9.0-crf");
+    assert_eq!(with_ver.identity().backend_version(), Some("0.9.0-crf"));
+    assert_ne!(with_ver.identity(), http.identity());
+    assert_eq!(
+        http.clone()
+            .with_timeout(std::time::Duration::from_secs(9))
+            .identity(),
+        http.identity()
+    );
+}
+
+#[test]
 fn tei_coordinates_json_matches_fingerprint_and_includes_formula() {
     // M400 S03 T01: the REST body must request formula coordinates so
     // GROBID emits `coords` on `<formula>` elements — the request can

@@ -44,7 +44,8 @@ listed here — see `legacy/doc/adr/`.
 | [072](ADR-072-xy-cut-reading-order.md) | XY-Cut reading-order reconstruction over neutral line boxes — ported from opendataloader XYCutPlusPlusSorter + dedoc block-boundary discipline; fallback grammar for TOC-less PDFs; figure-zone pre-mask | Accepted (M451) | 2026-08-24 |
 | [073](ADR-073-upstream-resilience-and-hybrid-search.md) | Upstream resilience (batched DOI 50/call, negative-cache purge, circuit breaker — citracer) + hybrid search patterns (temporal filters, RRF rerankers — graphiti); normative follow-ups: incremental nav index (iwe), content_ref (edgequake), schema snapshot-diff (semantica) | Accepted (M451) | 2026-08-25 |
 | [074](ADR-074-wasm-microlora-policy-modules.md) | WASM MicroLoRA as swappable FSM policy modules — hot-swap learned routing/admission/scheduling; SONA three-loop lifecycle; D294 opens training while promotion remains explicit | Accepted (amended D294) | 2026-08-25 |
-| [075](ADR-075-scholarly-parse-plane-staged-platform.md) | Scholarly parse plane as staged native Rust platform — da-parse ownership, conservation-first GROBID replacement, ruVector CPU/SMP, active SONA/MicroLoRA/EWC++ and ruVLLM learning | Accepted (M463, D294) | 2026-08-27 |
+| [075](ADR-075-scholarly-parse-plane-staged-platform.md) | Scholarly parse plane as staged native Rust platform — da-parse ownership, conservation-first GROBID replacement, ruVector CPU/SMP, active SONA/MicroLoRA/EWC++ and ruVLLM learning | Accepted (M463/M464 platform; amended ADR-076: cascade still Java) | 2026-08-27 |
+| [076](ADR-076-grobid-cascade-three-automata-graph-freeze.md) | GROBID cascade honesty — three automata, waves W0–W6, graph frozen until family receipts exist | Accepted (M465-sqt7w0, D321, R118–R124) | 2026-09-04 |
 
 ## Phase completion status (ADR-050, 2026-08-02)
 
@@ -93,6 +94,10 @@ ADR-056 (source revision)     ──projected──► ADR-058 (revision-aware g
 ADR-060 (figure understanding) ──preceded──► ADR-061 (read-only plane for agent reads)
 ADR-061 (read plane)          ──supersedes D145/D146/D148──► vendor RespServer no longer used for the daemon path
 ADR-061 (read plane)          ──refines D149/D150──► typed DA_SERVE_GRAPH_* / DA_REMOTE_GRAPH_* / DA_GRAPH_ENDPOINT env contract
+ADR-075 (parse platform)      ──amended──► ADR-076 (cascade honesty, three automata, graph freeze)
+ADR-074 (policy WASM)         ──amended──► ADR-076 (parse-pdf stamp; sona-policy CLI is demo)
+ADR-055 (ACAP)                ──amended──► ADR-076 (ACAP does not own GROBID cascade or parse graph writes)
+ADR-072 (XY-Cut)              ──amended──► ADR-076 (XY-Cut is a layout lane, not a product parser CLI)
 ```
 
 ## Template

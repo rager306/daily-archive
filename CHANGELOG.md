@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-04 — M465-sqt7w0/S01 W0: honest GROBID probes, measured conservation, policy stamp
+
+ADR-076 / D321: three automata, graph frozen, M464 was platform-only.
+GROBID GET /api/health and /api/version are fail-closed probes on
+GrobidHttpBackend (not ParseBackend). TeiIdentity.backend_version is
+additive; historical cache keys unchanged until a version is stamped.
+Acceptance evidence measures ConservationEngine on three preserved TEI
+files instead of hardcoding no_silent_loss. Current lift is loss_detected
+on all three, so verdict is FAIL (honest). parse-pdf stamps policy_source
+wasm|native_fallback|none and policy_hash or none. Governor scholarly_parse_plane
+gains ledger_surface, backend_identity, policy_stamp, silent_loss.
+No graph writes. D127 false.
+
+Green: da-parse backend_contract+data_contracts+cache_identity+conservation;
+da-cli source_cli; test_scholarly_parse_governance 59; clippy da-parse/da-cli.
+
 ## 2026-08-25 — M462-ieh2tt: load network is on by default
 
 --allow-network was an extra step. AcquisitionPolicy.allow_network now

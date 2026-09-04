@@ -1,25 +1,28 @@
-# continue — M446-rw9a2p: consolidated catalog, non-gold sealed, gold F1 pending
+# continue — M465 S01 W0 shipped; M446 S03 still pending T24/T25
 
-## Active state (updated 2026-09-04 ~19:00 +0700)
+## Active state (updated 2026-09-04 after M465/S01 W0)
 
-Milestone `M446-rw9a2p` ("Quick wins and citation dictionary foundation") active.
-`S03`: **22/25 done**, pending 3 (T23 eval_batch, T24 index bench, T25 arch gate).
-Branch `feat/da-parse`, HEAD `549e333e1`. Git clean.
+Parse-plane: `M465-sqt7w0` S01 W0 implemented (health/version probes, additive
+TeiIdentity version, measured conservation FAIL/loss_detected, policy_stamp
+none vs wasm, governor W0 gates). Graph still frozen (R118). Next parse slice
+is S02 lattice — do not start until this commit is in.
+Product: `M446-rw9a2p` S03 still 23/25, pending T24 index bench + T25 arch gate.
+Branch `feat/da-parse`.
 
 ```text
 branch: feat/da-parse
-HEAD:   549e333e1 (drift+regression rebuild)
+HEAD:   6b941d02b (doctor snapshot of continue.md only; parent 549e333e1)
 GROBID: alive (http://127.0.0.1:8070/api/isalive → true)
 ```
 
-## Running processes (as of handoff)
+## Running processes (as of health repair)
 
-- `bg_908cbcb4` — `GSD_MILESTONE_LOCK=M446-rw9a2p gsd headless auto`
-  (PIDs 893484→893498 at handoff). **Do NOT start a second locked auto.**
-- `bg_2894ad34` — supervisor-run full `eval_batch` (PID 863349→863363),
-  logging to `/tmp/m446_eval_batch.log`, large time budget. **Do NOT start
-  a second eval_batch** — two runners against one GROBID cause mass
-  timeouts (proven: orphan PID 833061 killed after causing 115 timeouts).
+- Locked auto `bg_908cbcb4` / PID 893498 is **dead**. Doctor could not see it
+  as a crash lock (`workers.status=stopping` with no in-flight dispatch).
+  Engine `forceReleaseLeasesForWorker` released the expired M446 lease
+  (fencing_token 41). A new locked auto is allowed.
+- Supervisor `eval_batch` PID 863349/863363 was also dead at health time.
+  Check `/tmp/m446_eval_batch.log` before starting another eval_batch.
 
 ## What shipped this session
 

@@ -4,7 +4,9 @@
 
 **Date:** 2026-08-09
 
-**Related:** ADR-040, ADR-049, ADR-050, ADR-051, ADR-052, ADR-053; D127, D136, D202-D215, D276; R084-R090, R096
+**Related:** ADR-040, ADR-049, ADR-050, ADR-051, ADR-052, ADR-053, ADR-075, ADR-076; D127, D136, D202-D215, D276, D321; R084-R090, R096, R118
+
+**Updated:** 2026-09-04 — ADR-076 separates ACAP from the GROBID parse workflow. ACAP does not admit parse-family substitution and does not unfreeze graph writes from M465 parse waves.
 
 ## Context
 
@@ -415,3 +417,4 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
 - Never auto-promote DSPy/GRPO/RL output.
 - Never change `import_eligible=false` without explicit user authorization.
 - Read the YAML policy for executable stage and metric details.
+- ACAP is not the GROBID cascade. Parse workflow FSM and policy FSM are ADR-076; do not admit TEI family substitution or Samyama writes from parse waves until W0–W6 receipts exist (R118).

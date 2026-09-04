@@ -41,6 +41,79 @@ use async_trait::async_trait;
 
 pub(crate) const DEFAULT_GROBID_URL: &str = "http://127.0.0.1:8070";
 
+/// Fail-closed outcome of a GROBID liveness/identity probe (not ParseBackend).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProbeFailure {
+    /// Transport error or HTTP 5xx. Same availability class as `is_alive == false`.
+    Unavailable,
+    /// 2xx/4xx with a body that is not the closed health/version shape.
+    InvalidResponse,
+}
+
+/// Successful `GET /api/health` (JSON object, status recorded, body not identity).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct HealthProbe {
+    pub status: u16,
+}
+
+/// Successful `GET /api/version` (JSON object or plain string).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VersionProbe {
+    pub version: String,
+    pub name: Option<String>,
+    pub revision: Option<String>,
+}
+
+fn parse_version_payload(bytes: &[u8]) -> Result<VersionProbe, ProbeFailure> {
+    let trimmed = bytes
+        .iter()
+        .position(|b| !b.is_ascii_whitespace())
+        .map(|i| &bytes[i..])
+        .unwrap_or(&[]);
+    if trimmed.is_empty() {
+        return Err(ProbeFailure::InvalidResponse);
+    }
+    if trimmed[0] == b'{' {
+        let value: serde_json::Value =
+            serde_json::from_slice(bytes).map_err(|_| ProbeFailure::InvalidResponse)?;
+        let obj = value.as_object().ok_or(ProbeFailure::InvalidResponse)?;
+        let version = obj
+            .get("version")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .ok_or(ProbeFailure::InvalidResponse)?;
+        let name = obj
+            .get("name")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string);
+        let revision = obj
+            .get("revision")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string);
+        return Ok(VersionProbe {
+            version: version.to_string(),
+            name,
+            revision,
+        });
+    }
+    let text = std::str::from_utf8(bytes)
+        .map_err(|_| ProbeFailure::InvalidResponse)?
+        .trim();
+    if text.is_empty() || text.contains('<') {
+        return Err(ProbeFailure::InvalidResponse);
+    }
+    Ok(VersionProbe {
+        version: text.to_string(),
+        name: None,
+        revision: None,
+    })
+}
+
 const DEFAULT_TIMEOUT_SECS: u64 = 120;
 
 /// Opt-in client-enforced byte bounds for one fulltext exchange.
@@ -68,6 +141,7 @@ pub struct GrobidHttpBackend {
     client: reqwest::Client,
     profile: GrobidProfile,
     limits: ByteLimits,
+    backend_version: Option<String>,
 }
 
 impl GrobidHttpBackend {
@@ -79,6 +153,7 @@ impl GrobidHttpBackend {
             client: build_client(std::time::Duration::from_secs(DEFAULT_TIMEOUT_SECS)),
             profile: GrobidProfile::rich(),
             limits: ByteLimits::default(),
+            backend_version: None,
         }
     }
 
@@ -133,10 +208,28 @@ impl GrobidHttpBackend {
         &self.url
     }
 
+    /// Stamp a previously probed `/api/version` string onto envelopes.
+    /// Empty input is ignored. Does not call the network; `fetch_tei` never
+    /// probes version on its own (T02 additive identity only).
+    pub fn with_backend_version(mut self, version: impl Into<String>) -> Self {
+        let version = version.into();
+        let trimmed = version.trim();
+        if !trimmed.is_empty() {
+            self.backend_version = Some(trimmed.to_string());
+        }
+        self
+    }
+
     /// Exact backend/profile identity stamped on every envelope. Deliberately
     /// independent of transport tuning (timeout, pools, byte bounds).
+    /// Backend version is included only when [`Self::with_backend_version`]
+    /// was used — default identities stay historically comparable.
     pub fn identity(&self) -> TeiIdentity {
-        TeiIdentity::grobid_http(self.profile)
+        let identity = TeiIdentity::grobid_http(self.profile);
+        match &self.backend_version {
+            Some(version) => identity.with_backend_version(version.clone()),
+            None => identity,
+        }
     }
 
     /// Check if GROBID is alive.
@@ -146,6 +239,63 @@ impl GrobidHttpBackend {
             Ok(resp) => resp.status().is_success(),
             Err(_) => false,
         }
+    }
+
+    /// `GET /api/health` (ADR-076 W0 / R121). Not part of [`ParseBackend`].
+    ///
+    /// 2xx with a JSON object is success. Transport/5xx → [`ProbeFailure::Unavailable`].
+    /// Other statuses or non-object bodies → [`ProbeFailure::InvalidResponse`].
+    /// The payload never enters [`TeiIdentity`].
+    pub async fn probe_health(&self) -> Result<HealthProbe, ProbeFailure> {
+        let url = format!("{}/api/health", self.url);
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|_| ProbeFailure::Unavailable)?;
+        let status = response.status().as_u16();
+        if status >= 500 || status == 0 {
+            return Err(ProbeFailure::Unavailable);
+        }
+        if !(200..300).contains(&status) {
+            return Err(ProbeFailure::InvalidResponse);
+        }
+        let bytes = response
+            .bytes()
+            .await
+            .map_err(|_| ProbeFailure::Unavailable)?;
+        match serde_json::from_slice::<serde_json::Value>(&bytes) {
+            Ok(serde_json::Value::Object(_)) => Ok(HealthProbe { status }),
+            _ => Err(ProbeFailure::InvalidResponse),
+        }
+    }
+
+    /// `GET /api/version` (ADR-076 W0 / R121). Not part of [`ParseBackend`].
+    ///
+    /// Accepts JSON `{name, version, revision}` (version required) or a non-empty
+    /// plain version string. Transport/5xx → Unavailable. Empty/unparseable →
+    /// InvalidResponse. The string is diagnostic until T02 stamps identity.
+    pub async fn probe_version(&self) -> Result<VersionProbe, ProbeFailure> {
+        let url = format!("{}/api/version", self.url);
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|_| ProbeFailure::Unavailable)?;
+        let status = response.status().as_u16();
+        if status >= 500 || status == 0 {
+            return Err(ProbeFailure::Unavailable);
+        }
+        if !(200..300).contains(&status) {
+            return Err(ProbeFailure::InvalidResponse);
+        }
+        let bytes = response
+            .bytes()
+            .await
+            .map_err(|_| ProbeFailure::Unavailable)?;
+        parse_version_payload(&bytes)
     }
 
     /// The shared multipart `input` part (S05/T02): the source PDF bytes
@@ -581,6 +731,16 @@ impl GrobidParser {
     /// Check if GROBID is alive.
     pub async fn is_alive(&self) -> bool {
         self.transport.is_alive().await
+    }
+
+    /// Facade for [`GrobidHttpBackend::probe_health`].
+    pub async fn probe_health(&self) -> Result<HealthProbe, ProbeFailure> {
+        self.transport.probe_health().await
+    }
+
+    /// Facade for [`GrobidHttpBackend::probe_version`].
+    pub async fn probe_version(&self) -> Result<VersionProbe, ProbeFailure> {
+        self.transport.probe_version().await
     }
 
     /// Provider-neutral transport seam behind this facade (R105).

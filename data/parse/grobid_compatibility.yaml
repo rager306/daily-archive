@@ -1,8 +1,8 @@
 schema_version: grobid-compatibility.v1
 adr_ref: ADR-075
 ledger_id: grobid-compatibility
-requirement_ids: [R113, R117, R085, R110, R112]
-decisions: [D127, D204, D291, D292, D294, D295]
+requirement_ids: [R113, R117, R085, R110, R112, R118, R119, R120, R121, R124]
+decisions: [D127, D204, D291, D292, D294, D295, D321]
 import_eligible: false
 auto_promote: forbidden
 
@@ -25,6 +25,11 @@ defaults:
     version: workspace
     license: project
   rollback_target: java-grobid-http@0.9.0-crf
+  policy_stamp:
+    closed_sources: [wasm, native_fallback, none]
+    closed_hash_tokens: [none]
+    production_consult: parse-pdf
+    demo_cli_is_not_closure: true
   profiles:
     rich:
       consolidateHeader: 1
@@ -160,7 +165,7 @@ capabilities:
   - id: rest.health
     group: 1
     kind: endpoint
-    state: absent
+    state: proxy
     product_scope: required
     promotion_state: candidate
     official:
@@ -170,10 +175,13 @@ capabilities:
       response_format: JSON Dropwizard/health payload
     implementation:
       crate: da-parse
-      surface: none
-      notes: Not called. Optional REST facade (D291) must not bind :8070.
+      surface: crates/da-parse/src/http.rs GrobidHttpBackend::probe_health
+      notes: >-
+        GET {GROBID_URL}/api/health; 2xx JSON object succeeds. 5xx/transport
+        Unavailable; other bodies InvalidResponse. Not on ParseBackend.
+        Optional REST facade (D291) must not bind :8070. Payload is not identity.
     baseline: java-grobid-http@0.9.0-crf
-    candidate: none
+    candidate: da-parse@http-proxy
     evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
     hard_regressions: [panic]
     metrics:
@@ -185,7 +193,7 @@ capabilities:
   - id: rest.version
     group: 1
     kind: endpoint
-    state: absent
+    state: proxy
     product_scope: required
     promotion_state: candidate
     official:
@@ -195,10 +203,13 @@ capabilities:
       response_format: JSON {name, version, revision} or plain version string
     implementation:
       crate: da-parse
-      surface: none
-      notes: T03 reports Java version when the service is reachable; no client yet.
+      surface: crates/da-parse/src/http.rs GrobidHttpBackend::probe_version
+      notes: >-
+        GET {GROBID_URL}/api/version; JSON version field or non-empty plain
+        string. Not on ParseBackend. Version is diagnostic until TeiIdentity
+        T02; must not bind a product facade to :8070.
     baseline: java-grobid-http@0.9.0-crf
-    candidate: none
+    candidate: da-parse@http-proxy
     evidence_ref: https://grobid.readthedocs.io/en/latest/Grobid-service/
     hard_regressions: [incorrect_cache_reuse]
     metrics:
