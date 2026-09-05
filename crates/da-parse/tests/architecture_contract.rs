@@ -2544,3 +2544,169 @@ fn parse_pdf_p3_wires_java_lifted_header_authors_not_native_splice() {
     );
     assert!(header_quarantine_hits(&src).is_empty());
 }
+
+// ───── S07/T02: bibliography atoms stay shadow — never in parse-pdf source_cli or ParserPort ─────
+//
+// Mirrors the Governor bibliography quarantine (S07/T01) as an independent
+// compile/test contract: the exact tokens `compose_references` and
+// `run_reference_sequence` must not appear in code positions of the two
+// production boundaries. `//` comments (full-line and trailing) are stripped
+// before the scan; `decompose_references` never matches because a word
+// boundary is required before the token and a call-site `(` (with optional
+// whitespace) is required after it.
+
+/// Production boundaries that must stay free of bibliography atoms.
+const BIBLIOGRAPHY_QUARANTINE_BOUNDARIES: [&str; 2] = [
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+];
+
+/// Native bibliography method/type names that must never appear in ParserPort.
+const BIBLIOGRAPHY_NATIVE_PORT_TOKENS: [&str; 7] = [
+    "compose_references",
+    "run_reference_sequence",
+    "ReferenceCompositionInput",
+    "ReferenceCompositionCandidate",
+    "ReferenceCompositionOutcome",
+    "ReferenceSequenceInput",
+    "ReferenceCandidate",
+];
+
+/// Comment-stripped bibliography-atom scan over code text. One hit per token
+/// per line; mirrors the Governor `_bibliography_quarantine_tokens_present`
+/// semantics: each snake_case atom requires a word boundary before it and a
+/// call-site `(` (after optional whitespace) after it.
+fn bibliography_quarantine_hits(text: &str) -> Vec<String> {
+    let mut hits = Vec::new();
+    for (line_no, raw) in strip_line_comments(text).lines().enumerate() {
+        // `strip_line_comments` blanks full-line prose; trailing `//` prose
+        // is cut here so evidence comments never flag (Governor parity).
+        let code = match raw.find("//") {
+            Some(cut) => &raw[..cut],
+            None => raw,
+        };
+        for token in ["compose_references", "run_reference_sequence"] {
+            let bytes = code.as_bytes();
+            let needle = token.as_bytes();
+            let mut i = 0;
+            let mut found = false;
+            while i + needle.len() <= bytes.len() {
+                if &bytes[i..i + needle.len()] == needle {
+                    let before_ok =
+                        i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_');
+                    if before_ok {
+                        let mut j = i + needle.len();
+                        while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+                            j += 1;
+                        }
+                        if j < bytes.len() && bytes[j] == b'(' {
+                            found = true;
+                            break;
+                        }
+                    }
+                    i += needle.len();
+                } else {
+                    i += 1;
+                }
+            }
+            if found {
+                hits.push(format!(
+                    "[bibliography-quarantine] line {}: atom `{token}`: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    hits
+}
+
+#[test]
+fn bibliography_quarantine_scanner_fails_visible_on_synthetic_atoms() {
+    let synthetic =
+        "fn run() {\n    compose_references(input);\n    run_reference_sequence(seq);\n}\n";
+    let hits = bibliography_quarantine_hits(synthetic);
+    assert_eq!(hits.len(), 2, "each bibliography atom must flag: {hits:?}");
+    assert!(hits.iter().any(|h| h.contains("compose_references")));
+    assert!(hits.iter().any(|h| h.contains("run_reference_sequence")));
+    // Whitespace before `(` is still a call site and must flag.
+    let spaced =
+        "fn run() {\n    compose_references (input);\n    run_reference_sequence  (seq);\n}\n";
+    let hits = bibliography_quarantine_hits(spaced);
+    assert_eq!(hits.len(), 2, "whitespace call-sites must flag: {hits:?}");
+    // Comments are prose, not splice; `decompose_references` is a different word;
+    // prose mentions without a call-site `(` are not splices.
+    let prose = "// compose_references run_reference_sequence are prose\nlet x = decompose_references(y);\nlet y = compose_references;\nfoo(); // compose_references(input);\n";
+    assert!(
+        bibliography_quarantine_hits(prose).is_empty(),
+        "prose comments, prefixed identifiers and bare mentions must not flag"
+    );
+}
+
+#[test]
+fn parse_pdf_source_cli_and_parser_port_stay_free_of_bibliography_atoms() {
+    let mut leaked = Vec::new();
+    for rel in BIBLIOGRAPHY_QUARANTINE_BOUNDARIES {
+        let text = read_text(rel);
+        assert!(
+            text.len() > 1_000,
+            "positive control failed: {rel} looks truncated"
+        );
+        for hit in bibliography_quarantine_hits(&text) {
+            leaked.push(format!("{rel}: {hit}"));
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "bibliography atoms leaked into a production boundary (shadow means never served):\n{}",
+        leaked.join("\n")
+    );
+}
+
+#[test]
+fn parse_pdf_p4_wires_java_lifted_biblstruct_citations_not_native_splice() {
+    let src = read_text("crates/da-cli/src/source_cli.rs");
+    let code = strip_line_comments(&src);
+    assert!(
+        code.contains("stamp_p4_references_observe(&mut m, parsed.citations.len())"),
+        "P4 must count Java-lifted ParsedArticle.citations (biblStruct receipt)"
+    );
+    assert!(
+        code.contains("p4.insert(\"production_authority\"") && code.contains("\"java_http\""),
+        "P4 production_authority must stay java_http"
+    );
+    assert!(
+        code.contains("p4.insert(\"citation_names_not_biblstruct\"")
+            && code.contains("true.into()"),
+        "P4 citation_names_not_biblstruct must stay boolean true"
+    );
+    assert!(bibliography_quarantine_hits(&src).is_empty());
+}
+
+#[test]
+fn parser_port_carries_no_native_bibliography_methods_or_types() {
+    let src = read_text("crates/da-ports/src/parser.rs");
+    let code = strip_line_comments(&src);
+    assert!(
+        code.contains("pub trait ParserPort"),
+        "positive control failed: ParserPort trait vanished"
+    );
+    assert!(
+        code.contains("async fn parse_pdf"),
+        "positive control failed: ParserPort.parse_pdf vanished"
+    );
+    let mut leaked = Vec::new();
+    for token in BIBLIOGRAPHY_NATIVE_PORT_TOKENS {
+        if code.contains(token) {
+            leaked.push(token.to_string());
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "native bibliography methods/types leaked into ParserPort: {leaked:?}"
+    );
+    assert!(
+        bibliography_quarantine_hits(&src).is_empty(),
+        "bibliography call-sites leaked into ParserPort"
+    );
+}

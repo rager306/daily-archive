@@ -5271,6 +5271,23 @@ fn validate_java_lift_same_n_gap(contract: &serde_yaml::Value) -> Vec<String> {
             "[hub-header-gap-drift] java_header_authors_equals must stay header_raw_total".into(),
         );
     }
+    // S07/T02: P4 bibliography receipt stays Java-derived — the biblStruct
+    // count equals the named references_total population, never the native
+    // composition output and never the citation-names population.
+    if gap.get("java_biblstruct_equals").and_then(|v| v.as_str()) != Some("references_total") {
+        errs.push(
+            "[hub-header-gap-drift] java_biblstruct_equals must stay references_total".into(),
+        );
+    }
+    if gap
+        .get("citation_names_not_biblstruct")
+        .and_then(|v| v.as_bool())
+        != Some(true)
+    {
+        errs.push(
+            "[hub-header-gap-drift] citation_names_not_biblstruct must stay boolean true".into(),
+        );
+    }
     for key in [
         "pooling_accepted_with_raw",
         "pooling_citation_names_with_references",
@@ -5350,6 +5367,64 @@ fn rejects_hub_gap_drift_pooling_or_compose_substitution() {
         &validate_java_lift_same_n_gap(&composed),
         "compose vocabulary in java_header_authors_equals",
     );
+    // S07/T02: bibliography conflation must fail loudly — biblStruct stays
+    // references_total, the boolean stays true, and pooling stays forbidden.
+    let mut bibl = contract.clone();
+    bibl["native_fulltext_composition_shadow"]["source_evidence"]["s12_named_denominators"]["java_lift_same_n"]
+        ["java_biblstruct_equals"] = serde_yaml::Value::String("citation_names_total".into());
+    negative(
+        "[hub-header-gap-drift]",
+        &validate_java_lift_same_n_gap(&bibl),
+        "java_biblstruct conflated with citation_names_total",
+    );
+    let mut bibl = contract.clone();
+    bibl["native_fulltext_composition_shadow"]["source_evidence"]["s12_named_denominators"]["java_lift_same_n"]
+        ["citation_names_not_biblstruct"] = serde_yaml::Value::Bool(false);
+    negative(
+        "[hub-header-gap-drift]",
+        &validate_java_lift_same_n_gap(&bibl),
+        "citation_names_not_biblstruct flipped to false",
+    );
+    let mut bibl = contract.clone();
+    bibl["native_fulltext_composition_shadow"]["source_evidence"]["s12_named_denominators"]["java_lift_same_n"]
+        ["pooling_citation_names_with_references"] = serde_yaml::Value::String("allowed".into());
+    negative(
+        "[hub-header-gap-drift]",
+        &validate_java_lift_same_n_gap(&bibl),
+        "pooling citation names with references allowed",
+    );
+    let mut bibl = contract.clone();
+    bibl["native_fulltext_composition_shadow"]["source_evidence"]["s12_named_denominators"]["java_lift_same_n"]
+        ["java_biblstruct_equals"] = serde_yaml::Value::String("compose_references".into());
+    negative(
+        "[hub-header-gap-drift]",
+        &validate_java_lift_same_n_gap(&bibl),
+        "compose vocabulary in java_biblstruct_equals",
+    );
+}
+
+#[test]
+fn rejects_missing_or_malformed_comparison_contract_artifact() {
+    // Missing artifact is loss, not silence.
+    let missing: Result<serde_yaml::Value, String> =
+        load_yaml("data/parse/does-not-exist-s07-bibliography.yaml");
+    let err = missing.expect_err("missing comparison artifact must fail loudly");
+    assert!(
+        err.contains("[unreadable-artifact]"),
+        "missing artifact must tag [unreadable-artifact], got: {err}"
+    );
+    // Malformed YAML never parses into a contract value.
+    let malformed = serde_yaml::from_str::<serde_yaml::Value>("{unclosed: [1,");
+    assert!(
+        malformed.is_err(),
+        "malformed yaml must fail loudly, not parse"
+    );
+}
+
+#[test]
+fn rejects_removed_named_denominators_block() {
+    let contract: serde_yaml::Value =
+        load_yaml(COMPARISON_CONTRACT_REL).expect("comparison contract");
     // A removed block is loss, not silence.
     let mut removed = contract.clone();
     removed["native_fulltext_composition_shadow"]["source_evidence"]["s12_named_denominators"] =

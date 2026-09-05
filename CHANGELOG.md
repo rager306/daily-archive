@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-05 — M493-jzmctv/S07 T02: Rust/DATA Java P4 contracts, bibliography stays shadow
+
+P4 stamps Java `ParsedArticle.citations` (biblStruct). Bibliography atoms stay
+shadow. `java_biblstruct_equals` is `references_total`; citation-names stay a
+boolean flag, never pooled with biblStruct. Hub 20 vs 21 stays DATA. No splice.
+No graph. D127 false.
+
+Green: da-parse architecture 45; data contracts 78; scholarly governance 170.
+
 ## 2026-09-05 — M493-jzmctv/S06 T02: Rust/DATA Java P3 contracts, hub 20 vs 21 stays DATA
 
 Header atoms stay shadow: `compose_header`, `run_header_sequence` and
