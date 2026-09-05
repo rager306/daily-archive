@@ -304,7 +304,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Hub extract — MUST NOT reuse name `sections` (shadows graph Section node IDs).
     let hub_pdf = find_pdf(&hub_id).expect("hub pdf");
-    let parser2 = GrobidParser::from_env();
+    let parser2 = da_cli::parse_profile::corpus_grobid_parser();
     let parsed = parser2.parse_pdf(&hub_pdf, &hub_id).await?;
     let hub_sections: Vec<(String, String)> = parsed
         .sections

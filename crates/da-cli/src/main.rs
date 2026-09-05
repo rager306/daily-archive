@@ -1056,12 +1056,11 @@ fn require_fd_api_key_for_ingest() {
 async fn ingest_pdf(pdf_path: &str, paper_id: &str, enable_import: bool) {
     use da_adapters::FdApiEmbedder;
     use da_application::IngestUseCase;
-    use da_parse::GrobidParser;
     use std::sync::Arc;
 
     require_fd_api_key_for_ingest();
 
-    let parser = Box::new(GrobidParser::from_env());
+    let parser = Box::new(parse_profile::corpus_grobid_parser());
     let embedder = Box::new(FdApiEmbedder::from_env());
     let context = match production::ProductionContext::from_env(None, None) {
         Ok(context) => context,
@@ -1161,7 +1160,6 @@ async fn batch_ingest(
 ) {
     use da_adapters::FdApiEmbedder;
     use da_application::{IngestUseCase, batch_ingest_pdfs_with_context};
-    use da_parse::GrobidParser;
     use std::sync::Arc;
 
     let id_list = match batch_ids::resolve_batch_ids(ids, ids_file) {
@@ -1219,7 +1217,7 @@ async fn batch_ingest(
 
     require_fd_api_key_for_ingest();
 
-    let parser = Box::new(GrobidParser::from_env());
+    let parser = Box::new(parse_profile::corpus_grobid_parser());
     let embedder = Box::new(FdApiEmbedder::from_env());
     let context = match production::ProductionContext::from_env(None, None) {
         Ok(context) => context,
@@ -1719,7 +1717,6 @@ async fn summarize_paper(
         prompt_task_registry::load_prompt_task_registry,
     };
     use da_application::SummaryUseCase;
-    use da_parse::GrobidParser;
     use da_ports::graph_store::DirectGraphStore;
     use da_ports::parser::ParserPort;
     use std::sync::Arc;
@@ -1740,8 +1737,8 @@ async fn summarize_paper(
         }
     };
 
-    // Parse via GROBID
-    let parser = GrobidParser::from_env();
+    // Parse via GROBID (DATA profile_route, D204 structural default).
+    let parser = parse_profile::corpus_grobid_parser();
     if !parser.is_alive().await {
         eprintln!("\u{274c} GROBID not alive");
         std::process::exit(1);
@@ -1875,7 +1872,6 @@ async fn extract_entities(
 ) {
     use da_adapters::RuleBasedExtractor;
     use da_application::ExtractionUseCase;
-    use da_parse::GrobidParser;
     use da_ports::parser::ParserPort;
     use std::sync::Arc;
 
@@ -1902,8 +1898,8 @@ async fn extract_entities(
 
     println!("Extracting entities from {paper_id}...");
 
-    // Parse via GROBID
-    let parser = GrobidParser::from_env();
+    // Parse via GROBID (DATA profile_route, D204 structural default).
+    let parser = parse_profile::corpus_grobid_parser();
     let parsed = match parser.parse_pdf(&pdf_path, paper_id).await {
         Ok(p) => p,
         Err(e) => {
@@ -2279,13 +2275,13 @@ async fn run_scheduler(queue_dir: &str) -> anyhow::Result<()> {
     let catalog_locator = Arc::new(da_application::FilesystemCatalogPdfLocator::from_env());
     let ingest_executor = da_application::IngestSchedulerExecutor::new(
         catalog_locator.clone(),
-        Box::new(da_parse::GrobidParser::from_env()),
+        Box::new(parse_profile::corpus_grobid_parser()),
         Box::new(da_adapters::FdApiEmbedder::from_env()),
         graph_store.clone(),
     );
     let reparse_executor = da_application::ReparseSchedulerExecutor::new(
         catalog_locator,
-        Box::new(da_parse::GrobidParser::from_env()),
+        Box::new(parse_profile::corpus_grobid_parser()),
         Box::new(da_adapters::FdApiEmbedder::from_env()),
         graph_store.clone(),
     );

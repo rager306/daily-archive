@@ -4,7 +4,6 @@ use anyhow::{Context, Result, bail};
 use clap::Parser;
 use da_application::{FigureContextAssembler, FigureSectionLocator};
 use da_domain::{ArticleSummaryContext, DetectedVisualArtifact};
-use da_parse::GrobidParser;
 use da_ports::parser::{ParsedArticle, ParserPort};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -55,7 +54,7 @@ async fn main() -> Result<()> {
         .iter()
         .find(|artifact| artifact.artifact_id == args.artifact_id)
         .with_context(|| format!("artifact {} not found", args.artifact_id))?;
-    let parser = GrobidParser::from_env();
+    let parser = da_cli::parse_profile::corpus_grobid_parser();
     if !parser.is_alive().await {
         bail!("GROBID is unavailable; cannot assemble real section context");
     }

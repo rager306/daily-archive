@@ -13,7 +13,7 @@ use da_adapters::{
 use da_application::{PipelineOrchestrator, PipelineRunReport, StageDisposition};
 use da_cli::gold_corpus::{CanonicalSourceKind, GoldCorpusManifest};
 use da_domain::eval::{ExtractionMetrics, GoldEntity, PredictedEntity};
-use da_parse::{GrobidParser, GrobidProfile, PROJECT_ARTICLE_SCHEMA_FINGERPRINT};
+use da_parse::PROJECT_ARTICLE_SCHEMA_FINGERPRINT;
 use da_ports::extractor::ExtractedEntity;
 use da_ports::pipeline_cache::{
     CacheLookup, PipelineCache, SourceFormat, SourceIdentity, StageOutcome,
@@ -201,8 +201,7 @@ async fn main() -> Result<()> {
                 Arc::new(
                     GrobidParseStage::new(
                         Arc::new(
-                            GrobidParser::from_env()
-                                .with_profile(GrobidProfile::structural())
+                            da_cli::parse_profile::corpus_grobid_parser()
                                 .with_timeout(std::time::Duration::from_secs(
                                     args.grobid_timeout_seconds,
                                 )),

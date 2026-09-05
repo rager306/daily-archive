@@ -8,7 +8,6 @@
 use da_adapters::{HtmlParser, RuleBasedExtractor};
 use da_cli::gold_corpus::{CanonicalSourceKind, build_gold_corpus_manifest};
 use da_domain::eval::{ExtractionMetrics, GoldEntity, PredictedEntity};
-use da_parse::GrobidParser;
 use da_ports::extractor::Extractor;
 use da_ports::parser::ParserPort;
 
@@ -73,7 +72,7 @@ async fn main() {
 
         let parsed = match record.source.kind {
             CanonicalSourceKind::Pdf => {
-                let parser = GrobidParser::from_env();
+                let parser = da_cli::parse_profile::corpus_grobid_parser();
                 match parser.parse_pdf(source_path, &paper_id).await {
                     Ok(parsed) => parsed,
                     Err(error) => {

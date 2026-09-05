@@ -8,7 +8,6 @@ use da_application::{
     FigureContextStage, FigureSectionLocator, PipelineOrchestrator, StageDisposition,
 };
 use da_domain::FigureSemanticContext;
-use da_parse::GrobidParser;
 use da_ports::clock::SystemClock;
 use da_ports::pipeline_cache::{CacheLookup, PipelineCache, SourceFormat, SourceIdentity};
 use da_ports::{FigureDetectionPort, FigureDetectionRequest, ParserPort};
@@ -47,7 +46,7 @@ async fn main() -> Result<()> {
         .with_context(|| format!("read canonical PDF {}", args.pdf.display()))?;
     let pdf_sha256 = hex::encode(Sha256::digest(&pdf_bytes));
     let retry_after = (Utc::now() + Duration::minutes(10)).to_rfc3339();
-    let parser: Arc<dyn ParserPort> = Arc::new(GrobidParser::from_env());
+    let parser: Arc<dyn ParserPort> = Arc::new(da_cli::parse_profile::corpus_grobid_parser());
     let detector: Arc<dyn FigureDetectionPort> = Arc::new(PdfFigures2Adapter::new(&args.jar));
     let parse_stage = Arc::new(GrobidParseStage::new(parser, &args.pdf, &retry_after));
     let figure_stage = Arc::new(FigureDetectionStage::new(

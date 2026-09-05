@@ -9,7 +9,6 @@
 
 use da_adapters::RuleBasedExtractor;
 use da_domain::eval::{ExtractionMetrics, GoldEntity, PredictedEntity};
-use da_parse::GrobidParser;
 use da_ports::extractor::Extractor;
 use da_ports::parser::ParserPort;
 
@@ -62,7 +61,7 @@ async fn main() {
 
     // --- Parse via GROBID ---
     println!("\nParsing {paper_id} via GROBID...");
-    let parser = GrobidParser::from_env();
+    let parser = da_cli::parse_profile::corpus_grobid_parser();
     let parsed = match parser.parse_pdf(&pdf_path, &paper_id).await {
         Ok(p) => p,
         Err(e) => {

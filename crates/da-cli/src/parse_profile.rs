@@ -43,6 +43,12 @@ pub fn consult_corpus_grobid_profile() -> GrobidProfile {
     consult_corpus_grobid_profile_from_yaml(&yaml)
 }
 
+/// Production PDF parser: historical `from_env` URL plus DATA profile.
+/// Health probes may keep [`GrobidParser::from_env`] — liveness is profile-free.
+pub fn corpus_grobid_parser() -> da_parse::GrobidParser {
+    da_parse::GrobidParser::from_env().with_profile(consult_corpus_grobid_profile())
+}
+
 /// YAML-in consult used by tests and by [`consult_corpus_grobid_profile`].
 pub fn consult_corpus_grobid_profile_from_yaml(yaml: &str) -> GrobidProfile {
     let host: Option<&dyn FsmPolicyPort> = None;
@@ -127,6 +133,11 @@ decision_points:
             consult_corpus_grobid_profile_from_yaml(yaml).name(),
             da_parse::GrobidParser::from_env().profile().name(),
             "corpus consult must not silently equal the historical from_env default"
+        );
+        assert_eq!(
+            corpus_grobid_parser().profile().name(),
+            "structural",
+            "production PDF constructor must follow DATA default"
         );
     }
 }

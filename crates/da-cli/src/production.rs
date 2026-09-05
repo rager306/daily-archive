@@ -17,7 +17,7 @@ use da_application::{
     MultimodalComposition, MultimodalFingerprintSummary, PipelineOrchestrator,
 };
 use da_domain::{PipelineStageLedger, StageIdRegistry};
-use da_parse::{GrobidParser, GrobidProfile, PROJECT_ARTICLE_SCHEMA_FINGERPRINT};
+use da_parse::{GrobidProfile, PROJECT_ARTICLE_SCHEMA_FINGERPRINT};
 use da_ports::figure_detection::{FigureDetectionPort, FigureDetectionRequest};
 use da_ports::multimodal_llm::{ModelRouteDescriptor, ModelWireProtocol, MultimodalLlmPort};
 use da_ports::parser::ParserPort;
@@ -274,9 +274,9 @@ pub fn revision_context_for_versioned_pdf(
 /// deterministic fakes; [`MultimodalProductionSettings::from_env`] resolves
 /// them from the configured env surfaces for real production runs.
 pub struct MultimodalProductionSettings {
-    /// GROBID parser (production: `GrobidParser::from_env()`).
+    /// GROBID parser (production: DATA profile_route consult).
     pub parser: Arc<dyn ParserPort>,
-    /// GROBID consolidation profile (production: from the env parser).
+    /// GROBID consolidation profile (production: DATA profile_route consult).
     pub grobid_profile: GrobidProfile,
     /// Figure/table detector (production: `PdfFigures2Adapter::from_env()`).
     pub detector: Arc<dyn FigureDetectionPort>,
@@ -300,9 +300,8 @@ impl MultimodalProductionSettings {
     /// returns an explicit error instead of silently composing a degraded
     /// pipeline (admission stays fail-closed).
     pub fn from_env() -> Result<Self, String> {
-        let parser = GrobidParser::from_env();
-        let grobid_profile = parser.profile();
-        let parser: Arc<dyn ParserPort> = Arc::new(parser);
+        let grobid_profile = crate::parse_profile::consult_corpus_grobid_profile();
+        let parser: Arc<dyn ParserPort> = Arc::new(crate::parse_profile::corpus_grobid_parser());
         let detector: Arc<dyn FigureDetectionPort> =
             Arc::new(PdfFigures2Adapter::from_env().map_err(|error| error.to_string())?);
         let model = resolve_multimodal_model_from_env()?;

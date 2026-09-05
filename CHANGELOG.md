@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-05 — M471-oi80qz/S02: production PDF constructors consult ProfileRoute
+
+ingest, batch-ingest, extract, summarize, scheduler, da load journey,
+multimodal production, eval_batch, eval_extract, figure_context,
+gepa_hub_research, pipeline_figures, gold_corpus_canary and catalog_sweep
+PDF parsers use corpus_grobid_parser() (DATA structural default).
+Health is_alive probes keep from_env. Facade default stays rich.
+No graph. D127 false.
+
+Green: parse_profile 6; load 20; production 11; load_journey 2; bins+examples check.
+
 ## 2026-09-05 — M471-oi80qz/S01: shared ProfileRoute consult helper
 
 consult_corpus_grobid_profile fail-opens to DATA structural (D204).

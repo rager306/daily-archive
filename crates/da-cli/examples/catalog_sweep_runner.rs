@@ -20,7 +20,7 @@ use da_application::{PipelineOrchestrator, PipelineRunReport, StageDisposition};
 use da_cli::catalog_sweep::{
     ArticleMetrics, CatalogEntry, DeviationKind, SweepThresholds, classify_deviations,
 };
-use da_parse::{GrobidParser, GrobidProfile, PROJECT_ARTICLE_SCHEMA_FINGERPRINT};
+use da_parse::{GrobidParser, PROJECT_ARTICLE_SCHEMA_FINGERPRINT};
 use da_ports::pipeline_cache::{PipelineCache, SourceIdentity};
 use da_ports::pipeline_stage::{PipelineStageExecutor, StageContract};
 use kg_pipeline::PipelineBuilder;
@@ -608,8 +608,7 @@ async fn main() -> Result<()> {
 
     let cache = Arc::new(FilePipelineCache::new(&args.cache_root));
     let parser = Arc::new(
-        GrobidParser::from_env()
-            .with_profile(GrobidProfile::structural())
+        da_cli::parse_profile::corpus_grobid_parser()
             .with_timeout(std::time::Duration::from_secs(args.grobid_timeout_seconds)),
     );
     let extractor = Arc::new(extractor_from_data());

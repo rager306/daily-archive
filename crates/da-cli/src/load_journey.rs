@@ -56,7 +56,7 @@ use da_application::{
 };
 use da_domain::figure_analysis::FigureQuotePolicy;
 use da_domain::{LoadCacheRecord, StageCacheMode, StageIdRegistry};
-use da_parse::{GrobidParser, GrobidProfile};
+use da_parse::GrobidProfile;
 use da_ports::clock::Clock;
 use da_ports::embedder::Embedder;
 use da_ports::extractor::Extractor;
@@ -93,7 +93,7 @@ impl JourneyPorts {
     /// the legacy load path resolves them.
     pub fn from_env() -> Self {
         Self {
-            parser: Arc::new(GrobidParser::from_env()),
+            parser: Arc::new(crate::parse_profile::corpus_grobid_parser()),
             extractor: Arc::new(extractor_from_data()),
             embedder: Arc::new(FdApiEmbedder::from_env()),
             detector: PdfFigures2Adapter::from_env()
@@ -839,10 +839,9 @@ pub async fn run_journey_content(
     Ok((outcome, report))
 }
 
-/// Journey mode pins the PDF plane: GROBID profile from the shared env
-/// surface, exactly like the legacy path default.
+/// Journey mode pins the PDF plane: GROBID profile from DATA profile_route.
 fn ports_profile() -> GrobidProfile {
-    GrobidParser::from_env().profile()
+    crate::parse_profile::consult_corpus_grobid_profile()
 }
 
 /// Minimum region-text length considered sufficient grounding evidence.
