@@ -87,14 +87,14 @@ pub(crate) fn stamp_p2_segmentation_observe(m: &mut serde_yaml::Mapping, java_se
 }
 
 /// P3 header observe beside Java lift. Native compose is not called.
-/// named_native_accepted_gap is the hub 20 vs Java 21 receipt, not a fix.
+/// named_native_accepted_gap is a flag: hub 20 vs Java 21 lives in DATA, not as a per-article count.
 pub(crate) fn stamp_p3_header_observe(m: &mut serde_yaml::Mapping, java_header_n: usize) {
     let mut p3 = serde_yaml::Mapping::new();
     p3.insert("stage".into(), "P3".into());
     p3.insert("production_authority".into(), "java_http".into());
     p3.insert("observe_mode".into(), "shadow_receipt".into());
     p3.insert("java_header_n".into(), java_header_n.into());
-    p3.insert("named_native_accepted_gap".into(), 20.into());
+    p3.insert("named_native_accepted_gap".into(), true.into());
     merge_cascade_observe(m, "P3", p3);
 }
 
@@ -3514,12 +3514,14 @@ mod tests {
         );
         assert_eq!(p3.get("java_header_n").and_then(|v| v.as_u64()), Some(21));
         assert_eq!(
-            p3.get("named_native_accepted_gap").and_then(|v| v.as_u64()),
-            Some(20)
+            p3.get("named_native_accepted_gap")
+                .and_then(|v| v.as_bool()),
+            Some(true),
+            "hub 20 vs Java 21 is a DATA gap flag, not a per-article count 20"
         );
         assert_ne!(
             p3.get("java_header_n").and_then(|v| v.as_u64()),
-            p3.get("named_native_accepted_gap").and_then(|v| v.as_u64()),
+            Some(20),
             "hub Java 21 must not be replaced by native accepted 20"
         );
     }

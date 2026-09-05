@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-05 — M492-k0s52t/S01: P3 observe must not hardcode hub native 20
+
+stamp_p3 writes named_native_accepted_gap as a boolean flag, not count 20.
+java_header_n still comes from Java lift. DATA still names hub 20 vs Java 21.
+Governor flags a stamp that writes named_native_accepted_gap 20. No splice.
+No graph. D127 false.
+
+Green: da-cli lib source_cli 21; scholarly_parse_governance 105.
+
 ## 2026-09-05 — M491-lj9ybx/S01: Hub real_tei must not pool sections with biblStruct
 
 Hub Java sections are 69: body heads minus figure caption heads, not

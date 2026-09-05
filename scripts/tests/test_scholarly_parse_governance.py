@@ -394,6 +394,20 @@ def test_checker_flags_parse_pdf_missing_p3_observe_stamp(tmp_path: Path):
     assert any("source_cli.rs" in item.evidence for item in matching)
 
 
+def test_checker_flags_p3_named_gap_hardcoded_hub_count(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        'p3.insert("named_native_accepted_gap".into(), 20.into());\n',
+        encoding="utf-8",
+    )
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_acceptance_same_n_drift"]
+    assert matching, flags
+    assert any("named_native_accepted_gap" in item.evidence or "source_cli.rs" in item.evidence for item in matching)
+
+
 def test_checker_flags_hub_real_tei_pooling_sections_with_biblstruct(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     target = tmp_path / "crates/da-parse/src/real_tei_tests.rs"

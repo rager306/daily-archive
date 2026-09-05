@@ -753,6 +753,14 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "parse-pdf stamps P2 observe from Java section_n",
                 "missing stamp_p2_segmentation_observe",
             )
+        if 'named_native_accepted_gap".into(), 20.into()' in src:
+            flag(
+                "acceptance_same_n_drift",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#stamp_p3_header_observe",
+                "named_native_accepted_gap true, hub 20 vs 21 stays in DATA",
+                "named_native_accepted_gap 20",
+            )
         if "stamp_p3_header_observe" not in src:
             flag(
                 "policy_stamp",
