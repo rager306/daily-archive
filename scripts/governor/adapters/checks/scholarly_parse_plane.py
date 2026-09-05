@@ -212,6 +212,29 @@ def _scan_bare_from_env_parse(root: Path, scan_roots: list[str]) -> list[str]:
     return hits
 
 
+def _cascade_observe_tokens(stages: Any) -> tuple[list[str], list[str]]:
+    """Derive required/forbidden observe-stamp tokens from cascade DATA.
+
+    Convention: stage ``P7`` maps to token ``stamp_p7_`` (trailing underscore
+    avoids a future P10 collision). Stages with
+    ``observe_mode == accountant_later`` are forbidden (must not be stamped
+    as live); every other stage — including malformed rows with a missing or
+    non-mapping row — is required (fail-closed).
+    """
+    if not isinstance(stages, dict):
+        return [], []
+    required: list[str] = []
+    forbidden: list[str] = []
+    for sid, row in stages.items():
+        token = f"stamp_{str(sid).lower()}_"
+        mode = str((row if isinstance(row, dict) else {}).get("observe_mode") or "")
+        if mode == "accountant_later":
+            forbidden.append(token)
+        else:
+            required.append(token)
+    return required, forbidden
+
+
 def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     """Validate the source-bound scholarly parse policy and its fixtures.
 
@@ -729,30 +752,25 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             src = source_cli.read_text(encoding="utf-8")
         except OSError as error:
             src = str(error)
-        if "stamp_p0_admit_observe" not in src:
-            flag(
-                "policy_stamp",
-                "integration",
-                "crates/da-cli/src/source_cli.rs#stamp_p0_admit_observe",
-                "parse-pdf stamps P0 admit from live grammar and profile consults",
-                "missing stamp_p0_admit_observe",
-            )
-        if "stamp_p1_layout_observe" not in src:
-            flag(
-                "policy_stamp",
-                "integration",
-                "crates/da-cli/src/source_cli.rs#stamp_p1_layout_observe",
-                "parse-pdf stamps P1 observe from Java layout_json presence",
-                "missing stamp_p1_layout_observe",
-            )
-        if "stamp_p2_segmentation_observe" not in src:
-            flag(
-                "policy_stamp",
-                "integration",
-                "crates/da-cli/src/source_cli.rs#stamp_p2_segmentation_observe",
-                "parse-pdf stamps P2 observe from Java section_n",
-                "missing stamp_p2_segmentation_observe",
-            )
+        required_stamps, forbidden_stamps = _cascade_observe_tokens(stages)
+        for token in required_stamps:
+            if token not in src:
+                flag(
+                    "policy_stamp",
+                    "integration",
+                    f"crates/da-cli/src/source_cli.rs#{token.rstrip('_')}",
+                    f"parse-pdf stamps {token.rstrip('_')} from cascade_stages observe_mode",
+                    f"missing {token.rstrip('_')}",
+                )
+        for token in forbidden_stamps:
+            if token in src:
+                flag(
+                    "policy_stamp",
+                    "integration",
+                    "crates/da-cli/src/source_cli.rs#parse-pdf",
+                    "accountant_later stages must not be stamped as live",
+                    f"{token.rstrip('_')} present",
+                )
         if 'named_native_accepted_gap".into(), 20.into()' in src:
             flag(
                 "acceptance_same_n_drift",
@@ -760,22 +778,6 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "crates/da-cli/src/source_cli.rs#stamp_p3_header_observe",
                 "named_native_accepted_gap true, hub 20 vs 21 stays in DATA",
                 "named_native_accepted_gap 20",
-            )
-        if "stamp_p3_header_observe" not in src:
-            flag(
-                "policy_stamp",
-                "integration",
-                "crates/da-cli/src/source_cli.rs#stamp_p3_header_observe",
-                "parse-pdf stamps P3 observe from Java header_n",
-                "missing stamp_p3_header_observe",
-            )
-        if "stamp_p4_references_observe" not in src:
-            flag(
-                "policy_stamp",
-                "integration",
-                "crates/da-cli/src/source_cli.rs#stamp_p4_references_observe",
-                "parse-pdf stamps P4 observe from Java citation_n",
-                "missing stamp_p4_references_observe",
             )
         if 'citation_names_not_biblstruct".into(), 2198.into()' in src or 'citation_names_not_biblstruct".into(),2198.into()' in src:
             flag(
@@ -792,46 +794,6 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "crates/da-cli/src/source_cli.rs#stamp_p4_references_observe",
                 "citation_names_not_biblstruct true, citation-names stay off java_citation_n",
                 "citation_names_not_biblstruct pooled with java_citation_n",
-            )
-        if "stamp_p6_visual_observe" not in src:
-            flag(
-                "policy_stamp",
-                "integration",
-                "crates/da-cli/src/source_cli.rs#stamp_p6_visual_observe",
-                "parse-pdf stamps P6 observe from Java figure/table/formula counts",
-                "missing stamp_p6_visual_observe",
-            )
-        if "stamp_p7_callout_observe" not in src:
-            flag(
-                "policy_stamp",
-                "integration",
-                "crates/da-cli/src/source_cli.rs#stamp_p7_callout_observe",
-                "parse-pdf stamps P7 observe from Java visual_callouts",
-                "missing stamp_p7_callout_observe",
-            )
-        if "stamp_p8_consolidation_observe" not in src:
-            flag(
-                "policy_stamp",
-                "integration",
-                "crates/da-cli/src/source_cli.rs#stamp_p8_consolidation_observe",
-                "parse-pdf stamps P8 observe from live grobid profile",
-                "missing stamp_p8_consolidation_observe",
-            )
-        if "stamp_p9_conservation_observe" not in src:
-            flag(
-                "policy_stamp",
-                "integration",
-                "crates/da-cli/src/source_cli.rs#stamp_p9_conservation_observe",
-                "parse-pdf stamps P9 conservation as tracked candidate_lift",
-                "missing stamp_p9_conservation_observe",
-            )
-        if "stamp_p5" in src:
-            flag(
-                "policy_stamp",
-                "integration",
-                "crates/da-cli/src/source_cli.rs#parse-pdf",
-                "P5 accountant_later must not be stamped as live",
-                "stamp_p5 present",
             )
         if "ConservationEngine" in src:
             flag(

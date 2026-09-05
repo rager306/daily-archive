@@ -17,7 +17,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from governor.adapters.checks.scholarly_parse_plane import _check_scholarly_parse_plane
+from governor.adapters.checks.scholarly_parse_plane import (
+    _cascade_observe_tokens,
+    _check_scholarly_parse_plane,
+)
 from governor.application.trajectory_service import TrajectoryService
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -481,6 +484,42 @@ def test_checker_flags_p5_observe_mode_not_later(tmp_path: Path):
     matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
     assert matching, flags
     assert any("P5" in item.evidence for item in matching)
+
+
+def test_cascade_observe_tokens_derive_live_and_forbidden_from_data():
+    payload = yaml.safe_load((ROOT / "data/parse/grobid_compatibility.yaml").read_text(encoding="utf-8"))
+    stages = (payload.get("defaults") or {}).get("cascade_stages") or {}
+    required, forbidden = _cascade_observe_tokens(stages)
+    assert required == [f"stamp_p{i}_" for i in (0, 1, 2, 3, 4, 6, 7, 8, 9)]
+    assert forbidden == ["stamp_p5_"]
+
+
+def test_cascade_observe_tokens_treats_malformed_rows_fail_closed():
+    required, forbidden = _cascade_observe_tokens(None)
+    assert (required, forbidden) == ([], [])
+    required, forbidden = _cascade_observe_tokens({"P7": None, "P5": "accountant_later", "P1": {}})
+    assert "stamp_p7_" in required
+    assert "stamp_p1_" in required
+    assert "stamp_p5_" in required
+    assert forbidden == []
+
+
+def test_checker_p7_accountant_later_removes_missing_p7_requirement(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/parse/grobid_compatibility.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    stages = payload.setdefault("defaults", {}).setdefault("cascade_stages", {})
+    stages.setdefault("P7", {})["observe_mode"] = "accountant_later"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        "pub fn run_parse_pdf() { stamp_p0_admit_observe(&mut m, true, true); stamp_p1_layout_observe(&mut m, false); stamp_p2_segmentation_observe(&mut m, 1); stamp_p3_header_observe(&mut m, 1); stamp_p4_references_observe(&mut m, 1); stamp_p6_visual_observe(&mut m, 0, 0, 0, true, true); stamp_p8_consolidation_observe(&mut m, \"structural\", false, false); stamp_p9_conservation_observe(&mut m); }\n",
+        encoding="utf-8",
+    )
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    assert not any("stamp_p7" in item.evidence for item in matching), flags
 
 
 def test_checker_flags_cascade_stage_later_as_fsm_consult(tmp_path: Path):
