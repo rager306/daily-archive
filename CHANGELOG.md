@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-05 — M473-9h6jhe/S01: Java lift same-n vs independent three-SHA oracle
+
+TeiLifter::lift_tei on hub/rlm/reca matches independent header_raw
+21/4/11 and biblStruct 80/49/78. Header and citation populations stay
+separate. Native compose is not the expected builder. Hub native
+accepted=20 stays a named gap, not Java truth. No splice. No graph.
+D127 false.
+
+Green: java_lift_same_n_oracle 2.
+
 ## 2026-09-05 — M472-nxpy4n/S01: governor flags bare from_env PDF constructors
 
 DATA lists allowed GrobidParser::from_env roles. Governor scans declared
