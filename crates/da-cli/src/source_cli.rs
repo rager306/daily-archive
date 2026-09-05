@@ -47,6 +47,12 @@ pub(crate) fn stamp_parse_grammar(
     m.insert("grammar_route".into(), route.into());
     m.insert("policy_source".into(), policy_source.into());
     m.insert("policy_hash".into(), policy_hash.into());
+    // Java GROBID corpus default is structural (D204). This is not the FSM
+    // grammar_profile (page_outline / arxiv_pdf_dot / html_headings).
+    m.insert(
+        "grobid_profile".into(),
+        da_parse::GrobidProfile::structural().name().into(),
+    );
 }
 
 fn stamp_from_grammar(
@@ -1697,9 +1703,10 @@ pub fn run_parse_pdf(
     let grammar = consult_parse_grammar_cli(paper_id, pages, bookmarks, quality).ok();
     if let Some(g) = &grammar {
         println!(
-            "grammar_route: {} → profile={} hash={}",
+            "grammar_route: {} → grammar_profile={} grobid_profile={} hash={}",
             g.route.as_str(),
             g.grammar_profile,
+            da_parse::GrobidProfile::structural().name(),
             g.policy_hash
         );
     }
@@ -2596,7 +2603,7 @@ fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
             let toc_exists = toc_observations_path(paper_id).exists();
             let chosen = choose_parsed_action(&g.grammar_profile, toc_exists);
             println!(
-                "   grammar_route: {} → {} (profile={} hash={})",
+                "   grammar_route: {} → {} (grammar_profile={} hash={})",
                 g.route.as_str(),
                 chosen,
                 g.grammar_profile,
@@ -3244,6 +3251,21 @@ mod tests {
         assert_eq!(
             none.get("policy_hash").and_then(|v| v.as_str()),
             Some("none")
+        );
+        assert_eq!(
+            m.get("grobid_profile").and_then(|v| v.as_str()),
+            Some("structural"),
+            "Java GROBID corpus default is structural, not the FSM grammar_profile"
+        );
+        assert_eq!(
+            none.get("grobid_profile").and_then(|v| v.as_str()),
+            Some("structural"),
+            "policy=none still records the Java GROBID profile actually used"
+        );
+        assert_ne!(
+            m.get("grammar_profile").and_then(|v| v.as_str()),
+            m.get("grobid_profile").and_then(|v| v.as_str()),
+            "FSM grammar_profile and GROBID profile must not share one field"
         );
     }
 

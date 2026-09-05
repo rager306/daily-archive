@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-05 — M469-j23uk8/S01: stamp grobid_profile separate from grammar_profile
+
+parse-pdf receipts now stamp grobid_profile=structural next to FSM grammar_profile.
+Stdout names both fields so they cannot be mixed. Java GROBID call stays
+GrobidProfile::structural() (D204 corpus default). No rich. No fingerprint
+rotation. No graph. D127 false.
+
+Green: stamp_parse_grammar unit; choose_parsed_action unit.
+
 ## 2026-09-04 — M468-4k3p7s/S01: ledger and leftover pins stop claiming loss_detected
 
 `defaults.promotion.reason` no longer says tracked conservation is still
