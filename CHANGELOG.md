@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-05 — M485-jgybkl/S01: parse-pdf stamps P1 layout observe beside Java
+
+parse-pdf merges cascade_observe.P1 from Java layout_json presence.
+None is typed absence, not an empty lattice. Native layout is not called.
+P0 P2 P3 P4 P6 stay. Governor flags a parse-pdf without the P1 stamp or
+with LayoutProvider names. No splice. No graph. D127 false.
+
+Green: da-cli lib source_cli 18; scholarly_parse_governance 98.
+
 ## 2026-09-05 — M484-ra6fpq/S01: parse-pdf stamps P0 admit observe from live consults
 
 parse-pdf merges cascade_observe.P0 from live grammar_route and

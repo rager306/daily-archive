@@ -150,6 +150,18 @@ pub(crate) fn stamp_p0_admit_observe(
     merge_cascade_observe(m, "P0", p0);
 }
 
+/// P1 layout observe beside Java projector. Native lattice is not called.
+/// typed_absence keeps layout_json None from looking like an empty lattice.
+pub(crate) fn stamp_p1_layout_observe(m: &mut serde_yaml::Mapping, java_layout_present: bool) {
+    let mut p1 = serde_yaml::Mapping::new();
+    p1.insert("stage".into(), "P1".into());
+    p1.insert("production_authority".into(), "java_http".into());
+    p1.insert("observe_mode".into(), "shadow_receipt".into());
+    p1.insert("java_layout_present".into(), java_layout_present.into());
+    p1.insert("typed_absence".into(), (!java_layout_present).into());
+    merge_cascade_observe(m, "P1", p1);
+}
+
 fn stamp_from_grammar(
     m: &mut serde_yaml::Mapping,
     g: &da_application::parse_grammar::ParseGrammarDecision,
@@ -1903,6 +1915,7 @@ pub fn run_parse_pdf(
     }
     stamp_grobid_profile(&mut m, grobid_route);
     stamp_p0_admit_observe(&mut m, grammar.is_some(), true);
+    stamp_p1_layout_observe(&mut m, parsed.layout_json.is_some());
     stamp_p2_segmentation_observe(&mut m, parsed.sections.len());
     stamp_p3_header_observe(&mut m, parsed.header_authors.len());
     stamp_p4_references_observe(&mut m, parsed.citations.len());
@@ -3439,6 +3452,49 @@ mod tests {
             p3.get("java_header_n").and_then(|v| v.as_u64()),
             p3.get("named_native_accepted_gap").and_then(|v| v.as_u64()),
             "hub Java 21 must not be replaced by native accepted 20"
+        );
+    }
+
+    #[test]
+    fn stamp_p1_merges_beside_p0_families_and_none_is_typed_absence() {
+        let mut m = serde_yaml::Mapping::new();
+        stamp_p0_admit_observe(&mut m, true, true);
+        stamp_p1_layout_observe(&mut m, false);
+        stamp_p2_segmentation_observe(&mut m, 12);
+        stamp_p3_header_observe(&mut m, 21);
+        stamp_p4_references_observe(&mut m, 80);
+        stamp_p6_visual_observe(&mut m, 0, 0, 0, true, true);
+        let observe = m
+            .get("cascade_observe")
+            .and_then(|v| v.as_mapping())
+            .expect("cascade_observe");
+        assert!(observe.contains_key("P0"), "P1 must not erase P0");
+        assert!(observe.contains_key("P1"), "P1 layout observe missing");
+        assert!(observe.contains_key("P2"), "P1 must not erase P2");
+        assert!(observe.contains_key("P3"), "P1 must not erase P3");
+        assert!(observe.contains_key("P4"), "P1 must not erase P4");
+        assert!(observe.contains_key("P6"), "P1 must not erase P6");
+        let p1 = observe
+            .get("P1")
+            .and_then(|v| v.as_mapping())
+            .expect("P1 observe");
+        assert_eq!(p1.get("stage").and_then(|v| v.as_str()), Some("P1"));
+        assert_eq!(
+            p1.get("production_authority").and_then(|v| v.as_str()),
+            Some("java_http")
+        );
+        assert_eq!(
+            p1.get("observe_mode").and_then(|v| v.as_str()),
+            Some("shadow_receipt")
+        );
+        assert_eq!(
+            p1.get("java_layout_present").and_then(|v| v.as_bool()),
+            Some(false)
+        );
+        assert_eq!(
+            p1.get("typed_absence").and_then(|v| v.as_bool()),
+            Some(true),
+            "layout_json None must not look like an empty lattice"
         );
     }
 

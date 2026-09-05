@@ -728,6 +728,14 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "parse-pdf stamps P0 admit from live grammar and profile consults",
                 "missing stamp_p0_admit_observe",
             )
+        if "stamp_p1_layout_observe" not in src:
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#stamp_p1_layout_observe",
+                "parse-pdf stamps P1 observe from Java layout_json presence",
+                "missing stamp_p1_layout_observe",
+            )
         if "stamp_p2_segmentation_observe" not in src:
             flag(
                 "policy_stamp",
@@ -793,6 +801,14 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "crates/da-cli/src/source_cli.rs#parse-pdf",
                 "P6 observe must not call native visual heads",
                 "native visual call",
+            )
+        if "LayoutProvider" in src or "LayoutDocument" in src or "pdfalto" in src:
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#parse-pdf",
+                "P1 observe must not call native layout",
+                "native layout call",
             )
 
     constructors = (registry.get("defaults") or {}).get("production_pdf_constructors") or {}
