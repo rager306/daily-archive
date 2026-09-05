@@ -124,6 +124,8 @@ fn source_bound_shadow_report_is_terminal_replayed_and_quarantined() {
         "native-fulltext-composition-shadow.v1"
     );
     assert_eq!(value["data_schema"], "native-fulltext-composition.v1");
+    assert_eq!(value["source_identity"]["identity_kind"], "synthetic_clone");
+    assert_eq!(value["source_identity"]["unique_source_sha256"], 1);
     assert_eq!(value["denominators"]["documents"], 3);
     assert_eq!(value["denominators"]["lanes"], 3);
     assert_eq!(value["denominators"]["admitted_rows"], 9);

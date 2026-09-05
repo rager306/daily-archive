@@ -268,6 +268,30 @@ def test_checker_clean_root_has_no_s19_flags():
     assert _check_scholarly_parse_plane(ROOT) == []
 
 
+def test_checker_flags_undeclared_shadow_sha_clone(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    shadow_path = tmp_path / "artifacts/parse_compat/native_fulltext_composition_shadow.json"
+    payload = json.loads(shadow_path.read_text(encoding="utf-8"))
+    payload["source_identity"].pop("identity_kind", None)
+    payload["source_identity"].pop("unique_source_sha256", None)
+    shadow_path.write_text(json.dumps(payload), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_acceptance_same_n_drift"]
+    assert matching, flags
+
+
+def test_checker_flags_preserved_names_without_preserved_kind(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    shadow_path = tmp_path / "artifacts/parse_compat/native_fulltext_composition_shadow.json"
+    payload = json.loads(shadow_path.read_text(encoding="utf-8"))
+    payload["source_identity"]["identity_kind"] = "synthetic_clone"
+    payload["outcomes"][0]["document_id"] = "hub_2507.19457"
+    shadow_path.write_text(json.dumps(payload), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_acceptance_same_n_drift"]
+    assert matching, flags
+
+
 def test_checker_flags_bare_from_env_pdf_parse_constructor(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     target = tmp_path / "crates/da-cli/src/bare_from_env.rs"

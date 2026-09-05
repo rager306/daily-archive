@@ -54,6 +54,9 @@ struct Identity {
     config_fingerprint: String,
     artifact_sha256: String,
     fallback_target: &'static str,
+    /// This report clones one hybrid fixture three times. Not hub/rlm/reca.
+    identity_kind: &'static str,
+    unique_source_sha256: usize,
 }
 #[derive(Debug, Serialize)]
 struct Denominators {
@@ -447,6 +450,8 @@ fn main() {
             config_fingerprint: f.config_fingerprint.clone(),
             artifact_sha256: format!("sha256:{ARTIFACT}"),
             fallback_target: NATIVE_FULLTEXT_FALLBACK_TARGET,
+            identity_kind: "synthetic_clone",
+            unique_source_sha256: 1,
         },
         denominators: Denominators {
             documents: 3,

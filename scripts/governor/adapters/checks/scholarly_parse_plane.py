@@ -58,8 +58,25 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
         return value.get("disposition") not in set((contract.get("closed_taxonomy") or {}).get("dispositions", []))
     if label == "missing_integration_evidence":
         return not value.get("integration_evidence")
-    if label in {"acceptance_evidence_missing", "acceptance_evidence_substitution", "acceptance_role_drift", "acceptance_same_n_drift", "acceptance_lock_erosion"}:
+    if label in {"acceptance_evidence_missing", "acceptance_evidence_substitution", "acceptance_role_drift", "acceptance_lock_erosion"}:
         return bool(value.get("acceptance_mutation"))
+    if label == "acceptance_same_n_drift":
+        if value.get("acceptance_mutation"):
+            return True
+        if (
+            "documents" not in value
+            and "unique_source_sha256" not in value
+            and "identity_kind" not in value
+        ):
+            return False
+        documents = int(value.get("documents") or 0)
+        unique = int(value.get("unique_source_sha256") or 0)
+        kind = value.get("identity_kind")
+        if documents > 1 and unique == 1 and kind != "synthetic_clone":
+            return True
+        if kind == "preserved_three_sha" and unique != 3:
+            return True
+        return False
     if label == "ledger_surface":
         surface = str(value.get("surface") or "").strip().lower()
         return value.get("state") in {"proxy", "shadow"} and (
@@ -365,6 +382,53 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 f"data/parse/native_fulltext_composition.yaml#admission.current_matrix.{family}",
                 "fallback",
                 matrix.get(family),
+            )
+
+    composition_shadow_path = root / "artifacts/parse_compat/native_fulltext_composition_shadow.json"
+    try:
+        composition_shadow = json.loads(composition_shadow_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        composition_shadow = {}
+    if composition_shadow:
+        identity = composition_shadow.get("source_identity") or {}
+        outcomes = [row for row in (composition_shadow.get("outcomes") or []) if isinstance(row, dict)]
+        shas = {str(row.get("source_sha256") or "") for row in outcomes}
+        shas.discard("")
+        if not shas and identity.get("source_sha256"):
+            shas = {str(identity.get("source_sha256"))}
+        documents = int((composition_shadow.get("denominators") or {}).get("documents") or 0)
+        unique = len(shas)
+        kind = identity.get("identity_kind")
+        if documents > 1 and unique == 1 and kind != "synthetic_clone":
+            flag(
+                "acceptance_same_n_drift",
+                "integration",
+                "artifacts/parse_compat/native_fulltext_composition_shadow.json#source_identity",
+                {"identity_kind": "synthetic_clone", "unique_source_sha256": 1},
+                {"identity_kind": kind, "unique_source_sha256": unique, "documents": documents},
+            )
+        preserved = {
+            "985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b79e7ec4",
+            "e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3",
+            "dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040",
+        }
+        ids = " ".join(str(row.get("document_id") or "") for row in outcomes).lower()
+        looks_preserved = bool(shas & preserved) or any(token in ids for token in ("hub", "rlm", "reca", "2507.19457", "2512.24601", "2605.26525"))
+        if looks_preserved and kind != "preserved_three_sha":
+            flag(
+                "acceptance_same_n_drift",
+                "integration",
+                "artifacts/parse_compat/native_fulltext_composition_shadow.json#identity_kind",
+                "preserved_three_sha",
+                kind,
+            )
+        if kind == "preserved_three_sha" and unique != 3:
+            flag(
+                "acceptance_same_n_drift",
+                "integration",
+                "artifacts/parse_compat/native_fulltext_composition_shadow.json#unique_source_sha256",
+                3,
+                unique,
             )
 
     visual = by_id.get("stage.figure_table_formula") or {}

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-05 — M474-90q2i6/S01: shadow report declares synthetic_clone identity
+
+Native fulltext composition shadow stamps identity_kind=synthetic_clone
+and unique_source_sha256=1. documents=3 is three clones of one hybrid
+fixture, not hub/rlm/reca. Governor flags undeclared SHA clones and
+preserved names without preserved_three_sha. SHA rebound in the same
+change. No splice. No graph. D127 false.
+
+Green: scholarly_parse_governance 87.
+
 ## 2026-09-05 — M473-9h6jhe/S01: Java lift same-n vs independent three-SHA oracle
 
 TeiLifter::lift_tei on hub/rlm/reca matches independent header_raw
