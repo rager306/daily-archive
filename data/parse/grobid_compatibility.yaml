@@ -43,6 +43,23 @@ defaults:
   - processFulltextAssetDocument
   - createTraining
   - annotatePDF
+  # S08/T01: DATA-gated visual-head quarantine. This section — not
+  # capabilities[].state — is the sole source of the forbidden token set
+  # and the production boundaries, so a mutation of state cannot remove a
+  # token or boundary from the checked set. Snake_case tokens are matched
+  # as call-sites (whitespace allowed before `(`); CamelCase tokens are
+  # matched as type names (word boundary). Full-line and trailing `//`
+  # comments are stripped; prose and prefix-substrings never count.
+  visual_heads_quarantine:
+    tokens:
+    - detect_figure_heads
+    - detect_table_heads
+    - detect_formula_heads
+    - NativeVisual
+    - LayoutProvider
+    boundaries:
+    - crates/da-cli/src/source_cli.rs
+    - crates/da-ports/src/parser.rs
   production_pdf_constructors:
     # After M471 PDF parse constructors consult ProfileRoute.
     # GrobidParser::from_env stays historical rich. A bare from_env used as

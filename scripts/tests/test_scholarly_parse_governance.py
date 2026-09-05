@@ -23,6 +23,7 @@ from governor.adapters.checks.scholarly_parse_plane import (
     _empty_native_consult_tokens,
     _java_absent_endpoint_tokens,
     _native_rules_not_consulted_tokens,
+    _visual_heads_quarantine_spec,
 )
 from governor.application.trajectory_service import TrajectoryService
 
@@ -1230,3 +1231,191 @@ def test_checker_bibliography_and_java_absent_namespaces_stay_isolated(tmp_path:
     flags = _check_scholarly_parse_plane(tmp_path)
     assert _bibliography_quarantine_flags(flags), flags
     assert _java_absent_flags(flags) == [], flags
+
+# ───── S08/T01: visual heads stay shadow, out of parse-pdf source_cli and ParserPort ─────
+
+VISUAL_HEADS_QUARANTINE_TOKENS = [
+    "detect_figure_heads",
+    "detect_table_heads",
+    "detect_formula_heads",
+    "NativeVisual",
+    "LayoutProvider",
+]
+VISUAL_HEADS_QUARANTINE_BOUNDARIES = [
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+]
+VISUAL_HEADS_QUARANTINE_PAYLOADS = {
+    "detect_figure_heads": "let _v = detect_figure_heads(input);\n",
+    "detect_table_heads": "let _v = detect_table_heads(input);\n",
+    "detect_formula_heads": "let _v = detect_formula_heads(input);\n",
+    "NativeVisual": "let _v: NativeVisual = build();\n",
+    "LayoutProvider": "let _v: LayoutProvider = build();\n",
+}
+
+EXPECTED_VISUAL_HEADS_TOKENS = list(VISUAL_HEADS_QUARANTINE_TOKENS)
+EXPECTED_VISUAL_HEADS_BOUNDARIES = list(VISUAL_HEADS_QUARANTINE_BOUNDARIES)
+
+
+def _visual_heads_quarantine_flags(flags):
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    return [item for item in matching if "#visual_heads_quarantine." in item.evidence]
+
+
+def _load_live_compat() -> dict:
+    return yaml.safe_load((ROOT / "data/parse/grobid_compatibility.yaml").read_text(encoding="utf-8"))
+
+
+def test_visual_heads_quarantine_derive_live_from_data():
+    payload = _load_live_compat()
+    tokens, boundaries = _visual_heads_quarantine_spec(payload.get("defaults"))
+    assert tokens == EXPECTED_VISUAL_HEADS_TOKENS
+    assert boundaries == EXPECTED_VISUAL_HEADS_BOUNDARIES
+
+
+def test_visual_heads_quarantine_helper_rejects_malformed_without_invented_fallback():
+    assert _visual_heads_quarantine_spec(None) == ([], [])
+    assert _visual_heads_quarantine_spec({}) == ([], [])
+    assert _visual_heads_quarantine_spec({"visual_heads_quarantine": "detect_figure_heads"}) == ([], [])
+    assert _visual_heads_quarantine_spec({"visual_heads_quarantine": {"tokens": "x", "boundaries": "y"}}) == ([], [])
+    assert _visual_heads_quarantine_spec(
+        {"visual_heads_quarantine": {"tokens": [None, 7, "  "], "boundaries": [None, 7, "  "]}}
+    ) == ([], [])
+    assert _visual_heads_quarantine_spec(
+        {"visual_heads_quarantine": {"tokens": ["detect_figure_heads", "", None, 7, " LayoutProvider "], "boundaries": ["crates/da-cli/src/source_cli.rs", "", None]}}
+    ) == (["detect_figure_heads", "LayoutProvider"], ["crates/da-cli/src/source_cli.rs"])
+
+
+@pytest.mark.parametrize("relative", VISUAL_HEADS_QUARANTINE_BOUNDARIES)
+@pytest.mark.parametrize("token", VISUAL_HEADS_QUARANTINE_TOKENS)
+def test_checker_flags_visual_heads_quarantine_token_in_boundary(tmp_path: Path, relative: str, token: str):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / relative
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(VISUAL_HEADS_QUARANTINE_PAYLOADS[token], encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _visual_heads_quarantine_flags(flags)
+    assert matching, flags
+    hit = next(item for item in matching if token in item.evidence and relative in item.evidence)
+    assert hit.flag == "scholarly_parse_plane_policy_stamp"
+    assert hit.severity == "high"
+    assert f"#visual_heads_quarantine.{token}" in hit.evidence
+    assert "plane=integration" in hit.evidence and "violation=policy_stamp" in hit.evidence
+
+
+@pytest.mark.parametrize("token", ["detect_figure_heads", "detect_table_heads", "detect_formula_heads"])
+def test_checker_visual_heads_quarantine_allows_whitespace_before_paren(tmp_path: Path, token: str):
+    _copy_checker_surface(tmp_path)
+    for relative in VISUAL_HEADS_QUARANTINE_BOUNDARIES:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(f"let _v = {token} (input);\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _visual_heads_quarantine_flags(flags)
+    assert len(matching) == len(VISUAL_HEADS_QUARANTINE_BOUNDARIES), flags
+    assert all(f"#visual_heads_quarantine.{token}" in item.evidence for item in matching), flags
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "let _v = my_detect_figure_heads(input);\n",
+        "let _v = detect_figure_heads_extra(input);\n",
+        "detect_figure_heads is shadow-only prose without a call\n",
+        "let _v = my_detect_table_heads(input);\n",
+        "let _v = detect_table_heads_extra(input);\n",
+        "detect_table_heads is shadow-only prose without a call\n",
+        "let _v = my_detect_formula_heads(input);\n",
+        "let _v = detect_formula_heads_extra(input);\n",
+        "detect_formula_heads is shadow-only prose without a call\n",
+        "let _v = MyNativeVisual::new();\n",
+        "let _v = NativeVisualExtra::new();\n",
+        "let _v = MyLayoutProvider::new();\n",
+        "let _v = LayoutProviderExtra::new();\n",
+        "// detect_figure_heads is shadow-only prose\n",
+        "// detect_table_heads is shadow-only prose\n",
+        "// detect_formula_heads is shadow-only prose\n",
+        "// NativeVisual is shadow-only prose\n",
+        "// LayoutProvider is shadow-only prose\n",
+        "/// doc detect_figure_heads prose\n",
+        "/// doc NativeVisual prose\n",
+        "let x = 1; // detect_figure_heads prose\n",
+        "let x = 1; // LayoutProvider prose\n",
+    ],
+)
+def test_checker_visual_heads_quarantine_ignores_prefixed_and_prose_comments(tmp_path: Path, payload: str):
+    _copy_checker_surface(tmp_path)
+    for relative in VISUAL_HEADS_QUARANTINE_BOUNDARIES:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(payload, encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _visual_heads_quarantine_flags(flags) == [], flags
+
+
+def test_checker_clean_root_has_no_visual_heads_quarantine_flags():
+    assert _visual_heads_quarantine_flags(_check_scholarly_parse_plane(ROOT)) == []
+
+
+def test_checker_visual_heads_quarantine_skips_missing_boundaries(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    for relative in VISUAL_HEADS_QUARANTINE_BOUNDARIES:
+        target = tmp_path / relative
+        if target.is_file():
+            target.unlink()
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _visual_heads_quarantine_flags(flags) == [], flags
+
+
+def test_checker_visual_heads_quarantine_stays_silent_without_ledger_but_keeps_integrity_signals(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    (tmp_path / "data/parse/grobid_compatibility.yaml").unlink()
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _visual_heads_quarantine_flags(flags) == [], flags
+    assert any(
+        item.flag
+        in {
+            "scholarly_parse_plane_evidence_missing",
+            "scholarly_parse_plane_backend_identity",
+        }
+        for item in flags
+    ), flags
+
+
+def test_checker_visual_heads_quarantine_stays_silent_on_malformed_ledger(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/parse/grobid_compatibility.yaml"
+    path.write_text("{unclosed: [1,\n", encoding="utf-8")
+    target = tmp_path / VISUAL_HEADS_QUARANTINE_BOUNDARIES[0]
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(VISUAL_HEADS_QUARANTINE_PAYLOADS["detect_figure_heads"], encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _visual_heads_quarantine_flags(flags) == [], flags
+    assert any(
+        item.flag == "scholarly_parse_plane_backend_identity" for item in flags
+    ), flags
+
+
+def test_checker_visual_heads_quarantine_stays_silent_on_missing_section_but_keeps_other_namespaces(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/parse/grobid_compatibility.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    payload.get("defaults", {}).pop("visual_heads_quarantine", None)
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    target = tmp_path / VISUAL_HEADS_QUARANTINE_BOUNDARIES[0]
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(VISUAL_HEADS_QUARANTINE_PAYLOADS["detect_figure_heads"], encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _visual_heads_quarantine_flags(flags) == [], flags
+
+
+def test_checker_visual_heads_and_other_namespaces_stay_isolated(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / VISUAL_HEADS_QUARANTINE_BOUNDARIES[0]
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(VISUAL_HEADS_QUARANTINE_PAYLOADS["detect_figure_heads"], encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _visual_heads_quarantine_flags(flags), flags
+    assert _java_absent_flags(flags) == [], flags
+    assert _bibliography_quarantine_flags(flags) == [], flags
+    assert _header_quarantine_flags(flags) == [], flags
