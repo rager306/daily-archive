@@ -268,6 +268,20 @@ def test_checker_clean_root_has_no_s19_flags():
     assert _check_scholarly_parse_plane(ROOT) == []
 
 
+def test_checker_flags_parse_pdf_missing_p6_observe_stamp(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        "pub fn run_parse_pdf() { stamp_p2_segmentation_observe(&mut m, 1); stamp_p3_header_observe(&mut m, 1); stamp_p4_references_observe(&mut m, 1); }\n",
+        encoding="utf-8",
+    )
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    assert matching, flags
+    assert any("stamp_p6" in item.evidence or "source_cli.rs" in item.evidence for item in matching)
+
+
 def test_checker_flags_parse_pdf_missing_p2_observe_stamp(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     target = tmp_path / "crates/da-cli/src/source_cli.rs"

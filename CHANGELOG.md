@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-05 — M482-k8go0z/S01: parse-pdf stamps P6 visual observe beside Java
+
+parse-pdf merges cascade_observe.P6 from Java figures/tables/formulas.
+P2 P3 P4 are kept. empty_count_not_success stays true. Native visual
+heads are not called. Governor flags a parse-pdf without the P6 stamp
+or with native visual names. No splice. No graph. D127 false.
+
+Green: da-cli lib source_cli 16; architecture_contract native_visual 2;
+scholarly_parse_governance 95.
+
 ## 2026-09-05 — M481-x8opx5/S01: parse-pdf stamps P2 segmentation observe beside Java
 
 parse-pdf merges cascade_observe.P2 from Java sections.len().

@@ -736,6 +736,14 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "parse-pdf stamps P4 observe from Java citation_n",
                 "missing stamp_p4_references_observe",
             )
+        if "stamp_p6_visual_observe" not in src:
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#stamp_p6_visual_observe",
+                "parse-pdf stamps P6 observe from Java figure/table/formula counts",
+                "missing stamp_p6_visual_observe",
+            )
         if (
             "compose_header(" in src
             or "run_header_sequence(" in src
@@ -756,6 +764,19 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "crates/da-cli/src/source_cli.rs#parse-pdf",
                 "P2 observe must not call native segmentation",
                 "native segmentation call",
+            )
+        if (
+            "detect_figure_heads" in src
+            or "detect_table_heads" in src
+            or "detect_formula_heads" in src
+            or "NativeVisual" in src
+        ):
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#parse-pdf",
+                "P6 observe must not call native visual heads",
+                "native visual call",
             )
 
     constructors = (registry.get("defaults") or {}).get("production_pdf_constructors") or {}

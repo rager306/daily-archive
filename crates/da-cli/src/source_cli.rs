@@ -110,6 +110,29 @@ pub(crate) fn stamp_p4_references_observe(m: &mut serde_yaml::Mapping, java_cita
     merge_cascade_observe(m, "P4", p4);
 }
 
+/// P6 visual observe beside Java lift. Native heads are not called.
+/// empty_count_not_success keeps a zero vec from looking like a pass.
+pub(crate) fn stamp_p6_visual_observe(
+    m: &mut serde_yaml::Mapping,
+    java_figure_n: usize,
+    java_table_n: usize,
+    java_formula_n: usize,
+    table_typed_absence: bool,
+    formula_typed_absence: bool,
+) {
+    let mut p6 = serde_yaml::Mapping::new();
+    p6.insert("stage".into(), "P6".into());
+    p6.insert("production_authority".into(), "java_http".into());
+    p6.insert("observe_mode".into(), "shadow_receipt".into());
+    p6.insert("java_figure_n".into(), java_figure_n.into());
+    p6.insert("java_table_n".into(), java_table_n.into());
+    p6.insert("java_formula_n".into(), java_formula_n.into());
+    p6.insert("empty_count_not_success".into(), true.into());
+    p6.insert("table_typed_absence".into(), table_typed_absence.into());
+    p6.insert("formula_typed_absence".into(), formula_typed_absence.into());
+    merge_cascade_observe(m, "P6", p6);
+}
+
 fn stamp_from_grammar(
     m: &mut serde_yaml::Mapping,
     g: &da_application::parse_grammar::ParseGrammarDecision,
@@ -1865,6 +1888,14 @@ pub fn run_parse_pdf(
     stamp_p2_segmentation_observe(&mut m, parsed.sections.len());
     stamp_p3_header_observe(&mut m, parsed.header_authors.len());
     stamp_p4_references_observe(&mut m, parsed.citations.len());
+    stamp_p6_visual_observe(
+        &mut m,
+        parsed.figures.len(),
+        parsed.tables.len(),
+        parsed.formulas.len(),
+        parsed.table_missingness.is_some(),
+        parsed.formula_missingness.is_some(),
+    );
     m.insert("lifecycle".into(), "parsed".into());
     let ev_raw = serde_yaml::Mapping::from_iter([
         ("stage".into(), "raw".into()),
@@ -3390,6 +3421,51 @@ mod tests {
             p3.get("java_header_n").and_then(|v| v.as_u64()),
             p3.get("named_native_accepted_gap").and_then(|v| v.as_u64()),
             "hub Java 21 must not be replaced by native accepted 20"
+        );
+    }
+
+    #[test]
+    fn stamp_p6_merges_beside_p2_p3_p4_and_empty_count_is_not_success() {
+        let mut m = serde_yaml::Mapping::new();
+        stamp_p2_segmentation_observe(&mut m, 12);
+        stamp_p3_header_observe(&mut m, 21);
+        stamp_p4_references_observe(&mut m, 80);
+        stamp_p6_visual_observe(&mut m, 0, 0, 0, true, true);
+        let observe = m
+            .get("cascade_observe")
+            .and_then(|v| v.as_mapping())
+            .expect("cascade_observe");
+        assert!(observe.contains_key("P2"), "P6 must not erase P2");
+        assert!(observe.contains_key("P3"), "P6 must not erase P3");
+        assert!(observe.contains_key("P4"), "P6 must not erase P4");
+        let p6 = observe
+            .get("P6")
+            .and_then(|v| v.as_mapping())
+            .expect("P6 observe");
+        assert_eq!(p6.get("stage").and_then(|v| v.as_str()), Some("P6"));
+        assert_eq!(
+            p6.get("production_authority").and_then(|v| v.as_str()),
+            Some("java_http")
+        );
+        assert_eq!(
+            p6.get("observe_mode").and_then(|v| v.as_str()),
+            Some("shadow_receipt")
+        );
+        assert_eq!(p6.get("java_figure_n").and_then(|v| v.as_u64()), Some(0));
+        assert_eq!(p6.get("java_table_n").and_then(|v| v.as_u64()), Some(0));
+        assert_eq!(p6.get("java_formula_n").and_then(|v| v.as_u64()), Some(0));
+        assert_eq!(
+            p6.get("empty_count_not_success").and_then(|v| v.as_bool()),
+            Some(true),
+            "zero figures must not look like visual success"
+        );
+        assert_eq!(
+            p6.get("table_typed_absence").and_then(|v| v.as_bool()),
+            Some(true)
+        );
+        assert_eq!(
+            p6.get("formula_typed_absence").and_then(|v| v.as_bool()),
+            Some(true)
         );
     }
 
