@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-05 — M493-jzmctv/S12 T01: candidate admission and receipt completeness pinned
+
+Independent Rust DATA contracts pin S12 candidate admission over three YAML
+ledgers and receipt completeness. Unified validator; ablation path is the real
+nested DATA shape. No family promote. No splice. No graph. D127 false. P5 later.
+Hub 20 vs 21 stays DATA. `visual_bundle` stays later.
+
+Green: da-parse data_contracts S12 tests 2/2 plus S06–S11 regression.
+
 ## 2026-09-05 — M493-jzmctv/S11 T01: PARSE_BARE fail-closed for parser lifetime
 
 Governor classifies `GrobidParser::from_env()` by binding use in the enclosing

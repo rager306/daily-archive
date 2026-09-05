@@ -6536,3 +6536,594 @@ fn s11_live_registry_default_profile_stays_structural_not_rich() {
     assert_ne!(mutated, RICH_FP);
     assert_ne!(mutated, STRUCTURAL_FP);
 }
+
+// ───── M493 S12/T01: one named candidate family after W0-W6 receipts ─────
+//
+// Final wave-admission contract: after W0-W6 receipts exactly one named
+// native candidate contour exists (`da-parse.native_header_reference_composition`
+// in shadow/candidate), its independently selectable lanes stay exactly
+// `[header, references]`, admission requires the full four-receipt set with
+// named non-poolable denominators (hub 20 vs 21, citation names != biblStruct),
+// and the wave promotes nothing — no explicit decision, Java GROBID stays
+// production oracle and sole rollback target, import/graph writes frozen.
+//
+// One shared validator (`validate_s12_wave_admission`) binds all three live
+// DATA surfaces (registry of record, comparison contract, composition
+// authority); every synthetic drift below fails through that helper, never
+// through ad-hoc asserts. No production YAML or runtime code is touched.
+
+const S12_CANDIDATE_ID: &str = "da-parse.native_header_reference_composition";
+const S12_FULLTEXT_CANDIDATE_ID: &str = "da-parse.native_fulltext_composition";
+const S12_ROLLBACK: &str = "java-grobid-http@0.9.0-crf";
+const S12_ADMISSION_TAG: &str = "[s12-wave-admission-drift]";
+const S12_LANES_EXACT: [&str; 2] = ["header", "references"];
+const S12_REQUIRED_RECEIPTS: [&str; 4] = [
+    "native_date_shadow",
+    "native_personal_name_shadow",
+    "native_affiliation_shadow",
+    "native_citation_shadow",
+];
+
+struct S12AdmissionSnapshot {
+    registry: serde_yaml::Value,
+    comparison: serde_yaml::Value,
+    composition: serde_yaml::Value,
+}
+
+fn load_s12_admission() -> S12AdmissionSnapshot {
+    S12AdmissionSnapshot {
+        registry: expect_loaded(REGISTRY_REL_PATH),
+        comparison: expect_loaded(COMPARISON_CONTRACT_REL),
+        composition: expect_loaded(NATIVE_FULLTEXT_COMPOSITION_REL),
+    }
+}
+
+fn s12_seq_strs(v: &serde_yaml::Value) -> Vec<String> {
+    v.as_sequence()
+        .map(|seq| {
+            seq.iter()
+                .filter_map(|x| x.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Shared S12 wave-admission validator over the three live DATA surfaces.
+/// Generic `serde_yaml::Value` reader — a renamed/removed field fails loudly.
+fn validate_s12_wave_admission(snap: &S12AdmissionSnapshot) -> Vec<String> {
+    let mut errs: Vec<String> = Vec::new();
+    // ── Registry wave promotion freeze (this wave promotes nothing) ──
+    match snap
+        .registry
+        .get("defaults")
+        .and_then(|d| d.get("promotion"))
+    {
+        Some(p) => {
+            if p.get("this_wave_promotes").and_then(|v| v.as_str()) != Some("none") {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} registry `defaults.promotion.this_wave_promotes` must stay `none` — this wave promotes nothing"
+                ));
+            }
+            if p.get("max_non_candidate_families").and_then(|v| v.as_i64()) != Some(1) {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} registry `defaults.promotion.max_non_candidate_families` must stay 1 — one candidate family only"
+                ));
+            }
+            if p.get("deployed").and_then(|v| v.as_bool()) != Some(false) {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} registry `defaults.promotion.deployed` must stay false"
+                ));
+            }
+            if p.get("auto_promote").and_then(|v| v.as_str()) != Some("forbidden") {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} registry `defaults.promotion.auto_promote` must stay forbidden"
+                ));
+            }
+        }
+        None => errs.push(format!(
+            "{S12_ADMISSION_TAG} registry lost `defaults.promotion` — loss, not silence"
+        )),
+    }
+    if snap.registry.get("auto_promote").and_then(|v| v.as_str()) != Some("forbidden") {
+        errs.push(format!(
+            "{S12_ADMISSION_TAG} registry top-level `auto_promote` must stay forbidden"
+        ));
+    }
+    if snap
+        .registry
+        .get("import_eligible")
+        .and_then(|v| v.as_bool())
+        != Some(false)
+    {
+        errs.push(format!(
+            "{S12_ADMISSION_TAG} registry `import_eligible` must stay false — import frozen"
+        ));
+    }
+    if snap
+        .registry
+        .get("defaults")
+        .and_then(|d| d.get("rollback_target"))
+        .and_then(|v| v.as_str())
+        != Some(S12_ROLLBACK)
+    {
+        errs.push(format!(
+            "{S12_ADMISSION_TAG} registry `defaults.rollback_target` must stay the Java rollback target"
+        ));
+    }
+    // ── Named composition candidate: shadow/candidate, no explicit decision ──
+    let Some(shadow) = snap
+        .comparison
+        .get("native_header_reference_composition_shadow")
+    else {
+        return vec![format!(
+            "{S12_ADMISSION_TAG} comparison lost `native_header_reference_composition_shadow` — loss, not silence"
+        )];
+    };
+    if shadow.get("candidate_id").and_then(|v| v.as_str()) != Some(S12_CANDIDATE_ID) {
+        errs.push(format!(
+            "{S12_ADMISSION_TAG} composition `candidate_id` must stay exactly `{S12_CANDIDATE_ID}`"
+        ));
+    }
+    for (key, expected) in [
+        ("observation_mode", "shadow"),
+        ("promotion_state", "candidate"),
+        ("auto_promote", "forbidden"),
+    ] {
+        if shadow.get(key).and_then(|v| v.as_str()) != Some(expected) {
+            errs.push(format!(
+                "{S12_ADMISSION_TAG} composition `{key}` must stay `{expected}`"
+            ));
+        }
+    }
+    // No promotion decision exists: the key stays absent-or-null until a
+    // later explicit user yes (outside M493) creates one.
+    if !matches!(
+        shadow.get("explicit_decision"),
+        None | Some(serde_yaml::Value::Null)
+    ) {
+        errs.push(format!(
+            "{S12_ADMISSION_TAG} composition `explicit_decision` must stay absent-or-null — no promotion decision this wave"
+        ));
+    }
+    for lane in S12_LANES_EXACT {
+        if shadow
+            .get("rollback")
+            .and_then(|r| r.get(lane))
+            .and_then(|v| v.as_str())
+            != Some(S12_ROLLBACK)
+        {
+            errs.push(format!(
+                "{S12_ADMISSION_TAG} composition `rollback.{lane}` must stay the Java rollback target"
+            ));
+        }
+    }
+    // Independently selectable lanes stay exactly [header, references], ordered.
+    let lanes = s12_seq_strs(&shadow["independently_selectable_lanes"]);
+    let expected_lanes: Vec<String> = S12_LANES_EXACT.iter().map(|s| s.to_string()).collect();
+    if lanes != expected_lanes {
+        errs.push(format!(
+            "{S12_ADMISSION_TAG} composition `independently_selectable_lanes` must stay exactly `[header, references]`, got {lanes:?}"
+        ));
+    }
+    // Admission requires the full four-receipt set, exact and ordered.
+    let required = s12_seq_strs(&shadow["component_receipts"]["required"]);
+    let expected_required: Vec<String> = S12_REQUIRED_RECEIPTS
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    if required != expected_required {
+        errs.push(format!(
+            "{S12_ADMISSION_TAG} composition `component_receipts.required` must stay the exact four-receipt set, got {required:?}"
+        ));
+    }
+    // Each required receipt block exists as shadow/candidate evidence bound
+    // to the same Java rollback target.
+    for receipt in S12_REQUIRED_RECEIPTS {
+        match snap.comparison.get(receipt) {
+            Some(block) => {
+                if block.get("promotion_state").and_then(|v| v.as_str()) != Some("candidate") {
+                    errs.push(format!(
+                        "{S12_ADMISSION_TAG} receipt `{receipt}` `promotion_state` must stay candidate"
+                    ));
+                }
+                if block.get("rollback_target").and_then(|v| v.as_str()) != Some(S12_ROLLBACK) {
+                    errs.push(format!(
+                        "{S12_ADMISSION_TAG} receipt `{receipt}` `rollback_target` must stay the Java rollback target"
+                    ));
+                }
+            }
+            None => errs.push(format!(
+                "{S12_ADMISSION_TAG} receipt block `{receipt}` missing — loss, not silence"
+            )),
+        }
+    }
+    // Named non-poolable denominators on the composition shadow.
+    for (receipt, field, expected) in [
+        ("date", "total", 173_i64),
+        ("header", "raw_total", 36),
+        ("header", "accepted_total", 35),
+        ("header", "rejected_or_incomplete", 1),
+        ("header", "strict_n", 0),
+        ("header", "soft_initial_n", 35),
+        ("citation_names", "total", 2198),
+        ("citation_names", "strict_n", 0),
+        ("citation_names", "soft_initial_n", 2196),
+        ("citation_names", "unsupported_n", 2),
+        ("affiliation", "recognition_total", 13),
+        ("affiliation", "linking_total", 13),
+        ("affiliation", "linked_authors", 11),
+        ("affiliation", "zero_link_authors", 25),
+        ("affiliation", "exactly_one_three_link", 1),
+        ("affiliation", "address_observed_n", 0),
+        ("references", "total", 207),
+        ("anchors", "total", 380),
+        ("anchors", "targeted", 217),
+        ("anchors", "targetless", 163),
+        ("anchors", "fragmented_adjacency", 168),
+    ] {
+        if shadow["component_receipts"][receipt][field].as_i64() != Some(expected) {
+            errs.push(format!(
+                "{S12_ADMISSION_TAG} composition `component_receipts.{receipt}.{field}` must stay {expected}"
+            ));
+        }
+    }
+    if !s12_seq_strs(&shadow["forbidden"]).contains(&"pooled_denominators".to_string()) {
+        errs.push(format!(
+            "{S12_ADMISSION_TAG} composition `forbidden` lost `pooled_denominators`"
+        ));
+    }
+    // ── Ablation freeze: explicit decision null, graph write forbidden ──
+    match snap
+        .comparison
+        .get("metrics")
+        .and_then(|m| m.get("learning"))
+        .and_then(|l| l.get("ruvllm_ablation"))
+    {
+        Some(ablation) => {
+            if ablation.get("explicit_decision") != Some(&serde_yaml::Value::Null) {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} ablation `explicit_decision` must stay null — no explicit yes this wave"
+                ));
+            }
+            if ablation.get("deployed").and_then(|v| v.as_bool()) != Some(false) {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} ablation `deployed` must stay false"
+                ));
+            }
+            if ablation.get("graph_write").and_then(|v| v.as_str()) != Some("forbidden") {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} ablation `graph_write` must stay forbidden — graph frozen"
+                ));
+            }
+            if ablation.get("promotion_state").and_then(|v| v.as_str()) != Some("candidate") {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} ablation `promotion_state` must stay candidate"
+                ));
+            }
+        }
+        None => errs.push(format!(
+            "{S12_ADMISSION_TAG} comparison lost `metrics.learning.ruvllm_ablation` — loss, not silence"
+        )),
+    }
+    // ── Fulltext shadow + composition authority: same lanes, same hub gap ──
+    for (label, block) in [
+        (
+            "comparison-native_fulltext_composition_shadow",
+            snap.comparison.get("native_fulltext_composition_shadow"),
+        ),
+        ("composition-authority", Some(&snap.composition)),
+    ] {
+        let Some(block) = block else {
+            errs.push(format!(
+                "{S12_ADMISSION_TAG} `{label}` block missing — loss, not silence"
+            ));
+            continue;
+        };
+        for (key, expected) in [
+            ("observation_mode", "shadow"),
+            ("promotion_state", "candidate"),
+            ("auto_promote", "forbidden"),
+        ] {
+            if block.get(key).and_then(|v| v.as_str()) != Some(expected) {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} `{label}` `{key}` must stay `{expected}`"
+                ));
+            }
+        }
+        if block.get("rollback_target").and_then(|v| v.as_str()) != Some(S12_ROLLBACK) {
+            errs.push(format!(
+                "{S12_ADMISSION_TAG} `{label}` `rollback_target` must stay the Java rollback target"
+            ));
+        }
+        if label.starts_with("comparison") {
+            if block.get("candidate_id").and_then(|v| v.as_str()) != Some(S12_FULLTEXT_CANDIDATE_ID)
+            {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} `{label}` `candidate_id` must stay exactly `{S12_FULLTEXT_CANDIDATE_ID}`"
+                ));
+            }
+            if block.get("import_eligible").and_then(|v| v.as_bool()) != Some(false) {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} `{label}` `import_eligible` must stay false"
+                ));
+            }
+            for (key, expected) in [
+                ("production_route", "forbidden"),
+                ("graph_mutation", "forbidden"),
+            ] {
+                if block.get(key).and_then(|v| v.as_str()) != Some(expected) {
+                    errs.push(format!(
+                        "{S12_ADMISSION_TAG} `{label}` `{key}` must stay `{expected}`"
+                    ));
+                }
+            }
+            let lanes = s12_seq_strs(&block["admission"]["independently_selectable_lanes"]);
+            if lanes != expected_lanes {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} `{label}` `admission.independently_selectable_lanes` must stay exactly `[header, references]`, got {lanes:?}"
+                ));
+            }
+        } else {
+            if block.get("import_eligible").and_then(|v| v.as_bool()) != Some(false) {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} `{label}` `import_eligible` must stay false"
+                ));
+            }
+            for (key, expected) in [
+                ("production_route", "forbidden"),
+                ("graph_mutation", "forbidden"),
+            ] {
+                if block.get(key).and_then(|v| v.as_str()) != Some(expected) {
+                    errs.push(format!(
+                        "{S12_ADMISSION_TAG} `{label}` `{key}` must stay `{expected}`"
+                    ));
+                }
+            }
+            let lanes = s12_seq_strs(&block["admission"]["independently_selectable"]);
+            if lanes != expected_lanes {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} `{label}` `admission.independently_selectable` must stay exactly `[header, references]`, got {lanes:?}"
+                ));
+            }
+            if block["admission"]["pooled_winner"].as_str() != Some("forbidden") {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} `{label}` `admission.pooled_winner` must stay forbidden"
+                ));
+            }
+            if block["admission"]["terminal_receipt_is_pass"].as_bool() != Some(false) {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} `{label}` `admission.terminal_receipt_is_pass` must stay false"
+                ));
+            }
+        }
+        // Named denominators: hub 20 vs 21 stays a named gap, citation
+        // names never conflate with the biblStruct count.
+        for (field, expected) in [
+            ("date_total", 173_i64),
+            ("header_raw_total", 36),
+            ("header_accepted_total", 35),
+            ("header_rejected_or_incomplete", 1),
+            ("citation_names_total", 2198),
+            ("affiliation_recognition_total", 13),
+            ("affiliation_linking_total", 13),
+            ("references_total", 207),
+            ("anchors_total", 380),
+            ("anchors_targeted", 217),
+            ("anchors_targetless", 163),
+            ("anchors_fragmented_adjacency", 168),
+        ] {
+            if block["source_evidence"]["s12_named_denominators"][field].as_i64() != Some(expected)
+            {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} `{label}` `s12_named_denominators.{field}` must stay {expected}"
+                ));
+            }
+        }
+        let hub = &block["source_evidence"]["s12_named_denominators"]["java_lift_same_n"];
+        if hub["hub_native_accepted_header"].as_i64() != Some(20)
+            || hub["hub_java_header_raw"].as_i64() != Some(21)
+        {
+            errs.push(format!(
+                "{S12_ADMISSION_TAG} `{label}` hub gap must stay native-accepted 20 vs Java-raw 21"
+            ));
+        }
+        if hub["citation_names_not_biblstruct"].as_bool() != Some(true) {
+            errs.push(format!(
+                "{S12_ADMISSION_TAG} `{label}` `citation_names_not_biblstruct` must stay boolean true"
+            ));
+        }
+        if hub["java_header_authors_equals"].as_str() != Some("header_raw_total")
+            || hub["java_biblstruct_equals"].as_str() != Some("references_total")
+        {
+            errs.push(format!(
+                "{S12_ADMISSION_TAG} `{label}` Java same-n bindings must stay `header_raw_total` / `references_total`"
+            ));
+        }
+        for key in [
+            "pooling_accepted_with_raw",
+            "pooling_citation_names_with_references",
+        ] {
+            if hub[key].as_str() != Some("forbidden") {
+                errs.push(format!(
+                    "{S12_ADMISSION_TAG} `{label}` `{key}` must stay forbidden — no pooled denominator"
+                ));
+            }
+        }
+    }
+    // Composition authority receipts for the two admitted lanes stay
+    // S12-produced, passing, and Java-fallback-bound.
+    for lane in ["header", "references"] {
+        let receipt = &snap.composition["component_receipts"][lane];
+        if receipt["producer"].as_str() != Some("S12")
+            || receipt["disposition"].as_str() != Some("passed")
+            || receipt["evidence_state"].as_str() != Some("passing")
+            || receipt["fallback_target"].as_str() != Some(S12_ROLLBACK)
+        {
+            errs.push(format!(
+                "{S12_ADMISSION_TAG} composition `component_receipts.{lane}` must stay S12/passed/passing with Java fallback"
+            ));
+        }
+    }
+    errs
+}
+
+#[test]
+fn s12_wave_admits_single_named_candidate_with_full_receipts() {
+    let snap = load_s12_admission();
+    let errs = validate_s12_wave_admission(&snap);
+    assert!(
+        errs.is_empty(),
+        "S12 wave-admission DATA violations:\n{}",
+        errs.join("\n")
+    );
+    // The live DATA identity binds the pinned constant — a renamed or
+    // prefixed candidate never admits.
+    let live_id = snap.comparison["native_header_reference_composition_shadow"]["candidate_id"]
+        .as_str()
+        .unwrap_or_default();
+    assert_eq!(
+        live_id, S12_CANDIDATE_ID,
+        "S12: live candidate_id `{live_id}` drifted from the admitted contour"
+    );
+}
+
+#[test]
+fn s12_rejects_wave_admission_drift_on_synthetic_clones() {
+    // Wave promotes a lane: this wave promotes nothing.
+    let mut wave = load_s12_admission();
+    wave.registry["defaults"]["promotion"]["this_wave_promotes"] =
+        serde_yaml::Value::String("header".into());
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&wave),
+        "this_wave_promotes -> header",
+    );
+    // Silent deployment without an explicit decision.
+    let mut deployed = load_s12_admission();
+    deployed.registry["defaults"]["promotion"]["deployed"] = serde_yaml::Value::Bool(true);
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&deployed),
+        "deployed -> true",
+    );
+    // Second non-candidate family smuggled past the one-family cap.
+    let mut families = load_s12_admission();
+    families.registry["defaults"]["promotion"]["max_non_candidate_families"] =
+        serde_yaml::Value::Number(2.into());
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&families),
+        "max_non_candidate_families -> 2",
+    );
+    // Promotion state flipped to promoted without a decision receipt.
+    let mut promoted = load_s12_admission();
+    promoted.comparison["native_header_reference_composition_shadow"]["promotion_state"] =
+        serde_yaml::Value::String("promoted".into());
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&promoted),
+        "promotion_state -> promoted",
+    );
+    // Explicit decision invented without a later user yes.
+    let mut decided = load_s12_admission();
+    decided.comparison["metrics"]["learning"]["ruvllm_ablation"]["explicit_decision"] =
+        serde_yaml::Value::String("user-yes-2026-09".into());
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&decided),
+        "explicit_decision invented",
+    );
+    // A required component receipt removed from admission.
+    let mut removed = load_s12_admission();
+    if let Some(seq) = removed.comparison["native_header_reference_composition_shadow"]
+        ["component_receipts"]["required"]
+        .as_sequence_mut()
+    {
+        seq.retain(|x| x.as_str() != Some("native_citation_shadow"));
+    }
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&removed),
+        "native_citation_shadow receipt removed",
+    );
+    // Body lane smuggled into the independently selectable set.
+    let mut widened = load_s12_admission();
+    if let Some(seq) =
+        widened.composition["admission"]["independently_selectable"].as_sequence_mut()
+    {
+        seq.push(serde_yaml::Value::String("body".into()));
+    }
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&widened),
+        "body added to independently_selectable",
+    );
+    // Visual lane smuggled into the composition selectable lanes.
+    let mut visual = load_s12_admission();
+    if let Some(seq) = visual.comparison["native_header_reference_composition_shadow"]
+        ["independently_selectable_lanes"]
+        .as_sequence_mut()
+    {
+        seq.push(serde_yaml::Value::String("visual".into()));
+    }
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&visual),
+        "visual added to independently_selectable_lanes",
+    );
+    // Pooled denominator: accepted-with-raw pooling allowed.
+    let mut pooled = load_s12_admission();
+    pooled.comparison["native_fulltext_composition_shadow"]["source_evidence"]["s12_named_denominators"]
+        ["java_lift_same_n"]["pooling_accepted_with_raw"] =
+        serde_yaml::Value::String("allowed".into());
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&pooled),
+        "pooling_accepted_with_raw allowed",
+    );
+    // Hub gap collapsed: native 20 rewritten to Java 21.
+    let mut hub = load_s12_admission();
+    hub.composition["source_evidence"]["s12_named_denominators"]["java_lift_same_n"]["hub_native_accepted_header"] =
+        serde_yaml::Value::Number(21.into());
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&hub),
+        "hub native 20 rewritten to 21",
+    );
+    // Citation names conflated with the biblStruct count.
+    let mut bibl = load_s12_admission();
+    bibl.comparison["native_fulltext_composition_shadow"]["source_evidence"]["s12_named_denominators"]
+        ["java_lift_same_n"]["citation_names_not_biblstruct"] = serde_yaml::Value::Bool(false);
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&bibl),
+        "citation_names_not_biblstruct flipped to false",
+    );
+    // Rollback swapped off Java: no non-Java fallback admits.
+    let mut rollback = load_s12_admission();
+    rollback.comparison["native_header_reference_composition_shadow"]["rollback"]["header"] =
+        serde_yaml::Value::String("da-parse.native@9.9.9".into());
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&rollback),
+        "rollback.header swapped off Java",
+    );
+    // Graph write unlocked on the ablation freeze.
+    let mut graph = load_s12_admission();
+    graph.comparison["metrics"]["learning"]["ruvllm_ablation"]["graph_write"] =
+        serde_yaml::Value::String("allowed".into());
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&graph),
+        "ablation graph_write allowed",
+    );
+    // Observation mode lifted to production on the shadow contour.
+    let mut production = load_s12_admission();
+    production.comparison["native_header_reference_composition_shadow"]["observation_mode"] =
+        serde_yaml::Value::String("production".into());
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&production),
+        "observation_mode -> production",
+    );
+}
