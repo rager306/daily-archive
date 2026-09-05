@@ -25,7 +25,8 @@
 //!   first `<abstract>` → [`ConservationFamily::Abstract`], `<persName>` →
 //!   [`ConservationFamily::Author`], `<idno>` → [`ConservationFamily::ArticleIdno`];
 //! - body region: `<head>` outside `<figure>` → [`ConservationFamily::Section`],
-//!   `<biblStruct>` → [`ConservationFamily::CitationEntry`], `<ref type="bibr">`
+//!   body `<biblStruct>` → [`ConservationFamily::CitationEntry`] (header
+//!   `sourceDesc` biblStruct is the paper itself, not a cited work), `<ref type="bibr">`
 //!   → [`ConservationFamily::CitationAnchor`], other `<ref>`/`<xref>` →
 //!   [`ConservationFamily::CrossReference`], `<ptr>` → [`ConservationFamily::Link`],
 //!   `<note>` → [`ConservationFamily::Note`], non-table `<figure>` →
@@ -1602,10 +1603,12 @@ fn classify_element(
                 .then_some(ConservationSubtype::ArxivIdno);
             Some((ConservationFamily::ArticleIdno, subtype))
         }
-        // Mirrors the flat-scan lifter semantics: every `<head>` in the body
-        // is a section-window boundary (caption heads included).
-        "head" if body => Some((ConservationFamily::Section, None)),
-        "biblStruct" => Some((ConservationFamily::CitationEntry, None)),
+        // Body `<head>` outside a figure/table wrapper is a section window.
+        // Caption heads live inside `<figure>` and are not sections.
+        "head" if body && elem.inside_figure.is_none() => Some((ConservationFamily::Section, None)),
+        // Bibliography entries are back-matter `<biblStruct>`. The paper's
+        // own header `<sourceDesc><biblStruct>` is not a cited work.
+        "biblStruct" if body => Some((ConservationFamily::CitationEntry, None)),
         "ref" if body && !elem.inside_bibl => {
             let ref_type = attr_value(&elem.attrs, "type");
             if ref_type.as_deref() == Some("bibr") {
@@ -1805,6 +1808,47 @@ mod tests {
                 && entry.reason == ConservationReasonCode::ObservedButMissing
                 && entry.source_ordinal == Some(1)
         }));
+    }
+
+    #[test]
+    fn header_biblstruct_is_not_a_citation_entry() {
+        let tei = concat!(
+            "<TEI><teiHeader><sourceDesc><biblStruct xml:id=\"paper\">",
+            "<analytic><title>Paper</title></analytic></biblStruct></sourceDesc>",
+            "</teiHeader><text><body><div><head>Intro</head><p>x</p></div></body>",
+            "<back><listBibl><biblStruct xml:id=\"b0\">",
+            "<analytic><title>Cited</title></analytic></biblStruct></listBibl></back></text></TEI>",
+        );
+        let envelope = TeiEnvelope::new(
+            tei.as_bytes().to_vec(),
+            TeiIdentity::new("cached-tei", "profile=test"),
+        );
+        let source = ConservationEngine::new().source_inventory(&envelope);
+        assert_eq!(
+            source.count(ConservationFamily::CitationEntry),
+            1,
+            "header sourceDesc biblStruct must not count as a cited work"
+        );
+    }
+
+    #[test]
+    fn figure_caption_head_is_not_a_section() {
+        let tei = concat!(
+            "<TEI><teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>",
+            "</fileDesc></teiHeader><text><body><div><head>Intro</head><p>x</p>",
+            "<figure><head>Fig 1. Caption</head><graphic/></figure></div></body></text></TEI>",
+        );
+        let envelope = TeiEnvelope::new(
+            tei.as_bytes().to_vec(),
+            TeiIdentity::new("cached-tei", "profile=test"),
+        );
+        let source = ConservationEngine::new().source_inventory(&envelope);
+        assert_eq!(
+            source.count(ConservationFamily::Section),
+            1,
+            "caption heads inside figure must not count as sections"
+        );
+        assert_eq!(source.count(ConservationFamily::Figure), 1);
     }
 
     #[test]

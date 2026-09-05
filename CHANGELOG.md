@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-04 — M466-xxitm7/S01: scanner honesty for header biblStruct and caption heads
+
+ConservationEngine no longer counts the paper's own header sourceDesc/biblStruct as a
+cited work, and no longer counts figure caption heads as sections. That was a
+scanner lie, not a missing bibliography. Remaining pinned section_missing is
+1 (hub) and 6 (rlm) extra body heads the nested-div lifter does not emit.
+citation_missing is 0. linkage_loss stays typed. Java production_route.
+No graph. D127 false.
+
+Green: conservation lib 6; conservation_contract 14.
+
 ## 2026-09-04 — M465-sqt7w0/S07 W6: identity ignores workers, no family promote
 
 Reuse stamp_parse_grammar and layout_smp receipts. TeiIdentity and D204 fingerprints

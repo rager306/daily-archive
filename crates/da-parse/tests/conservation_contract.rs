@@ -23,14 +23,13 @@
 //!   exact figure-owned source ordinal without disturbing the figure's own
 //!   ordinal-aligned retention.
 //!
-//! Baseline semantics on preserved GROBID TEI (pinned, deterministic): this
-//! cut's lifter honestly loses a typed, stable minority — the header
-//! `sourceDesc`/`biblStruct` entry (−1 citation per document), citation
-//! anchors outside section windows (`linkage_loss`), and trailing caption
-//! heads (rlm/hub sections). The pristine verdict is therefore
-//! `loss_detected` with pinned per-reason counts, and replay equality is
-//! byte-identical. Injected losses are asserted relative to that pinned
-//! baseline.
+//! Baseline semantics on preserved GROBID TEI (pinned, deterministic): the
+//! scanner does not count the paper's own header `sourceDesc`/`biblStruct`
+//! as a citation, and does not count figure caption `<head>` as a section.
+//! Remaining typed loss is citation anchors outside section windows
+//! (`linkage_loss`). The pristine verdict stays `loss_detected` while those
+//! anchors remain unlifted. Replay equality is byte-identical. Injected
+//! losses are asserted relative to that pinned baseline.
 //!
 //! Since S07/T04 the lifted P0 families (header authors, non-table figures,
 //! the declared arXiv identity, figure/table callouts, figure-owned graphic
@@ -260,7 +259,7 @@ fn pins_for(paper_id: &str) -> Pins {
             figures: 22,
             coordinates: Some(1),
             section_missing: 1,
-            citation_missing: 1,
+            citation_missing: 0,
             linkage_loss: 36,
             idnos_arxiv: 1,
             idnos_other: 1,
@@ -277,8 +276,8 @@ fn pins_for(paper_id: &str) -> Pins {
             authors: 4,
             figures: 29,
             coordinates: Some(25),
-            section_missing: 8,
-            citation_missing: 1,
+            section_missing: 6,
+            citation_missing: 0,
             linkage_loss: 29,
             idnos_arxiv: 1,
             idnos_other: 1,
@@ -296,7 +295,7 @@ fn pins_for(paper_id: &str) -> Pins {
             figures: 55,
             coordinates: Some(34),
             section_missing: 0,
-            citation_missing: 1,
+            citation_missing: 0,
             linkage_loss: 99,
             idnos_arxiv: 1,
             idnos_other: 1,
@@ -564,8 +563,7 @@ async fn preserved_source_inventory_is_complete_ordered_and_bounded() {
         assert_eq!(
             delta.verdict,
             ConservationVerdict::LossDetected,
-            "{case}: this cut loses header biblStruct citations, out-of-window \
-             anchors and trailing caption heads — pinned, never silent",
+            "{case}: this cut still loses out-of-window bibr anchors — pinned, never silent",
             case = fixture.case_id
         );
         assert_eq!(delta.identity.backend_id, CACHED_TEI_BACKEND_ID);
@@ -593,7 +591,7 @@ async fn preserved_source_inventory_is_complete_ordered_and_bounded() {
         assert_eq!(
             citation_missing,
             pins.citation_missing,
-            "{case}: header sourceDesc biblStruct loss drifted",
+            "{case}: citation ObservedButMissing drifted after scanner honesty",
             case = fixture.case_id
         );
         if pins.citation_missing > 0 {

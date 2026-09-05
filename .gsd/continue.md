@@ -1,12 +1,12 @@
-# continue — M465 S01–S07 skip-delivered in git; graph still frozen
+# continue — M466 S01 scanner honesty; M465 W0–W6 in git; graph frozen
 
-## Active state (updated 2026-09-04 after M465/S07 W6)
+## Active state (updated 2026-09-04 after M466/S01)
 
-Parse-plane waves W0–W6 are in git on feat/da-parse. S07: TeiIdentity ignores
-worker count; defaults.promotion this_wave_promotes=none, deployed=false.
-No family was candidate-promoted (acceptance conservation still loss_detected).
-Graph frozen (R118). Do not treat 9-lane segmentation report as 202-page pass.
-Do not unfreeze Samyama or D127 from these waves.
+Conservation scanner no longer treats header sourceDesc/biblStruct as a lost
+citation or figure caption heads as lost sections. citation_missing=0.
+Remaining section_missing is extra body heads the nested-div lifter skips
+(hub 1, rlm 6). Next is M466 S02: out-of-window bibr anchors (linkage_loss).
+Graph frozen. D127 false. Java production_route.
 Product: `M446-rw9a2p` S03 still 23/25, pending T24/T25.
 Branch `feat/da-parse`.
 
