@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-05 — M470-485ukv/S01: FSM ProfileRoute native default structural
+
+DecisionPoint now parses profile_route as its own point, not an alias of
+grammar_route. Closed ProfileRoute {structural, rich}. Native fallback
+consults DATA default=structural (D204). Rich is named, never implied.
+No WASM wat. Governor SHA-binds data/policies/registry.yaml and flags
+non-structural default via policy_stamp. No graph. D127 false.
+
+Green: da-domain fsm_policy 15; da-application fsm_policy_fallback 5;
+parse_grammar 8; wasm_policy 3; scholarly_parse_governance 83.
+
 ## 2026-09-05 — M469-j23uk8/S01: stamp grobid_profile separate from grammar_profile
 
 parse-pdf receipts now stamp grobid_profile=structural next to FSM grammar_profile.

@@ -6,7 +6,7 @@
 
 use da_domain::fsm_policy::{
     ArticleFeatures, DecisionPoint, PolicyDecision, PolicyRegistry, PolicySource,
-    batch_admission_native, grammar_route_native,
+    batch_admission_native, grammar_route_native, profile_route_native,
 };
 use da_ports::fsm_policy::{FsmPolicyError, FsmPolicyPort, FsmPolicyResult};
 
@@ -51,6 +51,10 @@ impl FsmPolicyPort for NativeFallbackPolicy {
             DecisionPoint::BatchAdmission => {
                 let admission = batch_admission_native(features, &self.registry.admission_native());
                 Ok(PolicyDecision::admission(PolicySource::Native, admission))
+            }
+            DecisionPoint::ProfileRoute => {
+                let profile = profile_route_native(features, &self.registry.profile_route_native());
+                Ok(PolicyDecision::profile(PolicySource::Native, profile))
             }
             other => Err(FsmPolicyError::UnknownPoint(other.as_str().into())),
         }
@@ -109,5 +113,42 @@ decision_points:
             .consult(DecisionPoint::ConcurrencyTune, &feat(1, 0, 1.0))
             .unwrap_err();
         assert!(matches!(err, FsmPolicyError::UnknownPoint(_)));
+    }
+
+    #[test]
+    fn profile_route_native_consult_returns_structural() {
+        let yaml = r#"
+decision_points:
+  profile_route:
+    native:
+      default: structural
+"#;
+        let p = NativeFallbackPolicy::from_yaml(yaml).unwrap();
+        let d = p
+            .consult(DecisionPoint::ProfileRoute, &feat(18, 0, 0.85))
+            .unwrap();
+        assert_eq!(d.id.decision_point, "profile_route");
+        assert_eq!(d.id.source, PolicySource::Native);
+        assert_eq!(
+            d.profile,
+            Some(da_domain::fsm_policy::ProfileRoute::Structural)
+        );
+        assert!(
+            d.route.is_none(),
+            "profile_route must not reuse grammar_route"
+        );
+    }
+
+    #[test]
+    fn profile_route_missing_yaml_still_defaults_structural() {
+        let p = NativeFallbackPolicy::empty();
+        let d = p
+            .consult(DecisionPoint::ProfileRoute, &feat(1, 0, 1.0))
+            .unwrap();
+        assert_eq!(
+            d.profile,
+            Some(da_domain::fsm_policy::ProfileRoute::Structural),
+            "missing DATA must fail-open to D204 structural, not UnknownPoint"
+        );
     }
 }

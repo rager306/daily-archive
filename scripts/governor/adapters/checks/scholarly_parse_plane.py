@@ -69,9 +69,15 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
             value.get("health_state") != "proxy" or value.get("version_state") != "proxy"
         )
     if label == "policy_stamp":
-        if "closed_sources" not in value and "production_consult" not in value:
+        if (
+            "closed_sources" not in value
+            and "production_consult" not in value
+            and "profile_route_default" not in value
+        ):
             return False
         sources = set(value.get("closed_sources") or [])
+        if "profile_route_default" in value and value.get("profile_route_default") != "structural":
+            return True
         return "none" not in sources or value.get("production_consult") != "parse-pdf"
     if label == "silent_loss":
         return value.get("verdict") == "PASS" and value.get("no_silent_loss") is not True
@@ -399,6 +405,22 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     sources = set(stamp.get("closed_sources") or [])
     if "none" not in sources or "wasm" not in sources or "native_fallback" not in sources or stamp.get("production_consult") != "parse-pdf":
         flag("policy_stamp", "integration", "data/parse/grobid_compatibility.yaml#defaults.policy_stamp", {"closed_sources": ["wasm", "native_fallback", "none"], "production_consult": "parse-pdf"}, stamp)
+
+    policy_reg_path = root / "data/policies/registry.yaml"
+    try:
+        policy_reg = yaml.safe_load(policy_reg_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as error:
+        flag("policy_stamp", "integration", "data/policies/registry.yaml", "valid YAML", str(error))
+        policy_reg = {}
+    profile_native = ((policy_reg.get("decision_points") or {}).get("profile_route") or {}).get("native") or {}
+    if profile_native.get("default") != "structural":
+        flag(
+            "policy_stamp",
+            "integration",
+            "data/policies/registry.yaml#decision_points.profile_route.native.default",
+            "structural",
+            profile_native.get("default"),
+        )
 
     segmentation_path = root / "data/parse/document_segmentation.yaml"
     try:

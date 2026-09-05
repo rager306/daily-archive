@@ -16,6 +16,7 @@ pub enum DecisionPoint {
     ConcurrencyTune,
     RetryPolicy,
     SummaryDepth,
+    ProfileRoute,
 }
 
 impl DecisionPoint {
@@ -26,6 +27,7 @@ impl DecisionPoint {
             Self::ConcurrencyTune => "concurrency_tune",
             Self::RetryPolicy => "retry_policy",
             Self::SummaryDepth => "summary_depth",
+            Self::ProfileRoute => "profile_route",
         }
     }
 
@@ -36,6 +38,7 @@ impl DecisionPoint {
             "concurrency_tune" => Some(Self::ConcurrencyTune),
             "retry_policy" => Some(Self::RetryPolicy),
             "summary_depth" => Some(Self::SummaryDepth),
+            "profile_route" => Some(Self::ProfileRoute),
             _ => None,
         }
     }
@@ -92,6 +95,50 @@ impl GrammarRoute {
             Self::PageOutline => 0,
             Self::XyCut => 1,
             Self::GrobidStructural => 2,
+        }
+    }
+}
+
+/// Java GROBID REST profile (ADR-076 profile_route). Not FSM grammar_profile.
+///
+/// Closed set. Corpus default is [`ProfileRoute::Structural`] (D204: no
+/// Crossref inside the structural fingerprint). Rich is a named variant,
+/// never implied by grammar_route.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProfileRoute {
+    Structural,
+    Rich,
+}
+
+impl ProfileRoute {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Structural => "structural",
+            Self::Rich => "rich",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "structural" => Some(Self::Structural),
+            "rich" => Some(Self::Rich),
+            _ => None,
+        }
+    }
+
+    pub fn from_code(code: i32) -> Option<Self> {
+        match code {
+            0 => Some(Self::Structural),
+            1 => Some(Self::Rich),
+            _ => None,
+        }
+    }
+
+    pub fn to_code(self) -> i32 {
+        match self {
+            Self::Structural => 0,
+            Self::Rich => 1,
         }
     }
 }
@@ -154,6 +201,8 @@ pub struct PolicyDecision {
     pub route: Option<GrammarRoute>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub admission: Option<Admission>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub profile: Option<ProfileRoute>,
 }
 
 impl PolicyDecision {
@@ -165,6 +214,7 @@ impl PolicyDecision {
             },
             route: Some(route),
             admission: None,
+            profile: None,
         }
     }
 
@@ -176,6 +226,19 @@ impl PolicyDecision {
             },
             route: None,
             admission: Some(admission),
+            profile: None,
+        }
+    }
+
+    pub fn profile(source: PolicySource, profile: ProfileRoute) -> Self {
+        Self {
+            id: PolicyId {
+                decision_point: DecisionPoint::ProfileRoute.as_str().to_string(),
+                source,
+            },
+            route: None,
+            admission: None,
+            profile: Some(profile),
         }
     }
 }
@@ -232,6 +295,25 @@ impl Default for BatchAdmissionNative {
     }
 }
 
+/// Native profile_route (DATA; corpus default is structural / D204).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProfileRouteNative {
+    #[serde(default = "default_profile_route")]
+    pub default: ProfileRoute,
+}
+
+fn default_profile_route() -> ProfileRoute {
+    ProfileRoute::Structural
+}
+
+impl Default for ProfileRouteNative {
+    fn default() -> Self {
+        Self {
+            default: default_profile_route(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DecisionPointSpec {
     #[serde(default)]
@@ -283,6 +365,13 @@ impl PolicyRegistry {
             .unwrap_or_default()
     }
 
+    pub fn profile_route_native(&self) -> ProfileRouteNative {
+        self.decision_points
+            .get(DecisionPoint::ProfileRoute.as_str())
+            .and_then(|s| serde_json::from_value(s.native.clone()).ok())
+            .unwrap_or_default()
+    }
+
     pub fn spec(&self, point: DecisionPoint) -> Option<&DecisionPointSpec> {
         self.decision_points.get(point.as_str())
     }
@@ -314,6 +403,12 @@ pub fn grammar_route_native(features: &ArticleFeatures, cfg: &GrammarRouteNative
         return GrammarRoute::GrobidStructural;
     }
     GrammarRoute::XyCut
+}
+
+/// Deterministic native profile_route (fail-open to structural / D204).
+/// Features are unused this cut: corpus must not infer rich from page count.
+pub fn profile_route_native(_features: &ArticleFeatures, cfg: &ProfileRouteNative) -> ProfileRoute {
+    cfg.default
 }
 
 /// Deterministic native batch_admission (fail-open to Accept).
@@ -428,6 +523,86 @@ decision_points:
         assert_eq!(
             DecisionPoint::parse("grammar_route"),
             Some(DecisionPoint::GrammarRoute)
+        );
+        assert_eq!(
+            DecisionPoint::parse("profile_route"),
+            Some(DecisionPoint::ProfileRoute),
+            "ADR-076 promised profile_route as its own DecisionPoint"
+        );
+        assert_ne!(
+            DecisionPoint::parse("profile_route"),
+            DecisionPoint::parse("grammar_route"),
+            "profile_route must not alias grammar_route"
+        );
+    }
+
+    #[test]
+    fn profile_route_codes_roundtrip() {
+        assert_eq!(ProfileRoute::from_code(0), Some(ProfileRoute::Structural));
+        assert_eq!(ProfileRoute::from_code(1), Some(ProfileRoute::Rich));
+        assert!(ProfileRoute::from_code(2).is_none());
+        assert_eq!(ProfileRoute::Structural.to_code(), 0);
+        assert_eq!(ProfileRoute::Rich.to_code(), 1);
+        assert_eq!(ProfileRoute::Structural.as_str(), "structural");
+        assert_eq!(ProfileRoute::Rich.as_str(), "rich");
+        assert_eq!(
+            ProfileRoute::parse("structural"),
+            Some(ProfileRoute::Structural)
+        );
+        assert_eq!(ProfileRoute::parse("rich"), Some(ProfileRoute::Rich));
+        assert!(ProfileRoute::parse("grobid_structural").is_none());
+        assert!(ProfileRoute::parse("arxiv_pdf_dot").is_none());
+    }
+
+    #[test]
+    fn profile_route_native_default_is_structural() {
+        let cfg = ProfileRouteNative::default();
+        assert_eq!(cfg.default, ProfileRoute::Structural);
+        let chosen = profile_route_native(&feat(18, 0, 0.85), &cfg);
+        assert_eq!(chosen, ProfileRoute::Structural);
+        let rich_cfg = ProfileRouteNative {
+            default: ProfileRoute::Rich,
+        };
+        assert_eq!(
+            profile_route_native(&feat(18, 0, 0.85), &rich_cfg),
+            ProfileRoute::Rich,
+            "DATA may name rich; native default must not"
+        );
+    }
+
+    #[test]
+    fn registry_profile_route_default_from_yaml() {
+        let yaml = r#"
+decision_points:
+  grammar_route:
+    default_profile: arxiv_pdf_dot
+  profile_route:
+    native:
+      default: structural
+"#;
+        let reg = PolicyRegistry::from_yaml_str(yaml).unwrap();
+        assert_eq!(reg.profile_route_native().default, ProfileRoute::Structural);
+        assert_eq!(
+            profile_route_native(&feat(1, 0, 1.0), &reg.profile_route_native()),
+            ProfileRoute::Structural
+        );
+    }
+
+    #[test]
+    fn policy_decision_profile_serde_roundtrip() {
+        let d = PolicyDecision::profile(PolicySource::Native, ProfileRoute::Structural);
+        assert_eq!(d.id.decision_point, "profile_route");
+        assert_eq!(d.profile, Some(ProfileRoute::Structural));
+        assert!(
+            d.route.is_none(),
+            "profile consult must not stamp grammar_route"
+        );
+        let json = serde_json::to_string(&d).unwrap();
+        let back: PolicyDecision = serde_json::from_str(&json).unwrap();
+        assert_eq!(d, back);
+        assert!(
+            !json.contains("grammar_route"),
+            "profile JSON must not collide with grammar_route field names beyond skip-optional"
         );
     }
 
