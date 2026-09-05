@@ -21,6 +21,7 @@ from governor.adapters.checks.scholarly_parse_plane import (
     _cascade_observe_tokens,
     _check_scholarly_parse_plane,
     _empty_native_consult_tokens,
+    _native_rules_not_consulted_tokens,
 )
 from governor.application.trajectory_service import TrajectoryService
 
@@ -746,6 +747,101 @@ def test_checker_empty_native_scan_ignores_batch_admission_and_later(tmp_path: P
     target.write_text("let a = DecisionPoint::BatchAdmission; // head_fallback visual_bundle critic_sample\n", encoding="utf-8")
     flags = _check_scholarly_parse_plane(tmp_path)
     assert _source_cli_policy_stamp_flags(flags) == [], flags
+
+
+def _native_rules_source_cli_policy_stamp_flags(flags):
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    return [item for item in matching if "source_cli.rs#native_rules_not_consulted" in item.evidence]
+
+
+def test_native_rules_not_consulted_tokens_derive_snake_and_pascal_from_data():
+    payload = yaml.safe_load((ROOT / "data/policies/registry.yaml").read_text(encoding="utf-8"))
+    consult = payload.get("consult_status") or {}
+    assert _native_rules_not_consulted_tokens(consult) == [("batch_admission", "BatchAdmission")]
+    synthetic = _native_rules_not_consulted_tokens({"native_rules_not_consulted": ["my_point", " a_b ", 7, "", None]})
+    assert synthetic == [("my_point", "MyPoint"), ("a_b", "AB")]
+
+
+def test_native_rules_not_consulted_tokens_rejects_malformed_without_invented_fallback():
+    assert _native_rules_not_consulted_tokens(None) == []
+    assert _native_rules_not_consulted_tokens({}) == []
+    assert _native_rules_not_consulted_tokens({"native_rules_not_consulted": "batch_admission"}) == []
+    assert _native_rules_not_consulted_tokens({"native_rules_not_consulted": [None, 7, "  "]}) == []
+    names = {snake for snake, _ in _native_rules_not_consulted_tokens(
+        {"native_rules_not_consulted": ["batch_admission"]})}
+    assert names == {"batch_admission"}
+    assert not names & {"concurrency_tune", "retry_policy", "summary_depth"}
+    assert not names & {"head_fallback", "visual_bundle", "critic_sample"}
+
+
+def test_checker_flags_native_rules_snake_consult_in_source_cli(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("// live consult batch_admission stays here\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _native_rules_source_cli_policy_stamp_flags(flags)
+    assert matching, flags
+    assert all("plane=integration" in item.evidence and "violation=policy_stamp" in item.evidence for item in matching)
+    hit = next(item for item in matching if "batch_admission" in item.evidence)
+    assert hit.flag == "scholarly_parse_plane_policy_stamp"
+    assert "crates/da-cli/src/source_cli.rs#native_rules_not_consulted.batch_admission" in hit.evidence
+    assert "sona-policy demo is not closure" in hit.evidence
+
+
+def test_checker_flags_native_rules_pascal_consult_in_source_cli(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("let p = DecisionPoint::BatchAdmission;\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _native_rules_source_cli_policy_stamp_flags(flags)
+    assert matching, flags
+    hit = next(item for item in matching if "batch_admission" in item.evidence)
+    assert hit.flag == "scholarly_parse_plane_policy_stamp"
+    assert "crates/da-cli/src/source_cli.rs#native_rules_not_consulted.batch_admission" in hit.evidence
+    assert "DecisionPoint::BatchAdmission" in hit.evidence
+    assert "sona-policy demo is not closure" in hit.evidence
+
+
+def test_checker_native_rules_source_cli_scan_is_data_driven(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/policies/registry.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    status = payload.setdefault("consult_status", {})
+    status["native_rules_not_consulted"] = []
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("let p = DecisionPoint::BatchAdmission;\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _native_rules_source_cli_policy_stamp_flags(flags) == [], flags
+
+
+def test_checker_native_rules_scan_skips_missing_source_cli(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    if target.is_file():
+        target.unlink()
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _native_rules_source_cli_policy_stamp_flags(flags) == [], flags
+
+
+def test_checker_native_rules_scan_stays_out_of_empty_native_namespace(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("let p = DecisionPoint::BatchAdmission;\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _source_cli_policy_stamp_flags(flags) == [], flags
+    assert _native_rules_source_cli_policy_stamp_flags(flags), flags
+
+
+def test_checker_sona_policy_may_demo_batch_admission_without_refuse():
+    source = (ROOT / "crates/da-cli/src/background_tasks.rs").read_text(encoding="utf-8")
+    assert "fn batch_admission_is_demo_not_parse_pdf" in source
+    assert 'sona_policy_report(&registry_yaml(), "batch_admission"' in source
+    assert "parse_pdf_consult=false" in source
 
 
 def test_checker_does_not_replace_independent_promotion_contract():

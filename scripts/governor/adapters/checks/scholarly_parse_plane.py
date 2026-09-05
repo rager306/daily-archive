@@ -263,6 +263,34 @@ def _empty_native_consult_tokens(consult: Any) -> list[tuple[str, str]]:
     return pairs
 
 
+def _native_rules_not_consulted_tokens(consult: Any) -> list[tuple[str, str]]:
+    """Derive (snake, PascalCase) tokens from DATA consult_status.native_rules_not_consulted.
+
+    Sibling of the S03 empty-native helper: scan is limited to a single file
+    (crates/da-cli/src/source_cli.rs) and to this DATA set, comments and
+    string literals included. No hardcoded DecisionPoint list and no invented
+    fallback on malformed/missing DATA: the exact-list DATA-shape check owns
+    that surface and this helper returns [] there.
+    """
+    if not isinstance(consult, dict):
+        return []
+    raw = consult.get("native_rules_not_consulted")
+    if not isinstance(raw, list):
+        return []
+    pairs: list[tuple[str, str]] = []
+    for item in raw:
+        if not isinstance(item, str):
+            continue
+        snake = item.strip()
+        if not snake:
+            continue
+        pascal = "".join(part[:1].upper() + part[1:].lower() for part in snake.split("_") if part)
+        if not pascal:
+            continue
+        pairs.append((snake, pascal))
+    return pairs
+
+
 def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     """Validate the source-bound scholarly parse policy and its fixtures.
 
@@ -790,6 +818,18 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                     "integration",
                     f"crates/da-cli/src/source_cli.rs#empty_native_unknown_point.{snake}",
                     f"empty-native DecisionPoint {snake} must stay UnknownPoint (no live parse-pdf consult)",
+                    f"live consult {observed_hit} in parse-pdf source_cli",
+                )
+        for snake, pascal in _native_rules_not_consulted_tokens(consult):
+            hit_snake = snake in src
+            hit_pascal = f"DecisionPoint::{pascal}" in src
+            if hit_snake or hit_pascal:
+                observed_hit = "DecisionPoint::" + pascal if hit_pascal else snake
+                flag(
+                    "policy_stamp",
+                    "integration",
+                    f"crates/da-cli/src/source_cli.rs#native_rules_not_consulted.{snake}",
+                    f"native-rules DecisionPoint {snake} is not a parse-pdf consult (sona-policy demo is not closure)",
                     f"live consult {observed_hit} in parse-pdf source_cli",
                 )
         required_stamps, forbidden_stamps = _cascade_observe_tokens(stages)
