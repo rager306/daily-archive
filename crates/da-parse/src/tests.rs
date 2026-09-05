@@ -44,6 +44,24 @@ fn profile_fingerprints_bind_semantics_and_exclude_timeout() {
 }
 
 #[test]
+fn identity_and_fingerprint_ignore_worker_count() {
+    let fingerprint = GrobidProfile::structural().configuration_fingerprint();
+    for leak in ["worker", "smp", "concurrency", "thread"] {
+        assert!(
+            !fingerprint.to_ascii_lowercase().contains(leak),
+            "D204 fingerprint leaked operational {leak}: {fingerprint}"
+        );
+    }
+    let a = TeiIdentity::grobid_http(GrobidProfile::structural());
+    let b = TeiIdentity::grobid_http(GrobidProfile::structural());
+    assert_eq!(a, b);
+    assert_eq!(a.backend_id(), b.backend_id());
+    assert_eq!(a.profile_fingerprint(), fingerprint);
+    assert_eq!(a.profile_fingerprint(), b.profile_fingerprint());
+    assert!(a.backend_version().is_none());
+}
+
+#[test]
 fn tei_identity_backend_version_is_additive() {
     let base = TeiIdentity::grobid_http(GrobidProfile::structural());
     assert!(base.backend_version().is_none());

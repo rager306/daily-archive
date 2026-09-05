@@ -105,6 +105,13 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
         if "outcome" not in value and "receipts" not in value:
             return False
         return str(value.get("outcome") or "").lower() in {"figure", "table", "formula"} and int(value.get("receipts") or 0) == 0 and str(value.get("status") or "") in {"pass", "accepted"}
+    if label == "family_promote_cap":
+        if "non_candidate_families" not in value and "deployed" not in value:
+            return False
+        return int(value.get("non_candidate_families") or 0) > 1 or value.get("deployed") is True
+    if label == "worker_identity_leak":
+        fields = {str(item).lower() for item in (value.get("identity_fields") or [])}
+        return bool(fields & {"worker", "workers", "smp", "concurrency", "thread"})
     return bool(plane) and bool(value)
 
 
@@ -338,6 +345,55 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             "forbidden",
             (visual_heads.get("gates") or {}).get("fulltext_composition"),
         )
+
+    promotion = (registry.get("defaults") or {}).get("promotion") or {}
+    non_candidate = [
+        cap.get("id")
+        for cap in caps
+        if str(cap.get("promotion_state") or "candidate") not in {"candidate", ""}
+    ]
+    deployed_caps = [
+        cap.get("id")
+        for cap in caps
+        if cap.get("deployed") is True or str(cap.get("state") or "") == "deployed"
+    ]
+    wave = promotion.get("this_wave_promotes")
+    wave_ok = wave in {None, "none"} or wave == []
+    if (
+        int(promotion.get("max_non_candidate_families") or 1) < 1
+        or promotion.get("deployed") is True
+        or promotion.get("auto_promote") not in {None, "forbidden", False}
+        or not wave_ok
+        or len(non_candidate) > 1
+        or deployed_caps
+    ):
+        flag(
+            "family_promote_cap",
+            "promotion_quarantine",
+            "data/parse/grobid_compatibility.yaml#defaults.promotion",
+            {"max_non_candidate_families": 1, "this_wave_promotes": "none", "deployed": False},
+            {
+                "non_candidate": non_candidate,
+                "deployed_caps": deployed_caps,
+                "promotion": promotion,
+            },
+        )
+    envelope_path = root / "crates/da-parse/src/envelope.rs"
+    try:
+        envelope = envelope_path.read_text(encoding="utf-8")
+    except OSError:
+        envelope = ""
+    if envelope:
+        identity_block = envelope.split("pub struct TeiIdentity", 1)[-1].split("impl TeiIdentity", 1)[0]
+        leaked = [token for token in ("worker", "workers", "smp", "concurrency", "thread") if token in identity_block.lower()]
+        if leaked:
+            flag(
+                "worker_identity_leak",
+                "cache_identity",
+                "crates/da-parse/src/envelope.rs#TeiIdentity",
+                "no worker/smp fields",
+                leaked,
+            )
 
     stamp = ((registry.get("defaults") or {}).get("policy_stamp") or {})
     sources = set(stamp.get("closed_sources") or [])

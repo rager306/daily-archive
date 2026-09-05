@@ -191,6 +191,17 @@ fn every_worker_count_and_bounded_queue_preserve_semantic_receipts() {
             }
         }
     }
+    let one = da_parse::TeiIdentity::grobid_http(da_parse::GrobidProfile::structural());
+    let many = da_parse::TeiIdentity::grobid_http(da_parse::GrobidProfile::structural());
+    assert_eq!(
+        one, many,
+        "worker count 1..=N must not invent a TEI identity component"
+    );
+    assert!(
+        !one.profile_fingerprint()
+            .to_ascii_lowercase()
+            .contains("worker")
+    );
 }
 
 #[test]

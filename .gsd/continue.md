@@ -1,13 +1,12 @@
-# continue — M465 S06 W5 shipped; S01–S05 skip-delivered; next S07 policy SMP
+# continue — M465 S01–S07 skip-delivered in git; graph still frozen
 
-## Active state (updated 2026-09-04 after M465/S06 W5)
+## Active state (updated 2026-09-04 after M465/S07 W6)
 
-Parse-plane: S01 fc9dfae6a, S02 8d28e01fc, S03 1d912a61c, S04 08fc194e0, S05
-6603d6781, S06 visual heads implemented. Missing Image is Terminal NotObserved,
-not zero figures. Heads stay independent. Graph frozen (R118). Next is S07 W6:
-policy SMP on the cascade; TEI byte-stable across worker counts; at most one
-family candidate-promote with deployed=false. Do not treat 9-lane segmentation
-report as 202-page pass.
+Parse-plane waves W0–W6 are in git on feat/da-parse. S07: TeiIdentity ignores
+worker count; defaults.promotion this_wave_promotes=none, deployed=false.
+No family was candidate-promoted (acceptance conservation still loss_detected).
+Graph frozen (R118). Do not treat 9-lane segmentation report as 202-page pass.
+Do not unfreeze Samyama or D127 from these waves.
 Product: `M446-rw9a2p` S03 still 23/25, pending T24/T25.
 Branch `feat/da-parse`.
 

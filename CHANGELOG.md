@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-04 — M465-sqt7w0/S07 W6: identity ignores workers, no family promote
+
+Reuse stamp_parse_grammar and layout_smp receipts. TeiIdentity and D204 fingerprints
+do not contain worker/smp/concurrency. SMP semantic receipts stay equal for
+workers 1..=cap. grobid defaults.promotion: this_wave_promotes none, deployed false,
+max_non_candidate_families 1. Conservation is still loss_detected so no family
+is candidate-promoted. Governor adds family_promote_cap and worker_identity_leak.
+Java production_route. Graph frozen. D127 false.
+
+Green: identity_and_fingerprint_ignore_worker_count; layout_smp every_worker_count;
+architecture_contract 38; data_contracts 74; test_scholarly_parse_governance 83.
+
 ## 2026-09-04 — M465-sqt7w0/S06 W5: missing Image is typed absence not zero figures
 
 Reuse detect_figure_heads/table/formula. An observation without Image/Graphic

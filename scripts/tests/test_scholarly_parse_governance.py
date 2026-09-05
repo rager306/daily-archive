@@ -66,6 +66,8 @@ REQUIRED_VIOLATIONS = {
     "reading_order_change",
     "typed_visual_absence",
     "zero_count_from_absence",
+    "family_promote_cap",
+    "worker_identity_leak",
 }
 
 
