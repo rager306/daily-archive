@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-04 — M467-ase1bu/S03: Conserved acceptance evidence after region honesty
+
+Regenerated artifacts/parse_compat/acceptance_evidence.json from ConservationEngine.
+Three preserved TEI documents are Conserved; no_silent_loss is true; verdict PASS.
+SHA bound in scholarly_parse_plane in the same change. Java production_route.
+No graph. D127 false.
+
+Green: acceptance_evidence offline; test_scholarly_parse_governance 83.
+
 ## 2026-09-04 — M467-ase1bu/S02: flat lifter skips caption heads; anchors bag-aligned
 
 TeiLifter extract_sections_flat no longer treats figure/table caption `<head>` as a
