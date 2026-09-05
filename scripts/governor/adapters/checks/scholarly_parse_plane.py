@@ -396,6 +396,56 @@ def _check_header_quarantine(root: Path, registry: dict[str, Any], registry_path
                 f"header atom {token} in {relative}",
             )
 
+_BIBLIOGRAPHY_QUARANTINE_TOKENS = ("compose_references", "run_reference_sequence")
+_BIBLIOGRAPHY_QUARANTINE_BOUNDARIES = (
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+)
+
+
+def _strip_bibliography_quarantine_comments(text: str) -> str:
+    kept: list[str] = []
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("//"):
+            kept.append("")
+            continue
+        cut = line.find("//")
+        kept.append(line if cut < 0 else line[:cut])
+    return "\n".join(kept)
+
+
+def _bibliography_quarantine_tokens_present(code: str) -> list[str]:
+    hits: list[str] = []
+    for token in _BIBLIOGRAPHY_QUARANTINE_TOKENS:
+        if re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}\s*\(", code):
+            hits.append(token)
+    return hits
+
+
+def _check_bibliography_quarantine(root: Path, registry: dict[str, Any], registry_path: Path, flag: Any) -> None:
+    if not isinstance(registry, dict) or not registry or not registry_path.is_file():
+        return
+    for relative in _BIBLIOGRAPHY_QUARANTINE_BOUNDARIES:
+        path = root / relative
+        if not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as error:
+            flag("policy_stamp", "integration", f"{relative}#bibliography_quarantine", "readable boundary", str(error))
+            continue
+        code = _strip_bibliography_quarantine_comments(text)
+        for token in _bibliography_quarantine_tokens_present(code):
+            flag(
+                "policy_stamp",
+                "integration",
+                f"{relative}#bibliography_quarantine.{token}",
+                "bibliography atoms stay shadow-only (no parse-pdf source_cli or ParserPort splice)",
+                f"bibliography atom {token} in {relative}",
+            )
+
+
 def _check_java_absent_endpoints(
     registry: dict[str, Any],
     caps: list[dict[str, Any]],
@@ -542,6 +592,7 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     if isinstance(registry, dict) and registry_path.is_file():
         _check_java_absent_endpoints(registry, caps, by_id, flag)
     _check_header_quarantine(root, registry, registry_path, flag)
+    _check_bibliography_quarantine(root, registry, registry_path, flag)
     header_ids = (
         "rest.processDate",
         "rest.processHeaderNames",

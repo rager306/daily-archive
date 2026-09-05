@@ -1116,3 +1116,117 @@ def test_checker_header_quarantine_stays_silent_without_ledger_but_keeps_integri
         }
         for item in flags
     ), flags
+
+# ───── S07/T01: bibliography atoms stay shadow, out of parse-pdf source_cli and ParserPort ─────
+
+BIBLIOGRAPHY_QUARANTINE_TOKENS = ["compose_references", "run_reference_sequence"]
+BIBLIOGRAPHY_QUARANTINE_BOUNDARIES = [
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+]
+BIBLIOGRAPHY_QUARANTINE_PAYLOADS = {
+    "compose_references": "let _r = compose_references(input);\n",
+    "run_reference_sequence": "let _r = run_reference_sequence(input);\n",
+}
+
+def _bibliography_quarantine_flags(flags):
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    return [item for item in matching if "#bibliography_quarantine." in item.evidence]
+
+@pytest.mark.parametrize("relative", BIBLIOGRAPHY_QUARANTINE_BOUNDARIES)
+@pytest.mark.parametrize("token", BIBLIOGRAPHY_QUARANTINE_TOKENS)
+def test_checker_flags_bibliography_quarantine_token_in_boundary(tmp_path: Path, relative: str, token: str):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / relative
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(BIBLIOGRAPHY_QUARANTINE_PAYLOADS[token], encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _bibliography_quarantine_flags(flags)
+    assert matching, flags
+    hit = next(item for item in matching if token in item.evidence and relative in item.evidence)
+    assert hit.flag == "scholarly_parse_plane_policy_stamp"
+    assert hit.severity == "high"
+    assert f"#bibliography_quarantine.{token}" in hit.evidence
+    assert "plane=integration" in hit.evidence and "violation=policy_stamp" in hit.evidence
+
+@pytest.mark.parametrize("token", BIBLIOGRAPHY_QUARANTINE_TOKENS)
+def test_checker_bibliography_quarantine_allows_whitespace_before_paren(tmp_path: Path, token: str):
+    _copy_checker_surface(tmp_path)
+    for relative in BIBLIOGRAPHY_QUARANTINE_BOUNDARIES:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(f"let _r = {token} (input);\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _bibliography_quarantine_flags(flags)
+    assert len(matching) == len(BIBLIOGRAPHY_QUARANTINE_BOUNDARIES), flags
+    assert all(f"#bibliography_quarantine.{token}" in item.evidence for item in matching), flags
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "let _r = decompose_references(input);\n",
+        "// compose_references is shadow-only prose\n",
+        "// run_reference_sequence is shadow-only prose\n",
+        "/// doc compose_references prose\n",
+        "/// doc run_reference_sequence prose\n",
+        "let x = 1; // compose_references prose\n",
+        "let x = 1; // run_reference_sequence prose\n",
+        "compose_references is shadow-only prose without a call\n",
+    ],
+)
+def test_checker_bibliography_quarantine_ignores_prefixed_and_prose_comments(tmp_path: Path, payload: str):
+    _copy_checker_surface(tmp_path)
+    for relative in BIBLIOGRAPHY_QUARANTINE_BOUNDARIES:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(payload, encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _bibliography_quarantine_flags(flags) == [], flags
+
+def test_checker_clean_root_has_no_bibliography_quarantine_flags():
+    assert _bibliography_quarantine_flags(_check_scholarly_parse_plane(ROOT)) == []
+
+def test_checker_bibliography_quarantine_skips_missing_boundaries(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    for relative in BIBLIOGRAPHY_QUARANTINE_BOUNDARIES:
+        target = tmp_path / relative
+        if target.is_file():
+            target.unlink()
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _bibliography_quarantine_flags(flags) == [], flags
+
+def test_checker_bibliography_quarantine_stays_silent_without_ledger_but_keeps_integrity_signals(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    (tmp_path / "data/parse/grobid_compatibility.yaml").unlink()
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _bibliography_quarantine_flags(flags) == [], flags
+    assert any(
+        item.flag
+        in {
+            "scholarly_parse_plane_evidence_missing",
+            "scholarly_parse_plane_backend_identity",
+        }
+        for item in flags
+    ), flags
+
+def test_checker_bibliography_quarantine_stays_silent_on_malformed_ledger(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/parse/grobid_compatibility.yaml"
+    path.write_text("{unclosed: [1,\n", encoding="utf-8")
+    target = tmp_path / BIBLIOGRAPHY_QUARANTINE_BOUNDARIES[0]
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(BIBLIOGRAPHY_QUARANTINE_PAYLOADS["compose_references"], encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _bibliography_quarantine_flags(flags) == [], flags
+    assert any(
+        item.flag == "scholarly_parse_plane_backend_identity" for item in flags
+    ), flags
+
+def test_checker_bibliography_and_java_absent_namespaces_stay_isolated(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / BIBLIOGRAPHY_QUARANTINE_BOUNDARIES[0]
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(BIBLIOGRAPHY_QUARANTINE_PAYLOADS["compose_references"], encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _bibliography_quarantine_flags(flags), flags
+    assert _java_absent_flags(flags) == [], flags
