@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-04 — M468-4k3p7s/S01: ledger and leftover pins stop claiming loss_detected
+
+`defaults.promotion.reason` no longer says tracked conservation is still
+loss_detected. Pristine cache_identity and parse_compat_baseline pins are
+Conserved. Frozen lift hashes rotated after caption-head skip (sections
+264→183). Mutated citation deletion still LossDetected. SHA of
+grobid_compatibility.yaml bound in scholarly_parse_plane in the same change.
+this_wave_promotes stays none. Java production_route. No graph. D127 false.
+
+Green: cache_identity 23; parse_compat_baseline 16; data_contracts 74;
+test_scholarly_parse_governance 83.
+
 ## 2026-09-04 — M467-ase1bu/S03: Conserved acceptance evidence after region honesty
 
 Regenerated artifacts/parse_compat/acceptance_evidence.json from ConservationEngine.

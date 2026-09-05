@@ -58,31 +58,29 @@ const COMPARISON_CONTRACT_REL: &str = "data/parse/comparison_contract.yaml";
 const RICH_FP: &str = "profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula";
 const STRUCTURAL_FP: &str = "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note,formula";
 
-/// Per-case output hashes frozen at S01 and rotated by S07/T05: the
-/// `da-parse.lift-output-preimage.v2` preimage now covers the additive P0
-/// lift families (declared arXiv id, header authors, figures with graphic
-/// coordinates, visual callouts). Any further change means the lift/projection
-/// output identity rotated and must be a conscious, coordinated decision —
-/// never a refactor side effect.
+/// Per-case output hashes frozen at S01, rotated by S07/T05 (P0 lift families)
+/// and again by M467/S02 (flat lifter skips figure/table caption heads).
+/// Any further change means the lift/projection output identity rotated and
+/// must be a conscious, coordinated decision — never a refactor side effect.
 const FROZEN_CASE_OUTPUT_HASHES: [(&str, &str); 3] = [
     (
         "reg.tei.hub-bibliography-2507.19457",
-        "sha256:f8ce01ec075828c93487d0803d74e328ae6758f9365a03d9eee6a474cea40e68",
+        "sha256:712cc6bf87a40bb95dfdf51ce1755658b3ae92b6d812568a86daeedd0bcfee2b",
     ),
     (
         "reg.tei.rlm-2512.24601",
-        "sha256:f77b414af8909932599f91d4d633baf1a0a8c79e8bfbb26cdd2ee907ccd26229",
+        "sha256:6f7abdf66ba18109c4102efbdcf004a8082fbb9e8755f5ff2ca8d3288b4dba52",
     ),
     (
         "reg.tei.reca-bibliography-2605.26525",
-        "sha256:e7ac1aaa3ccd2666bc97804f3cd50f4f29d7771a4038d9793696edd33677f593",
+        "sha256:595510ecc1a066464db58e490409370b80a059e7025eff86e2193b5085e6b35d",
     ),
 ];
 
-/// Aggregate identities frozen at S01, output hash rotated by S07/T05 (the
-/// v2 preimage covers the lifted P0 families).
+/// Aggregate identities frozen at S01, output hash rotated by S07/T05 and
+/// M467/S02 (caption heads are not sections).
 const FROZEN_AGGREGATE_OUTPUT_HASH: &str =
-    "sha256:3d1f0a537766de0f8003b34498b8685611a8c7df218c79c1055020cd403bdea7";
+    "sha256:07c8ae8ecac382c15b5d91a089d348246fccf1b76901e57e4fb6bab2bc756d54";
 const FROZEN_SOURCE_HASH: &str =
     "sha256:d0b2c6c7e3b4af551b1e804705b6424cd1c367832516beb383d9c3cb5ade4c49";
 /// Rotated by S03/T04 (per-case `conservation_delta` evidence), S07/T05
@@ -102,7 +100,7 @@ const FROZEN_TOTALS: [(&str, u64); 7] = [
     ("figures", 106),
     ("formulas", 38),
     ("header_authors", 36),
-    ("sections", 264),
+    ("sections", 183),
     ("tables", 8),
     ("visual_callouts", 106),
 ];
@@ -658,8 +656,8 @@ fn s03_conservation_evidence_is_bound_per_case_and_aggregates_exactly() {
         );
         assert_eq!(
             cons.get("verdict").and_then(|v| v.as_str()),
-            Some("loss_detected"),
-            "pristine preserved baseline stays pinned loss_detected (S03/T02)"
+            Some("conserved"),
+            "pristine preserved baseline is Conserved after scanner and lifter honesty"
         );
         assert_eq!(
             cons.get("malformed_rows").and_then(|v| v.as_u64()),
@@ -700,7 +698,7 @@ fn s03_conservation_evidence_is_bound_per_case_and_aggregates_exactly() {
     assert_eq!(aggregate.get("cases").and_then(|v| v.as_u64()), Some(3));
     assert_eq!(
         aggregate
-            .pointer("/verdicts/loss_detected")
+            .pointer("/verdicts/conserved")
             .and_then(|v| v.as_u64()),
         Some(3)
     );
