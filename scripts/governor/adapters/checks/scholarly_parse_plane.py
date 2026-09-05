@@ -706,6 +706,29 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             p3,
         )
 
+    source_cli = root / "crates/da-cli/src/source_cli.rs"
+    if source_cli.is_file():
+        try:
+            src = source_cli.read_text(encoding="utf-8")
+        except OSError as error:
+            src = str(error)
+        if "stamp_p3_header_observe" not in src:
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#stamp_p3_header_observe",
+                "parse-pdf stamps P3 observe from Java header_n",
+                "missing stamp_p3_header_observe",
+            )
+        if "compose_header(" in src or "run_header_sequence(" in src:
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#parse-pdf",
+                "P3 observe must not call native compose",
+                "compose_header or run_header_sequence call",
+            )
+
     constructors = (registry.get("defaults") or {}).get("production_pdf_constructors") or {}
     scan_roots = [str(item) for item in (constructors.get("scan_roots") or [])]
     allowed = set(constructors.get("allowed_from_env_roles") or [])

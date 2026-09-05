@@ -62,6 +62,23 @@ fn stamp_grobid_profile(m: &mut serde_yaml::Mapping, route: da_domain::fsm_polic
     );
 }
 
+/// P3 header observe beside Java lift. Native compose is not called.
+/// named_native_accepted_gap is the hub 20 vs Java 21 receipt, not a fix.
+pub(crate) fn stamp_p3_header_observe(m: &mut serde_yaml::Mapping, java_header_n: usize) {
+    let mut p3 = serde_yaml::Mapping::new();
+    p3.insert("stage".into(), "P3".into());
+    p3.insert("production_authority".into(), "java_http".into());
+    p3.insert("observe_mode".into(), "shadow_receipt".into());
+    p3.insert("java_header_n".into(), java_header_n.into());
+    p3.insert("named_native_accepted_gap".into(), 20.into());
+    let mut observe = serde_yaml::Mapping::new();
+    observe.insert("P3".into(), serde_yaml::Value::Mapping(p3));
+    m.insert(
+        "cascade_observe".into(),
+        serde_yaml::Value::Mapping(observe),
+    );
+}
+
 fn stamp_from_grammar(
     m: &mut serde_yaml::Mapping,
     g: &da_application::parse_grammar::ParseGrammarDecision,
@@ -1814,6 +1831,7 @@ pub fn run_parse_pdf(
         None => stamp_policy_none(&mut m),
     }
     stamp_grobid_profile(&mut m, grobid_route);
+    stamp_p3_header_observe(&mut m, parsed.header_authors.len());
     m.insert("lifecycle".into(), "parsed".into());
     let ev_raw = serde_yaml::Mapping::from_iter([
         ("stage".into(), "raw".into()),
@@ -3308,6 +3326,37 @@ mod tests {
             grobid_profile_from_route(da_domain::fsm_policy::ProfileRoute::Rich)
                 .configuration_fingerprint(),
             "D204 fingerprints must not collide"
+        );
+    }
+
+    #[test]
+    fn stamp_p3_header_observe_is_java_shadow_not_native_splice() {
+        let mut m = serde_yaml::Mapping::new();
+        stamp_p3_header_observe(&mut m, 21);
+        let p3 = m
+            .get("cascade_observe")
+            .and_then(|v| v.as_mapping())
+            .and_then(|o| o.get("P3"))
+            .and_then(|v| v.as_mapping())
+            .expect("P3 observe");
+        assert_eq!(p3.get("stage").and_then(|v| v.as_str()), Some("P3"));
+        assert_eq!(
+            p3.get("production_authority").and_then(|v| v.as_str()),
+            Some("java_http")
+        );
+        assert_eq!(
+            p3.get("observe_mode").and_then(|v| v.as_str()),
+            Some("shadow_receipt")
+        );
+        assert_eq!(p3.get("java_header_n").and_then(|v| v.as_u64()), Some(21));
+        assert_eq!(
+            p3.get("named_native_accepted_gap").and_then(|v| v.as_u64()),
+            Some(20)
+        );
+        assert_ne!(
+            p3.get("java_header_n").and_then(|v| v.as_u64()),
+            p3.get("named_native_accepted_gap").and_then(|v| v.as_u64()),
+            "hub Java 21 must not be replaced by native accepted 20"
         );
     }
 

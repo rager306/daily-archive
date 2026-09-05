@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-05 — M479-xin07g/S01: parse-pdf stamps P3 header observe beside Java
+
+parse-pdf stamps cascade_observe.P3 from Java header_authors.len().
+production_authority java_http, observe_mode shadow_receipt,
+named_native_accepted_gap 20. run_header_sequence is not called.
+Governor flags a parse-pdf without the stamp or with native compose.
+No splice. No graph. D127 false.
+
+Green: da-cli lib source_cli 13; scholarly_parse_governance 92.
+
 ## 2026-09-05 — M478-k37wo4/S01: DATA maps P0-P9 cascade stages onto Java native and FSM
 
 cascade_stages lists ten parse stages. P0 consults grammar_route and
