@@ -30,6 +30,17 @@ defaults:
     closed_hash_tokens: [none]
     production_consult: parse-pdf
     demo_cli_is_not_closure: true
+  production_pdf_constructors:
+    # After M471 PDF parse constructors consult ProfileRoute.
+    # GrobidParser::from_env stays historical rich. A bare from_env used as
+    # a PDF parse constructor splits D204 fingerprints. Health probes,
+    # with_profile, corpus_grobid_parser and tests are allowed.
+    scan_roots:
+      - crates/da-cli/src
+      - crates/da-cli/examples
+    allowed_from_env_roles: [health_probe, with_profile, consult_helper, test, comment]
+    consult_helper: crates/da-cli/src/parse_profile.rs
+    forbidden_role: PARSE_BARE
   promotion:
     max_non_candidate_families: 1
     this_wave_promotes: none

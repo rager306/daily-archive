@@ -268,6 +268,33 @@ def test_checker_clean_root_has_no_s19_flags():
     assert _check_scholarly_parse_plane(ROOT) == []
 
 
+def test_checker_flags_bare_from_env_pdf_parse_constructor(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/bare_from_env.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        "fn parse() {\n    let parser = GrobidParser::from_env();\n    parser.parse_pdf(path, id);\n}\n",
+        encoding="utf-8",
+    )
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    assert matching, flags
+    assert any("bare_from_env.rs" in item.evidence for item in matching)
+
+
+def test_checker_allows_from_env_health_probe(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/health_probe.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        "async fn check() {\n    let grobid = GrobidParser::from_env();\n    let grobid_ok = grobid.is_alive().await;\n    println!(\"  GROBID: {grobid_ok}\");\n}\n",
+        encoding="utf-8",
+    )
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp" and "health_probe.rs" in item.evidence]
+    assert matching == []
+
+
 @pytest.mark.parametrize("label", sorted(REQUIRED_VIOLATIONS))
 def test_checker_localizes_each_synthetic_mutation_to_high_severity_flag(tmp_path: Path, label: str):
     _copy_checker_surface(tmp_path)

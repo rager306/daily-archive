@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -73,8 +74,11 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
             "closed_sources" not in value
             and "production_consult" not in value
             and "profile_route_default" not in value
+            and "bare_from_env_parse" not in value
         ):
             return False
+        if value.get("bare_from_env_parse") is True:
+            return True
         sources = set(value.get("closed_sources") or [])
         if "profile_route_default" in value and value.get("profile_route_default") != "structural":
             return True
@@ -119,6 +123,51 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
         fields = {str(item).lower() for item in (value.get("identity_fields") or [])}
         return bool(fields & {"worker", "workers", "smp", "concurrency", "thread"})
     return bool(plane) and bool(value)
+
+
+_FROM_ENV = re.compile(r"GrobidParser::from_env\s*\(\s*\)")
+
+
+def _from_env_role(lines: list[str], index: int, relative: str) -> str:
+    """Classify one GrobidParser::from_env() site. Missing roots are skipped by the caller."""
+    stripped = lines[index].strip()
+    if stripped.startswith(("//", "///", "//!", "*")):
+        return "comment"
+    window = "\n".join(lines[max(0, index - 2) : min(len(lines), index + 8)])
+    prev = "\n".join(lines[max(0, index - 8) : index + 4])
+    if "fn corpus_grobid_parser" in prev:
+        return "consult_helper"
+    if ".with_profile" in window:
+        return "with_profile"
+    if any(token in window for token in ("is_alive", "probe_health", "probe_version", "GROBID:")):
+        return "health_probe"
+    if "mod tests" in "\n".join(lines[: index + 1]) or relative.endswith("/tests.rs") or "/tests/" in relative:
+        return "test"
+    if "parse_pdf" in window:
+        return "PARSE_BARE"
+    return "PARSE_BARE"
+
+
+def _scan_bare_from_env_parse(root: Path, scan_roots: list[str]) -> list[str]:
+    """Return PARSE_BARE sites under declared roots. Missing roots are skipped."""
+    hits: list[str] = []
+    for relative in scan_roots:
+        path = root / relative
+        if not path.exists():
+            continue
+        files = [path] if path.is_file() else sorted(path.rglob("*.rs"))
+        for file_path in files:
+            try:
+                lines = file_path.read_text(encoding="utf-8").splitlines()
+            except OSError:
+                continue
+            rel = str(file_path.relative_to(root))
+            for index, line in enumerate(lines):
+                if not _FROM_ENV.search(line):
+                    continue
+                if _from_env_role(lines, index, rel) == "PARSE_BARE":
+                    hits.append(f"{rel}:{index + 1}")
+    return hits
 
 
 def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
@@ -421,6 +470,28 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             "structural",
             profile_native.get("default"),
         )
+
+    constructors = (registry.get("defaults") or {}).get("production_pdf_constructors") or {}
+    scan_roots = [str(item) for item in (constructors.get("scan_roots") or [])]
+    allowed = set(constructors.get("allowed_from_env_roles") or [])
+    if constructors:
+        if "health_probe" not in allowed or constructors.get("forbidden_role") != "PARSE_BARE":
+            flag(
+                "policy_stamp",
+                "integration",
+                "data/parse/grobid_compatibility.yaml#defaults.production_pdf_constructors",
+                {"allowed_from_env_roles": ["health_probe", "with_profile", "consult_helper", "test", "comment"], "forbidden_role": "PARSE_BARE"},
+                constructors,
+            )
+        bare = _scan_bare_from_env_parse(root, scan_roots)
+        if bare:
+            flag(
+                "policy_stamp",
+                "integration",
+                "GrobidParser::from_env PDF parse constructor",
+                "consult_corpus_grobid_parser or with_profile",
+                bare,
+            )
 
     segmentation_path = root / "data/parse/document_segmentation.yaml"
     try:

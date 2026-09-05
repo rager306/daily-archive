@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-05 — M472-nxpy4n/S01: governor flags bare from_env PDF constructors
+
+DATA lists allowed GrobidParser::from_env roles. Governor scans declared
+da-cli roots and flags a bare from_env used as a PDF parse constructor
+(policy_stamp). Health probes, with_profile, consult helper and tests stay
+allowed. Facade default stays rich. SHA of grobid_compatibility.yaml rebound
+in the same change. No graph. D127 false.
+
+Green: scholarly_parse_governance 85.
+
 ## 2026-09-05 — M471-oi80qz/S02: production PDF constructors consult ProfileRoute
 
 ingest, batch-ingest, extract, summarize, scheduler, da load journey,
