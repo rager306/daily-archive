@@ -181,6 +181,25 @@ pub(crate) fn stamp_p7_callout_observe(
     merge_cascade_observe(m, "P7", p7);
 }
 
+/// P8 bibliographic consolidation is a production_stamp from the live profile.
+/// production_authority is java_profile. Do not pool this row with P0 admit.
+pub(crate) fn stamp_p8_consolidation_observe(
+    m: &mut serde_yaml::Mapping,
+    grobid_profile: &str,
+    consolidate_header: bool,
+    consolidate_citations: bool,
+) {
+    let mut p8 = serde_yaml::Mapping::new();
+    p8.insert("stage".into(), "P8".into());
+    p8.insert("production_authority".into(), "java_profile".into());
+    p8.insert("observe_mode".into(), "production_stamp".into());
+    p8.insert("grobid_profile".into(), grobid_profile.into());
+    p8.insert("consolidate_header".into(), consolidate_header.into());
+    p8.insert("consolidate_citations".into(), consolidate_citations.into());
+    p8.insert("not_pooled_with_p0".into(), true.into());
+    merge_cascade_observe(m, "P8", p8);
+}
+
 fn stamp_from_grammar(
     m: &mut serde_yaml::Mapping,
     g: &da_application::parse_grammar::ParseGrammarDecision,
@@ -1955,6 +1974,12 @@ pub fn run_parse_pdf(
             .filter(|c| c.unresolved.is_some())
             .count(),
     );
+    stamp_p8_consolidation_observe(
+        &mut m,
+        grobid_profile.name(),
+        grobid_profile.consolidate_header(),
+        grobid_profile.consolidate_citations(),
+    );
     m.insert("lifecycle".into(), "parsed".into());
     let ev_raw = serde_yaml::Mapping::from_iter([
         ("stage".into(), "raw".into()),
@@ -3481,6 +3506,71 @@ mod tests {
             p3.get("named_native_accepted_gap").and_then(|v| v.as_u64()),
             "hub Java 21 must not be replaced by native accepted 20"
         );
+    }
+
+    #[test]
+    fn stamp_p8_is_java_profile_and_not_pooled_with_p0() {
+        let mut m = serde_yaml::Mapping::new();
+        stamp_p0_admit_observe(&mut m, true, true);
+        stamp_p1_layout_observe(&mut m, false);
+        stamp_p2_segmentation_observe(&mut m, 12);
+        stamp_p3_header_observe(&mut m, 21);
+        stamp_p4_references_observe(&mut m, 80);
+        stamp_p6_visual_observe(&mut m, 0, 0, 0, true, true);
+        stamp_p7_callout_observe(&mut m, 0, 0);
+        stamp_p8_consolidation_observe(&mut m, "structural", false, false);
+        let observe = m
+            .get("cascade_observe")
+            .and_then(|v| v.as_mapping())
+            .expect("cascade_observe");
+        for key in ["P0", "P1", "P2", "P3", "P4", "P6", "P7", "P8"] {
+            assert!(observe.contains_key(key), "{key} observe missing");
+        }
+        let p0 = observe
+            .get("P0")
+            .and_then(|v| v.as_mapping())
+            .expect("P0 observe");
+        let p8 = observe
+            .get("P8")
+            .and_then(|v| v.as_mapping())
+            .expect("P8 observe");
+        assert_eq!(p8.get("stage").and_then(|v| v.as_str()), Some("P8"));
+        assert_eq!(
+            p8.get("production_authority").and_then(|v| v.as_str()),
+            Some("java_profile"),
+            "P8 is bibliographic consolidation, not java_http admit"
+        );
+        assert_eq!(
+            p0.get("production_authority").and_then(|v| v.as_str()),
+            Some("java_http")
+        );
+        assert_ne!(
+            p8.get("production_authority").and_then(|v| v.as_str()),
+            p0.get("production_authority").and_then(|v| v.as_str()),
+            "do not pool P8 with P0"
+        );
+        assert_eq!(
+            p8.get("observe_mode").and_then(|v| v.as_str()),
+            Some("production_stamp")
+        );
+        assert_eq!(
+            p8.get("grobid_profile").and_then(|v| v.as_str()),
+            Some("structural")
+        );
+        assert_eq!(
+            p8.get("consolidate_header").and_then(|v| v.as_bool()),
+            Some(false)
+        );
+        assert_eq!(
+            p8.get("consolidate_citations").and_then(|v| v.as_bool()),
+            Some(false)
+        );
+        assert_eq!(
+            p8.get("not_pooled_with_p0").and_then(|v| v.as_bool()),
+            Some(true)
+        );
+        assert!(p0.get("grobid_profile").is_none());
+        assert!(p0.get("consolidate_citations").is_none());
     }
 
     #[test]

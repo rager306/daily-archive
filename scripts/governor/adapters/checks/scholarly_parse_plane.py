@@ -776,6 +776,22 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "parse-pdf stamps P7 observe from Java visual_callouts",
                 "missing stamp_p7_callout_observe",
             )
+        if "stamp_p8_consolidation_observe" not in src:
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#stamp_p8_consolidation_observe",
+                "parse-pdf stamps P8 observe from live grobid profile",
+                "missing stamp_p8_consolidation_observe",
+            )
+        if "ConservationEngine" in src:
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#parse-pdf",
+                "P8 observe must not call ConservationEngine",
+                "conservation engine call",
+            )
         if (
             "compose_header(" in src
             or "run_header_sequence(" in src

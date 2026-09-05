@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-05 — M487-mr0jkj/S01: parse-pdf stamps P8 consolidation observe from live profile
+
+parse-pdf merges cascade_observe.P8 from the live GrobidProfile.
+observe_mode is production_stamp. production_authority is java_profile.
+P8 is not pooled with P0 admit. ConservationEngine is not called.
+Governor flags a parse-pdf without the P8 stamp. No splice. No graph.
+D127 false.
+
+Green: da-cli lib source_cli 20; scholarly_parse_governance 100.
+
 ## 2026-09-05 — M486-5cggw1/S01: parse-pdf stamps P7 callout observe from Java lift
 
 parse-pdf merges cascade_observe.P7 from Java visual_callouts.
