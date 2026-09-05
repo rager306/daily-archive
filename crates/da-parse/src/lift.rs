@@ -818,9 +818,8 @@ impl TeiLifter {
             // (which is flat in real GROBID output — see MEM654).
             let path_component = Self::extract_head_n_string(open_tag);
             // level = number of path components (1 for "1", 2 for "3.1").
-            // For backward compat with the old extract_head_level behavior,
             // when n is a single integer, level = that integer (not 1).
-            // This matches the old test expectation: <head n="2"> -> level 2.
+            // This matches the live test: <head n="2"> -> level 2.
             let level = if path_component.contains('.') {
                 path_component.split('.').count() as u32
             } else {
@@ -943,18 +942,6 @@ impl TeiLifter {
                 section.section_id = Some(expected);
             }
         }
-    }
-
-    /// Extract the `n` attribute value from a `<head n="1">` tag.
-    #[allow(dead_code)]
-    pub(crate) fn extract_head_level(open_tag: &str) -> u32 {
-        if let Some(n_pos) = open_tag.find("n=\"") {
-            let after = &open_tag[n_pos + 3..];
-            if let Some(end) = after.find('"') {
-                return after[..end].parse().unwrap_or(1);
-            }
-        }
-        1
     }
 
     /// Extract citations from TEI `<back>` references.

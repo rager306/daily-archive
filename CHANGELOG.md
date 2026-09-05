@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-05 — M490-3jfk24/S01: Remove dead extract_head_level from TeiLifter
+
+extract_head_level is gone. Live lift reads head n through
+extract_head_n_string and derives level from path components. A live
+extract_sections test covers n=3, missing n, and n=abc. No splice.
+No graph. D127 false.
+
+Green: da-parse lib tests:: 67 (skip real_tei). real_tei hub 69 vs
+≥80 sections is pre-existing on HEAD, not this slice.
+
 ## 2026-09-05 — M489-rj64mf/S01: P5 accountant later must not look like a live consult
 
 YAML comment no longer lists later as fsm_consult. P5 observe_mode stays

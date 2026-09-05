@@ -402,10 +402,26 @@ fn test_extract_citations_anchor_in_top_level_gap_path_unresolved() {
 }
 
 #[test]
-fn test_extract_head_level() {
-    assert_eq!(TeiLifter::extract_head_level(r#"<head n="3">"#), 3);
-    assert_eq!(TeiLifter::extract_head_level("<head>"), 1);
-    assert_eq!(TeiLifter::extract_head_level(r#"<head n="abc">"#), 1);
+fn test_live_head_n_string_drives_section_level() {
+    let tei = r#"<TEI><text><body>
+            <div><head n="3">Third</head><p>Three.</p></div>
+            <div><head>Missing n</head><p>Default.</p></div>
+            <div><head n="abc">Bad n</head><p>Fallback.</p></div>
+        </body></text></TEI>"#;
+    let sections = TeiLifter::extract_sections(tei);
+    assert_eq!(sections.len(), 3);
+    assert_eq!(sections[0].title, "Third");
+    assert_eq!(
+        sections[0].level, 3,
+        "n=3 is a single integer, live level is 3"
+    );
+    assert_eq!(sections[1].title, "Missing n");
+    assert_eq!(sections[1].level, 1, "missing n defaults to 1");
+    assert_eq!(sections[2].title, "Bad n");
+    assert_eq!(
+        sections[2].level, 1,
+        "n=abc is not digits-and-dots, live default is 1"
+    );
 }
 
 // ─── ADR-053 Layer A T02: recursive TEI div walk for path_id ───
