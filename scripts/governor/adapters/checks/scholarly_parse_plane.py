@@ -713,6 +713,15 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             {"observe_mode": "shadow_receipt", "production_authority": "java_http"},
             p3,
         )
+    p5 = stages.get("P5") or {}
+    if str(p5.get("observe_mode") or "") != "accountant_later":
+        flag(
+            "policy_stamp",
+            "integration",
+            "data/parse/grobid_compatibility.yaml#defaults.cascade_stages.P5.observe_mode",
+            "accountant_later",
+            p5.get("observe_mode"),
+        )
 
     source_cli = root / "crates/da-cli/src/source_cli.rs"
     if source_cli.is_file():
@@ -791,6 +800,14 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "crates/da-cli/src/source_cli.rs#stamp_p9_conservation_observe",
                 "parse-pdf stamps P9 conservation as tracked candidate_lift",
                 "missing stamp_p9_conservation_observe",
+            )
+        if "stamp_p5" in src:
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#parse-pdf",
+                "P5 accountant_later must not be stamped as live",
+                "stamp_p5 present",
             )
         if "ConservationEngine" in src:
             flag(

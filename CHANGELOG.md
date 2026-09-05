@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-05 — M489-rj64mf/S01: P5 accountant later must not look like a live consult
+
+YAML comment no longer lists later as fsm_consult. P5 observe_mode stays
+accountant_later. Governor flags stamp_p5 and a live P5 mode.
+grobid_compatibility.yaml SHA rebound. No stamp_p5 added. No splice.
+No graph. D127 false.
+
+Green: scholarly_parse_governance 103.
+
 ## 2026-09-05 — M488-isklf9/S01: parse-pdf stamps P9 conservation observe without calling the engine
 
 parse-pdf merges cascade_observe.P9 as candidate_lift. production_authority

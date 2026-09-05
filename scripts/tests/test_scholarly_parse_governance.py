@@ -394,6 +394,33 @@ def test_checker_flags_parse_pdf_missing_p3_observe_stamp(tmp_path: Path):
     assert any("source_cli.rs" in item.evidence for item in matching)
 
 
+def test_checker_flags_parse_pdf_p5_live_stamp(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        "pub fn run_parse_pdf() { stamp_p5_body_observe(&mut m, 1); }\n",
+        encoding="utf-8",
+    )
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    assert matching, flags
+    assert any("stamp_p5" in item.evidence or "source_cli.rs" in item.evidence for item in matching)
+
+
+def test_checker_flags_p5_observe_mode_not_later(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/parse/grobid_compatibility.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    stages = payload.setdefault("defaults", {}).setdefault("cascade_stages", {})
+    stages.setdefault("P5", {})["observe_mode"] = "production_stamp"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    assert matching, flags
+    assert any("P5" in item.evidence for item in matching)
+
+
 def test_checker_flags_cascade_stage_later_as_fsm_consult(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     path = tmp_path / "data/parse/grobid_compatibility.yaml"
