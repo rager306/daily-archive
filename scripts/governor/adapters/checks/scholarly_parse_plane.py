@@ -720,13 +720,26 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "parse-pdf stamps P3 observe from Java header_n",
                 "missing stamp_p3_header_observe",
             )
-        if "compose_header(" in src or "run_header_sequence(" in src:
+        if "stamp_p4_references_observe" not in src:
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#stamp_p4_references_observe",
+                "parse-pdf stamps P4 observe from Java citation_n",
+                "missing stamp_p4_references_observe",
+            )
+        if (
+            "compose_header(" in src
+            or "run_header_sequence(" in src
+            or "compose_references(" in src
+            or "run_reference_sequence(" in src
+        ):
             flag(
                 "policy_stamp",
                 "integration",
                 "crates/da-cli/src/source_cli.rs#parse-pdf",
-                "P3 observe must not call native compose",
-                "compose_header or run_header_sequence call",
+                "P3/P4 observe must not call native compose",
+                "native compose call",
             )
 
     constructors = (registry.get("defaults") or {}).get("production_pdf_constructors") or {}

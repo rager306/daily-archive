@@ -62,6 +62,18 @@ fn stamp_grobid_profile(m: &mut serde_yaml::Mapping, route: da_domain::fsm_polic
     );
 }
 
+fn merge_cascade_observe(m: &mut serde_yaml::Mapping, stage: &str, row: serde_yaml::Mapping) {
+    let mut observe = match m.remove("cascade_observe") {
+        Some(serde_yaml::Value::Mapping(existing)) => existing,
+        _ => serde_yaml::Mapping::new(),
+    };
+    observe.insert(stage.into(), serde_yaml::Value::Mapping(row));
+    m.insert(
+        "cascade_observe".into(),
+        serde_yaml::Value::Mapping(observe),
+    );
+}
+
 /// P3 header observe beside Java lift. Native compose is not called.
 /// named_native_accepted_gap is the hub 20 vs Java 21 receipt, not a fix.
 pub(crate) fn stamp_p3_header_observe(m: &mut serde_yaml::Mapping, java_header_n: usize) {
@@ -71,12 +83,19 @@ pub(crate) fn stamp_p3_header_observe(m: &mut serde_yaml::Mapping, java_header_n
     p3.insert("observe_mode".into(), "shadow_receipt".into());
     p3.insert("java_header_n".into(), java_header_n.into());
     p3.insert("named_native_accepted_gap".into(), 20.into());
-    let mut observe = serde_yaml::Mapping::new();
-    observe.insert("P3".into(), serde_yaml::Value::Mapping(p3));
-    m.insert(
-        "cascade_observe".into(),
-        serde_yaml::Value::Mapping(observe),
-    );
+    merge_cascade_observe(m, "P3", p3);
+}
+
+/// P4 references observe beside Java lift. Native compose is not called.
+/// citation_names_not_biblstruct keeps 2198 off the Java biblStruct count.
+pub(crate) fn stamp_p4_references_observe(m: &mut serde_yaml::Mapping, java_citation_n: usize) {
+    let mut p4 = serde_yaml::Mapping::new();
+    p4.insert("stage".into(), "P4".into());
+    p4.insert("production_authority".into(), "java_http".into());
+    p4.insert("observe_mode".into(), "shadow_receipt".into());
+    p4.insert("java_citation_n".into(), java_citation_n.into());
+    p4.insert("citation_names_not_biblstruct".into(), true.into());
+    merge_cascade_observe(m, "P4", p4);
 }
 
 fn stamp_from_grammar(
@@ -1832,6 +1851,7 @@ pub fn run_parse_pdf(
     }
     stamp_grobid_profile(&mut m, grobid_route);
     stamp_p3_header_observe(&mut m, parsed.header_authors.len());
+    stamp_p4_references_observe(&mut m, parsed.citations.len());
     m.insert("lifecycle".into(), "parsed".into());
     let ev_raw = serde_yaml::Mapping::from_iter([
         ("stage".into(), "raw".into()),
@@ -3357,6 +3377,42 @@ mod tests {
             p3.get("java_header_n").and_then(|v| v.as_u64()),
             p3.get("named_native_accepted_gap").and_then(|v| v.as_u64()),
             "hub Java 21 must not be replaced by native accepted 20"
+        );
+    }
+
+    #[test]
+    fn stamp_p4_merges_beside_p3_and_does_not_pool_citation_names() {
+        let mut m = serde_yaml::Mapping::new();
+        stamp_p3_header_observe(&mut m, 21);
+        stamp_p4_references_observe(&mut m, 80);
+        let observe = m
+            .get("cascade_observe")
+            .and_then(|v| v.as_mapping())
+            .expect("cascade_observe");
+        assert!(observe.contains_key("P3"), "P4 must not erase P3");
+        let p4 = observe
+            .get("P4")
+            .and_then(|v| v.as_mapping())
+            .expect("P4 observe");
+        assert_eq!(p4.get("stage").and_then(|v| v.as_str()), Some("P4"));
+        assert_eq!(
+            p4.get("production_authority").and_then(|v| v.as_str()),
+            Some("java_http")
+        );
+        assert_eq!(
+            p4.get("observe_mode").and_then(|v| v.as_str()),
+            Some("shadow_receipt")
+        );
+        assert_eq!(p4.get("java_citation_n").and_then(|v| v.as_u64()), Some(80));
+        assert_eq!(
+            p4.get("citation_names_not_biblstruct")
+                .and_then(|v| v.as_bool()),
+            Some(true)
+        );
+        assert_ne!(
+            p4.get("java_citation_n").and_then(|v| v.as_u64()),
+            Some(2198),
+            "Java biblStruct must not be replaced by citation_names 2198"
         );
     }
 

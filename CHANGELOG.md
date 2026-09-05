@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-05 — M480-ccwqii/S01: parse-pdf stamps P4 references observe beside Java
+
+parse-pdf merges cascade_observe.P4 from Java citations.len().
+P3 is kept. citation_names_not_biblstruct stays true. compose_references
+is not called. Governor flags a parse-pdf without the P4 stamp or with
+native compose. No splice. No graph. D127 false.
+
+Green: da-cli lib source_cli 14; scholarly_parse_governance 93.
+
 ## 2026-09-05 — M479-xin07g/S01: parse-pdf stamps P3 header observe beside Java
 
 parse-pdf stamps cascade_observe.P3 from Java header_authors.len().
