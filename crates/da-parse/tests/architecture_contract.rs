@@ -3190,3 +3190,143 @@ fn s10_decision_point_scanner_fails_visible_on_synthetic_violations() {
         "expected [s10-decision-point-drift] for lost enum, got: {errs:?}"
     );
 }
+
+// ───── S11/T02: corpus constructors stay structural, from_env stays rich ─────
+
+/// S11 constructor-policy roots: bare `from_env` may appear ONLY as a
+/// health probe (main.rs `check_health`) or as an explicit approved
+/// `with_profile` construction after a ProfileRoute consult
+/// (load.rs `parse_primary`, source_cli.rs `run_parse_pdf`); the parse-plane
+/// helper definition and its unit tests are the remaining sanctioned sites.
+/// Every real corpus PDF constructor must go through
+/// `corpus_grobid_parser()` — the helper itself is CRITICAL blast radius
+/// (19 symbols, 7 flows) and is NOT reworked here, only its call sites.
+const S11_CORPUS_HELPER_USES: [&str; 2] = [
+    "crates/da-cli/examples/batch_promote_gold.rs",
+    "crates/da-cli/examples/gepa_hub_research.rs",
+];
+
+const S11_SANCTIONED_BARE_FROM_ENV: [(&str, &str); 4] = [
+    // (file, required nearby role marker proving the classification)
+    ("crates/da-cli/src/main.rs", "is_alive"),
+    ("crates/da-cli/src/load.rs", ".with_profile"),
+    ("crates/da-cli/src/source_cli.rs", ".with_profile"),
+    ("crates/da-cli/src/parse_profile.rs", "with_profile"),
+];
+
+fn s11_bare_from_env_lines(text: &str) -> Vec<(usize, String)> {
+    text.lines()
+        .enumerate()
+        .map(|(i, l)| (i + 1, l.to_string()))
+        .filter(|(_, l)| {
+            l.contains("GrobidParser::from_env()") && !l.trim_start().starts_with("//")
+        })
+        .collect()
+}
+
+#[test]
+fn s11_corpus_examples_use_the_structural_helper_not_bare_from_env() {
+    for rel in S11_CORPUS_HELPER_USES {
+        let text = read_text(rel);
+        assert!(
+            text.contains("corpus_grobid_parser()"),
+            "positive control failed: {rel} must construct its corpus parser via corpus_grobid_parser()"
+        );
+        let bare = s11_bare_from_env_lines(&text);
+        assert!(
+            bare.is_empty(),
+            "S11: {rel} still carries bare GrobidParser::from_env() (production corpus PDF must consult corpus_grobid_parser()): {bare:?}"
+        );
+    }
+}
+
+#[test]
+fn s11_remaining_bare_from_env_sites_stay_health_or_explicit_profile() {
+    // Positive inventory: every remaining bare site must be one of the
+    // sanctioned health-only / explicit-with_profile / helper-definition
+    // roles — a new bare corpus parse constructor fails loudly.
+    let mut seen: Vec<String> = Vec::new();
+    for (rel, marker) in S11_SANCTIONED_BARE_FROM_ENV {
+        let text = read_text(rel);
+        let bare = s11_bare_from_env_lines(&text);
+        assert!(
+            !bare.is_empty(),
+            "positive control failed: sanctioned {rel} lost its {marker} from_env site — inventory drifted"
+        );
+        // Line offset where the unit-test module starts (if any): bare
+        // from_env inside `mod tests` is the Governor-sanctioned test role,
+        // not a production constructor (mirrors _from_env_role).
+        let test_module_from: Option<usize> = text
+            .lines()
+            .position(|l| l.contains("mod tests"))
+            .map(|i| i + 1);
+        for (line_no, line) in &bare {
+            // The role marker must sit within a 12-line window so the
+            // classification is local evidence, not file folklore.
+            let window: Vec<&str> = text
+                .lines()
+                .skip(line_no.saturating_sub(7))
+                .take(14)
+                .collect();
+            let joined = window.join("\n");
+            let is_test_role = rel.ends_with("parse_profile.rs")
+                && test_module_from.is_some_and(|from| *line_no >= from);
+            assert!(
+                joined.contains(marker) || is_test_role,
+                "S11: {rel}:{line_no} bare from_env lost its `{marker}` role evidence: `{}`",
+                line.trim()
+            );
+        }
+        seen.push(rel.to_string());
+    }
+    // Closed world: scan the DATA-declared roots and fail on any bare site
+    // outside the sanctioned inventory.
+    for root in ["crates/da-cli/src", "crates/da-cli/examples"] {
+        let mut files = Vec::new();
+        collect_rs_files(&repo_root().join(root), &mut files);
+        for file in &files {
+            let rel = file
+                .strip_prefix(repo_root())
+                .unwrap_or(file)
+                .to_string_lossy()
+                .replace('\\', "/");
+            if !seen.contains(&rel) && !S11_CORPUS_HELPER_USES.contains(&rel.as_str()) {
+                let text = std::fs::read_to_string(file)
+                    .unwrap_or_else(|e| panic!("source unreadable {}: {e}", file.display()));
+                let bare = s11_bare_from_env_lines(&text);
+                assert!(
+                    bare.is_empty(),
+                    "S11: unsanctioned bare GrobidParser::from_env() in {rel}: {bare:?} — route it via corpus_grobid_parser() or extend the sanctioned inventory"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn s11_rich_structural_fingerprints_stay_distinct_and_frozen() {
+    use da_parse::GrobidProfile;
+    // D204 exact strings: from_env identity (rich) and corpus identity
+    // (structural) must never mix or collide.
+    assert_eq!(
+        GrobidProfile::rich().configuration_fingerprint(),
+        "profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula"
+    );
+    assert_eq!(
+        GrobidProfile::structural().configuration_fingerprint(),
+        "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note,formula"
+    );
+    assert_ne!(
+        GrobidProfile::rich().configuration_fingerprint(),
+        GrobidProfile::structural().configuration_fingerprint(),
+        "S11: rich/structural fingerprint collision — D204 separation lost"
+    );
+    // Synthetic collision control: a single-flag mutation must not equal
+    // either frozen identity.
+    let mutated = "profile=structural;consolidateHeader=1;consolidateCitations=0;teiCoordinates=figure,table,note,formula";
+    assert_ne!(mutated, GrobidProfile::rich().configuration_fingerprint());
+    assert_ne!(
+        mutated,
+        GrobidProfile::structural().configuration_fingerprint()
+    );
+}

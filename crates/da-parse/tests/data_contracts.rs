@@ -6350,3 +6350,189 @@ fn s10_rejects_later_set_drift_and_cascade_promotion() {
         "malformed yaml must fail loudly, not parse"
     );
 }
+
+// ───── S11/T02: DATA constructor policy + D204 fingerprint separation ─────
+
+/// S11 DATA constructor policy: the exact allowlist, forbidden role and scan
+/// roots declared in `data/parse/grobid_compatibility.yaml
+/// #defaults.production_pdf_constructors`. Live DATA is never mutated here —
+/// drift is proven on synthetic clones.
+const S11_CONSTRUCTOR_SCAN_ROOTS: [&str; 2] = ["crates/da-cli/src", "crates/da-cli/examples"];
+const S11_CONSTRUCTOR_ALLOWLIST: [&str; 5] = [
+    "health_probe",
+    "with_profile",
+    "consult_helper",
+    "test",
+    "comment",
+];
+const S11_CONSTRUCTOR_FORBIDDEN_ROLE: &str = "PARSE_BARE";
+const S11_CONSTRUCTOR_HELPER: &str = "crates/da-cli/src/parse_profile.rs";
+
+fn s11_constructor_policy(value: &serde_yaml::Value) -> Vec<String> {
+    let mut errs = Vec::new();
+    let ctor = &value["defaults"]["production_pdf_constructors"];
+    if ctor.is_null() {
+        return vec![
+            "[s11-constructor-policy-drift] defaults.production_pdf_constructors missing"
+                .to_string(),
+        ];
+    }
+    let roots: Vec<String> = ctor
+        .get("scan_roots")
+        .and_then(|v| v.as_sequence())
+        .map(|s| {
+            s.iter()
+                .filter_map(|i| i.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
+    let expected_roots: Vec<String> = S11_CONSTRUCTOR_SCAN_ROOTS
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    if roots != expected_roots {
+        errs.push(format!(
+            "[s11-constructor-policy-drift] scan_roots {roots:?} != exact {expected_roots:?}"
+        ));
+    }
+    let allowed: Vec<String> = ctor
+        .get("allowed_from_env_roles")
+        .and_then(|v| v.as_sequence())
+        .map(|s| {
+            s.iter()
+                .filter_map(|i| i.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
+    let expected_allowed: Vec<String> = S11_CONSTRUCTOR_ALLOWLIST
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    if allowed != expected_allowed {
+        errs.push(format!(
+            "[s11-constructor-policy-drift] allowed_from_env_roles {allowed:?} != exact {expected_allowed:?}"
+        ));
+    }
+    if ctor.get("forbidden_role").and_then(|v| v.as_str()) != Some(S11_CONSTRUCTOR_FORBIDDEN_ROLE) {
+        errs.push(format!(
+            "[s11-constructor-policy-drift] forbidden_role {:?} != {S11_CONSTRUCTOR_FORBIDDEN_ROLE:?}",
+            ctor.get("forbidden_role").and_then(|v| v.as_str())
+        ));
+    }
+    if ctor.get("consult_helper").and_then(|v| v.as_str()) != Some(S11_CONSTRUCTOR_HELPER) {
+        errs.push(format!(
+            "[s11-constructor-policy-drift] consult_helper {:?} != {S11_CONSTRUCTOR_HELPER:?}",
+            ctor.get("consult_helper").and_then(|v| v.as_str())
+        ));
+    }
+    errs
+}
+
+#[test]
+fn s11_data_constructor_policy_stays_exact() {
+    let registry = load_registry_value();
+    let errs = s11_constructor_policy(&registry);
+    assert!(
+        errs.is_empty(),
+        "constructor-policy DATA violations:\n{}",
+        errs.join("\n")
+    );
+}
+
+#[test]
+fn s11_rejects_constructor_policy_drift_on_synthetic_clones() {
+    let registry = load_registry_value();
+    // Dropped allowlist role.
+    let mut dropped = registry.clone();
+    dropped["defaults"]["production_pdf_constructors"]["allowed_from_env_roles"] =
+        serde_yaml::Value::Sequence(vec![
+            serde_yaml::Value::String("health_probe".into()),
+            serde_yaml::Value::String("with_profile".into()),
+        ]);
+    negative(
+        "[s11-constructor-policy-drift]",
+        &s11_constructor_policy(&dropped),
+        "dropped allowlist roles",
+    );
+    // Invented allowlist role.
+    let mut invented = registry.clone();
+    if let Some(seq) = invented["defaults"]["production_pdf_constructors"]["allowed_from_env_roles"]
+        .as_sequence_mut()
+    {
+        seq.push(serde_yaml::Value::String("bare_parse".into()));
+    }
+    negative(
+        "[s11-constructor-policy-drift]",
+        &s11_constructor_policy(&invented),
+        "invented allowlist role",
+    );
+    // Rotated forbidden role.
+    let mut rotated = registry.clone();
+    rotated["defaults"]["production_pdf_constructors"]["forbidden_role"] =
+        serde_yaml::Value::String("PARSE_WARN".into());
+    negative(
+        "[s11-constructor-policy-drift]",
+        &s11_constructor_policy(&rotated),
+        "rotated forbidden role",
+    );
+    // Narrowed scan roots.
+    let mut narrowed = registry.clone();
+    narrowed["defaults"]["production_pdf_constructors"]["scan_roots"] =
+        serde_yaml::Value::Sequence(vec![serde_yaml::Value::String("crates/da-cli/src".into())]);
+    negative(
+        "[s11-constructor-policy-drift]",
+        &s11_constructor_policy(&narrowed),
+        "narrowed scan roots",
+    );
+    // Moved consult helper.
+    let mut moved = registry.clone();
+    moved["defaults"]["production_pdf_constructors"]["consult_helper"] =
+        serde_yaml::Value::String("crates/da-cli/src/elsewhere.rs".into());
+    negative(
+        "[s11-constructor-policy-drift]",
+        &s11_constructor_policy(&moved),
+        "moved consult helper",
+    );
+    // Removed constructor block is loss, not silence.
+    let mut lost = registry.clone();
+    if let Some(map) = lost["defaults"].as_mapping_mut() {
+        map.remove("production_pdf_constructors");
+    }
+    negative(
+        "[s11-constructor-policy-drift]",
+        &s11_constructor_policy(&lost),
+        "removed constructor block",
+    );
+}
+
+#[test]
+fn s11_live_registry_default_profile_stays_structural_not_rich() {
+    // DATA default (profile_route.native.default) is structural; the live
+    // helper consult must agree without importing da-cli types.
+    let policy: serde_yaml::Value = expect_loaded("data/policies/registry.yaml");
+    let default = policy["decision_points"]["profile_route"]["native"]["default"]
+        .as_str()
+        .unwrap_or_default();
+    assert_eq!(
+        default, "structural",
+        "S11: DATA profile_route default `{default}` drifted — corpus default must stay structural"
+    );
+    assert_eq!(
+        GrobidProfile::structural().configuration_fingerprint(),
+        STRUCTURAL_FP,
+        "S11: live structural fingerprint drifted from the DATA-bound constant"
+    );
+    assert_eq!(
+        GrobidProfile::rich().configuration_fingerprint(),
+        RICH_FP,
+        "S11: live rich fingerprint drifted from the DATA-bound constant"
+    );
+    assert_ne!(
+        RICH_FP, STRUCTURAL_FP,
+        "S11: profile/fingerprint collision — D204 separation lost"
+    );
+    // Synthetic collision control: a one-flag mutation matches neither.
+    let mutated = "profile=structural;consolidateHeader=1;consolidateCitations=0;teiCoordinates=figure,table,note,formula";
+    assert_ne!(mutated, RICH_FP);
+    assert_ne!(mutated, STRUCTURAL_FP);
+}

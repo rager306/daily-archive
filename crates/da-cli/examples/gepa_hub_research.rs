@@ -15,7 +15,6 @@
 
 use da_adapters::{RuleBasedExtractor, SamyamaGraphStore};
 use da_application::{IngestUseCase, batch_ingest_pdfs};
-use da_parse::GrobidParser;
 use da_ports::extractor::Extractor;
 use da_ports::parser::ParserPort;
 use kg_embeddings::mock::MockEmbedder;
@@ -183,7 +182,9 @@ async fn main() -> anyhow::Result<()> {
     let hub_id = "2507.19457".to_string();
     println!("GEPA hub research: {} paper ids (hub={hub_id})", ids.len());
 
-    let parser = GrobidParser::from_env();
+    // S11: corpus PDF parse must consult the DATA profile route (structural
+    // default) — the historical rich from_env facade stays health-only.
+    let parser = da_cli::parse_profile::corpus_grobid_parser();
     if !parser.is_alive().await {
         anyhow::bail!("GROBID not alive at default endpoint");
     }

@@ -16,7 +16,6 @@ use da_domain::{
     ExtractionMetrics, GoldEntity, MultiPaperGoldIndex, PredictedEntity, list_false_positives,
     promote_candidates,
 };
-use da_parse::GrobidParser;
 use da_ports::extractor::Extractor;
 use da_ports::parser::ParserPort;
 use std::path::PathBuf;
@@ -120,7 +119,9 @@ async fn main() {
             .map(|(pid, ents)| (pid.as_str(), ents.as_slice())),
     );
 
-    let parser = GrobidParser::from_env();
+    // S11: corpus PDF parse must consult the DATA profile route (structural
+    // default) — the historical rich from_env facade stays health-only.
+    let parser = da_cli::parse_profile::corpus_grobid_parser();
     if !parser.is_alive().await {
         eprintln!("❌ GROBID not alive; start service before batch promote");
         std::process::exit(1);
