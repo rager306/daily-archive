@@ -39,6 +39,7 @@ fn tei_header(tei: &str) -> &str {
 
 /// Hub paper for large bibliography regression: arXiv **2507.19457** (GEPA).
 /// Real GROBID TEI has ~80 `<biblStruct>` in `<back>` (largest in m033 probe).
+/// Java sections are 69: body heads minus figure caption heads, not biblStruct 80.
 /// Changelog historically called this out as "80 citations with DOI/arXiv id".
 /// Previous pin was only `citations.len() > 5` — too weak to catch bibliography drops.
 #[test]
@@ -51,10 +52,10 @@ fn test_real_grobid_tei_gepa_hub_bibliography_2507_19457() {
         sections.len(),
         citations.len()
     );
-    assert!(
-        sections.len() >= 80,
-        "GEPA hub expected ≥80 sections, got {}",
-        sections.len()
+    assert_eq!(
+        sections.len(),
+        69,
+        "GEPA hub Java sections are 69 (body heads minus figure caption heads), not biblStruct 80"
     );
     // Pin the large bibliography: must stay at full hub scale (not toy >5).
     assert!(

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-05 — M491-lj9ybx/S01: Hub real_tei must not pool sections with biblStruct
+
+Hub Java sections are 69: body heads minus figure caption heads, not
+biblStruct 80. real_tei pins sections at 69 and keeps citations >=80.
+Governor flags pooling those two pins. extract_sections is unchanged.
+No splice. No graph. D127 false.
+
+Green: da-parse lib real_tei 15; scholarly_parse_governance 104.
+
 ## 2026-09-05 — M490-3jfk24/S01: Remove dead extract_head_level from TeiLifter
 
 extract_head_level is gone. Live lift reads head n through

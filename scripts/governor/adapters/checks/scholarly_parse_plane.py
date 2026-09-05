@@ -860,6 +860,21 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "native layout call",
             )
 
+    real_tei = root / "crates/da-parse/src/real_tei_tests.rs"
+    if real_tei.is_file():
+        try:
+            tei_src = real_tei.read_text(encoding="utf-8")
+        except OSError as error:
+            tei_src = str(error)
+        if "sections.len() >= 80" in tei_src and "citations.len() >= 80" in tei_src:
+            flag(
+                "acceptance_same_n_drift",
+                "integration",
+                "crates/da-parse/src/real_tei_tests.rs#hub_sections",
+                "hub Java sections 69, not biblStruct 80",
+                "sections.len() >= 80 pooled with citations.len() >= 80",
+            )
+
     constructors = (registry.get("defaults") or {}).get("production_pdf_constructors") or {}
     scan_roots = [str(item) for item in (constructors.get("scan_roots") or [])]
     allowed = set(constructors.get("allowed_from_env_roles") or [])
