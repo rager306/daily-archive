@@ -712,6 +712,14 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             src = source_cli.read_text(encoding="utf-8")
         except OSError as error:
             src = str(error)
+        if "stamp_p2_segmentation_observe" not in src:
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#stamp_p2_segmentation_observe",
+                "parse-pdf stamps P2 observe from Java section_n",
+                "missing stamp_p2_segmentation_observe",
+            )
         if "stamp_p3_header_observe" not in src:
             flag(
                 "policy_stamp",
@@ -738,8 +746,16 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "policy_stamp",
                 "integration",
                 "crates/da-cli/src/source_cli.rs#parse-pdf",
-                "P3/P4 observe must not call native compose",
+                "P2/P3/P4 observe must not call native compose",
                 "native compose call",
+            )
+        if "NativeSegmenter" in src or "segment_document(" in src:
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#parse-pdf",
+                "P2 observe must not call native segmentation",
+                "native segmentation call",
             )
 
     constructors = (registry.get("defaults") or {}).get("production_pdf_constructors") or {}

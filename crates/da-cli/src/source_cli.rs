@@ -74,6 +74,18 @@ fn merge_cascade_observe(m: &mut serde_yaml::Mapping, stage: &str, row: serde_ya
     );
 }
 
+/// P2 segmentation observe beside Java lift. Native lattice is not called.
+/// tei_divs_not_native_regions keeps TEI <div> counts off native regions.
+pub(crate) fn stamp_p2_segmentation_observe(m: &mut serde_yaml::Mapping, java_section_n: usize) {
+    let mut p2 = serde_yaml::Mapping::new();
+    p2.insert("stage".into(), "P2".into());
+    p2.insert("production_authority".into(), "java_http".into());
+    p2.insert("observe_mode".into(), "shadow_receipt".into());
+    p2.insert("java_section_n".into(), java_section_n.into());
+    p2.insert("tei_divs_not_native_regions".into(), true.into());
+    merge_cascade_observe(m, "P2", p2);
+}
+
 /// P3 header observe beside Java lift. Native compose is not called.
 /// named_native_accepted_gap is the hub 20 vs Java 21 receipt, not a fix.
 pub(crate) fn stamp_p3_header_observe(m: &mut serde_yaml::Mapping, java_header_n: usize) {
@@ -1850,6 +1862,7 @@ pub fn run_parse_pdf(
         None => stamp_policy_none(&mut m),
     }
     stamp_grobid_profile(&mut m, grobid_route);
+    stamp_p2_segmentation_observe(&mut m, parsed.sections.len());
     stamp_p3_header_observe(&mut m, parsed.header_authors.len());
     stamp_p4_references_observe(&mut m, parsed.citations.len());
     m.insert("lifecycle".into(), "parsed".into());
@@ -3377,6 +3390,40 @@ mod tests {
             p3.get("java_header_n").and_then(|v| v.as_u64()),
             p3.get("named_native_accepted_gap").and_then(|v| v.as_u64()),
             "hub Java 21 must not be replaced by native accepted 20"
+        );
+    }
+
+    #[test]
+    fn stamp_p2_merges_beside_p3_p4_and_does_not_claim_native_regions() {
+        let mut m = serde_yaml::Mapping::new();
+        stamp_p2_segmentation_observe(&mut m, 12);
+        stamp_p3_header_observe(&mut m, 21);
+        stamp_p4_references_observe(&mut m, 80);
+        let observe = m
+            .get("cascade_observe")
+            .and_then(|v| v.as_mapping())
+            .expect("cascade_observe");
+        assert!(observe.contains_key("P2"), "P2 observe missing");
+        assert!(observe.contains_key("P3"), "P2 must not erase P3");
+        assert!(observe.contains_key("P4"), "P2 must not erase P4");
+        let p2 = observe
+            .get("P2")
+            .and_then(|v| v.as_mapping())
+            .expect("P2 observe");
+        assert_eq!(p2.get("stage").and_then(|v| v.as_str()), Some("P2"));
+        assert_eq!(
+            p2.get("production_authority").and_then(|v| v.as_str()),
+            Some("java_http")
+        );
+        assert_eq!(
+            p2.get("observe_mode").and_then(|v| v.as_str()),
+            Some("shadow_receipt")
+        );
+        assert_eq!(p2.get("java_section_n").and_then(|v| v.as_u64()), Some(12));
+        assert_eq!(
+            p2.get("tei_divs_not_native_regions")
+                .and_then(|v| v.as_bool()),
+            Some(true)
         );
     }
 

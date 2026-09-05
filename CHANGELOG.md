@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-05 — M481-x8opx5/S01: parse-pdf stamps P2 segmentation observe beside Java
+
+parse-pdf merges cascade_observe.P2 from Java sections.len().
+P3 and P4 are kept. tei_divs_not_native_regions stays true.
+NativeSegmenter is not called. Governor flags a parse-pdf without the
+P2 stamp or with native segmentation. No splice. No graph. D127 false.
+
+Green: da-cli lib source_cli 15; architecture_contract segmentation 2;
+scholarly_parse_governance 94.
+
 ## 2026-09-05 — M480-ccwqii/S01: parse-pdf stamps P4 references observe beside Java
 
 parse-pdf merges cascade_observe.P4 from Java citations.len().
