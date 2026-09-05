@@ -5435,3 +5435,402 @@ fn rejects_removed_named_denominators_block() {
         "removed s12_named_denominators",
     );
 }
+
+// ───── S08/T02: P6 cascade row stays Java-lifted, never native ─────
+//
+// The `defaults.cascade_stages.P6` row in the registry of record pins the
+// visual family to the Java TEI lift: `production_authority: java_http`,
+// `observe_mode: shadow_receipt`, `fsm_consult: [none]`, with the native
+// visual module as observe-only surface. `empty_count_not_success=true`
+// lives on the live `stamp_p6_visual_observe` receipt (R120): a zero
+// figure/table/formula count is a receipt, never a pass — and terminal
+// missing Image semantics are `NotObserved`, not a successful zero count.
+
+const P6_POLICY_TAG: &str = "[p6-visual-policy-drift]";
+
+/// Validate the P6 cascade row of the registry of record
+/// (`defaults.cascade_stages.P6`). Generic `serde_yaml::Value` reader — no
+/// typed deserialization that could mask a removed field.
+fn validate_p6_visual_policy(registry: &serde_yaml::Value) -> Vec<String> {
+    let mut errs = Vec::new();
+    let stage = registry
+        .get("defaults")
+        .and_then(|d| d.get("cascade_stages"))
+        .and_then(|c| c.get("P6"));
+    let Some(stage) = stage else {
+        errs.push(format!(
+            "{P6_POLICY_TAG} registry lost `defaults.cascade_stages.P6` — loss, not silence"
+        ));
+        return errs;
+    };
+    let mut str_eq = |key: &str, expected: &str| {
+        if stage.get(key).and_then(|v| v.as_str()) != Some(expected) {
+            errs.push(format!("{P6_POLICY_TAG} P6 `{key}` must stay `{expected}`"));
+        }
+    };
+    str_eq("production_authority", "java_http");
+    str_eq("observe_mode", "shadow_receipt");
+    str_eq("native_surface", "crates/da-parse/src/native_visual.rs");
+    match stage.get("fsm_consult") {
+        Some(v) => {
+            let is_none = v
+                .as_sequence()
+                .is_some_and(|seq| seq.len() == 1 && seq[0].as_str() == Some("none"));
+            if !is_none {
+                errs.push(format!(
+                    "{P6_POLICY_TAG} P6 `fsm_consult` must stay `[none]` — visual never consults the FSM"
+                ));
+            }
+        }
+        None => errs.push(format!(
+            "{P6_POLICY_TAG} registry lost P6 `fsm_consult` — loss, not silence"
+        )),
+    }
+    if stage.get("grobid").and_then(|v| v.as_str()) != Some("figure_table_formula") {
+        errs.push(format!(
+            "{P6_POLICY_TAG} P6 `grobid` must stay `figure_table_formula`"
+        ));
+    }
+    errs
+}
+
+/// Validate the `stage.figure_table_formula` capability row: shadow state,
+/// candidate promotion state, Java baseline, forbidden graph truth and
+/// locked import eligibility (R111/R118/R123).
+fn validate_figure_table_formula_capability(registry: &serde_yaml::Value) -> Vec<String> {
+    const TAG: &str = "[p6-visual-capability-drift]";
+    let mut errs = Vec::new();
+    let cap = registry
+        .get("capabilities")
+        .and_then(|c| c.as_sequence())
+        .and_then(|seq| {
+            seq.iter().find(|c| {
+                c.get("id").and_then(|i| i.as_str()) == Some("stage.figure_table_formula")
+            })
+        });
+    let Some(cap) = cap else {
+        errs.push(format!(
+            "{TAG} registry lost capability `stage.figure_table_formula` — loss, not silence"
+        ));
+        return errs;
+    };
+    let str_at = |path: &[&str]| -> String {
+        let mut cur = cap;
+        for key in path {
+            cur = match cur.get(key) {
+                Some(v) => v,
+                None => return String::new(),
+            };
+        }
+        cur.as_str().unwrap_or_default().to_string()
+    };
+    for (path, expected) in [
+        (vec!["state"], "shadow"),
+        (vec!["promotion_state"], "candidate"),
+        (vec!["baseline"], "java-grobid-fulltext"),
+        (vec!["candidate"], "da-parse@lift-partial"),
+        (vec!["rollback_target"], "java-grobid-http@0.9.0-crf"),
+    ] {
+        if str_at(&path) != expected {
+            errs.push(format!(
+                "{TAG} stage.figure_table_formula `{}` must stay `{expected}`",
+                path.join(".")
+            ));
+        }
+    }
+    if str_at(&["implementation", "surface"]) != "crates/da-parse/src/native_visual.rs" {
+        errs.push(format!(
+            "{TAG} stage.figure_table_formula implementation.surface must stay on native_visual.rs"
+        ));
+    }
+    // `graph_truth: forbidden` is pinned on the `native_visual_shadow:`
+    // additive shadow block (`comparison_separation` keeps Java TEI
+    // supporting-only and native scores shadow-only), not on this internal
+    // stage capability: pin it there instead of requiring it on this row.
+    let shadow = registry.get("native_visual_shadow");
+    if shadow
+        .and_then(|s| s.get("graph_truth"))
+        .and_then(|v| v.as_str())
+        != Some("forbidden")
+    {
+        errs.push(format!(
+            "{TAG} `native_visual_shadow.graph_truth` must stay `forbidden`"
+        ));
+    }
+    // `import_eligible: false` is a document-level hard lock (top of the
+    // registry), not a per-capability field: pin it globally instead of
+    // requiring it on this capability row.
+    if registry.get("import_eligible").and_then(|v| v.as_bool()) != Some(false) {
+        errs.push(format!(
+            "{TAG} registry `import_eligible` must stay `false` (D127)"
+        ));
+    }
+    // Terminal missing Image is NotObserved, never a successful zero count:
+    // the implementation note must keep that semantics pinned.
+    let notes = str_at(&["implementation", "notes"]);
+    if !notes.contains("NotObserved") {
+        errs.push(format!(
+            "{TAG} stage.figure_table_formula note lost terminal NotObserved semantics"
+        ));
+    }
+    if !notes.contains("not zero figures") {
+        errs.push(format!(
+            "{TAG} stage.figure_table_formula note lost `not zero figures` (no-silent-success)"
+        ));
+    }
+    errs
+}
+
+#[test]
+fn p6_cascade_row_stays_java_lifted_shadow_receipt() {
+    let registry = load_registry_value();
+    let errs = validate_p6_visual_policy(&registry);
+    assert!(
+        errs.is_empty(),
+        "P6 visual policy DATA violations:\n{}",
+        errs.join("\n")
+    );
+    let errs = validate_figure_table_formula_capability(&registry);
+    assert!(
+        errs.is_empty(),
+        "figure/table/formula capability DATA violations:\n{}",
+        errs.join("\n")
+    );
+}
+
+#[test]
+fn rejects_p6_policy_drift_mutation_or_loss() {
+    let registry = load_registry_value();
+    // java_http -> native erosion must fail loudly.
+    let mut drifted = registry.clone();
+    drifted["defaults"]["cascade_stages"]["P6"]["production_authority"] =
+        serde_yaml::Value::String("native".into());
+    negative(
+        P6_POLICY_TAG,
+        &validate_p6_visual_policy(&drifted),
+        "P6 authority -> native",
+    );
+    // shadow_receipt -> production_stamp erosion must fail loudly.
+    let mut drifted = registry.clone();
+    drifted["defaults"]["cascade_stages"]["P6"]["observe_mode"] =
+        serde_yaml::Value::String("production_stamp".into());
+    negative(
+        P6_POLICY_TAG,
+        &validate_p6_visual_policy(&drifted),
+        "P6 mode -> production_stamp",
+    );
+    // fsm_consult [none] -> [grammar_route] (FSM promotion) must fail loudly.
+    let mut drifted = registry.clone();
+    drifted["defaults"]["cascade_stages"]["P6"]["fsm_consult"] =
+        serde_yaml::Value::Sequence(vec![serde_yaml::Value::String("grammar_route".into())]);
+    negative(
+        P6_POLICY_TAG,
+        &validate_p6_visual_policy(&drifted),
+        "P6 consults the FSM",
+    );
+    // Removed P6 row is loss, not silence.
+    let mut removed = registry.clone();
+    if let Some(map) = removed["defaults"]["cascade_stages"].as_mapping_mut() {
+        map.remove("P6");
+    }
+    negative(
+        P6_POLICY_TAG,
+        &validate_p6_visual_policy(&removed),
+        "removed P6 row",
+    );
+    // Removed P6 fsm_consult is loss, not silence.
+    let mut removed = registry.clone();
+    if let Some(map) = removed["defaults"]["cascade_stages"]["P6"].as_mapping_mut() {
+        map.remove("fsm_consult");
+    }
+    negative(
+        P6_POLICY_TAG,
+        &validate_p6_visual_policy(&removed),
+        "removed P6 fsm_consult",
+    );
+    // shadow -> proxy capability promotion must fail loudly.
+    let mut promoted = registry.clone();
+    if let Some(seq) = promoted["capabilities"].as_sequence_mut()
+        && let Some(cap) = seq
+            .iter_mut()
+            .find(|c| c.get("id").and_then(|i| i.as_str()) == Some("stage.figure_table_formula"))
+    {
+        cap["state"] = serde_yaml::Value::String("proxy".into());
+    }
+    negative(
+        "[p6-visual-capability-drift]",
+        &validate_figure_table_formula_capability(&promoted),
+        "figure_table_formula -> proxy",
+    );
+    // Missing artifact is loss, not silence.
+    let missing: Result<serde_yaml::Value, String> =
+        load_yaml("data/parse/does-not-exist-s08-p6.yaml");
+    let err = missing.expect_err("missing registry artifact must fail loudly");
+    assert!(
+        err.contains("[unreadable-artifact]"),
+        "missing artifact must tag [unreadable-artifact], got: {err}"
+    );
+    // Malformed YAML never parses into a contract value.
+    let malformed = serde_yaml::from_str::<serde_yaml::Value>("{unclosed: [1,");
+    assert!(
+        malformed.is_err(),
+        "malformed yaml must fail loudly, not parse"
+    );
+}
+
+// ───── S08/T02: visual_bundle stays a later registry name, never a DecisionPoint ─────
+//
+// `visual_bundle` lives in `consult_status.later` of
+// `data/policies/registry.yaml` (ADR-076): parse-pdf consults exactly the two
+// DecisionPoints `[grammar_route, profile_route]`, `visual_bundle` is not
+// among the six `DecisionPoint` enum variants and not in
+// `parse_pdf_consults`. Promotion into the FSM would need a new enum variant;
+// this contract fails loudly on it. The DecisionPoint enum and the registry
+// file are NOT modified here.
+
+const POLICY_REGISTRY_REL: &str = "data/policies/registry.yaml";
+
+fn load_policy_registry() -> serde_yaml::Value {
+    let full = repo_root().join(POLICY_REGISTRY_REL);
+    let text = std::fs::read_to_string(&full)
+        .unwrap_or_else(|e| panic!("policy registry unreadable: {e}"));
+    serde_yaml::from_str(&text).unwrap_or_else(|e| panic!("policy registry yaml malformed: {e}"))
+}
+
+/// Validate `consult_status`: exactly two parse_pdf consults, visual_bundle
+/// in later, never in consults.
+fn validate_visual_bundle_later(policy: &serde_yaml::Value) -> Vec<String> {
+    const TAG: &str = "[visual-bundle-later-drift]";
+    let mut errs = Vec::new();
+    let status = match policy.get("consult_status") {
+        Some(s) => s,
+        None => {
+            errs.push(format!(
+                "{TAG} policy registry lost `consult_status` — loss, not silence"
+            ));
+            return errs;
+        }
+    };
+    let seq_strs = |key: &str| -> Option<Vec<String>> {
+        status.get(key).and_then(|v| v.as_sequence()).map(|seq| {
+            seq.iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect()
+        })
+    };
+    match seq_strs("parse_pdf_consults") {
+        Some(consults) => {
+            if consults != vec!["grammar_route".to_string(), "profile_route".to_string()] {
+                errs.push(format!(
+                    "{TAG} `parse_pdf_consults` must stay exactly `[grammar_route, profile_route]`, got {consults:?}"
+                ));
+            }
+            if consults.iter().any(|c| c == "visual_bundle") {
+                errs.push(format!(
+                    "{TAG} `visual_bundle` promoted into `parse_pdf_consults` — candidate-only, never consulted"
+                ));
+            }
+        }
+        None => errs.push(format!(
+            "{TAG} policy registry lost `consult_status.parse_pdf_consults` — loss, not silence"
+        )),
+    }
+    match seq_strs("later") {
+        Some(later) => {
+            if !later.iter().any(|c| c == "visual_bundle") {
+                errs.push(format!(
+                    "{TAG} `visual_bundle` must stay in `consult_status.later`, got {later:?}"
+                ));
+            }
+        }
+        None => errs.push(format!(
+            "{TAG} policy registry lost `consult_status.later` — loss, not silence"
+        )),
+    }
+    errs
+}
+
+#[test]
+fn visual_bundle_stays_later_name_outside_decision_points() {
+    // DATA side: consult_status pins visual_bundle to later.
+    let policy = load_policy_registry();
+    let errs = validate_visual_bundle_later(&policy);
+    assert!(
+        errs.is_empty(),
+        "visual_bundle later DATA violations:\n{}",
+        errs.join("\n")
+    );
+    // Live side: the closed DecisionPoint enum carries exactly the six
+    // sanctioned variants — no visual_bundle variant exists.
+    let src = std::fs::read_to_string(repo_root().join("crates/da-domain/src/fsm_policy.rs"))
+        .expect("fsm_policy.rs unreadable");
+    for variant in [
+        "GrammarRoute",
+        "BatchAdmission",
+        "ConcurrencyTune",
+        "RetryPolicy",
+        "SummaryDepth",
+        "ProfileRoute",
+    ] {
+        assert!(
+            src.contains(variant),
+            "positive control failed: DecisionPoint lost sanctioned variant {variant}"
+        );
+    }
+    assert!(
+        !src.contains("VisualBundle") && !src.contains("visual_bundle"),
+        "visual_bundle promoted into the DecisionPoint enum — closed set, later stays later"
+    );
+}
+
+#[test]
+fn rejects_visual_bundle_promotion_into_fsm() {
+    let policy = load_policy_registry();
+    // Promotion into parse_pdf_consults must fail loudly.
+    let mut promoted = policy.clone();
+    promoted["consult_status"]["parse_pdf_consults"] = serde_yaml::Value::Sequence(vec![
+        serde_yaml::Value::String("grammar_route".into()),
+        serde_yaml::Value::String("profile_route".into()),
+        serde_yaml::Value::String("visual_bundle".into()),
+    ]);
+    negative(
+        "[visual-bundle-later-drift]",
+        &validate_visual_bundle_later(&promoted),
+        "visual_bundle promoted into parse_pdf_consults",
+    );
+    // Dropping visual_bundle from later must fail loudly.
+    let mut dropped = policy.clone();
+    dropped["consult_status"]["later"] = serde_yaml::Value::Sequence(vec![
+        serde_yaml::Value::String("head_fallback".into()),
+        serde_yaml::Value::String("critic_sample".into()),
+    ]);
+    negative(
+        "[visual-bundle-later-drift]",
+        &validate_visual_bundle_later(&dropped),
+        "visual_bundle dropped from later",
+    );
+    // Removed consult_status is loss, not silence.
+    let mut removed = policy.clone();
+    if let Some(map) = removed.as_mapping_mut() {
+        map.remove("consult_status");
+    }
+    negative(
+        "[visual-bundle-later-drift]",
+        &validate_visual_bundle_later(&removed),
+        "removed consult_status",
+    );
+    // Missing artifact is loss, not silence.
+    let missing: Result<serde_yaml::Value, String> =
+        load_yaml("data/policies/does-not-exist-s08-visual.yaml");
+    let err = missing.expect_err("missing policy artifact must fail loudly");
+    assert!(
+        err.contains("[unreadable-artifact]"),
+        "missing artifact must tag [unreadable-artifact], got: {err}"
+    );
+    // Malformed YAML never parses into a contract value.
+    let malformed = serde_yaml::from_str::<serde_yaml::Value>("{unclosed: [1,");
+    assert!(
+        malformed.is_err(),
+        "malformed yaml must fail loudly, not parse"
+    );
+}

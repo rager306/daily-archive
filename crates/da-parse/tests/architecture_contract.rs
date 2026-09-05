@@ -2710,3 +2710,232 @@ fn parser_port_carries_no_native_bibliography_methods_or_types() {
         "bibliography call-sites leaked into ParserPort"
     );
 }
+
+// ───── S08/T02: visual heads stay shadow — never in parse-pdf source_cli or ParserPort ─────
+//
+// Mirrors the Governor visual-heads quarantine (S08/T01, DATA-gated — the
+// forbidden set and the boundaries live in
+// `defaults.visual_heads_quarantine`, never hardcoded here) as an
+// independent compile/test contract: the exact tokens `detect_figure_heads`,
+// `detect_table_heads`, `detect_formula_heads`, `NativeVisual` and
+// `LayoutProvider` must not appear in code positions of the two production
+// boundaries. `//` comments (full-line and trailing) are stripped before the
+// scan; `redetect_figure_heads` and prose mentions never match because a
+// word boundary is required before each token, snake_case atoms additionally
+// require a call-site `(` (after optional whitespace) and CamelCase atoms
+// require a word boundary after the token.
+
+/// Production boundaries that must stay free of visual-head atoms.
+const VISUAL_HEADS_QUARANTINE_BOUNDARIES: [&str; 2] = [
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+];
+
+/// Snake_case visual-head call-sites that must never splice into a boundary.
+const VISUAL_HEADS_SNAKE_TOKENS: [&str; 3] = [
+    "detect_figure_heads",
+    "detect_table_heads",
+    "detect_formula_heads",
+];
+
+/// CamelCase visual/layout type names that must never splice into a boundary.
+const VISUAL_HEADS_TYPE_TOKENS: [&str; 2] = ["NativeVisual", "LayoutProvider"];
+
+/// Native visual method/type names that must never appear in ParserPort.
+const VISUAL_HEADS_NATIVE_PORT_TOKENS: [&str; 5] = [
+    "detect_figure_heads",
+    "detect_table_heads",
+    "detect_formula_heads",
+    "NativeVisual",
+    "LayoutProvider",
+];
+
+/// Comment-stripped visual-head scan over code text. One hit per token per
+/// line; mirrors the Governor `_visual_heads_quarantine_tokens_present`
+/// semantics: snake_case atoms need a word boundary before and a call-site
+/// `(` (after optional whitespace) after; CamelCase atoms need word
+/// boundaries on both sides.
+fn visual_heads_quarantine_hits(text: &str) -> Vec<String> {
+    let mut hits = Vec::new();
+    for (line_no, raw) in strip_line_comments(text).lines().enumerate() {
+        // `strip_line_comments` blanks full-line prose; trailing `//` prose
+        // is cut here so evidence comments never flag (Governor parity).
+        let code = match raw.find("//") {
+            Some(cut) => &raw[..cut],
+            None => raw,
+        };
+        for token in VISUAL_HEADS_SNAKE_TOKENS {
+            let bytes = code.as_bytes();
+            let needle = token.as_bytes();
+            let mut i = 0;
+            let mut found = false;
+            while i + needle.len() <= bytes.len() {
+                if &bytes[i..i + needle.len()] == needle {
+                    let before_ok =
+                        i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_');
+                    if before_ok {
+                        let mut j = i + needle.len();
+                        while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+                            j += 1;
+                        }
+                        if j < bytes.len() && bytes[j] == b'(' {
+                            found = true;
+                            break;
+                        }
+                    }
+                    i += needle.len();
+                } else {
+                    i += 1;
+                }
+            }
+            if found {
+                hits.push(format!(
+                    "[visual-heads-quarantine] line {}: atom `{token}`: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+        for token in VISUAL_HEADS_TYPE_TOKENS {
+            let bytes = code.as_bytes();
+            let needle = token.as_bytes();
+            let mut i = 0;
+            let mut found = false;
+            while i + needle.len() <= bytes.len() {
+                if &bytes[i..i + needle.len()] == needle {
+                    let before_ok =
+                        i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_');
+                    let after = i + needle.len();
+                    let after_ok = after >= bytes.len()
+                        || !(bytes[after].is_ascii_alphanumeric() || bytes[after] == b'_');
+                    if before_ok && after_ok {
+                        found = true;
+                        break;
+                    }
+                    i += needle.len();
+                } else {
+                    i += 1;
+                }
+            }
+            if found {
+                hits.push(format!(
+                    "[visual-heads-quarantine] line {}: atom `{token}`: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    hits
+}
+
+#[test]
+fn visual_heads_quarantine_scanner_fails_visible_on_synthetic_atoms() {
+    let synthetic = "fn run() {\n    detect_figure_heads(input);\n    detect_table_heads(input);\n    detect_formula_heads(input);\n    let _ = NativeVisual;\n    let _ = LayoutProvider;\n}\n";
+    let hits = visual_heads_quarantine_hits(synthetic);
+    assert_eq!(hits.len(), 5, "each visual-head atom must flag: {hits:?}");
+    for token in VISUAL_HEADS_NATIVE_PORT_TOKENS {
+        assert!(
+            hits.iter().any(|h| h.contains(token)),
+            "atom `{token}` must flag: {hits:?}"
+        );
+    }
+    // Whitespace before `(` is still a call site and must flag.
+    let spaced = "fn run() {\n    detect_figure_heads (input);\n    detect_table_heads  (input);\n    detect_formula_heads\t(input);\n}\n";
+    let hits = visual_heads_quarantine_hits(spaced);
+    assert_eq!(hits.len(), 3, "whitespace call-sites must flag: {hits:?}");
+    // Comments are prose, not splice; `redetect_figure_heads` is a different
+    // word; prose mentions without a call-site `(` are not splices; a
+    // CamelCase prefix (`NativeVisualizer`) is not the quarantined type.
+    let prose = "// detect_figure_heads detect_table_heads NativeVisual LayoutProvider are prose\nlet x = redetect_figure_heads(y);\nlet y = detect_figure_heads;\nlet z = NativeVisualizer;\nfoo(); // detect_table_heads(input);\n";
+    assert!(
+        visual_heads_quarantine_hits(prose).is_empty(),
+        "prose comments, prefixed identifiers, bare mentions and type prefixes must not flag"
+    );
+}
+
+#[test]
+fn parse_pdf_source_cli_and_parser_port_stay_free_of_visual_heads() {
+    let mut leaked = Vec::new();
+    for rel in VISUAL_HEADS_QUARANTINE_BOUNDARIES {
+        let text = read_text(rel);
+        assert!(
+            text.len() > 1_000,
+            "positive control failed: {rel} looks truncated"
+        );
+        for hit in visual_heads_quarantine_hits(&text) {
+            leaked.push(format!("{rel}: {hit}"));
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "visual-head atoms leaked into a production boundary (shadow means never served):\n{}",
+        leaked.join("\n")
+    );
+}
+
+#[test]
+fn parse_pdf_p6_wires_java_lifted_visual_counts_not_native_splice() {
+    let src = read_text("crates/da-cli/src/source_cli.rs");
+    let code = strip_line_comments(&src);
+    // P6 observes the Java lift: figure/table/formula counts plus the typed
+    // table/formula missingness carried on ParsedArticle — never a native
+    // head call.
+    assert!(
+        code.contains("stamp_p6_visual_observe("),
+        "P6 must keep its Java-lift observe stamp"
+    );
+    for arg in [
+        "parsed.figures.len()",
+        "parsed.tables.len()",
+        "parsed.formulas.len()",
+        "parsed.table_missingness.is_some()",
+        "parsed.formula_missingness.is_some()",
+    ] {
+        assert!(
+            code.contains(arg),
+            "P6 must count Java-lifted ParsedArticle visual receipts ({arg})"
+        );
+    }
+    assert!(
+        code.contains("p6.insert(\"production_authority\"") && code.contains("\"java_http\""),
+        "P6 production_authority must stay java_http"
+    );
+    assert!(
+        code.contains("p6.insert(\"observe_mode\"") && code.contains("\"shadow_receipt\""),
+        "P6 observe_mode must stay shadow_receipt"
+    );
+    assert!(
+        code.contains("p6.insert(\"empty_count_not_success\"") && code.contains("true.into()"),
+        "P6 empty_count_not_success must stay boolean true"
+    );
+    assert!(visual_heads_quarantine_hits(&src).is_empty());
+}
+
+#[test]
+fn parser_port_carries_no_native_visual_methods_or_types() {
+    let src = read_text("crates/da-ports/src/parser.rs");
+    let code = strip_line_comments(&src);
+    assert!(
+        code.contains("pub trait ParserPort"),
+        "positive control failed: ParserPort trait vanished"
+    );
+    assert!(
+        code.contains("async fn parse_pdf"),
+        "positive control failed: ParserPort.parse_pdf vanished"
+    );
+    let mut leaked = Vec::new();
+    for token in VISUAL_HEADS_NATIVE_PORT_TOKENS {
+        if code.contains(token) {
+            leaked.push(token.to_string());
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "native visual methods/types leaked into ParserPort: {leaked:?}"
+    );
+    assert!(
+        visual_heads_quarantine_hits(&src).is_empty(),
+        "visual-head call-sites leaked into ParserPort"
+    );
+}

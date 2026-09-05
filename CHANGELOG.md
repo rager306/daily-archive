@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-05 — M493-jzmctv/S08 T02: Rust/DATA Java P6 contracts, visual_bundle stays later
+
+P6 stamps Java figure/table/formula counts. Visual atoms stay shadow. `visual_bundle`
+stays later, not a DecisionPoint variant. Hub 20 vs 21 stays DATA. No splice.
+No graph. D127 false.
+
+Green: da-parse architecture + data contracts for P6 policy and visual-bundle later.
+
 ## 2026-09-05 — M493-jzmctv/S07 T02: Rust/DATA Java P4 contracts, bibliography stays shadow
 
 P4 stamps Java `ParsedArticle.citations` (biblStruct). Bibliography atoms stay
