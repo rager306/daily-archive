@@ -21,6 +21,7 @@ from governor.adapters.checks.scholarly_parse_plane import (
     _cascade_observe_tokens,
     _check_scholarly_parse_plane,
     _empty_native_consult_tokens,
+    _java_absent_endpoint_tokens,
     _native_rules_not_consulted_tokens,
 )
 from governor.application.trajectory_service import TrajectoryService
@@ -853,3 +854,185 @@ def test_checker_does_not_replace_independent_promotion_contract():
     checker_source = (ROOT / "scripts/governor/adapters/checks/scholarly_parse_plane.py").read_text(encoding="utf-8")
     assert "shared_promotion_contract" in checker_source
     assert "PromotionDecision" not in checker_source
+
+
+# ───── S05/T01: Java absent endpoints stay absent with no proxy surface ─────
+
+EXPECTED_JAVA_ABSENT_TOKENS = [
+    "processHeaderFundingDocument",
+    "processFulltextDocumentHTML",
+    "processFulltextAssetDocument",
+    "createTraining",
+    "annotatePDF",
+]
+
+
+def _load_live_registry() -> dict:
+    return yaml.safe_load((ROOT / "data/parse/grobid_compatibility.yaml").read_text(encoding="utf-8"))
+
+
+def _java_absent_flags(flags) -> list:
+    return [
+        item
+        for item in flags
+        if item.flag == "scholarly_parse_plane_ledger_surface"
+        and "java_absent_endpoints." in item.evidence
+    ]
+
+
+def _set_capability_state_surface(payload: dict, cap_id: str, state: str, surface) -> None:
+    for cap in payload.get("capabilities") or []:
+        if isinstance(cap, dict) and cap.get("id") == cap_id:
+            cap["state"] = state
+            impl = cap.setdefault("implementation", {})
+            if isinstance(impl, dict):
+                impl["surface"] = surface
+
+
+def _write_registry_copy(tmp_path: Path, mutate=None) -> None:
+    _copy_checker_surface(tmp_path)
+    if mutate is None:
+        return
+    path = tmp_path / "data/parse/grobid_compatibility.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    mutate(payload)
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+
+
+def test_java_absent_tokens_derive_live_from_data():
+    payload = _load_live_registry()
+    assert _java_absent_endpoint_tokens(payload.get("defaults")) == EXPECTED_JAVA_ABSENT_TOKENS
+
+
+def test_java_absent_helper_rejects_malformed_without_invented_fallback():
+    assert _java_absent_endpoint_tokens(None) == []
+    assert _java_absent_endpoint_tokens({}) == []
+    assert _java_absent_endpoint_tokens({"java_absent_endpoints": "createTraining"}) == []
+    assert _java_absent_endpoint_tokens({"java_absent_endpoints": [None, 7, "  "]}) == []
+    assert _java_absent_endpoint_tokens(
+        {"java_absent_endpoints": ["createTraining", "", None, 7, " annotatePDF "]}
+    ) == ["createTraining", "annotatePDF"]
+
+
+def test_java_absent_live_capabilities_are_absent_with_none_surface():
+    payload = _load_live_registry()
+    caps = [c for c in payload.get("capabilities") or [] if isinstance(c, dict)]
+    by_id = {str(c.get("id")): c for c in caps}
+    suffix = {
+        "processHeaderFundingDocument": "rest.processHeaderFundingDocument",
+        "processFulltextDocumentHTML": "rest.processFulltextDocumentHTML",
+        "processFulltextAssetDocument": "rest.processFulltextAssetDocument",
+        "createTraining": "rest.createTraining",
+        "annotatePDF": "rest.annotatePDF",
+    }
+    for token in EXPECTED_JAVA_ABSENT_TOKENS:
+        cap = by_id.get(suffix[token])
+        assert cap is not None, f"missing capability for {token}"
+        assert cap.get("state") == "absent", token
+        surface = (cap.get("implementation") or {}).get("surface")
+        assert surface is None or str(surface).strip().lower() == "none", token
+
+
+def test_checker_clean_root_has_no_java_absent_flags():
+    assert _java_absent_flags(_check_scholarly_parse_plane(ROOT)) == []
+
+
+def test_checker_flags_fake_proxy_with_real_surface(tmp_path: Path):
+    def mutate(payload: dict) -> None:
+        _set_capability_state_surface(
+            payload,
+            "rest.createTraining",
+            "proxy",
+            "crates/da-parse/src/http.rs GrobidHttpBackend::process_training",
+        )
+
+    _write_registry_copy(tmp_path, mutate)
+    flags = _java_absent_flags(_check_scholarly_parse_plane(tmp_path))
+    assert len(flags) == 1, flags
+    hit = flags[0]
+    assert hit.flag == "scholarly_parse_plane_ledger_surface"
+    assert "data/parse/grobid_compatibility.yaml#java_absent_endpoints.createTraining" in hit.evidence
+    assert "Java path is not a proxy surface" in hit.evidence
+
+
+def test_checker_flags_absent_with_non_none_surface(tmp_path: Path):
+    def mutate(payload: dict) -> None:
+        _set_capability_state_surface(
+            payload, "rest.annotatePDF", "absent", "crates/da-parse/src/http.rs"
+        )
+
+    _write_registry_copy(tmp_path, mutate)
+    flags = _java_absent_flags(_check_scholarly_parse_plane(tmp_path))
+    assert len(flags) == 1, flags
+    assert "data/parse/grobid_compatibility.yaml#java_absent_endpoints.annotatePDF" in flags[0].evidence
+    assert "Java path is not a proxy surface" in flags[0].evidence
+
+
+def test_checker_flags_missing_capability_row_with_defaults_token_kept(tmp_path: Path):
+    def mutate(payload: dict) -> None:
+        payload["capabilities"] = [
+            c for c in payload.get("capabilities") or [] if c.get("id") != "rest.annotatePDF"
+        ]
+
+    _write_registry_copy(tmp_path, mutate)
+    flags = _java_absent_flags(_check_scholarly_parse_plane(tmp_path))
+    assert len(flags) == 1, flags
+    assert "data/parse/grobid_compatibility.yaml#java_absent_endpoints.annotatePDF" in flags[0].evidence
+    assert "Java path is not a proxy surface" in flags[0].evidence
+
+
+def test_checker_data_mutation_removing_token_drops_its_evidence(tmp_path: Path):
+    def mutate(payload: dict) -> None:
+        tokens = (payload.get("defaults") or {}).get("java_absent_endpoints") or []
+        payload["defaults"]["java_absent_endpoints"] = [t for t in tokens if t != "createTraining"]
+        _set_capability_state_surface(
+            payload,
+            "rest.createTraining",
+            "proxy",
+            "crates/da-parse/src/http.rs GrobidHttpBackend::process_training",
+        )
+
+    _write_registry_copy(tmp_path, mutate)
+    flags = _java_absent_flags(_check_scholarly_parse_plane(tmp_path))
+    assert not any("java_absent_endpoints.createTraining" in item.evidence for item in flags), flags
+
+
+def test_checker_missing_ledger_has_no_java_absent_namespace_but_keeps_integrity_signals(
+    tmp_path: Path,
+):
+    _copy_checker_surface(tmp_path)
+    (tmp_path / "data/parse/grobid_compatibility.yaml").unlink()
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _java_absent_flags(flags) == [], flags
+    assert any(
+        item.flag
+        in {
+            "scholarly_parse_plane_evidence_missing",
+            "scholarly_parse_plane_backend_identity",
+        }
+        for item in flags
+    ), flags
+
+
+def test_checker_keeps_existing_empty_surface_ledger_surface(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/parse/grobid_compatibility.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    payload["capabilities"].append(
+        {
+            "id": "rest.inventedProxy",
+            "state": "proxy",
+            "implementation": {"surface": "none"},
+        }
+    )
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    legacy = [
+        item
+        for item in flags
+        if item.flag == "scholarly_parse_plane_ledger_surface"
+        and "java_absent_endpoints." not in item.evidence
+    ]
+    assert any("rest.inventedProxy" in item.evidence for item in legacy), flags
+    # The five DATA tokens stay clean while the legacy opposite-polarity hit fires.
+    assert _java_absent_flags(flags) == [], flags

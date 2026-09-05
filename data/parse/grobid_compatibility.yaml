@@ -32,6 +32,17 @@ defaults:
     demo_cli_is_not_closure: true
     parse_pdf_consults: [grammar_route, profile_route]
     empty_native_unknown_point: [concurrency_tune, retry_policy, summary_depth]
+  # S05/T01: independent Java absent-endpoint set. The roadmap shorthand
+  # processHeaderFunding maps to the Java constant PATH_HEADER_FUNDING whose
+  # wire token is processHeaderFundingDocument. This list — not
+  # capabilities[].state — is the sole source of the forbidden set, so a
+  # mutation of state cannot remove an endpoint from the checked set.
+  java_absent_endpoints:
+  - processHeaderFundingDocument
+  - processFulltextDocumentHTML
+  - processFulltextAssetDocument
+  - createTraining
+  - annotatePDF
   production_pdf_constructors:
     # After M471 PDF parse constructors consult ProfileRoute.
     # GrobidParser::from_env stays historical rich. A bare from_env used as
@@ -466,6 +477,36 @@ capabilities:
       conservation: header_field_counts
       quality: title_author_date_affiliation_accuracy
       performance: p95_latency_ms
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  - id: rest.processHeaderFundingDocument
+    group: 3
+    kind: endpoint
+    state: absent
+    product_scope: supporting
+    promotion_state: candidate
+    official:
+      identity: POST /api/processHeaderFundingDocument
+      grobid_path_constant: PATH_HEADER_FUNDING
+      request_fields:
+      - {name: input, required: true, type: pdf-bytes}
+      response_format: application/xml TEI header with funding acknowledgement
+    implementation:
+      crate: da-parse
+      surface: none
+      notes: >-
+        Roadmap shorthand processHeaderFunding maps to Java constant
+        PATH_HEADER_FUNDING (wire token processHeaderFundingDocument).
+        Funding acknowledgement extraction is not a product compatibility
+        requirement and must stay absent with no implementation surface.
+    baseline: java-grobid-http@0.9.0-crf
+    candidate: none
+    evidence_ref: /root/vendor-source/grobid/grobid-service/src/main/java/org/grobid/service/GrobidPaths.java
+    hard_regressions: [incorrect_cache_reuse]
+    metrics:
+      conservation: not_applicable
+      quality: not_gated
+      performance: not_gated
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.processReferences

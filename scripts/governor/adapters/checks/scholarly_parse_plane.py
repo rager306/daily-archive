@@ -291,6 +291,101 @@ def _native_rules_not_consulted_tokens(consult: Any) -> list[tuple[str, str]]:
     return pairs
 
 
+def _java_absent_endpoint_tokens(defaults: Any) -> list[str]:
+    """Derive the independent Java absent-endpoint set from ledger DATA.
+
+    Returns only non-empty strings from the ``java_absent_endpoints`` list.
+    Missing or malformed DATA yields ``[]`` with no hardcoded fallback: the
+    forbidden set must never be invented by the checker. The existing
+    SHA/evidence_missing/load signals own the missing-ledger surface; this
+    helper stays silent there.
+    """
+    if not isinstance(defaults, dict):
+        return []
+    raw = defaults.get("java_absent_endpoints")
+    if not isinstance(raw, list):
+        return []
+    tokens: list[str] = []
+    for item in raw:
+        if not isinstance(item, str):
+            continue
+        token = item.strip()
+        if token:
+            tokens.append(token)
+    return tokens
+
+
+def _find_java_absent_capability(caps: list[dict[str, Any]], by_id: dict[str, dict[str, Any]], token: str) -> dict[str, Any] | None:
+    """Locate one capability for a DATA token by exact typed match only.
+
+    Match order: exact suffix capability id (``rest.{token}``), exact
+    ``official.grobid_path_constant`` is not a token match by itself (the
+    constant differs from the wire token), so the typed matches are: exact
+    suffix id, exact ``official.identity`` containing the token as an exact
+    ``/api/{token}`` route, or identity ending with ``/api/{token}``. Raw
+    substring scan of the YAML is forbidden.
+    """
+    suffix_id = f"rest.{token}"
+    direct = by_id.get(suffix_id)
+    if isinstance(direct, dict):
+        return direct
+    route = f"/api/{token}"
+    for cap in caps:
+        if not isinstance(cap, dict):
+            continue
+        official = cap.get("official") if isinstance(cap.get("official"), dict) else {}
+        identity = str(official.get("identity") or "")
+        if route in identity:
+            # Accept exact identity match or an identity ending with the
+            # exact route (method prefix like "POST " is allowed).
+            tail = identity.strip().split()[-1] if identity.strip() else ""
+            if tail == route or identity.strip().endswith(route):
+                return cap
+    return None
+
+
+def _check_java_absent_endpoints(
+    registry: dict[str, Any],
+    caps: list[dict[str, Any]],
+    by_id: dict[str, dict[str, Any]],
+    flag: Any,
+) -> None:
+    """Flag any Java absent-endpoint token that is not absent with no surface.
+
+    A Java path is not a proxy surface: for each DATA token the ledger must
+    carry a capability whose state is exactly ``absent`` and whose
+    ``implementation.surface`` is none/empty/null. Missing row, non-absent
+    state, or a real surface all flag with canonical evidence
+    ``data/parse/grobid_compatibility.yaml#java_absent_endpoints.{token}``.
+    This loop is intentionally separate from the opposite-polarity
+    proxy/shadow-empty-surface scan above.
+    """
+    defaults = registry.get("defaults") if isinstance(registry, dict) else None
+    for token in _java_absent_endpoint_tokens(defaults):
+        cap = _find_java_absent_capability(caps, by_id, token)
+        if cap is None:
+            flag(
+                "ledger_surface",
+                "integration",
+                f"data/parse/grobid_compatibility.yaml#java_absent_endpoints.{token}",
+                {"state": "absent", "surface": "none"},
+                "Java path is not a proxy surface: capability row missing",
+            )
+            continue
+        state = cap.get("state")
+        impl = cap.get("implementation") if isinstance(cap.get("implementation"), dict) else {}
+        surface = (impl or {}).get("surface")
+        surface_text = "" if surface is None else str(surface).strip()
+        if state != "absent" or (surface_text != "" and surface_text.lower() != "none"):
+            flag(
+                "ledger_surface",
+                "integration",
+                f"data/parse/grobid_compatibility.yaml#java_absent_endpoints.{token}",
+                {"state": "absent", "surface": "none"},
+                f"Java path is not a proxy surface: state={state!r} surface={surface_text!r}",
+            )
+
+
 def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     """Validate the source-bound scholarly parse policy and its fixtures.
 
@@ -392,6 +487,8 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             not surface or surface_l == "none" or surface_l.startswith("none")
         ):
             flag("ledger_surface", "integration", f"data/parse/grobid_compatibility.yaml#{cap.get('id')}", {"state": state, "surface": "crate path"}, {"state": state, "surface": surface})
+    if isinstance(registry, dict) and registry_path.is_file():
+        _check_java_absent_endpoints(registry, caps, by_id, flag)
     header_ids = (
         "rest.processDate",
         "rest.processHeaderNames",
