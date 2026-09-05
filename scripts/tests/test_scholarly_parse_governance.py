@@ -641,6 +641,99 @@ def test_checker_allows_from_env_health_probe(tmp_path: Path):
     assert matching == []
 
 
+def test_checker_flags_health_then_parse_lifetime_bypass(tmp_path: Path):
+    """Fail-closed lifetime: health probe + later parse_pdf on the same binding is PARSE_BARE."""
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/lifetime_bypass.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        "async fn run(pdf: &str, id: &str) {\n"
+        "    let parser = GrobidParser::from_env();\n"
+        "    if !parser.is_alive().await {\n"
+        "        eprintln!(\"GROBID down\");\n"
+        "        return;\n"
+        "    }\n"
+        "    let parsed = parser.parse_pdf(pdf, id).await;\n"
+        "    println!(\"{parsed:?}\");\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    assert matching, flags
+    assert any("lifetime_bypass.rs" in item.evidence for item in matching)
+
+
+def test_checker_flags_moved_binding_despite_health_probe(tmp_path: Path):
+    """A bare binding consumed (moved into Box) is real work, not health-only — PARSE_BARE."""
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/moved_binding.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        "async fn run() {\n"
+        "    let parser = GrobidParser::from_env();\n"
+        "    if !parser.is_alive().await {\n"
+        "        return;\n"
+        "    }\n"
+        "    let _boxed = Box::new(parser);\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    assert matching, flags
+    assert any("moved_binding.rs" in item.evidence for item in matching)
+
+
+@pytest.mark.parametrize(
+    "filename,payload",
+    [
+        ("helper_allow.rs", "fn corpus_grobid_parser() {\n    let _p = GrobidParser::from_env();\n}\n"),
+        ("profile_allow.rs", "fn parse() {\n    let parser = GrobidParser::from_env().with_profile(profile);\n    parser.parse_pdf(p, i);\n}\n"),
+        ("test_allow.rs", "mod tests {\n    #[test]\n    fn t() {\n        let p = GrobidParser::from_env();\n        let _ = p;\n    }\n}\n"),
+        ("comment_allow.rs", "fn parse() {}\n// GrobidParser::from_env() stays historical rich\n"),
+        ("helper_fn_allow.rs", "fn corpus_grobid_parser() {}\nfn parse() {\n    let p = corpus_grobid_parser();\n    let _ = p;\n}\n"),
+    ],
+)
+def test_checker_allows_non_bare_from_env_roles(tmp_path: Path, filename: str, payload: str):
+    """Allowlist: helper, with_profile, test, comment, and non-from_env helpers stay allowed."""
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / f"crates/da-cli/src/{filename}"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(payload, encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [
+        item
+        for item in flags
+        if item.flag == "scholarly_parse_plane_policy_stamp" and filename in item.evidence
+    ]
+    assert matching == [], [str(item) for item in flags]
+
+
+@pytest.mark.parametrize("scan_root", ["crates/da-cli/does_not_exist", "crates/da-cli/examples"])
+def test_checker_scan_roots_keep_isolation_behavior(tmp_path: Path, scan_root: str):
+    """Malformed/missing declared scan roots keep isolation: skipped, never crash, no stray flags."""
+    _copy_checker_surface(tmp_path)
+    registry_path = tmp_path / "data/parse/grobid_compatibility.yaml"
+    payload = yaml.safe_load(registry_path.read_text(encoding="utf-8"))
+    payload["defaults"]["production_pdf_constructors"]["scan_roots"] = [scan_root]
+    registry_path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    # A bare parse site under a NON-declared production root must stay invisible.
+    target = tmp_path / "crates/da-cli/src/outside_scope.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        "fn parse() {\n    let parser = GrobidParser::from_env();\n    parser.parse_pdf(p, i);\n}\n",
+        encoding="utf-8",
+    )
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [
+        item
+        for item in flags
+        if item.flag == "scholarly_parse_plane_policy_stamp" and "outside_scope.rs" in item.evidence
+    ]
+    assert matching == [], [str(item) for item in flags]
+
+
 @pytest.mark.parametrize("label", sorted(REQUIRED_VIOLATIONS))
 def test_checker_localizes_each_synthetic_mutation_to_high_severity_flag(tmp_path: Path, label: str):
     _copy_checker_surface(tmp_path)

@@ -168,10 +168,78 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
 
 
 _FROM_ENV = re.compile(r"GrobidParser::from_env\s*\(\s*\)")
+_HEALTH_TOKENS = ("is_alive", "probe_health", "probe_version", "GROBID:")
+_HEALTH_METHODS = {"is_alive", "probe_health", "probe_version"}
+_FN_DEF = re.compile(r"^\s*(?:pub(?:\s*\([^)]*\))?\s+)?(?:async\s+)?(?:unsafe\s+)?fn\s+[A-Za-z_]")
+_LET_FROM_ENV = re.compile(
+    r"let\s+(?:mut\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^=;{}]+)?=\s*[^;{}]*"
+    r"GrobidParser::from_env\s*\(\s*\)"
+)
+_COMMENT_OR_STRING = re.compile(r'"(?:[^"\\]|\\.)*"')
+
+
+def _strip_line_noise(line: str) -> str:
+    """Drop // comments and string literals so identifier scans see code only."""
+    return _COMMENT_OR_STRING.sub('""', line.split("//", 1)[0])
+
+
+def _bound_parser_name(lines: list[str], index: int) -> str | None:
+    """Return the `let` binding holding a bare from_env construction, if any."""
+    chunk = "\n".join(lines[max(0, index - 3) : index + 1])
+    match = _LET_FROM_ENV.search(chunk)
+    return match.group(1) if match else None
+
+
+def _enclosing_fn_scope(lines: list[str], index: int) -> tuple[int, int]:
+    """Return [start, end) line bounds of the enclosing fn body (whole file fallback)."""
+    start = 0
+    for pos in range(index, -1, -1):
+        if _FN_DEF.match(lines[pos]):
+            start = pos
+            break
+    end = len(lines)
+    for pos in range(index + 1, len(lines)):
+        if _FN_DEF.match(lines[pos]):
+            end = pos
+            break
+    return start, end
+
+
+def _parser_binding_use(lines: list[str], index: int, name: str) -> str:
+    """Classify how a bare-constructed binding is used in its fn scope.
+
+    Returns "parse" (real work: parse_pdf, any other non-health method call,
+    or a moved/consumed bare use such as Box::new(parser)), "health_only"
+    (exclusively liveness probing), or "unused" (fail-closed by the caller).
+    """
+    start, end = _enclosing_fn_scope(lines, index)
+    use = re.compile(rf"\b{re.escape(name)}\b(?:\s*\.\s*([A-Za-z_][A-Za-z0-9_]*))?")
+    skip_top = max(0, index - 3)
+    saw_health = False
+    for pos in range(start, end):
+        if skip_top <= pos <= index:
+            continue
+        for match in use.finditer(_strip_line_noise(lines[pos])):
+            method = match.group(1)
+            if method is None:
+                return "parse"
+            if method == "parse_pdf":
+                return "parse"
+            if method in _HEALTH_METHODS:
+                saw_health = True
+            else:
+                return "parse"
+    return "health_only" if saw_health else "unused"
 
 
 def _from_env_role(lines: list[str], index: int, relative: str) -> str:
-    """Classify one GrobidParser::from_env() site. Missing roots are skipped by the caller."""
+    """Classify one GrobidParser::from_env() site. Missing roots are skipped by the caller.
+
+    Fail-closed lifetime rule: a bare from_env binding used for anything beyond
+    liveness probing in its enclosing fn scope is PARSE_BARE, even when a health
+    probe (is_alive) sits nearby. Pure health-only, with_profile, helper, test,
+    and comment roles stay allowed.
+    """
     stripped = lines[index].strip()
     if stripped.startswith(("//", "///", "//!", "*")):
         return "comment"
@@ -181,12 +249,17 @@ def _from_env_role(lines: list[str], index: int, relative: str) -> str:
         return "consult_helper"
     if ".with_profile" in window:
         return "with_profile"
-    if any(token in window for token in ("is_alive", "probe_health", "probe_version", "GROBID:")):
-        return "health_probe"
     if "mod tests" in "\n".join(lines[: index + 1]) or relative.endswith("/tests.rs") or "/tests/" in relative:
         return "test"
+    name = _bound_parser_name(lines, index)
+    if name is not None:
+        if _parser_binding_use(lines, index, name) == "health_only":
+            return "health_probe"
+        return "PARSE_BARE"
     if "parse_pdf" in window:
         return "PARSE_BARE"
+    if any(token in window for token in _HEALTH_TOKENS):
+        return "health_probe"
     return "PARSE_BARE"
 
 
