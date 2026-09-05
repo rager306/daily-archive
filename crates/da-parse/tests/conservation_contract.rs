@@ -26,10 +26,13 @@
 //! Baseline semantics on preserved GROBID TEI (pinned, deterministic): the
 //! scanner does not count the paper's own header `sourceDesc`/`biblStruct`
 //! as a citation, and does not count figure caption `<head>` as a section.
-//! Remaining typed loss is citation anchors outside section windows
-//! (`linkage_loss`). The pristine verdict stays `loss_detected` while those
-//! anchors remain unlifted. Replay equality is byte-identical. Injected
-//! losses are asserted relative to that pinned baseline.
+//! Remaining typed loss is extra body heads the nested-div lifter does not
+//! emit, plus a small leftover of targeted bibr anchors the lifter does not
+//! attach (`linkage_loss`, currently rlm=1). Unresolved bibr without a
+//! `target` is a typed CrossReference remainder, not linkage loss. The
+//! pristine verdict stays `loss_detected` while those remain. Replay equality
+//! is byte-identical. Injected losses are asserted relative to that pinned
+//! baseline.
 //!
 //! Since S07/T04 the lifted P0 families (header authors, non-table figures,
 //! the declared arXiv identity, figure/table callouts, figure-owned graphic
@@ -260,10 +263,10 @@ fn pins_for(paper_id: &str) -> Pins {
             coordinates: Some(1),
             section_missing: 1,
             citation_missing: 0,
-            linkage_loss: 36,
+            linkage_loss: 0,
             idnos_arxiv: 1,
             idnos_other: 1,
-            cross_refs: 31,
+            cross_refs: 67,
             visual_callouts: 29,
         },
         // "4 header authors, 29 non-table figures, 2 tables, 25 coords
@@ -278,10 +281,10 @@ fn pins_for(paper_id: &str) -> Pins {
             coordinates: Some(25),
             section_missing: 6,
             citation_missing: 0,
-            linkage_loss: 29,
+            linkage_loss: 1,
             idnos_arxiv: 1,
             idnos_other: 1,
-            cross_refs: 38,
+            cross_refs: 66,
             visual_callouts: 36,
         },
         // "Large bibliography pin: citations >= 70. 11 header authors, 55
@@ -296,10 +299,10 @@ fn pins_for(paper_id: &str) -> Pins {
             coordinates: Some(34),
             section_missing: 0,
             citation_missing: 0,
-            linkage_loss: 99,
+            linkage_loss: 0,
             idnos_arxiv: 1,
             idnos_other: 1,
-            cross_refs: 41,
+            cross_refs: 140,
             visual_callouts: 41,
         },
         other => panic!("FATAL: no manifest pins for paper {other}"),

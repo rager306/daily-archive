@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-04 — M466-xxitm7/S02: unresolved bibr is not linkage loss
+
+A GROBID `<ref type="bibr">` without `target` is an unresolved marker, not a
+lost citation link. ConservationEngine classifies it as a typed CrossReference
+remainder. linkage_loss is now 0/1/0 on hub/rlm/reca (was 36/29/99). Remaining
+rlm=1 is a targeted bibr the nested-div lifter still does not attach. Java
+production_route. No graph. D127 false.
+
+Green: conservation lib 7; conservation_contract 14.
+
 ## 2026-09-04 — M466-xxitm7/S01: scanner honesty for header biblStruct and caption heads
 
 ConservationEngine no longer counts the paper's own header sourceDesc/biblStruct as a

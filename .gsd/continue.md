@@ -1,11 +1,11 @@
-# continue — M466 S01 scanner honesty; M465 W0–W6 in git; graph frozen
+# continue — M466 S02 unresolved bibr typed; next S03 acceptance SHA
 
-## Active state (updated 2026-09-04 after M466/S01)
+## Active state (updated 2026-09-04 after M466/S02)
 
-Conservation scanner no longer treats header sourceDesc/biblStruct as a lost
-citation or figure caption heads as lost sections. citation_missing=0.
-Remaining section_missing is extra body heads the nested-div lifter skips
-(hub 1, rlm 6). Next is M466 S02: out-of-window bibr anchors (linkage_loss).
+Scanner honesty: header biblStruct is not a citation; figure caption heads are
+not sections; bibr without target is not linkage_loss. Remaining true lift
+gaps: extra body heads (hub 1, rlm 6) and rlm linkage_loss=1. Next is M466 S03:
+regenerate acceptance_evidence.json and SHA-bind scholarly_parse_plane.
 Graph frozen. D127 false. Java production_route.
 Product: `M446-rw9a2p` S03 still 23/25, pending T24/T25.
 Branch `feat/da-parse`.

@@ -26,8 +26,10 @@
 //!   [`ConservationFamily::Author`], `<idno>` → [`ConservationFamily::ArticleIdno`];
 //! - body region: `<head>` outside `<figure>` → [`ConservationFamily::Section`],
 //!   body `<biblStruct>` → [`ConservationFamily::CitationEntry`] (header
-//!   `sourceDesc` biblStruct is the paper itself, not a cited work), `<ref type="bibr">`
-//!   → [`ConservationFamily::CitationAnchor`], other `<ref>`/`<xref>` →
+//!   `sourceDesc` biblStruct is the paper itself, not a cited work), body
+//!   `<ref type="bibr" target>` → [`ConservationFamily::CitationAnchor`]
+//!   (bibr without `target` is an unresolved GROBID marker, not a lost
+//!   linkage; it is a typed CrossReference remainder), other `<ref>`/`<xref>` →
 //!   [`ConservationFamily::CrossReference`], `<ptr>` → [`ConservationFamily::Link`],
 //!   `<note>` → [`ConservationFamily::Note`], non-table `<figure>` →
 //!   [`ConservationFamily::Figure`], `<table>` → [`ConservationFamily::Table`],
@@ -1612,7 +1614,12 @@ fn classify_element(
         "ref" if body && !elem.inside_bibl => {
             let ref_type = attr_value(&elem.attrs, "type");
             if ref_type.as_deref() == Some("bibr") {
-                Some((ConservationFamily::CitationAnchor, None))
+                if attr_value(&elem.attrs, "target").is_some() {
+                    Some((ConservationFamily::CitationAnchor, None))
+                } else {
+                    // GROBID unresolved marker: no target, not a lost linkage.
+                    Some((ConservationFamily::CrossReference, None))
+                }
             } else {
                 // S07/T04: figure/table refs are the lifted visual-callout
                 // occurrences; every other ref kind stays unsupported.
@@ -1828,6 +1835,32 @@ mod tests {
             source.count(ConservationFamily::CitationEntry),
             1,
             "header sourceDesc biblStruct must not count as a cited work"
+        );
+    }
+
+    #[test]
+    fn bibr_without_target_is_not_a_citation_anchor() {
+        let tei = concat!(
+            "<TEI><teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>",
+            "</fileDesc></teiHeader><text><body><div><head>Intro</head>",
+            "<p>See <ref type=\"bibr\" target=\"#b0\">[1]</ref> and <ref type=\"bibr\">[2]</ref>.</p>",
+            "</div></body><back><listBibl><biblStruct xml:id=\"b0\">",
+            "<analytic><title>Cited</title></analytic></biblStruct></listBibl></back></text></TEI>",
+        );
+        let envelope = TeiEnvelope::new(
+            tei.as_bytes().to_vec(),
+            TeiIdentity::new("cached-tei", "profile=test"),
+        );
+        let source = ConservationEngine::new().source_inventory(&envelope);
+        assert_eq!(
+            source.count(ConservationFamily::CitationAnchor),
+            1,
+            "bibr without target must not count as a citation anchor"
+        );
+        assert_eq!(
+            source.count(ConservationFamily::CrossReference),
+            1,
+            "unresolved bibr is a typed cross-reference remainder"
         );
     }
 
