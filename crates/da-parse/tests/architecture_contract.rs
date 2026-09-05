@@ -3330,3 +3330,174 @@ fn s11_rich_structural_fingerprints_stay_distinct_and_frozen() {
         GrobidProfile::structural().configuration_fingerprint()
     );
 }
+
+// ───── M493 S12/T02: composition stays a quarantined candidate leaf ─────
+//
+// Governor fail-closed twin (S12/T02): da-parse must not acquire a Samyama
+// dependency, native compose/run atoms must not enter the parse-pdf
+// boundary or ParserPort, Java stays the production oracle, P5 stays
+// accountant_later, and DecisionPoint stays exactly six wire variants.
+// Only NEW local `s12_*` helpers are added here — no production symbol, no
+// existing helper and no DATA file is touched.
+
+/// Production boundaries that must stay free of native compose atoms.
+const S12_COMPOSE_QUARANTINE_BOUNDARIES: [&str; 2] = [
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+];
+
+/// Native compose/run atoms that stay shadow-only (never production).
+const S12_COMPOSE_ATOMS: [&str; 4] = [
+    "compose_header",
+    "run_header_sequence",
+    "compose_references",
+    "run_reference_sequence",
+];
+
+/// Local S12 helper: call-site hits for native compose atoms in code text.
+/// Mirrors the header/bibliography quarantine scanners: snake_case atoms
+/// require a call-site `(` (optional whitespace allowed) with a word
+/// boundary before the token; `//` comments never count.
+fn s12_compose_atom_hits(text: &str) -> Vec<String> {
+    let mut hits = Vec::new();
+    for (line_no, raw) in strip_line_comments(text).lines().enumerate() {
+        let code = match raw.find("//") {
+            Some(cut) => &raw[..cut],
+            None => raw,
+        };
+        for token in S12_COMPOSE_ATOMS {
+            let bytes = code.as_bytes();
+            let needle = token.as_bytes();
+            let mut i = 0;
+            let mut found = false;
+            while i + needle.len() <= bytes.len() {
+                if &bytes[i..i + needle.len()] == needle {
+                    let before_ok =
+                        i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_');
+                    if before_ok {
+                        let mut j = i + needle.len();
+                        while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+                            j += 1;
+                        }
+                        if j < bytes.len() && bytes[j] == b'(' {
+                            found = true;
+                            break;
+                        }
+                    }
+                    i += needle.len();
+                } else {
+                    i += 1;
+                }
+            }
+            if found {
+                hits.push(format!(
+                    "[s12-compose-quarantine] line {}: atom `{token}`: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    hits
+}
+
+/// Local S12 helper: violations of the composition quarantine in code text.
+/// Every violation carries `[s12-composition-quarantine]`.
+fn s12_composition_quarantine_violations(code: &str) -> Vec<String> {
+    const TAG: &str = "[s12-composition-quarantine]";
+    let mut errs = Vec::new();
+    for hit in s12_compose_atom_hits(code) {
+        errs.push(format!(
+            "{TAG} native compose atom in production boundary: {hit}"
+        ));
+    }
+    errs
+}
+
+#[test]
+fn s12_composition_stays_quarantined_candidate_leaf() {
+    // Manifest: da-parse must not acquire a Samyama dependency; the
+    // forbidden-dependency table already pins samyama, but S12 re-asserts
+    // the freeze explicitly so a graph-store bypass cannot hide behind a
+    // renamed helper.
+    let manifest = read_text("crates/da-parse/Cargo.toml");
+    assert!(
+        manifest.len() > 200,
+        "positive control failed: da-parse Cargo.toml looks truncated"
+    );
+    let names = manifest_dependency_names(&manifest);
+    assert!(
+        !names.iter().any(|(_, name)| name == "samyama"),
+        "S12: da-parse must not depend on samyama — graph stays frozen"
+    );
+    assert!(
+        forbidden_dependency_hits(&names).is_empty(),
+        "S12: forbidden dependency entered da-parse"
+    );
+    // Production boundaries: no native compose/run atoms in code positions.
+    for rel in S12_COMPOSE_QUARANTINE_BOUNDARIES {
+        let text = read_text(rel);
+        assert!(
+            text.len() > 1_000,
+            "positive control failed: {rel} looks truncated"
+        );
+        let violations = s12_composition_quarantine_violations(&text);
+        assert!(
+            violations.is_empty(),
+            "S12: native compose atoms leaked into a production boundary (candidate stays shadow):\n{}",
+            violations.join("\n")
+        );
+    }
+    // ParserPort itself carries no compose surface.
+    let port = read_text("crates/da-ports/src/parser.rs");
+    assert!(
+        port.contains("pub trait ParserPort"),
+        "positive control failed: ParserPort trait vanished"
+    );
+    for atom in S12_COMPOSE_ATOMS {
+        assert!(
+            !port.contains(atom),
+            "S12: ParserPort must not carry native compose atom `{atom}`"
+        );
+    }
+    // Java stays the production oracle: GrobidParser construction remains
+    // the production parse entry, native composition never replaces it.
+    let http = read_text("crates/da-parse/src/http.rs");
+    assert!(
+        http.contains("GrobidParser"),
+        "positive control failed: GrobidParser vanished — Java oracle lost"
+    );
+    // P5 stays accountant_later, DecisionPoint stays six wires: reuse the
+    // neighbouring contracts as positive controls so S12 cannot drift them.
+    let cli = read_text("crates/da-cli/src/source_cli.rs");
+    assert!(
+        !strip_line_comments(&cli).contains("stamp_p5_"),
+        "S12: P5 must stay accountant_later — live stamp leaked"
+    );
+    let fsm = read_text("crates/da-domain/src/fsm_policy.rs");
+    let fsm_code = s10_code_without_comments(&fsm);
+    assert!(
+        s10_decision_point_violations(&fsm_code).is_empty(),
+        "S12: DecisionPoint drifted off the six sanctioned wires"
+    );
+}
+
+#[test]
+fn s12_composition_scanner_fails_visible_on_synthetic_atoms() {
+    // Negative control: every compose atom flags, prose never does.
+    for atom in S12_COMPOSE_ATOMS {
+        let synthetic = format!("fn run() {{\n    {atom} (input);\n}}\n");
+        let hits = s12_compose_atom_hits(&synthetic);
+        assert_eq!(hits.len(), 1, "atom `{atom}` must flag: {hits:?}");
+        assert!(hits[0].contains(atom));
+    }
+    let prose = "// compose_header run_header_sequence compose_references run_reference_sequence are prose\nlet x = decompose(y); // compose_header(input);\n";
+    assert!(
+        s12_compose_atom_hits(prose).is_empty(),
+        "prose comments and `decompose` must not flag"
+    );
+    assert!(
+        s12_composition_quarantine_violations("let x = 1;\n").is_empty(),
+        "clean code must not violate the S12 quarantine"
+    );
+}

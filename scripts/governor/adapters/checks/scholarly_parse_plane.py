@@ -873,6 +873,124 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 matrix.get(family),
             )
 
+    # S12/T02: composition freeze — top-level candidate/shadow/frozen locks.
+    # Self-promotion, import/graph unlock or Java rollback drift on the live
+    # composition DATA fails closed here, not only on fixture envelopes.
+    if (
+        fulltext.get("observation_mode") != "shadow"
+        or fulltext.get("promotion_state") != "candidate"
+        or fulltext.get("auto_promote") != "forbidden"
+    ):
+        flag(
+            "family_promote_cap",
+            "promotion_quarantine",
+            "data/parse/native_fulltext_composition.yaml#candidate_freeze",
+            {"observation_mode": "shadow", "promotion_state": "candidate", "auto_promote": "forbidden"},
+            {"observation_mode": fulltext.get("observation_mode"), "promotion_state": fulltext.get("promotion_state"), "auto_promote": fulltext.get("auto_promote")},
+        )
+    if fulltext.get("import_eligible") is not False:
+        flag(
+            "import_leak",
+            "promotion_quarantine",
+            "data/parse/native_fulltext_composition.yaml#import_eligible",
+            False,
+            fulltext.get("import_eligible"),
+        )
+    if fulltext.get("graph_mutation") != "forbidden":
+        flag(
+            "graph_write",
+            "promotion_quarantine",
+            "data/parse/native_fulltext_composition.yaml#graph_mutation",
+            "forbidden",
+            fulltext.get("graph_mutation"),
+        )
+    if fulltext.get("rollback_target") != "java-grobid-http@0.9.0-crf":
+        flag(
+            "missing_rollback",
+            "promotion_quarantine",
+            "data/parse/native_fulltext_composition.yaml#rollback_target",
+            "java-grobid-http@0.9.0-crf",
+            fulltext.get("rollback_target"),
+        )
+
+    # S12/T02: named composition admission — the single candidate contour
+    # keeps its exact identity, full four-receipt set, exact lanes and Java
+    # rollback on live comparison DATA. An invented explicit decision is a
+    # promotion receipt without a later user yes and fails closed as one.
+    comparison_path = root / "data/parse/comparison_contract.yaml"
+    try:
+        comparison = yaml.safe_load(comparison_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as error:
+        flag("acceptance_same_n_drift", "integration", "data/parse/comparison_contract.yaml", "valid YAML", str(error))
+        comparison = {}
+    shadow = comparison.get("native_header_reference_composition_shadow") or {}
+    if not isinstance(shadow, dict) or not shadow:
+        flag(
+            "acceptance_same_n_drift",
+            "integration",
+            "data/parse/comparison_contract.yaml#native_header_reference_composition_shadow",
+            "named candidate shadow",
+            "missing",
+        )
+    else:
+        if shadow.get("candidate_id") != "da-parse.native_header_reference_composition":
+            flag(
+                "family_promote_cap",
+                "promotion_quarantine",
+                "data/parse/comparison_contract.yaml#native_header_reference_composition_shadow.candidate_id",
+                "da-parse.native_header_reference_composition",
+                shadow.get("candidate_id"),
+            )
+        if (
+            shadow.get("observation_mode") != "shadow"
+            or shadow.get("promotion_state") != "candidate"
+            or shadow.get("auto_promote") != "forbidden"
+        ):
+            flag(
+                "family_promote_cap",
+                "promotion_quarantine",
+                "data/parse/comparison_contract.yaml#native_header_reference_composition_shadow.candidate_freeze",
+                {"observation_mode": "shadow", "promotion_state": "candidate", "auto_promote": "forbidden"},
+                {"observation_mode": shadow.get("observation_mode"), "promotion_state": shadow.get("promotion_state"), "auto_promote": shadow.get("auto_promote")},
+            )
+        if shadow.get("explicit_decision") is not None:
+            flag(
+                "promotion_receipt",
+                "promotion_quarantine",
+                "data/parse/comparison_contract.yaml#native_header_reference_composition_shadow.explicit_decision",
+                None,
+                shadow.get("explicit_decision"),
+            )
+        required = [str(item) for item in ((shadow.get("component_receipts") or {}).get("required") or [])]
+        expected_required = ["native_date_shadow", "native_personal_name_shadow", "native_affiliation_shadow", "native_citation_shadow"]
+        if required != expected_required:
+            flag(
+                "acceptance_same_n_drift",
+                "integration",
+                "data/parse/comparison_contract.yaml#native_header_reference_composition_shadow.component_receipts.required",
+                expected_required,
+                required,
+            )
+        lanes = [str(item) for item in (shadow.get("independently_selectable_lanes") or [])]
+        if lanes != ["header", "references"]:
+            flag(
+                "body_java_fallback",
+                "integration",
+                "data/parse/comparison_contract.yaml#native_header_reference_composition_shadow.independently_selectable_lanes",
+                ["header", "references"],
+                lanes,
+            )
+        lane_rollback = shadow.get("rollback") or {}
+        for lane in ("header", "references"):
+            if lane_rollback.get(lane) != "java-grobid-http@0.9.0-crf":
+                flag(
+                    "missing_rollback",
+                    "promotion_quarantine",
+                    f"data/parse/comparison_contract.yaml#native_header_reference_composition_shadow.rollback.{lane}",
+                    "java-grobid-http@0.9.0-crf",
+                    lane_rollback.get(lane),
+                )
+
     composition_shadow_path = root / "artifacts/parse_compat/native_fulltext_composition_shadow.json"
     try:
         composition_shadow = json.loads(composition_shadow_path.read_text(encoding="utf-8"))

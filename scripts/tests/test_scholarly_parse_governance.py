@@ -1547,3 +1547,170 @@ def test_checker_visual_heads_and_other_namespaces_stay_isolated(tmp_path: Path)
     assert _java_absent_flags(flags) == [], flags
     assert _bibliography_quarantine_flags(flags) == [], flags
     assert _header_quarantine_flags(flags) == [], flags
+
+
+# ───── M493 S12/T02: candidate freeze fails closed on live DATA ─────
+#
+# Each focused negative fixture mutates exactly one live-DATA S12 surface on
+# a copied root, then asserts the checker localizes the exact stable
+# violation (policy stamp shape: plane= + requirements=). DATA-driven: no
+# example names are hardcoded — mutations rewrite the live YAML values in
+# place, so the assertions pin the checker's fail-closed wiring, not a
+# fixture copy.
+
+_S12_FROZEN_ROLLBACK = "java-grobid-http@0.9.0-crf"
+_S12_CANDIDATE_ID = "da-parse.native_header_reference_composition"
+_S12_REQUIRED_RECEIPTS = [
+    "native_date_shadow",
+    "native_personal_name_shadow",
+    "native_affiliation_shadow",
+    "native_citation_shadow",
+]
+
+
+def _s12_assert_policy_stamp(flags, code: str, evidence_needle: str):
+    matching = [item for item in flags if item.flag == f"scholarly_parse_plane_{code}"]
+    assert matching, flags
+    assert all(item.severity == "high" for item in matching)
+    hit = next(item for item in matching if evidence_needle in item.evidence)
+    assert "plane=" in hit.evidence and "requirements=" in hit.evidence
+    assert "fail-closed" in hit.evidence or "violation=" in hit.evidence
+    return matching
+
+
+def _s12_rewrite_yaml(root: Path, relative: str, mutate):
+    path = root / relative
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    mutate(payload)
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+
+
+def test_s12_checker_flags_wave_self_promotion(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+
+    def mutate(payload):
+        payload["defaults"]["promotion"]["this_wave_promotes"] = "header"
+
+    _s12_rewrite_yaml(tmp_path, "data/parse/grobid_compatibility.yaml", mutate)
+    flags = _check_scholarly_parse_plane(tmp_path)
+    _s12_assert_policy_stamp(flags, "family_promote_cap", "defaults.promotion")
+
+
+def test_s12_checker_flags_deployed_and_auto_promote_unlock(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+
+    def mutate(payload):
+        payload["defaults"]["promotion"]["deployed"] = True
+        payload["defaults"]["promotion"]["auto_promote"] = "allowed"
+
+    _s12_rewrite_yaml(tmp_path, "data/parse/grobid_compatibility.yaml", mutate)
+    flags = _check_scholarly_parse_plane(tmp_path)
+    _s12_assert_policy_stamp(flags, "family_promote_cap", "defaults.promotion")
+
+
+def test_s12_checker_flags_candidate_state_drift(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+
+    def mutate(payload):
+        payload["native_header_reference_composition_shadow"]["promotion_state"] = "promoted"
+
+    _s12_rewrite_yaml(tmp_path, "data/parse/comparison_contract.yaml", mutate)
+    flags = _check_scholarly_parse_plane(tmp_path)
+    _s12_assert_policy_stamp(flags, "family_promote_cap", "candidate_freeze")
+
+
+def test_s12_checker_flags_invented_explicit_decision(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+
+    def mutate(payload):
+        payload["native_header_reference_composition_shadow"]["explicit_decision"] = "user-yes-synthetic"
+
+    _s12_rewrite_yaml(tmp_path, "data/parse/comparison_contract.yaml", mutate)
+    flags = _check_scholarly_parse_plane(tmp_path)
+    _s12_assert_policy_stamp(flags, "promotion_receipt", "explicit_decision")
+
+
+def test_s12_checker_flags_missing_component_receipt(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+
+    def mutate(payload):
+        required = payload["native_header_reference_composition_shadow"]["component_receipts"]["required"]
+        required.remove("native_citation_shadow")
+
+    _s12_rewrite_yaml(tmp_path, "data/parse/comparison_contract.yaml", mutate)
+    flags = _check_scholarly_parse_plane(tmp_path)
+    _s12_assert_policy_stamp(flags, "acceptance_same_n_drift", "component_receipts.required")
+
+
+def test_s12_checker_flags_selectable_lane_widening(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+
+    def mutate(payload):
+        payload["native_header_reference_composition_shadow"]["independently_selectable_lanes"] = [
+            "header",
+            "references",
+            "body",
+        ]
+
+    _s12_rewrite_yaml(tmp_path, "data/parse/comparison_contract.yaml", mutate)
+    flags = _check_scholarly_parse_plane(tmp_path)
+    _s12_assert_policy_stamp(flags, "body_java_fallback", "independently_selectable_lanes")
+
+
+def test_s12_checker_flags_composition_freeze_unlock(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+
+    def mutate(payload):
+        payload["observation_mode"] = "production"
+        payload["graph_mutation"] = "allowed"
+
+    _s12_rewrite_yaml(tmp_path, "data/parse/native_fulltext_composition.yaml", mutate)
+    flags = _check_scholarly_parse_plane(tmp_path)
+    _s12_assert_policy_stamp(flags, "family_promote_cap", "candidate_freeze")
+    _s12_assert_policy_stamp(flags, "graph_write", "graph_mutation")
+
+
+def test_s12_checker_flags_import_unlock_on_positive_envelope(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    positive_path = tmp_path / POSITIVE_PATH.relative_to(ROOT)
+    envelope = json.loads(positive_path.read_text(encoding="utf-8"))
+    envelope["promotion"]["import_eligible"] = True
+    positive_path.write_text(json.dumps(envelope), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    _s12_assert_policy_stamp(flags, "import_eligible", str(POSITIVE_PATH.relative_to(ROOT)))
+
+
+def test_s12_checker_flags_graph_unlock_on_positive_envelope(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    positive_path = tmp_path / POSITIVE_PATH.relative_to(ROOT)
+    envelope = json.loads(positive_path.read_text(encoding="utf-8"))
+    envelope["promotion"]["graph_write"] = True
+    positive_path.write_text(json.dumps(envelope), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    _s12_assert_policy_stamp(flags, "graph_write", str(POSITIVE_PATH.relative_to(ROOT)))
+
+
+def test_s12_checker_flags_rollback_drift_off_java(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+
+    def mutate(payload):
+        payload["native_header_reference_composition_shadow"]["rollback"]["header"] = "native-da-parse@9.9.9"
+
+    _s12_rewrite_yaml(tmp_path, "data/parse/comparison_contract.yaml", mutate)
+    flags = _check_scholarly_parse_plane(tmp_path)
+    _s12_assert_policy_stamp(flags, "missing_rollback", "rollback.header")
+
+
+def test_s12_checker_live_root_stays_clean_and_isolated(tmp_path: Path):
+    """Clean-copy sanity: without any S12 mutation only evidence_substitution
+    for the copied root may appear; no S12 fail-closed stamp fires."""
+    _copy_checker_surface(tmp_path)
+    flags = _check_scholarly_parse_plane(tmp_path)
+    s12_evidence = [
+        "candidate_freeze",
+        "explicit_decision",
+        "component_receipts.required",
+        "independently_selectable_lanes",
+        "rollback.header",
+    ]
+    assert not [item for item in flags if any(needle in item.evidence for needle in s12_evidence)], flags
