@@ -49,15 +49,10 @@ pub(crate) fn stamp_parse_grammar(
     m.insert("policy_hash".into(), policy_hash.into());
 }
 
-/// Map FSM ProfileRoute onto the da-parse GROBID REST profile.
-/// Lives in CLI so da-domain never depends on da-parse.
 pub(crate) fn grobid_profile_from_route(
     route: da_domain::fsm_policy::ProfileRoute,
 ) -> da_parse::GrobidProfile {
-    match route {
-        da_domain::fsm_policy::ProfileRoute::Structural => da_parse::GrobidProfile::structural(),
-        da_domain::fsm_policy::ProfileRoute::Rich => da_parse::GrobidProfile::rich(),
-    }
+    crate::parse_profile::grobid_profile_from_route(route)
 }
 
 fn stamp_grobid_profile(m: &mut serde_yaml::Mapping, route: da_domain::fsm_policy::ProfileRoute) {

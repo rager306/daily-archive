@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-05 — M471-oi80qz/S01: shared ProfileRoute consult helper
+
+consult_corpus_grobid_profile fail-opens to DATA structural (D204).
+da load PDF path uses the consult instead of from_env().profile().
+GrobidParser::from_env stays historical rich. HTML path unchanged.
+No graph. D127 false.
+
+Green: parse_profile 6; grobid_profile_from_route 2; stamp_parse_grammar.
+
 ## 2026-09-05 — M470-485ukv/S02: parse-pdf consults ProfileRoute
 
 parse-pdf maps consulted ProfileRoute to GrobidProfile instead of hardcoding

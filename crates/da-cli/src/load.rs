@@ -338,7 +338,7 @@ impl LoadContentPipeline for CliContentPipeline {
         let grobid_profile = if is_html {
             GrobidProfile::rich()
         } else {
-            GrobidParser::from_env().profile()
+            crate::parse_profile::consult_corpus_grobid_profile()
         };
         let source_identity =
             source_identity_for_assets(req.paper_id, req.primary_path, is_html, req.assets)?;

@@ -17,6 +17,8 @@ mod load_journey;
 mod parse_batch;
 #[allow(dead_code)]
 mod parse_config;
+#[allow(dead_code)]
+mod parse_profile;
 // The lib target exposes this module as public API and its tests exercise the
 // production composition; the duplicate bin-module compilation does not call
 // every public composition constructor directly.
