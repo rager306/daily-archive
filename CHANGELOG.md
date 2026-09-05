@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-05 — M493-jzmctv/S10 T01: six DecisionPoint variants and exact later set pinned
+
+Independent Rust DATA+architecture contracts pin six DecisionPoint wires and the
+exact later set. New local `s10_*` helpers only; production symbols untouched.
+`visual_bundle` stays later, not a DecisionPoint variant. P5 stays accountant_later.
+Hub 20 vs 21 stays DATA. No splice. No graph. D127 false.
+
+Green: da-parse architecture 52; data contracts 86; governor 57; source_cli 21.
+
 ## 2026-09-05 — M493-jzmctv/S09 T01: P5 accountant later pinned in independent Rust contracts
 
 P5 stays `accountant_later`, not a live stamp. `stamp_p5` stays absent. Independent

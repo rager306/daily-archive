@@ -6032,3 +6032,321 @@ fn rejects_p5_policy_drift_mutation_or_loss() {
         "malformed yaml must fail loudly, not parse"
     );
 }
+
+// ───── M493 S10/T01: exact later set + later names out of cascade fsm_consult ─────
+//
+// Meta/prompt freeze after the family quarantines: `consult_status` of
+// `data/policies/registry.yaml` keeps the exact ordered
+// `later == [head_fallback, visual_bundle, critic_sample]`, `decision_points`
+// stays exactly the six approved keys, and no cascade `fsm_consult` of the
+// registry of record (`data/parse/grobid_compatibility.yaml`) may carry a
+// later name. Only NEW local `s10_*` helpers are added here — no production
+// symbol, no existing helper and no DATA file is touched. S09 pins (P5
+// `accountant_later`, no `stamp_p5`, `independently_selectable`) are left
+// intact above.
+
+/// Exact ordered later set (ADR-076).
+const S10_LATER_EXACT: [&str; 3] = ["head_fallback", "visual_bundle", "critic_sample"];
+
+/// Exact approved decision-point keys (matches the six DecisionPoint wires).
+const S10_DECISION_KEYS_EXACT: [&str; 6] = [
+    "grammar_route",
+    "batch_admission",
+    "concurrency_tune",
+    "retry_policy",
+    "summary_depth",
+    "profile_route",
+];
+
+/// Local S10 helper: string sequence of a mapping key, or None on
+/// missing/non-sequence/non-string shape (loss/malformed, never silence).
+fn s10_seq_strs(map: &serde_yaml::Mapping, key: &str) -> Option<Vec<String>> {
+    map.get(serde_yaml::Value::String(key.into()))
+        .and_then(|v| v.as_sequence())
+        .map(|seq| {
+            seq.iter()
+                .map(|v| v.as_str().unwrap_or_default().to_string())
+                .collect()
+        })
+}
+
+/// Local S10 helper: violations of the exact later-set contract in the
+/// policy registry. Every violation carries `[s10-later-set-drift]`.
+fn s10_later_set_violations(policy: &serde_yaml::Value) -> Vec<String> {
+    const TAG: &str = "[s10-later-set-drift]";
+    let mut errs = Vec::new();
+    let Some(status) = policy.get("consult_status") else {
+        return vec![format!(
+            "{TAG} policy registry lost `consult_status` — loss, not silence"
+        )];
+    };
+    let Some(map) = status.as_mapping() else {
+        return vec![format!(
+            "{TAG} `consult_status` is not a mapping — malformed, not silence"
+        )];
+    };
+    match s10_seq_strs(map, "later") {
+        Some(later) => {
+            let expected: Vec<String> = S10_LATER_EXACT.iter().map(|s| s.to_string()).collect();
+            if later != expected {
+                errs.push(format!(
+                    "{TAG} `consult_status.later` must stay exactly {expected:?} (ordered), got {later:?}"
+                ));
+            }
+        }
+        None => errs.push(format!(
+            "{TAG} policy registry lost `consult_status.later` — loss, not silence"
+        )),
+    }
+    match s10_seq_strs(map, "parse_pdf_consults") {
+        Some(consults) => {
+            if consults != vec!["grammar_route".to_string(), "profile_route".to_string()] {
+                errs.push(format!(
+                    "{TAG} `parse_pdf_consults` must stay exactly `[grammar_route, profile_route]`, got {consults:?}"
+                ));
+            }
+            for later in S10_LATER_EXACT {
+                if consults.iter().any(|c| c == later) {
+                    errs.push(format!(
+                        "{TAG} later name `{later}` promoted into `parse_pdf_consults` — later stays later"
+                    ));
+                }
+            }
+        }
+        None => errs.push(format!(
+            "{TAG} policy registry lost `consult_status.parse_pdf_consults` — loss, not silence"
+        )),
+    }
+    errs
+}
+
+/// Local S10 helper: violations of the exact decision_points key set.
+/// Every violation carries `[s10-decision-keys-drift]`.
+fn s10_decision_keys_violations(policy: &serde_yaml::Value) -> Vec<String> {
+    const TAG: &str = "[s10-decision-keys-drift]";
+    let Some(points) = policy.get("decision_points") else {
+        return vec![format!(
+            "{TAG} policy registry lost `decision_points` — loss, not silence"
+        )];
+    };
+    let Some(map) = points.as_mapping() else {
+        return vec![format!(
+            "{TAG} `decision_points` is not a mapping — malformed, not silence"
+        )];
+    };
+    let mut got: Vec<String> = map
+        .keys()
+        .map(|k| k.as_str().unwrap_or_default().to_string())
+        .collect();
+    got.sort();
+    let mut expected: Vec<String> = S10_DECISION_KEYS_EXACT
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    expected.sort();
+    if got != expected {
+        return vec![format!(
+            "{TAG} `decision_points` must stay exactly {expected:?} (six approved keys), got {got:?}"
+        )];
+    }
+    Vec::new()
+}
+
+/// Local S10 helper: cascade fsm_consult violations in the registry of
+/// record. Every violation carries `[s10-cascade-consult-drift]`.
+fn s10_cascade_consult_violations(registry: &serde_yaml::Value) -> Vec<String> {
+    const TAG: &str = "[s10-cascade-consult-drift]";
+    let mut errs = Vec::new();
+    let Some(stages) = registry
+        .get("defaults")
+        .and_then(|d| d.get("cascade_stages"))
+        .and_then(|c| c.as_mapping())
+    else {
+        return vec![format!(
+            "{TAG} registry lost `defaults.cascade_stages` — loss, not silence"
+        )];
+    };
+    for (key, row) in stages {
+        let sid = key.as_str().unwrap_or_default();
+        let consults: Vec<String> = match row.get("fsm_consult") {
+            Some(v) => match v.as_sequence() {
+                Some(seq) => seq
+                    .iter()
+                    .map(|v| v.as_str().unwrap_or_default().to_string())
+                    .collect(),
+                None => {
+                    errs.push(format!(
+                        "{TAG} stage `{sid}` `fsm_consult` is not a sequence — malformed, not silence"
+                    ));
+                    continue;
+                }
+            },
+            None => {
+                errs.push(format!(
+                    "{TAG} stage `{sid}` lost `fsm_consult` — loss, not silence"
+                ));
+                continue;
+            }
+        };
+        for later in S10_LATER_EXACT {
+            if consults.iter().any(|c| c == later) {
+                errs.push(format!(
+                    "{TAG} later name `{later}` in cascade stage `{sid}` `fsm_consult` — later stays later"
+                ));
+            }
+        }
+    }
+    errs
+}
+
+#[test]
+fn s10_registry_later_set_stays_exact_and_ordered() {
+    let policy = load_policy_registry();
+    let errs = s10_later_set_violations(&policy);
+    assert!(
+        errs.is_empty(),
+        "later-set DATA violations:\n{}",
+        errs.join("\n")
+    );
+    let errs = s10_decision_keys_violations(&policy);
+    assert!(
+        errs.is_empty(),
+        "decision-points DATA violations:\n{}",
+        errs.join("\n")
+    );
+    // Registry of record: no cascade fsm_consult carries a later name.
+    let registry = load_registry_value();
+    let errs = s10_cascade_consult_violations(&registry);
+    assert!(
+        errs.is_empty(),
+        "cascade consult DATA violations:\n{}",
+        errs.join("\n")
+    );
+    // Cross-check against the live six-variant source (positive control that
+    // the DATA keys and the enum agree without importing production types).
+    let src = std::fs::read_to_string(repo_root().join("crates/da-domain/src/fsm_policy.rs"))
+        .expect("fsm_policy.rs unreadable");
+    for wire in S10_DECISION_KEYS_EXACT {
+        assert!(
+            src.contains(&format!("\"{wire}\"")),
+            "positive control failed: DecisionPoint source lost wire `{wire}`"
+        );
+    }
+}
+
+#[test]
+fn s10_rejects_later_set_drift_and_cascade_promotion() {
+    let policy = load_policy_registry();
+    // Removal of a later name must fail loudly.
+    let mut removed = policy.clone();
+    removed["consult_status"]["later"] = serde_yaml::Value::Sequence(vec![
+        serde_yaml::Value::String("head_fallback".into()),
+        serde_yaml::Value::String("critic_sample".into()),
+    ]);
+    negative(
+        "[s10-later-set-drift]",
+        &s10_later_set_violations(&removed),
+        "visual_bundle dropped from later",
+    );
+    // Reorder must fail loudly (ordered pin).
+    let mut reordered = policy.clone();
+    reordered["consult_status"]["later"] = serde_yaml::Value::Sequence(vec![
+        serde_yaml::Value::String("visual_bundle".into()),
+        serde_yaml::Value::String("head_fallback".into()),
+        serde_yaml::Value::String("critic_sample".into()),
+    ]);
+    negative(
+        "[s10-later-set-drift]",
+        &s10_later_set_violations(&reordered),
+        "later reordered",
+    );
+    // Extension with a seventh point must fail loudly.
+    let mut extended = policy.clone();
+    extended["consult_status"]["later"] = serde_yaml::Value::Sequence(vec![
+        serde_yaml::Value::String("head_fallback".into()),
+        serde_yaml::Value::String("visual_bundle".into()),
+        serde_yaml::Value::String("critic_sample".into()),
+        serde_yaml::Value::String("invented_point".into()),
+    ]);
+    negative(
+        "[s10-later-set-drift]",
+        &s10_later_set_violations(&extended),
+        "later extended",
+    );
+    // Later name in parse_pdf_consults must fail loudly.
+    let mut promoted = policy.clone();
+    promoted["consult_status"]["parse_pdf_consults"] = serde_yaml::Value::Sequence(vec![
+        serde_yaml::Value::String("grammar_route".into()),
+        serde_yaml::Value::String("head_fallback".into()),
+    ]);
+    negative(
+        "[s10-later-set-drift]",
+        &s10_later_set_violations(&promoted),
+        "later in parse_pdf_consults",
+    );
+    // A seventh decision_points key must fail loudly.
+    let mut wider = policy.clone();
+    wider["decision_points"]["head_fallback"] =
+        serde_yaml::Value::Mapping(serde_yaml::Mapping::new());
+    negative(
+        "[s10-decision-keys-drift]",
+        &s10_decision_keys_violations(&wider),
+        "seventh decision_points key",
+    );
+    // A dropped decision_points key must fail loudly.
+    let mut narrower = policy.clone();
+    if let Some(map) = narrower["decision_points"].as_mapping_mut() {
+        map.remove("profile_route");
+    }
+    negative(
+        "[s10-decision-keys-drift]",
+        &s10_decision_keys_violations(&narrower),
+        "dropped profile_route key",
+    );
+    // Later name smuggled into any cascade fsm_consult must fail loudly.
+    let registry = load_registry_value();
+    for later in S10_LATER_EXACT {
+        let mut drifted = registry.clone();
+        drifted["defaults"]["cascade_stages"]["P6"]["fsm_consult"] =
+            serde_yaml::Value::Sequence(vec![serde_yaml::Value::String(later.into())]);
+        negative(
+            "[s10-cascade-consult-drift]",
+            &s10_cascade_consult_violations(&drifted),
+            &format!("later `{later}` in P6 fsm_consult"),
+        );
+    }
+    // Removed cascade fsm_consult is loss, not silence.
+    let mut lost = registry.clone();
+    if let Some(map) = lost["defaults"]["cascade_stages"]["P6"].as_mapping_mut() {
+        map.remove("fsm_consult");
+    }
+    negative(
+        "[s10-cascade-consult-drift]",
+        &s10_cascade_consult_violations(&lost),
+        "removed P6 fsm_consult",
+    );
+    // Removed consult_status is loss, not silence.
+    let mut removed_status = policy.clone();
+    if let Some(map) = removed_status.as_mapping_mut() {
+        map.remove("consult_status");
+    }
+    negative(
+        "[s10-later-set-drift]",
+        &s10_later_set_violations(&removed_status),
+        "removed consult_status",
+    );
+    // Missing artifact is loss, not silence.
+    let missing: Result<serde_yaml::Value, String> =
+        load_yaml("data/policies/does-not-exist-s10-later.yaml");
+    let err = missing.expect_err("missing policy artifact must fail loudly");
+    assert!(
+        err.contains("[unreadable-artifact]"),
+        "missing artifact must tag [unreadable-artifact], got: {err}"
+    );
+    // Malformed YAML never parses into a contract value.
+    let malformed = serde_yaml::from_str::<serde_yaml::Value>("{unclosed: [1,");
+    assert!(
+        malformed.is_err(),
+        "malformed yaml must fail loudly, not parse"
+    );
+}

@@ -2980,3 +2980,213 @@ fn parse_pdf_p5_body_stays_accountant_later_not_live_stamp() {
         "positive control failed: P6 live receipt vanished (S09 must not regress P6)"
     );
 }
+
+// ───── M493 S10/T01: DecisionPoint stays six approved wire names ─────
+//
+// Meta/prompt freeze after the family quarantines: `DecisionPoint` in
+// `crates/da-domain/src/fsm_policy.rs` stays exactly the six sanctioned
+// variants, and the registry later names (`head_fallback`, `visual_bundle`,
+// `critic_sample`) never become decision points. Only NEW local `s10_*`
+// helpers are added here — no production symbol, no existing helper and no
+// DATA file is touched.
+
+/// Production source under contract (read-only).
+const S10_DECISION_POINT_SOURCE: &str = "crates/da-domain/src/fsm_policy.rs";
+
+/// The six sanctioned enum variants, in declaration order.
+const S10_APPROVED_VARIANTS: [&str; 6] = [
+    "GrammarRoute",
+    "BatchAdmission",
+    "ConcurrencyTune",
+    "RetryPolicy",
+    "SummaryDepth",
+    "ProfileRoute",
+];
+
+/// The six sanctioned wire names, in declaration order.
+const S10_APPROVED_WIRE: [&str; 6] = [
+    "grammar_route",
+    "batch_admission",
+    "concurrency_tune",
+    "retry_policy",
+    "summary_depth",
+    "profile_route",
+];
+
+/// Registry later names that must never appear as decision points.
+const S10_LATER_NAMES: [&str; 3] = ["head_fallback", "visual_bundle", "critic_sample"];
+
+/// Enum-variant spellings of the later names (must never be introduced).
+const S10_LATER_VARIANTS: [&str; 3] = ["HeadFallback", "VisualBundle", "CriticSample"];
+
+/// Local S10 helper: strip full-line AND trailing `//` comments so prose
+/// mentions of later names never count as enum drift. Wire literals in the
+/// scanned file carry no `//` sequences, so a plain split is sound here.
+fn s10_code_without_comments(text: &str) -> String {
+    text.lines()
+        .map(|line| match line.split_once("//") {
+            Some((code, _)) => code,
+            None => line,
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// Local S10 helper: extract the `pub enum DecisionPoint { ... }` body with
+/// brace matching over comment-stripped code.
+fn s10_enum_body(code: &str) -> Option<String> {
+    let start = code.find("pub enum DecisionPoint")?;
+    let open = code[start..].find('{')? + start;
+    let mut depth = 0usize;
+    for (i, ch) in code[open..].char_indices() {
+        if ch == '{' {
+            depth += 1;
+        } else if ch == '}' {
+            depth -= 1;
+            if depth == 0 {
+                return Some(code[open..open + i + 1].to_string());
+            }
+        }
+    }
+    None
+}
+
+/// Local S10 helper: accept exactly the six approved wire names.
+fn s10_wire_allowed(name: &str) -> bool {
+    S10_APPROVED_WIRE.contains(&name)
+}
+
+/// Local S10 helper: violations of the closed six-point contract in
+/// comment-stripped source. Every violation carries
+/// `[s10-decision-point-drift]`.
+fn s10_decision_point_violations(code: &str) -> Vec<String> {
+    const TAG: &str = "[s10-decision-point-drift]";
+    let mut errs = Vec::new();
+    let Some(body) = s10_enum_body(code) else {
+        return vec![format!(
+            "{TAG} lost `pub enum DecisionPoint` — loss, not silence"
+        )];
+    };
+    for variant in S10_APPROVED_VARIANTS {
+        if !body.contains(variant) {
+            errs.push(format!(
+                "{TAG} DecisionPoint lost sanctioned variant `{variant}`"
+            ));
+        }
+    }
+    for wire in S10_APPROVED_WIRE {
+        let arm = format!("\"{wire}\"");
+        if !code.contains(&arm) {
+            errs.push(format!("{TAG} DecisionPoint lost wire arm `{wire}`"));
+        }
+    }
+    for later in S10_LATER_NAMES {
+        let lit = format!("\"{later}\"");
+        if code.contains(&lit) {
+            errs.push(format!(
+                "{TAG} later name `{later}` leaked into DecisionPoint source — later stays later"
+            ));
+        }
+    }
+    for variant in S10_LATER_VARIANTS {
+        if body.contains(variant) {
+            errs.push(format!(
+                "{TAG} later variant `{variant}` promoted into the DecisionPoint enum — closed set of six"
+            ));
+        }
+    }
+    errs
+}
+
+#[test]
+fn s10_decision_point_stays_six_approved_wire_names() {
+    let src = read_text(S10_DECISION_POINT_SOURCE);
+    assert!(
+        src.len() > 1_000,
+        "positive control failed: fsm_policy.rs looks truncated"
+    );
+    let code = s10_code_without_comments(&src);
+    let errs = s10_decision_point_violations(&code);
+    assert!(errs.is_empty(), "DecisionPoint drift:\n{}", errs.join("\n"));
+    // Accept and round-trip exactly the six approved wire names.
+    for wire in S10_APPROVED_WIRE {
+        assert!(
+            s10_wire_allowed(wire),
+            "positive control failed: approved wire `{wire}` rejected"
+        );
+    }
+    // Later names and unknown points stay rejected.
+    for bad in [
+        "head_fallback",
+        "visual_bundle",
+        "critic_sample",
+        "invented_point",
+        "grammarRoute",
+        "GRAMMAR_ROUTE",
+        "",
+    ] {
+        assert!(
+            !s10_wire_allowed(bad),
+            "negative control failed: `{bad}` accepted as a DecisionPoint"
+        );
+    }
+}
+
+#[test]
+fn s10_decision_point_scanner_fails_visible_on_synthetic_violations() {
+    let src = read_text(S10_DECISION_POINT_SOURCE);
+    let code = s10_code_without_comments(&src);
+    assert!(
+        s10_enum_body(&code).is_some(),
+        "positive control failed: enum body not found in clean source"
+    );
+    // Comment-only prose about a later name must NOT trip the gate.
+    let with_prose = code.clone() + "\n// visual_bundle stays later, prose only\n";
+    let stripped = s10_code_without_comments(&with_prose);
+    assert!(
+        s10_decision_point_violations(&stripped).is_empty(),
+        "comment prose must not trip the DecisionPoint gate"
+    );
+    // A later wire literal smuggled into code fails loudly.
+    let smuggled = code.clone() + "\nlet _ = \"visual_bundle\";\n";
+    let errs = s10_decision_point_violations(&smuggled);
+    assert!(
+        errs.iter()
+            .any(|e| e.contains("[s10-decision-point-drift]") && e.contains("visual_bundle")),
+        "expected [s10-decision-point-drift] for smuggled visual_bundle, got: {errs:?}"
+    );
+    // A later variant smuggled into the enum body fails loudly.
+    let body = s10_enum_body(&code).expect("enum body must exist");
+    let drifted_body = body.replacen("ProfileRoute,", "ProfileRoute,\n    VisualBundle,", 1);
+    assert_ne!(
+        body, drifted_body,
+        "positive control failed: enum body has no ProfileRoute arm to extend"
+    );
+    let drifted = code.replacen(&body, &drifted_body, 1);
+    let errs = s10_decision_point_violations(&drifted);
+    assert!(
+        errs.iter()
+            .any(|e| e.contains("[s10-decision-point-drift]") && e.contains("VisualBundle")),
+        "expected [s10-decision-point-drift] for VisualBundle variant, got: {errs:?}"
+    );
+    // A dropped approved wire arm fails loudly (replace ALL occurrences:
+    // the wire legitimately appears in both `as_str` and `parse`).
+    let dropped = code.replace("\"profile_route\"", "\"profile_rout\"");
+    assert_ne!(
+        code, dropped,
+        "positive control failed: no profile_route arm to drop"
+    );
+    let errs = s10_decision_point_violations(&dropped);
+    assert!(
+        errs.iter()
+            .any(|e| e.contains("[s10-decision-point-drift]") && e.contains("profile_route")),
+        "expected [s10-decision-point-drift] for dropped profile_route, got: {errs:?}"
+    );
+    // A lost enum is loss, not silence.
+    let errs = s10_decision_point_violations("pub fn nothing_here() {}");
+    assert!(
+        errs.iter()
+            .any(|e| e.contains("[s10-decision-point-drift]")),
+        "expected [s10-decision-point-drift] for lost enum, got: {errs:?}"
+    );
+}
