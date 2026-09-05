@@ -589,6 +589,33 @@ fn test_extract_sections_flat_legacy_tei_still_works() {
     assert_eq!(sections[1].path_id.as_deref(), Some("2"));
 }
 
+#[test]
+fn test_extract_sections_flat_skips_figure_caption_head() {
+    // Real GROBID body is structurally flat. A figure caption `<head>` must
+    // not open a section window (scanner honesty: caption ≠ section).
+    let tei = r#"<body>
+          <head n="1">Intro</head><p>Before figure.</p>
+          <figure xml:id="fig_0"><head>Fig 1. Caption</head><graphic/></figure>
+          <p>After figure.</p>
+          <head n="2">Methods</head><p>Methods text.</p>
+        </body>"#;
+    let sections = TeiLifter::extract_sections(tei);
+    let titles: Vec<_> = sections.iter().map(|s| s.title.as_str()).collect();
+    assert_eq!(
+        titles,
+        vec!["Intro", "Methods"],
+        "caption head is not a section"
+    );
+    assert!(
+        sections[0].text.contains("Before figure"),
+        "preceding prose stays in Intro"
+    );
+    assert!(
+        sections[0].text.contains("After figure"),
+        "figure does not split the Intro window"
+    );
+}
+
 // ─── M400 S02 T01: deterministic TEI table extraction ───
 
 /// Flat TEI: a `<figure type="table">` (no caption head, so it creates
@@ -664,37 +691,19 @@ fn test_extract_tables_nested_section_mapping_and_spans() {
     }
 }
 
-/// Flat TEI with a caption `<head>` inside the figure: the caption head
-/// becomes a section boundary (mirroring `extract_sections_flat`), so the
-/// table lands in its own caption window with a collision-resolved path
-/// that exists in the section list — consistency, never invention.
+/// Flat TEI with a caption `<head>` inside the figure: the caption is not a
+/// section. The table stays in the preceding body window (`Results`).
 #[test]
-fn test_extract_tables_caption_head_creates_consistent_section() {
+fn test_extract_tables_caption_head_stays_in_body_section() {
     let tei = r##"<TEI><text><body><head n="1">Results</head><p>Benchmarks.</p><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><table><row><cell>a</cell></row></table></figure></body></text></TEI>"##;
     let (tables, _) = TeiLifter::extract_tables(tei);
     let sections = TeiLifter::extract_sections(tei);
-    assert_eq!(sections.len(), 2, "caption head is a flat section boundary");
-    assert_eq!(sections[1].title, "Table 1 :");
-    let section_paths: std::collections::HashSet<&str> = sections
-        .iter()
-        .filter_map(|s| s.path_id.as_deref())
-        .collect();
+    assert_eq!(sections.len(), 1, "caption head is not a section");
+    assert_eq!(sections[0].title, "Results");
     let table = &tables[0];
     assert_eq!(table.caption, "Table 1 :");
-    let path = table
-        .section_path_id
-        .as_deref()
-        .expect("table resolves to its caption window");
-    assert!(
-        section_paths.contains(path),
-        "table path '{path}' must exist among section paths"
-    );
-    let ordinal = table.section_ordinal.expect("ordinal resolved");
-    assert_eq!(
-        sections[ordinal].path_id.as_deref(),
-        Some(path),
-        "ordinal must point at the section with the table's path"
-    );
+    assert_eq!(table.section_path_id.as_deref(), Some("1"));
+    assert_eq!(table.section_ordinal, Some(0));
 }
 
 /// A table in a top-level gap (outside every section text window) is

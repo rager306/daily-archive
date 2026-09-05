@@ -640,16 +640,23 @@ impl ConservationEngine {
                         cand,
                         "section_document_order",
                         ConservationReasonCode::ObservedButMissing,
+                        true,
                         &mut entries,
                     );
                 }
                 ConservationFamily::CitationAnchor => {
+                    // Linkage identity is the target ref_id. Candidate IR
+                    // groups anchors under bibliography entries; the scanner
+                    // inventories them in document order. That grouping is
+                    // not a structure permutation — Reordered stays a Section
+                    // finding. Missing targets still surface as LinkageLoss.
                     compare_digest_aligned(
                         family,
                         &clean,
                         cand,
                         "citation_anchor_linkage",
                         ConservationReasonCode::LinkageLoss,
+                        false,
                         &mut entries,
                     );
                 }
@@ -851,14 +858,15 @@ fn compare_subtype_aligned(
 
 /// Digest-multiset alignment with positional preference: exact positional
 /// matches stay clean, digest matches at a different position additionally
-/// raise a `Reordered` structure observation, and unmatched source items get
-/// `missing_reason` (per-family: missing vs linkage loss).
+/// raise a `Reordered` structure observation when `report_reordered` is set
+/// (sections), and unmatched source items get `missing_reason`.
 fn compare_digest_aligned(
     family: ConservationFamily,
     src: &[&ConservationObservation],
     cand: &[ConservationObservation],
     structure_key: &str,
     missing_reason: ConservationReasonCode,
+    report_reordered: bool,
     entries: &mut Vec<ConservationEntry>,
 ) {
     let mut used = vec![false; cand.len()];
@@ -874,7 +882,9 @@ fn compare_digest_aligned(
                 .find(|(j, c)| !used[*j] && c.digest == obs.digest)
                 .map(|(j, _)| {
                     used[j] = true;
-                    reordered = true;
+                    if report_reordered {
+                        reordered = true;
+                    }
                     j
                 })
         };

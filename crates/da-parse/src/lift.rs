@@ -731,6 +731,75 @@ impl TeiLifter {
         (title, text)
     }
 
+    /// Opening tag at `rest` named `name` (`<name` then a tag boundary).
+    fn is_open_named(rest: &str, name: &str) -> bool {
+        let Some(after) = rest.strip_prefix('<') else {
+            return false;
+        };
+        let Some(after) = after.strip_prefix(name) else {
+            return false;
+        };
+        matches!(
+            after.as_bytes().first().copied(),
+            Some(b'>' | b'/' | b' ' | b'\t' | b'\n' | b'\r') | None
+        )
+    }
+
+    /// Self-closing open tag (`<figure .../>`) must not raise wrapper depth.
+    fn open_tag_is_self_closing(rest: &str) -> bool {
+        match rest.find('>') {
+            Some(end) => rest.as_bytes().get(end.saturating_sub(1)) == Some(&b'/'),
+            None => false,
+        }
+    }
+
+    /// Next body-level `<head` that is not inside a `<figure>` or `<table>`
+    /// wrapper. Caption heads must not open a section window (scanner honesty:
+    /// caption ≠ section). Depth is tracked from `from`, which every flat
+    /// walker keeps at body level (windows start after a body-level `</head>`).
+    fn next_section_head(body: &str, from: usize) -> Option<usize> {
+        let bytes = body.as_bytes();
+        let mut i = from;
+        let mut figure_depth: i32 = 0;
+        let mut table_depth: i32 = 0;
+        while i < bytes.len() {
+            if bytes[i] != b'<' {
+                i += 1;
+                continue;
+            }
+            let rest = &body[i..];
+            if rest.starts_with("</figure") {
+                figure_depth = figure_depth.saturating_sub(1);
+                i += 1;
+                continue;
+            }
+            if rest.starts_with("</table") {
+                table_depth = table_depth.saturating_sub(1);
+                i += 1;
+                continue;
+            }
+            if Self::is_open_named(rest, "figure") {
+                if !Self::open_tag_is_self_closing(rest) {
+                    figure_depth += 1;
+                }
+                i += 1;
+                continue;
+            }
+            if Self::is_open_named(rest, "table") {
+                if !Self::open_tag_is_self_closing(rest) {
+                    table_depth += 1;
+                }
+                i += 1;
+                continue;
+            }
+            if Self::is_open_named(rest, "head") && figure_depth == 0 && table_depth == 0 {
+                return Some(i);
+            }
+            i += 1;
+        }
+        None
+    }
+
     /// Legacy flat-structure TEI scanner — used when the body has no nested
     /// `<div>` elements. Produces sections with `path_id = None` to preserve
     /// backward compat with parsers that never populated navigation fields.
@@ -738,8 +807,7 @@ impl TeiLifter {
         use da_ports::parser::Section;
         let mut sections = Vec::new();
         let mut pos = 0;
-        while let Some(head_start) = body[pos..].find("<head") {
-            let abs = pos + head_start;
+        while let Some(abs) = Self::next_section_head(body, pos) {
             let tag_end = match body[abs..].find('>') {
                 Some(e) => abs + e,
                 None => break,
@@ -765,7 +833,7 @@ impl TeiLifter {
             };
             let title = Self::strip_xml_tags(&body[content_start..head_close]);
             let after_head = head_close + "</head>".len();
-            let next_head = body[after_head..].find("<head").map(|e| after_head + e);
+            let next_head = Self::next_section_head(body, after_head);
             let text_end = next_head.unwrap_or(body.len());
             let text = Self::strip_xml_tags(&body[after_head..text_end]);
             if !title.is_empty() || !text.is_empty() {
@@ -1048,7 +1116,7 @@ impl TeiLifter {
             // Pre-first-head region belongs to no section (extract_sections_flat
             // starts sections at the first `<head>`), so anchors there stay
             // path-unresolved rather than being dropped silently.
-            if let Some(first_head) = body.find("<head") {
+            if let Some(first_head) = Self::next_section_head(body, 0) {
                 Self::scan_refs_in_window(body, 0, first_head, None, &mut out, 0, kinds);
             }
             Self::scan_flat_anchors(body, &mut out, kinds);
@@ -1188,8 +1256,7 @@ impl TeiLifter {
         // tell a later window repeating the same raw path (e.g. an appendix
         // restarting at n="1") apart from the earlier one.
         let mut window_ordinal = 1usize;
-        while let Some(head_start) = body[pos..].find("<head") {
-            let abs = pos + head_start;
+        while let Some(abs) = Self::next_section_head(body, pos) {
             let tag_end = match body[abs..].find('>') {
                 Some(e) => abs + e,
                 None => break,
@@ -1202,7 +1269,7 @@ impl TeiLifter {
                 None => break,
             };
             let after_head = head_close + "</head>".len();
-            let next_head = body[after_head..].find("<head").map(|e| after_head + e);
+            let next_head = Self::next_section_head(body, after_head);
             let text_end = next_head.unwrap_or(body.len());
             Self::scan_refs_in_window(
                 body,
@@ -1230,8 +1297,7 @@ impl TeiLifter {
     fn flat_window_paths(body: &str) -> Vec<(String, bool)> {
         let mut out = Vec::new();
         let mut pos = 0;
-        while let Some(head_start) = body[pos..].find("<head") {
-            let abs = pos + head_start;
+        while let Some(abs) = Self::next_section_head(body, pos) {
             let tag_end = match body[abs..].find('>') {
                 Some(e) => abs + e,
                 None => break,
@@ -1245,7 +1311,7 @@ impl TeiLifter {
             };
             let title = Self::strip_xml_tags(&body[content_start..head_close]);
             let after_head = head_close + "</head>".len();
-            let next_head = body[after_head..].find("<head").map(|e| after_head + e);
+            let next_head = Self::next_section_head(body, after_head);
             let text_end = next_head.unwrap_or(body.len());
             let text = Self::strip_xml_tags(&body[after_head..text_end]);
             out.push((path_component, !title.is_empty() || !text.is_empty()));
@@ -1567,8 +1633,7 @@ impl TeiLifter {
     fn flat_section_windows(body: &str, out: &mut Vec<(usize, usize, Option<String>)>) {
         let mut raw: Vec<(usize, usize, String, bool)> = Vec::new();
         let mut pos = 0usize;
-        while let Some(head_start) = body[pos..].find("<head") {
-            let abs = pos + head_start;
+        while let Some(abs) = Self::next_section_head(body, pos) {
             let tag_end = match body[abs..].find('>') {
                 Some(e) => abs + e,
                 None => break,
@@ -1582,7 +1647,7 @@ impl TeiLifter {
             };
             let title = Self::strip_xml_tags(&body[content_start..head_close]);
             let after_head = head_close + "</head>".len();
-            let next_head = body[after_head..].find("<head").map(|e| after_head + e);
+            let next_head = Self::next_section_head(body, after_head);
             let text_end = next_head.unwrap_or(body.len());
             let text = Self::strip_xml_tags(&body[after_head..text_end]);
             raw.push((
@@ -1598,7 +1663,7 @@ impl TeiLifter {
             }
         }
         // Pre-first-head region belongs to no section.
-        if let Some(first_head) = body.find("<head")
+        if let Some(first_head) = Self::next_section_head(body, 0)
             && first_head > 0
         {
             out.push((0, first_head, None));

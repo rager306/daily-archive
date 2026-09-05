@@ -26,14 +26,13 @@
 //! Baseline semantics on preserved GROBID TEI (pinned, deterministic): the
 //! scanner does not count the paper's own header `sourceDesc`/`biblStruct`
 //! as a citation, and does not count figure caption `<head>` as a section.
-//! Remaining typed loss after three-region scanner honesty is CountMismatch
-//! on Section: the flat GROBID `<head>` scan still emits figure caption heads
-//! as sections (S02). Annex `<head>` in `<back>` is not a section; a targeted
-//! bibr in `<back>` is a typed CrossReference remainder, not linkage loss.
-//! Back `biblStruct` stays CitationEntry. The pristine verdict stays
-//! `loss_detected` while caption heads inflate the IR. Replay equality is
-//! byte-identical. Injected losses are asserted relative to that pinned
-//! baseline.
+//! Three-region scanner honesty plus the flat lifter skipping figure/table
+//! caption heads: body Section counts match. Annex `<head>` in `<back>` is
+//! not a section; a targeted bibr in `<back>` is a typed CrossReference
+//! remainder, not linkage loss. Back `biblStruct` stays CitationEntry.
+//! Citation anchors compare as a digest bag (bibliography grouping is not
+//! Reordered). The pristine verdict is Conserved. Replay equality is
+//! byte-identical. Injected losses are asserted relative to that baseline.
 //!
 //! Since S07/T04 the lifted P0 families (header authors, non-table figures,
 //! the declared arXiv identity, figure/table callouts, figure-owned graphic
@@ -252,11 +251,10 @@ struct Pins {
 
 fn pins_for(paper_id: &str) -> Pins {
     match paper_id {
-        // "Behavioral floors: sections >= 80, citations >= 80, 3 tables, 24
-        // formulas; 21 header authors and 22 non-table figures present in TEI
-        // bytes (not lifted this cut)."
+        // Honest body-head floor after caption skip: 69 body heads outside
+        // figure/table (was 80 while the flat lifter still emitted captions).
         "2507.19457" => Pins {
-            sections_min: Some(80),
+            sections_min: Some(69),
             citations_min: Some(80),
             tables: Some(3),
             formulas: Some(24),
@@ -563,12 +561,14 @@ async fn preserved_source_inventory_is_complete_ordered_and_bounded() {
             case = fixture.case_id
         );
 
-        // Baseline delta: the honest pinned conservation findings of this cut.
+        // Baseline delta: scanner and lifter agree on body heads and linkage
+        // presence. Bibliography-vs-document grouping of citation anchors is
+        // not Reordered. Remaining rows are typed unsupported remainders.
         let delta = engine.compare(&envelope, &ir);
         assert_eq!(
             delta.verdict,
-            ConservationVerdict::LossDetected,
-            "{case}: this cut still mismatches caption heads the flat lifter emits as sections — pinned, never silent",
+            ConservationVerdict::Conserved,
+            "{case}: caption skip plus bag-aligned anchors must conserve",
             case = fixture.case_id
         );
         assert_eq!(delta.identity.backend_id, CACHED_TEI_BACKEND_ID);
@@ -825,7 +825,7 @@ async fn preserved_injected_family_item_loss_is_typed() {
     let engine = ConservationEngine::new();
     let (envelope, mut ir) = load_pair(&fixture).await;
     let baseline = engine.compare(&envelope, &ir);
-    assert_eq!(baseline.verdict, ConservationVerdict::LossDetected);
+    assert_eq!(baseline.verdict, ConservationVerdict::Conserved);
 
     let source_count = engine
         .source_inventory(&envelope)
@@ -883,7 +883,7 @@ async fn preserved_injected_source_span_corruption_is_typed() {
     let engine = ConservationEngine::new();
     let (envelope, ir) = load_pair(&fixture).await;
     let baseline = engine.compare(&envelope, &ir);
-    assert_eq!(baseline.verdict, ConservationVerdict::LossDetected);
+    assert_eq!(baseline.verdict, ConservationVerdict::Conserved);
 
     let corrupted_bytes = corrupt_first_head_close_tag(envelope.raw_tei());
     let corrupted = TeiEnvelope::new(
@@ -949,7 +949,7 @@ async fn preserved_injected_structure_permutation_is_reordered() {
     let engine = ConservationEngine::new();
     let (envelope, mut ir) = load_pair(&fixture).await;
     let baseline = engine.compare(&envelope, &ir);
-    assert_eq!(baseline.verdict, ConservationVerdict::LossDetected);
+    assert_eq!(baseline.verdict, ConservationVerdict::Conserved);
     assert_eq!(
         count_rows(
             &baseline,

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-04 — M467-ase1bu/S02: flat lifter skips caption heads; anchors bag-aligned
+
+TeiLifter extract_sections_flat no longer treats figure/table caption `<head>` as a
+section. Four flat walkers share next_section_head so tables, formulas and
+anchors stay on the same windows. Citation anchors compare as a digest bag:
+bibliography grouping is not Reordered. Pristine conservation on the three
+preserved TEI files is Conserved. Hub body-head floor is 69 (was 80 while
+captions inflated the IR). Java production_route. No graph. D127 false.
+
+Green: extract_ 45; conservation lib 9; conservation_contract 14; conservation_properties 6.
+
 ## 2026-09-04 — M467-ase1bu/S01: three-region scanner honesty for back annex
 
 ConservationEngine now has three TEI regions: header, body, back. Annex `<head>`
