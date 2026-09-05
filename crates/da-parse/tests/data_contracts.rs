@@ -5834,3 +5834,201 @@ fn rejects_visual_bundle_promotion_into_fsm() {
         "malformed yaml must fail loudly, not parse"
     );
 }
+
+// ───── S09/T01: P5 body stays accountant_later, never a live receipt ─────
+//
+// P5 (`fulltext_body_sections`) is the single cascade stage with
+// `observe_mode: accountant_later`: Java stays the production authority for
+// the row, but parse-pdf must NOT stamp it live. This DATA contract pins the
+// exact P5 row of the registry of record
+// (`defaults.cascade_stages.P5`) and the data-driven admission allowlist
+// (`admission.independently_selectable == [header, references]` in
+// `data/parse/native_fulltext_composition.yaml`). The production-boundary
+// side (no `stamp_p5_` in source_cli.rs, P4/P6 stay live) lives in
+// `architecture_contract.rs`. Nothing here touches source_cli, ParserPort,
+// native modules, DecisionPoint, registry, graph/ACAP, D127 or
+// import_eligible.
+
+const P5_BODY_LATER_TAG: &str = "[p5-body-later-drift]";
+const NATIVE_FULLTEXT_COMPOSITION_REL: &str = "data/parse/native_fulltext_composition.yaml";
+
+/// Validate the P5 cascade row of the registry of record
+/// (`defaults.cascade_stages.P5`). Generic `serde_yaml::Value` reader — no
+/// typed deserialization that could mask a removed field.
+fn validate_p5_body_later_policy(registry: &serde_yaml::Value) -> Vec<String> {
+    let mut errs = Vec::new();
+    let stage = registry
+        .get("defaults")
+        .and_then(|d| d.get("cascade_stages"))
+        .and_then(|c| c.get("P5"));
+    let Some(stage) = stage else {
+        errs.push(format!(
+            "{P5_BODY_LATER_TAG} registry lost `defaults.cascade_stages.P5` — loss, not silence"
+        ));
+        return errs;
+    };
+    let mut str_eq = |key: &str, expected: &str| {
+        if stage.get(key).and_then(|v| v.as_str()) != Some(expected) {
+            errs.push(format!(
+                "{P5_BODY_LATER_TAG} P5 `{key}` must stay `{expected}`"
+            ));
+        }
+    };
+    str_eq("grobid", "fulltext_body_sections");
+    str_eq("production_authority", "java_http");
+    str_eq("native_surface", "none");
+    str_eq("observe_mode", "accountant_later");
+    match stage.get("fsm_consult") {
+        Some(v) => {
+            let is_none = v
+                .as_sequence()
+                .is_some_and(|seq| seq.len() == 1 && seq[0].as_str() == Some("none"));
+            if !is_none {
+                errs.push(format!(
+                    "{P5_BODY_LATER_TAG} P5 `fsm_consult` must stay `[none]` — body never consults the FSM"
+                ));
+            }
+        }
+        None => errs.push(format!(
+            "{P5_BODY_LATER_TAG} registry lost P5 `fsm_consult` — loss, not silence"
+        )),
+    }
+    errs
+}
+
+/// Validate the data-driven admission allowlist: `independently_selectable`
+/// is exactly `[header, references]` — body is never independently
+/// selectable. Generic reader so a renamed/removed field fails loudly.
+fn validate_p5_admission_selectable(composition: &serde_yaml::Value) -> Vec<String> {
+    const TAG: &str = "[p5-admission-selectable-drift]";
+    let mut errs = Vec::new();
+    let got = composition
+        .get("admission")
+        .and_then(|a| a.get("independently_selectable"))
+        .and_then(|v| v.as_sequence())
+        .map(|seq| {
+            seq.iter()
+                .map(|v| v.as_str().unwrap_or_default().to_string())
+                .collect::<Vec<_>>()
+        });
+    match got {
+        Some(got) => {
+            if got != vec!["header".to_string(), "references".to_string()] {
+                errs.push(format!(
+                    "{TAG} `admission.independently_selectable` must stay exactly `[header, references]`, got {got:?}"
+                ));
+            }
+        }
+        None => errs.push(format!(
+            "{TAG} composition lost `admission.independently_selectable` — loss, not silence"
+        )),
+    }
+    errs
+}
+
+#[test]
+fn p5_cascade_row_stays_accountant_later() {
+    let registry = load_registry_value();
+    let errs = validate_p5_body_later_policy(&registry);
+    assert!(
+        errs.is_empty(),
+        "P5 body-later DATA violations:\n{}",
+        errs.join("\n")
+    );
+    // Admission allowlist is DATA-driven from the composition authority.
+    let composition: serde_yaml::Value = expect_loaded(NATIVE_FULLTEXT_COMPOSITION_REL);
+    let errs = validate_p5_admission_selectable(&composition);
+    assert!(
+        errs.is_empty(),
+        "P5 admission DATA violations:\n{}",
+        errs.join("\n")
+    );
+}
+
+#[test]
+fn rejects_p5_policy_drift_mutation_or_loss() {
+    let registry = load_registry_value();
+    // accountant_later -> production_stamp promotion must fail loudly.
+    let mut drifted = registry.clone();
+    drifted["defaults"]["cascade_stages"]["P5"]["observe_mode"] =
+        serde_yaml::Value::String("production_stamp".into());
+    negative(
+        P5_BODY_LATER_TAG,
+        &validate_p5_body_later_policy(&drifted),
+        "P5 mode -> production_stamp",
+    );
+    // accountant_later -> shadow_receipt erosion must fail loudly.
+    let mut drifted = registry.clone();
+    drifted["defaults"]["cascade_stages"]["P5"]["observe_mode"] =
+        serde_yaml::Value::String("shadow_receipt".into());
+    negative(
+        P5_BODY_LATER_TAG,
+        &validate_p5_body_later_policy(&drifted),
+        "P5 mode -> shadow_receipt",
+    );
+    // java_http -> native erosion must fail loudly (no hardcoded fallback).
+    let mut drifted = registry.clone();
+    drifted["defaults"]["cascade_stages"]["P5"]["production_authority"] =
+        serde_yaml::Value::String("native".into());
+    negative(
+        P5_BODY_LATER_TAG,
+        &validate_p5_body_later_policy(&drifted),
+        "P5 authority -> native",
+    );
+    // fsm_consult [none] -> [grammar_route] (FSM promotion) must fail loudly.
+    let mut drifted = registry.clone();
+    drifted["defaults"]["cascade_stages"]["P5"]["fsm_consult"] =
+        serde_yaml::Value::Sequence(vec![serde_yaml::Value::String("grammar_route".into())]);
+    negative(
+        P5_BODY_LATER_TAG,
+        &validate_p5_body_later_policy(&drifted),
+        "P5 consults the FSM",
+    );
+    // Removed P5 row is loss, not silence.
+    let mut removed = registry.clone();
+    if let Some(map) = removed["defaults"]["cascade_stages"].as_mapping_mut() {
+        map.remove("P5");
+    }
+    negative(
+        P5_BODY_LATER_TAG,
+        &validate_p5_body_later_policy(&removed),
+        "removed P5 row",
+    );
+    // Removed P5 observe_mode is loss, not silence.
+    let mut removed = registry.clone();
+    if let Some(map) = removed["defaults"]["cascade_stages"]["P5"].as_mapping_mut() {
+        map.remove("observe_mode");
+    }
+    negative(
+        P5_BODY_LATER_TAG,
+        &validate_p5_body_later_policy(&removed),
+        "removed P5 observe_mode",
+    );
+    // Body smuggled into independently_selectable must fail loudly.
+    let composition: serde_yaml::Value = expect_loaded(NATIVE_FULLTEXT_COMPOSITION_REL);
+    let mut widened = composition.clone();
+    widened["admission"]["independently_selectable"] = serde_yaml::Value::Sequence(vec![
+        serde_yaml::Value::String("header".into()),
+        serde_yaml::Value::String("references".into()),
+        serde_yaml::Value::String("body".into()),
+    ]);
+    negative(
+        "[p5-admission-selectable-drift]",
+        &validate_p5_admission_selectable(&widened),
+        "body added to independently_selectable",
+    );
+    // Missing artifact is loss, not silence.
+    let missing: Result<serde_yaml::Value, String> =
+        load_yaml("data/parse/does-not-exist-s09-p5.yaml");
+    let err = missing.expect_err("missing registry artifact must fail loudly");
+    assert!(
+        err.contains("[unreadable-artifact]"),
+        "missing artifact must tag [unreadable-artifact], got: {err}"
+    );
+    // Malformed YAML never parses into a contract value.
+    let malformed = serde_yaml::from_str::<serde_yaml::Value>("{unclosed: [1,");
+    assert!(
+        malformed.is_err(),
+        "malformed yaml must fail loudly, not parse"
+    );
+}

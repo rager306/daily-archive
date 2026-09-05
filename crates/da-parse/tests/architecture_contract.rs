@@ -2939,3 +2939,44 @@ fn parser_port_carries_no_native_visual_methods_or_types() {
         "visual-head call-sites leaked into ParserPort"
     );
 }
+
+// ───── S09/T01: P5 body stays accountant_later in production source ─────
+//
+// P5 (`fulltext_body_sections`) is the single cascade stage with
+// `observe_mode: accountant_later`: parse-pdf must NOT stamp it live. This
+// production-boundary contract proves `crates/da-cli/src/source_cli.rs`
+// carries no `stamp_p5_` receipt while the neighbouring P4/P6 stamps stay
+// live (Java-lifted receipts). The live DATA row is pinned in
+// `data_contracts.rs`; nothing here touches source_cli, ParserPort, native
+// modules, DecisionPoint, registry, graph/ACAP, D127 or import_eligible.
+
+#[test]
+fn parse_pdf_p5_body_stays_accountant_later_not_live_stamp() {
+    let src = read_text("crates/da-cli/src/source_cli.rs");
+    let code = strip_line_comments(&src);
+    assert!(
+        code.len() > 1_000,
+        "positive control failed: source_cli.rs looks truncated"
+    );
+    // The forbidden live P5 stamp must not exist in production source.
+    assert!(
+        !code.contains("stamp_p5_"),
+        "P5 body must stay accountant_later: `stamp_p5_` leaked into production source_cli"
+    );
+    // A synthetic live P5 stamp must flag — the scan is not vacuous.
+    let synthetic = "pub fn run_parse_pdf() {\n    stamp_p5_body_observe(&mut m, 1);\n}\n";
+    assert!(
+        synthetic.contains("stamp_p5_"),
+        "negative control failed: synthetic live P5 stamp does not carry the forbidden token"
+    );
+    // Neighbouring receipts stay live: P4 counts Java-lifted citations,
+    // P6 counts Java-lifted visual families.
+    assert!(
+        code.contains("stamp_p4_references_observe(&mut m, parsed.citations.len())"),
+        "positive control failed: P4 live receipt vanished (S09 must not regress P4)"
+    );
+    assert!(
+        code.contains("stamp_p6_visual_observe("),
+        "positive control failed: P6 live receipt vanished (S09 must not regress P6)"
+    );
+}

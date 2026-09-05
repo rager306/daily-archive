@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-05 — M493-jzmctv/S09 T01: P5 accountant later pinned in independent Rust contracts
+
+P5 stays `accountant_later`, not a live stamp. `stamp_p5` stays absent. Independent
+Rust DATA+architecture contracts pin the later row without touching production
+source. Hub 20 vs 21 stays DATA. No splice. No graph. D127 false.
+
+Green: da-parse architecture + data contracts for P5 later.
+
 ## 2026-09-05 — M493-jzmctv/S08 T02: Rust/DATA Java P6 contracts, visual_bundle stays later
 
 P6 stamps Java figure/table/formula counts. Visual atoms stay shadow. `visual_bundle`
