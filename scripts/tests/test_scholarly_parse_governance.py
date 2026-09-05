@@ -408,6 +408,40 @@ def test_checker_flags_p3_named_gap_hardcoded_hub_count(tmp_path: Path):
     assert any("named_native_accepted_gap" in item.evidence or "source_cli.rs" in item.evidence for item in matching)
 
 
+def test_checker_flags_p4_citation_names_numeric_count(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        'pub fn stamp_p4_references_observe(m: &mut serde_yaml::Mapping, java_citation_n: usize) { p4.insert("java_citation_n".into(), java_citation_n.into()); p4.insert("citation_names_not_biblstruct".into(), 2198.into()); }\n',
+        encoding="utf-8",
+    )
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_acceptance_same_n_drift"]
+    assert matching, flags
+    assert any("citation_names_not_biblstruct" in item.evidence or "source_cli.rs" in item.evidence for item in matching)
+
+
+def test_checker_flags_p4_pooling_citation_names_with_java_count(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        'pub fn stamp_p4_references_observe(m: &mut serde_yaml::Mapping, java_citation_n: usize) { p4.insert("java_citation_n".into(), java_citation_n.into()); p4.insert("citation_names_not_biblstruct".into(), java_citation_n.into()); }\n',
+        encoding="utf-8",
+    )
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_acceptance_same_n_drift"]
+    assert matching, flags
+    assert any("citation_names_not_biblstruct" in item.evidence or "source_cli.rs" in item.evidence for item in matching)
+
+
+def test_checker_skips_missing_source_cli_without_p4_flags(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert not any("source_cli.rs" in item.evidence for item in flags), flags
+
+
 def test_checker_flags_hub_real_tei_pooling_sections_with_biblstruct(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     target = tmp_path / "crates/da-parse/src/real_tei_tests.rs"

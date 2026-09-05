@@ -777,6 +777,22 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "parse-pdf stamps P4 observe from Java citation_n",
                 "missing stamp_p4_references_observe",
             )
+        if 'citation_names_not_biblstruct".into(), 2198.into()' in src or 'citation_names_not_biblstruct".into(),2198.into()' in src:
+            flag(
+                "acceptance_same_n_drift",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#stamp_p4_references_observe",
+                "citation_names_not_biblstruct true, citation-names 2198 stays off java_citation_n",
+                "citation_names_not_biblstruct 2198",
+            )
+        if 'citation_names_not_biblstruct".into(), java_citation_n.into()' in src:
+            flag(
+                "acceptance_same_n_drift",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#stamp_p4_references_observe",
+                "citation_names_not_biblstruct true, citation-names stay off java_citation_n",
+                "citation_names_not_biblstruct pooled with java_citation_n",
+            )
         if "stamp_p6_visual_observe" not in src:
             flag(
                 "policy_stamp",

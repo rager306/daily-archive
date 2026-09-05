@@ -1,72 +1,20 @@
-# continue — M466 S01–S03 scanner honesty in git; remaining lift gaps
+# continue — M493-jzmctv GROBID cascade honesty then FSM then one family shadow
 
-## Active state (updated 2026-09-04 after M466/S03)
+## Active state (updated 2026-09-05 after M493 plan)
 
-Conservation scanner is honest: header biblStruct is not a citation; caption
-heads are not sections; bibr without target is not linkage_loss. Acceptance
-evidence regenerated (FAIL, no_silent_loss=false). Remaining true lift gaps:
-extra body heads hub=1 rlm=6, rlm linkage_loss=1. Graph frozen. D127 false.
-Java production_route. Do not candidate-promote families.
-Product: `M446-rw9a2p` S03 still 23/25, pending T24/T25.
+parse-pdf merges cascade_observe.P0+P1+P2+P3+P4+P6+P7+P8+P9. P5 stays
+accountant_later. Java GROBID is production_route. Native stays shadow.
+Graph frozen. D127 false. Next: GSD auto M493-jzmctv starting at S01
+(P4 citation-names flag, not count 2198). Do not splice. Do not add
+later names to DecisionPoint. Do not close 20 vs 21 by compose.
+Product: `M446-rw9a2p` S03 still 23/25.
 Branch `feat/da-parse`.
 
+## GSD auto
+
 ```text
-branch: feat/da-parse
-HEAD:   6b941d02b (doctor snapshot of continue.md only; parent 549e333e1)
-GROBID: alive (http://127.0.0.1:8070/api/isalive → true)
+/gsd auto M493-jzmctv
 ```
 
-## Running processes (as of health repair)
-
-- Locked auto `bg_908cbcb4` / PID 893498 is **dead**. Doctor could not see it
-  as a crash lock (`workers.status=stopping` with no in-flight dispatch).
-  Engine `forceReleaseLeasesForWorker` released the expired M446 lease
-  (fencing_token 41). A new locked auto is allowed.
-- Supervisor `eval_batch` PID 863349/863363 was also dead at health time.
-  Check `/tmp/m446_eval_batch.log` before starting another eval_batch.
-
-## What shipped this session
-
-1. **mixed-source liquidated (user order)**: 75 unique articles moved to
-   typed arXiv categories (primary_category via live arXiv API, network
-   authorized by user — D320), 13 byte-identical dups deleted, stale
-   `2501.07811` mixed copy deleted (typed cs-se canonical per arXiv
-   primary + sweep). 4 PDF-less articles fetched live from arXiv.
-   Backup manifest: `artifacts/mixed_source_backup_manifest.json`.
-   Commits: `abb8aa6c4` (consolidation) + `33d9bbc1b` (gold dedup fix:
-   byte-identical → deterministic path choice, real conflicts stay
-   fail-closed) + `b23b7f829` (recovery-merge bare-ID normalization).
-2. **Honest denominators proven**: inventory 807 − 200 gold (excluded by
-   design, go through eval_batch) = 607 non-gold; report closed 612/612;
-   run **594 completed / 0 failed / 0 replay_noop**; drift 0 alarms.
-   `papers_removed` vs the 589-baseline is expected for gold IDs.
-3. **Unicode span panic fixed** (`ee65b756d`): `RuleBasedExtractor`
-   clamps all projected spans to UTF-8 boundaries (was panic on `•`
-   in 2005.14165). Suite 51 passed; single-paper probe 1/0.
-4. **Sweep resume made cumulative** (`d8c011a97`, `5729c78ba`): runner
-   preserves prior typed rows; Verify is read-only (mutating sweep in
-   Verify trips gsd-source-integrity — proven twice).
-5. T04–T22 sealed except T22-light-core; T22 split into T23/T24/T25
-   (monolithic Verify exceeds 600s exec cap — proven exit 124).
-
-## Next action
-
-1. Wait for `bg_2894ad34` eval_batch → collect micro/macro F1 from
-   `/tmp/m446_eval_batch.log` (need micro ≥0.869, macro ≥0.859; do NOT
-   edit gold on failure).
-2. T23 consumes F1 evidence → T24 (index bench on sealed snapshot) →
-   T25 (governor architecture) → validate → complete M446.
-3. If headless stalls on closeout-backstop again (recurring lifecycle
-   bug: `Host verification requires the latest succeeded canonical
-   Attempt`), use sanctioned recovery: `gsd_task_recovery_resume` +
-   clear paused KV via `db/runtime-kv.js` + locked headless restart.
-   Never hand-edit `gsd.db`; never run two locked autos.
-
-## Locks
-
-- `import_eligible=false`; D127 unchanged. No archived extraction/
-  embedding payloads as current evidence (baseline-only).
-- D320: user authorized live arXiv network (API + PDF fetch).
-- Single cargo writer; per-crate commands only (rocksdb trap).
-- `data/sources/arxiv` is git-ignored except MANIFEST/SCHEMA;
-  `artifacts/catalog_sweep/pipeline_cache/` local-only (git info/exclude).
+S01 is planned. S02-S05 are executable honesty. S06-S12 are sketches.
+Graph is out of this milestone.
