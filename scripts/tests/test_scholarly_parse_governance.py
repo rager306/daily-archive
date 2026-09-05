@@ -20,6 +20,7 @@ import yaml
 from governor.adapters.checks.scholarly_parse_plane import (
     _cascade_observe_tokens,
     _check_scholarly_parse_plane,
+    _empty_native_consult_tokens,
 )
 from governor.application.trajectory_service import TrajectoryService
 
@@ -666,6 +667,85 @@ def test_checker_registration_is_present_for_active_and_closeout_reports():
     assert "def build_report(self, phase: str = \"preflight\")" in build_report
     assert "phase=phase" in build_report
     assert "_check_scholarly_parse_plane" in build_report
+
+
+def test_empty_native_consult_tokens_derive_snake_and_pascal_from_data():
+    payload = yaml.safe_load((ROOT / "data/policies/registry.yaml").read_text(encoding="utf-8"))
+    consult = payload.get("consult_status") or {}
+    assert _empty_native_consult_tokens(consult) == [
+        ("concurrency_tune", "ConcurrencyTune"),
+        ("retry_policy", "RetryPolicy"),
+        ("summary_depth", "SummaryDepth"),
+    ]
+    synthetic = _empty_native_consult_tokens({"empty_native_unknown_point": ["my_point", " a_b ", 7, "", None]})
+    assert synthetic == [("my_point", "MyPoint"), ("a_b", "AB")]
+
+
+def test_empty_native_consult_tokens_rejects_malformed_without_invented_fallback():
+    assert _empty_native_consult_tokens(None) == []
+    assert _empty_native_consult_tokens({}) == []
+    assert _empty_native_consult_tokens({"empty_native_unknown_point": "concurrency_tune"}) == []
+    assert _empty_native_consult_tokens({"empty_native_unknown_point": [None, 7, "  "]}) == []
+    names = {snake for snake, _ in _empty_native_consult_tokens(
+        {"empty_native_unknown_point": ["concurrency_tune", "retry_policy", "summary_depth"]})}
+    assert "batch_admission" not in names
+    assert not names & {"head_fallback", "visual_bundle", "critic_sample"}
+
+
+def _source_cli_policy_stamp_flags(flags):
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    return [item for item in matching if "source_cli.rs#empty_native_unknown_point" in item.evidence]
+
+
+def test_checker_flags_empty_native_live_snake_consult_in_source_cli(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("// live consult concurrency_tune stays here\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _source_cli_policy_stamp_flags(flags)
+    assert matching, flags
+    assert all("plane=integration" in item.evidence and "violation=policy_stamp" in item.evidence for item in matching)
+    hit = next(item for item in matching if "concurrency_tune" in item.evidence)
+    assert "crates/da-cli/src/source_cli.rs" in hit.evidence
+    assert "UnknownPoint" in hit.evidence
+
+
+def test_checker_flags_empty_native_live_pascal_consult_in_source_cli(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("let p = DecisionPoint::RetryPolicy;\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _source_cli_policy_stamp_flags(flags)
+    assert matching, flags
+    hit = next(item for item in matching if "retry_policy" in item.evidence)
+    assert "crates/da-cli/src/source_cli.rs" in hit.evidence
+    assert "DecisionPoint::RetryPolicy" in hit.evidence
+    assert "UnknownPoint" in hit.evidence
+
+
+def test_checker_empty_native_source_cli_scan_is_data_driven(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/policies/registry.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    status = payload.setdefault("consult_status", {})
+    status["empty_native_unknown_point"] = ["retry_policy", "summary_depth"]
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("// live consult concurrency_tune stays here\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _source_cli_policy_stamp_flags(flags) == [], flags
+
+
+def test_checker_empty_native_scan_ignores_batch_admission_and_later(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/source_cli.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("let a = DecisionPoint::BatchAdmission; // head_fallback visual_bundle critic_sample\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _source_cli_policy_stamp_flags(flags) == [], flags
 
 
 def test_checker_does_not_replace_independent_promotion_contract():
