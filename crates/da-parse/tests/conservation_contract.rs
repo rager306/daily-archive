@@ -26,12 +26,13 @@
 //! Baseline semantics on preserved GROBID TEI (pinned, deterministic): the
 //! scanner does not count the paper's own header `sourceDesc`/`biblStruct`
 //! as a citation, and does not count figure caption `<head>` as a section.
-//! Remaining typed loss is extra body heads the nested-div lifter does not
-//! emit, plus a small leftover of targeted bibr anchors the lifter does not
-//! attach (`linkage_loss`, currently rlm=1). Unresolved bibr without a
-//! `target` is a typed CrossReference remainder, not linkage loss. The
-//! pristine verdict stays `loss_detected` while those remain. Replay equality
-//! is byte-identical. Injected losses are asserted relative to that pinned
+//! Remaining typed loss after three-region scanner honesty is CountMismatch
+//! on Section: the flat GROBID `<head>` scan still emits figure caption heads
+//! as sections (S02). Annex `<head>` in `<back>` is not a section; a targeted
+//! bibr in `<back>` is a typed CrossReference remainder, not linkage loss.
+//! Back `biblStruct` stays CitationEntry. The pristine verdict stays
+//! `loss_detected` while caption heads inflate the IR. Replay equality is
+//! byte-identical. Injected losses are asserted relative to that pinned
 //! baseline.
 //!
 //! Since S07/T04 the lifted P0 families (header authors, non-table figures,
@@ -237,14 +238,15 @@ struct Pins {
     cross_refs: usize,
     /// Visual callouts lifted since S07/T03 (figure + table refs).
     visual_callouts: usize,
-    /// Pinned this-cut loss: `<head>` occurrences the lifter does not emit
-    /// (trailing caption heads). Frozen deterministic finding.
+    /// Pinned this-cut loss: body `<head>` occurrences the lifter does not
+    /// emit. Zero after three-region honesty (annex heads are not sections).
     section_missing: usize,
-    /// Pinned this-cut loss: the header `sourceDesc`/`biblStruct` entry is
-    /// not lifted (exactly one per document). Frozen deterministic finding.
+    /// Pinned this-cut loss: header `sourceDesc`/`biblStruct` counted as a
+    /// cited work. Zero after scanner honesty.
     citation_missing: usize,
-    /// Pinned this-cut loss: source `<ref type="bibr">` anchors whose linkage
-    /// is not carried by the IR (anchors outside section windows).
+    /// Pinned this-cut loss: body `<ref type="bibr" target>` anchors whose
+    /// linkage is not carried by the IR. Zero after three-region honesty
+    /// (back targeted bibr is a CrossReference remainder).
     linkage_loss: usize,
 }
 
@@ -261,7 +263,7 @@ fn pins_for(paper_id: &str) -> Pins {
             authors: 21,
             figures: 22,
             coordinates: Some(1),
-            section_missing: 1,
+            section_missing: 0,
             citation_missing: 0,
             linkage_loss: 0,
             idnos_arxiv: 1,
@@ -279,12 +281,12 @@ fn pins_for(paper_id: &str) -> Pins {
             authors: 4,
             figures: 29,
             coordinates: Some(25),
-            section_missing: 6,
+            section_missing: 0,
             citation_missing: 0,
-            linkage_loss: 1,
+            linkage_loss: 0,
             idnos_arxiv: 1,
             idnos_other: 1,
-            cross_refs: 66,
+            cross_refs: 67,
             visual_callouts: 36,
         },
         // "Large bibliography pin: citations >= 70. 11 header authors, 55
@@ -566,7 +568,7 @@ async fn preserved_source_inventory_is_complete_ordered_and_bounded() {
         assert_eq!(
             delta.verdict,
             ConservationVerdict::LossDetected,
-            "{case}: this cut still loses out-of-window bibr anchors — pinned, never silent",
+            "{case}: this cut still mismatches caption heads the flat lifter emits as sections — pinned, never silent",
             case = fixture.case_id
         );
         assert_eq!(delta.identity.backend_id, CACHED_TEI_BACKEND_ID);

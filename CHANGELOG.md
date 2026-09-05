@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-04 — M467-ase1bu/S01: three-region scanner honesty for back annex
+
+ConservationEngine now has three TEI regions: header, body, back. Annex `<head>`
+in `<back>` is not a Section. A targeted `<ref type="bibr">` in `<back>` is a
+typed CrossReference remainder, not CitationAnchor linkage_loss. Back
+`biblStruct` stays CitationEntry (bibliography lives there). Pins:
+section_missing 0/0/0, linkage_loss 0/0/0, rlm cross_refs 67. Remaining
+LossDetected is CountMismatch: the flat GROBID head scan still emits figure
+caption heads as sections (S02). Java production_route. No graph. D127 false.
+
+Green: conservation lib 9; conservation_contract 14; conservation_properties 6.
+
 ## 2026-09-04 — M466-xxitm7/S03: honest acceptance evidence after scanner rewrite
 
 Regenerated artifacts/parse_compat/acceptance_evidence.json from ConservationEngine.

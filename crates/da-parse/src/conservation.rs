@@ -24,12 +24,14 @@
 //! - header region (before `<body`): first `<title>` → [`ConservationFamily::Title`],
 //!   first `<abstract>` → [`ConservationFamily::Abstract`], `<persName>` →
 //!   [`ConservationFamily::Author`], `<idno>` → [`ConservationFamily::ArticleIdno`];
-//! - body region: `<head>` outside `<figure>` → [`ConservationFamily::Section`],
-//!   body `<biblStruct>` → [`ConservationFamily::CitationEntry`] (header
-//!   `sourceDesc` biblStruct is the paper itself, not a cited work), body
+//! - body region (`<body>…</body>`): `<head>` outside `<figure>` → [`ConservationFamily::Section`],
 //!   `<ref type="bibr" target>` → [`ConservationFamily::CitationAnchor`]
-//!   (bibr without `target` is an unresolved GROBID marker, not a lost
-//!   linkage; it is a typed CrossReference remainder), other `<ref>`/`<xref>` →
+//!   (bibr without `target`, and any bibr in `<back>`, is an unresolved or
+//!   annex marker — a typed CrossReference remainder, not a lost body
+//!   linkage). Annex `<head>` in `<back>` is not a section.
+//! - back / not-header region: `<biblStruct>` → [`ConservationFamily::CitationEntry`]
+//!   (header `sourceDesc` biblStruct is the paper itself, not a cited work),
+//!   other `<ref>`/`<xref>` →
 //!   [`ConservationFamily::CrossReference`], `<ptr>` → [`ConservationFamily::Link`],
 //!   `<note>` → [`ConservationFamily::Note`], non-table `<figure>` →
 //!   [`ConservationFamily::Figure`], `<table>` → [`ConservationFamily::Table`],
@@ -1491,6 +1493,10 @@ fn scan_source(raw: &[u8]) -> ConservationInventory {
         .iter()
         .find(|t| t.kind == TagKind::Open && raw[t.name.0..t.name.1] == *b"body")
         .map(|t| t.start);
+    let body_end = tokens
+        .iter()
+        .find(|t| t.kind == TagKind::Close && raw[t.name.0..t.name.1] == *b"body")
+        .map(|t| t.start);
     let elements = match_elements(&tokens, raw);
 
     let mut inv = ConservationInventory::default();
@@ -1499,7 +1505,15 @@ fn scan_source(raw: &[u8]) -> ConservationInventory {
 
     for elem in &elements {
         let region_header = body_start.is_none_or(|bs| elem.span.0 < bs);
-        let classified = classify_element(elem, region_header, &mut title_seen, &mut abstract_seen);
+        let region_body = body_start
+            .is_some_and(|bs| elem.span.0 >= bs && body_end.is_none_or(|be| elem.span.0 < be));
+        let classified = classify_element(
+            elem,
+            region_header,
+            region_body,
+            &mut title_seen,
+            &mut abstract_seen,
+        );
 
         // Structural damage on elements outside every conservation family
         // (stray/unclosed structural containers, bare closes) must stay
@@ -1580,10 +1594,14 @@ fn scan_source(raw: &[u8]) -> ConservationInventory {
 fn classify_element(
     elem: &Elem,
     region_header: bool,
+    region_body: bool,
     title_seen: &mut bool,
     abstract_seen: &mut bool,
 ) -> Option<(ConservationFamily, Option<ConservationSubtype>)> {
-    let body = !region_header;
+    // Bibliography, notes, ptrs and figures live in `<back>` as well as
+    // `<body>`. Only Section windows and citation-anchor linkage are
+    // body-scoped (TeiLifter extract_sections / extract_citations).
+    let not_header = !region_header;
     match elem.name.as_str() {
         "title" if region_header && !elem.inside_bibl && !*title_seen => {
             *title_seen = true;
@@ -1606,23 +1624,28 @@ fn classify_element(
             Some((ConservationFamily::ArticleIdno, subtype))
         }
         // Body `<head>` outside a figure/table wrapper is a section window.
-        // Caption heads live inside `<figure>` and are not sections.
-        "head" if body && elem.inside_figure.is_none() => Some((ConservationFamily::Section, None)),
+        // Caption heads live inside `<figure>` and are not sections. Annex
+        // heads live in `<back>` and are not body sections.
+        "head" if region_body && elem.inside_figure.is_none() => {
+            Some((ConservationFamily::Section, None))
+        }
         // Bibliography entries are back-matter `<biblStruct>`. The paper's
         // own header `<sourceDesc><biblStruct>` is not a cited work.
-        "biblStruct" if body => Some((ConservationFamily::CitationEntry, None)),
-        "ref" if body && !elem.inside_bibl => {
+        "biblStruct" if not_header => Some((ConservationFamily::CitationEntry, None)),
+        "ref" if not_header && !elem.inside_bibl => {
             let ref_type = attr_value(&elem.attrs, "type");
             if ref_type.as_deref() == Some("bibr") {
-                if attr_value(&elem.attrs, "target").is_some() {
+                if region_body && attr_value(&elem.attrs, "target").is_some() {
                     Some((ConservationFamily::CitationAnchor, None))
                 } else {
-                    // GROBID unresolved marker: no target, not a lost linkage.
+                    // Unresolved body marker, or a targeted/untargeted bibr
+                    // in annex/back: not a lost body linkage.
                     Some((ConservationFamily::CrossReference, None))
                 }
             } else {
                 // S07/T04: figure/table refs are the lifted visual-callout
-                // occurrences; every other ref kind stays unsupported.
+                // occurrences (body and post-body); every other ref kind
+                // stays unsupported.
                 let subtype = match ref_type.as_deref() {
                     Some("figure") => Some(ConservationSubtype::FigureRef),
                     Some("table") => Some(ConservationSubtype::TableRef),
@@ -1631,13 +1654,15 @@ fn classify_element(
                 Some((ConservationFamily::CrossReference, subtype))
             }
         }
-        "xref" if body && !elem.inside_bibl => Some((ConservationFamily::CrossReference, None)),
+        "xref" if not_header && !elem.inside_bibl => {
+            Some((ConservationFamily::CrossReference, None))
+        }
         // GROBID emits link <ptr> elements inside <biblStruct> (relatedItem
         // URLs) — they are the document's observed link family; the header
-        // region stays out of scope via the body guard.
-        "ptr" if body => Some((ConservationFamily::Link, None)),
-        "note" if body && !elem.inside_bibl => Some((ConservationFamily::Note, None)),
-        "figure" if body => {
+        // region stays out of scope via the not-header guard.
+        "ptr" if not_header => Some((ConservationFamily::Link, None)),
+        "note" if not_header && !elem.inside_bibl => Some((ConservationFamily::Note, None)),
+        "figure" if not_header => {
             if attr_value(&elem.attrs, "type").as_deref() == Some("table") {
                 // Table wrapper: the `<table>` element itself is the observed
                 // Table family member (mirrors the lifter's table iteration).
@@ -1646,7 +1671,7 @@ fn classify_element(
                 Some((ConservationFamily::Figure, None))
             }
         }
-        "table" if body => Some((ConservationFamily::Table, None)),
+        "table" if not_header => Some((ConservationFamily::Table, None)),
         "cell" => Some((ConservationFamily::TableCell, None)),
         "formula" => Some((ConservationFamily::Formula, None)),
         _ => None,
@@ -1882,6 +1907,60 @@ mod tests {
             "caption heads inside figure must not count as sections"
         );
         assert_eq!(source.count(ConservationFamily::Figure), 1);
+    }
+
+    #[test]
+    fn back_annex_head_is_not_a_section() {
+        let tei = concat!(
+            "<TEI><teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>",
+            "</fileDesc></teiHeader><text><body><div><head>Intro</head><p>x</p></div></body>",
+            "<back><div type=\"annex\"><head>A Extra Training</head><p>annex</p></div>",
+            "<div type=\"references\"><listBibl><biblStruct xml:id=\"b0\">",
+            "<analytic><title>Cited</title></analytic></biblStruct></listBibl></div></back></text></TEI>",
+        );
+        let envelope = TeiEnvelope::new(
+            tei.as_bytes().to_vec(),
+            TeiIdentity::new("cached-tei", "profile=test"),
+        );
+        let source = ConservationEngine::new().source_inventory(&envelope);
+        assert_eq!(
+            source.count(ConservationFamily::Section),
+            1,
+            "annex heads in back must not count as body sections"
+        );
+        assert_eq!(
+            source.count(ConservationFamily::CitationEntry),
+            1,
+            "back biblStruct must stay a cited work"
+        );
+    }
+
+    #[test]
+    fn back_targeted_bibr_is_not_a_citation_anchor() {
+        let tei = concat!(
+            "<TEI><teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>",
+            "</fileDesc></teiHeader><text><body><div><head>Intro</head>",
+            "<p>See <ref type=\"bibr\" target=\"#b0\">[1]</ref>.</p></div></body>",
+            "<back><div type=\"annex\"><p>Also <ref type=\"bibr\" target=\"#b0\">[1]</ref>.</p></div>",
+            "<listBibl><biblStruct xml:id=\"b0\">",
+            "<analytic><title>Cited</title></analytic></biblStruct></listBibl></back></text></TEI>",
+        );
+        let envelope = TeiEnvelope::new(
+            tei.as_bytes().to_vec(),
+            TeiIdentity::new("cached-tei", "profile=test"),
+        );
+        let source = ConservationEngine::new().source_inventory(&envelope);
+        assert_eq!(
+            source.count(ConservationFamily::CitationAnchor),
+            1,
+            "targeted bibr in back is not a lost body linkage"
+        );
+        assert_eq!(
+            source.count(ConservationFamily::CrossReference),
+            1,
+            "back targeted bibr is a typed cross-reference remainder"
+        );
+        assert_eq!(source.count(ConservationFamily::CitationEntry), 1);
     }
 
     #[test]
