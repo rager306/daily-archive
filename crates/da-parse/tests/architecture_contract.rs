@@ -2407,3 +2407,140 @@ fn native_visual_quarantine_scanner_fails_visible_on_synthetic_violations() {
         .is_empty()
     );
 }
+
+// ───── S06/T02: header atoms stay shadow — never in parse-pdf source_cli or ParserPort ─────
+//
+// Mirrors the Governor header quarantine (T01) as an independent compile/test
+// contract: the exact tokens `compose_header`, `run_header_sequence` and
+// `NativeDateParser` must not appear in code positions of the two production
+// boundaries. `//` comments (full-line and trailing) are stripped before the
+// scan; `decompose` never matches because the call-site `(` is required for
+// the snake_case atoms while NativeDateParser needs word boundaries.
+
+/// Production boundaries that must stay free of header atoms.
+const HEADER_QUARANTINE_BOUNDARIES: [&str; 2] = [
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+];
+
+/// Comment-stripped header-atom scan over code text. One hit per token per
+/// line; mirrors the Governor `_header_quarantine_tokens_present` semantics:
+/// snake_case atoms require a call-site `(`, NativeDateParser is word-bound.
+fn header_quarantine_hits(text: &str) -> Vec<String> {
+    let mut hits = Vec::new();
+    for (line_no, raw) in strip_line_comments(text).lines().enumerate() {
+        // `strip_line_comments` blanks full-line prose; trailing `//` prose
+        // is cut here so evidence comments never flag (Governor parity).
+        let code = match raw.find("//") {
+            Some(cut) => &raw[..cut],
+            None => raw,
+        };
+        for token in ["compose_header", "run_header_sequence"] {
+            let bytes = code.as_bytes();
+            let needle = token.as_bytes();
+            let mut i = 0;
+            let mut found = false;
+            while i + needle.len() <= bytes.len() {
+                if &bytes[i..i + needle.len()] == needle {
+                    let before_ok =
+                        i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_');
+                    if before_ok {
+                        let mut j = i + needle.len();
+                        while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+                            j += 1;
+                        }
+                        if j < bytes.len() && bytes[j] == b'(' {
+                            found = true;
+                            break;
+                        }
+                    }
+                    i += needle.len();
+                } else {
+                    i += 1;
+                }
+            }
+            if found {
+                hits.push(format!(
+                    "[header-quarantine] line {}: atom `{token}`: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+        let ident: &[u8] = b"NativeDateParser";
+        let bytes = code.as_bytes();
+        let mut i = 0;
+        let mut found = false;
+        while i + ident.len() <= bytes.len() {
+            if &bytes[i..i + ident.len()] == ident {
+                let before_ok =
+                    i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_');
+                let after = i + ident.len();
+                let after_ok = after >= bytes.len()
+                    || !(bytes[after].is_ascii_alphanumeric() || bytes[after] == b'_');
+                if before_ok && after_ok {
+                    found = true;
+                    break;
+                }
+                i += ident.len();
+            } else {
+                i += 1;
+            }
+        }
+        if found {
+            hits.push(format!(
+                "[header-quarantine] line {}: atom `NativeDateParser`: {}",
+                line_no + 1,
+                raw.trim()
+            ));
+        }
+    }
+    hits
+}
+
+#[test]
+fn header_quarantine_scanner_fails_visible_on_synthetic_atoms() {
+    let synthetic = "fn run() {\n    compose_header(input);\n    run_header_sequence(seq);\n    let _ = NativeDateParser;\n}\n";
+    let hits = header_quarantine_hits(synthetic);
+    assert_eq!(hits.len(), 3, "each header atom must flag: {hits:?}");
+    assert!(hits.iter().any(|h| h.contains("compose_header")));
+    assert!(hits.iter().any(|h| h.contains("run_header_sequence")));
+    assert!(hits.iter().any(|h| h.contains("NativeDateParser")));
+    // Comments are prose, not splice; `decompose` is a different word.
+    let prose = "// compose_header run_header_sequence NativeDateParser are prose\nlet x = decompose(y); // compose_header(input);\n";
+    assert!(
+        header_quarantine_hits(prose).is_empty(),
+        "prose comments and `decompose` must not flag"
+    );
+}
+
+#[test]
+fn parse_pdf_source_cli_and_parser_port_stay_free_of_header_atoms() {
+    let mut leaked = Vec::new();
+    for rel in HEADER_QUARANTINE_BOUNDARIES {
+        let text = read_text(rel);
+        assert!(
+            text.len() > 1_000,
+            "positive control failed: {rel} looks truncated"
+        );
+        for hit in header_quarantine_hits(&text) {
+            leaked.push(format!("{rel}: {hit}"));
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "header atoms leaked into a production boundary (shadow means never served):\n{}",
+        leaked.join("\n")
+    );
+}
+
+#[test]
+fn parse_pdf_p3_wires_java_lifted_header_authors_not_native_splice() {
+    let src = read_text("crates/da-cli/src/source_cli.rs");
+    let code = strip_line_comments(&src);
+    assert!(
+        code.contains("stamp_p3_header_observe(&mut m, parsed.header_authors.len())"),
+        "P3 must count Java-lifted ParsedArticle.header_authors"
+    );
+    assert!(header_quarantine_hits(&src).is_empty());
+}

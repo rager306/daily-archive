@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-05 — M493-jzmctv/S06 T02: Rust/DATA Java P3 contracts, hub 20 vs 21 stays DATA
+
+Header atoms stay shadow: `compose_header`, `run_header_sequence` and
+`NativeDateParser` stay out of parse-pdf and ParserPort. P3 stamps Java
+`ParsedArticle.header_authors`. Hub native 20 vs Java 21 is a named
+`java_lift_same_n` DATA gap, not compose. No splice. No graph. D127 false.
+
+Green: da-parse architecture + data contracts; Governor quarantine 151.
+
 ## 2026-09-05 — M492-k0s52t/S01: P3 observe must not hardcode hub native 20
 
 stamp_p3 writes named_native_accepted_gap as a boolean flag, not count 20.

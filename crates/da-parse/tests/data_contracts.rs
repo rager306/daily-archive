@@ -5224,3 +5224,139 @@ fn rejects_native_date_obligation_removal_and_invented_binding() {
     let errs2 = validate_manifest(&m2, &refs);
     negative("[unresolved-ledger-ref]", &errs2, "invented date binding");
 }
+
+// ───── S06/T02: hub 20 vs Java 21 stays a named DATA gap, never pooled or composed ─────
+//
+// The Hub 2507.19457 header gap — native accepted 20 vs Java header_raw 21 —
+// is a NAMED receipt pair in DATA (`java_lift_same_n`), not a per-article
+// count and not a poolable denominator. This validator reads the live
+// `data/parse/comparison_contract.yaml` block and pins:
+// - hub_native_accepted_header == 20, hub_java_header_raw == 21;
+// - java_header_authors_equals == header_raw_total (Java truth, not native);
+// - both pooling keys == forbidden;
+// - no compose/pooling vocabulary substituted into the named keys.
+
+fn validate_java_lift_same_n_gap(contract: &serde_yaml::Value) -> Vec<String> {
+    let mut errs = Vec::new();
+    let Some(gap) = contract
+        .get("native_fulltext_composition_shadow")
+        .and_then(|v| v.get("source_evidence"))
+        .and_then(|v| v.get("s12_named_denominators"))
+        .and_then(|v| v.get("java_lift_same_n"))
+    else {
+        return vec!["[hub-header-gap-lost] java_lift_same_n block missing".into()];
+    };
+    if gap
+        .get("hub_native_accepted_header")
+        .and_then(|v| v.as_i64())
+        != Some(20)
+    {
+        errs.push(format!(
+            "[hub-header-gap-drift] hub_native_accepted_header must stay 20, got {:?}",
+            gap.get("hub_native_accepted_header")
+        ));
+    }
+    if gap.get("hub_java_header_raw").and_then(|v| v.as_i64()) != Some(21) {
+        errs.push(format!(
+            "[hub-header-gap-drift] hub_java_header_raw must stay 21, got {:?}",
+            gap.get("hub_java_header_raw")
+        ));
+    }
+    if gap
+        .get("java_header_authors_equals")
+        .and_then(|v| v.as_str())
+        != Some("header_raw_total")
+    {
+        errs.push(
+            "[hub-header-gap-drift] java_header_authors_equals must stay header_raw_total".into(),
+        );
+    }
+    for key in [
+        "pooling_accepted_with_raw",
+        "pooling_citation_names_with_references",
+    ] {
+        if gap.get(key).and_then(|v| v.as_str()) != Some("forbidden") {
+            errs.push(format!(
+                "[hub-header-gap-drift] `{key}` must stay forbidden"
+            ));
+        }
+    }
+    for (key, forbidden_substring) in [
+        ("hub_native_accepted_header", "compose"),
+        ("hub_java_header_raw", "compose"),
+        ("java_header_authors_equals", "compose"),
+    ] {
+        if gap
+            .get(key)
+            .and_then(|v| v.as_str())
+            .is_some_and(|s| s.contains(forbidden_substring))
+        {
+            errs.push(format!(
+                "[hub-header-gap-drift] `{key}` acquired compose vocabulary"
+            ));
+        }
+    }
+    errs
+}
+
+#[test]
+fn hub_native_20_vs_java_21_stays_named_without_pooling_or_compose() {
+    let contract: serde_yaml::Value =
+        load_yaml(COMPARISON_CONTRACT_REL).expect("comparison contract");
+    let errs = validate_java_lift_same_n_gap(&contract);
+    assert!(
+        errs.is_empty(),
+        "hub header gap DATA violations:\n{}",
+        errs.join("\n")
+    );
+}
+
+#[test]
+fn rejects_hub_gap_drift_pooling_or_compose_substitution() {
+    let contract: serde_yaml::Value =
+        load_yaml(COMPARISON_CONTRACT_REL).expect("comparison contract");
+    // Drift of either named denominator must fail loudly.
+    let mut drifted = contract.clone();
+    drifted["native_fulltext_composition_shadow"]["source_evidence"]["s12_named_denominators"]["java_lift_same_n"]
+        ["hub_native_accepted_header"] = serde_yaml::Value::Number(21.into());
+    negative(
+        "[hub-header-gap-drift]",
+        &validate_java_lift_same_n_gap(&drifted),
+        "hub native 20 drifted to 21",
+    );
+    let mut drifted = contract.clone();
+    drifted["native_fulltext_composition_shadow"]["source_evidence"]["s12_named_denominators"]["java_lift_same_n"]
+        ["hub_java_header_raw"] = serde_yaml::Value::Number(20.into());
+    negative(
+        "[hub-header-gap-drift]",
+        &validate_java_lift_same_n_gap(&drifted),
+        "hub Java 21 drifted to 20",
+    );
+    // Pooling erosion must fail loudly.
+    let mut pooled = contract.clone();
+    pooled["native_fulltext_composition_shadow"]["source_evidence"]["s12_named_denominators"]["java_lift_same_n"]
+        ["pooling_accepted_with_raw"] = serde_yaml::Value::String("allowed".into());
+    negative(
+        "[hub-header-gap-drift]",
+        &validate_java_lift_same_n_gap(&pooled),
+        "pooling_accepted_with_raw erosion",
+    );
+    // Compose vocabulary substituted into a named key must fail loudly.
+    let mut composed = contract.clone();
+    composed["native_fulltext_composition_shadow"]["source_evidence"]["s12_named_denominators"]["java_lift_same_n"]
+        ["java_header_authors_equals"] = serde_yaml::Value::String("compose_header".into());
+    negative(
+        "[hub-header-gap-drift]",
+        &validate_java_lift_same_n_gap(&composed),
+        "compose vocabulary in java_header_authors_equals",
+    );
+    // A removed block is loss, not silence.
+    let mut removed = contract.clone();
+    removed["native_fulltext_composition_shadow"]["source_evidence"]["s12_named_denominators"] =
+        serde_yaml::Mapping::new().into();
+    negative(
+        "[hub-header-gap-lost]",
+        &validate_java_lift_same_n_gap(&removed),
+        "removed s12_named_denominators",
+    );
+}
