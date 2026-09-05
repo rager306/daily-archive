@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-04 — M466-xxitm7/S03: honest acceptance evidence after scanner rewrite
+
+Regenerated artifacts/parse_compat/acceptance_evidence.json from ConservationEngine.
+Verdict stays FAIL: remaining extra body heads (hub 1, rlm 6) and rlm
+linkage_loss=1 are still typed losses. no_silent_loss stays false. SHA bound
+in scholarly_parse_plane in the same change. Java production_route. No graph.
+D127 false.
+
+Green: acceptance_evidence offline; test_scholarly_parse_governance 83.
+
 ## 2026-09-04 — M466-xxitm7/S02: unresolved bibr is not linkage loss
 
 A GROBID `<ref type="bibr">` without `target` is an unresolved marker, not a
