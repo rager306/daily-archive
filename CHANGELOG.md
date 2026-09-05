@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-05 — M478-k37wo4/S01: DATA maps P0-P9 cascade stages onto Java native and FSM
+
+cascade_stages lists ten parse stages. P0 consults grammar_route and
+profile_route. P3 header native is shadow_receipt, not production.
+Governor flags native production_authority or empty-native fsm_consult.
+SHA rebound in the same change. da-parse modules unchanged. No splice.
+No graph. D127 false.
+
+Green: scholarly_parse_governance 91.
+
 ## 2026-09-05 — M477-m1qp4n/S01: demo sona-policy stamps consult_status and refuses empty-native
 
 run_sona_policy reads consult_status. Empty-native and later are refused
