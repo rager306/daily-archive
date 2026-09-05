@@ -1,13 +1,18 @@
 # continue — M493-jzmctv GROBID cascade honesty then FSM then one family shadow
 
-## Active state (updated 2026-09-05 after M493 plan)
+## Active state (updated 2026-09-05 after S11 T01 wedge W-a779222c)
 
-parse-pdf merges cascade_observe.P0+P1+P2+P3+P4+P6+P7+P8+P9. P5 stays
-accountant_later. Java GROBID is production_route. Native stays shadow.
-Graph frozen. D127 false. Next: GSD auto M493-jzmctv starting at S01
-(P4 citation-names flag, not count 2198). Do not splice. Do not add
-later names to DecisionPoint. Do not close 20 vs 21 by compose.
-Product: `M446-rw9a2p` S03 still 23/25.
+S01–S10 complete. S11 T01: PARSE_BARE fail-closed for parser lifetime
+(classifier in snapshot `5323ed18a`; clean-root test now DATA-rooted so
+live T02 constructor hits do not fail governance). Wedge **W-a779222c**
+(finalize-retry 2× on S11/T01 after pytest clean-root `== []`). Fix the
+test, acknowledge, restart **without** `--resume-wedge`.
+
+T02 pending: remaining corpus PDF call sites to structural constructor
+(`batch_promote_gold.rs`, `gepa_hub_research.rs`). Do not splice. Do not
+promote a native family. Do not close hub 20 vs 21 by compose. P5 stays
+accountant_later. `visual_bundle` stays later. Graph frozen. D127 false.
+Product: `M446-rw9a2p` is another train — do not steal auto onto it.
 Branch `feat/da-parse`.
 
 ## GSD auto
@@ -16,5 +21,5 @@ Branch `feat/da-parse`.
 /gsd auto M493-jzmctv
 ```
 
-S01 is planned. S02-S05 are executable honesty. S06-S12 are sketches.
-Graph is out of this milestone.
+Lock the suffixed id. S06–S12 are sketches: quarantine then later freeze
+then no family promote. Graph is out of this milestone.

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-05 — M493-jzmctv/S11 T01: PARSE_BARE fail-closed for parser lifetime
+
+Governor classifies `GrobidParser::from_env()` by binding use in the enclosing
+fn, not by a nearby `is_alive` token. Health then `parse_pdf` on the same
+binding is `PARSE_BARE`. Pure health-only, `with_profile`, helper, tests and
+comments stay allowed. Clean-root allows only DATA-rooted constructor hits
+under declared `scan_roots`; remaining corpus examples stay T02 inventory.
+Filenames are not hardcoded. No splice. No graph. D127 false. P5 later.
+Hub 20 vs 21 stays DATA.
+
+Green: scholarly parse governance 222.
+
 ## 2026-09-05 — M493-jzmctv/S10 T01: six DecisionPoint variants and exact later set pinned
 
 Independent Rust DATA+architecture contracts pin six DecisionPoint wires and the

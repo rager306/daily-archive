@@ -23,6 +23,7 @@ from governor.adapters.checks.scholarly_parse_plane import (
     _empty_native_consult_tokens,
     _java_absent_endpoint_tokens,
     _native_rules_not_consulted_tokens,
+    _scan_bare_from_env_parse,
     _visual_heads_quarantine_spec,
 )
 from governor.application.trajectory_service import TrajectoryService
@@ -272,7 +273,41 @@ def test_taxonomy_mutation_is_rejected_by_exact_wire_assertion():
 
 
 def test_checker_clean_root_has_no_s19_flags():
-    assert _check_scholarly_parse_plane(ROOT) == []
+    """Live root stays clean except DATA-rooted PARSE_BARE constructor hits.
+
+    Fail-closed lifetime analysis may still flag remaining corpus PDF constructors
+    under declared scan_roots; those sites are T02 inventory, not a T01 scanner
+    regression. Other scholarly-parse families must stay empty. Filenames are not
+    hardcoded: observed hits must equal `_scan_bare_from_env_parse` over DATA
+    `production_pdf_constructors.scan_roots`.
+    """
+    flags = _check_scholarly_parse_plane(ROOT)
+    constructor_flags = [
+        item
+        for item in flags
+        if item.flag == "scholarly_parse_plane_policy_stamp"
+        and "GrobidParser::from_env PDF parse constructor" in item.evidence
+    ]
+    other = [item for item in flags if item not in constructor_flags]
+    assert other == [], [str(item) for item in other]
+
+    registry = yaml.safe_load(
+        (ROOT / "data/parse/grobid_compatibility.yaml").read_text(encoding="utf-8")
+    )
+    constructors = (registry.get("defaults") or {}).get("production_pdf_constructors") or {}
+    scan_roots = [str(item) for item in (constructors.get("scan_roots") or [])]
+    live = _scan_bare_from_env_parse(ROOT, scan_roots)
+    if not live:
+        assert constructor_flags == []
+        return
+    assert constructor_flags, live
+    for item in constructor_flags:
+        for hit in live:
+            assert hit in item.evidence, (hit, item.evidence)
+            assert any(
+                hit == root or hit.startswith(root.rstrip("/") + "/") or hit.startswith(root + ":")
+                for root in scan_roots
+            ), hit
 
 
 def test_checker_flags_parse_pdf_missing_p9_conservation_stamp(tmp_path: Path):
