@@ -324,6 +324,19 @@ def test_checker_flags_parse_pdf_missing_p3_observe_stamp(tmp_path: Path):
     assert any("source_cli.rs" in item.evidence for item in matching)
 
 
+def test_checker_flags_cascade_stage_later_as_fsm_consult(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/parse/grobid_compatibility.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    stages = payload.setdefault("defaults", {}).setdefault("cascade_stages", {})
+    stages.setdefault("P6", {})["fsm_consult"] = ["visual_bundle"]
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    assert matching, flags
+    assert any("fsm_consult" in item.evidence for item in matching)
+
+
 def test_checker_flags_cascade_stage_native_production(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     path = tmp_path / "data/parse/grobid_compatibility.yaml"

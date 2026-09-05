@@ -652,7 +652,7 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             expected_ids,
             list(stages.keys()),
         )
-    allowed_fsm = set(expected_parse) | {"none"} | set(expected_later)
+    allowed_fsm = set(expected_parse) | {"none"}
     for sid in expected_ids:
         row = stages.get(sid) or {}
         authority = str(row.get("production_authority") or "")
@@ -673,7 +673,15 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "policy_stamp",
                 "integration",
                 f"data/parse/grobid_compatibility.yaml#defaults.cascade_stages.{sid}.fsm_consult",
-                "subset of parse_pdf_consults or later or none",
+                "subset of parse_pdf_consults or none",
+                consults,
+            )
+        if set(consults) & set(expected_later):
+            flag(
+                "policy_stamp",
+                "integration",
+                f"data/parse/grobid_compatibility.yaml#defaults.cascade_stages.{sid}.fsm_consult",
+                "later names must not appear as fsm_consult",
                 consults,
             )
         if consults and any(item not in allowed_fsm for item in consults):
