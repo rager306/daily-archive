@@ -200,6 +200,21 @@ pub(crate) fn stamp_p8_consolidation_observe(
     merge_cascade_observe(m, "P8", p8);
 }
 
+/// P9 conservation is a candidate_lift honesty receipt.
+/// Tracked Conserved on preserved TEI is a DATA claim, not a this-run compare.
+/// The comparator stays in da-parse; parse-pdf does not call it.
+pub(crate) fn stamp_p9_conservation_observe(m: &mut serde_yaml::Mapping) {
+    let mut p9 = serde_yaml::Mapping::new();
+    p9.insert("stage".into(), "P9".into());
+    p9.insert("production_authority".into(), "tei_lift".into());
+    p9.insert("observe_mode".into(), "candidate_lift".into());
+    p9.insert("engine_called".into(), false.into());
+    p9.insert("computed_this_run".into(), false.into());
+    p9.insert("tracked_on_preserved_tei".into(), true.into());
+    p9.insert("tracked_verdict".into(), "conserved".into());
+    merge_cascade_observe(m, "P9", p9);
+}
+
 fn stamp_from_grammar(
     m: &mut serde_yaml::Mapping,
     g: &da_application::parse_grammar::ParseGrammarDecision,
@@ -1980,6 +1995,7 @@ pub fn run_parse_pdf(
         grobid_profile.consolidate_header(),
         grobid_profile.consolidate_citations(),
     );
+    stamp_p9_conservation_observe(&mut m);
     m.insert("lifecycle".into(), "parsed".into());
     let ev_raw = serde_yaml::Mapping::from_iter([
         ("stage".into(), "raw".into()),
@@ -3505,6 +3521,57 @@ mod tests {
             p3.get("java_header_n").and_then(|v| v.as_u64()),
             p3.get("named_native_accepted_gap").and_then(|v| v.as_u64()),
             "hub Java 21 must not be replaced by native accepted 20"
+        );
+    }
+
+    #[test]
+    fn stamp_p9_is_tracked_candidate_lift_not_this_run() {
+        let mut m = serde_yaml::Mapping::new();
+        stamp_p0_admit_observe(&mut m, true, true);
+        stamp_p1_layout_observe(&mut m, false);
+        stamp_p2_segmentation_observe(&mut m, 12);
+        stamp_p3_header_observe(&mut m, 21);
+        stamp_p4_references_observe(&mut m, 80);
+        stamp_p6_visual_observe(&mut m, 0, 0, 0, true, true);
+        stamp_p7_callout_observe(&mut m, 0, 0);
+        stamp_p8_consolidation_observe(&mut m, "structural", false, false);
+        stamp_p9_conservation_observe(&mut m);
+        let observe = m
+            .get("cascade_observe")
+            .and_then(|v| v.as_mapping())
+            .expect("cascade_observe");
+        for key in ["P0", "P1", "P2", "P3", "P4", "P6", "P7", "P8", "P9"] {
+            assert!(observe.contains_key(key), "{key} observe missing");
+        }
+        let p9 = observe
+            .get("P9")
+            .and_then(|v| v.as_mapping())
+            .expect("P9 observe");
+        assert_eq!(p9.get("stage").and_then(|v| v.as_str()), Some("P9"));
+        assert_eq!(
+            p9.get("production_authority").and_then(|v| v.as_str()),
+            Some("tei_lift")
+        );
+        assert_eq!(
+            p9.get("observe_mode").and_then(|v| v.as_str()),
+            Some("candidate_lift")
+        );
+        assert_eq!(
+            p9.get("engine_called").and_then(|v| v.as_bool()),
+            Some(false)
+        );
+        assert_eq!(
+            p9.get("computed_this_run").and_then(|v| v.as_bool()),
+            Some(false),
+            "tracked Conserved is not a this-run compare"
+        );
+        assert_eq!(
+            p9.get("tracked_on_preserved_tei").and_then(|v| v.as_bool()),
+            Some(true)
+        );
+        assert_eq!(
+            p9.get("tracked_verdict").and_then(|v| v.as_str()),
+            Some("conserved")
         );
     }
 

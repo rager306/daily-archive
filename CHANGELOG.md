@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-05 — M488-isklf9/S01: parse-pdf stamps P9 conservation observe without calling the engine
+
+parse-pdf merges cascade_observe.P9 as candidate_lift. production_authority
+is tei_lift. engine_called and computed_this_run are false. tracked_verdict
+is conserved. The comparator stays in da-parse. Governor flags a parse-pdf
+without the P9 stamp. No splice. No graph. D127 false.
+
+Green: da-cli lib source_cli 21; scholarly_parse_governance 101.
+
 ## 2026-09-05 — M487-mr0jkj/S01: parse-pdf stamps P8 consolidation observe from live profile
 
 parse-pdf merges cascade_observe.P8 from the live GrobidProfile.

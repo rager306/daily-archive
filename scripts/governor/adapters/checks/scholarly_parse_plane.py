@@ -784,6 +784,14 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "parse-pdf stamps P8 observe from live grobid profile",
                 "missing stamp_p8_consolidation_observe",
             )
+        if "stamp_p9_conservation_observe" not in src:
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#stamp_p9_conservation_observe",
+                "parse-pdf stamps P9 conservation as tracked candidate_lift",
+                "missing stamp_p9_conservation_observe",
+            )
         if "ConservationEngine" in src:
             flag(
                 "policy_stamp",
