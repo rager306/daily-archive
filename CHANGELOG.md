@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-05 — M483-x7e137/S01: P6 cascade map must not list later as fsm consult
+
+cascade_stages.P6.fsm_consult is none. visual_bundle stays later, not a
+DecisionPoint. Governor flags later names in fsm_consult. grobid_compatibility.yaml
+SHA rebound. No splice. No graph. D127 false.
+
+Green: scholarly_parse_governance 96.
+
 ## 2026-09-05 — M482-k8go0z/S01: parse-pdf stamps P6 visual observe beside Java
 
 parse-pdf merges cascade_observe.P6 from Java figures/tables/formulas.
