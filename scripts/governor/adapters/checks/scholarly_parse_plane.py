@@ -720,6 +720,14 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             src = source_cli.read_text(encoding="utf-8")
         except OSError as error:
             src = str(error)
+        if "stamp_p0_admit_observe" not in src:
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#stamp_p0_admit_observe",
+                "parse-pdf stamps P0 admit from live grammar and profile consults",
+                "missing stamp_p0_admit_observe",
+            )
         if "stamp_p2_segmentation_observe" not in src:
             flag(
                 "policy_stamp",

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-05 — M484-ra6fpq/S01: parse-pdf stamps P0 admit observe from live consults
+
+parse-pdf merges cascade_observe.P0 from live grammar_route and
+profile_route consults. observe_mode is production_stamp. native_surface
+is none. P2 P3 P4 P6 stay. Governor flags a parse-pdf without the P0
+stamp. No splice. No graph. D127 false.
+
+Green: da-cli lib source_cli 17; scholarly_parse_governance 97.
+
 ## 2026-09-05 — M483-x7e137/S01: P6 cascade map must not list later as fsm consult
 
 cascade_stages.P6.fsm_consult is none. visual_bundle stays later, not a

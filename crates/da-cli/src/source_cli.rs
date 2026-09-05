@@ -133,6 +133,23 @@ pub(crate) fn stamp_p6_visual_observe(
     merge_cascade_observe(m, "P6", p6);
 }
 
+/// P0 admit is a production_stamp from live grammar_route and profile_route.
+/// Native surface is none. Do not pool this row with P8 bibliographic consolidation.
+pub(crate) fn stamp_p0_admit_observe(
+    m: &mut serde_yaml::Mapping,
+    grammar_consulted: bool,
+    profile_consulted: bool,
+) {
+    let mut p0 = serde_yaml::Mapping::new();
+    p0.insert("stage".into(), "P0".into());
+    p0.insert("production_authority".into(), "java_http".into());
+    p0.insert("observe_mode".into(), "production_stamp".into());
+    p0.insert("grammar_consulted".into(), grammar_consulted.into());
+    p0.insert("profile_consulted".into(), profile_consulted.into());
+    p0.insert("native_surface".into(), "none".into());
+    merge_cascade_observe(m, "P0", p0);
+}
+
 fn stamp_from_grammar(
     m: &mut serde_yaml::Mapping,
     g: &da_application::parse_grammar::ParseGrammarDecision,
@@ -1885,6 +1902,7 @@ pub fn run_parse_pdf(
         None => stamp_policy_none(&mut m),
     }
     stamp_grobid_profile(&mut m, grobid_route);
+    stamp_p0_admit_observe(&mut m, grammar.is_some(), true);
     stamp_p2_segmentation_observe(&mut m, parsed.sections.len());
     stamp_p3_header_observe(&mut m, parsed.header_authors.len());
     stamp_p4_references_observe(&mut m, parsed.citations.len());
@@ -3421,6 +3439,56 @@ mod tests {
             p3.get("java_header_n").and_then(|v| v.as_u64()),
             p3.get("named_native_accepted_gap").and_then(|v| v.as_u64()),
             "hub Java 21 must not be replaced by native accepted 20"
+        );
+    }
+
+    #[test]
+    fn stamp_p0_merges_beside_families_as_production_stamp() {
+        let mut m = serde_yaml::Mapping::new();
+        stamp_p0_admit_observe(&mut m, true, true);
+        stamp_p2_segmentation_observe(&mut m, 12);
+        stamp_p3_header_observe(&mut m, 21);
+        stamp_p4_references_observe(&mut m, 80);
+        stamp_p6_visual_observe(&mut m, 0, 0, 0, true, true);
+        let observe = m
+            .get("cascade_observe")
+            .and_then(|v| v.as_mapping())
+            .expect("cascade_observe");
+        assert!(observe.contains_key("P0"), "P0 admit observe missing");
+        assert!(observe.contains_key("P2"), "P0 must not erase P2");
+        assert!(observe.contains_key("P3"), "P0 must not erase P3");
+        assert!(observe.contains_key("P4"), "P0 must not erase P4");
+        assert!(observe.contains_key("P6"), "P0 must not erase P6");
+        let p0 = observe
+            .get("P0")
+            .and_then(|v| v.as_mapping())
+            .expect("P0 observe");
+        assert_eq!(p0.get("stage").and_then(|v| v.as_str()), Some("P0"));
+        assert_eq!(
+            p0.get("production_authority").and_then(|v| v.as_str()),
+            Some("java_http")
+        );
+        assert_eq!(
+            p0.get("observe_mode").and_then(|v| v.as_str()),
+            Some("production_stamp"),
+            "P0 is live consult, not a native family shadow"
+        );
+        assert_eq!(
+            p0.get("grammar_consulted").and_then(|v| v.as_bool()),
+            Some(true)
+        );
+        assert_eq!(
+            p0.get("profile_consulted").and_then(|v| v.as_bool()),
+            Some(true)
+        );
+        assert_eq!(
+            p0.get("native_surface").and_then(|v| v.as_str()),
+            Some("none")
+        );
+        assert_ne!(
+            p0.get("observe_mode").and_then(|v| v.as_str()),
+            Some("shadow_receipt"),
+            "do not pool P0 admit with family shadow receipts"
         );
     }
 
