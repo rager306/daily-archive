@@ -103,12 +103,26 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
             and "production_consult" not in value
             and "profile_route_default" not in value
             and "bare_from_env_parse" not in value
+            and "parse_pdf_consults" not in value
+            and "empty_native_unknown_point" not in value
         ):
             return False
         if value.get("bare_from_env_parse") is True:
             return True
         sources = set(value.get("closed_sources") or [])
         if "profile_route_default" in value and value.get("profile_route_default") != "structural":
+            return True
+        consults = [str(item) for item in (value.get("parse_pdf_consults") or [])]
+        empty_native = [str(item) for item in (value.get("empty_native_unknown_point") or [])]
+        if set(consults) & set(empty_native):
+            return True
+        if "parse_pdf_consults" in value and consults != ["grammar_route", "profile_route"]:
+            return True
+        if "empty_native_unknown_point" in value and empty_native != [
+            "concurrency_tune",
+            "retry_policy",
+            "summary_depth",
+        ]:
             return True
         return "none" not in sources or value.get("production_consult") != "parse-pdf"
     if label == "silent_loss":
@@ -569,6 +583,44 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             "data/policies/registry.yaml#decision_points.profile_route.native.default",
             "structural",
             profile_native.get("default"),
+        )
+    consult = policy_reg.get("consult_status") or {}
+    parse_pdf = [str(item) for item in (consult.get("parse_pdf_consults") or [])]
+    empty_native = [str(item) for item in (consult.get("empty_native_unknown_point") or [])]
+    not_consulted = [str(item) for item in (consult.get("native_rules_not_consulted") or [])]
+    later = [str(item) for item in (consult.get("later") or [])]
+    expected_parse = ["grammar_route", "profile_route"]
+    expected_empty = ["concurrency_tune", "retry_policy", "summary_depth"]
+    expected_not = ["batch_admission"]
+    expected_later = ["head_fallback", "visual_bundle", "critic_sample"]
+    if (
+        parse_pdf != expected_parse
+        or empty_native != expected_empty
+        or not_consulted != expected_not
+        or later != expected_later
+        or set(parse_pdf) & set(empty_native)
+    ):
+        flag(
+            "policy_stamp",
+            "integration",
+            "data/policies/registry.yaml#consult_status",
+            {
+                "parse_pdf_consults": expected_parse,
+                "empty_native_unknown_point": expected_empty,
+                "native_rules_not_consulted": expected_not,
+                "later": expected_later,
+            },
+            consult,
+        )
+    stamp_consults = [str(item) for item in (stamp.get("parse_pdf_consults") or [])]
+    stamp_empty = [str(item) for item in (stamp.get("empty_native_unknown_point") or [])]
+    if stamp_consults != expected_parse or stamp_empty != expected_empty:
+        flag(
+            "policy_stamp",
+            "integration",
+            "data/parse/grobid_compatibility.yaml#defaults.policy_stamp.parse_pdf_consults",
+            {"parse_pdf_consults": expected_parse, "empty_native_unknown_point": expected_empty},
+            {"parse_pdf_consults": stamp_consults, "empty_native_unknown_point": stamp_empty},
         )
 
     constructors = (registry.get("defaults") or {}).get("production_pdf_constructors") or {}

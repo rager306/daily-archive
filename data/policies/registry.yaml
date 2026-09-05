@@ -33,3 +33,11 @@ decision_points:
     # structural = D204 corpus default (no Crossref). rich is named, not default.
     native:
       default: structural
+# parse-pdf consults two of six DecisionPoints. Empty native maps are
+# UnknownPoint, not live production policy. batch_admission has native
+# rules but parse-pdf does not consult it. ADR-076 later points stay later.
+consult_status:
+  parse_pdf_consults: [grammar_route, profile_route]
+  empty_native_unknown_point: [concurrency_tune, retry_policy, summary_depth]
+  native_rules_not_consulted: [batch_admission]
+  later: [head_fallback, visual_bundle, critic_sample]

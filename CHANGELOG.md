@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-05 — M476-33ifna/S01: DATA names live vs empty-native DecisionPoints
+
+consult_status: parse-pdf consults grammar_route and profile_route.
+empty_native_unknown_point is concurrency_tune, retry_policy,
+summary_depth. batch_admission has native rules but is not consulted.
+later stays head_fallback, visual_bundle, critic_sample. Governor flags
+empty-native listed as a parse-pdf consult. SHA rebound in the same
+change. DecisionPoint enum unchanged. No splice. No graph. D127 false.
+
+Green: scholarly_parse_governance 89.
+
 ## 2026-09-05 — M475-d1npw9/S01: DATA names Java header raw vs native accepted gap
 
 java_lift_same_n maps Java header_authors to header_raw_total 36, not

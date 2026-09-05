@@ -268,6 +268,18 @@ def test_checker_clean_root_has_no_s19_flags():
     assert _check_scholarly_parse_plane(ROOT) == []
 
 
+def test_checker_flags_empty_native_listed_as_parse_pdf_consult(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/policies/registry.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    status = payload.setdefault("consult_status", {})
+    status["parse_pdf_consults"] = ["grammar_route", "profile_route", "concurrency_tune"]
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    assert matching, flags
+
+
 def test_checker_flags_pooling_java_header_with_native_accepted(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     path = tmp_path / "data/parse/native_fulltext_composition.yaml"
