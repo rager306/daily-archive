@@ -344,6 +344,58 @@ def _find_java_absent_capability(caps: list[dict[str, Any]], by_id: dict[str, di
     return None
 
 
+_HEADER_QUARANTINE_TOKENS = ("compose_header", "run_header_sequence", "NativeDateParser")
+_HEADER_QUARANTINE_BOUNDARIES = (
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+)
+
+
+def _strip_header_quarantine_comments(text: str) -> str:
+    kept: list[str] = []
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("//"):
+            kept.append("")
+            continue
+        cut = line.find("//")
+        kept.append(line if cut < 0 else line[:cut])
+    return "\n".join(kept)
+
+
+def _header_quarantine_tokens_present(code: str) -> list[str]:
+    hits: list[str] = []
+    for token in _HEADER_QUARANTINE_TOKENS:
+        if token == "NativeDateParser":
+            if re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}(?![A-Za-z0-9_])", code):
+                hits.append(token)
+        elif re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}\s*\(", code):
+            hits.append(token)
+    return hits
+
+
+def _check_header_quarantine(root: Path, registry: dict[str, Any], registry_path: Path, flag: Any) -> None:
+    if not isinstance(registry, dict) or not registry or not registry_path.is_file():
+        return
+    for relative in _HEADER_QUARANTINE_BOUNDARIES:
+        path = root / relative
+        if not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as error:
+            flag("policy_stamp", "integration", f"{relative}#header_quarantine", "readable boundary", str(error))
+            continue
+        code = _strip_header_quarantine_comments(text)
+        for token in _header_quarantine_tokens_present(code):
+            flag(
+                "policy_stamp",
+                "integration",
+                f"{relative}#header_quarantine.{token}",
+                "header atoms stay shadow-only (no parse-pdf source_cli or ParserPort splice)",
+                f"header atom {token} in {relative}",
+            )
+
 def _check_java_absent_endpoints(
     registry: dict[str, Any],
     caps: list[dict[str, Any]],
@@ -489,6 +541,7 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             flag("ledger_surface", "integration", f"data/parse/grobid_compatibility.yaml#{cap.get('id')}", {"state": state, "surface": "crate path"}, {"state": state, "surface": surface})
     if isinstance(registry, dict) and registry_path.is_file():
         _check_java_absent_endpoints(registry, caps, by_id, flag)
+    _check_header_quarantine(root, registry, registry_path, flag)
     header_ids = (
         "rest.processDate",
         "rest.processHeaderNames",

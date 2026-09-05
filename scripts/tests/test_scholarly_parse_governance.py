@@ -1036,3 +1036,83 @@ def test_checker_keeps_existing_empty_surface_ledger_surface(tmp_path: Path):
     assert any("rest.inventedProxy" in item.evidence for item in legacy), flags
     # The five DATA tokens stay clean while the legacy opposite-polarity hit fires.
     assert _java_absent_flags(flags) == [], flags
+
+# ───── S06/T01: header atoms stay shadow, out of parse-pdf source_cli and ParserPort ─────
+
+HEADER_QUARANTINE_TOKENS = ["compose_header", "run_header_sequence", "NativeDateParser"]
+HEADER_QUARANTINE_BOUNDARIES = [
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+]
+HEADER_QUARANTINE_PAYLOADS = {
+    "compose_header": "let _h = compose_header(input);\n",
+    "run_header_sequence": "let _h = run_header_sequence(input);\n",
+    "NativeDateParser": "let _p = NativeDateParser::new();\n",
+}
+
+def _header_quarantine_flags(flags):
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    return [item for item in matching if "#header_quarantine." in item.evidence]
+
+@pytest.mark.parametrize("relative", HEADER_QUARANTINE_BOUNDARIES)
+@pytest.mark.parametrize("token", HEADER_QUARANTINE_TOKENS)
+def test_checker_flags_header_quarantine_token_in_boundary(tmp_path: Path, relative: str, token: str):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / relative
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(HEADER_QUARANTINE_PAYLOADS[token], encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _header_quarantine_flags(flags)
+    assert matching, flags
+    hit = next(item for item in matching if token in item.evidence and relative in item.evidence)
+    assert hit.flag == "scholarly_parse_plane_policy_stamp"
+    assert hit.severity == "high"
+    assert f"#header_quarantine.{token}" in hit.evidence
+    assert "plane=integration" in hit.evidence and "violation=policy_stamp" in hit.evidence
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "let _h = decompose_header(input);\n",
+        "// compose_header is shadow-only prose\n",
+        "// run_header_sequence is shadow-only prose\n",
+        "// NativeDateParser is shadow-only prose\n",
+        "/// doc compose_header prose\n",
+        "let x = 1; // run_header_sequence prose\n",
+        "let x = 1; // NativeDateParser prose\n",
+    ],
+)
+def test_checker_header_quarantine_ignores_decompose_and_prose_comments(tmp_path: Path, payload: str):
+    _copy_checker_surface(tmp_path)
+    for relative in HEADER_QUARANTINE_BOUNDARIES:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(payload, encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _header_quarantine_flags(flags) == [], flags
+
+def test_checker_clean_boundaries_have_no_header_quarantine_flags():
+    assert _header_quarantine_flags(_check_scholarly_parse_plane(ROOT)) == []
+
+def test_checker_header_quarantine_skips_missing_boundaries(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    for relative in HEADER_QUARANTINE_BOUNDARIES:
+        target = tmp_path / relative
+        if target.is_file():
+            target.unlink()
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _header_quarantine_flags(flags) == [], flags
+
+def test_checker_header_quarantine_stays_silent_without_ledger_but_keeps_integrity_signals(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    (tmp_path / "data/parse/grobid_compatibility.yaml").unlink()
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _header_quarantine_flags(flags) == [], flags
+    assert any(
+        item.flag
+        in {
+            "scholarly_parse_plane_evidence_missing",
+            "scholarly_parse_plane_backend_identity",
+        }
+        for item in flags
+    ), flags
