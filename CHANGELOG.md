@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-05 — M470-485ukv/S02: parse-pdf consults ProfileRoute
+
+parse-pdf maps consulted ProfileRoute to GrobidProfile instead of hardcoding
+structural(). Receipt grobid_profile is stamped only on the Java parse-pdf
+path. grammar stamp no longer claims a Java profile. DATA default stays
+structural (D204). Rich is a closed consult variant, not corpus default.
+No WASM wat on this point. No graph. D127 false.
+
+Green: resolve_parse_profile 4; parse_grammar 12; stamp + grobid_profile CLI 4.
+
 ## 2026-09-05 — M470-485ukv/S01: FSM ProfileRoute native default structural
 
 DecisionPoint now parses profile_route as its own point, not an alias of

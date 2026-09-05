@@ -4,7 +4,7 @@
 //! IO (file load, GROBID) stays in CLI. Fail-open to DATA `default_profile`.
 
 use da_domain::fsm_policy::{
-    ArticleFeatures, DecisionPoint, GrammarRoute, PolicyRegistry, PolicySource,
+    ArticleFeatures, DecisionPoint, GrammarRoute, PolicyRegistry, PolicySource, ProfileRoute,
 };
 use da_ports::fsm_policy::{FsmPolicyError, FsmPolicyPort, FsmPolicyResult};
 
@@ -42,6 +42,34 @@ pub fn resolve_parse_grammar(
     Ok(ParseGrammarDecision {
         grammar_profile,
         route,
+        policy_hash: decision.id.source.hash_stamp().to_string(),
+        source: decision.id.source,
+    })
+}
+
+/// Consulted Java GROBID REST profile (ADR-076 profile_route).
+/// Not FSM grammar_profile. Corpus default is structural (D204).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParseProfileDecision {
+    pub profile: ProfileRoute,
+    pub policy_hash: String,
+    pub source: PolicySource,
+}
+
+/// Consult profile_route. Fail-open to DATA native default (structural).
+///
+/// Hosts that only serve grammar_route return UnknownPoint and fall open
+/// to native. Do not attach a grammar_route wat to this point: WasmPolicyHost
+/// maps i32 through GrammarRoute::from_code.
+pub fn resolve_parse_profile(
+    yaml: &str,
+    host: Option<&dyn FsmPolicyPort>,
+    features: &ArticleFeatures,
+) -> FsmPolicyResult<ParseProfileDecision> {
+    let decision = consult_with_fallback(host, yaml, DecisionPoint::ProfileRoute, features)?;
+    let profile = decision.profile.unwrap_or(ProfileRoute::Structural);
+    Ok(ParseProfileDecision {
+        profile,
         policy_hash: decision.id.source.hash_stamp().to_string(),
         source: decision.id.source,
     })
@@ -193,5 +221,74 @@ decision_points:
         let yaml = include_str!("../../../data/policies/registry.yaml");
         let d = resolve_parse_grammar(yaml, None, &feat(18, 0, 0.85)).unwrap();
         assert_eq!(d.grammar_profile, "arxiv_pdf_dot");
+    }
+
+    struct ProfileHost(da_domain::fsm_policy::ProfileRoute);
+
+    impl FsmPolicyPort for ProfileHost {
+        fn consult(
+            &self,
+            point: DecisionPoint,
+            _features: &ArticleFeatures,
+        ) -> FsmPolicyResult<PolicyDecision> {
+            if point != DecisionPoint::ProfileRoute {
+                return Err(FsmPolicyError::UnknownPoint(point.as_str().into()));
+            }
+            Ok(PolicyDecision::profile(
+                PolicySource::Wasm {
+                    sha256: "cafe".into(),
+                },
+                self.0,
+            ))
+        }
+    }
+
+    const PROFILE_YAML: &str = r#"
+decision_points:
+  grammar_route:
+    default_profile: arxiv_pdf_dot
+  profile_route:
+    native:
+      default: structural
+"#;
+
+    #[test]
+    fn resolve_parse_profile_native_default_is_structural() {
+        let d = resolve_parse_profile(PROFILE_YAML, None, &feat(18, 0, 0.85)).unwrap();
+        assert_eq!(d.profile, da_domain::fsm_policy::ProfileRoute::Structural);
+        assert_eq!(d.policy_hash, "native");
+        assert_eq!(d.source, PolicySource::Native);
+    }
+
+    #[test]
+    fn resolve_parse_profile_host_can_name_rich_without_changing_grammar() {
+        let d = resolve_parse_profile(
+            PROFILE_YAML,
+            Some(&ProfileHost(da_domain::fsm_policy::ProfileRoute::Rich)),
+            &feat(18, 0, 0.85),
+        )
+        .unwrap();
+        assert_eq!(d.profile, da_domain::fsm_policy::ProfileRoute::Rich);
+        assert_eq!(d.policy_hash, "cafe");
+        let g = resolve_parse_grammar(PROFILE_YAML, None, &feat(18, 0, 0.85)).unwrap();
+        assert_eq!(g.grammar_profile, "arxiv_pdf_dot");
+        assert_ne!(
+            d.profile.as_str(),
+            g.route.as_str(),
+            "profile_route and grammar_route stay separate consults"
+        );
+    }
+
+    #[test]
+    fn resolve_parse_profile_missing_yaml_fails_open_structural() {
+        let d = resolve_parse_profile("decision_points: {}", None, &feat(1, 0, 1.0)).unwrap();
+        assert_eq!(d.profile, da_domain::fsm_policy::ProfileRoute::Structural);
+    }
+
+    #[test]
+    fn real_registry_yaml_profile_route_is_structural() {
+        let yaml = include_str!("../../../data/policies/registry.yaml");
+        let d = resolve_parse_profile(yaml, None, &feat(18, 0, 0.85)).unwrap();
+        assert_eq!(d.profile, da_domain::fsm_policy::ProfileRoute::Structural);
     }
 }

@@ -47,11 +47,23 @@ pub(crate) fn stamp_parse_grammar(
     m.insert("grammar_route".into(), route.into());
     m.insert("policy_source".into(), policy_source.into());
     m.insert("policy_hash".into(), policy_hash.into());
-    // Java GROBID corpus default is structural (D204). This is not the FSM
-    // grammar_profile (page_outline / arxiv_pdf_dot / html_headings).
+}
+
+/// Map FSM ProfileRoute onto the da-parse GROBID REST profile.
+/// Lives in CLI so da-domain never depends on da-parse.
+pub(crate) fn grobid_profile_from_route(
+    route: da_domain::fsm_policy::ProfileRoute,
+) -> da_parse::GrobidProfile {
+    match route {
+        da_domain::fsm_policy::ProfileRoute::Structural => da_parse::GrobidProfile::structural(),
+        da_domain::fsm_policy::ProfileRoute::Rich => da_parse::GrobidProfile::rich(),
+    }
+}
+
+fn stamp_grobid_profile(m: &mut serde_yaml::Mapping, route: da_domain::fsm_policy::ProfileRoute) {
     m.insert(
         "grobid_profile".into(),
-        da_parse::GrobidProfile::structural().name().into(),
+        grobid_profile_from_route(route).name().into(),
     );
 }
 
@@ -134,6 +146,24 @@ fn consult_parse_grammar_cli(
     });
     let host_ref: Option<&dyn FsmPolicyPort> = host.as_ref().map(|h| h as _);
     resolve_parse_grammar(&yaml, host_ref, &features).map_err(|e| anyhow::anyhow!("{e}"))
+}
+
+fn consult_parse_profile_cli(
+    paper_id: &str,
+    pages: Option<u32>,
+    bookmarks: Option<u32>,
+    quality: Option<f32>,
+) -> anyhow::Result<da_application::parse_grammar::ParseProfileDecision> {
+    use da_application::parse_grammar::resolve_parse_profile;
+    use da_ports::fsm_policy::FsmPolicyPort;
+
+    let yaml = std::fs::read_to_string(policy_registry_path())
+        .map_err(|e| anyhow::anyhow!("policy registry: {e}"))?;
+    let features = features_from_env_and_cache(paper_id, pages, bookmarks, quality);
+    // Native only this cut. WasmPolicyHost maps i32 through GrammarRoute;
+    // do not attach grammar_route.wat to profile_route.
+    let host: Option<&dyn FsmPolicyPort> = None;
+    resolve_parse_profile(&yaml, host, &features).map_err(|e| anyhow::anyhow!("{e}"))
 }
 
 fn load_toolchain() -> anyhow::Result<Toolchain> {
@@ -1701,12 +1731,18 @@ pub fn run_parse_pdf(
     use da_ports::parser::ParserPort;
 
     let grammar = consult_parse_grammar_cli(paper_id, pages, bookmarks, quality).ok();
+    let grobid = consult_parse_profile_cli(paper_id, pages, bookmarks, quality).ok();
+    let grobid_route = grobid
+        .as_ref()
+        .map(|d| d.profile)
+        .unwrap_or(da_domain::fsm_policy::ProfileRoute::Structural);
+    let grobid_profile = grobid_profile_from_route(grobid_route);
     if let Some(g) = &grammar {
         println!(
             "grammar_route: {} → grammar_profile={} grobid_profile={} hash={}",
             g.route.as_str(),
             g.grammar_profile,
-            da_parse::GrobidProfile::structural().name(),
+            grobid_profile.name(),
             g.policy_hash
         );
     }
@@ -1716,13 +1752,11 @@ pub fn run_parse_pdf(
     };
     let rt = tokio::runtime::Runtime::new()?;
     let parsed = rt.block_on(async {
-        // D204: structural profile for corpus parsing — consolidation flags
-        // off, coordinates on. Rich mode requires GROBID outbound to Crossref
-        // which is not guaranteed in the corpus environment (2512.00107
-        // regression: rich profile hung 120s until client timeout when the
-        // container had no crossref route). Bibliography enrichment runs via
-        // the separately cached OpenAlex/Crossref enrich stage from the host.
-        let parser = GrobidParser::from_env().with_profile(da_parse::GrobidProfile::structural());
+        // D204 corpus default is structural via DATA profile_route.native.default.
+        // Rich is a closed consult variant; it is not the corpus default and
+        // still requires Crossref. Bibliography enrichment stays on the
+        // separately cached OpenAlex/Crossref enrich stage from the host.
+        let parser = GrobidParser::from_env().with_profile(grobid_profile);
         parser
             .parse_pdf(pdf, paper_id)
             .await
@@ -1784,6 +1818,7 @@ pub fn run_parse_pdf(
         Some(g) => stamp_from_grammar(&mut m, g),
         None => stamp_policy_none(&mut m),
     }
+    stamp_grobid_profile(&mut m, grobid_route);
     m.insert("lifecycle".into(), "parsed".into());
     let ev_raw = serde_yaml::Mapping::from_iter([
         ("stage".into(), "raw".into()),
@@ -3252,20 +3287,51 @@ mod tests {
             none.get("policy_hash").and_then(|v| v.as_str()),
             Some("none")
         );
+        assert!(
+            m.get("grobid_profile").is_none(),
+            "grammar stamp is not a Java GROBID receipt"
+        );
+        assert!(
+            none.get("grobid_profile").is_none(),
+            "policy=none must not invent a Java GROBID profile"
+        );
+    }
+
+    #[test]
+    fn grobid_profile_from_route_maps_closed_set() {
         assert_eq!(
-            m.get("grobid_profile").and_then(|v| v.as_str()),
-            Some("structural"),
-            "Java GROBID corpus default is structural, not the FSM grammar_profile"
+            grobid_profile_from_route(da_domain::fsm_policy::ProfileRoute::Structural).name(),
+            "structural"
         );
         assert_eq!(
-            none.get("grobid_profile").and_then(|v| v.as_str()),
-            Some("structural"),
-            "policy=none still records the Java GROBID profile actually used"
+            grobid_profile_from_route(da_domain::fsm_policy::ProfileRoute::Rich).name(),
+            "rich"
         );
         assert_ne!(
-            m.get("grammar_profile").and_then(|v| v.as_str()),
+            grobid_profile_from_route(da_domain::fsm_policy::ProfileRoute::Structural)
+                .configuration_fingerprint(),
+            grobid_profile_from_route(da_domain::fsm_policy::ProfileRoute::Rich)
+                .configuration_fingerprint(),
+            "D204 fingerprints must not collide"
+        );
+    }
+
+    #[test]
+    fn stamp_grobid_profile_is_separate_from_grammar_stamp() {
+        let mut m = serde_yaml::Mapping::new();
+        stamp_parse_grammar(&mut m, "page_outline", "page_outline", "wasm", "abc123");
+        assert!(
+            m.get("grobid_profile").is_none(),
+            "grammar stamp must not claim a Java GROBID profile"
+        );
+        stamp_grobid_profile(&mut m, da_domain::fsm_policy::ProfileRoute::Structural);
+        assert_eq!(
             m.get("grobid_profile").and_then(|v| v.as_str()),
-            "FSM grammar_profile and GROBID profile must not share one field"
+            Some("structural")
+        );
+        assert_eq!(
+            m.get("grammar_profile").and_then(|v| v.as_str()),
+            Some("page_outline")
         );
     }
 
