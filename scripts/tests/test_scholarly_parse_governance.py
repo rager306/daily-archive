@@ -268,6 +268,19 @@ def test_checker_clean_root_has_no_s19_flags():
     assert _check_scholarly_parse_plane(ROOT) == []
 
 
+def test_checker_flags_pooling_java_header_with_native_accepted(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/parse/native_fulltext_composition.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    payload["source_evidence"]["s12_named_denominators"]["java_lift_same_n"][
+        "java_header_authors_equals"
+    ] = "header_accepted_total"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_acceptance_same_n_drift"]
+    assert matching, flags
+
+
 def test_checker_flags_undeclared_shadow_sha_clone(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     shadow_path = tmp_path / "artifacts/parse_compat/native_fulltext_composition_shadow.json"

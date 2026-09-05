@@ -67,6 +67,9 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
             "documents" not in value
             and "unique_source_sha256" not in value
             and "identity_kind" not in value
+            and "java_header_authors_equals" not in value
+            and "citation_names_not_biblstruct" not in value
+            and "pooling_accepted_with_raw" not in value
         ):
             return False
         documents = int(value.get("documents") or 0)
@@ -75,6 +78,14 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
         if documents > 1 and unique == 1 and kind != "synthetic_clone":
             return True
         if kind == "preserved_three_sha" and unique != 3:
+            return True
+        if value.get("java_header_authors_equals") == "header_accepted_total":
+            return True
+        if value.get("citation_names_not_biblstruct") is False:
+            return True
+        if value.get("pooling_accepted_with_raw") == "allowed":
+            return True
+        if value.get("pooling_citation_names_with_references") == "allowed":
             return True
         return False
     if label == "ledger_surface":
@@ -363,6 +374,31 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     except (OSError, yaml.YAMLError) as error:
         flag("body_java_fallback", "integration", "data/parse/native_fulltext_composition.yaml", "valid YAML", str(error))
         fulltext = {}
+    lift = ((fulltext.get("source_evidence") or {}).get("s12_named_denominators") or {}).get("java_lift_same_n") or {}
+    if (
+        lift.get("java_header_authors_equals") != "header_raw_total"
+        or lift.get("java_biblstruct_equals") != "references_total"
+        or lift.get("hub_native_accepted_header") not in {20, "20"}
+        or lift.get("hub_java_header_raw") not in {21, "21"}
+        or lift.get("citation_names_not_biblstruct") is not True
+        or lift.get("pooling_accepted_with_raw") != "forbidden"
+        or lift.get("pooling_citation_names_with_references") != "forbidden"
+    ):
+        flag(
+            "acceptance_same_n_drift",
+            "integration",
+            "data/parse/native_fulltext_composition.yaml#source_evidence.s12_named_denominators.java_lift_same_n",
+            {
+                "java_header_authors_equals": "header_raw_total",
+                "java_biblstruct_equals": "references_total",
+                "hub_native_accepted_header": 20,
+                "hub_java_header_raw": 21,
+                "citation_names_not_biblstruct": True,
+                "pooling_accepted_with_raw": "forbidden",
+                "pooling_citation_names_with_references": "forbidden",
+            },
+            lift,
+        )
     admission = fulltext.get("admission") or {}
     selectable = [str(item) for item in (admission.get("independently_selectable") or [])]
     if selectable != ["header", "references"]:

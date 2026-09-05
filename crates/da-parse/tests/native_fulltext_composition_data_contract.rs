@@ -266,6 +266,50 @@ fn authority_errors(v: &Value) -> Vec<String> {
             e.push(format!("denominator:{k}"));
         }
     }
+    let lift = d.get("java_lift_same_n");
+    if text(
+        lift.unwrap_or(&Value::Null),
+        &["java_header_authors_equals"],
+    )
+    .as_deref()
+        != Some("header_raw_total")
+    {
+        e.push("java header equals raw, not accepted".into());
+    }
+    if text(lift.unwrap_or(&Value::Null), &["java_biblstruct_equals"]).as_deref()
+        != Some("references_total")
+    {
+        e.push("java biblStruct equals references_total, not citation_names".into());
+    }
+    if lift
+        .and_then(|x| x.get("hub_native_accepted_header"))
+        .and_then(Value::as_i64)
+        != Some(20)
+        || lift
+            .and_then(|x| x.get("hub_java_header_raw"))
+            .and_then(Value::as_i64)
+            != Some(21)
+    {
+        e.push("hub native accepted 20 vs java header_raw 21 must stay named".into());
+    }
+    if lift
+        .and_then(|x| x.get("citation_names_not_biblstruct"))
+        .and_then(Value::as_bool)
+        != Some(true)
+    {
+        e.push("citation_names is not biblStruct".into());
+    }
+    if text(lift.unwrap_or(&Value::Null), &["pooling_accepted_with_raw"]).as_deref()
+        != Some("forbidden")
+        || text(
+            lift.unwrap_or(&Value::Null),
+            &["pooling_citation_names_with_references"],
+        )
+        .as_deref()
+            != Some("forbidden")
+    {
+        e.push("pooling named header or citation populations".into());
+    }
     for (section, expected) in [
         ("s15_shared_intersection", "immutable_s15_manifest"),
         ("s16_shared_intersection", "immutable_s16_manifest"),
@@ -421,6 +465,32 @@ fn native_fulltext_mutations_fail_closed() {
             Value::String("stale".into()),
         ),
         "receipt source hash:table",
+    );
+    rejects(
+        mutate(
+            a.clone(),
+            &[
+                "source_evidence",
+                "s12_named_denominators",
+                "java_lift_same_n",
+                "java_header_authors_equals",
+            ],
+            Value::String("header_accepted_total".into()),
+        ),
+        "java header equals raw, not accepted",
+    );
+    rejects(
+        mutate(
+            a.clone(),
+            &[
+                "source_evidence",
+                "s12_named_denominators",
+                "java_lift_same_n",
+                "citation_names_not_biblstruct",
+            ],
+            Value::Bool(false),
+        ),
+        "citation_names is not biblStruct",
     );
     rejects(
         mutate(

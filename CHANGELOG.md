@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-05 — M475-d1npw9/S01: DATA names Java header raw vs native accepted gap
+
+java_lift_same_n maps Java header_authors to header_raw_total 36, not
+accepted 35. Java biblStruct equals references_total 207, not
+citation_names 2198. Hub native accepted 20 vs Java 21 stays named.
+Governor flags pooling those pairs. SHA rebound in the same change.
+No splice. No graph. D127 false.
+
+Green: native_fulltext_composition_data_contract 2; scholarly_parse_governance 88.
+
 ## 2026-09-05 — M474-90q2i6/S01: shadow report declares synthetic_clone identity
 
 Native fulltext composition shadow stamps identity_kind=synthetic_clone
