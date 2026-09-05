@@ -623,6 +623,25 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             {"parse_pdf_consults": stamp_consults, "empty_native_unknown_point": stamp_empty},
         )
 
+    sona_path = root / "crates/da-cli/src/background_tasks.rs"
+    if sona_path.is_file():
+        try:
+            sona_src = sona_path.read_text(encoding="utf-8")
+        except OSError as error:
+            sona_src = str(error)
+        if (
+            "demo=true" not in sona_src
+            or "empty_native_unknown_point" not in sona_src
+            or "refuses before consult" not in sona_src
+        ):
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/background_tasks.rs#sona_policy_report",
+                "demo=true and refuse empty_native_unknown_point before consult",
+                "missing demo stamp or empty-native refuse",
+            )
+
     constructors = (registry.get("defaults") or {}).get("production_pdf_constructors") or {}
     scan_roots = [str(item) for item in (constructors.get("scan_roots") or [])]
     allowed = set(constructors.get("allowed_from_env_roles") or [])

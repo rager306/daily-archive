@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-05 — M477-m1qp4n/S01: demo sona-policy stamps consult_status and refuses empty-native
+
+run_sona_policy reads consult_status. Empty-native and later are refused
+before consult. grammar_route prints demo=true parse_pdf_consult=true.
+batch_admission prints demo=true parse_pdf_consult=false. Governor
+flags a demo CLI that omits the stamp. DecisionPoint enum unchanged.
+No splice. No graph. D127 false.
+
+Green: da-cli lib background_tasks 4; scholarly_parse_governance 90.
+
 ## 2026-09-05 — M476-33ifna/S01: DATA names live vs empty-native DecisionPoints
 
 consult_status: parse-pdf consults grammar_route and profile_route.

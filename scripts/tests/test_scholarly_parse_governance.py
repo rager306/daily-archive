@@ -268,6 +268,20 @@ def test_checker_clean_root_has_no_s19_flags():
     assert _check_scholarly_parse_plane(ROOT) == []
 
 
+def test_checker_flags_sona_policy_missing_demo_stamp(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-cli/src/background_tasks.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        "pub fn sona_policy_report() { consult_with_fallback(host, yaml, point, features) }\n",
+        encoding="utf-8",
+    )
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    assert matching, flags
+    assert any("background_tasks.rs" in item.evidence for item in matching)
+
+
 def test_checker_flags_empty_native_listed_as_parse_pdf_consult(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     path = tmp_path / "data/policies/registry.yaml"

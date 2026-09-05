@@ -431,6 +431,7 @@ pub fn run_sona_analyze(pid: &str) -> anyhow::Result<()> {
 /// ADR-074: consult an FSM policy decision point.
 /// Paths come from data/policies/registry.yaml (DATA). WASM if wat/wasm
 /// exists; otherwise native fallback. D136: no LoRA load.
+/// Demo CLI is not parse-pdf closure (M477 / ADR-076).
 pub fn run_sona_policy(
     point_name: &str,
     pages: Option<u32>,
@@ -438,15 +439,58 @@ pub fn run_sona_policy(
     quality: Option<f32>,
     domain: Option<&str>,
 ) -> anyhow::Result<()> {
+    let yaml = std::fs::read_to_string("data/policies/registry.yaml")
+        .map_err(|e| anyhow::anyhow!("policy registry: {e}"))?;
+    let report = sona_policy_report(&yaml, point_name, pages, bookmarks, quality, domain)?;
+    print!("{report}");
+    Ok(())
+}
+
+fn yaml_str_list(status: &serde_yaml::Value, key: &str) -> Vec<String> {
+    status
+        .get(key)
+        .and_then(serde_yaml::Value::as_sequence)
+        .map(|seq| {
+            seq.iter()
+                .filter_map(|item| item.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// YAML-in demo consult. Refuses empty-native and later before consult.
+/// Always stamps demo=true and parse_pdf_consult from consult_status.
+pub fn sona_policy_report(
+    yaml: &str,
+    point_name: &str,
+    pages: Option<u32>,
+    bookmarks: Option<u32>,
+    quality: Option<f32>,
+    domain: Option<&str>,
+) -> anyhow::Result<String> {
     use da_application::fsm_policy_consult::consult_with_fallback;
     use da_domain::fsm_policy::{ArticleFeatures, DecisionPoint, PolicyRegistry};
     use da_ports::fsm_policy::FsmPolicyPort;
 
-    let yaml = std::fs::read_to_string("data/policies/registry.yaml")
-        .map_err(|e| anyhow::anyhow!("policy registry: {e}"))?;
     let point = DecisionPoint::parse(point_name)
         .ok_or_else(|| anyhow::anyhow!("unknown decision point {point_name:?}"))?;
-    let registry = PolicyRegistry::from_yaml_str(&yaml)?;
+    let parsed: serde_yaml::Value = serde_yaml::from_str(yaml).unwrap_or(serde_yaml::Value::Null);
+    let status = parsed
+        .get("consult_status")
+        .cloned()
+        .unwrap_or(serde_yaml::Value::Null);
+    let parse_pdf = yaml_str_list(&status, "parse_pdf_consults");
+    let empty_native = yaml_str_list(&status, "empty_native_unknown_point");
+    let later = yaml_str_list(&status, "later");
+    if empty_native.iter().any(|item| item == point.as_str()) {
+        anyhow::bail!(
+            "sona-policy: {point_name} is empty_native_unknown_point; demo CLI refuses before consult"
+        );
+    }
+    if later.iter().any(|item| item == point.as_str()) {
+        anyhow::bail!("sona-policy: {point_name} is later; demo CLI refuses before consult");
+    }
+    let registry = PolicyRegistry::from_yaml_str(yaml)?;
 
     let features = ArticleFeatures {
         page_count: pages.unwrap_or(18),
@@ -464,18 +508,19 @@ pub fn run_sona_policy(
         da_adapters::wasm_policy::SharedWasmPolicyHost::from_path(path, point).ok()
     });
     let host_ref: Option<&dyn FsmPolicyPort> = host.as_ref().map(|h| h as _);
-    let d = consult_with_fallback(host_ref, &yaml, point, &features)?;
-    println!(
-        "== sona-policy: {} ==\nroute={:?} admission={:?} source={} hash={}",
+    let d = consult_with_fallback(host_ref, yaml, point, &features)?;
+    let parse_pdf_consult = parse_pdf.iter().any(|item| item == point.as_str());
+    Ok(format!(
+        "== sona-policy: {} ==\ndemo=true parse_pdf_consult={}\nroute={:?} admission={:?} source={} hash={}\n",
         point.as_str(),
+        parse_pdf_consult,
         d.route.map(|r| r.as_str()),
         d.admission.map(|a| a.as_str()),
         d.id.source.hash_stamp(),
         host.as_ref()
             .map(|h| h.policy_hash())
             .unwrap_or_else(|| "native".into()),
-    );
-    Ok(())
+    ))
 }
 
 /// M454: critic repair process entry. DATA manifest + verdict → RepairOutcome.
@@ -569,4 +614,52 @@ pub fn run_memory_admit(paper_id: &str) -> anyhow::Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::sona_policy_report;
+
+    fn registry_yaml() -> String {
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/policies/registry.yaml");
+        std::fs::read_to_string(path).unwrap()
+    }
+
+    #[test]
+    fn empty_native_refused_before_consult() {
+        let err = sona_policy_report(&registry_yaml(), "concurrency_tune", None, None, None, None)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("empty_native_unknown_point"), "{err}");
+        assert!(err.contains("refuses before consult"), "{err}");
+    }
+
+    #[test]
+    fn later_name_is_unknown_or_refused() {
+        let err = sona_policy_report(&registry_yaml(), "head_fallback", None, None, None, None)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            err.contains("unknown decision point") || err.contains("later"),
+            "{err}"
+        );
+    }
+
+    #[test]
+    fn grammar_route_stamps_demo_and_parse_pdf_consult() {
+        let report =
+            sona_policy_report(&registry_yaml(), "grammar_route", None, None, None, None).unwrap();
+        assert!(report.contains("demo=true"), "{report}");
+        assert!(report.contains("parse_pdf_consult=true"), "{report}");
+    }
+
+    #[test]
+    fn batch_admission_is_demo_not_parse_pdf() {
+        let report =
+            sona_policy_report(&registry_yaml(), "batch_admission", None, None, None, None)
+                .unwrap();
+        assert!(report.contains("demo=true"), "{report}");
+        assert!(report.contains("parse_pdf_consult=false"), "{report}");
+    }
 }
