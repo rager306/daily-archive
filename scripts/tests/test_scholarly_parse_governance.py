@@ -268,6 +268,18 @@ def test_checker_clean_root_has_no_s19_flags():
     assert _check_scholarly_parse_plane(ROOT) == []
 
 
+def test_checker_flags_cascade_stage_native_production(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/parse/grobid_compatibility.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    stages = payload.setdefault("defaults", {}).setdefault("cascade_stages", {})
+    stages.setdefault("P3", {})["production_authority"] = "native"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    assert matching, flags
+
+
 def test_checker_flags_sona_policy_missing_demo_stamp(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     target = tmp_path / "crates/da-cli/src/background_tasks.rs"

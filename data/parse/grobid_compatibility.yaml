@@ -49,6 +49,70 @@ defaults:
     deployed: false
     auto_promote: forbidden
     reason: W6 does not candidate-promote; tracked conservation on preserved TEI is Conserved; native families stay shadow
+  # Closed P0-P9 cascade skeleton (ADR-076). production_authority is never native.
+  # fsm_consult must be parse_pdf_consults, later, or none. Native modules are
+  # shadow_receipt observe only — not splice into parse_pdf.
+  cascade_stages:
+    P0:
+      grobid: admit_identity_profile
+      production_authority: java_http
+      native_surface: none
+      fsm_consult: [grammar_route, profile_route]
+      observe_mode: production_stamp
+    P1:
+      grobid: pdfalto_layout_lattice
+      production_authority: java_http
+      native_surface: crates/da-parse/src/layout.rs
+      fsm_consult: [none]
+      observe_mode: shadow_receipt
+    P2:
+      grobid: document_segmentation
+      production_authority: java_http
+      native_surface: crates/da-parse/src/native_segmentation.rs
+      fsm_consult: [none]
+      observe_mode: shadow_receipt
+    P3:
+      grobid: header_heads_and_compose
+      production_authority: java_http
+      native_surface: crates/da-parse/src/native_composition.rs
+      fsm_consult: [none]
+      observe_mode: shadow_receipt
+    P4:
+      grobid: bibliography_segment_and_compose
+      production_authority: java_http
+      native_surface: crates/da-parse/src/native_composition.rs
+      fsm_consult: [none]
+      observe_mode: shadow_receipt
+    P5:
+      grobid: fulltext_body_sections
+      production_authority: java_http
+      native_surface: none
+      fsm_consult: [none]
+      observe_mode: accountant_later
+    P6:
+      grobid: figure_table_formula
+      production_authority: java_http
+      native_surface: crates/da-parse/src/native_visual.rs
+      fsm_consult: [visual_bundle]
+      observe_mode: shadow_receipt
+    P7:
+      grobid: tei_coordinates_callouts
+      production_authority: java_http
+      native_surface: none
+      fsm_consult: [none]
+      observe_mode: production_stamp
+    P8:
+      grobid: bibliographic_consolidation
+      production_authority: java_profile
+      native_surface: crates/da-parse/src/profile.rs
+      fsm_consult: [profile_route]
+      observe_mode: production_stamp
+    P9:
+      grobid: tei_lift_conservation
+      production_authority: tei_lift
+      native_surface: crates/da-parse/src/lift.rs
+      fsm_consult: [none]
+      observe_mode: candidate_lift
   profiles:
     rich:
       consolidateHeader: 1

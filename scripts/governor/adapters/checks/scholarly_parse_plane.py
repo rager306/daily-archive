@@ -642,6 +642,70 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "missing demo stamp or empty-native refuse",
             )
 
+    stages = (registry.get("defaults") or {}).get("cascade_stages") or {}
+    expected_ids = [f"P{i}" for i in range(10)]
+    if list(stages.keys()) != expected_ids:
+        flag(
+            "policy_stamp",
+            "integration",
+            "data/parse/grobid_compatibility.yaml#defaults.cascade_stages",
+            expected_ids,
+            list(stages.keys()),
+        )
+    allowed_fsm = set(expected_parse) | {"none"} | set(expected_later)
+    for sid in expected_ids:
+        row = stages.get(sid) or {}
+        authority = str(row.get("production_authority") or "")
+        consults = row.get("fsm_consult") or []
+        if isinstance(consults, str):
+            consults = [consults]
+        consults = [str(item) for item in consults]
+        if authority == "native":
+            flag(
+                "policy_stamp",
+                "integration",
+                f"data/parse/grobid_compatibility.yaml#defaults.cascade_stages.{sid}.production_authority",
+                "java_http or java_profile or tei_lift",
+                authority,
+            )
+        if set(consults) & set(expected_empty):
+            flag(
+                "policy_stamp",
+                "integration",
+                f"data/parse/grobid_compatibility.yaml#defaults.cascade_stages.{sid}.fsm_consult",
+                "subset of parse_pdf_consults or later or none",
+                consults,
+            )
+        if consults and any(item not in allowed_fsm for item in consults):
+            flag(
+                "policy_stamp",
+                "integration",
+                f"data/parse/grobid_compatibility.yaml#defaults.cascade_stages.{sid}.fsm_consult",
+                sorted(allowed_fsm),
+                consults,
+            )
+    p0 = stages.get("P0") or {}
+    p0_consults = p0.get("fsm_consult") or []
+    if isinstance(p0_consults, str):
+        p0_consults = [p0_consults]
+    if [str(item) for item in p0_consults] != expected_parse:
+        flag(
+            "policy_stamp",
+            "integration",
+            "data/parse/grobid_compatibility.yaml#defaults.cascade_stages.P0.fsm_consult",
+            expected_parse,
+            p0_consults,
+        )
+    p3 = stages.get("P3") or {}
+    if str(p3.get("observe_mode") or "") != "shadow_receipt" or str(p3.get("production_authority") or "") == "native":
+        flag(
+            "policy_stamp",
+            "integration",
+            "data/parse/grobid_compatibility.yaml#defaults.cascade_stages.P3",
+            {"observe_mode": "shadow_receipt", "production_authority": "java_http"},
+            p3,
+        )
+
     constructors = (registry.get("defaults") or {}).get("production_pdf_constructors") or {}
     scan_roots = [str(item) for item in (constructors.get("scan_roots") or [])]
     allowed = set(constructors.get("allowed_from_env_roles") or [])
