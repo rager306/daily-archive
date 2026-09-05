@@ -162,6 +162,25 @@ pub(crate) fn stamp_p1_layout_observe(m: &mut serde_yaml::Mapping, java_layout_p
     merge_cascade_observe(m, "P1", p1);
 }
 
+/// P7 callout is a production_stamp from Java visual_callouts.
+/// Native surface is none. empty_count_not_success keeps a zero vec from looking like a pass.
+/// Do not pool java_callout_n with P6 figure_n.
+pub(crate) fn stamp_p7_callout_observe(
+    m: &mut serde_yaml::Mapping,
+    java_callout_n: usize,
+    unresolved_n: usize,
+) {
+    let mut p7 = serde_yaml::Mapping::new();
+    p7.insert("stage".into(), "P7".into());
+    p7.insert("production_authority".into(), "java_http".into());
+    p7.insert("observe_mode".into(), "production_stamp".into());
+    p7.insert("java_callout_n".into(), java_callout_n.into());
+    p7.insert("unresolved_n".into(), unresolved_n.into());
+    p7.insert("empty_count_not_success".into(), true.into());
+    p7.insert("native_surface".into(), "none".into());
+    merge_cascade_observe(m, "P7", p7);
+}
+
 fn stamp_from_grammar(
     m: &mut serde_yaml::Mapping,
     g: &da_application::parse_grammar::ParseGrammarDecision,
@@ -1927,6 +1946,15 @@ pub fn run_parse_pdf(
         parsed.table_missingness.is_some(),
         parsed.formula_missingness.is_some(),
     );
+    stamp_p7_callout_observe(
+        &mut m,
+        parsed.visual_callouts.len(),
+        parsed
+            .visual_callouts
+            .iter()
+            .filter(|c| c.unresolved.is_some())
+            .count(),
+    );
     m.insert("lifecycle".into(), "parsed".into());
     let ev_raw = serde_yaml::Mapping::from_iter([
         ("stage".into(), "raw".into()),
@@ -3452,6 +3480,64 @@ mod tests {
             p3.get("java_header_n").and_then(|v| v.as_u64()),
             p3.get("named_native_accepted_gap").and_then(|v| v.as_u64()),
             "hub Java 21 must not be replaced by native accepted 20"
+        );
+    }
+
+    #[test]
+    fn stamp_p7_merges_beside_prior_as_production_stamp() {
+        let mut m = serde_yaml::Mapping::new();
+        stamp_p0_admit_observe(&mut m, true, true);
+        stamp_p1_layout_observe(&mut m, false);
+        stamp_p2_segmentation_observe(&mut m, 12);
+        stamp_p3_header_observe(&mut m, 21);
+        stamp_p4_references_observe(&mut m, 80);
+        stamp_p6_visual_observe(&mut m, 0, 0, 0, true, true);
+        stamp_p7_callout_observe(&mut m, 0, 0);
+        let observe = m
+            .get("cascade_observe")
+            .and_then(|v| v.as_mapping())
+            .expect("cascade_observe");
+        for key in ["P0", "P1", "P2", "P3", "P4", "P6", "P7"] {
+            assert!(observe.contains_key(key), "{key} observe missing");
+        }
+        let p7 = observe
+            .get("P7")
+            .and_then(|v| v.as_mapping())
+            .expect("P7 observe");
+        assert_eq!(p7.get("stage").and_then(|v| v.as_str()), Some("P7"));
+        assert_eq!(
+            p7.get("production_authority").and_then(|v| v.as_str()),
+            Some("java_http")
+        );
+        assert_eq!(
+            p7.get("observe_mode").and_then(|v| v.as_str()),
+            Some("production_stamp"),
+            "P7 is Java lift, not a native family shadow"
+        );
+        assert_eq!(p7.get("java_callout_n").and_then(|v| v.as_u64()), Some(0));
+        assert_eq!(p7.get("unresolved_n").and_then(|v| v.as_u64()), Some(0));
+        assert_eq!(
+            p7.get("empty_count_not_success").and_then(|v| v.as_bool()),
+            Some(true),
+            "zero callouts must not look like callout success"
+        );
+        assert_eq!(
+            p7.get("native_surface").and_then(|v| v.as_str()),
+            Some("none")
+        );
+        let p6 = observe
+            .get("P6")
+            .and_then(|v| v.as_mapping())
+            .expect("P6 observe");
+        assert!(
+            p7.get("java_figure_n").is_none(),
+            "do not pool callout_n with figure_n"
+        );
+        assert!(p6.get("java_callout_n").is_none());
+        assert_ne!(
+            p7.get("observe_mode").and_then(|v| v.as_str()),
+            Some("shadow_receipt"),
+            "do not stamp P7 as family shadow"
         );
     }
 

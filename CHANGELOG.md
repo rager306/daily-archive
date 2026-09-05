@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-05 — M486-5cggw1/S01: parse-pdf stamps P7 callout observe from Java lift
+
+parse-pdf merges cascade_observe.P7 from Java visual_callouts.
+observe_mode is production_stamp. native_surface is none.
+empty_count_not_success stays true. Callouts are not pooled with P6
+figures. Governor flags a parse-pdf without the P7 stamp. No splice.
+No graph. D127 false.
+
+Green: da-cli lib source_cli 19; scholarly_parse_governance 99.
+
 ## 2026-09-05 — M485-jgybkl/S01: parse-pdf stamps P1 layout observe beside Java
 
 parse-pdf merges cascade_observe.P1 from Java layout_json presence.

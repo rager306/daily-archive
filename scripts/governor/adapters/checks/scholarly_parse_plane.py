@@ -768,6 +768,14 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "parse-pdf stamps P6 observe from Java figure/table/formula counts",
                 "missing stamp_p6_visual_observe",
             )
+        if "stamp_p7_callout_observe" not in src:
+            flag(
+                "policy_stamp",
+                "integration",
+                "crates/da-cli/src/source_cli.rs#stamp_p7_callout_observe",
+                "parse-pdf stamps P7 observe from Java visual_callouts",
+                "missing stamp_p7_callout_observe",
+            )
         if (
             "compose_header(" in src
             or "run_header_sequence(" in src
