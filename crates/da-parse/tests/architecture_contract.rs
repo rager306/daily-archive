@@ -2562,9 +2562,10 @@ const BIBLIOGRAPHY_QUARANTINE_BOUNDARIES: [&str; 2] = [
 ];
 
 /// Native bibliography method/type names that must never appear in ParserPort.
-const BIBLIOGRAPHY_NATIVE_PORT_TOKENS: [&str; 7] = [
+const BIBLIOGRAPHY_NATIVE_PORT_TOKENS: [&str; 8] = [
     "compose_references",
     "run_reference_sequence",
+    "NativeCitationAnchorScanner",
     "ReferenceCompositionInput",
     "ReferenceCompositionCandidate",
     "ReferenceCompositionOutcome",
