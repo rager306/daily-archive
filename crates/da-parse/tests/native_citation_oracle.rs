@@ -433,6 +433,97 @@ fn tamper_missing_duplicate_reorder_malformed_and_span_overflow_are_rejected() {
     assert!(da_parse_span_overflow_is_invalid());
 }
 
+#[test]
+fn shape_valid_invented_doi_and_title_are_not_admitted_as_oracle_evidence() {
+    // Authority is test-local only: declared fields scanned from the three
+    // SHA-bound preserved TEI identities via FIXTURES/fixture_path/scan_fixture.
+    let entries = all_entries();
+    assert_eq!(entries.len(), 207, "oracle population must stay exact");
+    let declared_dois: Vec<&str> = entries
+        .iter()
+        .flat_map(|entry| entry.declared_fields.iter())
+        .filter(|(role, _)| *role == CitationFieldRole::Doi)
+        .map(|(_, value)| value.as_str())
+        .collect();
+    let declared_titles: Vec<&str> = entries
+        .iter()
+        .flat_map(|entry| entry.declared_fields.iter())
+        .filter(|(role, _)| *role == CitationFieldRole::ArticleTitle)
+        .map(|(_, value)| value.as_str())
+        .collect();
+    assert_eq!(
+        declared_titles.len(),
+        200,
+        "title denominator must stay exact"
+    );
+    // Fixed synthetic negatives only; no fixture payload is logged here.
+    const INVENTED_DOI: &str = "10.9999/not-in-corpus";
+    const INVENTED_TITLE: &str = "Completely Fake Paper";
+    assert!(
+        !declared_dois.contains(&INVENTED_DOI),
+        "invented DOI is unexpectedly present in preserved oracle identities"
+    );
+    assert!(
+        !declared_titles.contains(&INVENTED_TITLE),
+        "invented title is unexpectedly present in preserved oracle identities"
+    );
+    // Shape recognition is distinct from corpus admission: both synthetic
+    // values still parse by shape, but match no SHA-bound declared field.
+    let parser = NativeCitationParser::new();
+    let NativeCitationOutcome::Recognized { fields: doi_fields } =
+        parser.parse("doi:10.9999/not-in-corpus")
+    else {
+        panic!("shape-valid invented DOI must still parse by shape");
+    };
+    assert!(
+        doi_fields
+            .iter()
+            .any(|field| field.role == CitationFieldRole::Doi && field.value == INVENTED_DOI),
+        "invented DOI must be recognized as a syntactic Doi candidate"
+    );
+    let NativeCitationOutcome::Recognized {
+        fields: title_fields,
+    } = parser.parse("title: Completely Fake Paper")
+    else {
+        panic!("shape-valid invented title must still parse by shape");
+    };
+    assert!(
+        title_fields
+            .iter()
+            .any(|field| field.role == CitationFieldRole::ArticleTitle
+                && field.value == INVENTED_TITLE),
+        "invented title must be recognized as a syntactic ArticleTitle candidate"
+    );
+    // Simulated admission as oracle evidence breaks exact same-n: 207 -> 208.
+    let mut admitted = entries.clone();
+    admitted.push(OracleEntry {
+        fixture: "invented",
+        ordinal: admitted.len(),
+        raw: "doi:10.9999/not-in-corpus".to_owned(),
+        declared_fields: vec![(CitationFieldRole::Doi, INVENTED_DOI.to_owned())],
+    });
+    assert_eq!(admitted.len(), 208);
+    assert_ne!(
+        admitted.len(),
+        207,
+        "admitting a foreign DOI breaks exact same-n oracle population"
+    );
+    // Zero-invention cross-check: neither synthetic value occurs in any
+    // preserved raw_reference, so admitting either would also be invented.
+    assert!(
+        entries
+            .iter()
+            .all(|entry| !entry.raw.contains(INVENTED_DOI)),
+        "invented DOI must occur in no preserved raw_reference"
+    );
+    assert!(
+        entries
+            .iter()
+            .all(|entry| !entry.raw.contains(INVENTED_TITLE)),
+        "invented title must occur in no preserved raw_reference"
+    );
+}
+
 fn da_parse_span_overflow_is_invalid() -> bool {
     !da_parse::CitationSpan { start: 1, end: 9 }.is_valid_for(4)
 }
