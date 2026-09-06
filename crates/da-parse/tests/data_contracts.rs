@@ -7058,6 +7058,30 @@ fn s12_rejects_wave_admission_drift_on_synthetic_clones() {
         &validate_s12_wave_admission(&widened),
         "body added to independently_selectable",
     );
+    // M494/S01: observation lane smuggled into the composition selectable set.
+    let mut docseg = load_s12_admission();
+    if let Some(seq) = docseg.composition["admission"]["independently_selectable"].as_sequence_mut()
+    {
+        seq.push(serde_yaml::Value::String("document_segmentation".into()));
+    }
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&docseg),
+        "document_segmentation added to independently_selectable",
+    );
+    // M494/S01: observation lane smuggled into the fulltext shadow selectable.
+    let mut ftseg = load_s12_admission();
+    if let Some(seq) = ftseg.comparison["native_fulltext_composition_shadow"]["admission"]
+        ["independently_selectable_lanes"]
+        .as_sequence_mut()
+    {
+        seq.push(serde_yaml::Value::String("document_segmentation".into()));
+    }
+    negative(
+        S12_ADMISSION_TAG,
+        &validate_s12_wave_admission(&ftseg),
+        "document_segmentation added to fulltext shadow selectable",
+    );
     // Visual lane smuggled into the composition selectable lanes.
     let mut visual = load_s12_admission();
     if let Some(seq) = visual.comparison["native_header_reference_composition_shadow"]

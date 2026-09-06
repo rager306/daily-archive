@@ -862,8 +862,20 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             ["header", "references"],
             selectable,
         )
+    # M494/S01: observation lanes are never independently selectable. A third
+    # lane in selectable fails closed under its own evidence, even when the
+    # exact-list check above already fired. strata.lanes may stay a superset.
+    for family in ("document_segmentation", "figure", "table", "formula", "learning_policy"):
+        if family in selectable:
+            flag(
+                "body_java_fallback",
+                "integration",
+                f"data/parse/native_fulltext_composition.yaml#admission.independently_selectable.{family}",
+                "observation lane not selectable",
+                selectable,
+            )
     matrix = admission.get("current_matrix") or {}
-    for family in ("document_segmentation", "figure", "table", "formula"):
+    for family in ("document_segmentation", "figure", "table", "formula", "learning_policy"):
         if str(matrix.get(family) or "") == "passed":
             flag(
                 "body_java_fallback",
@@ -980,6 +992,42 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 ["header", "references"],
                 lanes,
             )
+        # M494/S01: observation lanes are never independently selectable, on
+        # the comparison shadow either. strata.lanes may stay a superset.
+        for family in ("document_segmentation", "figure", "table", "formula", "learning_policy"):
+            if family in lanes:
+                flag(
+                    "body_java_fallback",
+                    "integration",
+                    f"data/parse/comparison_contract.yaml#native_header_reference_composition_shadow.independently_selectable_lanes.{family}",
+                    "observation lane not selectable",
+                    lanes,
+                )
+        # M494/S01: native fulltext composition shadow keeps the same
+        # selectable allowlist so the two DATA files cannot drift. Observation
+        # lanes (document_segmentation, figure, table, formula,
+        # learning_policy) fail closed here; strata.lanes may stay a superset.
+        fulltext_shadow = comparison.get("native_fulltext_composition_shadow") or {}
+        if isinstance(fulltext_shadow, dict) and fulltext_shadow:
+            ft_admission = fulltext_shadow.get("admission") or {}
+            ft_lanes = [str(item) for item in (ft_admission.get("independently_selectable_lanes") or [])]
+            if ft_lanes != ["header", "references"]:
+                flag(
+                    "body_java_fallback",
+                    "integration",
+                    "data/parse/comparison_contract.yaml#native_fulltext_composition_shadow.admission.independently_selectable_lanes",
+                    ["header", "references"],
+                    ft_lanes,
+                )
+            for family in ("document_segmentation", "figure", "table", "formula", "learning_policy"):
+                if family in ft_lanes:
+                    flag(
+                        "body_java_fallback",
+                        "integration",
+                        f"data/parse/comparison_contract.yaml#native_fulltext_composition_shadow.admission.independently_selectable_lanes.{family}",
+                        "observation lane not selectable",
+                        ft_lanes,
+                    )
         lane_rollback = shadow.get("rollback") or {}
         for lane in ("header", "references"):
             if lane_rollback.get(lane) != "java-grobid-http@0.9.0-crf":

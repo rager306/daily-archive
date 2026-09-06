@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-06 — M494-a1i14t/S01 T01: observation lanes pinned off independently selectable
+
+Governor `scholarly_parse_plane` fails closed when `document_segmentation`, `figure`, `table`, `formula`, or `learning_policy` enters `independently_selectable` on the native composition authority, the header/reference shadow, or the fulltext composition shadow in `comparison_contract.yaml`. `strata.lanes` may stay a superset. Selectable stays exactly `[header, references]` on both YAML files (SHA-bound). Negative fixture already mutates selectable with `document_segmentation`; Rust `data_contracts` adds the same negatives. No `strata.lanes` shrink, no `document_segmentation` pass, no `this_wave_promotes` change, no splice, no graph write.
+
+
 ## 2026-09-05 — M493-jzmctv/S12 T01: candidate admission and receipt completeness pinned
 
 Independent Rust DATA contracts pin S12 candidate admission over three YAML
