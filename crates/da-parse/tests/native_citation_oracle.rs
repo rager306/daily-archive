@@ -5,8 +5,8 @@
 //! authority; candidate output is never used to manufacture expected values.
 use da_parse::{
     CitationFieldRole, NativeCitationAnchorOutcome, NativeCitationAnchorScanner,
-    NativeCitationOutcome, NativeCitationParser, NativeReferenceListOutcome,
-    NativeReferenceSegmenter,
+    NativeCitationOutcome, NativeCitationParser, NativeReferenceListError,
+    NativeReferenceListOutcome, NativeReferenceSegmenter,
 };
 use sha2::{Digest, Sha256};
 use std::{fs, path::PathBuf};
@@ -287,6 +287,160 @@ fn reconstructed_raw_reference_lists_preserve_exact_source_population() {
                 && reference.span.end == input[ordinal].len()
         }));
     }
+}
+
+#[test]
+fn fixture_bound_mixed_empty_segments_fail_closed_as_empty_segment() {
+    // Authority is test-local only: reconstructed raw_reference strings come
+    // from SHA-bound preserved TEI via FIXTURES/scan_fixture; candidate output
+    // never manufactures expected values (hub=80/reca=78/rlm=49/total=207).
+    let segmenter = NativeReferenceSegmenter::new();
+    for (name, expected_checksum, expected_n) in FIXTURES {
+        let bytes = fs::read(fixture_path(name)).unwrap();
+        assert_eq!(
+            digest(&bytes),
+            expected_checksum,
+            "fixture checksum changed: {name}"
+        );
+        let entries = scan_fixture(name);
+        assert_eq!(
+            entries.len(),
+            expected_n,
+            "raw-note denominator changed: {name}"
+        );
+        assert!(
+            entries.iter().all(|entry| !entry.raw.trim().is_empty()),
+            "preserved fixture must carry no empty raw_reference: {name}"
+        );
+        let input: Vec<&str> = entries.iter().map(|entry| entry.raw.as_str()).collect();
+        // Sane baseline: the unmutated fixture list is still Recognized same-n.
+        let NativeReferenceListOutcome::Recognized { references } = segmenter.segment(&input)
+        else {
+            panic!("candidate did not reconstruct {name}")
+        };
+        assert_eq!(references.len(), expected_n);
+        // One empty sibling among non-empty entries is Malformed, never
+        // Recognized and never part of the 207 population.
+        for probe in ["", "  "] {
+            let mut mutated = input.clone();
+            let victim = mutated.len() / 2;
+            mutated[victim] = probe;
+            assert!(
+                matches!(
+                    segmenter.segment(&mutated),
+                    NativeReferenceListOutcome::Malformed {
+                        reason: NativeReferenceListError::EmptySegment
+                    }
+                ),
+                "mixed empty segment must fail closed as EmptySegment: {name} probe={probe:?}"
+            );
+        }
+    }
+    // Outcome distinction: an all-empty/all-whitespace list is Empty, not
+    // Malformed and not Recognized.
+    let segmenter = NativeReferenceSegmenter::new();
+    assert!(matches!(
+        segmenter.segment(&[]),
+        NativeReferenceListOutcome::Empty
+    ));
+    assert!(matches!(
+        segmenter.segment(&["", "  "]),
+        NativeReferenceListOutcome::Empty
+    ));
+    assert!(matches!(
+        segmenter.segment(&[""]),
+        NativeReferenceListOutcome::Empty
+    ));
+}
+
+#[test]
+fn checksum_bound_hub_reorder_preserves_n_but_breaks_ordered_identity() {
+    // Contract counter-sense `reordered`: same cardinality (n=80) but a
+    // different ordered identity. Test-local joined digest only; the segmenter
+    // must not sort or repair order.
+    let (name, expected_checksum, expected_n) = FIXTURES[0];
+    let bytes = fs::read(fixture_path(name)).unwrap();
+    assert_eq!(
+        digest(&bytes),
+        expected_checksum,
+        "fixture checksum changed: {name}"
+    );
+    let entries = scan_fixture(name);
+    assert_eq!(entries.len(), expected_n);
+    assert_ne!(
+        entries[0].raw, entries[1].raw,
+        "hub fixture must start with two distinct entries for the swap negative"
+    );
+    let input: Vec<&str> = entries.iter().map(|entry| entry.raw.as_str()).collect();
+    let segmenter = NativeReferenceSegmenter::new();
+    let NativeReferenceListOutcome::Recognized { references } = segmenter.segment(&input) else {
+        panic!("candidate did not reconstruct {name}")
+    };
+    assert_eq!(references.len(), expected_n);
+    assert!(references.iter().enumerate().all(|(ordinal, reference)| {
+        reference.ordinal == ordinal
+            && reference.source == input[ordinal]
+            && reference.span.start == 0
+            && reference.span.end == input[ordinal].len()
+    }));
+    let original_joined = input.join("\x1f");
+    let original_digest = digest(original_joined.as_bytes());
+    let mut swapped = input.clone();
+    swapped.swap(0, 1);
+    assert_ne!(
+        swapped, input,
+        "swap of distinct entries must change the sequence"
+    );
+    let NativeReferenceListOutcome::Recognized {
+        references: swapped_refs,
+    } = segmenter.segment(&swapped)
+    else {
+        panic!("swapped hub list must still segment as Recognized n=80")
+    };
+    assert_eq!(
+        swapped_refs.len(),
+        expected_n,
+        "reorder preserves cardinality (contract `reordered`, not cardinality drift)"
+    );
+    let swapped_sources: Vec<&str> = swapped_refs
+        .iter()
+        .map(|reference| reference.source.as_str())
+        .collect();
+    assert_eq!(
+        swapped_sources, swapped,
+        "source sequence must follow input order"
+    );
+    assert_ne!(
+        swapped_sources, input,
+        "swapped source sequence must differ from the original"
+    );
+    let swapped_joined = swapped.join("\x1f");
+    assert_ne!(
+        swapped_joined, original_joined,
+        "swapped joined source must differ from the original"
+    );
+    assert_ne!(
+        digest(swapped_joined.as_bytes()),
+        original_digest,
+        "swapped joined digest must differ from the original"
+    );
+    // Corpus-wide ordered identity, test-local only: the hub/reca/rlm
+    // joined-source order pins ORDERED_RAW_DIGEST; any permutation breaks it.
+    let combined = all_entries();
+    assert_eq!(combined.len(), 207);
+    let combined_raw: Vec<&str> = combined.iter().map(|entry| entry.raw.as_str()).collect();
+    assert_eq!(
+        digest(combined_raw.join("\x1f").as_bytes()),
+        ORDERED_RAW_DIGEST,
+        "combined ordered digest must stay pinned"
+    );
+    let mut permuted = combined_raw.clone();
+    permuted.swap(0, 1);
+    assert_ne!(
+        digest(permuted.join("\x1f").as_bytes()),
+        ORDERED_RAW_DIGEST,
+        "permutation must break ORDERED_RAW_DIGEST"
+    );
 }
 
 #[test]
