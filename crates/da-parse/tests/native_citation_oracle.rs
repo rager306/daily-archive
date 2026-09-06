@@ -4,9 +4,10 @@
 //! or lifting code.  The fixture bytes, entry order, and raw notes are the
 //! authority; candidate output is never used to manufacture expected values.
 use da_parse::{
-    CitationFieldRole, NativeCitationAnchorOutcome, NativeCitationAnchorScanner,
-    NativeCitationOutcome, NativeCitationParser, NativeReferenceListError,
-    NativeReferenceListOutcome, NativeReferenceSegmenter,
+    CitationFieldRole, NativeCitationAnchorError, NativeCitationAnchorLimits,
+    NativeCitationAnchorOutcome, NativeCitationAnchorScanner, NativeCitationOutcome,
+    NativeCitationParser, NativeReferenceListError, NativeReferenceListOutcome,
+    NativeReferenceSegmenter,
 };
 use sha2::{Digest, Sha256};
 use std::{fs, path::PathBuf};
@@ -262,11 +263,137 @@ fn checksum_bound_anchor_population_preserves_order_state_spans_and_adjacency() 
             .count();
         adjacency += expected_pairs.len();
     }
-    assert_eq!((total, targeted, targetless), (380, 217, 163));
-    assert!(
-        adjacency > 0,
-        "the pinned corpus must contain adjacent fragmented occurrences"
+    assert_eq!(
+        (total, targeted, targetless, adjacency),
+        (380, 217, 163, 168),
+        "anchor same-n aggregate changed: (total, targeted, targetless, adjacent_fragment_pairs)"
     );
+}
+
+#[test]
+fn fixture_bound_malformed_anchors_fail_closed_with_exact_reasons() {
+    // Authority is test-local only: every negative starts from SHA-verified
+    // preserved TEI bytes via FIXTURES/fixture_path/digest; mutations live in
+    // in-memory copies only, never touch the fixture files, and never enter
+    // the pinned 380 population.
+    let scanner = NativeCitationAnchorScanner::new();
+    for (name, expected_checksum, _) in FIXTURES {
+        let bytes = fs::read(fixture_path(name)).unwrap();
+        assert_eq!(
+            digest(&bytes),
+            expected_checksum,
+            "fixture checksum changed before mutation: {name}"
+        );
+        let xml = String::from_utf8(bytes).expect("fixture is UTF-8");
+        // Sane baseline: the unmutated SHA-bound document is Recognized.
+        assert!(
+            matches!(
+                scanner.scan(&xml),
+                NativeCitationAnchorOutcome::Recognized { .. }
+            ),
+            "unmutated fixture must stay Recognized: {name}"
+        );
+        // Unclosed opening tag: trailing `<ref type="bibr"` with no `>`.
+        let mut unclosed_opening = xml.clone();
+        unclosed_opening.push_str("<ref type=\"bibr\"");
+        assert!(
+            matches!(
+                scanner.scan(&unclosed_opening),
+                NativeCitationAnchorOutcome::Malformed {
+                    reason: NativeCitationAnchorError::MalformedOpeningTag
+                }
+            ),
+            "unclosed opening tag must fail closed as MalformedOpeningTag: {name}"
+        );
+        // Missing closing tag: complete `<ref type="bibr">` with no `</ref>`.
+        let mut missing_close = xml.clone();
+        missing_close.push_str("<ref type=\"bibr\">unclosed");
+        assert!(
+            matches!(
+                scanner.scan(&missing_close),
+                NativeCitationAnchorOutcome::Malformed {
+                    reason: NativeCitationAnchorError::MissingClosingTag
+                }
+            ),
+            "missing closing tag must fail closed as MissingClosingTag: {name}"
+        );
+        // Neither injection is Recognized, so neither enters the 380 population.
+        assert!(
+            !matches!(
+                scanner.scan(&unclosed_opening),
+                NativeCitationAnchorOutcome::Recognized { .. }
+            ) && !matches!(
+                scanner.scan(&missing_close),
+                NativeCitationAnchorOutcome::Recognized { .. }
+            ),
+            "malformed injections must never count as recognized anchors: {name}"
+        );
+    }
+    // Outcome distinction: empty input stays Empty, never Malformed.
+    assert!(matches!(
+        scanner.scan(""),
+        NativeCitationAnchorOutcome::Empty
+    ));
+}
+
+#[test]
+fn fixture_bound_oversized_anchors_fail_closed_without_truncation() {
+    // Authority is test-local only: limits are exercised against SHA-verified
+    // preserved TEI bytes via FIXTURES/fixture_path/digest; no fixture file
+    // is written and the pinned 380 population is untouched.
+    for (name, expected_checksum, _) in FIXTURES {
+        let bytes = fs::read(fixture_path(name)).unwrap();
+        assert_eq!(
+            digest(&bytes),
+            expected_checksum,
+            "fixture checksum changed before limit probe: {name}"
+        );
+        let xml = String::from_utf8(bytes).expect("fixture is UTF-8");
+        // Document total cap below the real length fails closed before the walk.
+        let tight_total = NativeCitationAnchorScanner::with_limits(NativeCitationAnchorLimits {
+            total_bytes: xml.len() - 1,
+            max_anchors: 16_384,
+            max_anchor_bytes: 64 * 1024,
+        });
+        assert!(
+            matches!(
+                tight_total.scan(&xml),
+                NativeCitationAnchorOutcome::Oversized
+            ),
+            "total cap below fixture length must fail closed as Oversized: {name}"
+        );
+        // Anchor cap below the first real bibr fails closed as Oversized on
+        // that anchor: never Recognized and never Truncated. The witness
+        // length comes from the independent oracle, not from the candidate.
+        let expected = scan_bibr_anchors(&xml);
+        assert!(
+            !expected.is_empty(),
+            "fixture must carry bibr anchors: {name}"
+        );
+        let first_len = expected[0].end - expected[0].start;
+        assert!(
+            first_len > 16,
+            "first oracle bibr must exceed the 16-byte probe cap: {name}"
+        );
+        let tight_anchor = NativeCitationAnchorScanner::with_limits(NativeCitationAnchorLimits {
+            total_bytes: xml.len(),
+            max_anchors: 16_384,
+            max_anchor_bytes: 16,
+        });
+        let outcome = tight_anchor.scan(&xml);
+        assert!(
+            matches!(outcome, NativeCitationAnchorOutcome::Oversized),
+            "anchor cap below the first real bibr must fail closed as Oversized: {name}"
+        );
+        assert!(
+            !matches!(
+                outcome,
+                NativeCitationAnchorOutcome::Recognized { .. }
+                    | NativeCitationAnchorOutcome::Truncated
+            ),
+            "oversized anchor must be neither Recognized nor Truncated: {name}"
+        );
+    }
 }
 
 #[test]
