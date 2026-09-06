@@ -625,6 +625,64 @@ def test_checker_flags_pooling_java_header_with_native_accepted(tmp_path: Path):
     assert matching, flags
 
 
+def test_checker_flags_citation_names_pooled_as_biblstruct_count(tmp_path: Path):
+    """M495/S01: citation_names_total=2198 — отдельный именованный знаменатель.
+
+    Подмена 2198 на 207 (число biblStruct/references) даёт существующий флаг
+    scholarly_parse_plane_acceptance_same_n_drift с evidence по конкретной
+    DATA-поверхности; нового violation label нет. Мутация в tmp_path, live
+    YAML не трогается."""
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/parse/native_fulltext_composition.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    payload["source_evidence"]["s12_named_denominators"]["citation_names_total"] = 207
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_acceptance_same_n_drift"]
+    assert matching, flags
+    assert any("native_fulltext_composition.yaml" in item.evidence and "citation_names_total" in item.evidence for item in matching)
+
+
+def test_checker_flags_citation_names_pooling_unlocked(tmp_path: Path):
+    """M495/S01: pooling_citation_names_with_references stays forbidden.
+
+    Снятие запрета (allowed) даёт существующий флаг
+    scholarly_parse_plane_acceptance_same_n_drift; нового label нет.
+    Мутация в tmp_path, live YAML не трогается."""
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/parse/native_fulltext_composition.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    payload["source_evidence"]["s12_named_denominators"]["java_lift_same_n"][
+        "pooling_citation_names_with_references"
+    ] = "allowed"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_acceptance_same_n_drift"]
+    assert matching, flags
+    assert any("native_fulltext_composition.yaml" in item.evidence for item in matching)
+
+
+def test_checker_flags_citation_names_pooled_on_comparison_shadow(tmp_path: Path):
+    """M495/S01: comparison shadow держит те же знаменатели и lift-флаги.
+
+    Подмена citation_names_total=2198 на 207 в
+    native_fulltext_composition_shadow из comparison_contract.yaml даёт тот же
+    scholarly_parse_plane_acceptance_same_n_drift с evidence по shadow-
+    поверхности. Ключ selectable здесь — independently_selectable_lanes.
+    Мутация в tmp_path, live YAML не трогается."""
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/parse/comparison_contract.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    payload["native_fulltext_composition_shadow"]["source_evidence"]["s12_named_denominators"][
+        "citation_names_total"
+    ] = 207
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_acceptance_same_n_drift"]
+    assert matching, flags
+    assert any("native_fulltext_composition_shadow" in item.evidence and "citation_names_total" in item.evidence for item in matching)
+
+
 def test_checker_flags_undeclared_shadow_sha_clone(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     shadow_path = tmp_path / "artifacts/parse_compat/native_fulltext_composition_shadow.json"

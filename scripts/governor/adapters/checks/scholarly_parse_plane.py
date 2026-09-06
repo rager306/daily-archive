@@ -70,6 +70,8 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
             and "java_header_authors_equals" not in value
             and "citation_names_not_biblstruct" not in value
             and "pooling_accepted_with_raw" not in value
+            and "citation_names_total" not in value
+            and "pooling_citation_names_with_references" not in value
         ):
             return False
         documents = int(value.get("documents") or 0)
@@ -86,6 +88,13 @@ def _check_negative_violation(label: str, record: dict[str, Any], contract: dict
         if value.get("pooling_accepted_with_raw") == "allowed":
             return True
         if value.get("pooling_citation_names_with_references") == "allowed":
+            return True
+        # M495/S01: citation_names_total=2198 — отдельный именованный
+        # знаменатель. Подмена на 207 (references_total / biblStruct) — пул,
+        # не отдельный флаг, и даёт тот же acceptance_same_n_drift.
+        if "citation_names_total" in value and value.get("citation_names_total") not in {2198, "2198"}:
+            return True
+        if "references_total" in value and value.get("references_total") not in {207, "207"}:
             return True
         return False
     if label == "ledger_surface":
@@ -827,9 +836,17 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     except (OSError, yaml.YAMLError) as error:
         flag("body_java_fallback", "integration", "data/parse/native_fulltext_composition.yaml", "valid YAML", str(error))
         fulltext = {}
-    lift = ((fulltext.get("source_evidence") or {}).get("s12_named_denominators") or {}).get("java_lift_same_n") or {}
+    denominators = (fulltext.get("source_evidence") or {}).get("s12_named_denominators") or {}
+    lift = denominators.get("java_lift_same_n") or {}
+    # M495/S01: citation_names_total=2198 и references_total=207 — раздельные
+    # именованные знаменатели, не пул. Подмена 2198 на 207 или снятие запрета
+    # pooling даёт тот же существующий флаг acceptance_same_n_drift, нового
+    # violation label нет. Оба DATA-ключа сравниваются именно с int 2198/207
+    # (YAML хранит их как int); отсутствие ключа тоже дрейф (fail-closed).
     if (
-        lift.get("java_header_authors_equals") != "header_raw_total"
+        denominators.get("citation_names_total") not in {2198, "2198"}
+        or denominators.get("references_total") not in {207, "207"}
+        or lift.get("java_header_authors_equals") != "header_raw_total"
         or lift.get("java_biblstruct_equals") != "references_total"
         or lift.get("hub_native_accepted_header") not in {20, "20"}
         or lift.get("hub_java_header_raw") not in {21, "21"}
@@ -842,6 +859,8 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             "integration",
             "data/parse/native_fulltext_composition.yaml#source_evidence.s12_named_denominators.java_lift_same_n",
             {
+                "citation_names_total": 2198,
+                "references_total": 207,
                 "java_header_authors_equals": "header_raw_total",
                 "java_biblstruct_equals": "references_total",
                 "hub_native_accepted_header": 20,
@@ -850,7 +869,7 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "pooling_accepted_with_raw": "forbidden",
                 "pooling_citation_names_with_references": "forbidden",
             },
-            lift,
+            {"citation_names_total": denominators.get("citation_names_total"), "references_total": denominators.get("references_total"), **lift},
         )
     admission = fulltext.get("admission") or {}
     selectable = [str(item) for item in (admission.get("independently_selectable") or [])]
@@ -1009,6 +1028,43 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
         # learning_policy) fail closed here; strata.lanes may stay a superset.
         fulltext_shadow = comparison.get("native_fulltext_composition_shadow") or {}
         if isinstance(fulltext_shadow, dict) and fulltext_shadow:
+            # M495/S01: comparison shadow держит те же именованные знаменатели
+            # и тот же java_lift_same_n, что composition DATA: citation 2198
+            # не biblStruct, не пул с references 207. Тот же существующий флаг
+            # acceptance_same_n_drift, нового violation label нет. Ключ
+            # selectable здесь называется independently_selectable_lanes
+            # (в composition — independently_selectable); оба ровно
+            # [header, references] и проверяются ниже по своим именам.
+            ft_denominators = (fulltext_shadow.get("source_evidence") or {}).get("s12_named_denominators") or {}
+            ft_lift = ft_denominators.get("java_lift_same_n") or {}
+            if (
+                ft_denominators.get("citation_names_total") not in {2198, "2198"}
+                or ft_denominators.get("references_total") not in {207, "207"}
+                or ft_lift.get("java_header_authors_equals") != "header_raw_total"
+                or ft_lift.get("java_biblstruct_equals") != "references_total"
+                or ft_lift.get("hub_native_accepted_header") not in {20, "20"}
+                or ft_lift.get("hub_java_header_raw") not in {21, "21"}
+                or ft_lift.get("citation_names_not_biblstruct") is not True
+                or ft_lift.get("pooling_accepted_with_raw") != "forbidden"
+                or ft_lift.get("pooling_citation_names_with_references") != "forbidden"
+            ):
+                flag(
+                    "acceptance_same_n_drift",
+                    "integration",
+                    "data/parse/comparison_contract.yaml#native_fulltext_composition_shadow.source_evidence.s12_named_denominators.java_lift_same_n",
+                    {
+                        "citation_names_total": 2198,
+                        "references_total": 207,
+                        "java_header_authors_equals": "header_raw_total",
+                        "java_biblstruct_equals": "references_total",
+                        "hub_native_accepted_header": 20,
+                        "hub_java_header_raw": 21,
+                        "citation_names_not_biblstruct": True,
+                        "pooling_accepted_with_raw": "forbidden",
+                        "pooling_citation_names_with_references": "forbidden",
+                    },
+                    {"citation_names_total": ft_denominators.get("citation_names_total"), "references_total": ft_denominators.get("references_total"), **ft_lift},
+                )
             ft_admission = fulltext_shadow.get("admission") or {}
             ft_lanes = [str(item) for item in (ft_admission.get("independently_selectable_lanes") or [])]
             if ft_lanes != ["header", "references"]:
