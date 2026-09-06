@@ -467,3 +467,185 @@ fn missing_or_tampered_checksum_is_a_hard_failure_contract() {
         );
     }
 }
+
+// ───── M494-a1i14t S03/T01: native personal-name same-n on hub/rlm/reca ─────
+//
+// Expected name counts below are test-local constants bound to the three
+// preserved TEI SHA identities — never built from TeiLifter, HeaderAuthor,
+// compose_header or run_header_sequence. The Hub native-accepted 20 vs Java
+// header-raw 21 denominator stays a named DATA gap (owned by
+// data/parse/native_fulltext_composition.yaml
+// source_evidence.s12_named_denominators.java_lift_same_n), never closed by
+// compose. citation_names 2198 is never pooled with header 35 or biblStruct
+// 207. parse-pdf keeps stamping P3 from Java header_authors (pinned by
+// architecture_contract, not here).
+
+/// Test-local per-fixture expected (header, citation) name counts.
+const EXPECTED_PER_FIXTURE: &[(&str, usize, usize)] = &[
+    ("hub_2507.19457", 20, 665),
+    ("rlm_2512.24601", 4, 973),
+    ("reca_2605.26525v1", 11, 560),
+];
+
+/// Named Hub gap: native accepted header vs Java header_raw. DATA-owned.
+const HUB_NATIVE_ACCEPTED_HEADER: usize = 20;
+const HUB_JAVA_HEADER_RAW: usize = 21;
+const EXPECTED_HEADER_TOTAL: usize = 35;
+const EXPECTED_CITATION_TOTAL: usize = 2_198;
+/// Java biblStruct population (java_lift_same_n_oracle): never citation_names.
+const JAVA_BIBLSTRUCT_TOTAL: usize = 207;
+
+#[test]
+fn same_n_per_fixture_names_fixture_identity_on_drift() {
+    let parser = NativePersonalNameParser::new();
+    let results = all_scan_results();
+    assert_eq!(
+        results.len(),
+        EXPECTED_PER_FIXTURE.len(),
+        "fixture population drift: expected {} preserved TEI identities",
+        EXPECTED_PER_FIXTURE.len()
+    );
+    for ((id, exp_header, exp_citation), result) in EXPECTED_PER_FIXTURE.iter().zip(results.iter())
+    {
+        let headers = result
+            .occurrences
+            .iter()
+            .filter(|item| item.context == PersonalNameContext::Header)
+            .count();
+        let citations = result
+            .occurrences
+            .iter()
+            .filter(|item| item.context == PersonalNameContext::Citation)
+            .count();
+        assert_eq!(
+            headers, *exp_header,
+            "header same-n drift in {id}: oracle {exp_header} vs scanned {headers}"
+        );
+        assert_eq!(
+            citations, *exp_citation,
+            "citation same-n drift in {id}: oracle {exp_citation} vs scanned {citations}"
+        );
+        // One candidate evaluation per oracle occurrence: oracle_n ==
+        // candidate_n by construction; any skip would be a same-n drift.
+        let mut oracle_n = 0usize;
+        let mut candidate_n = 0usize;
+        for item in &result.occurrences {
+            oracle_n += 1;
+            let _ = parser.parse(item.context, &item.input);
+            candidate_n += 1;
+        }
+        assert_eq!(
+            oracle_n, candidate_n,
+            "same-n drift in {id}: oracle_n {oracle_n} vs candidate_n {candidate_n}"
+        );
+    }
+}
+
+#[test]
+fn empty_or_invented_author_is_rejected_without_oracle_admission() {
+    let parser = NativePersonalNameParser::new();
+    // Empty authors are rejected, never recognized.
+    for input in ["", "   "] {
+        assert_eq!(
+            parser.parse(PersonalNameContext::Header, input),
+            NativePersonalNameOutcome::Empty,
+            "empty author must be rejected, got recognition for {input:?}"
+        );
+    }
+    // Invented single-token author is ambiguous, never recognized.
+    let invented_single = parser.parse(PersonalNameContext::Header, "Zxqwr");
+    assert!(
+        matches!(invented_single, NativePersonalNameOutcome::Ambiguous { .. }),
+        "invented single-token author must be ambiguous, got {invented_single:?}"
+    );
+    // Invented et-al author is unsupported, never recognized.
+    let invented_etal = parser.parse(PersonalNameContext::Header, "Kjfblq, et al.");
+    assert!(
+        matches!(invented_etal, NativePersonalNameOutcome::Unsupported { .. }),
+        "invented et-al author must be unsupported, got {invented_etal:?}"
+    );
+    // A shape-valid invented full name still parses by shape — but it is not
+    // admitted as preserved-TEI evidence: its surname occurs in no
+    // hub/rlm/reca oracle identity.
+    let oracle_surnames: Vec<String> = all_occurrences()
+        .into_iter()
+        .map(|item| item.oracle.surname)
+        .collect();
+    assert!(
+        !oracle_surnames.contains(&"Kjfblq".to_string()),
+        "invented surname Kjfblq is unexpectedly present in preserved oracle identities"
+    );
+    let invented_shape = parser.parse(PersonalNameContext::Header, "Zxqwr Kjfblq");
+    let NativePersonalNameOutcome::Recognized { name } = invented_shape else {
+        panic!("shape-valid invented name must still parse by shape, got {invented_shape:?}");
+    };
+    assert!(
+        !oracle_surnames.contains(&name.surname),
+        "invented author surname {} must not match any preserved oracle identity",
+        name.surname
+    );
+}
+
+#[test]
+fn expected_builder_does_not_import_tei_lifter_or_compose() {
+    let src = include_str!("native_personal_name_oracle.rs");
+    let use_block: String = src
+        .lines()
+        .filter(|line| line.trim_start().starts_with("use "))
+        .collect();
+    for name in [
+        "TeiLifter",
+        "HeaderAuthor",
+        "compose_header",
+        "compose_references",
+        "run_header_sequence",
+        "run_reference_sequence",
+    ] {
+        assert!(
+            !use_block.contains(name),
+            "{name} must not be imported into the native personal-name expected builder"
+        );
+        assert!(
+            !src.contains(&format!("{name}(")),
+            "{name} must not be called from the native personal-name expected builder"
+        );
+    }
+}
+
+#[test]
+fn hub_native_20_vs_java_21_stays_named_without_pooling_citation_names() {
+    // The Hub gap is named, never closed by compose.
+    assert_ne!(
+        HUB_NATIVE_ACCEPTED_HEADER, HUB_JAVA_HEADER_RAW,
+        "hub native accepted 20 vs Java raw 21 is a named gap, never equated by compose"
+    );
+    assert_eq!(HUB_NATIVE_ACCEPTED_HEADER, 20);
+    assert_eq!(HUB_JAVA_HEADER_RAW, 21);
+    // Hub native accepted binds the hub per-fixture header constant.
+    let hub = EXPECTED_PER_FIXTURE
+        .iter()
+        .find(|(id, _, _)| *id == "hub_2507.19457")
+        .expect("hub fixture must have a pinned per-fixture expectation");
+    assert_eq!(
+        hub.1, HUB_NATIVE_ACCEPTED_HEADER,
+        "hub per-fixture header expectation must stay the named native-accepted 20"
+    );
+    // Populations stay distinct: header 35 vs citation_names 2198, never pooled.
+    let header_total: usize = EXPECTED_PER_FIXTURE.iter().map(|(_, h, _)| *h).sum();
+    let citation_total: usize = EXPECTED_PER_FIXTURE.iter().map(|(_, _, c)| *c).sum();
+    assert_eq!(header_total, EXPECTED_HEADER_TOTAL);
+    assert_eq!(citation_total, EXPECTED_CITATION_TOTAL);
+    assert_ne!(
+        header_total, citation_total,
+        "header and citation_names must remain distinct populations"
+    );
+    assert_ne!(
+        header_total + citation_total,
+        header_total,
+        "pooling citation_names into header is forbidden"
+    );
+    assert_ne!(
+        citation_total, JAVA_BIBLSTRUCT_TOTAL,
+        "citation_names 2198 is not biblStruct 207"
+    );
+}

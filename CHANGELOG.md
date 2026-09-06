@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-06 — M494-a1i14t/S03 T01: native personal-name same-n on preserved TEI identities
+
+NativePersonalNameParser proven same-n on the three hub/rlm/reca SHA identities: test-local per-fixture expected (hub 20/665, rlm 4/973, reca 11/560; header 35, citation_names 2198) bound to the preserved TEI checksums, one candidate evaluation per oracle occurrence, same-n drift names fixture identity. Expected builder imports no TeiLifter/HeaderAuthor and calls no compose_header/compose_references/run_header_sequence. Empty author is Empty; invented single-token is Ambiguous; invented et-al is Unsupported; a shape-valid invented surname matches no preserved oracle identity. Hub native accepted 20 vs Java header_raw 21 stays a named DATA gap in `data/parse/native_fulltext_composition.yaml` `source_evidence.s12_named_denominators.java_lift_same_n`, never closed by compose; citation_names 2198 is never pooled with header 35 or biblStruct 207. parse-pdf still stamps P3 from Java header_authors (pinned by architecture_contract). No DATA edit, no splice, no graph write.
+
+Green: da-parse native_personal_name_oracle 9/9, native_personal_name_contract 6/6, java_lift_same_n_oracle 2/2, architecture_contract 57/57.
+
 ## 2026-09-06 — M494-a1i14t/S01 T01: observation lanes pinned off independently selectable
 
 Governor `scholarly_parse_plane` fails closed when `document_segmentation`, `figure`, `table`, `formula`, or `learning_policy` enters `independently_selectable` on the native composition authority, the header/reference shadow, or the fulltext composition shadow in `comparison_contract.yaml`. `strata.lanes` may stay a superset. Selectable stays exactly `[header, references]` on both YAML files (SHA-bound). Negative fixture already mutates selectable with `document_segmentation`; Rust `data_contracts` adds the same negatives. No `strata.lanes` shrink, no `document_segmentation` pass, no `this_wave_promotes` change, no splice, no graph write.
