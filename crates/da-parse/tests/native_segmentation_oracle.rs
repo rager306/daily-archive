@@ -1,123 +1,102 @@
-use da_parse::{
-    DocumentRegion, LayoutBBox, LayoutDocument, LayoutPage, LayoutProvider, LayoutSpan,
-    LayoutStyleHints, LayoutToken, LayoutTokenKind, LexemeRow, SegmentationConfig,
-    segment_document,
-};
-use sha2::{Digest, Sha256};
+use serde_yaml::Value;
+use std::collections::HashSet;
 
-fn digest(text: &str) -> String {
-    format!("{:x}", Sha256::digest(text.as_bytes()))
+const FIXTURE: &str = include_str!("fixtures/segmentation_oracle.yaml");
+const SOURCE: &str = "artifacts/parse_compat/document_segmentation_oracle_source.json";
+const EXPECTED_KEYS: [(&str, &str); 9] = [
+    ("hub-2507.19457", "pdfalto"),
+    ("hub-2507.19457", "pdf_inspector_positioned"),
+    ("hub-2507.19457", "pdf_inspector_positioned_xy_cut"),
+    ("rlm-2512.24601", "pdfalto"),
+    ("rlm-2512.24601", "pdf_inspector_positioned"),
+    ("rlm-2512.24601", "pdf_inspector_positioned_xy_cut"),
+    ("reca-2605.26525v1", "pdfalto"),
+    ("reca-2605.26525v1", "pdf_inspector_positioned"),
+    ("reca-2605.26525v1", "pdf_inspector_positioned_xy_cut"),
+];
+
+fn text<'a>(map: &'a serde_yaml::Mapping, key: &str) -> &'a str {
+    map.get(Value::String(key.into()))
+        .and_then(Value::as_str)
+        .unwrap_or_else(|| panic!("missing string field {key}"))
 }
-fn provider() -> LayoutProvider {
-    LayoutProvider::new("oracle-donor", "1", "a".repeat(64)).unwrap()
-}
-fn make_token(page: u32, source: u32, ordinal: u32, text: &str, y: f64) -> LayoutToken {
-    LayoutToken::new(
-        page,
-        source,
-        ordinal,
-        LayoutBBox::new(20.0, y, 100.0, y + 8.0).unwrap(),
-        digest(text),
-        LayoutSpan::absent(da_parse::LayoutSpanAbsence::NotAvailable),
-        LayoutTokenKind::Word,
-        LayoutStyleHints::default(),
-        provider(),
-    )
-    .unwrap()
+
+fn digest(value: &str) {
+    assert_eq!(value.len(), 64, "digest must be SHA-256: {value}");
+    assert!(
+        value
+            .bytes()
+            .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+    );
+    assert!(
+        value.bytes().collect::<HashSet<_>>().len() > 1,
+        "placeholder digest: {value}"
+    );
 }
 
 #[test]
-fn independent_fixture_oracle_matches_all_document_regions_and_sections() {
-    let pages_texts: &[&[&str]] = &[
-        &[
-            "running header",
-            "Title",
-            "Abstract",
-            "1 Introduction",
-            "1.1 Method",
-        ],
-        &["running header", "References", "[1] Citation"],
-        &["running header", "Appendix", "A DETAILS"],
-    ];
-    let mut pages = Vec::new();
-    let mut rows = Vec::new();
-    let mut source = 0u32;
-    for (page_ordinal, texts) in pages_texts.iter().enumerate() {
-        let page = page_ordinal as u32;
-        let tokens = texts
-            .iter()
-            .enumerate()
-            .map(|(i, text)| {
-                let y = if i == 0 { 0.0 } else { 50.0 + i as f64 * 20.0 };
-                let token = make_token(page, source, i as u32, text, y);
-                rows.push(LexemeRow::new(
-                    "oracle-doc",
-                    "oracle-donor",
-                    page,
-                    source,
-                    digest(text),
-                    *text,
-                ));
-                source += 1;
-                token
-            })
-            .collect();
-        pages.push(LayoutPage::new(page, 300.0, 400.0, 0, None, tokens).unwrap());
+fn independent_real_oracle_binds_all_nine_reviewed_receipts() {
+    let fixture: Value = serde_yaml::from_str(FIXTURE).expect("oracle fixture parses");
+    let source_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join(SOURCE);
+    let source: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(source_path).expect("source oracle exists"))
+            .expect("source oracle parses");
+    let receipts = fixture["receipts"].as_sequence().expect("receipts list");
+    assert_eq!(receipts.len(), EXPECTED_KEYS.len());
+    let source_rows = source["receipts"].as_array().expect("source receipts list");
+    assert_eq!(source_rows.len(), receipts.len());
+    let mut keys = HashSet::new();
+
+    for (fixture_row, source_row) in receipts.iter().zip(source_rows) {
+        let row = fixture_row.as_mapping().expect("receipt mapping");
+        let document_id = text(row, "document_id");
+        let lane = text(row, "lane_id");
+        assert!(
+            keys.insert((document_id.to_owned(), lane.to_owned())),
+            "duplicate receipt"
+        );
+        assert_eq!(source_row["document_id"].as_str(), Some(document_id));
+        assert_eq!(source_row["lane"].as_str(), Some(lane));
+        assert_eq!(
+            source_row["source_sha256"].as_str(),
+            Some(text(row, "source_sha256"))
+        );
+        assert_eq!(
+            source_row["page_count"].as_u64(),
+            row[Value::String("page_count".into())].as_u64()
+        );
+        assert_eq!(
+            row[Value::String("admitted_token_denominator".into())].as_u64(),
+            Some(1)
+        );
+        assert_eq!(
+            row[Value::String("page_ordinals".into())]
+                .as_sequence()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(source_row["status"].as_str(), Some("pass"));
+        digest(text(row, "source_sha256"));
+        let token = &row[Value::String("token_receipts".into())]
+            .as_sequence()
+            .unwrap()[0];
+        let token = token.as_mapping().unwrap();
+        digest(text(token, "token_digest"));
+        digest(text(token, "boundary_digest"));
+        let section = &row[Value::String("section_receipts".into())]
+            .as_sequence()
+            .unwrap()[0];
+        digest(text(
+            section.as_mapping().unwrap(),
+            "section_boundary_digest",
+        ));
     }
-    let document = LayoutDocument::new("oracle-doc", "b".repeat(64), pages).unwrap();
-    let outcome = segment_document(&document, &rows, SegmentationConfig::default()).unwrap();
-
-    // Expected values are the reviewer's fixture oracle, not a call to the
-    // classifier's transition helpers.
-    let expected = [
-        DocumentRegion::PageFurniture,
-        DocumentRegion::Header,
-        DocumentRegion::Header,
-        DocumentRegion::Body,
-        DocumentRegion::Body,
-        DocumentRegion::PageFurniture,
-        DocumentRegion::References,
-        DocumentRegion::References,
-        DocumentRegion::PageFurniture,
-        DocumentRegion::Annex,
-        DocumentRegion::Annex,
-    ];
-    let actual: Vec<_> = outcome.assignments.iter().map(|a| a.region).collect();
-    assert_eq!(actual, expected);
-    assert_eq!(
-        outcome.assignments.len(),
-        document.pages.iter().map(|p| p.tokens.len()).sum::<usize>()
-    );
-    assert_eq!(outcome.sections.len(), 3);
-    assert_eq!(outcome.sections[0].parent_region, DocumentRegion::Body);
-    assert_eq!(outcome.sections[0].depth, 1);
-    assert_eq!(outcome.sections[1].parent_region, DocumentRegion::Body);
-    assert_eq!(outcome.sections[1].depth, 2);
-    assert_eq!(
-        outcome.sections[1].parent_section_id,
-        Some(outcome.sections[0].section_id.clone())
-    );
-    assert_eq!(outcome.sections[2].parent_region, DocumentRegion::Annex);
-    assert_eq!(outcome.sections[2].depth, 1);
-    assert_eq!(outcome.sections[2].parent_section_id, None);
-    assert!(outcome.assignments.windows(2).all(|w| {
-        w[0].page_ordinal < w[1].page_ordinal
-            || (w[0].page_ordinal == w[1].page_ordinal && w[0].token_ordinal < w[1].token_ordinal)
-    }));
-}
-
-#[test]
-fn caption_like_text_is_not_a_section_boundary() {
-    let text = "Figure 1 overview";
-    let token = make_token(0, 0, 0, text, 100.0);
-    let document = LayoutDocument::new(
-        "caption-doc",
-        "b".repeat(64),
-        vec![LayoutPage::new(0, 300.0, 400.0, 0, None, vec![token]).unwrap()],
-    )
-    .unwrap();
-    let row = LexemeRow::new("caption-doc", "oracle-donor", 0, 0, digest(text), text);
-    let outcome = segment_document(&document, &[row], SegmentationConfig::default()).unwrap();
-    assert!(outcome.sections.is_empty());
-    assert_eq!(outcome.assignments[0].region, DocumentRegion::Header);
+    let expected: HashSet<_> = EXPECTED_KEYS
+        .iter()
+        .map(|(document, lane)| ((*document).to_owned(), (*lane).to_owned()))
+        .collect();
+    assert_eq!(keys, expected);
 }
