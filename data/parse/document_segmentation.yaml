@@ -86,12 +86,16 @@ evaluation:
     quality: candidate_evidence_only
 
 oracle:
+  source_artifact: artifacts/parse_compat/document_segmentation_oracle_source.json
+  source_artifact_schema: document-segmentation-oracle-source.v1
+  source_artifact_sha256: ab95c62ee045c986d33466f79e0be40107708216be1c25a2544ad3b3431f4c13
   fixture: crates/da-parse/tests/fixtures/segmentation_oracle.yaml
   independent: true
   expected_rows_not_from_sut_helpers: true
   key_fields: [document_id, lane_id, page_ordinal, token_ordinal, token_digest, region, boundary_digest]
   section_fields: [section_id, parent_region, order_ordinal, section_boundary_digest]
   provenance_fields: [source_sha256, genre_id, genre_provenance]
+  source_artifact_receipt_fields: [document_id, source_sha256, lane, page_count, page_ordinal, token_ordinal, token_digest, region, boundary_digest, section_ordinal, section_boundary_digest, status]
   forbidden_fields: [raw_text, pdf_bytes, tei_xml, page_image, physical_path, path, hostname, executable]
   conservation: assigned_equals_admitted
   boundary_order: monotonic

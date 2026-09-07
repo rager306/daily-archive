@@ -20,6 +20,17 @@ fn runner() -> PathBuf {
         })
 }
 
+fn is_digest(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .chars()
+            .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
+        && value.chars().any(|c| c != '0')
+        && value
+            .chars()
+            .any(|c| c != value.chars().next().unwrap_or('0'))
+}
+
 fn assert_redacted(value: &Value, path: &str, in_redaction: bool) {
     match value {
         Value::Object(object) => {
@@ -98,17 +109,33 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
         .to_path_buf();
     let layout_manifest = repo_root.join("data/parse/layout_bakeoff.yaml");
     let segmentation_manifest = repo_root.join("data/parse/document_segmentation.yaml");
+    let oracle = dir.path().join("document-segmentation-oracle-source.json");
+    let mut args = vec![
+        "--layout-manifest".to_owned(),
+        layout_manifest
+            .to_str()
+            .expect("layout manifest path")
+            .to_owned(),
+        "--segmentation-manifest".to_owned(),
+        segmentation_manifest
+            .to_str()
+            .expect("segmentation manifest path")
+            .to_owned(),
+        "--report".to_owned(),
+        report.to_str().expect("report path").to_owned(),
+        "--oracle-source".to_owned(),
+        oracle.to_str().expect("oracle path").to_owned(),
+    ];
+    let runtime_pdfalto = repo_root.join(".gsd/tmp/pdfalto-segmentation-runtime");
+    if runtime_pdfalto.is_file() {
+        args.extend([
+            "--pdfalto".to_owned(),
+            ".gsd/tmp/pdfalto-segmentation-runtime".to_owned(),
+        ]);
+    }
     let output = Command::new(runner())
-        .args([
-            "--layout-manifest",
-            layout_manifest.to_str().expect("layout manifest path"),
-            "--segmentation-manifest",
-            segmentation_manifest
-                .to_str()
-                .expect("segmentation manifest path"),
-            "--report",
-            report.to_str().expect("report path"),
-        ])
+        .args(args)
+        .current_dir(&repo_root)
         .output()
         .expect("run feature-gated shadow example");
     assert!(
@@ -119,6 +146,74 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
 
     let text = fs::read_to_string(&report).expect("canonical report");
     let value: Value = serde_json::from_str(&text).expect("valid JSON report");
+    let oracle_text = fs::read_to_string(&oracle).expect("oracle source report");
+    let oracle_value: Value = serde_json::from_str(&oracle_text).expect("valid oracle source JSON");
+    assert_eq!(
+        oracle_value["schema_version"],
+        "document-segmentation-oracle-source.v1"
+    );
+    let receipts = oracle_value["receipts"]
+        .as_array()
+        .expect("oracle receipts");
+    assert_eq!(receipts.len(), 9);
+    let expected_keys = [
+        ("hub-2507.19457", "pdfalto"),
+        ("hub-2507.19457", "pdf_inspector_positioned"),
+        ("hub-2507.19457", "pdf_inspector_positioned_xy_cut"),
+        ("rlm-2512.24601", "pdfalto"),
+        ("rlm-2512.24601", "pdf_inspector_positioned"),
+        ("rlm-2512.24601", "pdf_inspector_positioned_xy_cut"),
+        ("reca-2605.26525v1", "pdfalto"),
+        ("reca-2605.26525v1", "pdf_inspector_positioned"),
+        ("reca-2605.26525v1", "pdf_inspector_positioned_xy_cut"),
+    ];
+    let actual_keys = receipts
+        .iter()
+        .map(|receipt| {
+            (
+                receipt["document_id"].as_str().expect("document id"),
+                receipt["lane"].as_str().expect("lane"),
+            )
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(actual_keys, expected_keys);
+    let expected_source_sha = [
+        (
+            "hub-2507.19457",
+            "ab3a5139bac83f192ad67529368d77b84b0d807e95a8e4fd0daa8d45fd046bec",
+            96,
+        ),
+        (
+            "rlm-2512.24601",
+            "8567362c22768d9b50d4a4a8d63bb28dda2c2b2051be30d67f70f645170429ca",
+            43,
+        ),
+        (
+            "reca-2605.26525v1",
+            "a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8",
+            63,
+        ),
+    ];
+    assert!(receipts.iter().all(|receipt| {
+        let (document_id, source_sha256, page_count) = expected_source_sha
+            .iter()
+            .find(|(id, _, _)| receipt["document_id"] == *id)
+            .expect("source-bound document");
+        receipt["status"] == "pass"
+            && receipt["document_id"] == *document_id
+            && receipt["source_sha256"] == *source_sha256
+            && receipt["page_count"] == *page_count
+            && receipt["page_ordinal"]
+                .as_u64()
+                .is_some_and(|page| page > 0)
+            && receipt["token_ordinal"].as_u64().is_some()
+            && receipt["token_digest"].as_str().is_some_and(is_digest)
+            && receipt["boundary_digest"].as_str().is_some_and(is_digest)
+            && receipt["section_ordinal"].as_u64().is_some()
+            && receipt["section_boundary_digest"]
+                .as_str()
+                .is_some_and(is_digest)
+    }));
     assert_eq!(value["schema_version"], "document-segmentation-shadow.v1");
     assert_eq!(value["denominators"]["corpus_documents"], 3);
     assert_eq!(value["denominators"]["lanes"], 3);

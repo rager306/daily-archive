@@ -15,6 +15,9 @@ use std::sync::Arc;
 use std::time::Instant;
 
 const REPORT_SCHEMA: &str = "document-segmentation-shadow.v1";
+const ORACLE_SOURCE_SCHEMA: &str = "document-segmentation-oracle-source.v1";
+const ORACLE_SOURCE_DEFAULT: &str =
+    "artifacts/parse_compat/document_segmentation_oracle_source.json";
 const LAYOUT_MANIFEST: &str = "data/parse/layout_bakeoff.yaml";
 const SEGMENTATION_MANIFEST: &str = "data/parse/document_segmentation.yaml";
 const LANES: [&str; 3] = [
@@ -159,7 +162,32 @@ struct Outcome {
     region_tokens: BTreeMap<String, usize>,
     region_boundaries: BTreeMap<String, usize>,
     latency_ms: u128,
+    #[serde(skip)]
+    receipt: Option<Receipt>,
 }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Receipt {
+    ordinal: usize,
+    document_id: String,
+    source_sha256: String,
+    lane: String,
+    page_count: usize,
+    page_ordinal: u32,
+    token_ordinal: u32,
+    token_digest: String,
+    region: String,
+    boundary_digest: String,
+    section_ordinal: usize,
+    section_boundary_digest: String,
+    status: String,
+}
+#[derive(Debug, Serialize)]
+struct OracleSource {
+    schema_version: String,
+    manifest_sha256: String,
+    receipts: Vec<Receipt>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MatrixRow {
     document_id: String,
@@ -213,6 +241,9 @@ struct Job {
 
 fn sha(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
+}
+fn bare_sha(value: &str) -> String {
+    value.strip_prefix("sha256:").unwrap_or(value).to_owned()
 }
 fn digest_report<T: Serialize>(value: &T) -> String {
     sha(&serde_json::to_vec(value).expect("report serialization"))
@@ -281,6 +312,26 @@ fn run_job(job: Job, limits: LayoutDonorLimits, config: SegmentationConfig) -> O
                             .entry(region_name(section.parent_region).into())
                             .or_insert(0) += 1;
                     }
+                    let token = segmentation.assignments.first();
+                    let section = segmentation.sections.first();
+                    let receipt = match (token, section) {
+                        (Some(token), Some(section)) => Some(Receipt {
+                            ordinal: job.ordinal,
+                            document_id: job.document_id.clone(),
+                            source_sha256: bare_sha(&job.source_sha256),
+                            lane: job.lane.clone(),
+                            page_count: observation.document.pages.len(),
+                            page_ordinal: token.page_ordinal,
+                            token_ordinal: token.token_ordinal,
+                            token_digest: bare_sha(&token.text_digest),
+                            region: region_name(token.region).into(),
+                            boundary_digest: bare_sha(&segmentation.boundary_digest),
+                            section_ordinal: section.order_ordinal,
+                            section_boundary_digest: bare_sha(&section.boundary_digest),
+                            status: "pass".into(),
+                        }),
+                        _ => None,
+                    };
                     Outcome {
                         ordinal: job.ordinal,
                         document_id: job.document_id,
@@ -299,6 +350,7 @@ fn run_job(job: Job, limits: LayoutDonorLimits, config: SegmentationConfig) -> O
                         region_tokens,
                         region_boundaries,
                         latency_ms: started.elapsed().as_millis().saturating_add(wait),
+                        receipt,
                     }
                 }
                 Err(_) => Outcome {
@@ -319,6 +371,7 @@ fn run_job(job: Job, limits: LayoutDonorLimits, config: SegmentationConfig) -> O
                     region_tokens: empty_region_counts().0,
                     region_boundaries: empty_region_counts().1,
                     latency_ms: started.elapsed().as_millis().saturating_add(wait),
+                    receipt: None,
                 },
             }
         }
@@ -340,6 +393,7 @@ fn run_job(job: Job, limits: LayoutDonorLimits, config: SegmentationConfig) -> O
             region_tokens: empty_region_counts().0,
             region_boundaries: empty_region_counts().1,
             latency_ms: started.elapsed().as_millis().saturating_add(wait),
+            receipt: None,
         },
     }
 }
@@ -394,6 +448,7 @@ fn execute_jobs(
                     region_tokens: empty_region_counts().0,
                     region_boundaries: empty_region_counts().1,
                     latency_ms: 0,
+                    receipt: None,
                 }
             }
         })
@@ -409,10 +464,19 @@ fn semantic_digest(outcomes: &[Outcome]) -> String {
     digest_report(&normalized)
 }
 
-fn parse_args() -> (PathBuf, PathBuf, PathBuf, Option<PathBuf>, usize, usize) {
+fn parse_args() -> (
+    PathBuf,
+    PathBuf,
+    PathBuf,
+    PathBuf,
+    Option<PathBuf>,
+    usize,
+    usize,
+) {
     let mut layout = PathBuf::from(LAYOUT_MANIFEST);
     let mut segmentation = PathBuf::from(SEGMENTATION_MANIFEST);
     let mut report = PathBuf::from("artifacts/parse_compat/document_segmentation_shadow.json");
+    let mut oracle_source = PathBuf::from(ORACLE_SOURCE_DEFAULT);
     let mut pdfalto = None;
     let mut workers = 1;
     let mut queue = 1;
@@ -422,23 +486,33 @@ fn parse_args() -> (PathBuf, PathBuf, PathBuf, Option<PathBuf>, usize, usize) {
             "--layout-manifest" => layout = args.next().unwrap_or_default().into(),
             "--segmentation-manifest" => segmentation = args.next().unwrap_or_default().into(),
             "--report" => report = args.next().unwrap_or_default().into(),
+            "--oracle-source" => oracle_source = args.next().unwrap_or_default().into(),
             "--pdfalto" => pdfalto = Some(args.next().unwrap_or_default().into()),
             "--workers" => workers = args.next().unwrap_or_default().parse().unwrap_or(1),
             "--queue-capacity" => queue = args.next().unwrap_or_default().parse().unwrap_or(1),
             "--help" => {
                 println!(
-                    "document_segmentation_shadow [--layout-manifest FILE] [--segmentation-manifest FILE] [--report FILE] [--pdfalto EXE] [--workers N] [--queue-capacity N]"
+                    "document_segmentation_shadow [--layout-manifest FILE] [--segmentation-manifest FILE] [--report FILE] [--oracle-source FILE] [--pdfalto EXE] [--workers N] [--queue-capacity N]"
                 );
                 std::process::exit(0)
             }
             other => panic!("unknown argument {other}"),
         }
     }
-    (layout, segmentation, report, pdfalto, workers, queue)
+    (
+        layout,
+        segmentation,
+        report,
+        oracle_source,
+        pdfalto,
+        workers,
+        queue,
+    )
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _log_guard = da_cli::logging::init_pipeline_logging("document_segmentation_shadow");
-    let (layout_path, segmentation_path, report_path, pdfalto_path, workers, queue) = parse_args();
+    let (layout_path, segmentation_path, report_path, oracle_path, pdfalto_path, workers, queue) =
+        parse_args();
     let layout_bytes = fs::read(&layout_path)?;
     let layout: LayoutManifest = serde_yaml::from_slice(&layout_bytes)?;
     let segmentation_bytes = fs::read(&segmentation_path)?;
@@ -641,7 +715,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             result_queue_high_water: metrics.result_queue_high_water,
             in_flight_high_water: metrics.in_flight_high_water,
         },
-        outcomes,
+        outcomes: outcomes.clone(),
         matrix,
         replay: Replay {
             semantic_equal,
@@ -674,6 +748,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(parent) = report_path.parent() {
         fs::create_dir_all(parent)?;
     }
-    fs::write(report_path, serde_json::to_vec_pretty(&report)?)?;
+    fs::write(&report_path, serde_json::to_vec_pretty(&report)?)?;
+    let receipts = outcomes
+        .iter()
+        .filter_map(|outcome| outcome.receipt.clone())
+        .collect::<Vec<_>>();
+    if receipts.len() != 9 || receipts.iter().any(|receipt| receipt.status != "pass") {
+        return Err("all nine segmentation outcomes must produce passing receipts".into());
+    }
+    if let Some(parent) = oracle_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let oracle = OracleSource {
+        schema_version: ORACLE_SOURCE_SCHEMA.into(),
+        manifest_sha256: bare_sha(&sha(&segmentation_bytes)),
+        receipts,
+    };
+    fs::write(oracle_path, serde_json::to_vec_pretty(&oracle)?)?;
     Ok(())
 }
