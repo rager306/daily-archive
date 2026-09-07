@@ -9,6 +9,10 @@ source_authority:
   exact_sha256_binding: required
   page_denominator: 202
   lane_page_denominator: 606
+  document_page_denominators:
+    hub-2507.19457: 96
+    rlm-2512.24601: 43
+    reca-2605.26525v1: 63
 lanes:
   required_ids: [pdfalto, pdf_inspector_positioned, pdf_inspector_positioned_xy_cut]
   pages_per_lane: 202
@@ -21,6 +25,24 @@ heads:
   pooled_score: forbidden
   denominator_per_head: required
   metric_rows_per_head: required
+  oracle_n_per_head: 9
+  figure:
+    oracle_n: 9
+    row_identity: one_per_document_x_lane
+  table:
+    oracle_n: 9
+    row_identity: one_per_document_x_lane
+  formula:
+    oracle_n: 9
+    row_identity: one_per_document_x_lane
+  table_cells:
+    oracle_n: 0
+    absence: not_observed
+    absence_encoding: typed_closed_value
+  formula_labels:
+    oracle_n: 0
+    absence: not_observed
+    absence_encoding: typed_closed_value
   link_receipts_are_source_bound_only: true
   fulltext_composition: forbidden
 metrics:
@@ -40,8 +62,11 @@ source_documents:
     sha256: a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8
     pages: 63
 oracle:
+  source_artifact: artifacts/parse_compat/native_visual_oracle_source.json
+  source_artifact_schema: native-visual-oracle-source.v1
   fixture: crates/da-parse/tests/fixtures/native_visual_oracle.yaml
   independent_review: required
+  expected_rows_not_from_sut_helpers: true
   representation: digest_only
   row_identity: document_page_head_ordinal
   coordinate_dialect: top_left_72dpi_points
