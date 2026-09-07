@@ -1623,6 +1623,44 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
         if not required.issubset(observed):
             flag("missing_integration_evidence", "integration", positive_path.relative_to(root), sorted(required), sorted(observed))
 
+    # M496/T02: the native body ledger is a closed, source-bound DATA
+    # contract.  Do not infer labels or counts here; reject any mutation of
+    # its explicit locks and independent-denominator semantics.
+    ledger_relative = "data/parse/native_body_accounting.yaml"
+    ledger_path = root / ledger_relative
+    try:
+        ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as error:
+        flag("ledger_surface", "integration", ledger_relative, "valid native-body-accounting.v1", str(error))
+        ledger = None
+    if isinstance(ledger, dict):
+        if ledger.get("schema_version") != "native-body-accounting.v1":
+            flag("schema_vocabulary_drift", "taxonomy", f"{ledger_relative}#schema_version", "native-body-accounting.v1", ledger.get("schema_version"))
+        authority = (ledger.get("source_authority") or {}).get("evidence_artifact")
+        if authority != "artifacts/parse_compat/java_grobid_body_taxonomy_source.json":
+            flag("policy_stamp", "integration", f"{ledger_relative}#source_authority", "repo-owned Java taxonomy evidence", authority)
+        locks = ledger.get("policy_locks") or {}
+        expected_locks = {"observation_mode": "shadow", "promotion_state": "candidate", "auto_promote": "forbidden", "import_eligible": False, "graph_mutation": "forbidden", "raw_payloads": "forbidden", "production_authority": "java-grobid-http@0.9.0-crf"}
+        for key, expected in expected_locks.items():
+            if locks.get(key) != expected:
+                flag("policy_stamp" if key == "production_authority" else "ledger_surface", "promotion_quarantine" if key in {"auto_promote", "import_eligible", "graph_mutation", "raw_payloads"} else "integration", f"{ledger_relative}#policy_locks.{key}", expected, locks.get(key))
+        regions = (ledger.get("segmentation_regions") or {}).get("labels") or {}
+        fulltext = (ledger.get("fulltext_labels") or {}).get("labels") or {}
+        if (ledger.get("segmentation_regions") or {}).get("unknown_label_behavior") != "fail_closed" or (ledger.get("fulltext_labels") or {}).get("unknown_label_behavior") != "fail_closed":
+            flag("schema_vocabulary_drift", "taxonomy", f"{ledger_relative}#unknown_label_behavior", "fail_closed", "open")
+        families = ledger.get("families") or {}
+        family_specs = [spec for name, spec in families.items() if name not in {"closed", "pooling"}]
+        malformed_families = [name for name, spec in families.items() if name not in {"closed", "pooling"} and not isinstance(spec, dict)]
+        if malformed_families or families.get("pooling") != "forbidden" or any(spec.get("pooling") != "forbidden" for spec in family_specs if isinstance(spec, dict)):
+            flag("acceptance_same_n_drift", "integration", f"{ledger_relative}#families.pooling", "forbidden typed family specs", {"malformed": malformed_families, "pooling": families.get("pooling")})
+        pending = ((ledger.get("denominators") or {}).get("pending_body_counts") or {})
+        if set(pending) != set(families) - {"closed", "pooling"} or any(value != "pending_independent_oracle" for value in pending.values()):
+            flag("acceptance_same_n_drift", "integration", f"{ledger_relative}#denominators.pending_body_counts", "all body families pending_independent_oracle", pending)
+        if (ledger.get("exclusions") or {}).get("raw_payload_fields") and (ledger.get("exclusions") or {}).get("production_claims") != "forbidden":
+            flag("ledger_surface", "integration", f"{ledger_relative}#exclusions.production_claims", "forbidden", (ledger.get("exclusions") or {}).get("production_claims"))
+        if not regions or not fulltext:
+            flag("schema_vocabulary_drift", "taxonomy", f"{ledger_relative}#labels", "closed label maps", "missing")
+
     negative_spec = fixtures.get("negative") or {}
     negative_path = root / str(negative_spec.get("path", ""))
     try:

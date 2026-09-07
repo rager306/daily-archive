@@ -229,6 +229,7 @@ def _copy_checker_surface(destination: Path) -> None:
     paths = {
         "scripts/governor/checks/scholarly_parse_plane.yaml",
         "scripts/governor/checks/promotion_evidence_contract.yaml",
+        "data/parse/native_body_accounting.yaml",
         str(policy["fixtures"]["positive"]["path"]),
         str(policy["fixtures"]["negative"]["path"]),
     }
@@ -270,6 +271,18 @@ def test_taxonomy_mutation_is_rejected_by_exact_wire_assertion():
         for item in outcome["dispositions"]
     }
     assert not observed <= allowed
+
+
+def test_checker_rejects_native_body_ledger_mutations(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    ledger = tmp_path / "data/parse/native_body_accounting.yaml"
+    original = ledger.read_text(encoding="utf-8")
+    for mutation in ("unknown_label_behavior: accept", "pooling: allowed", "production_claims: allowed"):
+        ledger.write_text(original.replace("unknown_label_behavior: fail_closed", mutation) if mutation.startswith("unknown") else original.replace("pooling: forbidden", mutation) if mutation.startswith("pooling") else original.replace("production_claims: forbidden", mutation), encoding="utf-8")
+        flags = _check_scholarly_parse_plane(tmp_path)
+        assert flags, mutation
+        assert flags, mutation
+        ledger.write_text(original, encoding="utf-8")
 
 
 def test_checker_clean_root_has_no_s19_flags():
