@@ -4,7 +4,8 @@
 use da_parse::{
     AccountingBucket, DocumentRegion, LayoutBBox, LayoutDocument, LayoutPage, LayoutProvider,
     LayoutSpan, LayoutSpanAbsence, LayoutStyleHints, LayoutToken, LayoutTokenKind,
-    NativeBodyAccountant, SegmentationOutcome, TokenAssignment,
+    NATIVE_BODY_SCHEMA_VERSION, NATIVE_BODY_SEQUENCE_SCHEMA_VERSION, NativeBodyAccountant,
+    NativeBodySequenceInput, SegmentationOutcome, TokenAssignment, run_native_body_sequence,
 };
 use serde_yaml::Value;
 
@@ -206,6 +207,57 @@ fn exact_p2_receipts_close_to_accountant_without_aggregate_only_checks() {
         "body prose and opaque visuals stay in body"
     );
     assert_eq!(annex, 1, "annex remains outside body totals");
+
+    let sequence = run_native_body_sequence(NativeBodySequenceInput {
+        document: &document,
+        segmentation: Some(&segmentation),
+        p2_status: "pass",
+        p2_failure_code: None,
+    });
+    assert_eq!(sequence.schema_version, NATIVE_BODY_SEQUENCE_SCHEMA_VERSION);
+    assert_eq!(sequence.status, "pass");
+    assert_eq!(sequence.identity.document_id, document_id);
+    assert_eq!(sequence.identity.source_sha256, source_sha256);
+    assert_eq!(sequence.identity.provider_id, provider_id);
+    assert_eq!(sequence.identity.boundary_digest, boundary_digest);
+    assert_eq!(
+        sequence.identity.accounting_schema_version,
+        NATIVE_BODY_SCHEMA_VERSION
+    );
+    assert_eq!(sequence.steps.len(), 2);
+    assert!(sequence.steps.iter().all(|step| step.status == "pass"));
+    assert_eq!(sequence.counts.admitted, accounting.admitted);
+    assert_eq!(sequence.counts.conserved, accounting.conserved);
+    assert_eq!(sequence.counts.unsupported, accounting.unsupported);
+    assert_eq!(sequence.counts.loss, accounting.loss);
+    assert_eq!(
+        sequence.java_fallback.disposition,
+        "preserved_evidence_only"
+    );
+    assert!(sequence.redaction.values().all(|redacted| !redacted));
+    let wire = serde_json::to_string(&sequence).unwrap();
+    assert!(!wire.contains("raw_text_payload"));
+    assert!(!wire.contains("pdf_bytes"));
+}
+
+#[test]
+fn terminal_p2_failure_stops_before_accounting_and_keeps_java_evidence() {
+    let document = LayoutDocument::new("terminal-p2", "a".repeat(64), vec![]).unwrap();
+    let sequence = run_native_body_sequence(NativeBodySequenceInput {
+        document: &document,
+        segmentation: None,
+        p2_status: "terminal_failure",
+        p2_failure_code: Some("malformed_layout"),
+    });
+    assert_eq!(sequence.status, "terminal_failure");
+    assert_eq!(sequence.steps[0].status, "terminal_failure");
+    assert_eq!(sequence.steps[1].status, "not_admitted");
+    assert_eq!(
+        sequence.steps[1].failure_code.as_deref(),
+        Some("p2_terminal_failure")
+    );
+    assert_eq!(sequence.counts.admitted, 0);
+    assert_eq!(sequence.java_fallback.target, "java_grobid");
 }
 
 #[test]

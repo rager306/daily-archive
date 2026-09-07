@@ -92,9 +92,11 @@ pub use native_affiliation::{
     NativeAffiliationParser, NativeAffiliationUnsupported, RecognizedAffiliationComponent,
 };
 pub use native_body::{
-    AccountedKind, AccountedUnit, AccountingBucket, BucketCount, MAX_ACCOUNTED_ASSIGNMENTS,
-    NATIVE_BODY_SCHEMA_VERSION, NativeBodyAccountant, NativeBodyAccounting, NativeBodyError,
-    NativeBodyLimits, source_digest,
+    AccountedKind, AccountedUnit, AccountingBucket, BucketCount, JavaFallbackEvidence,
+    MAX_ACCOUNTED_ASSIGNMENTS, NATIVE_BODY_SCHEMA_VERSION, NATIVE_BODY_SEQUENCE_SCHEMA_VERSION,
+    NativeBodyAccountant, NativeBodyAccounting, NativeBodyError, NativeBodyLimits,
+    NativeBodySequenceCounts, NativeBodySequenceIdentity, NativeBodySequenceInput,
+    NativeBodySequenceReceipt, NativeBodySequenceStep, run_native_body_sequence, source_digest,
 };
 pub use native_citation::{
     CitationField, CitationFieldRole, CitationSpan, NATIVE_CITATION_ANCHOR_SCANNER_ID,

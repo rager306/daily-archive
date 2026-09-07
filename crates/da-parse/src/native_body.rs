@@ -14,7 +14,167 @@ use std::collections::BTreeMap;
 use std::fmt;
 
 pub const NATIVE_BODY_SCHEMA_VERSION: &str = "da-parse.native-body-accounting/v1";
+pub const NATIVE_BODY_SEQUENCE_SCHEMA_VERSION: &str = "da-parse.native-body-sequence/v1";
 pub const MAX_ACCOUNTED_ASSIGNMENTS: usize = 100_000;
+
+/// The fixed, redacted Java evidence retained while this native path is shadow-only.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct JavaFallbackEvidence {
+    pub disposition: String,
+    pub target: String,
+    pub source: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NativeBodySequenceIdentity {
+    pub document_id: String,
+    pub source_sha256: String,
+    pub provider_id: String,
+    pub segmentation_schema_version: String,
+    pub accounting_schema_version: String,
+    pub boundary_digest: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NativeBodySequenceStep {
+    pub name: String,
+    pub status: String,
+    pub duration_ms: u64,
+    pub failure_code: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NativeBodySequenceCounts {
+    pub admitted: usize,
+    pub conserved: usize,
+    pub unsupported: usize,
+    pub loss: usize,
+}
+
+/// Deterministic, payload-free receipt for the P2 → body-accounting shadow path.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NativeBodySequenceReceipt {
+    pub schema_version: String,
+    pub status: String,
+    pub identity: NativeBodySequenceIdentity,
+    pub steps: Vec<NativeBodySequenceStep>,
+    pub counts: NativeBodySequenceCounts,
+    pub java_fallback: JavaFallbackEvidence,
+    pub redaction: BTreeMap<String, bool>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NativeBodySequenceInput<'a> {
+    pub document: &'a LayoutDocument,
+    pub segmentation: Option<&'a SegmentationOutcome>,
+    pub p2_status: &'a str,
+    pub p2_failure_code: Option<&'a str>,
+}
+
+/// Compose a completed P2 receipt with body accounting without making this a
+/// parser route. The receipt is deterministic: timing is deliberately fixed
+/// at zero and no text, PDF, paths, or executable details are retained.
+pub fn run_native_body_sequence(input: NativeBodySequenceInput<'_>) -> NativeBodySequenceReceipt {
+    let provider_id = input
+        .document
+        .pages
+        .iter()
+        .flat_map(|page| page.tokens.iter())
+        .next()
+        .map(|token| token.provider.id.clone())
+        .unwrap_or_default();
+    let segmentation = input.segmentation;
+    let boundary_digest = segmentation
+        .map(|value| value.boundary_digest.clone())
+        .unwrap_or_default();
+    let identity = NativeBodySequenceIdentity {
+        document_id: input.document.document_id.clone(),
+        source_sha256: input.document.source_pdf_sha256.clone(),
+        provider_id,
+        segmentation_schema_version: segmentation
+            .map(|value| value.schema_version.clone())
+            .unwrap_or_else(|| "unknown".into()),
+        accounting_schema_version: NATIVE_BODY_SCHEMA_VERSION.into(),
+        boundary_digest,
+    };
+    let mut steps = vec![NativeBodySequenceStep {
+        name: "p2_segmentation".into(),
+        status: input.p2_status.into(),
+        duration_ms: 0,
+        failure_code: input.p2_failure_code.map(str::to_owned),
+    }];
+    let mut counts = NativeBodySequenceCounts {
+        admitted: 0,
+        conserved: 0,
+        unsupported: 0,
+        loss: 0,
+    };
+    let mut status = "terminal_failure";
+    if input.p2_status == "pass" {
+        if let Some(segmentation) = segmentation {
+            match NativeBodyAccountant::new().account(input.document, segmentation) {
+                Ok(accounting) => {
+                    counts = NativeBodySequenceCounts {
+                        admitted: accounting.admitted,
+                        conserved: accounting.conserved,
+                        unsupported: accounting.unsupported,
+                        loss: accounting.loss,
+                    };
+                    status = "pass";
+                    steps.push(NativeBodySequenceStep {
+                        name: "native_body_accounting".into(),
+                        status: "pass".into(),
+                        duration_ms: 0,
+                        failure_code: None,
+                    });
+                }
+                Err(error) => steps.push(NativeBodySequenceStep {
+                    name: "native_body_accounting".into(),
+                    status: "terminal_failure".into(),
+                    duration_ms: 0,
+                    failure_code: Some(native_body_error_code(&error).into()),
+                }),
+            }
+        } else {
+            steps.push(NativeBodySequenceStep {
+                name: "native_body_accounting".into(),
+                status: "not_admitted".into(),
+                duration_ms: 0,
+                failure_code: Some("missing_p2_receipt".into()),
+            });
+        }
+    } else {
+        steps.push(NativeBodySequenceStep {
+            name: "native_body_accounting".into(),
+            status: "not_admitted".into(),
+            duration_ms: 0,
+            failure_code: Some("p2_terminal_failure".into()),
+        });
+    }
+    let redaction = [
+        ("raw_text", false),
+        ("raw_pdf", false),
+        ("physical_paths", false),
+        ("hostname", false),
+        ("executable", false),
+    ]
+    .into_iter()
+    .map(|(key, value)| (key.into(), value))
+    .collect();
+    NativeBodySequenceReceipt {
+        schema_version: NATIVE_BODY_SEQUENCE_SCHEMA_VERSION.into(),
+        status: status.into(),
+        identity,
+        steps,
+        counts,
+        java_fallback: JavaFallbackEvidence {
+            disposition: "preserved_evidence_only".into(),
+            target: "java_grobid".into(),
+            source: "production_fallback".into(),
+        },
+        redaction,
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NativeBodyLimits {
@@ -303,6 +463,26 @@ impl NativeBodyAccountant {
             units,
             assignments: segmentation.assignments.clone(),
         })
+    }
+}
+
+fn native_body_error_code(error: &NativeBodyError) -> &'static str {
+    match error {
+        NativeBodyError::EmptyInput => "empty_input",
+        NativeBodyError::MissingIdentity { .. } => "missing_identity",
+        NativeBodyError::Oversize { .. } => "oversize",
+        NativeBodyError::DocumentMismatch => "document_mismatch",
+        NativeBodyError::ProviderMismatch => "provider_mismatch",
+        NativeBodyError::SourceDigestMismatch => "source_digest_mismatch",
+        NativeBodyError::ChecksumMismatch { .. } => "checksum_mismatch",
+        NativeBodyError::AssignmentCountMismatch { .. } => "assignment_count_mismatch",
+        NativeBodyError::UnknownAssignment { .. } => "unknown_assignment",
+        NativeBodyError::UnknownBucket { .. } => "unknown_bucket",
+        NativeBodyError::AssignmentDigestMismatch { .. } => "assignment_digest_mismatch",
+        NativeBodyError::DuplicateAssignment { .. } => "duplicate_assignment",
+        NativeBodyError::Overlap { .. } => "overlap",
+        NativeBodyError::MalformedRange { .. } => "malformed_range",
+        NativeBodyError::MalformedOrder { .. } => "malformed_order",
     }
 }
 
