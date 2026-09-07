@@ -137,11 +137,41 @@ fn replay_is_stable_for_generated_assignment_orders() {
     assert_eq!(first, replay);
 }
 
+#[test]
+fn bounded_accounting_preserves_conservation_and_ordered_identity() {
+    let (document, segmentation) = fixture();
+    let accounting = NativeBodyAccountant::new()
+        .account(&document, &segmentation)
+        .unwrap();
+
+    assert_eq!(accounting.admitted, segmentation.assignments.len());
+    assert_eq!(accounting.conserved, accounting.admitted);
+    assert_eq!(accounting.loss, 0);
+    assert_eq!(accounting.units.len(), segmentation.assignments.len());
+    assert_eq!(accounting.units[0].source_ordinal, 0);
+    assert_eq!(accounting.units[2].source_ordinal, 2);
+}
+
 proptest! {
     #[test]
     fn malformed_token_ordinals_never_panic(ordinal in any::<u32>()) {
         let (document, mut segmentation) = fixture();
         segmentation.assignments[1].token_ordinal = ordinal;
         let _ = NativeBodyAccountant::new().account(&document, &segmentation);
+    }
+
+    #[test]
+    fn bounded_assignment_limits_never_admit_more_than_configured(max in 0usize..4) {
+        let (document, segmentation) = fixture();
+        let result = NativeBodyAccountant::new().account_with_limits(
+            &document,
+            &segmentation,
+            NativeBodyLimits { max_assignments: max },
+        );
+        if max < segmentation.assignments.len() {
+            prop_assert!(result.is_err());
+        } else {
+            prop_assert!(result.is_ok());
+        }
     }
 }
