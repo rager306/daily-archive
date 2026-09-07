@@ -99,20 +99,32 @@ fn per_page_head_cap_is_enforced_without_pooled_scoring() {
 }
 
 #[test]
-fn missing_content_is_a_terminal_count_not_a_fake_success() {
+fn missing_content_is_exact_terminal_not_fake_empty_figure() {
     let mut item = p(NativeVisualKind::Image, 1, 1);
     item.bbox = None;
     item.content_digest = None;
     item.absence = Some(NativeVisualAbsence::NotObserved);
     let mut observation = input(vec![item]);
     assert!(observation.validate(Default::default()).is_ok());
-    let NativeVisualHeadOutcome::Figure { receipts, metrics } =
-        detect_figure_heads(&observation, Default::default()).unwrap()
-    else {
-        panic!()
+    let outcome = detect_figure_heads(&observation, Default::default()).unwrap();
+    let NativeVisualHeadOutcome::Terminal { reason, metrics } = &outcome else {
+        panic!("missing figure content must not become Figure(empty): {outcome:?}");
     };
-    assert!(receipts.is_empty());
+    assert_eq!(*reason, NativeVisualAbsence::NotObserved);
     assert_eq!((metrics.admitted, metrics.terminal), (0, 1));
+    assert_eq!(
+        (
+            metrics.caption_conservation,
+            metrics.content_conservation,
+            metrics.callout_conservation,
+            metrics.geometry_conservation,
+        ),
+        (0, 0, 0, 0)
+    );
+    let replay: NativeVisualHeadOutcome =
+        serde_json::from_slice(&serde_json::to_vec(&outcome).unwrap()).unwrap();
+    assert_eq!(replay, outcome);
+
     observation.lane_absence = Some(NativeVisualAbsence::Unsupported);
     observation.primitives.clear();
     assert!(matches!(
