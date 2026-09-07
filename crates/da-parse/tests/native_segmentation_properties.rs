@@ -77,3 +77,13 @@ fn malformed_sidecar_order_is_rejected_before_classification() {
         Err(da_parse::SegmentationError::MalformedOrder { page: 0, source: 0 })
     ));
 }
+
+#[test]
+fn repeated_admitted_token_ordinal_is_rejected_fail_closed() {
+    let (mut document, rows) = doc(&["one".into(), "two".into()]);
+    document.pages[0].tokens[1].token_ordinal = document.pages[0].tokens[0].token_ordinal;
+    assert!(matches!(
+        segment_document(&document, &rows, SegmentationConfig::default()),
+        Err(da_parse::SegmentationError::LayoutInvalid)
+    ));
+}

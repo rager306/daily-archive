@@ -7161,6 +7161,95 @@ fn s12_rejects_wave_admission_drift_on_synthetic_clones() {
 }
 
 #[test]
+fn document_segmentation_contract() {
+    let contract: serde_yaml::Value = expect_loaded("data/parse/document_segmentation.yaml");
+    assert_eq!(contract["schema_version"], "document-segmentation.v1");
+    assert_eq!(contract["policy_locks"]["import_eligible"], false);
+    assert_eq!(contract["policy_locks"]["graph_mutation"], "forbidden");
+    assert_eq!(contract["policy_locks"]["raw_payloads"], "forbidden");
+
+    let regions = contract["regions"]["closed_labels"]
+        .as_sequence()
+        .expect("closed segmentation regions");
+    assert_eq!(regions.len(), 5);
+    assert!(regions.iter().all(|value| value.as_str().is_some()));
+    assert_eq!(
+        contract["regions"]["assignment_rule"],
+        "exactly_one_region_per_admitted_token"
+    );
+    assert_eq!(
+        contract["regions"]["order_rule"],
+        "admitted_reading_order_preserved"
+    );
+    assert_eq!(contract["evaluation"]["independent_denominators"], true);
+    assert_eq!(contract["evaluation"]["pooled_metrics"], "forbidden");
+    assert_eq!(contract["evaluation"]["required_rows"], 45);
+    assert_eq!(
+        contract["evaluation"]["row_formula"],
+        "3_lanes_x_1_reviewed_genre_x_5_regions"
+    );
+    assert_eq!(contract["lanes"]["silent_skip"], "forbidden");
+    assert_eq!(
+        contract["source_bound_genres"]["unknown_label_behavior"],
+        "fail_closed"
+    );
+    assert_eq!(
+        contract["source_bound_genres"]["missing_coverage_behavior"],
+        "fail_closed"
+    );
+
+    let forbidden = contract["oracle"]["forbidden_fields"]
+        .as_sequence()
+        .expect("oracle redaction fields");
+    for field in [
+        "raw_text",
+        "pdf_bytes",
+        "tei_xml",
+        "page_image",
+        "physical_path",
+        "path",
+        "hostname",
+        "executable",
+    ] {
+        assert!(
+            forbidden.iter().any(|value| value == field),
+            "missing redaction field {field}"
+        );
+    }
+    assert_eq!(contract["oracle"]["independent"], true);
+    assert_eq!(
+        contract["oracle"]["expected_rows_not_from_sut_helpers"],
+        true
+    );
+    assert_eq!(
+        contract["oracle"]["conservation"],
+        "assigned_equals_admitted"
+    );
+    assert_eq!(contract["oracle"]["boundary_order"], "monotonic");
+
+    let failures = contract["failure_taxonomy"]["values"]
+        .as_sequence()
+        .expect("closed segmentation failure taxonomy");
+    assert_eq!(contract["failure_taxonomy"]["closed"], true);
+    for value in [
+        "unknown_region",
+        "unknown_genre",
+        "missing_oracle_row",
+        "duplicate_oracle_key",
+        "overlapping_range",
+        "denominator_erosion",
+        "pooled_metric",
+        "digest_mismatch",
+        "raw_payload_leakage",
+    ] {
+        assert!(
+            failures.iter().any(|candidate| candidate == value),
+            "missing failure value {value}"
+        );
+    }
+}
+
+#[test]
 fn native_body_accounting_contract() {
     let contract: serde_yaml::Value = expect_loaded("data/parse/native_body_accounting.yaml");
     let evidence = load_json_value("artifacts/parse_compat/java_grobid_body_taxonomy_source.json");
