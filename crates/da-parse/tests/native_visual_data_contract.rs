@@ -94,6 +94,14 @@ fn contains_key(value: &Value, forbidden: &str) -> bool {
     }
 }
 
+fn valid_digest(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+        && value.bytes().collect::<BTreeSet<_>>().len() > 1
+}
+
 fn validate(manifest: &Value, oracle: &Value) -> Vec<String> {
     let mut errors = Vec::new();
     if at(manifest, &["schema_version"]).as_str() != Some("native-visual-heads.v1") {
@@ -194,7 +202,7 @@ fn validate_oracle(oracle: &Value, errors: &mut Vec<String>) {
         errors.push("[oracle-coverage] expected 9 document/lane receipts".into());
     }
     let mut keys = BTreeSet::new();
-    for receipt in receipts {
+    for (receipt_index, receipt) in receipts.iter().enumerate() {
         let id = receipt["document_id"].as_str().unwrap_or("");
         let lane = receipt["lane_id"].as_str().unwrap_or("");
         let key = format!("{id}/{lane}");
@@ -209,11 +217,21 @@ fn validate_oracle(oracle: &Value, errors: &mut Vec<String>) {
             .iter()
             .find(|(expected_id, _, _)| *expected_id == id)
             .map(|(_, _, pages)| *pages);
+        let expected_document_index = DOCUMENTS
+            .iter()
+            .position(|(expected_id, _, _)| *expected_id == id);
+        let expected_lane_index = LANES.iter().position(|candidate| *candidate == lane);
         if expected_sha != receipt["source_sha256"].as_str()
             || !LANES.contains(&lane)
             || expected_pages != receipt["page_denominator"].as_i64()
+            || expected_document_index
+                .zip(expected_lane_index)
+                .map(|(document, lane)| document * LANES.len() + lane)
+                != Some(receipt_index)
         {
-            errors.push(format!("[source-binding] invalid receipt binding {key}"));
+            errors.push(format!(
+                "[source-binding] invalid receipt binding or order {key}"
+            ));
         }
         let range = receipt["page_range"].as_sequence().expect("page range");
         if range.len() != 2 || range[0].as_i64() != Some(1) || expected_pages != range[1].as_i64() {
@@ -236,17 +254,45 @@ fn validate_oracle(oracle: &Value, errors: &mut Vec<String>) {
             if !ABSENCES.contains(&status) {
                 errors.push(format!("[absence] status is not closed for {key}/{label}"));
             }
+            if head["head_ordinal"].as_i64() != Some(0) {
+                errors.push(format!(
+                    "[ordinal] head ordinal is not bounded for {key}/{label}"
+                ));
+            }
             for field in [
                 "bbox_72dpi",
                 "caption_digest",
                 "content_digest",
                 "callout_digest",
             ] {
-                if head[field].as_str() != Some("absent") {
+                let value = head[field].as_str().unwrap_or("");
+                let absent = value == "absent";
+                if !absent && !valid_digest(value) {
                     errors.push(format!(
-                        "[typed-absence] {field} is not absent for {key}/{label}"
+                        "[digest] {field} is not lowercase SHA-256 for {key}/{label}"
                     ));
                 }
+                if !absent && ABSENCES.contains(&status) {
+                    errors.push(format!(
+                        "[typed-absence] {field} must be absent for {key}/{label}"
+                    ));
+                }
+            }
+        }
+        for sibling in ["table_cells", "formula_labels"] {
+            let item = &receipt[sibling];
+            let count = item["oracle_n"].as_i64();
+            let status = item["status"].as_str().unwrap_or("");
+            if count.is_none() || count.unwrap() < 0 {
+                errors.push(format!("[sibling-denominator] invalid {key}/{sibling}"));
+            }
+            if count == Some(0) && status != "not_observed" {
+                errors.push(format!("[sibling-absence] silent zero {key}/{sibling}"));
+            }
+            if count.unwrap_or(0) > 0 && status == "not_observed" {
+                errors.push(format!(
+                    "[sibling-conservation] nonzero absent {key}/{sibling}"
+                ));
             }
         }
     }
