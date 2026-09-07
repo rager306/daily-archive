@@ -205,15 +205,19 @@ fn validate_oracle(oracle: &Value, errors: &mut Vec<String>) {
             .iter()
             .find(|(expected_id, _, _)| *expected_id == id)
             .map(|(_, sha, _)| *sha);
+        let expected_pages = DOCUMENTS
+            .iter()
+            .find(|(expected_id, _, _)| *expected_id == id)
+            .map(|(_, _, pages)| *pages);
         if expected_sha != receipt["source_sha256"].as_str()
             || !LANES.contains(&lane)
-            || receipt["page_denominator"].as_i64() != Some(202)
+            || expected_pages != receipt["page_denominator"].as_i64()
         {
             errors.push(format!("[source-binding] invalid receipt binding {key}"));
         }
         let range = receipt["page_range"].as_sequence().expect("page range");
-        if range.len() != 2 || range[0].as_i64() != Some(1) || range[1].as_i64() != Some(202) {
-            errors.push(format!("[topology] invalid 202-page range for {key}"));
+        if range.len() != 2 || range[0].as_i64() != Some(1) || expected_pages != range[1].as_i64() {
+            errors.push(format!("[topology] invalid document page range for {key}"));
         }
         let heads = receipt["heads"].as_sequence().expect("head receipts");
         if heads.len() != HEADS.len() {
