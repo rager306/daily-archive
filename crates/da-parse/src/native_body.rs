@@ -16,6 +16,19 @@ use std::fmt;
 pub const NATIVE_BODY_SCHEMA_VERSION: &str = "da-parse.native-body-accounting/v1";
 pub const MAX_ACCOUNTED_ASSIGNMENTS: usize = 100_000;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NativeBodyLimits {
+    pub max_assignments: usize,
+}
+
+impl Default for NativeBodyLimits {
+    fn default() -> Self {
+        Self {
+            max_assignments: MAX_ACCOUNTED_ASSIGNMENTS,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AccountingBucket {
@@ -75,20 +88,44 @@ pub struct NativeBodyAccounting {
 #[serde(rename_all = "snake_case", tag = "error")]
 pub enum NativeBodyError {
     EmptyInput,
-    TooManyAssignments { count: usize },
+    MissingIdentity { field: &'static str },
+    Oversize { count: usize, max: usize },
     DocumentMismatch,
     ProviderMismatch,
     SourceDigestMismatch,
+    ChecksumMismatch { field: &'static str },
     AssignmentCountMismatch { expected: usize, actual: usize },
     UnknownAssignment { page: u32, source: u32 },
+    UnknownBucket { page: u32, source: u32 },
     AssignmentDigestMismatch { page: u32, source: u32 },
     DuplicateAssignment { page: u32, source: u32 },
+    Overlap { page: u32, token: u32 },
+    MalformedRange { page: u32, source: u32, token: u32 },
     MalformedOrder { page: u32, token: u32 },
 }
 
 impl fmt::Display for NativeBodyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "native body accounting rejected input: {self:?}")
+        let message = match self {
+            Self::EmptyInput => "empty input",
+            Self::MissingIdentity { field } => return write!(f, "missing identity: {field}"),
+            Self::Oversize { count, max } => {
+                return write!(f, "assignment count {count} exceeds limit {max}");
+            }
+            Self::DocumentMismatch => "document identity mismatch",
+            Self::ProviderMismatch => "provider identity mismatch",
+            Self::SourceDigestMismatch => "source digest mismatch",
+            Self::ChecksumMismatch { field } => return write!(f, "checksum mismatch: {field}"),
+            Self::AssignmentCountMismatch { .. } => "assignment coverage mismatch",
+            Self::UnknownAssignment { .. } => "unknown assignment",
+            Self::UnknownBucket { .. } => "unknown accounting bucket",
+            Self::AssignmentDigestMismatch { .. } => "assignment digest mismatch",
+            Self::DuplicateAssignment { .. } => "duplicate assignment",
+            Self::Overlap { .. } => "overlapping token range",
+            Self::MalformedRange { .. } => "malformed token range",
+            Self::MalformedOrder { .. } => "malformed assignment order",
+        };
+        write!(f, "native body accounting rejected input: {message}")
     }
 }
 impl std::error::Error for NativeBodyError {}
@@ -106,6 +143,15 @@ impl NativeBodyAccountant {
         document: &LayoutDocument,
         segmentation: &SegmentationOutcome,
     ) -> Result<NativeBodyAccounting, NativeBodyError> {
+        self.account_with_limits(document, segmentation, NativeBodyLimits::default())
+    }
+
+    pub fn account_with_limits(
+        &self,
+        document: &LayoutDocument,
+        segmentation: &SegmentationOutcome,
+        limits: NativeBodyLimits,
+    ) -> Result<NativeBodyAccounting, NativeBodyError> {
         let tokens = document
             .pages
             .iter()
@@ -114,9 +160,30 @@ impl NativeBodyAccountant {
         if tokens.is_empty() || segmentation.assignments.is_empty() {
             return Err(NativeBodyError::EmptyInput);
         }
-        if segmentation.assignments.len() > MAX_ACCOUNTED_ASSIGNMENTS {
-            return Err(NativeBodyError::TooManyAssignments {
+        if document.document_id.is_empty() {
+            return Err(NativeBodyError::MissingIdentity {
+                field: "document_id",
+            });
+        }
+        if segmentation.document_id.is_empty() {
+            return Err(NativeBodyError::MissingIdentity {
+                field: "document_id",
+            });
+        }
+        if segmentation.provider_id.is_empty() {
+            return Err(NativeBodyError::MissingIdentity {
+                field: "provider_id",
+            });
+        }
+        if segmentation.boundary_digest.is_empty() {
+            return Err(NativeBodyError::MissingIdentity {
+                field: "boundary_digest",
+            });
+        }
+        if segmentation.assignments.len() > limits.max_assignments {
+            return Err(NativeBodyError::Oversize {
                 count: segmentation.assignments.len(),
+                max: limits.max_assignments,
             });
         }
         if segmentation.document_id != document.document_id {
@@ -139,6 +206,11 @@ impl NativeBodyAccountant {
         if !is_sha256(&source_sha256) {
             return Err(NativeBodyError::SourceDigestMismatch);
         }
+        if !segmentation.boundary_digest.starts_with("sha256:") {
+            return Err(NativeBodyError::ChecksumMismatch {
+                field: "boundary_digest",
+            });
+        }
 
         let mut token_by_key = BTreeMap::new();
         for token in tokens {
@@ -158,7 +230,7 @@ impl NativeBodyAccountant {
             }
             if let Some((page, ordinal)) = previous
                 && (assignment.page_ordinal < page
-                    || (assignment.page_ordinal == page && assignment.token_ordinal <= ordinal))
+                    || (assignment.page_ordinal == page && assignment.token_ordinal < ordinal))
             {
                 return Err(NativeBodyError::MalformedOrder {
                     page: assignment.page_ordinal,
@@ -166,6 +238,15 @@ impl NativeBodyAccountant {
                 });
             }
             previous = Some((assignment.page_ordinal, assignment.token_ordinal));
+            if units.iter().any(|unit: &AccountedUnit| {
+                unit.token_ordinal == assignment.token_ordinal
+                    && unit.page_ordinal == assignment.page_ordinal
+            }) {
+                return Err(NativeBodyError::Overlap {
+                    page: assignment.page_ordinal,
+                    token: assignment.token_ordinal,
+                });
+            }
             let token = token_by_key
                 .get(&key)
                 .ok_or(NativeBodyError::UnknownAssignment {
@@ -173,9 +254,10 @@ impl NativeBodyAccountant {
                     source: key.1,
                 })?;
             if token.token_ordinal != assignment.token_ordinal {
-                return Err(NativeBodyError::UnknownAssignment {
+                return Err(NativeBodyError::MalformedRange {
                     page: key.0,
                     source: key.1,
+                    token: assignment.token_ordinal,
                 });
             }
             if token.text_digest != assignment.text_digest {

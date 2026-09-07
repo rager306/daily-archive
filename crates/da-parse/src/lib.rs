@@ -94,7 +94,7 @@ pub use native_affiliation::{
 pub use native_body::{
     AccountedKind, AccountedUnit, AccountingBucket, BucketCount, MAX_ACCOUNTED_ASSIGNMENTS,
     NATIVE_BODY_SCHEMA_VERSION, NativeBodyAccountant, NativeBodyAccounting, NativeBodyError,
-    source_digest,
+    NativeBodyLimits, source_digest,
 };
 pub use native_citation::{
     CitationField, CitationFieldRole, CitationSpan, NATIVE_CITATION_ANCHOR_SCANNER_ID,
