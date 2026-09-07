@@ -77,6 +77,15 @@ defaults:
     deployed: false
     auto_promote: forbidden
     reason: W6 does not candidate-promote; tracked conservation on preserved TEI is Conserved; native families stay shadow
+  # Native P2 -> body accounting remains a test-only shadow sequence. These
+  # call/type atoms must never enter parse-pdf source_cli or ParserPort.
+  body_accounting_quarantine:
+    tokens: [NativeBodyAccountant, run_native_body_sequence]
+    boundaries:
+      - crates/da-cli/src/source_cli.rs
+      - crates/da-ports/src/parser.rs
+    production_authority: java_http
+    observe_mode: shadow_receipt
   # Closed P0-P9 cascade skeleton (ADR-076). production_authority is never native.
   # fsm_consult must be parse_pdf_consults or none. later names stay later.
   # P5 observe_mode is accountant_later and is not a live parse-pdf stamp.

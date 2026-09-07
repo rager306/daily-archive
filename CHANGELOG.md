@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-07 — M496-27op9w/S05 T02: native body accounting quarantine sealed
+
+Native P2 → body accounting remains a test-only shadow sequence: Rust architecture and Governor contracts now scan both `source_cli.rs` and `ParserPort` for body-accountant atoms, while preserving Java GROBID production authority. P5 remains `accountant_later`, DecisionPoint remains the six-wire closed set, and import, graph-write, auto-promotion, and deployment locks remain closed. Added data-driven negative governance coverage and refreshed the bound compatibility-ledger hash; no production route, graph write, import, or promotion changed.
+
 ## 2026-09-06 — M495-gnxzxu/S05 T01: reference sequence stays a test-only shadow runner
 
 Reference sequence quarantine pinned in `crates/da-parse/tests/architecture_contract.rs`: `BIBLIOGRAPHY_NATIVE_PORT_TOKENS` 7 -> 8 with explicit `NativeCitationAnchorScanner` prohibition in `parser_port_carries_no_native_bibliography_methods_or_types` (R129). `run_reference_sequence` stays inside da-parse tests; source_cli.rs and parser.rs have zero `compose_references`/`run_reference_sequence` call sites and zero `NativeCitationAnchorScanner` mentions; parse-pdf stamps P4 from Java biblStruct citations (`stamp_p4_references_observe(&mut m, parsed.citations.len())`, production_authority java_http, citation_names_not_biblstruct true). Governor `_BIBLIOGRAPHY_QUARANTINE_TOKENS` untouched (still 2 snake_case call-site tokens). No SUT/runtime/YAML/graph/import change, no promotion.

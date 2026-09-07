@@ -3483,6 +3483,88 @@ fn s12_composition_stays_quarantined_candidate_leaf() {
     );
 }
 
+// ───── M496 S05/T02: body accounting stays a test-only shadow sequence ─────
+//
+// The P2 -> body accountant is intentionally exposed only by da-parse's
+// shadow runner. The parse-pdf CLI boundary and ParserPort must remain Java
+// production surfaces; P5 remains accountant_later and promotion/import/graph
+// locks stay closed.
+const S05_BODY_QUARANTINE_BOUNDARIES: [&str; 2] = [
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+];
+const S05_BODY_QUARANTINE_ATOMS: [&str; 2] = ["NativeBodyAccountant", "run_native_body_sequence"];
+
+fn s05_body_quarantine_hits(text: &str) -> Vec<String> {
+    let code = s10_code_without_comments(text);
+    S05_BODY_QUARANTINE_ATOMS
+        .iter()
+        .filter(|atom| {
+            if atom.contains('_') {
+                code.contains(&format!("{atom}("))
+            } else {
+                code.split(|c: char| !c.is_ascii_alphanumeric() && c != '_')
+                    .any(|part| part == **atom)
+            }
+        })
+        .map(|atom| (*atom).to_owned())
+        .collect()
+}
+
+#[test]
+fn s05_body_accounting_stays_quarantined_from_production_boundaries() {
+    for rel in S05_BODY_QUARANTINE_BOUNDARIES {
+        let src = read_text(rel);
+        assert!(
+            src.len() > 1_000,
+            "positive control failed: {rel} looks truncated"
+        );
+        assert!(
+            s05_body_quarantine_hits(&src).is_empty(),
+            "S05: native body accountant leaked into {rel}"
+        );
+    }
+
+    let port = read_text("crates/da-ports/src/parser.rs");
+    assert!(port.contains("pub trait ParserPort"));
+    assert!(port.contains("async fn parse_pdf"));
+
+    let http = read_text("crates/da-parse/src/http.rs");
+    assert!(
+        http.contains("GrobidParser"),
+        "Java parser authority disappeared"
+    );
+
+    let cli = read_text("crates/da-cli/src/source_cli.rs");
+    let cli_code = s10_code_without_comments(&cli);
+    assert!(
+        !cli_code.contains("stamp_p5_"),
+        "P5 must remain accountant_later"
+    );
+
+    let fsm = read_text("crates/da-domain/src/fsm_policy.rs");
+    assert!(s10_decision_point_violations(&s10_code_without_comments(&fsm)).is_empty());
+
+    let policy = read_text("scripts/governor/checks/scholarly_parse_plane.yaml");
+    assert!(policy.contains("import_eligible: false"));
+    assert!(policy.contains("graph_write: forbidden"));
+    assert!(policy.contains("auto_promote: forbidden"));
+}
+
+#[test]
+fn s05_body_accounting_scanner_fails_visible_on_synthetic_atoms() {
+    for atom in S05_BODY_QUARANTINE_ATOMS {
+        let synthetic = if atom.contains('_') {
+            format!("fn run() {{ {atom}(input); }}")
+        } else {
+            format!("let _x: {atom};")
+        };
+        assert_eq!(s05_body_quarantine_hits(&synthetic), vec![atom.to_owned()]);
+    }
+    assert!(s05_body_quarantine_hits("// NativeBodyAccountant(input)\nlet x = 1;").is_empty());
+    assert!(s05_body_quarantine_hits("let NativeBodyAccountantFactory = 1;").is_empty());
+}
+
 #[test]
 fn s12_composition_scanner_fails_visible_on_synthetic_atoms() {
     // Negative control: every compose atom flags, prose never does.

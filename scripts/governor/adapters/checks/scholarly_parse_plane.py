@@ -373,6 +373,32 @@ def _native_rules_not_consulted_tokens(consult: Any) -> list[tuple[str, str]]:
     return pairs
 
 
+def _body_accounting_quarantine_spec(defaults: Any) -> tuple[list[str], list[str]]:
+    """Derive native body accountant atoms and boundaries from ledger DATA."""
+    if not isinstance(defaults, dict):
+        return [], []
+    spec = defaults.get("body_accounting_quarantine")
+    if not isinstance(spec, dict):
+        return [], []
+    tokens = [str(item).strip() for item in (spec.get("tokens") or []) if isinstance(item, str) and str(item).strip()]
+    boundaries = [str(item).strip() for item in (spec.get("boundaries") or []) if isinstance(item, str) and str(item).strip()]
+    return tokens, boundaries
+
+
+def _body_accounting_quarantine_tokens_present(code: str, tokens: list[str]) -> list[str]:
+    """Find typed names and call-sites in code, excluding line comments."""
+    code = _strip_header_quarantine_comments(code)
+    hits: list[str] = []
+    for token in tokens:
+        if "_" in token:
+            pattern = rf"(?<![A-Za-z0-9_]){re.escape(token)}\s*\("
+        else:
+            pattern = rf"(?<![A-Za-z0-9_]){re.escape(token)}(?![A-Za-z0-9_])"
+        if re.search(pattern, code):
+            hits.append(token)
+    return hits
+
+
 def _java_absent_endpoint_tokens(defaults: Any) -> list[str]:
     """Derive the independent Java absent-endpoint set from ledger DATA.
 
@@ -1506,6 +1532,35 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "crates/da-cli/src/source_cli.rs#parse-pdf",
                 "P1 observe must not call native layout",
                 "native layout call",
+            )
+
+    defaults = (registry.get("defaults") or {}) if isinstance(registry, dict) else {}
+    body_tokens, body_boundaries = _body_accounting_quarantine_spec(defaults)
+    body_quarantine = defaults.get("body_accounting_quarantine") or {}
+    if body_quarantine.get("production_authority") != "java_http" or body_quarantine.get("observe_mode") != "shadow_receipt":
+        flag(
+            "policy_stamp",
+            "integration",
+            "data/parse/grobid_compatibility.yaml#defaults.body_accounting_quarantine",
+            {"production_authority": "java_http", "observe_mode": "shadow_receipt"},
+            body_quarantine,
+        )
+    for relative in body_boundaries:
+        path = root / relative
+        if not path.is_file():
+            continue
+        try:
+            boundary_src = path.read_text(encoding="utf-8")
+        except OSError as error:
+            boundary_src = str(error)
+        hits = _body_accounting_quarantine_tokens_present(boundary_src, body_tokens)
+        if hits:
+            flag(
+                "policy_stamp",
+                "integration",
+                f"{relative}#body_accounting_quarantine",
+                "native body accountant remains shadow-only",
+                hits,
             )
 
     real_tei = root / "crates/da-parse/src/real_tei_tests.rs"

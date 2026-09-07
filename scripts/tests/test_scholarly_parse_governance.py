@@ -23,6 +23,8 @@ from governor.adapters.checks.scholarly_parse_plane import (
     _empty_native_consult_tokens,
     _java_absent_endpoint_tokens,
     _native_rules_not_consulted_tokens,
+    _body_accounting_quarantine_spec,
+    _body_accounting_quarantine_tokens_present,
     _scan_bare_from_env_parse,
     _visual_heads_quarantine_spec,
 )
@@ -271,6 +273,39 @@ def test_taxonomy_mutation_is_rejected_by_exact_wire_assertion():
         for item in outcome["dispositions"]
     }
     assert not observed <= allowed
+
+
+def test_body_accounting_quarantine_is_data_driven_and_comment_safe():
+    defaults = _load(ROOT / "data/parse/grobid_compatibility.yaml")["defaults"]
+    tokens, boundaries = _body_accounting_quarantine_spec(defaults)
+    assert tokens == ["NativeBodyAccountant", "run_native_body_sequence"]
+    assert boundaries == [
+        "crates/da-cli/src/source_cli.rs",
+        "crates/da-ports/src/parser.rs",
+    ]
+    assert _body_accounting_quarantine_tokens_present(
+        "let _x: NativeBodyAccountant; run_native_body_sequence (input);",
+        tokens,
+    ) == tokens
+    assert _body_accounting_quarantine_tokens_present(
+        "// NativeBodyAccountant(input)\nlet NativeBodyAccountantFactory = 1;",
+        tokens,
+    ) == []
+
+
+def test_checker_flags_native_body_accounting_in_production_boundary(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-ports/src/parser.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("fn parse() { run_native_body_sequence(input); }\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [
+        item for item in flags
+        if item.flag == "scholarly_parse_plane_policy_stamp"
+        and "body_accounting_quarantine" in item.evidence
+    ]
+    assert matching, flags
+    assert "run_native_body_sequence" in matching[0].evidence
 
 
 def test_checker_rejects_native_body_ledger_mutations(tmp_path: Path):
