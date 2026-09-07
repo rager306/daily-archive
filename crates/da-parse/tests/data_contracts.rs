@@ -526,6 +526,13 @@ fn load_yaml<T: for<'de> Deserialize<'de>>(rel: &str) -> Result<T, String> {
     serde_yaml::from_str(&text).map_err(|e| format!("[malformed-yaml] {rel}: {e}"))
 }
 
+fn load_json_value(rel: &str) -> serde_json::Value {
+    let text = std::fs::read_to_string(repo_root().join(rel))
+        .unwrap_or_else(|e| panic!("JSON artifact must be readable: {rel}: {e}"));
+    serde_json::from_str(&text)
+        .unwrap_or_else(|e| panic!("JSON artifact must be valid: {rel}: {e}"))
+}
+
 fn expect_loaded<T: for<'de> Deserialize<'de>>(rel: &str) -> T {
     match load_yaml::<T>(rel) {
         Ok(v) => v,
@@ -1492,7 +1499,7 @@ fn validate_registry_config_keys(registry: &serde_yaml::Value) -> Vec<String> {
 /// The observation ledger tree stays exactly the sanctioned data/parse file
 /// set — no parallel ledger tree may appear (R113/R117).
 fn data_parse_tree_errs(entries: Vec<(String, bool)>) -> Vec<String> {
-    const SANCTIONED: [&str; 10] = [
+    const SANCTIONED: [&str; 11] = [
         "SCHEMA.yaml",
         "api_compatibility_ledger.yaml",
         "comparison_contract.yaml",
@@ -1502,6 +1509,7 @@ fn data_parse_tree_errs(entries: Vec<(String, bool)>) -> Vec<String> {
         "document_segmentation.yaml",
         "native_visual_heads.yaml",
         "native_fulltext_composition.yaml",
+        "native_body_accounting.yaml",
         "acceptance_manifest.yaml",
     ];
     let mut errs = Vec::new();
@@ -7150,4 +7158,130 @@ fn s12_rejects_wave_admission_drift_on_synthetic_clones() {
         &validate_s12_wave_admission(&production),
         "observation_mode -> production",
     );
+}
+
+#[test]
+fn native_body_accounting_contract() {
+    let contract: serde_yaml::Value = expect_loaded("data/parse/native_body_accounting.yaml");
+    let evidence = load_json_value("artifacts/parse_compat/java_grobid_body_taxonomy_source.json");
+    let evidence_yaml = serde_yaml::to_value(&evidence).expect("evidence converts to YAML value");
+
+    assert_eq!(contract["schema_version"], "native-body-accounting.v1");
+    assert_eq!(
+        contract["source_authority"]["evidence_artifact"],
+        "artifacts/parse_compat/java_grobid_body_taxonomy_source.json"
+    );
+    assert_eq!(
+        contract["source_authority"]["evidence_schema_version"],
+        evidence_yaml["schema_version"]
+    );
+    assert_eq!(
+        contract["source_authority"]["vendor_revision"],
+        evidence_yaml["vendor_revision"]
+    );
+    assert_eq!(
+        contract["source_authority"]["files"],
+        evidence_yaml["files"]
+    );
+    assert_eq!(
+        contract["segmentation_regions"]["labels"],
+        evidence_yaml["segmentation_labels"]
+    );
+    assert_eq!(
+        contract["fulltext_labels"]["labels"],
+        evidence_yaml["fulltext_labels"]
+    );
+    assert_eq!(
+        contract["entry_points"]["orchestration_method_lines"],
+        evidence_yaml["orchestration_method_lines"]
+    );
+
+    let locks = &contract["policy_locks"];
+    for (key, value) in [
+        ("observation_mode", "shadow"),
+        ("auto_promote", "forbidden"),
+        ("production_authority", "java-grobid-http@0.9.0-crf"),
+    ] {
+        assert_eq!(locks[key], value, "policy lock {key}");
+    }
+    assert_eq!(locks["import_eligible"], false);
+    assert_eq!(locks["graph_mutation"], "forbidden");
+    assert_eq!(locks["raw_payloads"], "forbidden");
+
+    let families = &contract["families"];
+    assert_eq!(families["closed"], true);
+    assert_eq!(families["pooling"], "forbidden");
+    for family in [
+        "body_blocks",
+        "body_markers",
+        "visual_content",
+        "annex",
+        "references",
+        "page_furniture",
+    ] {
+        assert_eq!(
+            families[family]["pooling"], "forbidden",
+            "family {family} must not pool"
+        );
+    }
+    assert_eq!(
+        families["body_blocks"]["fulltext_labels"],
+        serde_yaml::from_str::<serde_yaml::Value>("[paragraph, item, section]").unwrap()
+    );
+    assert_eq!(
+        families["body_markers"]["fulltext_labels"],
+        serde_yaml::from_str::<serde_yaml::Value>(
+            "[citation_marker, figure_marker, table_marker, equation_marker, other]"
+        )
+        .unwrap()
+    );
+    assert_eq!(
+        families["visual_content"]["fulltext_labels"],
+        serde_yaml::from_str::<serde_yaml::Value>("[figure, table, equation, equation_label]")
+            .unwrap()
+    );
+    assert_eq!(
+        families["annex"]["fulltext_labels"],
+        serde_yaml::Value::Sequence(vec![])
+    );
+
+    assert_eq!(contract["source_corpus"]["corpus_n"], 3);
+    assert_eq!(contract["source_corpus"]["page_sum"], 202);
+    assert_eq!(contract["denominators"]["known"]["documents"], 3);
+    assert_eq!(contract["denominators"]["known"]["pages"], 202);
+    assert_eq!(contract["denominators"]["known"]["lanes"], 3);
+    for family in [
+        "body_blocks",
+        "body_markers",
+        "visual_content",
+        "annex",
+        "references",
+        "page_furniture",
+    ] {
+        assert_eq!(
+            contract["denominators"]["pending_body_counts"][family],
+            "pending_independent_oracle"
+        );
+    }
+
+    let failures = contract["failure_taxonomy"]["values"]
+        .as_sequence()
+        .expect("closed failure values");
+    for value in [
+        "unknown_label",
+        "missing_identity",
+        "checksum_mismatch",
+        "duplicate_assignment",
+        "overlap",
+        "denominator_erosion",
+        "pooled_metric",
+        "raw_payload",
+        "promotion_attempt",
+        "graph_attempt",
+    ] {
+        assert!(
+            failures.iter().any(|v| v == value),
+            "missing failure value {value}"
+        );
+    }
 }

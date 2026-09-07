@@ -1,0 +1,185 @@
+# M496/S01/T01 closed native body accounting DATA contract.
+# DATA ONLY: shadow ledger naming Java FullTextParser body/annex semantics,
+# entry points, exclusions and independent denominators. No candidate logic,
+# no graph writes, no import, no promotion, no raw payload material.
+schema_version: native-body-accounting.v1
+adr_ref: ADR-075
+contract_id: native-body-accounting-shadow
+requirement_ids: [R085, R087, R088, R091, R092, R118, R120, R122, R123, R124, R125, R127, R130, R131]
+decisions: [D127, D204]
+
+# Sole source authority: repo-owned evidence artifact (no vendor checkout,
+# no absolute paths, no embedded Java source bytes).
+source_authority:
+  evidence_artifact: artifacts/parse_compat/java_grobid_body_taxonomy_source.json
+  evidence_schema_version: java-grobid-body-taxonomy-source.v1
+  vendor: grobid
+  vendor_revision: 0b0ab53b159b32792a01fca1d9d04fd02cf8b24b
+  files:
+    fulltext_parser:
+      logical_path: grobid-core/src/main/java/org/grobid/core/engines/FullTextParser.java
+      sha256: f8780d55c25f17f53e2be2b286e9f68c0e674f09c4b88e3e1f2c7bb800228796
+    segmentation_labels:
+      logical_path: grobid-core/src/main/java/org/grobid/core/engines/label/SegmentationLabels.java
+      sha256: 196bdbefce20bfd9765e48f6c6a75e63d7ab2dd2b3cbfc11a1316a362760063c
+    tagging_labels:
+      logical_path: grobid-core/src/main/java/org/grobid/core/engines/label/TaggingLabels.java
+      sha256: eb0eef846e80fccfa6bc835e3f24c9eaa66cc2b66fbdd8b8074c7c30d3e775a8
+
+policy_locks:
+  observation_mode: shadow
+  promotion_state: candidate
+  auto_promote: forbidden
+  import_eligible: false
+  graph_mutation: forbidden
+  raw_payloads: forbidden
+  production_authority: java-grobid-http@0.9.0-crf
+
+# Closed segmentation regions copied exactly from the evidence artifact.
+# Unknown labels fail closed (never default into body).
+segmentation_regions:
+  closed: true
+  unknown_label_behavior: fail_closed
+  labels:
+    body: "<body>"
+    annex: "<annex>"
+    references: "<references>"
+    acknowledgement: "<acknowledgement>"
+    availability: "<availability>"
+    funding: "<funding>"
+    conflict: "<conflict>"
+    contribution: "<contribution>"
+    toc: "<toc>"
+    page_number: "<page>"
+    cover: "<cover>"
+    header: "<header>"
+    footnote: "<footnote>"
+    headnote: "<headnote>"
+    marginnote: "<marginnote>"
+
+# Closed FullTextParser fulltext labels copied exactly from the evidence artifact.
+fulltext_labels:
+  closed: true
+  unknown_label_behavior: fail_closed
+  labels:
+    paragraph: "<paragraph>"
+    item: "<item>"
+    section: "<section>"
+    citation_marker: "<citation_marker>"
+    figure_marker: "<figure_marker>"
+    table_marker: "<table_marker>"
+    equation_marker: "<equation_marker>"
+    figure: "<figure>"
+    table: "<table>"
+    equation: "<equation>"
+    equation_label: "<equation_label>"
+    other: "<other>"
+
+# Java entry points copied exactly from the evidence artifact
+# (orchestration method line spans inside FullTextParser.java).
+entry_points:
+  engine: FullTextParser
+  engine_file: grobid-core/src/main/java/org/grobid/core/engines/FullTextParser.java
+  orchestration_method_lines:
+    processingHeaderSection: [166, 733]
+    processingReferenceSection: [232, 1539]
+    processFigures: [278, 353, 2446, 2447, 2448, 2451, 2452, 2453, 2456]
+    processTables: [308, 377, 2635, 2639, 2640, 2643, 2647, 2648, 2651]
+    processEquations: [331, 403, 2854, 2855, 2858]
+    postProcessCallout: [416, 2929]
+
+# Six separate non-pooled accounting families. Fulltext labels partition
+# across families exactly once; pooling any two families is forbidden.
+families:
+  closed: true
+  pooling: forbidden
+  body_blocks:
+    description: admitted body prose blocks inside the body region
+    segmentation_labels: [body]
+    fulltext_labels: [paragraph, item, section]
+    pooling: forbidden
+  body_markers:
+    description: in-body callout markers plus the unclassified other label (fail closed, never silently absorbed)
+    segmentation_labels: [body]
+    fulltext_labels: [citation_marker, figure_marker, table_marker, equation_marker, other]
+    pooling: forbidden
+  visual_content:
+    description: visual heads inside body flow, opaque and conserved, never pooled into block counts
+    segmentation_labels: [body]
+    fulltext_labels: [figure, table, equation, equation_label]
+    behavior: opaque_conserved
+    pooling: forbidden
+  annex:
+    description: back-matter annex region and annex-adjacent segmentation labels
+    segmentation_labels: [annex, acknowledgement, availability, funding, conflict, contribution]
+    fulltext_labels: []
+    pooling: forbidden
+  references:
+    description: bibliography region only
+    segmentation_labels: [references]
+    fulltext_labels: []
+    pooling: forbidden
+  page_furniture:
+    description: running heads, pagination and marginalia, never body content
+    segmentation_labels: [toc, page_number, cover, header, footnote, headnote, marginnote]
+    fulltext_labels: []
+    pooling: forbidden
+
+# Source corpus identities bound to data/parse/layout_bakeoff.yaml
+# (exact document id + sha256 + pages; no re-derivation here).
+source_corpus:
+  authority: data/parse/layout_bakeoff.yaml
+  corpus_id: s13-same-input-pdf-corpus
+  source_identity: exact_document_id_and_sha256_from_layout_bakeoff
+  corpus_n: 3
+  documents:
+    - id: hub-2507.19457
+      source_pdf: data/sources/arxiv/cs-cl/2507.19457/source/2507.19457.pdf
+      source_sha256: ab3a5139bac83f192ad67529368d77b84b0d807e95a8e4fd0daa8d45fd046bec
+      pages: 96
+    - id: rlm-2512.24601
+      source_pdf: data/sources/arxiv/cs-ai/2512.24601/source/original.pdf
+      source_sha256: 8567362c22768d9b50d4a4a8d63bb28dda2c2b2051be30d67f70f645170429ca
+      pages: 43
+    - id: reca-2605.26525v1
+      source_pdf: data/sources/arxiv/cs-cv/2605.26525v1/source/2605.26525v1.pdf
+      source_sha256: a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8
+      pages: 63
+  page_sum: 202
+
+# Independent denominators. Only documents/pages/lanes are known;
+# every body-specific count awaits an independent oracle and is named
+# pending_independent_oracle rather than invented.
+denominators:
+  closed: true
+  pooling: forbidden
+  known:
+    documents: 3
+    pages: 202
+    lanes: 3
+  lane_ids: [pdfalto, pdf_inspector_positioned, pdf_inspector_positioned_xy_cut]
+  pending_body_counts:
+    body_blocks: pending_independent_oracle
+    body_markers: pending_independent_oracle
+    visual_content: pending_independent_oracle
+    annex: pending_independent_oracle
+    references: pending_independent_oracle
+    page_furniture: pending_independent_oracle
+
+# Closed typed failure vocabulary for the body ledger (fail closed, never skip).
+failure_taxonomy:
+  closed: true
+  values: [unknown_label, missing_identity, checksum_mismatch, duplicate_assignment, overlap, denominator_erosion, pooled_metric, raw_payload, promotion_attempt, graph_attempt]
+
+# Exclusions: what this ledger never carries.
+exclusions:
+  raw_source_bytes: forbidden
+  raw_payload_fields: [pdf_bytes, tei_xml, body_text, text, page_image, physical_path, path, hostname, executable]
+  production_claims: forbidden
+  candidate_logic: none
+
+gates:
+  rollback_target: java-grobid-http@0.9.0-crf
+  production_route_change: forbidden
+  promotion_receipt_required: true
+  used_by: [M496-S02, M496-S03]
