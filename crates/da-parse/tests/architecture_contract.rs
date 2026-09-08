@@ -3941,3 +3941,143 @@ fn s02_prompt_quarantine_scanner_fails_visible_on_synthetic_coupling() {
         );
     }
 }
+
+// ───── M499/S03/T03: transition evaluator remains an offline diagnostic leaf ─────
+//
+// The evaluator accepts untrusted observations but has no production parse,
+// import, graph, promotion, persistence, or runtime authority. Keep this
+// contract source-level and closed-world: adding a second export or wiring the
+// API into CLI/application siblings must fail before it can become a seventh
+// runtime decision point.
+const S03_TRANSITION_API_TOKENS: [&str; 5] = [
+    "derived_transition_evaluator",
+    "evaluate_transition",
+    "TransitionObservations",
+    "ClaimedTransition",
+    "TransitionEvaluation",
+];
+
+const S03_TRANSITION_FORBIDDEN_TOKENS: [&str; 18] = [
+    "da_parse",
+    "ParserPort",
+    "source_cli",
+    "run_parse_pdf",
+    "GraphStore",
+    "PromotionService",
+    "import_write",
+    "tracing",
+    "std::fs",
+    "tokio",
+    "unsafe",
+    "write_graph",
+    "import",
+    "promote",
+    "persist",
+    "std::net",
+    "std::process",
+    "chrono",
+];
+
+fn s03_transition_quarantine_hits(text: &str) -> Vec<String> {
+    let code = s02_code_without_comments_and_strings(text);
+    let mut hits = Vec::new();
+    for token in S03_TRANSITION_FORBIDDEN_TOKENS {
+        let found = if token.contains("::") {
+            code.contains(token)
+        } else {
+            code.split(|ch: char| !ch.is_ascii_alphanumeric() && ch != '_')
+                .any(|part| part == token)
+        };
+        if found {
+            hits.push(token.to_owned());
+        }
+    }
+    hits
+}
+
+#[test]
+fn s03_derived_transition_evaluator_stays_out_of_production_parse_and_write_boundaries() {
+    let application_manifest = read_text("crates/da-application/Cargo.toml");
+    let dependencies = manifest_dependency_names(&application_manifest);
+    assert!(
+        !dependencies.iter().any(|(_, name)| name == "da-parse"),
+        "S03: da-application must not depend on da-parse"
+    );
+
+    let cli = s10_code_without_comments(&read_text("crates/da-cli/src/source_cli.rs"));
+    for token in S03_TRANSITION_API_TOKENS {
+        assert!(
+            !cli.contains(token),
+            "S03: source_cli leaked transition evaluator token `{token}`"
+        );
+    }
+    assert!(
+        cli.contains("stamp_parse_grammar")
+            && cli.contains("grobid_profile_from_route")
+            && cli.contains("crate::parse_profile"),
+        "S03: parse-pdf routing must remain expressed through grammar/profile resolvers"
+    );
+
+    let evaluator = read_text("crates/da-application/src/derived_transition_evaluator.rs");
+    assert!(
+        s03_transition_quarantine_hits(&evaluator).is_empty(),
+        "S03: evaluator leaked production coupling: {:?}",
+        s03_transition_quarantine_hits(&evaluator)
+    );
+
+    let lib = s10_code_without_comments(&read_text("crates/da-application/src/lib.rs"));
+    assert_eq!(
+        lib.matches("pub mod derived_transition_evaluator;").count(),
+        1,
+        "S03: evaluator must have exactly one production module export"
+    );
+
+    let mut module_exports = 0;
+    for (path, source) in rust_sources_under("crates/da-application/src") {
+        let code = s10_code_without_comments(&source);
+        if code.contains("pub mod derived_transition_evaluator;") {
+            module_exports += 1;
+        }
+        if path != "crates/da-application/src/lib.rs"
+            && path != "crates/da-application/src/derived_transition_evaluator.rs"
+        {
+            for token in S03_TRANSITION_API_TOKENS {
+                assert!(
+                    !code.contains(token),
+                    "S03: transition evaluator API escaped quarantine in {path}: `{token}`"
+                );
+            }
+        }
+    }
+    assert_eq!(module_exports, 1, "S03: evaluator export escaped lib.rs");
+}
+
+#[test]
+fn s03_transition_quarantine_scanner_fails_visible_on_synthetic_coupling() {
+    let clean = s03_transition_quarantine_hits(&read_text(
+        "crates/da-application/src/derived_transition_evaluator.rs",
+    ));
+    assert!(
+        clean.is_empty(),
+        "clean evaluator unexpectedly has hits: {clean:?}"
+    );
+    for token in S03_TRANSITION_FORBIDDEN_TOKENS {
+        let synthetic = if token.contains("::") {
+            format!("fn leaked() {{ let _ = {token}::value; }}")
+        } else if token == "unsafe" {
+            "unsafe { let _ = 1; }".to_owned()
+        } else {
+            format!("fn leaked() {{ let _ = {token}; }}")
+        };
+        assert_eq!(
+            s03_transition_quarantine_hits(&synthetic),
+            vec![token.to_owned()],
+            "S03: synthetic forbidden coupling `{token}` was not fail-visible"
+        );
+    }
+    assert!(
+        s03_transition_quarantine_hits("// GraphStore import_write\nlet oracle_imports = 1;")
+            .is_empty(),
+        "S03: comments and compound identifiers must not create false positives"
+    );
+}
