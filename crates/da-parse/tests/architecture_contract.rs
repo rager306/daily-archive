@@ -2943,35 +2943,27 @@ fn parser_port_carries_no_native_visual_methods_or_types() {
     );
 }
 
-// ───── S09/T01: P5 body stays accountant_later in production source ─────
+// ───── M498/S02/T01: P5 body is a Java production stamp ─────
 //
-// P5 (`fulltext_body_sections`) is the single cascade stage with
-// `observe_mode: accountant_later`: parse-pdf must NOT stamp it live. This
-// production-boundary contract proves `crates/da-cli/src/source_cli.rs`
-// carries no `stamp_p5_` receipt while the neighbouring P4/P6 stamps stay
-// live (Java-lifted receipts). The live DATA row is pinned in
-// `data_contracts.rs`; nothing here touches source_cli, ParserPort, native
-// modules, DecisionPoint, registry, graph/ACAP, D127 or import_eligible.
+// P5 (`fulltext_body_sections`) is stamped from ParsedArticle shape only;
+// native accountant symbols remain quarantined from production parse-pdf.
 
 #[test]
-fn parse_pdf_p5_body_stays_accountant_later_not_live_stamp() {
+fn parse_pdf_p5_body_has_live_java_stamp_between_p4_and_p6() {
     let src = read_text("crates/da-cli/src/source_cli.rs");
     let code = strip_line_comments(&src);
     assert!(
         code.len() > 1_000,
         "positive control failed: source_cli.rs looks truncated"
     );
-    // The forbidden live P5 stamp must not exist in production source.
-    assert!(
-        !code.contains("stamp_p5_"),
-        "P5 body must stay accountant_later: `stamp_p5_` leaked into production source_cli"
-    );
-    // A synthetic live P5 stamp must flag — the scan is not vacuous.
-    let synthetic = "pub fn run_parse_pdf() {\n    stamp_p5_body_observe(&mut m, 1);\n}\n";
-    assert!(
-        synthetic.contains("stamp_p5_"),
-        "negative control failed: synthetic live P5 stamp does not carry the forbidden token"
-    );
+    // P5 must be live and derive both observations from Java ParsedArticle.
+    let p4 = code.find("stamp_p4_references_observe").expect("P4 stamp");
+    let p5 = code.find("stamp_p5_body_observe").expect("P5 stamp");
+    let p6 = code.find("stamp_p6_visual_observe").expect("P6 stamp");
+    assert!(p4 < p5 && p5 < p6, "P5 stamp must be between P4 and P6");
+    assert!(code.contains(
+        "stamp_p5_body_observe(&mut m, parsed.sections.len(), parsed.body_text.is_empty())"
+    ));
     // Neighbouring receipts stay live: P4 counts Java-lifted citations,
     // P6 counts Java-lifted visual families.
     assert!(
@@ -3338,8 +3330,8 @@ fn s11_rich_structural_fingerprints_stay_distinct_and_frozen() {
 //
 // Governor fail-closed twin (S12/T02): da-parse must not acquire a Samyama
 // dependency, native compose/run atoms must not enter the parse-pdf
-// boundary or ParserPort, Java stays the production oracle, P5 stays
-// accountant_later, and DecisionPoint stays exactly six wire variants.
+// boundary or ParserPort, Java stays the production oracle, P5 has a live
+// shape-only stamp, and DecisionPoint stays exactly six wire variants.
 // Only NEW local `s12_*` helpers are added here — no production symbol, no
 // existing helper and no DATA file is touched.
 
@@ -3470,12 +3462,12 @@ fn s12_composition_stays_quarantined_candidate_leaf() {
         http.contains("GrobidParser"),
         "positive control failed: GrobidParser vanished — Java oracle lost"
     );
-    // P5 stays accountant_later, DecisionPoint stays six wires: reuse the
+    // P5 has a live Java shape stamp, DecisionPoint stays six wires: reuse the
     // neighbouring contracts as positive controls so S12 cannot drift them.
     let cli = read_text("crates/da-cli/src/source_cli.rs");
     assert!(
-        !strip_line_comments(&cli).contains("stamp_p5_"),
-        "S12: P5 must stay accountant_later — live stamp leaked"
+        strip_line_comments(&cli).contains("stamp_p5_body_observe"),
+        "S12: live P5 Java shape stamp disappeared"
     );
     let fsm = read_text("crates/da-domain/src/fsm_policy.rs");
     let fsm_code = s10_code_without_comments(&fsm);
@@ -3489,7 +3481,7 @@ fn s12_composition_stays_quarantined_candidate_leaf() {
 //
 // The P2 -> body accountant is intentionally exposed only by da-parse's
 // shadow runner. The parse-pdf CLI boundary and ParserPort must remain Java
-// production surfaces; P5 remains accountant_later and promotion/import/graph
+// production surfaces; P5 remains Java shape-only and promotion/import/graph
 // locks stay closed.
 const S05_BODY_QUARANTINE_BOUNDARIES: [&str; 2] = [
     "crates/da-cli/src/source_cli.rs",
@@ -3540,8 +3532,8 @@ fn s05_body_accounting_stays_quarantined_from_production_boundaries() {
     let cli = read_text("crates/da-cli/src/source_cli.rs");
     let cli_code = s10_code_without_comments(&cli);
     assert!(
-        !cli_code.contains("stamp_p5_"),
-        "P5 must remain accountant_later"
+        cli_code.contains("stamp_p5_body_observe"),
+        "P5 Java shape stamp must remain live"
     );
 
     let fsm = read_text("crates/da-domain/src/fsm_policy.rs");

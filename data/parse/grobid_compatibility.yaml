@@ -89,9 +89,9 @@ defaults:
     observe_mode: shadow_receipt
   # Closed P0-P9 cascade skeleton (ADR-076). production_authority is never native.
   # fsm_consult must be parse_pdf_consults or none. later names stay later.
-  # P5 accountant_later means its Java observation contract exists, but no live
-  # parse-pdf stamp exists yet. Native modules remain shadow/join-only — never
-  # splice them into parse_pdf or pool their denominators with other stages.
+  # P5 production_stamp records only Java ParsedArticle body observations.
+  # Native modules remain shadow/join-only — never splice them into parse_pdf
+  # or pool their denominators with other stages.
   cascade_stages:
     P0:
       grobid: admit_identity_profile
@@ -128,7 +128,7 @@ defaults:
       production_authority: java_http
       native_surface: crates/da-parse/src/native_body.rs
       fsm_consult: [none]
-      observe_mode: accountant_later
+      observe_mode: production_stamp
       # Production observation is Java ParsedArticle data only; body_text is
       # payload and must never be emitted as a receipt/report field.
       java_observation: production

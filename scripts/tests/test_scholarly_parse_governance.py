@@ -560,12 +560,12 @@ def test_checker_flags_parse_pdf_p5_live_stamp(tmp_path: Path):
     assert any("stamp_p5" in item.evidence or "source_cli.rs" in item.evidence for item in matching)
 
 
-def test_checker_flags_p5_observe_mode_not_later(tmp_path: Path):
+def test_checker_flags_p5_observe_mode_not_production_stamp(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     path = tmp_path / "data/parse/grobid_compatibility.yaml"
     payload = yaml.safe_load(path.read_text(encoding="utf-8"))
     stages = payload.setdefault("defaults", {}).setdefault("cascade_stages", {})
-    stages.setdefault("P5", {})["observe_mode"] = "production_stamp"
+    stages.setdefault("P5", {})["observe_mode"] = "accountant_later"
     path.write_text(yaml.safe_dump(payload), encoding="utf-8")
     flags = _check_scholarly_parse_plane(tmp_path)
     matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
@@ -577,8 +577,8 @@ def test_cascade_observe_tokens_derive_live_and_forbidden_from_data():
     payload = yaml.safe_load((ROOT / "data/parse/grobid_compatibility.yaml").read_text(encoding="utf-8"))
     stages = (payload.get("defaults") or {}).get("cascade_stages") or {}
     required, forbidden = _cascade_observe_tokens(stages)
-    assert required == [f"stamp_p{i}_" for i in (0, 1, 2, 3, 4, 6, 7, 8, 9)]
-    assert forbidden == ["stamp_p5_"]
+    assert required == [f"stamp_p{i}_" for i in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)]
+    assert forbidden == []
 
 
 def test_cascade_observe_tokens_treats_malformed_rows_fail_closed():

@@ -110,6 +110,24 @@ pub(crate) fn stamp_p4_references_observe(m: &mut serde_yaml::Mapping, java_cita
     merge_cascade_observe(m, "P4", p4);
 }
 
+/// P5 body observe from the Java ParsedArticle lift. Native body accounting
+/// is not called; this receipt contains only O(1) shape observations.
+pub(crate) fn stamp_p5_body_observe(
+    m: &mut serde_yaml::Mapping,
+    sections_len: usize,
+    body_empty: bool,
+) {
+    let mut p5 = serde_yaml::Mapping::new();
+    p5.insert("stage".into(), "P5".into());
+    p5.insert("production_authority".into(), "java_http".into());
+    p5.insert("observe_mode".into(), "production_stamp".into());
+    p5.insert("sections_len".into(), sections_len.into());
+    p5.insert("body_empty".into(), body_empty.into());
+    p5.insert("empty_count_not_success".into(), true.into());
+    p5.insert("native_surface".into(), "none".into());
+    merge_cascade_observe(m, "P5", p5);
+}
+
 /// P6 visual observe beside Java lift. Native heads are not called.
 /// empty_count_not_success keeps a zero vec from looking like a pass.
 pub(crate) fn stamp_p6_visual_observe(
@@ -1972,6 +1990,7 @@ pub fn run_parse_pdf(
     stamp_p2_segmentation_observe(&mut m, parsed.sections.len());
     stamp_p3_header_observe(&mut m, parsed.header_authors.len());
     stamp_p4_references_observe(&mut m, parsed.citations.len());
+    stamp_p5_body_observe(&mut m, parsed.sections.len(), parsed.body_text.is_empty());
     stamp_p6_visual_observe(
         &mut m,
         parsed.figures.len(),
@@ -3491,6 +3510,48 @@ mod tests {
                 .configuration_fingerprint(),
             "D204 fingerprints must not collide"
         );
+    }
+
+    #[test]
+    fn stamp_p5_body_observe_is_java_shape_only_and_typed_empty() {
+        let mut m = serde_yaml::Mapping::new();
+        stamp_p5_body_observe(&mut m, 0, true);
+        let p5 = m
+            .get("cascade_observe")
+            .and_then(|v| v.as_mapping())
+            .and_then(|o| o.get("P5"))
+            .and_then(|v| v.as_mapping())
+            .expect("P5 observe");
+        assert_eq!(p5.get("stage").and_then(|v| v.as_str()), Some("P5"));
+        assert_eq!(
+            p5.get("production_authority").and_then(|v| v.as_str()),
+            Some("java_http")
+        );
+        assert_eq!(
+            p5.get("observe_mode").and_then(|v| v.as_str()),
+            Some("production_stamp")
+        );
+        assert_eq!(p5.get("sections_len").and_then(|v| v.as_u64()), Some(0));
+        assert_eq!(p5.get("body_empty").and_then(|v| v.as_bool()), Some(true));
+        assert_eq!(
+            p5.get("empty_count_not_success").and_then(|v| v.as_bool()),
+            Some(true)
+        );
+        assert_eq!(
+            p5.get("native_surface").and_then(|v| v.as_str()),
+            Some("none")
+        );
+        for forbidden in [
+            "java_section_n",
+            "java_figure_n",
+            "java_callout_n",
+            "body_text",
+        ] {
+            assert!(
+                !p5.contains_key(forbidden),
+                "P5 leaked forbidden field {forbidden}"
+            );
+        }
     }
 
     #[test]

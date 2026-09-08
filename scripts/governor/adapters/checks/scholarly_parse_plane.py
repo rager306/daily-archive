@@ -300,8 +300,8 @@ def _cascade_observe_tokens(stages: Any) -> tuple[list[str], list[str]]:
     Convention: stage ``P7`` maps to token ``stamp_p7_`` (trailing underscore
     avoids a future P10 collision). Stages with
     ``observe_mode == accountant_later`` are forbidden (must not be stamped
-    as live); every other stage — including malformed rows with a missing or
-    non-mapping row — is required (fail-closed).
+    as live); every other stage — including production_stamp — is required
+    (fail-closed).
     """
     if not isinstance(stages, dict):
         return [], []
@@ -1401,12 +1401,12 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             p3,
         )
     p5 = stages.get("P5") or {}
-    if str(p5.get("observe_mode") or "") != "accountant_later":
+    if str(p5.get("observe_mode") or "") != "production_stamp":
         flag(
             "policy_stamp",
             "integration",
             "data/parse/grobid_compatibility.yaml#defaults.cascade_stages.P5.observe_mode",
-            "accountant_later",
+            "production_stamp",
             p5.get("observe_mode"),
         )
     # M498/S01: P5 has one production observation authority and one offline
@@ -1418,7 +1418,7 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
         "production_authority": "java_http",
         "native_surface": "crates/da-parse/src/native_body.rs",
         "fsm_consult": ["none"],
-        "observe_mode": "accountant_later",
+        "observe_mode": "production_stamp",
         "java_observation": "production",
         "java_observation_fields": ["sections_len", "body_empty"],
         "empty_count_not_success": True,
@@ -1480,7 +1480,7 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                     "policy_stamp",
                     "integration",
                     "crates/da-cli/src/source_cli.rs#parse-pdf",
-                    "accountant_later stages must not be stamped as live",
+                    "every production_stamp stage must be stamped as live",
                     f"{token.rstrip('_')} present",
                 )
         if 'named_native_accepted_gap".into(), 20.into()' in src:

@@ -5843,12 +5843,12 @@ fn rejects_visual_bundle_promotion_into_fsm() {
     );
 }
 
-// ───── M498/S01/T02: P5 Java authority split and shadow accountant ─────
+// ───── M498/S02/T01: P5 Java authority split and production stamp ─────
 //
 // P5 (`fulltext_body_sections`) keeps Java ParsedArticle as its sole
 // production observation source. The native accountant is an offline,
-// shadow-join-only surface; `accountant_later` means the Java contract exists
-// but parse-pdf has no live P5 stamp yet. Generic `serde_yaml::Value` reading
+// shadow-join-only surface; the live stamp contains shape fields only.
+// Generic `serde_yaml::Value` reading
 // deliberately makes removed or malformed fields fail closed.
 
 const P5_AUTHORITY_SPLIT_TAG: &str = "[p5-authority-split-drift]";
@@ -5885,7 +5885,7 @@ fn validate_p5_authority_split_policy(registry: &serde_yaml::Value) -> Vec<Strin
         ("grobid", "fulltext_body_sections"),
         ("production_authority", "java_http"),
         ("native_surface", "crates/da-parse/src/native_body.rs"),
-        ("observe_mode", "accountant_later"),
+        ("observe_mode", "production_stamp"),
         ("java_observation", "production"),
         ("native_accountant", "shadow_join_only"),
     ] {
@@ -5973,16 +5973,16 @@ fn p5_cascade_row_preserves_java_authority_split() {
 #[test]
 fn rejects_p5_authority_split_drift_or_loss() {
     let registry = load_registry_value();
-    // accountant_later -> production_stamp promotion must fail loudly.
+    // production_stamp -> accountant_later demotion must fail loudly.
     let mut drifted = registry.clone();
     drifted["defaults"]["cascade_stages"]["P5"]["observe_mode"] =
-        serde_yaml::Value::String("production_stamp".into());
+        serde_yaml::Value::String("accountant_later".into());
     negative(
         P5_AUTHORITY_SPLIT_TAG,
         &validate_p5_authority_split_policy(&drifted),
-        "P5 mode -> production_stamp",
+        "P5 mode -> accountant_later",
     );
-    // accountant_later -> shadow_receipt quarantine collapse must fail loudly.
+    // production_stamp -> shadow_receipt quarantine collapse must fail loudly.
     let mut drifted = registry.clone();
     drifted["defaults"]["cascade_stages"]["P5"]["observe_mode"] =
         serde_yaml::Value::String("shadow_receipt".into());
