@@ -3943,6 +3943,77 @@ fn s02_prompt_quarantine_scanner_fails_visible_on_synthetic_coupling() {
     }
 }
 
+// ───── M499/S04/T03: family adapters remain an offline quarantine leaf ─────
+//
+// The adapter assembles injected DTOs only.  It must not become a parse
+// route, and the parse plane must not reach back into application policy.
+
+#[test]
+fn s04_derived_family_adapters_stays_out_of_production_parse_and_write_boundaries() {
+    let application_manifest = read_text("crates/da-application/Cargo.toml");
+    let dependencies = manifest_dependency_names(&application_manifest);
+    assert!(
+        !dependencies.iter().any(|(_, name)| name == "da-parse"),
+        "S04: da-application must not depend on da-parse"
+    );
+
+    let adapter = read_text("crates/da-application/src/derived_family_adapters.rs");
+    assert!(
+        adapter.contains("pub fn adapt_family")
+            && adapter.contains("pub fn prompt_adapted")
+            && adapter.contains("pub fn evaluate_adapted"),
+        "S04: adapter must expose only the intended constructor and thin delegates"
+    );
+    for forbidden in [
+        "std::fs",
+        "tokio",
+        "tracing",
+        "std::net",
+        "std::process",
+        "write_graph",
+        "run_parse_pdf",
+        "source_cli",
+        "GraphStore",
+        "ParserPort",
+    ] {
+        assert!(
+            !adapter.contains(forbidden),
+            "S04: adapter leaked runtime coupling token `{forbidden}`"
+        );
+    }
+
+    let lib = s10_code_without_comments(&read_text("crates/da-application/src/lib.rs"));
+    assert_eq!(
+        lib.matches("pub mod derived_family_adapters;").count(),
+        1,
+        "S04: adapter must have exactly one production module export"
+    );
+
+    let cli = s10_code_without_comments(&read_text("crates/da-cli/src/source_cli.rs"));
+    for token in [
+        "derived_family_adapters",
+        "adapt_family",
+        "prompt_adapted",
+        "evaluate_adapted",
+        "FamilyAdapterInput",
+        "AdaptedFamily",
+    ] {
+        assert!(
+            !cli.contains(token),
+            "S04: source_cli leaked offline adapter token `{token}`"
+        );
+    }
+
+    for (path, source) in rust_sources_under("crates/da-parse/src") {
+        assert!(
+            !source.contains("derived_family_adapters")
+                && !source.contains("adapt_family")
+                && !source.contains("FamilyAdapterInput"),
+            "S04: parse source reached application adapter in {path}"
+        );
+    }
+}
+
 // ───── M499/S03/T03: transition evaluator remains an offline diagnostic leaf ─────
 //
 // The evaluator accepts untrusted observations but has no production parse,

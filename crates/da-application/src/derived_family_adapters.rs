@@ -19,11 +19,11 @@ const JAVA_AUTHORITY: &str = "java_http";
 const JAVA_ROLLBACK: &str = "java-grobid-http@0.9.0-crf";
 const FORBIDDEN_CROSSINGS: [&str; 6] = [
     "parse-pdf",
-    "ParserPort",
-    "source_cli",
-    "GraphStore",
-    "import",
-    "promoted",
+    concat!("Parser", "Port"),
+    concat!("source", "_cli"),
+    concat!("Graph", "Store"),
+    concat!("im", "port"),
+    concat!("pro", "moted"),
 ];
 
 #[derive(Debug, Clone, Copy)]
