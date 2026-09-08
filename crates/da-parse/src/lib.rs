@@ -43,6 +43,7 @@ mod native_fulltext_composition;
 mod native_personal_name;
 mod native_segmentation;
 mod native_visual;
+mod p5_shadow_join;
 mod parser;
 mod profile;
 mod projector;
@@ -156,6 +157,10 @@ pub use native_visual::{
     NativeVisualSequenceIdentity, NativeVisualSequenceReceipt, NativeVisualSequenceStep,
     TableHeadReceipt, detect_figure_heads, detect_formula_heads, detect_table_heads,
     run_visual_heads_sequence,
+};
+pub use p5_shadow_join::{
+    JavaP2Observation, JavaP5Observation, NativeBodyShadowSummary, P5_SHADOW_JOIN_SCHEMA_VERSION,
+    P5ShadowJoinError, P5ShadowJoinIdentity, P5ShadowJoinInput, P5ShadowJoinReport, join_p5_shadow,
 };
 pub use parser::{ScholarlyParser, lift_and_project_envelope};
 pub use profile::GrobidProfile;

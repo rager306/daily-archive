@@ -7335,6 +7335,67 @@ fn document_segmentation_contract() {
 }
 
 #[test]
+fn p5_shadow_join_data_contract_is_closed() {
+    let contract: serde_yaml::Value = expect_loaded("data/parse/p5_shadow_join.yaml");
+    assert_eq!(contract["schema_version"], "p5-shadow-join.v1");
+    assert_eq!(
+        contract["join_schema_version"],
+        da_parse::P5_SHADOW_JOIN_SCHEMA_VERSION
+    );
+    assert_eq!(contract["join_mode"], "offline_shadow_report");
+    assert_eq!(contract["production_authority"], "java_http");
+    assert_eq!(contract["native_accountant"], "shadow_join_only");
+    assert_eq!(contract["mismatch"], "fail_closed");
+    assert_eq!(contract["empty_count_not_success"], true);
+    assert_eq!(contract["import_eligible"], false);
+    assert_eq!(contract["graph_mutation"], "forbidden");
+    assert_eq!(contract["this_wave_promotes"], "none");
+    assert_eq!(
+        contract["required_legs"],
+        serde_yaml::from_str::<serde_yaml::Value>("[java_p5, java_p2, native_body_sequence]")
+            .unwrap()
+    );
+    assert_eq!(
+        contract["pooling_forbidden_with"],
+        serde_yaml::from_str::<serde_yaml::Value>("[P2, P6, P7]").unwrap()
+    );
+    assert_eq!(
+        contract["report"]["independently_selectable"],
+        serde_yaml::from_str::<serde_yaml::Value>("[header, references]").unwrap()
+    );
+    assert_eq!(contract["report"]["payload_free"], true);
+    assert_eq!(contract["report"]["native_status_separate"], true);
+    assert_eq!(contract["report"]["java_fallback_preserved"], true);
+    for field in [
+        "body_text",
+        "tei_xml",
+        "pdf_bytes",
+        "section_text",
+        "java_section_n_on_p5",
+        "physical_paths",
+    ] {
+        assert!(
+            contract["forbidden_report_fields"]
+                .as_sequence()
+                .unwrap()
+                .iter()
+                .any(|v| v.as_str() == Some(field)),
+            "missing forbidden report field {field}"
+        );
+    }
+    for leg in ["java_p5", "java_p2", "native_body_sequence"] {
+        assert!(
+            contract["required_legs"]
+                .as_sequence()
+                .unwrap()
+                .iter()
+                .any(|v| v.as_str() == Some(leg)),
+            "required leg {leg} eroded"
+        );
+    }
+}
+
+#[test]
 fn native_body_accounting_contract() {
     let contract: serde_yaml::Value = expect_loaded("data/parse/native_body_accounting.yaml");
     let evidence = load_json_value("artifacts/parse_compat/java_grobid_body_taxonomy_source.json");

@@ -1,0 +1,27 @@
+# Offline source-bound observation join. This is evidence composition, never a
+# parser route, graph write, import authority, or promotion mechanism.
+schema_version: p5-shadow-join.v1
+join_schema_version: da-parse.p5-shadow-join/v1
+adr_ref: ADR-075
+join_mode: offline_shadow_report
+production_authority: java_http
+native_accountant: shadow_join_only
+required_legs: [java_p5, java_p2, native_body_sequence]
+optional_identity_siblings: []
+identity_fields: [document_id, source_sha256, grobid_profile, provider_id, segmentation_schema_version, accounting_schema_version, boundary_digest]
+mismatch: fail_closed
+empty_count_not_success: true
+pooling_forbidden_with: [P2, P6, P7]
+forbidden_report_fields: [body_text, tei_xml, pdf_bytes, section_text, java_section_n_on_p5, physical_paths]
+quarantine_tokens: [join_p5_shadow]
+boundaries: [crates/da-cli/src/source_cli.rs, crates/da-ports/src/parser.rs]
+import_eligible: false
+this_wave_promotes: none
+graph_mutation: forbidden
+report:
+  identity_match: true
+  native_status_separate: true
+  java_fallback_preserved: true
+  redaction_map_required: true
+  payload_free: true
+  independently_selectable: [header, references]
