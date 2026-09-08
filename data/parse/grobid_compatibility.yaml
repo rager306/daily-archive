@@ -81,7 +81,7 @@ defaults:
   # Native P2 -> body accounting remains a test-only shadow sequence. These
   # call/type atoms must never enter parse-pdf source_cli or ParserPort.
   body_accounting_quarantine:
-    tokens: [NativeBodyAccountant, run_native_body_sequence, join_p5_shadow]
+    tokens: [NativeBodyAccountant, run_native_body_sequence, join_p5_shadow, check_cross_stage_semantic_invariants]
     boundaries:
       - crates/da-cli/src/source_cli.rs
       - crates/da-ports/src/parser.rs
@@ -136,19 +136,6 @@ defaults:
       empty_count_not_success: true
       native_accountant: shadow_join_only
       pooling_forbidden_with: [P2, P6, P7]
-      cross_stage_semantic_invariants:
-        schema_version: da-parse.cross-stage-semantic-invariants/v1
-        mode: offline_shadow_report
-        required_legs: [p5_shadow_join_report, java_p4, java_p6, java_p7]
-        optional_legs: [native_body_accounting, native_visual_sequence]
-        production_authority: java_http
-        native_accountant: shadow_join_only
-        independently_selectable: [header, references]
-        empty_count_not_success: true
-        import_eligible: false
-        this_wave_promotes: none
-        ordered_identity: units_monotonic_page_token
-        forbidden_production_calls: [check_cross_stage_semantic_invariants, NativeBodyAccountant, run_native_body_sequence, run_native_visual_sequence, run_visual_heads_sequence, compose_references, ConservationEngine]
     P6:
       grobid: figure_table_formula
       production_authority: java_http

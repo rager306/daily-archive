@@ -5855,6 +5855,24 @@ const P5_AUTHORITY_SPLIT_TAG: &str = "[p5-authority-split-drift]";
 const NATIVE_FULLTEXT_COMPOSITION_REL: &str = "data/parse/native_fulltext_composition.yaml";
 const P5_JAVA_FIELDS: [&str; 2] = ["sections_len", "body_empty"];
 const P5_POOLING_FORBIDDEN_WITH: [&str; 3] = ["P2", "P6", "P7"];
+const P5_EXACT_KEYS: [&str; 10] = [
+    "grobid",
+    "production_authority",
+    "native_surface",
+    "fsm_consult",
+    "observe_mode",
+    "java_observation",
+    "java_observation_fields",
+    "empty_count_not_success",
+    "native_accountant",
+    "pooling_forbidden_with",
+];
+const BODY_ACCOUNTING_QUARANTINE_TOKENS: [&str; 4] = [
+    "NativeBodyAccountant",
+    "run_native_body_sequence",
+    "join_p5_shadow",
+    "check_cross_stage_semantic_invariants",
+];
 
 fn exact_string_list(value: Option<&serde_yaml::Value>, expected: &[&str]) -> bool {
     value
@@ -5881,6 +5899,20 @@ fn validate_p5_authority_split_policy(registry: &serde_yaml::Value) -> Vec<Strin
         ));
         return errs;
     };
+    let keys = stage
+        .as_mapping()
+        .map(|map| {
+            map.keys()
+                .filter_map(serde_yaml::Value::as_str)
+                .collect::<BTreeSet<_>>()
+        })
+        .unwrap_or_default();
+    let expected_keys = P5_EXACT_KEYS.into_iter().collect::<BTreeSet<_>>();
+    if keys != expected_keys {
+        errs.push(format!(
+            "{P5_AUTHORITY_SPLIT_TAG} P5 keys must be exactly {expected_keys:?}, got {keys:?}"
+        ));
+    }
     for (key, expected) in [
         ("grobid", "fulltext_body_sections"),
         ("production_authority", "java_http"),
@@ -5919,6 +5951,21 @@ fn validate_p5_authority_split_policy(registry: &serde_yaml::Value) -> Vec<Strin
         ));
     }
     errs
+}
+
+fn validate_body_accounting_quarantine(registry: &serde_yaml::Value) -> Vec<String> {
+    const TAG: &str = "[body-accounting-quarantine-drift]";
+    let got = registry
+        .get("defaults")
+        .and_then(|defaults| defaults.get("body_accounting_quarantine"))
+        .and_then(|quarantine| quarantine.get("tokens"));
+    if exact_string_list(got, &BODY_ACCOUNTING_QUARANTINE_TOKENS) {
+        Vec::new()
+    } else {
+        vec![format!(
+            "{TAG} tokens must stay exactly {BODY_ACCOUNTING_QUARANTINE_TOKENS:?}"
+        )]
+    }
 }
 
 /// Validate the data-driven admission allowlist: `independently_selectable`
@@ -5960,6 +6007,12 @@ fn p5_cascade_row_preserves_java_authority_split() {
         "P5 authority-split DATA violations:\n{}",
         errs.join("\n")
     );
+    let errs = validate_body_accounting_quarantine(&registry);
+    assert!(
+        errs.is_empty(),
+        "body-accounting quarantine DATA violations:\n{}",
+        errs.join("\n")
+    );
     // Admission allowlist is DATA-driven from the composition authority.
     let composition: serde_yaml::Value = expect_loaded(NATIVE_FULLTEXT_COMPOSITION_REL);
     let errs = validate_p5_admission_selectable(&composition);
@@ -5973,6 +6026,29 @@ fn p5_cascade_row_preserves_java_authority_split() {
 #[test]
 fn rejects_p5_authority_split_drift_or_loss() {
     let registry = load_registry_value();
+    // The production P5 row is deep and closed: shadow-checker metadata must
+    // remain in the quarantine map, never inside the production cascade row.
+    let mut widened = registry.clone();
+    widened["defaults"]["cascade_stages"]["P5"]["cross_stage_semantic_invariants"] =
+        serde_yaml::Value::Mapping(serde_yaml::Mapping::new());
+    negative(
+        P5_AUTHORITY_SPLIT_TAG,
+        &validate_p5_authority_split_policy(&widened),
+        "P5 extra cross-stage key",
+    );
+    let mut quarantine = registry.clone();
+    quarantine["defaults"]["body_accounting_quarantine"]["tokens"] = serde_yaml::Value::Sequence(
+        BODY_ACCOUNTING_QUARANTINE_TOKENS
+            .iter()
+            .take(3)
+            .map(|token| serde_yaml::Value::String((*token).into()))
+            .collect(),
+    );
+    negative(
+        "[body-accounting-quarantine-drift]",
+        &validate_body_accounting_quarantine(&quarantine),
+        "dropped cross-stage checker token",
+    );
     // production_stamp -> accountant_later demotion must fail loudly.
     let mut drifted = registry.clone();
     drifted["defaults"]["cascade_stages"]["P5"]["observe_mode"] =
