@@ -3736,3 +3736,52 @@ fn s12_composition_scanner_fails_visible_on_synthetic_atoms() {
         "clean code must not violate the S12 quarantine"
     );
 }
+
+#[test]
+fn s01_derived_maturity_stays_out_of_production_parse_and_write_boundaries() {
+    let application_manifest = read_text("crates/da-application/Cargo.toml");
+    let application_dependencies = manifest_dependency_names(&application_manifest);
+    assert!(
+        !application_dependencies
+            .iter()
+            .any(|(_, name)| name == "da-parse"),
+        "S01: da-application must not depend on the parse implementation crate"
+    );
+
+    let cli = s10_code_without_comments(&read_text("crates/da-cli/src/source_cli.rs"));
+    for forbidden in [
+        "derived_evidence_maturity",
+        "derive_maturity",
+        "MaturityState",
+        "MaturityDerivation",
+    ] {
+        assert!(
+            !cli.contains(forbidden),
+            "S01: production source_cli leaked derived maturity token `{forbidden}`"
+        );
+    }
+    assert!(
+        cli.contains("stamp_parse_grammar")
+            && cli.contains("grobid_profile_from_route")
+            && cli.contains("crate::parse_profile"),
+        "S01: production parse routing must remain expressed through grammar/profile resolvers"
+    );
+
+    let maturity = s10_code_without_comments(&read_text(
+        "crates/da-application/src/derived_evidence_maturity.rs",
+    ));
+    for forbidden in [
+        "da_parse",
+        "source_cli",
+        "run_parse_pdf",
+        "GraphStore",
+        "PromotionService",
+        "write_graph",
+        "import_write",
+    ] {
+        assert!(
+            !maturity.contains(forbidden),
+            "S01: derived-only module leaked production coupling token `{forbidden}`"
+        );
+    }
+}
