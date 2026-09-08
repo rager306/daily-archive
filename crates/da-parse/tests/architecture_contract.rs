@@ -3052,6 +3052,46 @@ fn s10_code_without_comments(text: &str) -> String {
         .join("\n")
 }
 
+/// S02 helper: retain code tokens while ignoring comments and string literals.
+/// The prompt spec legitimately contains boundary names such as `GraphStore`;
+/// only executable/source coupling should be rejected by the quarantine scan.
+fn s02_code_without_comments_and_strings(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut chars = text.chars().peekable();
+    let mut in_string = false;
+    let mut escaped = false;
+    while let Some(ch) = chars.next() {
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '"' {
+                in_string = false;
+            }
+            out.push(' ');
+            continue;
+        }
+        if ch == '"' {
+            in_string = true;
+            out.push(' ');
+            continue;
+        }
+        if ch == '/' && chars.peek() == Some(&'/') {
+            chars.next();
+            for comment_ch in chars.by_ref() {
+                if comment_ch == '\n' {
+                    out.push('\n');
+                    break;
+                }
+            }
+            continue;
+        }
+        out.push(ch);
+    }
+    out
+}
+
 /// Local S10 helper: extract the `pub enum DecisionPoint { ... }` body with
 /// brace matching over comment-stripped code.
 fn s10_enum_body(code: &str) -> Option<String> {
@@ -3782,6 +3822,122 @@ fn s01_derived_maturity_stays_out_of_production_parse_and_write_boundaries() {
         assert!(
             !maturity.contains(forbidden),
             "S01: derived-only module leaked production coupling token `{forbidden}`"
+        );
+    }
+}
+
+// ───── M499/S02/T03: bounded prompt renderer stays offline and quarantined ─────
+//
+// The prompt controller is planning metadata, not a parse/import/graph/model
+// controller. Keep this as a source-level contract so an accidental import is
+// caught before the application crate can expose a privileged path.
+
+#[test]
+fn s02_derived_prompt_contract_stays_out_of_production_parse_and_write_boundaries() {
+    let application_manifest = read_text("crates/da-application/Cargo.toml");
+    let dependencies = manifest_dependency_names(&application_manifest);
+    assert!(
+        !dependencies.iter().any(|(_, name)| name == "da-parse"),
+        "S02: da-application must not depend on da-parse"
+    );
+
+    let cli = s10_code_without_comments(&read_text("crates/da-cli/src/source_cli.rs"));
+    for forbidden in [
+        "derived_prompt_contract",
+        "render_prompt",
+        "AtomicPromptContract",
+        "FamilyPromptSpec",
+        "PromptRender",
+    ] {
+        assert!(
+            !cli.contains(forbidden),
+            "S02: source_cli leaked offline prompt token `{forbidden}`"
+        );
+    }
+    assert!(
+        cli.contains("stamp_parse_grammar")
+            && cli.contains("grobid_profile_from_route")
+            && cli.contains("crate::parse_profile"),
+        "S02: parse-pdf must retain grammar/profile resolver wiring"
+    );
+
+    let prompt = s02_code_without_comments_and_strings(&read_text(
+        "crates/da-application/src/derived_prompt_contract.rs",
+    ));
+    for forbidden in [
+        "da_parse",
+        "source_cli",
+        "run_parse_pdf",
+        "GraphStore",
+        "PromotionService",
+        "import_write",
+        "PromptExecution",
+        "PromptCandidate",
+        "tracing",
+        "std::fs",
+        "tokio",
+        "unsafe",
+    ] {
+        let leaked = if forbidden == "unsafe" {
+            prompt.contains("unsafe {")
+                || prompt.contains("unsafe fn")
+                || prompt.contains("unsafe impl")
+        } else {
+            prompt.contains(forbidden)
+        };
+        assert!(
+            !leaked,
+            "S02: prompt renderer leaked forbidden coupling token `{forbidden}`"
+        );
+    }
+
+    let lib = s10_code_without_comments(&read_text("crates/da-application/src/lib.rs"));
+    assert_eq!(
+        lib.matches("pub mod derived_prompt_contract;").count(),
+        1,
+        "S02: prompt renderer must have exactly one production module export"
+    );
+
+    let prompt_symbols = [
+        "derived_prompt_contract",
+        "render_prompt",
+        "AtomicPromptContract",
+        "FamilyPromptSpec",
+        "PromptRender",
+    ];
+    for (path, source) in rust_sources_under("crates/da-application/src") {
+        if path == "crates/da-application/src/lib.rs"
+            || path == "crates/da-application/src/derived_prompt_contract.rs"
+        {
+            continue;
+        }
+        let code = s10_code_without_comments(&source);
+        for symbol in prompt_symbols {
+            assert!(
+                !code.contains(symbol),
+                "S02: production reference `{symbol}` escaped quarantine in {path}"
+            );
+        }
+    }
+}
+
+#[test]
+fn s02_prompt_quarantine_scanner_fails_visible_on_synthetic_coupling() {
+    let clean = s02_code_without_comments_and_strings(&read_text(
+        "crates/da-application/src/derived_prompt_contract.rs",
+    ));
+    assert!(!clean.contains("GraphStore"));
+    for token in [
+        "da_parse",
+        "GraphStore",
+        "PromptExecution",
+        "std::fs",
+        "tokio",
+    ] {
+        let synthetic = format!("fn leaked() {{ let _ = {token}; }}");
+        assert!(
+            synthetic.contains(token) && !clean.contains(token),
+            "positive/negative quarantine controls must remain meaningful for `{token}`"
         );
     }
 }
