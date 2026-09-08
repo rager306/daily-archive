@@ -3517,6 +3517,18 @@ fn s05_body_accounting_stays_quarantined_from_production_boundaries() {
             s05_body_quarantine_hits(&src).is_empty(),
             "S05: native body accountant leaked into {rel}"
         );
+        for atom in S05_BODY_QUARANTINE_ATOMS {
+            let synthetic = if atom.contains('_') {
+                format!("fn run() {{ {atom}(input); }}")
+            } else {
+                format!("let _x: {atom};")
+            };
+            assert_eq!(
+                s05_body_quarantine_hits(&synthetic),
+                vec![atom.to_owned()],
+                "S05: quarantine scanner lost native atom coverage for {rel}: {atom}"
+            );
+        }
     }
 
     let port = read_text("crates/da-ports/src/parser.rs");

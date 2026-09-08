@@ -3514,44 +3514,80 @@ mod tests {
 
     #[test]
     fn stamp_p5_body_observe_is_java_shape_only_and_typed_empty() {
+        for (sections_len, body_empty) in [(0, true), (0, false), (3, true)] {
+            let mut m = serde_yaml::Mapping::new();
+            stamp_p5_body_observe(&mut m, sections_len, body_empty);
+            let observe = m
+                .get("cascade_observe")
+                .and_then(|v| v.as_mapping())
+                .expect("cascade_observe");
+            let p5 = observe
+                .get("P5")
+                .and_then(|v| v.as_mapping())
+                .expect("P5 observe");
+            assert_eq!(p5.get("stage").and_then(|v| v.as_str()), Some("P5"));
+            assert_eq!(
+                p5.get("production_authority").and_then(|v| v.as_str()),
+                Some("java_http")
+            );
+            assert_eq!(
+                p5.get("observe_mode").and_then(|v| v.as_str()),
+                Some("production_stamp")
+            );
+            assert_eq!(
+                p5.get("sections_len").and_then(|v| v.as_u64()),
+                Some(sections_len as u64)
+            );
+            assert_eq!(
+                p5.get("body_empty").and_then(|v| v.as_bool()),
+                Some(body_empty)
+            );
+            assert_eq!(
+                p5.get("empty_count_not_success").and_then(|v| v.as_bool()),
+                Some(true),
+                "typed-empty observations must never be success"
+            );
+            assert_eq!(
+                p5.get("native_surface").and_then(|v| v.as_str()),
+                Some("none")
+            );
+            for forbidden in [
+                "java_section_n",
+                "java_figure_n",
+                "java_callout_n",
+                "body_text",
+                "section_titles",
+                "section_text",
+                "titles",
+                "text",
+            ] {
+                assert!(
+                    !p5.contains_key(forbidden),
+                    "P5 leaked forbidden field {forbidden}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn stamp_p5_does_not_pool_p2_java_section_identity() {
         let mut m = serde_yaml::Mapping::new();
+        stamp_p2_segmentation_observe(&mut m, 12);
         stamp_p5_body_observe(&mut m, 0, true);
-        let p5 = m
+        let observe = m
             .get("cascade_observe")
             .and_then(|v| v.as_mapping())
-            .and_then(|o| o.get("P5"))
-            .and_then(|v| v.as_mapping())
-            .expect("P5 observe");
-        assert_eq!(p5.get("stage").and_then(|v| v.as_str()), Some("P5"));
-        assert_eq!(
-            p5.get("production_authority").and_then(|v| v.as_str()),
-            Some("java_http")
-        );
-        assert_eq!(
-            p5.get("observe_mode").and_then(|v| v.as_str()),
-            Some("production_stamp")
-        );
+            .expect("cascade_observe");
+        let p2 = observe.get("P2").and_then(|v| v.as_mapping()).expect("P2");
+        let p5 = observe.get("P5").and_then(|v| v.as_mapping()).expect("P5");
+        assert_eq!(p2.get("java_section_n").and_then(|v| v.as_u64()), Some(12));
+        assert!(!p5.contains_key("java_section_n"));
         assert_eq!(p5.get("sections_len").and_then(|v| v.as_u64()), Some(0));
-        assert_eq!(p5.get("body_empty").and_then(|v| v.as_bool()), Some(true));
-        assert_eq!(
-            p5.get("empty_count_not_success").and_then(|v| v.as_bool()),
-            Some(true)
+        assert_ne!(
+            p2.get("java_section_n").and_then(|v| v.as_u64()),
+            p5.get("sections_len").and_then(|v| v.as_u64()),
+            "P5 sections_len must not reuse P2's java_section_n identity"
         );
-        assert_eq!(
-            p5.get("native_surface").and_then(|v| v.as_str()),
-            Some("none")
-        );
-        for forbidden in [
-            "java_section_n",
-            "java_figure_n",
-            "java_callout_n",
-            "body_text",
-        ] {
-            assert!(
-                !p5.contains_key(forbidden),
-                "P5 leaked forbidden field {forbidden}"
-            );
-        }
     }
 
     #[test]
