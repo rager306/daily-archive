@@ -3487,7 +3487,11 @@ const S05_BODY_QUARANTINE_BOUNDARIES: [&str; 2] = [
     "crates/da-cli/src/source_cli.rs",
     "crates/da-ports/src/parser.rs",
 ];
-const S05_BODY_QUARANTINE_ATOMS: [&str; 2] = ["NativeBodyAccountant", "run_native_body_sequence"];
+const S05_BODY_QUARANTINE_ATOMS: [&str; 3] = [
+    "NativeBodyAccountant",
+    "run_native_body_sequence",
+    "join_p5_shadow",
+];
 
 fn s05_body_quarantine_hits(text: &str) -> Vec<String> {
     let code = s10_code_without_comments(text);
@@ -3569,6 +3573,8 @@ fn s05_body_accounting_scanner_fails_visible_on_synthetic_atoms() {
     }
     assert!(s05_body_quarantine_hits("// NativeBodyAccountant(input)\nlet x = 1;").is_empty());
     assert!(s05_body_quarantine_hits("let NativeBodyAccountantFactory = 1;").is_empty());
+    assert!(s05_body_quarantine_hits("let join_p5_shadow_report = 1;").is_empty());
+    assert!(s05_body_quarantine_hits("// join_p5_shadow(input)\nlet x = 1;").is_empty());
 }
 
 #[test]
