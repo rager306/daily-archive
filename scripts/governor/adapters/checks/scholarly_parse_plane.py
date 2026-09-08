@@ -1409,6 +1409,30 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             "accountant_later",
             p5.get("observe_mode"),
         )
+    # M498/S01: P5 has one production observation authority and one offline
+    # native shadow surface. Keep this exact and fail closed: missing keys,
+    # substituted authority, widened counters, or pooled denominators all
+    # invalidate the policy without changing the generic stamp derivation.
+    expected_p5 = {
+        "grobid": "fulltext_body_sections",
+        "production_authority": "java_http",
+        "native_surface": "crates/da-parse/src/native_body.rs",
+        "fsm_consult": ["none"],
+        "observe_mode": "accountant_later",
+        "java_observation": "production",
+        "java_observation_fields": ["sections_len", "body_empty"],
+        "empty_count_not_success": True,
+        "native_accountant": "shadow_join_only",
+        "pooling_forbidden_with": ["P2", "P6", "P7"],
+    }
+    if p5 != expected_p5:
+        flag(
+            "policy_stamp",
+            "integration",
+            "data/parse/grobid_compatibility.yaml#defaults.cascade_stages.P5",
+            expected_p5,
+            p5,
+        )
 
     source_cli = root / "crates/da-cli/src/source_cli.rs"
     if source_cli.is_file():
