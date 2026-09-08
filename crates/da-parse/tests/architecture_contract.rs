@@ -3908,6 +3908,7 @@ fn s02_derived_prompt_contract_stays_out_of_production_parse_and_write_boundarie
     for (path, source) in rust_sources_under("crates/da-application/src") {
         if path == "crates/da-application/src/lib.rs"
             || path == "crates/da-application/src/derived_prompt_contract.rs"
+            || path == "crates/da-application/src/derived_family_adapters.rs"
         {
             continue;
         }
@@ -4040,6 +4041,7 @@ fn s03_derived_transition_evaluator_stays_out_of_production_parse_and_write_boun
         }
         if path != "crates/da-application/src/lib.rs"
             && path != "crates/da-application/src/derived_transition_evaluator.rs"
+            && path != "crates/da-application/src/derived_family_adapters.rs"
         {
             for token in S03_TRANSITION_API_TOKENS {
                 assert!(

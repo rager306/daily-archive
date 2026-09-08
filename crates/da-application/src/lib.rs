@@ -163,6 +163,7 @@ pub use scheduler_runner::{
 pub mod cluster;
 pub mod cluster_stage;
 pub mod derived_evidence_maturity;
+pub mod derived_family_adapters;
 pub mod derived_prompt_contract;
 pub mod derived_transition_evaluator;
 pub mod document_context_stage;
