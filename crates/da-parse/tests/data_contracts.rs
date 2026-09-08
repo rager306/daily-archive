@@ -7396,6 +7396,101 @@ fn p5_shadow_join_data_contract_is_closed() {
 }
 
 #[test]
+fn p5_cross_stage_semantic_data_contract_is_closed() {
+    let contract: serde_yaml::Value = expect_loaded("data/parse/p5_cross_stage.yaml");
+    assert_eq!(contract["schema_version"], "p5-cross-stage.v1");
+    assert_eq!(
+        contract["join_schema_ref"],
+        da_parse::P5_SHADOW_JOIN_SCHEMA_VERSION
+    );
+    assert_eq!(
+        contract["report_schema_version"],
+        da_parse::CROSS_STAGE_SEMANTIC_SCHEMA_VERSION
+    );
+    assert_eq!(contract["mode"], "offline_shadow_report");
+    assert_eq!(contract["production_authority"], "java_http");
+    assert_eq!(contract["native_accountant"], "shadow_join_only");
+    assert_eq!(
+        contract["required_legs"],
+        serde_yaml::from_str::<serde_yaml::Value>(
+            "[p5_shadow_join_report, java_p4, java_p6, java_p7]"
+        )
+        .unwrap()
+    );
+    assert_eq!(
+        contract["optional_identity_siblings"],
+        serde_yaml::from_str::<serde_yaml::Value>(
+            "[native_visual_sequence, native_body_accounting]"
+        )
+        .unwrap()
+    );
+    assert_eq!(
+        contract["pooling_forbidden_with"],
+        serde_yaml::from_str::<serde_yaml::Value>("[P2, P4, P5, P6, P7]").unwrap()
+    );
+    assert_eq!(contract["order_check"], "units_monotonic_page_token");
+    assert_eq!(
+        contract["conservation"]["native_bucket_sum_equals_admitted"],
+        true
+    );
+    assert_eq!(
+        contract["conservation"]["cross_oracle_equality_is_not_success"],
+        true
+    );
+    assert_eq!(contract["empty_count_not_success"], true);
+    assert_eq!(contract["import_eligible"], false);
+    assert_eq!(contract["this_wave_promotes"], "none");
+    assert_eq!(
+        contract["independently_selectable"],
+        serde_yaml::from_str::<serde_yaml::Value>("[header, references]").unwrap()
+    );
+    assert_eq!(
+        contract["body_markers_policy"],
+        "missing_bucket_is_zero_not_p7"
+    );
+    for field in [
+        "pooled_n",
+        "body_text",
+        "tei_xml",
+        "pdf_bytes",
+        "p5_success",
+        "p6_success",
+        "p7_success",
+        "java_section_n_on_p5",
+    ] {
+        assert!(
+            contract["forbidden_report_fields"]
+                .as_sequence()
+                .unwrap()
+                .iter()
+                .any(|value| value.as_str() == Some(field)),
+            "missing forbidden field {field}"
+        );
+    }
+    for field in [
+        "java_p4.java_citation_n",
+        "java_p6.java_figure_n",
+        "java_p6.java_table_n",
+        "java_p6.java_formula_n",
+        "java_p7.java_callout_n",
+        "java_p7.unresolved_n",
+        "native_buckets.*",
+        "native_visual.figure.metrics.*",
+        "native_visual.table.metrics.*",
+        "native_visual.formula.metrics.*",
+    ] {
+        assert!(
+            contract["unpooled_fields"]
+                .as_sequence()
+                .unwrap()
+                .iter()
+                .any(|value| value.as_str() == Some(field)),
+            "missing unpooled field {field}"
+        );
+    }
+}
+
+#[test]
 fn native_body_accounting_contract() {
     let contract: serde_yaml::Value = expect_loaded("data/parse/native_body_accounting.yaml");
     let evidence = load_json_value("artifacts/parse_compat/java_grobid_body_taxonomy_source.json");

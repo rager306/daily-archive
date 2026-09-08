@@ -29,6 +29,7 @@ mod backend;
 mod batch;
 mod cache;
 mod conservation;
+mod cross_stage_semantic_invariants;
 mod envelope;
 mod http;
 mod ir;
@@ -74,6 +75,12 @@ pub use conservation::{
     ByteRange, ConservationDelta, ConservationEngine, ConservationEntry, ConservationFamily,
     ConservationIdentity, ConservationInventory, ConservationObservation, ConservationReasonCode,
     ConservationSubtype, ConservationVerdict, FamilyDeltaCounts,
+};
+pub use cross_stage_semantic_invariants::{
+    CROSS_STAGE_SEMANTIC_SCHEMA_VERSION, CrossStageSemanticInvariantsError,
+    CrossStageSemanticInvariantsInput, CrossStageSemanticInvariantsReport, JavaP4Observation,
+    JavaP6Observation, JavaP7Observation, NativeBucketReport, NativeVisualHeadReport,
+    check_cross_stage_semantic_invariants,
 };
 pub use envelope::{TeiEnvelope, TeiIdentity, TeiResultIdentity};
 pub use http::{GrobidHttpBackend, GrobidParser, HealthProbe, ProbeFailure, VersionProbe};

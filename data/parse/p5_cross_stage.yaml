@@ -1,0 +1,36 @@
+# S04 offline cross-stage semantic invariant contract.
+schema_version: p5-cross-stage.v1
+join_schema_ref: da-parse.p5-shadow-join/v1
+report_schema_version: da-parse.cross-stage-semantic-invariants/v1
+mode: offline_shadow_report
+production_authority: java_http
+native_accountant: shadow_join_only
+required_legs: [p5_shadow_join_report, java_p4, java_p6, java_p7]
+optional_identity_siblings: [native_visual_sequence, native_body_accounting]
+unpooled_fields:
+  - java_p5.sections_len
+  - java_p2.java_section_n
+  - java_p4.java_citation_n
+  - java_p6.java_figure_n
+  - java_p6.java_table_n
+  - java_p6.java_formula_n
+  - java_p7.java_callout_n
+  - java_p7.unresolved_n
+  - native_sequence.counts.admitted
+  - native_buckets.*
+  - native_visual.figure.metrics.*
+  - native_visual.table.metrics.*
+  - native_visual.formula.metrics.*
+pooling_forbidden_with: [P2, P4, P5, P6, P7]
+order_check: units_monotonic_page_token
+conservation:
+  native_bucket_sum_equals_admitted: true
+  cross_oracle_equality_is_not_success: true
+empty_count_not_success: true
+forbidden_report_fields: [pooled_n, body_text, tei_xml, pdf_bytes, p5_success, p6_success, p7_success, java_section_n_on_p5]
+quarantine_tokens: [check_cross_stage_semantic_invariants]
+boundaries: [crates/da-cli/src/source_cli.rs, crates/da-ports/src/parser.rs]
+import_eligible: false
+this_wave_promotes: none
+independently_selectable: [header, references]
+body_markers_policy: missing_bucket_is_zero_not_p7
