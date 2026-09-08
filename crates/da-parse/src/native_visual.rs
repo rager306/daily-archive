@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::BTreeSet, fmt};
 
 pub const NATIVE_VISUAL_SCHEMA_VERSION: &str = "da-parse.native-visual/v1";
+pub const NATIVE_VISUAL_SEQUENCE_SCHEMA_VERSION: &str = "da-parse.native-visual-sequence/v1";
 pub const MAX_PRIMITIVES: usize = 16_384;
 pub const MAX_RECEIPTS: usize = 4_096;
 pub const MAX_DIGEST_BYTES: usize = 64;
@@ -184,6 +185,41 @@ pub enum NativeVisualHeadOutcome {
         reason: NativeVisualAbsence,
         metrics: NativeVisualMetrics,
     },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NativeVisualSequenceIdentity {
+    pub document_id: String,
+    pub source_sha256: String,
+    pub provider_id: String,
+    pub visual_schema_version: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct NativeVisualSequenceStep {
+    pub name: String,
+    pub status: String,
+    pub duration_ms: u64,
+    pub failure_code: Option<String>,
+    pub outcome: Option<NativeVisualHeadOutcome>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct NativeVisualSequenceReceipt {
+    pub schema_version: String,
+    pub status: String,
+    pub identity: NativeVisualSequenceIdentity,
+    pub steps: Vec<NativeVisualSequenceStep>,
+    pub java_fallback: NativeVisualJavaFallback,
+    pub redaction: std::collections::BTreeMap<String, bool>,
+}
+
+/// Fixed Java evidence retained while native visual heads remain shadow-only.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NativeVisualJavaFallback {
+    pub disposition: String,
+    pub target: String,
+    pub source: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -519,4 +555,127 @@ pub fn detect_formula_heads(
         ),
         receipts,
     })
+}
+
+fn native_visual_error_code(error: &NativeVisualError) -> &'static str {
+    match error {
+        NativeVisualError::InvalidIdentity(_) => "invalid_identity",
+        NativeVisualError::InvalidDigest => "invalid_digest",
+        NativeVisualError::InvalidGeometry => "invalid_geometry",
+        NativeVisualError::DuplicatePrimitive => "duplicate_primitive",
+        NativeVisualError::DuplicateReceipt => "duplicate_receipt",
+        NativeVisualError::Oversize(_) => "oversize",
+        NativeVisualError::InvalidSchema => "invalid_schema",
+        NativeVisualError::HeadLimit => "head_limit",
+        NativeVisualError::ReceiptMismatch => "receipt_mismatch",
+    }
+}
+
+fn visual_redaction() -> std::collections::BTreeMap<String, bool> {
+    [
+        ("raw_text", false),
+        ("raw_pdf", false),
+        ("physical_paths", false),
+        ("hostname", false),
+        ("executable", false),
+    ]
+    .into_iter()
+    .map(|(key, value)| (key.to_owned(), value))
+    .collect()
+}
+
+fn sequence_step(
+    name: &str,
+    status: &str,
+    failure_code: Option<&str>,
+    outcome: Option<NativeVisualHeadOutcome>,
+) -> NativeVisualSequenceStep {
+    NativeVisualSequenceStep {
+        name: name.to_owned(),
+        status: status.to_owned(),
+        duration_ms: 0,
+        failure_code: failure_code.map(str::to_owned),
+        outcome,
+    }
+}
+
+/// Run the three independent visual heads in a deterministic shadow sequence.
+///
+/// Validation is the sole admission gate. Typed head absence is a completed
+/// sibling step; only a `NativeVisualError` stops later heads.
+pub fn run_visual_heads_sequence(
+    input: &NativeVisualObservation,
+    config: &NativeVisualConfig,
+) -> NativeVisualSequenceReceipt {
+    let identity = NativeVisualSequenceIdentity {
+        document_id: input.document_id.clone(),
+        source_sha256: input.source_sha256.clone(),
+        provider_id: input.provider.id.clone(),
+        visual_schema_version: input.schema_version.clone(),
+    };
+    let mut steps = Vec::with_capacity(4);
+    let status = if let Err(error) = input.validate(*config) {
+        let code = native_visual_error_code(&error);
+        steps.push(sequence_step(
+            "validate_observation",
+            "terminal",
+            Some(code),
+            None,
+        ));
+        for name in ["figure", "table", "formula"] {
+            steps.push(sequence_step(
+                name,
+                "not_admitted",
+                Some("validate_observation_terminal_failure"),
+                None,
+            ));
+        }
+        "terminal_failure"
+    } else {
+        steps.push(sequence_step("validate_observation", "pass", None, None));
+        let mut sequence_status = "pass";
+        let mut stop_code = None;
+        for (name, detector) in [
+            (
+                "figure",
+                detect_figure_heads as fn(&NativeVisualObservation, NativeVisualConfig) -> _,
+            ),
+            ("table", detect_table_heads),
+            ("formula", detect_formula_heads),
+        ] {
+            if let Some(code) = stop_code {
+                steps.push(sequence_step(name, "not_admitted", Some(code), None));
+                continue;
+            }
+            match detector(input, *config) {
+                Ok(outcome @ NativeVisualHeadOutcome::Terminal { .. }) => {
+                    steps.push(sequence_step(name, "terminal", None, Some(outcome)));
+                }
+                Ok(outcome) => steps.push(sequence_step(name, "pass", None, Some(outcome))),
+                Err(error) => {
+                    let code = native_visual_error_code(&error);
+                    steps.push(sequence_step(name, "terminal", Some(code), None));
+                    sequence_status = "terminal_failure";
+                    stop_code = Some(match name {
+                        "figure" => "figure_terminal_failure",
+                        "table" => "table_terminal_failure",
+                        _ => "formula_terminal_failure",
+                    });
+                }
+            }
+        }
+        sequence_status
+    };
+    NativeVisualSequenceReceipt {
+        schema_version: NATIVE_VISUAL_SEQUENCE_SCHEMA_VERSION.to_owned(),
+        status: status.to_owned(),
+        identity,
+        steps,
+        java_fallback: NativeVisualJavaFallback {
+            disposition: "preserved_evidence_only".to_owned(),
+            target: "java_grobid".to_owned(),
+            source: "production_fallback".to_owned(),
+        },
+        redaction: visual_redaction(),
+    }
 }

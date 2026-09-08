@@ -149,11 +149,13 @@ pub use native_segmentation::{
 };
 pub use native_visual::{
     FigureHeadReceipt, FormulaHeadReceipt, MAX_DIGEST_BYTES, MAX_PRIMITIVES, MAX_RECEIPTS,
-    NATIVE_VISUAL_SCHEMA_VERSION, NativeTableCellReceipt, NativeVisualAbsence, NativeVisualConfig,
-    NativeVisualDigestReceipt, NativeVisualError, NativeVisualHead, NativeVisualHeadOutcome,
-    NativeVisualKind, NativeVisualMetrics, NativeVisualObservation, NativeVisualPrimitive,
-    NativeVisualProvider, TableHeadReceipt, detect_figure_heads, detect_formula_heads,
-    detect_table_heads,
+    NATIVE_VISUAL_SCHEMA_VERSION, NATIVE_VISUAL_SEQUENCE_SCHEMA_VERSION, NativeTableCellReceipt,
+    NativeVisualAbsence, NativeVisualConfig, NativeVisualDigestReceipt, NativeVisualError,
+    NativeVisualHead, NativeVisualHeadOutcome, NativeVisualJavaFallback, NativeVisualKind,
+    NativeVisualMetrics, NativeVisualObservation, NativeVisualPrimitive, NativeVisualProvider,
+    NativeVisualSequenceIdentity, NativeVisualSequenceReceipt, NativeVisualSequenceStep,
+    TableHeadReceipt, detect_figure_heads, detect_formula_heads, detect_table_heads,
+    run_visual_heads_sequence,
 };
 pub use parser::{ScholarlyParser, lift_and_project_envelope};
 pub use profile::GrobidProfile;
