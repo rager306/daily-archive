@@ -437,6 +437,7 @@ pub fn evaluate_adapted(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::derived_evidence_maturity::MaturityState;
     use crate::derived_transition_evaluator::DenominatorScope;
 
     fn input(family: FamilyId) -> FamilyAdapterInput {
@@ -541,6 +542,283 @@ mod tests {
             adapt_family(&bad_name),
             AdapterResult::Blocked {
                 reason: BlockedReason::MalformedReceipt,
+                ..
+            }
+        ));
+    }
+
+    fn receipt(family: FamilyId, kind: ReceiptKind, reference: &str) -> BoundReceipt {
+        let _ = family;
+        BoundReceipt {
+            kind,
+            evidence_ref: reference.into(),
+            source_sha256: "a".repeat(64),
+            artifact_sha256: "b".repeat(64),
+            grobid_profile: "structural".into(),
+        }
+    }
+
+    fn adapted(family: FamilyId, prefix: usize) -> AdaptedFamily {
+        let mut value = input(family);
+        value.receipts = ReceiptKind::ALL
+            .into_iter()
+            .enumerate()
+            .take(prefix)
+            .map(|(index, kind)| receipt(family, kind, &format!("ref-{index}")))
+            .collect();
+        match adapt_family(&value) {
+            AdapterResult::Ready { adapted } => *adapted,
+            other => panic!("family {family:?} did not adapt: {other:?}"),
+        }
+    }
+
+    fn claim(current: Option<MaturityState>, goal: ReceiptKind) -> ClaimedTransition {
+        ClaimedTransition {
+            current_state: current,
+            next_allowed_state: match current {
+                None => MaturityState::InventoryBound,
+                Some(state) => state.successor().unwrap_or(state),
+            },
+            goal_kind: goal,
+        }
+    }
+
+    fn assert_advanced(
+        result: TransitionEvaluation,
+        from: Option<MaturityState>,
+        to: MaturityState,
+    ) {
+        assert!(matches!(
+            result,
+            TransitionEvaluation::Advanced { from: actual_from, to: actual_to, .. }
+                if actual_from == from && actual_to == to
+        ));
+    }
+
+    #[test]
+    fn all_families_share_bootstrap_plus_one_replay_and_human_gate_semantics() {
+        let expected = [
+            (ReceiptKind::Inventory, MaturityState::InventoryBound),
+            (ReceiptKind::Oracle, MaturityState::OracleBound),
+            (ReceiptKind::Atom, MaturityState::AtomProven),
+            (ReceiptKind::Sequence, MaturityState::SequenceProven),
+            (ReceiptKind::Shadow, MaturityState::ShadowObserved),
+        ];
+        for family in FamilyId::ALL {
+            for (prefix, (kind, state)) in expected.into_iter().enumerate() {
+                let prior = adapted(family, prefix);
+                let proposed = receipt(family, kind, &format!("ref-{prefix}"));
+                let direct = evaluate_transition(
+                    &prior.set,
+                    Some(&proposed),
+                    &prior.observations,
+                    Some(&claim(
+                        if prefix == 0 {
+                            None
+                        } else {
+                            Some(MaturityState::ALL[prefix - 1])
+                        },
+                        kind,
+                    )),
+                );
+                let wrapped = evaluate_adapted(
+                    &prior,
+                    Some(&proposed),
+                    Some(&claim(
+                        if prefix == 0 {
+                            None
+                        } else {
+                            Some(MaturityState::ALL[prefix - 1])
+                        },
+                        kind,
+                    )),
+                );
+                assert_eq!(wrapped, direct);
+                assert_advanced(
+                    wrapped,
+                    if prefix == 0 {
+                        None
+                    } else {
+                        Some(MaturityState::ALL[prefix - 1])
+                    },
+                    state,
+                );
+            }
+
+            let complete = adapted(family, ReceiptKind::ALL.len());
+            let review = receipt(family, ReceiptKind::Review, "ref-5");
+            let review_claim = ClaimedTransition {
+                current_state: Some(MaturityState::ShadowObserved),
+                next_allowed_state: MaturityState::HumanGateRequired,
+                goal_kind: ReceiptKind::Review,
+            };
+            let direct = evaluate_transition(
+                &adapted(family, 5).set,
+                Some(&review),
+                &adapted(family, 5).observations,
+                Some(&review_claim),
+            );
+            assert_eq!(
+                evaluate_adapted(&adapted(family, 5), Some(&review), Some(&review_claim)),
+                direct
+            );
+            assert!(matches!(direct, TransitionEvaluation::HumanGate { .. }));
+
+            let replay_claim = ClaimedTransition {
+                current_state: Some(MaturityState::HumanGateRequired),
+                next_allowed_state: MaturityState::HumanGateRequired,
+                goal_kind: ReceiptKind::Review,
+            };
+            let replay = evaluate_adapted(&complete, None, Some(&replay_claim));
+            assert!(matches!(replay, TransitionEvaluation::HumanGate { .. }));
+
+            let conflict = receipt(family, ReceiptKind::Review, "different-ref");
+            assert!(matches!(
+                evaluate_adapted(&complete, Some(&conflict), None),
+                TransitionEvaluation::Blocked {
+                    reason: BlockedReason::StaleIdentity,
+                    ..
+                }
+            ));
+        }
+    }
+
+    #[test]
+    fn prompt_wrapper_is_direct_and_deterministic_for_every_family_prefix() {
+        for family in FamilyId::ALL {
+            for prefix in 0..=ReceiptKind::ALL.len() {
+                let adapted = adapted(family, prefix);
+                assert_eq!(
+                    prompt_adapted(&adapted),
+                    render_prompt(&adapted.set, &adapted.spec)
+                );
+                assert_eq!(prompt_adapted(&adapted), prompt_adapted(&adapted));
+            }
+        }
+    }
+
+    #[test]
+    fn detector_matrix_remains_typed_and_fail_closed() {
+        let cases = [
+            ("stale", BlockedReason::StaleIdentity),
+            ("pooling", BlockedReason::Pooling),
+            ("drift", BlockedReason::DenominatorDrift),
+            ("contamination", BlockedReason::Contamination),
+            ("semantic", BlockedReason::SemanticDrift),
+            ("conservation", BlockedReason::ConservationLoss),
+            ("unsafe", BlockedReason::UnsafeProductionCall),
+            ("failed", BlockedReason::FailedEvidence),
+            ("empty", BlockedReason::FailedEvidence),
+            ("automatic", BlockedReason::AttemptedAutomaticPromotion),
+        ];
+        for family in FamilyId::ALL {
+            for (name, expected) in cases {
+                let mut value = input(family);
+                match name {
+                    "stale" => {}
+                    "pooling" => {
+                        let denominator =
+                            family_denominator(family, catalog(family).named_denominators[0]);
+                        value.denominators = vec![
+                            DenominatorObservation {
+                                name: denominator.clone(),
+                                claimed_n: 1,
+                                actual_n: Some(1),
+                                population_id: "one".into(),
+                                scope: DenominatorScope::Document,
+                            },
+                            DenominatorObservation {
+                                name: denominator,
+                                claimed_n: 1,
+                                actual_n: Some(1),
+                                population_id: "two".into(),
+                                scope: DenominatorScope::Document,
+                            },
+                        ];
+                    }
+                    "drift" => value.denominators.push(DenominatorObservation {
+                        name: catalog(family).named_denominators[0].into(),
+                        claimed_n: 2,
+                        actual_n: Some(1),
+                        population_id: "paper-1".into(),
+                        scope: DenominatorScope::Document,
+                    }),
+                    "contamination" => value.evidence_origin = EvidenceOrigin::Prompt,
+                    "semantic" => value.semantic_held = Some(false),
+                    "conservation" => value.conservation_held = Some(false),
+                    "unsafe" => value.native_on_production_route = true,
+                    "failed" => value.verification_exit_code = Some(1),
+                    "empty" => value.empty_success = true,
+                    "automatic" => value.import_eligible = !false,
+                    _ => unreachable!(),
+                }
+                let result = match adapt_family(&value) {
+                    AdapterResult::Ready { mut adapted } => {
+                        if name == "stale" {
+                            adapted.observations.observed_source_sha256 = Some("e".repeat(64));
+                        }
+                        evaluate_adapted(&adapted, None, None)
+                    }
+                    other => panic!("{family:?}/{name} unexpectedly failed adaptation: {other:?}"),
+                };
+                assert!(
+                    matches!(result, TransitionEvaluation::Blocked { reason, .. } if reason == expected),
+                    "{family:?}/{name}: {result:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn family_specific_denominators_do_not_pool_and_empty_success_needs_typed_absence() {
+        for family in [FamilyId::Header, FamilyId::Bibliography] {
+            let mut value = input(family);
+            let names = catalog(family).named_denominators;
+            value.denominators = names
+                .iter()
+                .map(|name| DenominatorObservation {
+                    name: (*name).into(),
+                    claimed_n: 1,
+                    actual_n: Some(1),
+                    population_id: "paper-1".into(),
+                    scope: DenominatorScope::Document,
+                })
+                .collect();
+            let AdapterResult::Ready { adapted } = adapt_family(&value) else {
+                panic!()
+            };
+            assert!(!matches!(
+                evaluate_adapted(&adapted, None, None),
+                TransitionEvaluation::Blocked {
+                    reason: BlockedReason::Pooling,
+                    ..
+                }
+            ));
+        }
+
+        let mut body = input(FamilyId::Body);
+        body.empty_success = true;
+        let AdapterResult::Ready { adapted } = adapt_family(&body) else {
+            panic!()
+        };
+        assert!(matches!(
+            evaluate_adapted(&adapted, None, None),
+            TransitionEvaluation::Blocked {
+                reason: BlockedReason::FailedEvidence,
+                ..
+            }
+        ));
+
+        let mut visual = input(FamilyId::Visual);
+        visual.empty_success = true;
+        visual.typed_absence_named = true;
+        let AdapterResult::Ready { adapted } = adapt_family(&visual) else {
+            panic!()
+        };
+        assert!(!matches!(
+            evaluate_adapted(&adapted, None, None),
+            TransitionEvaluation::Blocked {
+                reason: BlockedReason::FailedEvidence,
                 ..
             }
         ));
