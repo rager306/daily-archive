@@ -231,7 +231,62 @@ impl BlockedReason {
     }
 }
 
-/// Closed diagnostic result emitted by a future pure derivation function.
+/// An identity-only receipt bound to one immutable source and artifact.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BoundReceipt {
+    pub kind: ReceiptKind,
+    pub evidence_ref: String,
+    pub source_sha256: String,
+    pub artifact_sha256: String,
+    pub grobid_profile: String,
+}
+
+/// The complete, injected receipt set for one paper and one evidence family.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FamilyEvidenceSet {
+    pub family: FamilyId,
+    pub paper_id: String,
+    #[serde(default)]
+    pub inventory: Option<BoundReceipt>,
+    #[serde(default)]
+    pub oracle: Option<BoundReceipt>,
+    #[serde(default)]
+    pub atom: Option<BoundReceipt>,
+    #[serde(default)]
+    pub sequence: Option<BoundReceipt>,
+    #[serde(default)]
+    pub shadow: Option<BoundReceipt>,
+    #[serde(default)]
+    pub review: Option<BoundReceipt>,
+    #[serde(default)]
+    pub human_decision_ref: Option<String>,
+    #[serde(default)]
+    pub stale_identity: bool,
+    #[serde(default)]
+    pub denominator_drift: bool,
+    #[serde(default)]
+    pub pooling: bool,
+    #[serde(default)]
+    pub contamination: bool,
+    #[serde(default)]
+    pub semantic_drift: bool,
+    #[serde(default)]
+    pub conservation_loss: bool,
+    #[serde(default)]
+    pub unsafe_production_call: bool,
+    #[serde(default)]
+    pub failed_evidence: bool,
+    #[serde(default)]
+    pub claims_promoted: bool,
+    #[serde(default)]
+    pub deployed: bool,
+    #[serde(default)]
+    pub import_eligible: bool,
+}
+
+/// Closed diagnostic result emitted by the pure derivation function.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "status", rename_all = "snake_case")]
 pub enum MaturityDerivation {
@@ -244,6 +299,165 @@ pub enum MaturityDerivation {
         missing_or_offending: Option<String>,
         evidence_refs: Vec<String>,
     },
+}
+
+fn blocked(
+    reason: BlockedReason,
+    missing_or_offending: impl Into<Option<String>>,
+    evidence_refs: Vec<String>,
+) -> MaturityDerivation {
+    MaturityDerivation::Blocked {
+        reason,
+        missing_or_offending: missing_or_offending.into(),
+        evidence_refs,
+    }
+}
+
+fn valid_digest(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+/// Derive the highest contiguous maturity prefix from immutable receipts.
+///
+/// This function has no authority to promote, import, write, or consult a
+/// runtime parse state. Explicit authority or integrity claims always win
+/// over receipt presence and are returned as typed blocks.
+pub fn derive_maturity(set: &FamilyEvidenceSet) -> MaturityDerivation {
+    if set.claims_promoted || set.deployed || set.import_eligible {
+        return blocked(
+            BlockedReason::AttemptedAutomaticPromotion,
+            Some("authority_claim".to_owned()),
+            Vec::new(),
+        );
+    }
+
+    let integrity_flags = [
+        (set.pooling, BlockedReason::Pooling),
+        (set.contamination, BlockedReason::Contamination),
+        (set.stale_identity, BlockedReason::StaleIdentity),
+        (set.denominator_drift, BlockedReason::DenominatorDrift),
+        (set.conservation_loss, BlockedReason::ConservationLoss),
+        (set.semantic_drift, BlockedReason::SemanticDrift),
+        (
+            set.unsafe_production_call,
+            BlockedReason::UnsafeProductionCall,
+        ),
+        (set.failed_evidence, BlockedReason::FailedEvidence),
+    ];
+    if let Some((_, reason)) = integrity_flags.into_iter().find(|(set, _)| *set) {
+        return blocked(reason, Some("integrity_flag".to_owned()), Vec::new());
+    }
+
+    if set.paper_id.trim().is_empty() {
+        return blocked(
+            BlockedReason::MalformedReceipt,
+            Some("paper_id".to_owned()),
+            Vec::new(),
+        );
+    }
+
+    let slots = [
+        (ReceiptKind::Inventory, "inventory", set.inventory.as_ref()),
+        (ReceiptKind::Oracle, "oracle", set.oracle.as_ref()),
+        (ReceiptKind::Atom, "atom", set.atom.as_ref()),
+        (ReceiptKind::Sequence, "sequence", set.sequence.as_ref()),
+        (ReceiptKind::Shadow, "shadow", set.shadow.as_ref()),
+        (ReceiptKind::Review, "review", set.review.as_ref()),
+    ];
+    let mut source_sha256: Option<&str> = None;
+    for (expected_kind, name, receipt) in slots
+        .iter()
+        .filter_map(|(kind, name, receipt)| receipt.map(|receipt| (*kind, *name, receipt)))
+    {
+        if receipt.kind != expected_kind {
+            return blocked(
+                BlockedReason::MalformedReceipt,
+                Some(format!("{name}.kind")),
+                Vec::new(),
+            );
+        }
+        if receipt.evidence_ref.trim().is_empty() {
+            return blocked(
+                BlockedReason::MissingEvidence,
+                Some(format!("{name}.evidence_ref")),
+                Vec::new(),
+            );
+        }
+        if !valid_digest(&receipt.source_sha256) {
+            return blocked(
+                BlockedReason::MalformedReceipt,
+                Some(format!("{name}.source_sha256")),
+                Vec::new(),
+            );
+        }
+        if !valid_digest(&receipt.artifact_sha256) {
+            return blocked(
+                BlockedReason::MalformedReceipt,
+                Some(format!("{name}.artifact_sha256")),
+                Vec::new(),
+            );
+        }
+        if receipt.grobid_profile != "structural" && receipt.grobid_profile != "rich" {
+            return blocked(
+                BlockedReason::MalformedReceipt,
+                Some(format!("{name}.grobid_profile")),
+                Vec::new(),
+            );
+        }
+        if let Some(source) = source_sha256 {
+            if source != receipt.source_sha256 {
+                return blocked(
+                    BlockedReason::MalformedReceipt,
+                    Some(format!("{name}.source_sha256")),
+                    Vec::new(),
+                );
+            }
+        } else {
+            source_sha256 = Some(&receipt.source_sha256);
+        }
+    }
+
+    let first_gap = slots.iter().position(|(_, _, receipt)| receipt.is_none());
+    let contiguous = slots.iter().take_while(|(_, _, receipt)| receipt.is_some());
+    let evidence_refs: Vec<String> = contiguous
+        .map(|(_, _, receipt)| {
+            receipt
+                .expect("take_while guarantees receipt")
+                .evidence_ref
+                .clone()
+        })
+        .collect();
+    if let Some(index) = first_gap
+        && slots[index + 1..]
+            .iter()
+            .any(|(_, _, later)| later.is_some())
+    {
+        return blocked(
+            BlockedReason::LadderGap,
+            Some(slots[index].1.to_owned()),
+            evidence_refs,
+        );
+    }
+    if evidence_refs.is_empty() {
+        blocked(
+            BlockedReason::MissingEvidence,
+            Some(
+                first_gap
+                    .map(|index| slots[index].1.to_owned())
+                    .unwrap_or_else(|| "inventory".to_owned()),
+            ),
+            evidence_refs,
+        )
+    } else {
+        MaturityDerivation::Reached {
+            state: if evidence_refs.len() == ReceiptKind::ALL.len() {
+                MaturityState::HumanGateRequired
+            } else {
+                MaturityState::ALL[evidence_refs.len() - 1]
+            },
+            evidence_refs,
+        }
+    }
 }
 
 /// True only for one immediate forward step on the closed ladder.
@@ -355,5 +569,180 @@ mod tests {
             MaturityState::HumanGateRequired,
             MaturityState::InventoryBound
         ));
+    }
+
+    fn receipt(kind: ReceiptKind, reference: &str) -> BoundReceipt {
+        BoundReceipt {
+            kind,
+            evidence_ref: reference.into(),
+            source_sha256: "a".repeat(64),
+            artifact_sha256: "b".repeat(64),
+            grobid_profile: "structural".into(),
+        }
+    }
+
+    fn set() -> FamilyEvidenceSet {
+        FamilyEvidenceSet {
+            family: FamilyId::Body,
+            paper_id: "paper-1".into(),
+            inventory: None,
+            oracle: None,
+            atom: None,
+            sequence: None,
+            shadow: None,
+            review: None,
+            human_decision_ref: None,
+            stale_identity: false,
+            denominator_drift: false,
+            pooling: false,
+            contamination: false,
+            semantic_drift: false,
+            conservation_loss: false,
+            unsafe_production_call: false,
+            failed_evidence: false,
+            claims_promoted: false,
+            deployed: false,
+            import_eligible: false,
+        }
+    }
+
+    fn reached(result: MaturityDerivation) -> (MaturityState, Vec<String>) {
+        match result {
+            MaturityDerivation::Reached {
+                state,
+                evidence_refs,
+            } => (state, evidence_refs),
+            other => panic!("expected reached result, got {other:?}"),
+        }
+    }
+
+    fn blocked_reason(result: MaturityDerivation) -> BlockedReason {
+        match result {
+            MaturityDerivation::Blocked { reason, .. } => reason,
+            other => panic!("expected blocked result, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn every_contiguous_prefix_derives_exact_state_and_ordered_refs() {
+        let kinds = ReceiptKind::ALL;
+        for prefix in 1..=kinds.len() {
+            let mut family = set();
+            for (index, kind) in kinds.into_iter().enumerate().take(prefix) {
+                let value = Some(receipt(kind, &format!("ref-{index}")));
+                match kind {
+                    ReceiptKind::Inventory => family.inventory = value,
+                    ReceiptKind::Oracle => family.oracle = value,
+                    ReceiptKind::Atom => family.atom = value,
+                    ReceiptKind::Sequence => family.sequence = value,
+                    ReceiptKind::Shadow => family.shadow = value,
+                    ReceiptKind::Review => family.review = value,
+                }
+            }
+            let (state, refs) = reached(derive_maturity(&family));
+            let expected_state = if prefix == kinds.len() {
+                MaturityState::HumanGateRequired
+            } else {
+                MaturityState::ALL[prefix - 1]
+            };
+            assert_eq!(state, expected_state);
+            assert_eq!(
+                refs,
+                (0..prefix).map(|i| format!("ref-{i}")).collect::<Vec<_>>()
+            );
+        }
+    }
+
+    #[test]
+    fn empty_and_sparse_sets_fail_closed() {
+        let mut family = set();
+        assert_eq!(
+            blocked_reason(derive_maturity(&family)),
+            BlockedReason::MissingEvidence
+        );
+        family.shadow = Some(receipt(ReceiptKind::Shadow, "shadow-ref"));
+        assert_eq!(
+            blocked_reason(derive_maturity(&family)),
+            BlockedReason::LadderGap
+        );
+        match derive_maturity(&family) {
+            MaturityDerivation::Blocked { evidence_refs, .. } => assert!(evidence_refs.is_empty()),
+            other => panic!("expected block, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn authority_and_integrity_flags_have_fixed_priority() {
+        let mut family = set();
+        family.inventory = Some(receipt(ReceiptKind::Inventory, "inventory-ref"));
+        family.failed_evidence = true;
+        family.pooling = true;
+        family.claims_promoted = true;
+        assert_eq!(
+            blocked_reason(derive_maturity(&family)),
+            BlockedReason::AttemptedAutomaticPromotion
+        );
+        family.claims_promoted = false;
+        assert_eq!(
+            blocked_reason(derive_maturity(&family)),
+            BlockedReason::Pooling
+        );
+    }
+
+    #[test]
+    fn malformed_receipts_never_downgrade_to_a_reached_state() {
+        let mut family = set();
+        family.inventory = Some(receipt(ReceiptKind::Oracle, "wrong-kind"));
+        assert_eq!(
+            blocked_reason(derive_maturity(&family)),
+            BlockedReason::MalformedReceipt
+        );
+        family.inventory = Some(receipt(ReceiptKind::Inventory, ""));
+        assert_eq!(
+            blocked_reason(derive_maturity(&family)),
+            BlockedReason::MissingEvidence
+        );
+        family.inventory = Some(receipt(ReceiptKind::Inventory, "ref"));
+        family.inventory.as_mut().unwrap().source_sha256 = "bad".into();
+        assert_eq!(
+            blocked_reason(derive_maturity(&family)),
+            BlockedReason::MalformedReceipt
+        );
+        family.inventory = Some(receipt(ReceiptKind::Inventory, "ref"));
+        family.oracle = Some(receipt(ReceiptKind::Oracle, "oracle-ref"));
+        family.oracle.as_mut().unwrap().source_sha256 = "c".repeat(64);
+        assert_eq!(
+            blocked_reason(derive_maturity(&family)),
+            BlockedReason::MalformedReceipt
+        );
+        family.oracle.as_mut().unwrap().source_sha256 = "a".repeat(64);
+        family.oracle.as_mut().unwrap().grobid_profile = "unknown".into();
+        assert_eq!(
+            blocked_reason(derive_maturity(&family)),
+            BlockedReason::MalformedReceipt
+        );
+    }
+
+    #[test]
+    fn human_decision_is_diagnostic_only_and_containers_are_strict() {
+        let mut family = set();
+        family.human_decision_ref = Some("human-1".into());
+        for (slot, kind) in [
+            (&mut family.inventory, ReceiptKind::Inventory),
+            (&mut family.oracle, ReceiptKind::Oracle),
+            (&mut family.atom, ReceiptKind::Atom),
+            (&mut family.sequence, ReceiptKind::Sequence),
+            (&mut family.shadow, ReceiptKind::Shadow),
+            (&mut family.review, ReceiptKind::Review),
+        ] {
+            *slot = Some(receipt(kind, kind.as_str()));
+        }
+        assert_eq!(
+            reached(derive_maturity(&family)).0,
+            MaturityState::HumanGateRequired
+        );
+        let mut json = serde_json::to_value(&family).unwrap();
+        json["unexpected"] = true.into();
+        assert!(serde_json::from_value::<FamilyEvidenceSet>(json).is_err());
     }
 }
