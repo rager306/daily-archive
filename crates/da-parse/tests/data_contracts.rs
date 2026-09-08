@@ -5843,27 +5843,33 @@ fn rejects_visual_bundle_promotion_into_fsm() {
     );
 }
 
-// ───── S09/T01: P5 body stays accountant_later, never a live receipt ─────
+// ───── M498/S01/T02: P5 Java authority split and shadow accountant ─────
 //
-// P5 (`fulltext_body_sections`) is the single cascade stage with
-// `observe_mode: accountant_later`: Java stays the production authority for
-// the row, but parse-pdf must NOT stamp it live. This DATA contract pins the
-// exact P5 row of the registry of record
-// (`defaults.cascade_stages.P5`) and the data-driven admission allowlist
-// (`admission.independently_selectable == [header, references]` in
-// `data/parse/native_fulltext_composition.yaml`). The production-boundary
-// side (no `stamp_p5_` in source_cli.rs, P4/P6 stay live) lives in
-// `architecture_contract.rs`. Nothing here touches source_cli, ParserPort,
-// native modules, DecisionPoint, registry, graph/ACAP, D127 or
-// import_eligible.
+// P5 (`fulltext_body_sections`) keeps Java ParsedArticle as its sole
+// production observation source. The native accountant is an offline,
+// shadow-join-only surface; `accountant_later` means the Java contract exists
+// but parse-pdf has no live P5 stamp yet. Generic `serde_yaml::Value` reading
+// deliberately makes removed or malformed fields fail closed.
 
-const P5_BODY_LATER_TAG: &str = "[p5-body-later-drift]";
+const P5_AUTHORITY_SPLIT_TAG: &str = "[p5-authority-split-drift]";
 const NATIVE_FULLTEXT_COMPOSITION_REL: &str = "data/parse/native_fulltext_composition.yaml";
+const P5_JAVA_FIELDS: [&str; 2] = ["sections_len", "body_empty"];
+const P5_POOLING_FORBIDDEN_WITH: [&str; 3] = ["P2", "P6", "P7"];
 
-/// Validate the P5 cascade row of the registry of record
-/// (`defaults.cascade_stages.P5`). Generic `serde_yaml::Value` reader — no
-/// typed deserialization that could mask a removed field.
-fn validate_p5_body_later_policy(registry: &serde_yaml::Value) -> Vec<String> {
+fn exact_string_list(value: Option<&serde_yaml::Value>, expected: &[&str]) -> bool {
+    value
+        .and_then(serde_yaml::Value::as_sequence)
+        .is_some_and(|seq| {
+            seq.len() == expected.len()
+                && seq
+                    .iter()
+                    .zip(expected)
+                    .all(|(actual, expected)| actual.as_str() == Some(*expected))
+        })
+}
+
+/// Validate the complete P5 authority split in the registry of record.
+fn validate_p5_authority_split_policy(registry: &serde_yaml::Value) -> Vec<String> {
     let mut errs = Vec::new();
     let stage = registry
         .get("defaults")
@@ -5871,35 +5877,46 @@ fn validate_p5_body_later_policy(registry: &serde_yaml::Value) -> Vec<String> {
         .and_then(|c| c.get("P5"));
     let Some(stage) = stage else {
         errs.push(format!(
-            "{P5_BODY_LATER_TAG} registry lost `defaults.cascade_stages.P5` — loss, not silence"
+            "{P5_AUTHORITY_SPLIT_TAG} registry lost `defaults.cascade_stages.P5` — loss, not silence"
         ));
         return errs;
     };
-    let mut str_eq = |key: &str, expected: &str| {
+    for (key, expected) in [
+        ("grobid", "fulltext_body_sections"),
+        ("production_authority", "java_http"),
+        ("native_surface", "crates/da-parse/src/native_body.rs"),
+        ("observe_mode", "accountant_later"),
+        ("java_observation", "production"),
+        ("native_accountant", "shadow_join_only"),
+    ] {
         if stage.get(key).and_then(|v| v.as_str()) != Some(expected) {
             errs.push(format!(
-                "{P5_BODY_LATER_TAG} P5 `{key}` must stay `{expected}`"
+                "{P5_AUTHORITY_SPLIT_TAG} P5 `{key}` must stay `{expected}`"
             ));
         }
-    };
-    str_eq("grobid", "fulltext_body_sections");
-    str_eq("production_authority", "java_http");
-    str_eq("native_surface", "none");
-    str_eq("observe_mode", "accountant_later");
-    match stage.get("fsm_consult") {
-        Some(v) => {
-            let is_none = v
-                .as_sequence()
-                .is_some_and(|seq| seq.len() == 1 && seq[0].as_str() == Some("none"));
-            if !is_none {
-                errs.push(format!(
-                    "{P5_BODY_LATER_TAG} P5 `fsm_consult` must stay `[none]` — body never consults the FSM"
-                ));
-            }
-        }
-        None => errs.push(format!(
-            "{P5_BODY_LATER_TAG} registry lost P5 `fsm_consult` — loss, not silence"
-        )),
+    }
+    if !exact_string_list(stage.get("fsm_consult"), &["none"]) {
+        errs.push(format!(
+            "{P5_AUTHORITY_SPLIT_TAG} P5 `fsm_consult` must stay exactly `[none]`"
+        ));
+    }
+    if !exact_string_list(stage.get("java_observation_fields"), &P5_JAVA_FIELDS) {
+        errs.push(format!(
+            "{P5_AUTHORITY_SPLIT_TAG} P5 Java observation fields must be exactly `[sections_len, body_empty]`"
+        ));
+    }
+    if stage.get("empty_count_not_success") != Some(&serde_yaml::Value::Bool(true)) {
+        errs.push(format!(
+            "{P5_AUTHORITY_SPLIT_TAG} P5 `empty_count_not_success` must be true"
+        ));
+    }
+    if !exact_string_list(
+        stage.get("pooling_forbidden_with"),
+        &P5_POOLING_FORBIDDEN_WITH,
+    ) {
+        errs.push(format!(
+            "{P5_AUTHORITY_SPLIT_TAG} P5 pooling identities must be exactly `[P2, P6, P7]`"
+        ));
     }
     errs
 }
@@ -5935,12 +5952,12 @@ fn validate_p5_admission_selectable(composition: &serde_yaml::Value) -> Vec<Stri
 }
 
 #[test]
-fn p5_cascade_row_stays_accountant_later() {
+fn p5_cascade_row_preserves_java_authority_split() {
     let registry = load_registry_value();
-    let errs = validate_p5_body_later_policy(&registry);
+    let errs = validate_p5_authority_split_policy(&registry);
     assert!(
         errs.is_empty(),
-        "P5 body-later DATA violations:\n{}",
+        "P5 authority-split DATA violations:\n{}",
         errs.join("\n")
     );
     // Admission allowlist is DATA-driven from the composition authority.
@@ -5954,42 +5971,56 @@ fn p5_cascade_row_stays_accountant_later() {
 }
 
 #[test]
-fn rejects_p5_policy_drift_mutation_or_loss() {
+fn rejects_p5_authority_split_drift_or_loss() {
     let registry = load_registry_value();
     // accountant_later -> production_stamp promotion must fail loudly.
     let mut drifted = registry.clone();
     drifted["defaults"]["cascade_stages"]["P5"]["observe_mode"] =
         serde_yaml::Value::String("production_stamp".into());
     negative(
-        P5_BODY_LATER_TAG,
-        &validate_p5_body_later_policy(&drifted),
+        P5_AUTHORITY_SPLIT_TAG,
+        &validate_p5_authority_split_policy(&drifted),
         "P5 mode -> production_stamp",
     );
-    // accountant_later -> shadow_receipt erosion must fail loudly.
+    // accountant_later -> shadow_receipt quarantine collapse must fail loudly.
     let mut drifted = registry.clone();
     drifted["defaults"]["cascade_stages"]["P5"]["observe_mode"] =
         serde_yaml::Value::String("shadow_receipt".into());
     negative(
-        P5_BODY_LATER_TAG,
-        &validate_p5_body_later_policy(&drifted),
+        P5_AUTHORITY_SPLIT_TAG,
+        &validate_p5_authority_split_policy(&drifted),
         "P5 mode -> shadow_receipt",
     );
-    // java_http -> native erosion must fail loudly (no hardcoded fallback).
-    let mut drifted = registry.clone();
-    drifted["defaults"]["cascade_stages"]["P5"]["production_authority"] =
-        serde_yaml::Value::String("native".into());
-    negative(
-        P5_BODY_LATER_TAG,
-        &validate_p5_body_later_policy(&drifted),
-        "P5 authority -> native",
-    );
+    // Java authority or source substitution must fail loudly.
+    for (key, value, label) in [
+        ("production_authority", "native", "P5 authority -> native"),
+        ("native_surface", "none", "P5 native surface erased"),
+        (
+            "java_observation",
+            "native",
+            "P5 Java observation -> native",
+        ),
+        (
+            "native_accountant",
+            "production",
+            "P5 native accountant promoted",
+        ),
+    ] {
+        let mut drifted = registry.clone();
+        drifted["defaults"]["cascade_stages"]["P5"][key] = serde_yaml::Value::String(value.into());
+        negative(
+            P5_AUTHORITY_SPLIT_TAG,
+            &validate_p5_authority_split_policy(&drifted),
+            label,
+        );
+    }
     // fsm_consult [none] -> [grammar_route] (FSM promotion) must fail loudly.
     let mut drifted = registry.clone();
     drifted["defaults"]["cascade_stages"]["P5"]["fsm_consult"] =
         serde_yaml::Value::Sequence(vec![serde_yaml::Value::String("grammar_route".into())]);
     negative(
-        P5_BODY_LATER_TAG,
-        &validate_p5_body_later_policy(&drifted),
+        P5_AUTHORITY_SPLIT_TAG,
+        &validate_p5_authority_split_policy(&drifted),
         "P5 consults the FSM",
     );
     // Removed P5 row is loss, not silence.
@@ -5998,20 +6029,74 @@ fn rejects_p5_policy_drift_mutation_or_loss() {
         map.remove("P5");
     }
     negative(
-        P5_BODY_LATER_TAG,
-        &validate_p5_body_later_policy(&removed),
+        P5_AUTHORITY_SPLIT_TAG,
+        &validate_p5_authority_split_policy(&removed),
         "removed P5 row",
     );
-    // Removed P5 observe_mode is loss, not silence.
-    let mut removed = registry.clone();
-    if let Some(map) = removed["defaults"]["cascade_stages"]["P5"].as_mapping_mut() {
-        map.remove("observe_mode");
+    // Every authority-split field is required; removal is loss, not silence.
+    for key in [
+        "observe_mode",
+        "java_observation",
+        "java_observation_fields",
+        "native_accountant",
+        "empty_count_not_success",
+        "pooling_forbidden_with",
+    ] {
+        let mut removed = registry.clone();
+        if let Some(map) = removed["defaults"]["cascade_stages"]["P5"].as_mapping_mut() {
+            map.remove(key);
+        }
+        negative(
+            P5_AUTHORITY_SPLIT_TAG,
+            &validate_p5_authority_split_policy(&removed),
+            &format!("removed P5 {key}"),
+        );
     }
+    // Typed empty is not success, and denominator pooling cannot be relaxed.
+    let mut drifted = registry.clone();
+    drifted["defaults"]["cascade_stages"]["P5"]["empty_count_not_success"] =
+        serde_yaml::Value::Bool(false);
     negative(
-        P5_BODY_LATER_TAG,
-        &validate_p5_body_later_policy(&removed),
-        "removed P5 observe_mode",
+        P5_AUTHORITY_SPLIT_TAG,
+        &validate_p5_authority_split_policy(&drifted),
+        "P5 empty count accepted as success",
     );
+    for member in ["P2", "P6", "P7"] {
+        let mut drifted = registry.clone();
+        drifted["defaults"]["cascade_stages"]["P5"]["pooling_forbidden_with"] =
+            serde_yaml::Value::Sequence(
+                P5_POOLING_FORBIDDEN_WITH
+                    .iter()
+                    .filter(|candidate| **candidate != member)
+                    .map(|candidate| serde_yaml::Value::String((*candidate).into()))
+                    .collect(),
+            );
+        negative(
+            P5_AUTHORITY_SPLIT_TAG,
+            &validate_p5_authority_split_policy(&drifted),
+            &format!("P5 pooling member {member} removed"),
+        );
+    }
+    // Java observation must use exactly the named counters and flags.
+    for fields in [
+        vec!["sections_len"],
+        vec!["body_empty"],
+        vec!["sections_len", "body_text"],
+    ] {
+        let mut drifted = registry.clone();
+        drifted["defaults"]["cascade_stages"]["P5"]["java_observation_fields"] =
+            serde_yaml::Value::Sequence(
+                fields
+                    .iter()
+                    .map(|field| serde_yaml::Value::String((*field).into()))
+                    .collect(),
+            );
+        negative(
+            P5_AUTHORITY_SPLIT_TAG,
+            &validate_p5_authority_split_policy(&drifted),
+            "P5 Java observation fields drifted",
+        );
+    }
     // Body smuggled into independently_selectable must fail loudly.
     let composition: serde_yaml::Value = expect_loaded(NATIVE_FULLTEXT_COMPOSITION_REL);
     let mut widened = composition.clone();
