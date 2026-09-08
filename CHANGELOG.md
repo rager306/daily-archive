@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-08 — M498-0u7k1j/S05 T02: Java body observation closure sealed
+
+Java P5 body observation remains the production stamp; the native accountant, offline join, cross-stage checker, and visual/reference shadow families remain quarantined. Rust architecture coverage now checks the four DATA body-accounting tokens in lockstep with the compatibility registry, while import, graph-write, and promotion remain frozen.
+
 ## 2026-09-07 — M496-27op9w/S05 T02: native body accounting quarantine sealed
 
 Native P2 → body accounting remains a test-only shadow sequence: Rust architecture and Governor contracts now scan both `source_cli.rs` and `ParserPort` for body-accountant atoms, while preserving Java GROBID production authority. P5 remains `accountant_later`, DecisionPoint remains the six-wire closed set, and import, graph-write, auto-promotion, and deployment locks remain closed. Added data-driven negative governance coverage and refreshed the bound compatibility-ledger hash; no production route, graph write, import, or promotion changed.

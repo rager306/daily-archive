@@ -3521,6 +3521,26 @@ const S05_BODY_QUARANTINE_ATOMS: [&str; 7] = [
     "compose_references",
     "ConservationEngine",
 ];
+const S05_BODY_ACCOUNTING_DATA_TOKENS: [&str; 4] = [
+    "NativeBodyAccountant",
+    "run_native_body_sequence",
+    "join_p5_shadow",
+    "check_cross_stage_semantic_invariants",
+];
+
+fn s05_body_accounting_data_tokens(registry: &serde_yaml::Value) -> Vec<String> {
+    registry["defaults"]["body_accounting_quarantine"]["tokens"]
+        .as_sequence()
+        .expect("body-accounting quarantine DATA tokens")
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .expect("body-accounting token string")
+                .to_owned()
+        })
+        .collect()
+}
 
 fn s05_body_quarantine_hits(text: &str) -> Vec<String> {
     let code = s10_code_without_comments(text);
@@ -3540,6 +3560,24 @@ fn s05_body_quarantine_hits(text: &str) -> Vec<String> {
 
 #[test]
 fn s05_body_accounting_stays_quarantined_from_production_boundaries() {
+    let registry: serde_yaml::Value =
+        serde_yaml::from_str(&read_text("data/parse/grobid_compatibility.yaml"))
+            .expect("compatibility registry");
+    let data_tokens = s05_body_accounting_data_tokens(&registry);
+    assert_eq!(
+        data_tokens,
+        S05_BODY_ACCOUNTING_DATA_TOKENS
+            .iter()
+            .map(|token| (*token).to_owned())
+            .collect::<Vec<_>>(),
+        "S05: Rust body-accounting scanner and grobid DATA tokens drifted"
+    );
+    assert_eq!(
+        &S05_BODY_QUARANTINE_ATOMS[..S05_BODY_ACCOUNTING_DATA_TOKENS.len()],
+        S05_BODY_ACCOUNTING_DATA_TOKENS,
+        "S05: body-accounting atoms must remain the leading DATA-driven subset"
+    );
+
     for rel in S05_BODY_QUARANTINE_BOUNDARIES {
         let src = read_text(rel);
         assert!(
@@ -3622,6 +3660,25 @@ fn s05_body_accounting_scanner_fails_visible_on_synthetic_atoms() {
     }
     assert!(s05_body_quarantine_hits("// NativeBodyAccountant(input)\nlet x = 1;").is_empty());
     assert!(s05_body_quarantine_hits("let NativeBodyAccountantFactory = 1;").is_empty());
+    let registry: serde_yaml::Value =
+        serde_yaml::from_str(&read_text("data/parse/grobid_compatibility.yaml"))
+            .expect("compatibility registry");
+    let mut dropped_checker = registry.clone();
+    dropped_checker["defaults"]["body_accounting_quarantine"]["tokens"] =
+        serde_yaml::Value::Sequence(
+            S05_BODY_ACCOUNTING_DATA_TOKENS[..3]
+                .iter()
+                .map(|token| serde_yaml::Value::String((*token).to_owned()))
+                .collect(),
+        );
+    assert_ne!(
+        s05_body_accounting_data_tokens(&dropped_checker),
+        S05_BODY_ACCOUNTING_DATA_TOKENS
+            .iter()
+            .map(|token| (*token).to_owned())
+            .collect::<Vec<_>>(),
+        "S05: negative missing-checker fixture must not satisfy the closed DATA set"
+    );
     assert!(s05_body_quarantine_hits("let join_p5_shadow_report = 1;").is_empty());
     assert!(s05_body_quarantine_hits("// join_p5_shadow(input)\nlet x = 1;").is_empty());
     assert!(
