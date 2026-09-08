@@ -94,7 +94,7 @@ pub struct ClaimedTransition {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "status", rename_all = "snake_case")]
+#[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
 pub enum TransitionEvaluation {
     Advanced {
         from: Option<MaturityState>,
@@ -423,6 +423,29 @@ pub fn evaluate_transition(
     candidate.deployed |= observations.deployed;
     candidate.import_eligible |= observations.import_eligible;
 
+    // Earlier proof rungs may carry an explicitly unknown denominator. Review
+    // is different: it is the landing proof for the terminal human gate, so a
+    // missing exact n must be surfaced instead of being mistaken for complete.
+    // Compute the landing before adding this diagnostic flag, otherwise the
+    // flag itself would hide the state that triggered the requirement.
+    let candidate_reaches_human_gate = matches!(
+        derive_maturity(&candidate),
+        MaturityDerivation::Reached {
+            state: MaturityState::HumanGateRequired,
+            ..
+        }
+    );
+    let claimed_review_ready =
+        claimed.is_some_and(|claim| claim.next_allowed_state == MaturityState::ReviewReady);
+    if observations
+        .denominators
+        .iter()
+        .any(|item| item.actual_n.is_none())
+        && (claimed_review_ready || candidate_reaches_human_gate)
+    {
+        candidate.denominator_drift = true;
+    }
+
     let raised = raised_flags(&candidate, prior);
     let derivation = derive_maturity(&candidate);
     let prior_derivation = derive_maturity(prior);
@@ -435,12 +458,10 @@ pub fn evaluate_transition(
         MaturityDerivation::Blocked { .. } => None,
     };
 
-    if let Some(claim) = claimed
-        && proposed.is_some_and(|receipt| receipt.kind != claim.goal_kind)
-    {
+    if let Some(offending) = reconcile_claim(claimed, proposed, &prior_derivation, &derivation) {
         return TransitionEvaluation::blocked(
             BlockedReason::MalformedPrompt,
-            Some("goal_kind".to_owned()),
+            Some(offending),
             evidence_refs(&derivation),
             raised,
         );
@@ -512,6 +533,83 @@ pub fn evaluate_transition(
             raised,
         ),
     }
+}
+
+fn expected_goal(state: Option<MaturityState>) -> ReceiptKind {
+    match state {
+        None => ReceiptKind::Inventory,
+        Some(MaturityState::InventoryBound) => ReceiptKind::Oracle,
+        Some(MaturityState::OracleBound) => ReceiptKind::Atom,
+        Some(MaturityState::AtomProven) => ReceiptKind::Sequence,
+        Some(MaturityState::SequenceProven) => ReceiptKind::Shadow,
+        Some(MaturityState::ShadowObserved | MaturityState::ReviewReady)
+        | Some(MaturityState::HumanGateRequired) => ReceiptKind::Review,
+    }
+}
+
+fn reached_state(derivation: &MaturityDerivation) -> Option<MaturityState> {
+    match derivation {
+        MaturityDerivation::Reached { state, .. } => Some(*state),
+        MaturityDerivation::Blocked { .. } => None,
+    }
+}
+
+/// Reconcile an optional untrusted claim with the actual immutable derivation.
+/// Review deliberately accepts both the advertised `review_ready` landing and
+/// the evaluator's terminal `human_gate_required` landing.
+fn reconcile_claim(
+    claimed: Option<&ClaimedTransition>,
+    proposed: Option<&BoundReceipt>,
+    prior: &MaturityDerivation,
+    candidate: &MaturityDerivation,
+) -> Option<String> {
+    let claim = claimed?;
+    let prior_state = reached_state(prior).or_else(|| {
+        matches!(
+            prior,
+            MaturityDerivation::Blocked {
+                reason: BlockedReason::MissingEvidence,
+                ..
+            }
+        )
+        .then_some(MaturityState::InventoryBound)
+        .filter(|_| false)
+    });
+
+    // A blocked prior/candidate keeps its typed evidence reason as the primary
+    // diagnostic. Claims are reconciled whenever the actual landing is known,
+    // including exact replay with no proposed receipt.
+    let landing = reached_state(candidate)?;
+    if claim.current_state != prior_state {
+        return Some("current_state".to_owned());
+    }
+
+    let goal = proposed
+        .map(|receipt| receipt.kind)
+        .unwrap_or_else(|| expected_goal(prior_state));
+    if claim.goal_kind != goal {
+        return Some("goal_kind".to_owned());
+    }
+
+    let is_review = goal == ReceiptKind::Review;
+    let expected_next = if proposed.is_none() && prior_state == Some(landing) {
+        landing.successor().unwrap_or(landing)
+    } else {
+        landing
+    };
+    let next_ok = if is_review {
+        matches!(
+            claim.next_allowed_state,
+            MaturityState::ReviewReady | MaturityState::HumanGateRequired
+        )
+    } else {
+        claim.next_allowed_state == expected_next
+    };
+    if !next_ok {
+        return Some("next_allowed_state".to_owned());
+    }
+
+    None
 }
 
 fn candidate_receipts<'a>(
@@ -712,6 +810,186 @@ mod tests {
                 ..
             }
         ));
+    }
+
+    #[test]
+    fn review_landing_requires_exact_n_and_accepts_both_review_claim_states() {
+        let mut seeded = prior();
+        for (index, kind) in ReceiptKind::ALL
+            .into_iter()
+            .take(ReceiptKind::ALL.len() - 1)
+            .enumerate()
+        {
+            set_slot(&mut seeded, receipt(kind, &format!("ref-{index}")));
+        }
+        let review = receipt(ReceiptKind::Review, "review");
+        let mut facts = observations();
+        facts.denominators = vec![DenominatorObservation {
+            name: "sections".into(),
+            claimed_n: 6,
+            actual_n: Some(6),
+            population_id: "paper-1".into(),
+            scope: DenominatorScope::Document,
+        }];
+        let claim = ClaimedTransition {
+            current_state: Some(MaturityState::ShadowObserved),
+            next_allowed_state: MaturityState::HumanGateRequired,
+            goal_kind: ReceiptKind::Review,
+        };
+        assert!(matches!(
+            evaluate_transition(&seeded, Some(&review), &facts, Some(&claim)),
+            TransitionEvaluation::HumanGate { .. }
+        ));
+
+        let mut incomplete = facts.clone();
+        incomplete.denominators[0].actual_n = None;
+        assert!(matches!(
+            evaluate_transition(&seeded, Some(&review), &incomplete, Some(&claim)),
+            TransitionEvaluation::Blocked {
+                reason: BlockedReason::DenominatorDrift,
+                ..
+            }
+        ));
+
+        let mut ready_claim = claim.clone();
+        ready_claim.next_allowed_state = MaturityState::ReviewReady;
+        assert!(matches!(
+            evaluate_transition(&seeded, Some(&review), &facts, Some(&ready_claim)),
+            TransitionEvaluation::HumanGate { .. }
+        ));
+    }
+
+    #[test]
+    fn claims_reconcile_current_goal_and_next_without_skipping() {
+        let inventory = receipt(ReceiptKind::Inventory, "inventory");
+        let mut seeded = prior();
+        seeded.inventory = Some(inventory.clone());
+        let oracle = receipt(ReceiptKind::Oracle, "oracle");
+
+        let valid = ClaimedTransition {
+            current_state: Some(MaturityState::InventoryBound),
+            next_allowed_state: MaturityState::OracleBound,
+            goal_kind: ReceiptKind::Oracle,
+        };
+        assert!(matches!(
+            evaluate_transition(&seeded, Some(&oracle), &observations(), Some(&valid)),
+            TransitionEvaluation::Advanced { .. }
+        ));
+
+        for (field, claim) in [
+            (
+                "current_state",
+                ClaimedTransition {
+                    current_state: Some(MaturityState::OracleBound),
+                    ..valid.clone()
+                },
+            ),
+            (
+                "goal_kind",
+                ClaimedTransition {
+                    goal_kind: ReceiptKind::Atom,
+                    ..valid.clone()
+                },
+            ),
+            (
+                "next_allowed_state",
+                ClaimedTransition {
+                    next_allowed_state: MaturityState::SequenceProven,
+                    ..valid.clone()
+                },
+            ),
+        ] {
+            match evaluate_transition(&seeded, Some(&oracle), &observations(), Some(&claim)) {
+                TransitionEvaluation::Blocked {
+                    reason: BlockedReason::MalformedPrompt,
+                    missing_or_offending: Some(offending),
+                    ..
+                } => assert_eq!(offending, field),
+                other => panic!("{field} claim unexpectedly evaluated as {other:?}"),
+            }
+        }
+
+        let replay_claim = ClaimedTransition {
+            current_state: Some(MaturityState::InventoryBound),
+            next_allowed_state: MaturityState::OracleBound,
+            goal_kind: ReceiptKind::Oracle,
+        };
+        assert!(matches!(
+            evaluate_transition(&seeded, None, &observations(), Some(&replay_claim)),
+            TransitionEvaluation::Idempotent { .. }
+        ));
+        let mut conflicting = replay_claim;
+        conflicting.next_allowed_state = MaturityState::SequenceProven;
+        assert!(matches!(
+            evaluate_transition(&seeded, None, &observations(), Some(&conflicting)),
+            TransitionEvaluation::Blocked {
+                reason: BlockedReason::MalformedPrompt,
+                missing_or_offending: Some(ref field),
+                ..
+            } if field == "next_allowed_state"
+        ));
+    }
+
+    #[test]
+    fn seven_state_matrix_advances_only_one_rung() {
+        // Five ordinary receipts advance one rung. Review is intentionally
+        // asymmetric: S02 advertises ReviewReady, while six receipts land in
+        // the terminal HumanGateRequired state. The seventh row checks the
+        // stable terminal replay.
+        let expected = [
+            (
+                0usize,
+                ReceiptKind::Inventory,
+                MaturityState::InventoryBound,
+            ),
+            (1, ReceiptKind::Oracle, MaturityState::OracleBound),
+            (2, ReceiptKind::Atom, MaturityState::AtomProven),
+            (3, ReceiptKind::Sequence, MaturityState::SequenceProven),
+            (4, ReceiptKind::Shadow, MaturityState::ShadowObserved),
+        ];
+        for (prefix_len, kind, state) in expected {
+            let mut seeded = prior();
+            for (receipt_index, prior_kind) in
+                ReceiptKind::ALL.into_iter().enumerate().take(prefix_len)
+            {
+                set_slot(
+                    &mut seeded,
+                    receipt(prior_kind, &format!("ref-{receipt_index}")),
+                );
+            }
+            let proposed = receipt(kind, &format!("next-{prefix_len}"));
+            assert!(matches!(
+                evaluate_transition(&seeded, Some(&proposed), &observations(), None),
+                TransitionEvaluation::Advanced { to, .. } if to == state
+            ));
+        }
+
+        let mut shadow = prior();
+        for (index, kind) in ReceiptKind::ALL.into_iter().enumerate().take(5) {
+            set_slot(&mut shadow, receipt(kind, &format!("ref-{index}")));
+        }
+        let review = receipt(ReceiptKind::Review, "next-review");
+        assert!(matches!(
+            evaluate_transition(&shadow, Some(&review), &observations(), None),
+            TransitionEvaluation::HumanGate { .. }
+        ));
+
+        let mut complete = shadow;
+        set_slot(&mut complete, review);
+        assert!(matches!(
+            evaluate_transition(&complete, None, &observations(), None),
+            TransitionEvaluation::HumanGate { .. }
+        ));
+    }
+
+    #[test]
+    fn replay_is_deterministic_and_evaluation_wire_roundtrips() {
+        let inventory = receipt(ReceiptKind::Inventory, "inventory");
+        let first = evaluate_transition(&prior(), Some(&inventory), &observations(), None);
+        let second = evaluate_transition(&prior(), Some(&inventory), &observations(), None);
+        assert_eq!(first, second);
+        let encoded = serde_json::to_string(&first).unwrap();
+        assert_eq!(first, serde_json::from_str(&encoded).unwrap());
     }
 
     #[test]
