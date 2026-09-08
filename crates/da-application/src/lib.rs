@@ -162,6 +162,7 @@ pub use scheduler_runner::{
 };
 pub mod cluster;
 pub mod cluster_stage;
+pub mod derived_evidence_maturity;
 pub mod document_context_stage;
 pub mod scholarly_evidence;
 pub mod summary;
