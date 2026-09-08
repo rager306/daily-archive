@@ -145,9 +145,11 @@ fn reviewed_oracle_rows_run_all_three_independent_heads() {
                 .collect::<Vec<_>>(),
             ["validate_observation", "figure", "table", "formula"]
         );
-        assert!(receipt.steps[1..]
-            .iter()
-            .all(|s| s.status == "terminal" && s.outcome.is_some()));
+        assert!(
+            receipt.steps[1..]
+                .iter()
+                .all(|s| s.status == "terminal" && s.outcome.is_some())
+        );
         let expected = row["heads"].as_sequence().unwrap();
         for (step, expected_head) in receipt.steps[1..].iter().zip(expected) {
             let reason = match step.outcome.as_ref().unwrap() {
@@ -184,9 +186,11 @@ fn validation_failure_constructs_no_head_outcomes_and_stops_dependents() {
         receipt.steps[0].failure_code.as_deref(),
         Some("invalid_identity")
     );
-    assert!(receipt.steps[1..]
-        .iter()
-        .all(|s| s.status == "not_admitted" && s.outcome.is_none()));
+    assert!(
+        receipt.steps[1..]
+            .iter()
+            .all(|s| s.status == "not_admitted" && s.outcome.is_none())
+    );
 
     let mut malformed_sha = mixed();
     malformed_sha.source_sha256 = "bad".into();
@@ -270,9 +274,11 @@ fn figure_head_limit_stops_only_dependent_steps() {
     );
     assert_eq!(receipt.status, "terminal_failure");
     assert_eq!(receipt.steps[1].failure_code.as_deref(), Some("head_limit"));
-    assert!(receipt.steps[2..]
-        .iter()
-        .all(|s| s.status == "not_admitted" && s.outcome.is_none()));
+    assert!(
+        receipt.steps[2..]
+            .iter()
+            .all(|s| s.status == "not_admitted" && s.outcome.is_none())
+    );
     assert_eq!(receipt.java_fallback.source, "production_fallback");
 }
 
@@ -621,8 +627,10 @@ fn sequence_receipt_is_digest_only_and_timing_free() {
         );
     }
     assert!(text.contains("duration_ms"));
-    assert!(run_visual_heads_sequence(&mixed(), &Default::default())
-        .steps
-        .iter()
-        .all(|step| step.duration_ms == 0));
+    assert!(
+        run_visual_heads_sequence(&mixed(), &Default::default())
+            .steps
+            .iter()
+            .all(|step| step.duration_ms == 0)
+    );
 }

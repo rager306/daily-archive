@@ -1472,6 +1472,7 @@ VISUAL_HEADS_QUARANTINE_TOKENS = [
     "detect_figure_heads",
     "detect_table_heads",
     "detect_formula_heads",
+    "run_visual_heads_sequence",
     "NativeVisual",
     "LayoutProvider",
 ]
@@ -1483,6 +1484,7 @@ VISUAL_HEADS_QUARANTINE_PAYLOADS = {
     "detect_figure_heads": "let _v = detect_figure_heads(input);\n",
     "detect_table_heads": "let _v = detect_table_heads(input);\n",
     "detect_formula_heads": "let _v = detect_formula_heads(input);\n",
+    "run_visual_heads_sequence": "let _v = run_visual_heads_sequence(input);\n",
     "NativeVisual": "let _v: NativeVisual = build();\n",
     "LayoutProvider": "let _v: LayoutProvider = build();\n",
 }

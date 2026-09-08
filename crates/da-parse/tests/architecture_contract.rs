@@ -2733,20 +2733,22 @@ const VISUAL_HEADS_QUARANTINE_BOUNDARIES: [&str; 2] = [
 ];
 
 /// Snake_case visual-head call-sites that must never splice into a boundary.
-const VISUAL_HEADS_SNAKE_TOKENS: [&str; 3] = [
+const VISUAL_HEADS_SNAKE_TOKENS: [&str; 4] = [
     "detect_figure_heads",
     "detect_table_heads",
     "detect_formula_heads",
+    "run_visual_heads_sequence",
 ];
 
 /// CamelCase visual/layout type names that must never splice into a boundary.
 const VISUAL_HEADS_TYPE_TOKENS: [&str; 2] = ["NativeVisual", "LayoutProvider"];
 
 /// Native visual method/type names that must never appear in ParserPort.
-const VISUAL_HEADS_NATIVE_PORT_TOKENS: [&str; 5] = [
+const VISUAL_HEADS_NATIVE_PORT_TOKENS: [&str; 6] = [
     "detect_figure_heads",
     "detect_table_heads",
     "detect_formula_heads",
+    "run_visual_heads_sequence",
     "NativeVisual",
     "LayoutProvider",
 ];
@@ -2832,9 +2834,9 @@ fn visual_heads_quarantine_hits(text: &str) -> Vec<String> {
 
 #[test]
 fn visual_heads_quarantine_scanner_fails_visible_on_synthetic_atoms() {
-    let synthetic = "fn run() {\n    detect_figure_heads(input);\n    detect_table_heads(input);\n    detect_formula_heads(input);\n    let _ = NativeVisual;\n    let _ = LayoutProvider;\n}\n";
+    let synthetic = "fn run() {\n    detect_figure_heads(input);\n    detect_table_heads(input);\n    detect_formula_heads(input);\n    run_visual_heads_sequence(input);\n    let _ = NativeVisual;\n    let _ = LayoutProvider;\n}\n";
     let hits = visual_heads_quarantine_hits(synthetic);
-    assert_eq!(hits.len(), 5, "each visual-head atom must flag: {hits:?}");
+    assert_eq!(hits.len(), 6, "each visual-head atom must flag: {hits:?}");
     for token in VISUAL_HEADS_NATIVE_PORT_TOKENS {
         assert!(
             hits.iter().any(|h| h.contains(token)),
@@ -2842,9 +2844,9 @@ fn visual_heads_quarantine_scanner_fails_visible_on_synthetic_atoms() {
         );
     }
     // Whitespace before `(` is still a call site and must flag.
-    let spaced = "fn run() {\n    detect_figure_heads (input);\n    detect_table_heads  (input);\n    detect_formula_heads\t(input);\n}\n";
+    let spaced = "fn run() {\n    detect_figure_heads (input);\n    detect_table_heads  (input);\n    detect_formula_heads\t(input);\n    run_visual_heads_sequence (input);\n}\n";
     let hits = visual_heads_quarantine_hits(spaced);
-    assert_eq!(hits.len(), 3, "whitespace call-sites must flag: {hits:?}");
+    assert_eq!(hits.len(), 4, "whitespace call-sites must flag: {hits:?}");
     // Comments are prose, not splice; `redetect_figure_heads` is a different
     // word; prose mentions without a call-site `(` are not splices; a
     // CamelCase prefix (`NativeVisualizer`) is not the quarantined type.
