@@ -186,6 +186,50 @@ fn is_sha256(value: &str) -> bool {
     value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
+fn synthetic_formula_observation() -> NativeVisualObservation {
+    let source_sha256 = "a".repeat(64);
+    let provider = NativeVisualProvider {
+        id: "synthetic-formula-same-n".into(),
+        version: "v1".into(),
+    };
+    let formula = NativeVisualPrimitive {
+        document_id: "synthetic-formula-doc".into(),
+        source_sha256: source_sha256.clone(),
+        provider: provider.clone(),
+        page_ordinal: 7,
+        source_ordinal: 11,
+        kind: NativeVisualKind::Formula,
+        bbox: Some(LayoutBBox::new(12.5, 24.0, 88.25, 61.5).unwrap()),
+        content_digest: Some("b".repeat(64)),
+        absence: None,
+    };
+    NativeVisualObservation {
+        schema_version: NATIVE_VISUAL_SCHEMA_VERSION.into(),
+        document_id: "synthetic-formula-doc".into(),
+        source_sha256,
+        provider,
+        primitives: vec![formula],
+        figure_captions: vec![],
+        figure_callouts: vec![],
+        table_captions: vec![],
+        table_callouts: vec![],
+        table_cells: vec![],
+        formula_labels: vec![NativeVisualDigestReceipt {
+            page_ordinal: 7,
+            source_ordinal: 11,
+            digest: Some("c".repeat(64)),
+            absence: None,
+        }],
+        formula_callouts: vec![NativeVisualDigestReceipt {
+            page_ordinal: 7,
+            source_ordinal: 11,
+            digest: Some("d".repeat(64)),
+            absence: None,
+        }],
+        lane_absence: None,
+    }
+}
+
 fn formula_status(row: &Value) -> &str {
     row["heads"]
         .as_sequence()
@@ -269,6 +313,139 @@ fn nine_formula_rows_have_exact_source_bound_terminal_parity_and_denominators() 
         assert_eq!(row["formula_labels"]["oracle_n"].as_i64(), Some(0));
     }
     assert_eq!(rows.len(), 9, "same-n must not pool the nine identities");
+}
+
+#[test]
+fn positive_formula_head_conserves_geometry_content_label_and_callout_by_identity() {
+    let input = synthetic_formula_observation();
+    let outcome = detect_formula_heads(&input, Default::default()).unwrap();
+    let NativeVisualHeadOutcome::Formula { receipts, metrics } = &outcome else {
+        panic!("synthetic formula must be admitted: {outcome:?}");
+    };
+    assert_eq!(receipts.len(), 1);
+    let receipt = &receipts[0];
+    assert_eq!((receipt.page_ordinal, receipt.source_ordinal), (7, 11));
+    assert_eq!(receipt.head_ordinal, 0);
+    assert_eq!(
+        receipt.bbox,
+        LayoutBBox::new(12.5, 24.0, 88.25, 61.5).unwrap()
+    );
+    assert_eq!(receipt.content_digest, "b".repeat(64));
+    assert_eq!(receipt.equation_label_digest, Some("c".repeat(64)));
+    assert_eq!(receipt.callout_digest, Some("d".repeat(64)));
+    assert_eq!(
+        (
+            metrics.admitted,
+            metrics.terminal,
+            metrics.caption_conservation,
+            metrics.content_conservation,
+            metrics.callout_conservation,
+            metrics.geometry_conservation,
+        ),
+        (1, 0, 1, 1, 1, 1)
+    );
+
+    let replay: NativeVisualHeadOutcome =
+        serde_json::from_slice(&serde_json::to_vec(&outcome).unwrap()).unwrap();
+    assert_eq!(replay, outcome, "formula receipt replay must be exact");
+    let encoded = serde_json::to_string(&outcome).unwrap();
+    assert!(encoded.contains(&"b".repeat(64)));
+    assert!(!encoded.contains("raw_text"));
+    assert!(!encoded.contains("raw_pdf"));
+    assert!(!encoded.contains("tei_xml"));
+    assert!(!encoded.contains("image"));
+}
+
+#[test]
+fn formula_labels_and_callouts_join_only_by_page_and_source_without_cross_population() {
+    let mut input = synthetic_formula_observation();
+    input.formula_labels.push(NativeVisualDigestReceipt {
+        page_ordinal: 7,
+        source_ordinal: 12,
+        digest: Some("e".repeat(64)),
+        absence: None,
+    });
+    input.formula_callouts.push(NativeVisualDigestReceipt {
+        page_ordinal: 8,
+        source_ordinal: 11,
+        digest: Some("f".repeat(64)),
+        absence: None,
+    });
+    let NativeVisualHeadOutcome::Formula { receipts, metrics } =
+        detect_formula_heads(&input, Default::default()).unwrap()
+    else {
+        panic!()
+    };
+    assert_eq!(receipts.len(), 1);
+    assert_eq!(receipts[0].equation_label_digest, Some("c".repeat(64)));
+    assert_eq!(receipts[0].callout_digest, Some("d".repeat(64)));
+    assert_eq!(
+        (metrics.caption_conservation, metrics.callout_conservation),
+        (1, 1)
+    );
+
+    let mut no_formula = input.clone();
+    no_formula.primitives.clear();
+    let outcome = detect_formula_heads(&no_formula, Default::default()).unwrap();
+    assert!(matches!(
+        outcome,
+        NativeVisualHeadOutcome::Terminal {
+            reason: NativeVisualAbsence::NotObserved,
+            ..
+        }
+    ));
+}
+
+#[test]
+fn formula_outcome_is_stable_under_permutation_and_foreign_kinds() {
+    let input = synthetic_formula_observation();
+    let mut permuted = input.clone();
+    permuted.formula_labels.reverse();
+    permuted.formula_callouts.reverse();
+    let left = detect_formula_heads(&input, Default::default()).unwrap();
+    let right = detect_formula_heads(&permuted, Default::default()).unwrap();
+    assert_eq!(left, right);
+
+    let mut foreign = input.clone();
+    let source_sha256 = foreign.source_sha256.clone();
+    let provider = foreign.provider.clone();
+    foreign.primitives.push(NativeVisualPrimitive {
+        document_id: foreign.document_id.clone(),
+        source_sha256,
+        provider,
+        page_ordinal: 7,
+        source_ordinal: 12,
+        kind: NativeVisualKind::Image,
+        bbox: Some(LayoutBBox::new(1.0, 1.0, 2.0, 2.0).unwrap()),
+        content_digest: Some("9".repeat(64)),
+        absence: None,
+    });
+    assert_eq!(
+        detect_formula_heads(&input, Default::default()).unwrap(),
+        detect_formula_heads(&foreign, Default::default()).unwrap()
+    );
+}
+
+#[test]
+fn malformed_formula_digest_and_bbox_fail_closed_before_head_construction() {
+    let mut invalid_digest = synthetic_formula_observation();
+    invalid_digest.primitives[0].content_digest = Some("not-a-sha256".into());
+    assert_eq!(
+        invalid_digest.validate(Default::default()),
+        Err(NativeVisualError::InvalidGeometry)
+    );
+
+    let mut invalid_bbox = synthetic_formula_observation();
+    invalid_bbox.primitives[0].bbox = Some(LayoutBBox {
+        x_min: f64::NAN,
+        y_min: 24.0,
+        x_max: 88.25,
+        y_max: 61.5,
+    });
+    assert_eq!(
+        invalid_bbox.validate(Default::default()),
+        Err(NativeVisualError::InvalidGeometry)
+    );
 }
 
 #[test]
