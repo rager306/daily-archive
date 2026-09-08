@@ -7491,6 +7491,77 @@ fn p5_cross_stage_semantic_data_contract_is_closed() {
 }
 
 #[test]
+fn cross_stage_semantic_policy_exact_map_is_closed() {
+    let cross: serde_yaml::Value = expect_loaded("data/parse/p5_cross_stage.yaml");
+    assert_eq!(cross["production_authority"], "java_http");
+    assert_eq!(cross["native_accountant"], "shadow_join_only");
+    assert_eq!(cross["empty_count_not_success"], true);
+    assert_eq!(cross["import_eligible"], false);
+    assert_eq!(cross["this_wave_promotes"], "none");
+    assert_eq!(
+        cross["independently_selectable"],
+        serde_yaml::from_str::<serde_yaml::Value>("[header, references]").unwrap()
+    );
+    assert_eq!(
+        cross["required_legs"],
+        serde_yaml::from_str::<serde_yaml::Value>(
+            "[p5_shadow_join_report, java_p4, java_p6, java_p7]"
+        )
+        .unwrap()
+    );
+    assert_eq!(
+        cross["optional_identity_siblings"],
+        serde_yaml::from_str::<serde_yaml::Value>(
+            "[native_visual_sequence, native_body_accounting]"
+        )
+        .unwrap()
+    );
+
+    let shadow: serde_yaml::Value = expect_loaded("data/parse/p5_shadow_join.yaml");
+    assert_eq!(
+        shadow["quarantine_tokens"],
+        serde_yaml::from_str::<serde_yaml::Value>(
+            "[join_p5_shadow, check_cross_stage_semantic_invariants]"
+        )
+        .unwrap()
+    );
+    assert_eq!(
+        shadow["boundaries"],
+        serde_yaml::from_str::<serde_yaml::Value>(
+            "[crates/da-cli/src/source_cli.rs, crates/da-ports/src/parser.rs]"
+        )
+        .unwrap()
+    );
+    assert_eq!(shadow["production_authority"], "java_http");
+    assert_eq!(shadow["native_accountant"], "shadow_join_only");
+    assert_eq!(shadow["empty_count_not_success"], true);
+    assert_eq!(shadow["import_eligible"], false);
+    assert_eq!(shadow["this_wave_promotes"], "none");
+    assert_eq!(
+        shadow["report"]["independently_selectable"],
+        serde_yaml::from_str::<serde_yaml::Value>("[header, references]").unwrap()
+    );
+
+    let registry: serde_yaml::Value = expect_loaded("data/parse/grobid_compatibility.yaml");
+    let p5 = registry["capabilities"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .find(|cap| cap["id"].as_str() == Some("rest.processFulltextDocument"))
+        .expect("P5/fulltext capability");
+    assert_eq!(p5["baseline"], "java-grobid-http@0.9.0-crf");
+    assert_eq!(p5["rollback_target"], "java-grobid-http@0.9.0-crf");
+    let policy = &cross;
+    assert_eq!(policy["schema_version"], "p5-cross-stage.v1");
+    assert_eq!(policy["mode"], "offline_shadow_report");
+    assert_eq!(policy["production_authority"], "java_http");
+    assert_eq!(policy["native_accountant"], "shadow_join_only");
+    assert_eq!(policy["empty_count_not_success"], true);
+    assert_eq!(policy["import_eligible"], false);
+    assert_eq!(policy["this_wave_promotes"], "none");
+}
+
+#[test]
 fn native_body_accounting_contract() {
     let contract: serde_yaml::Value = expect_loaded("data/parse/native_body_accounting.yaml");
     let evidence = load_json_value("artifacts/parse_compat/java_grobid_body_taxonomy_source.json");

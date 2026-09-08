@@ -127,6 +127,31 @@ fn read_text(rel: &str) -> String {
         .unwrap_or_else(|e| panic!("tracked file unreadable: {rel}: {e}"))
 }
 
+fn rust_sources_under(rel: &str) -> Vec<(String, String)> {
+    fn visit(root: &Path, repo: &Path, out: &mut Vec<(String, String)>) {
+        for entry in std::fs::read_dir(root).expect("architecture source directory") {
+            let entry = entry.expect("architecture source entry");
+            let path = entry.path();
+            if path.is_dir() {
+                visit(&path, repo, out);
+            } else if path.extension().and_then(|x| x.to_str()) == Some("rs") {
+                let display = path
+                    .strip_prefix(repo)
+                    .expect("source stays under repository")
+                    .display()
+                    .to_string();
+                let text = std::fs::read_to_string(&path)
+                    .unwrap_or_else(|e| panic!("architecture source unreadable: {display}: {e}"));
+                out.push((display, text));
+            }
+        }
+    }
+    let repo = repo_root();
+    let mut out = Vec::new();
+    visit(&repo.join(rel), &repo, &mut out);
+    out
+}
+
 /// Extract `(section, crate_name)` pairs from Cargo.toml text. Dependency
 /// tables are any `[...dependencies]` section; the key before `=` is the
 /// crate name (works for plain, workspace-inherited and inline-table forms).
@@ -3487,10 +3512,14 @@ const S05_BODY_QUARANTINE_BOUNDARIES: [&str; 2] = [
     "crates/da-cli/src/source_cli.rs",
     "crates/da-ports/src/parser.rs",
 ];
-const S05_BODY_QUARANTINE_ATOMS: [&str; 3] = [
+const S05_BODY_QUARANTINE_ATOMS: [&str; 7] = [
     "NativeBodyAccountant",
     "run_native_body_sequence",
     "join_p5_shadow",
+    "check_cross_stage_semantic_invariants",
+    "run_visual_heads_sequence",
+    "compose_references",
+    "ConservationEngine",
 ];
 
 fn s05_body_quarantine_hits(text: &str) -> Vec<String> {
@@ -3559,6 +3588,26 @@ fn s05_body_accounting_stays_quarantined_from_production_boundaries() {
     assert!(policy.contains("import_eligible: false"));
     assert!(policy.contains("graph_write: forbidden"));
     assert!(policy.contains("auto_promote: forbidden"));
+
+    // S04: the checker and every native producer remain shadow-only. These
+    // are call/type tokens, not prose policy names, and are scanned in both
+    // production boundaries above.
+    for atom in [
+        "check_cross_stage_semantic_invariants",
+        "NativeBodyAccountant",
+        "run_native_body_sequence",
+        "run_visual_heads_sequence",
+        "compose_references",
+        "ConservationEngine",
+    ] {
+        assert!(
+            s05_body_quarantine_hits(&cli).iter().all(|hit| hit != atom)
+                && s05_body_quarantine_hits(&port)
+                    .iter()
+                    .all(|hit| hit != atom),
+            "S04: forbidden shadow token leaked into production boundary: {atom}"
+        );
+    }
 }
 
 #[test]
@@ -3575,6 +3624,40 @@ fn s05_body_accounting_scanner_fails_visible_on_synthetic_atoms() {
     assert!(s05_body_quarantine_hits("let NativeBodyAccountantFactory = 1;").is_empty());
     assert!(s05_body_quarantine_hits("let join_p5_shadow_report = 1;").is_empty());
     assert!(s05_body_quarantine_hits("// join_p5_shadow(input)\nlet x = 1;").is_empty());
+    assert!(
+        s05_body_quarantine_hits("let check_cross_stage_semantic_invariants_report = 1;")
+            .is_empty()
+    );
+    assert!(
+        s05_body_quarantine_hits("// check_cross_stage_semantic_invariants(input)\nlet x = 1;")
+            .is_empty()
+    );
+}
+
+#[test]
+fn s05_body_accounting_scans_da_application_production_sources() {
+    let forbidden = [
+        "check_cross_stage_semantic_invariants",
+        "NativeBodyAccountant",
+        "run_native_body_sequence",
+        "run_visual_heads_sequence",
+        "compose_references",
+        "ConservationEngine",
+    ];
+    for (path, source) in rust_sources_under("crates/da-application/src") {
+        let hits = s05_body_quarantine_hits(&source);
+        assert!(
+            hits.is_empty(),
+            "S04: forbidden shadow call in {path}: {hits:?}"
+        );
+        let code = s10_code_without_comments(&source);
+        for atom in forbidden {
+            assert!(
+                !code.contains(&format!("{atom}(")),
+                "S04: live checker/native call in {path}: {atom}"
+            );
+        }
+    }
 }
 
 #[test]
