@@ -258,7 +258,11 @@ impl NativeVisualObservation {
         for list in lists {
             validate_digest_receipts(list)?;
         }
+        let mut cell_ids = BTreeSet::new();
         for c in &self.table_cells {
+            if !cell_ids.insert((c.row, c.column)) {
+                return Err(NativeVisualError::DuplicateReceipt);
+            }
             if !c.digest.as_deref().is_some_and(sha256) && c.absence.is_none() {
                 return Err(NativeVisualError::InvalidDigest);
             }
@@ -438,7 +442,15 @@ pub fn detect_table_heads(
             content_digest,
             caption_digest: digest_at(&input.table_captions, p),
             callout_digest: digest_at(&input.table_callouts, p),
-            cells: input.table_cells.clone(),
+            // NativeTableCellReceipt has no source identity. Keep the
+            // sibling population observation-level and serialize it once on
+            // the first stable table receipt rather than guessing ownership
+            // or multiplying logical cells across heads.
+            cells: if n == 0 {
+                input.table_cells.clone()
+            } else {
+                Default::default()
+            },
         });
     }
     if receipts.is_empty() {

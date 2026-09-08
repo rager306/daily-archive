@@ -370,6 +370,190 @@ fn terminal_receipts_replay_exactly_and_never_serialize_forbidden_payloads() {
     }
 }
 
+fn positive_table_observation() -> NativeVisualObservation {
+    let mut first = primitive("positive-doc", &"a".repeat(64), 3, 8);
+    first.bbox = Some(LayoutBBox::new(10.0, 20.0, 40.0, 60.0).unwrap());
+    first.content_digest = Some("b".repeat(64));
+    first.absence = None;
+    let mut second = first.clone();
+    second.page_ordinal = 1;
+    second.source_ordinal = 2;
+    second.kind = NativeVisualKind::Rect;
+    second.bbox = Some(LayoutBBox::new(50.0, 20.0, 80.0, 60.0).unwrap());
+    second.content_digest = Some("c".repeat(64));
+    let mut image = first.clone();
+    image.kind = NativeVisualKind::Image;
+    image.source_ordinal = 99;
+    let mut formula = first.clone();
+    formula.kind = NativeVisualKind::Formula;
+    formula.source_ordinal = 100;
+    NativeVisualObservation {
+        schema_version: NATIVE_VISUAL_SCHEMA_VERSION.into(),
+        document_id: "positive-doc".into(),
+        source_sha256: "a".repeat(64),
+        provider: NativeVisualProvider {
+            id: "oracle-binding".into(),
+            version: "1".into(),
+        },
+        primitives: vec![first, image, second, formula],
+        figure_captions: vec![],
+        figure_callouts: vec![],
+        table_captions: vec![
+            NativeVisualDigestReceipt {
+                page_ordinal: 3,
+                source_ordinal: 8,
+                digest: Some("d".repeat(64)),
+                absence: None,
+            },
+            NativeVisualDigestReceipt {
+                page_ordinal: 1,
+                source_ordinal: 2,
+                digest: Some("e".repeat(64)),
+                absence: None,
+            },
+        ],
+        table_callouts: vec![
+            NativeVisualDigestReceipt {
+                page_ordinal: 3,
+                source_ordinal: 8,
+                digest: Some("f".repeat(64)),
+                absence: None,
+            },
+            NativeVisualDigestReceipt {
+                page_ordinal: 1,
+                source_ordinal: 2,
+                digest: Some("0".repeat(64)),
+                absence: None,
+            },
+        ],
+        table_cells: vec![
+            NativeTableCellReceipt {
+                row: 0,
+                column: 0,
+                digest: Some("1".repeat(64)),
+                absence: None,
+            },
+            NativeTableCellReceipt {
+                row: 0,
+                column: 1,
+                digest: Some("2".repeat(64)),
+                absence: None,
+            },
+        ],
+        formula_labels: vec![],
+        formula_callouts: vec![],
+        lane_absence: None,
+    }
+}
+
+#[test]
+fn positive_multi_head_table_conserves_geometry_links_and_cells_once() {
+    let input = positive_table_observation();
+    let NativeVisualHeadOutcome::Table { receipts, metrics } =
+        detect_table_heads(&input, Default::default()).unwrap()
+    else {
+        panic!("positive table observation must admit Table receipts")
+    };
+    assert_eq!(
+        receipts
+            .iter()
+            .map(|receipt| (receipt.page_ordinal, receipt.source_ordinal))
+            .collect::<Vec<_>>(),
+        vec![(1, 2), (3, 8)]
+    );
+    assert_eq!(
+        receipts[0].bbox,
+        LayoutBBox::new(50.0, 20.0, 80.0, 60.0).unwrap()
+    );
+    assert_eq!(receipts[0].content_digest, "c".repeat(64));
+    assert_eq!(receipts[0].caption_digest, Some("e".repeat(64)));
+    assert_eq!(receipts[0].callout_digest, Some("0".repeat(64)));
+    assert_eq!(
+        receipts[1].bbox,
+        LayoutBBox::new(10.0, 20.0, 40.0, 60.0).unwrap()
+    );
+    assert_eq!(receipts[1].content_digest, "b".repeat(64));
+    assert_eq!(receipts[1].caption_digest, Some("d".repeat(64)));
+    assert_eq!(receipts[1].callout_digest, Some("f".repeat(64)));
+    assert_eq!(receipts[0].cells.len(), 2);
+    assert!(receipts[1].cells.is_empty());
+    assert_eq!(
+        receipts
+            .iter()
+            .map(|receipt| receipt.cells.len())
+            .sum::<usize>(),
+        2
+    );
+    assert_eq!(
+        (
+            metrics.admitted,
+            metrics.content_conservation,
+            metrics.geometry_conservation,
+            metrics.caption_conservation,
+            metrics.callout_conservation
+        ),
+        (2, 2, 2, 2, 2)
+    );
+
+    let replay: NativeVisualHeadOutcome = serde_json::from_slice(
+        &serde_json::to_vec(&NativeVisualHeadOutcome::Table {
+            receipts: receipts.clone(),
+            metrics: metrics.clone(),
+        })
+        .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        replay,
+        NativeVisualHeadOutcome::Table {
+            receipts: receipts.clone(),
+            metrics: metrics.clone()
+        }
+    );
+
+    let mut without_foreign = input.clone();
+    without_foreign.primitives.retain(|primitive| {
+        matches!(
+            primitive.kind,
+            NativeVisualKind::Table | NativeVisualKind::Rect
+        )
+    });
+    let without_foreign = detect_table_heads(&without_foreign, Default::default()).unwrap();
+    assert_eq!(
+        serde_json::to_vec(&without_foreign).unwrap(),
+        serde_json::to_vec(&NativeVisualHeadOutcome::Table { receipts, metrics }).unwrap()
+    );
+}
+
+#[test]
+fn duplicate_or_malformed_table_cells_fail_closed_without_positional_guessing() {
+    let mut duplicate = positive_table_observation();
+    duplicate.table_cells.push(duplicate.table_cells[0].clone());
+    assert_eq!(
+        duplicate.validate(Default::default()),
+        Err(NativeVisualError::DuplicateReceipt)
+    );
+
+    let mut malformed_digest = positive_table_observation();
+    malformed_digest.table_cells[0].digest = Some("not-a-digest".into());
+    assert_eq!(
+        malformed_digest.validate(Default::default()),
+        Err(NativeVisualError::InvalidDigest)
+    );
+
+    let mut malformed_bbox = positive_table_observation();
+    malformed_bbox.primitives[0].bbox = Some(LayoutBBox {
+        x_min: 4.0,
+        y_min: 4.0,
+        x_max: 4.0,
+        y_max: 5.0,
+    });
+    assert_eq!(
+        malformed_bbox.validate(Default::default()),
+        Err(NativeVisualError::InvalidGeometry)
+    );
+}
+
 #[test]
 fn malformed_observation_inputs_fail_closed_before_detection() {
     let data = oracle();
