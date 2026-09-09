@@ -152,19 +152,32 @@ impl VisualPrimitive {
         if self.document_id != document.document_id {
             return Err(VisualError::InvalidIdentity("document_id"));
         }
-        if document
+        // Keep the pre-lattice direct visual helper compatible with its
+        // historical one-based caller while all donor receipts remain
+        // canonical zero-based. Ambiguity is avoided whenever an exact page
+        // exists; the alias is only a fallback for legacy callers.
+        let canonical_page = if document
             .pages
             .iter()
-            .all(|page| page.page_ordinal != self.page_ordinal)
+            .any(|page| page.page_ordinal == self.page_ordinal)
         {
+            self.page_ordinal
+        } else if self.page_ordinal > 0
+            && document
+                .pages
+                .iter()
+                .any(|page| page.page_ordinal == self.page_ordinal - 1)
+        {
+            self.page_ordinal - 1
+        } else {
             return Err(VisualError::InvalidIdentity("page_ordinal"));
-        }
+        };
         match (&self.bbox, &self.state) {
             (Some(bbox), VisualPrimitiveState::Observed { content_digest }) => {
                 let page = document
                     .pages
                     .iter()
-                    .find(|p| p.page_ordinal == self.page_ordinal)
+                    .find(|p| p.page_ordinal == canonical_page)
                     .ok_or(VisualError::InvalidIdentity("page_ordinal"))?;
                 if bbox.x_min < 0.0
                     || bbox.y_min < 0.0

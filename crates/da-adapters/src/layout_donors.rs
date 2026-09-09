@@ -7,8 +7,9 @@ use crate::layout_visual::{
     VisualAbsenceReason, VisualObservation, VisualPrimitive, VisualPrimitiveKind, VisualProvider,
 };
 use da_parse::{
-    LayoutBBox, LayoutDocument, LayoutError, LayoutPage, LayoutProvider, LayoutSpan,
-    LayoutStyleHints, LayoutToken, LayoutTokenKind,
+    CoordinateDialect, FurnitureEvidence, LatticeBlock, LatticeLine, LatticePage, LatticeToken,
+    LayoutBBox, LayoutDocument, LayoutError, LayoutLattice, LayoutPage, LayoutProvider, LayoutSpan,
+    LayoutStyleHints, LayoutToken, LayoutTokenKind, ReadingOrder,
 };
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
@@ -114,6 +115,8 @@ pub struct LayoutShadowObservation {
     /// Bounded visual evidence from this invocation, kept separate from the
     /// neutral lexical layout and absent when the upstream signal is missing.
     pub visual: VisualObservation,
+    /// Audited page/block/line companion; lexical content remains digest-only.
+    pub lattice: LayoutLattice,
 }
 
 #[cfg(feature = "pdf-layout")]
@@ -123,6 +126,7 @@ impl fmt::Debug for LayoutShadowObservation {
             .field("document", &self.document)
             .field("lexeme_count", &self.lexemes.len())
             .field("visual", &self.visual)
+            .field("lattice", &self.lattice)
             .finish()
     }
 }
@@ -156,7 +160,7 @@ fn observation_from_items(
             da_parse::LexemeRow::new(
                 document_id,
                 &provider.id,
-                item.page,
+                item.page.saturating_sub(1),
                 item.source_ordinal,
                 sha256_hex(item.text.as_bytes()),
                 item.text,
@@ -180,10 +184,12 @@ fn observation_from_items(
     .map_err(|error| LayoutDonorError::Malformed {
         detail: format!("visual observation: {error}"),
     })?;
+    let lattice = lattice_from_document(&document, None)?;
     Ok(LayoutShadowObservation {
         document,
         lexemes,
         visual,
+        lattice,
     })
 }
 
@@ -394,6 +400,360 @@ impl LayoutDonor for XyCutLayoutDonor {
 fn sha256_hex(bytes: impl AsRef<[u8]>) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
+
+#[cfg(feature = "pdf-layout")]
+fn lattice_from_document(
+    document: &LayoutDocument,
+    _xml: Option<&[u8]>,
+) -> Result<LayoutLattice, LayoutDonorError> {
+    let pages = document
+        .pages
+        .iter()
+        .map(|page| {
+            let tokens = page
+                .tokens
+                .iter()
+                .map(|token| LatticeToken {
+                    source_ordinal: token.source_ordinal,
+                    token_ordinal: token.token_ordinal,
+                    bbox: token.bbox,
+                    text_digest: token.text_digest.clone(),
+                    source_span: LayoutSpan::absent(da_parse::LayoutSpanAbsence::NotAvailable),
+                    kind: token.kind,
+                })
+                .collect::<Vec<_>>();
+            let line_bbox = tokens.iter().map(|token| token.bbox).reduce(|a, b| {
+                LayoutBBox::new(
+                    a.x_min.min(b.x_min),
+                    a.y_min.min(b.y_min),
+                    a.x_max.max(b.x_max),
+                    a.y_max.max(b.y_max),
+                )
+                .expect("union of valid bboxes")
+            });
+            let blocks = if tokens.is_empty() {
+                Vec::new()
+            } else {
+                vec![LatticeBlock {
+                    source_ordinal: 0,
+                    source_span: LayoutSpan::absent(da_parse::LayoutSpanAbsence::NotAvailable),
+                    bbox: line_bbox.expect("non-empty token bbox"),
+                    lines: vec![LatticeLine {
+                        source_ordinal: 0,
+                        source_span: LayoutSpan::absent(da_parse::LayoutSpanAbsence::NotAvailable),
+                        bbox: line_bbox.expect("non-empty token bbox"),
+                        tokens,
+                        newline_boundary_count: 0,
+                    }],
+                    source_order: 0,
+                    derived_order: None,
+                    furniture: FurnitureEvidence::Unknown,
+                }]
+            };
+            LatticePage {
+                page_ordinal: page.page_ordinal,
+                java_page_number: page.page_ordinal + 1,
+                width: page.width,
+                height: page.height,
+                rotation: page.rotation,
+                crop_box: page.crop_box,
+                blocks,
+            }
+        })
+        .collect();
+    LayoutLattice::new(
+        document,
+        CoordinateDialect::AltoTopLeft72Dpi,
+        ReadingOrder::XmlSource,
+        None,
+        pages,
+    )
+    .map_err(|error| LayoutDonorError::Malformed {
+        detail: format!("layout lattice: {error}"),
+    })
+}
+
+#[cfg(feature = "pdf-layout")]
+fn lattice_from_alto_xml(
+    document: &LayoutDocument,
+    xml: &[u8],
+    limits: LayoutDonorLimits,
+) -> Result<LayoutLattice, LayoutDonorError> {
+    use quick_xml::{Reader, events::Event};
+    #[derive(Default)]
+    struct Line {
+        bbox: Option<LayoutBBox>,
+        token_ids: Vec<u32>,
+    }
+    #[derive(Default)]
+    struct Block {
+        bbox: Option<LayoutBBox>,
+        lines: Vec<Line>,
+    }
+    let mut reader = Reader::from_reader(xml);
+    let mut buf = Vec::new();
+    let mut page_no = 0usize;
+    let mut blocks: Vec<Vec<Block>> = Vec::new();
+    let mut current_block: Option<Block> = None;
+    let mut current_line: Option<Line> = None;
+    let mut token_by_page = vec![0usize; document.pages.len()];
+    let mut page_geometry_seen = 0usize;
+    loop {
+        match reader.read_event_into(&mut buf) {
+            Ok(Event::Start(e)) | Ok(Event::Empty(e)) => {
+                let name = e.name();
+                if name.as_ref().eq_ignore_ascii_case(b"page") {
+                    page_no += 1;
+                    if page_no > limits.max_pages || page_no > document.pages.len() {
+                        return Err(LayoutDonorError::Oversize {
+                            resource: "pages",
+                            limit: limits.max_pages,
+                        });
+                    }
+                    page_geometry_seen += 1;
+                    if matches!(reader.buffer_position(), 0) { /* keep parser deterministic */ }
+                    if matches!(Event::Start(e), Event::Start(_)) {
+                        blocks.push(Vec::new());
+                    } else {
+                        blocks.push(Vec::new());
+                    }
+                } else if name.as_ref().eq_ignore_ascii_case(b"textblock") {
+                    current_block = Some(Block::default());
+                } else if name.as_ref().eq_ignore_ascii_case(b"textline") {
+                    if current_block.is_none() {
+                        return Err(LayoutDonorError::Malformed {
+                            detail: "TextLine outside TextBlock".into(),
+                        });
+                    }
+                    current_line = Some(Line::default());
+                } else if name.as_ref().eq_ignore_ascii_case(b"string") {
+                    let mut values = [None; 4];
+                    for attr in e.attributes() {
+                        let attr = attr.map_err(|error| LayoutDonorError::Malformed {
+                            detail: error.to_string(),
+                        })?;
+                        let key = attr.key.as_ref();
+                        let slot = if key.eq_ignore_ascii_case(b"hpos") {
+                            Some(0)
+                        } else if key.eq_ignore_ascii_case(b"vpos") {
+                            Some(1)
+                        } else if key.eq_ignore_ascii_case(b"width") {
+                            Some(2)
+                        } else if key.eq_ignore_ascii_case(b"height") {
+                            Some(3)
+                        } else {
+                            None
+                        };
+                        if let Some(slot) = slot {
+                            let raw = std::str::from_utf8(&attr.value).map_err(|error| {
+                                LayoutDonorError::Malformed {
+                                    detail: error.to_string(),
+                                }
+                            })?;
+                            values[slot] = Some(raw.parse::<f64>().map_err(|error| {
+                                LayoutDonorError::Malformed {
+                                    detail: error.to_string(),
+                                }
+                            })?);
+                        }
+                    }
+                    let [Some(x), Some(y), Some(w), Some(h)] = values else {
+                        return Err(LayoutDonorError::Malformed {
+                            detail: "ALTO String geometry missing".into(),
+                        });
+                    };
+                    let page_index =
+                        page_no
+                            .checked_sub(1)
+                            .ok_or_else(|| LayoutDonorError::Malformed {
+                                detail: "String before Page".into(),
+                            })?;
+                    let bbox = LayoutBBox::new(x, y, x + w, y + h)
+                        .map_err(LayoutDonorError::InvalidLayout)?;
+                    let token_index = token_by_page[page_index];
+                    let token = document.pages[page_index]
+                        .tokens
+                        .get(token_index)
+                        .ok_or_else(|| LayoutDonorError::Malformed {
+                            detail: "ALTO String/token conservation mismatch".into(),
+                        })?;
+                    token_by_page[page_index] += 1;
+                    let line =
+                        current_line
+                            .as_mut()
+                            .ok_or_else(|| LayoutDonorError::Malformed {
+                                detail: "String outside TextLine".into(),
+                            })?;
+                    line.token_ids.push(token.source_ordinal);
+                    line.bbox = Some(match line.bbox {
+                        Some(old) => union_bbox(old, bbox)?,
+                        None => bbox,
+                    });
+                }
+            }
+            Ok(Event::End(e)) => {
+                let name = e.name();
+                if name.as_ref().eq_ignore_ascii_case(b"textline") {
+                    let line = current_line
+                        .take()
+                        .ok_or_else(|| LayoutDonorError::Malformed {
+                            detail: "unbalanced TextLine".into(),
+                        })?;
+                    if line.token_ids.is_empty() {
+                        return Err(LayoutDonorError::Malformed {
+                            detail: "empty TextLine is unaccounted".into(),
+                        });
+                    }
+                    current_block
+                        .as_mut()
+                        .ok_or_else(|| LayoutDonorError::Malformed {
+                            detail: "TextLine outside TextBlock".into(),
+                        })?
+                        .lines
+                        .push(line);
+                } else if name.as_ref().eq_ignore_ascii_case(b"textblock") {
+                    let block =
+                        current_block
+                            .take()
+                            .ok_or_else(|| LayoutDonorError::Malformed {
+                                detail: "unbalanced TextBlock".into(),
+                            })?;
+                    if block.lines.is_empty() {
+                        return Err(LayoutDonorError::Malformed {
+                            detail: "empty TextBlock is unaccounted".into(),
+                        });
+                    }
+                    let mut block = block;
+                    block.bbox = block
+                        .lines
+                        .iter()
+                        .filter_map(|line| line.bbox)
+                        .reduce(|a, b| union_bbox(a, b).expect("valid line union"));
+                    blocks
+                        .last_mut()
+                        .ok_or_else(|| LayoutDonorError::Malformed {
+                            detail: "TextBlock before Page".into(),
+                        })?
+                        .push(block);
+                }
+            }
+            Ok(Event::Eof) => break,
+            Err(error) => {
+                return Err(LayoutDonorError::Malformed {
+                    detail: error.to_string(),
+                });
+            }
+            _ => {}
+        }
+        buf.clear();
+    }
+    if current_line.is_some()
+        || current_block.is_some()
+        || page_geometry_seen != document.pages.len()
+    {
+        return Err(LayoutDonorError::Malformed {
+            detail: "incomplete ALTO topology".into(),
+        });
+    }
+    for (page_index, page) in document.pages.iter().enumerate() {
+        if token_by_page[page_index] != page.tokens.len() {
+            return Err(LayoutDonorError::Malformed {
+                detail: "ALTO String/token conservation mismatch".into(),
+            });
+        }
+    }
+    let pages = document
+        .pages
+        .iter()
+        .enumerate()
+        .map(|(page_index, page)| {
+            let lattice_blocks = blocks[page_index]
+                .iter()
+                .enumerate()
+                .map(|(block_index, block)| {
+                    let lines = block
+                        .lines
+                        .iter()
+                        .enumerate()
+                        .map(|(line_index, line)| {
+                            let tokens = line
+                                .token_ids
+                                .iter()
+                                .enumerate()
+                                .map(|(token_ordinal, source)| {
+                                    let token = page
+                                        .tokens
+                                        .iter()
+                                        .find(|token| token.source_ordinal == *source)
+                                        .expect("conserved token");
+                                    LatticeToken {
+                                        source_ordinal: *source,
+                                        token_ordinal: token_ordinal as u32,
+                                        bbox: token.bbox,
+                                        text_digest: token.text_digest.clone(),
+                                        source_span: LayoutSpan::absent(
+                                            da_parse::LayoutSpanAbsence::NotAvailable,
+                                        ),
+                                        kind: token.kind,
+                                    }
+                                })
+                                .collect::<Vec<_>>();
+                            LatticeLine {
+                                source_ordinal: line_index as u32,
+                                source_span: LayoutSpan::absent(
+                                    da_parse::LayoutSpanAbsence::NotAvailable,
+                                ),
+                                bbox: line.bbox.expect("non-empty line"),
+                                tokens,
+                                newline_boundary_count: 1,
+                            }
+                        })
+                        .collect::<Vec<_>>();
+                    LatticeBlock {
+                        source_ordinal: block_index as u32,
+                        source_span: LayoutSpan::absent(da_parse::LayoutSpanAbsence::NotAvailable),
+                        bbox: block.bbox.expect("non-empty block"),
+                        lines,
+                        source_order: block_index as u32,
+                        derived_order: None,
+                        furniture: FurnitureEvidence::Unknown,
+                    }
+                })
+                .collect();
+            LatticePage {
+                page_ordinal: page.page_ordinal,
+                java_page_number: page.page_ordinal + 1,
+                width: page.width,
+                height: page.height,
+                rotation: page.rotation,
+                crop_box: page.crop_box,
+                blocks: lattice_blocks,
+            }
+        })
+        .collect();
+    LayoutLattice::new(
+        document,
+        CoordinateDialect::AltoTopLeft72Dpi,
+        ReadingOrder::XmlSource,
+        None,
+        pages,
+    )
+    .map_err(|error| LayoutDonorError::Malformed {
+        detail: format!("layout lattice: {error}"),
+    })
+}
+
+#[cfg(feature = "pdf-layout")]
+fn union_bbox(a: LayoutBBox, b: LayoutBBox) -> Result<LayoutBBox, LayoutDonorError> {
+    LayoutBBox::new(
+        a.x_min.min(b.x_min),
+        a.y_min.min(b.y_min),
+        a.x_max.max(b.x_max),
+        a.y_max.max(b.y_max),
+    )
+    .map_err(LayoutDonorError::InvalidLayout)
+}
+
 fn token_kind(text: &str) -> LayoutTokenKind {
     LayoutTokenKind::from_lexical_text(text)
 }
@@ -441,6 +801,9 @@ fn document_from_items(
     let mut total = 0usize;
     let mut pages = Vec::with_capacity(page_ids.len());
     for page in page_ids {
+        // Donor inputs use Java/pdfalto's one-based page identity; the neutral
+        // LayoutDocument and lattice are explicitly zero-based.
+        let page_ordinal = page.saturating_sub(1);
         let mut items = by_page.remove(&page).unwrap_or_default();
         items.sort_by_key(|i| i.source_ordinal);
         if require_page_geometry && !page_geometry.contains_key(&page) {
@@ -485,7 +848,7 @@ fn document_from_items(
                 }
             };
             tokens.push(LayoutToken::new(
-                page,
+                page_ordinal,
                 item.source_ordinal,
                 ordinal as u32,
                 bbox,
@@ -502,7 +865,7 @@ fn document_from_items(
             )?);
         }
         pages.push(LayoutPage::new(
-            page,
+            page_ordinal,
             width,
             height,
             geometry.rotation,
@@ -636,15 +999,113 @@ impl LayoutDonor for PdfInspectorLayoutDonor {
 /// External pdfalto donor. The executable is explicit and never replaced by
 /// pdftotext or another fallback.
 #[cfg(feature = "pdf-layout")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PdfaltoExitDisposition {
+    Success,
+    SuccessWithWarning,
+    WriteFailed,
+    OutOfMemory,
+    MissingPdfalto,
+    MissingLibxml2,
+    TimeoutOrKilled,
+    UnknownExitCode,
+}
+
+#[cfg(feature = "pdf-layout")]
+pub fn classify_pdfalto_exit(code: Option<i32>) -> PdfaltoExitDisposition {
+    match code {
+        Some(0) => PdfaltoExitDisposition::Success,
+        Some(5) => PdfaltoExitDisposition::SuccessWithWarning,
+        Some(4) => PdfaltoExitDisposition::WriteFailed,
+        Some(98) => PdfaltoExitDisposition::OutOfMemory,
+        Some(126) => PdfaltoExitDisposition::MissingPdfalto,
+        Some(127) => PdfaltoExitDisposition::MissingLibxml2,
+        Some(143) => PdfaltoExitDisposition::TimeoutOrKilled,
+        _ => PdfaltoExitDisposition::UnknownExitCode,
+    }
+}
+
+#[cfg(feature = "pdf-layout")]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PdfaltoInvocationConfig {
+    pub full_font_name: bool,
+    pub no_line_numbers: bool,
+    pub files_limit: Option<u32>,
+    pub annotation: bool,
+    pub only_graphs_coord: bool,
+}
+
+#[cfg(feature = "pdf-layout")]
+impl Default for PdfaltoInvocationConfig {
+    fn default() -> Self {
+        Self {
+            full_font_name: true,
+            no_line_numbers: true,
+            files_limit: Some(5000),
+            annotation: true,
+            only_graphs_coord: true,
+        }
+    }
+}
+
+#[cfg(feature = "pdf-layout")]
+impl PdfaltoInvocationConfig {
+    pub fn fingerprint(&self) -> String {
+        sha256_hex(format!(
+            "fullFontName={};noLineNumbers={};filesLimit={:?};annotation={};onlyGraphsCoord={}",
+            self.full_font_name,
+            self.no_line_numbers,
+            self.files_limit,
+            self.annotation,
+            self.only_graphs_coord
+        ))
+    }
+}
+
+#[cfg(feature = "pdf-layout")]
 pub struct PdfaltoLayoutDonor {
     pub executable: std::path::PathBuf,
+    pub invocation: PdfaltoInvocationConfig,
 }
 #[cfg(feature = "pdf-layout")]
 impl PdfaltoLayoutDonor {
     pub fn new(executable: impl Into<std::path::PathBuf>) -> Self {
         Self {
             executable: executable.into(),
+            invocation: PdfaltoInvocationConfig::default(),
         }
+    }
+
+    pub fn with_invocation(mut self, invocation: PdfaltoInvocationConfig) -> Self {
+        self.invocation = invocation;
+        self
+    }
+
+    fn command_args(
+        &self,
+        input: &std::path::Path,
+        output: &std::path::Path,
+    ) -> Vec<std::ffi::OsString> {
+        let mut args = Vec::new();
+        if self.invocation.full_font_name {
+            args.push("-fullFontName".into());
+        }
+        if self.invocation.no_line_numbers {
+            args.push("-noLineNumbers".into());
+        }
+        if let Some(limit) = self.invocation.files_limit {
+            args.push("-filesLimit".into());
+            args.push(limit.to_string().into());
+        }
+        if self.invocation.annotation {
+            args.push("-annotation".into());
+        }
+        if self.invocation.only_graphs_coord {
+            args.push("-onlyGraphsCoord".into());
+        }
+        args.push(input.as_os_str().to_owned());
+        args.push(output.as_os_str().to_owned());
+        args
     }
 
     /// Run the explicit pdfalto lane while retaining bounded lexical evidence
@@ -672,9 +1133,9 @@ impl PdfaltoLayoutDonor {
             let mut file = std::fs::File::create(&input)?;
             file.write_all(pdf_bytes)?;
             file.sync_all()?;
-            let mut child = Command::new(&self.executable)
-                .arg(&input)
-                .arg(&output)
+            let mut command = Command::new(&self.executable);
+            command.args(self.command_args(&input, &output));
+            let mut child = command
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .spawn()
@@ -690,12 +1151,15 @@ impl PdfaltoLayoutDonor {
             let started = std::time::Instant::now();
             loop {
                 if let Some(status) = child.try_wait()? {
-                    if !status.success() {
-                        return Err(LayoutDonorError::NonZero {
-                            status: status.code(),
-                        });
+                    match classify_pdfalto_exit(status.code()) {
+                        PdfaltoExitDisposition::Success
+                        | PdfaltoExitDisposition::SuccessWithWarning => break,
+                        _ => {
+                            return Err(LayoutDonorError::NonZero {
+                                status: status.code(),
+                            });
+                        }
                     }
-                    break;
                 }
                 if started.elapsed().as_millis() >= limits.timeout_ms as u128 {
                     let _ = child.kill();
@@ -1073,12 +1537,9 @@ pub fn parse_pdfalto_xml_shadow(
                         detail: "pdfalto String geometry missing".into(),
                     });
                 };
-                // pdfalto emits zero-area bookkeeping strings on some pages;
-                // they are not positioned text tokens. Preserve fail-closed
-                // behavior for negative/non-finite geometry below.
-                if width == 0.0 || height == 0.0 {
-                    continue;
-                }
+                // Zero-area bookkeeping strings are accounted terminal input,
+                // never silently discarded. The shared geometry validator below
+                // turns them into a typed malformed outcome.
                 let n = ordinal.entry(page).or_insert(0);
                 page_items.push(PositionedItem {
                     page,
@@ -1154,8 +1615,20 @@ pub fn parse_pdfalto_xml_shadow(
         })?,
         limits,
     )?;
+    let lattice = if xml
+        .windows(9)
+        .any(|window| window.eq_ignore_ascii_case(b"textblock"))
+        || xml
+            .windows(8)
+            .any(|window| window.eq_ignore_ascii_case(b"textline"))
+    {
+        lattice_from_alto_xml(&observation.document, xml, limits)?
+    } else {
+        lattice_from_document(&observation.document, None)?
+    };
     Ok(LayoutShadowObservation {
         visual,
+        lattice,
         ..observation
     })
 }
@@ -1277,7 +1750,7 @@ fn parse_pdfalto_visual_observation(
                 let page_doc = document
                     .pages
                     .iter()
-                    .find(|candidate| candidate.page_ordinal == page)
+                    .find(|candidate| candidate.page_ordinal == page.saturating_sub(1))
                     .ok_or_else(|| LayoutDonorError::Malformed {
                         detail: "visual primitive page identity missing".into(),
                     })?;

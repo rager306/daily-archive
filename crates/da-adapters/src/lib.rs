@@ -75,8 +75,9 @@ pub use html_parser::HtmlParser;
 #[cfg(feature = "pdf-layout")]
 pub use layout_donors::{
     LayoutDonor, LayoutDonorError, LayoutDonorLimits, LayoutShadowObservation,
-    PdfInspectorLayoutDonor, PdfaltoLayoutDonor, XyCutLayoutDonor, parse_pdfalto_xml,
-    parse_pdfalto_xml_shadow, reorder_shadow_with_xy_cut, reorder_with_xy_cut,
+    PdfInspectorLayoutDonor, PdfaltoExitDisposition, PdfaltoInvocationConfig, PdfaltoLayoutDonor,
+    XyCutLayoutDonor, classify_pdfalto_exit, parse_pdfalto_xml, parse_pdfalto_xml_shadow,
+    reorder_shadow_with_xy_cut, reorder_with_xy_cut,
 };
 #[cfg(feature = "pdf-layout")]
 pub use layout_visual::{
