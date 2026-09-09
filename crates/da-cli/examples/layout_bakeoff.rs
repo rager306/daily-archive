@@ -59,6 +59,15 @@ struct OracleSpec {
 }
 #[derive(Debug, Deserialize)]
 struct OracleFile {
+    #[serde(default)]
+    schema_version: String,
+    #[serde(default)]
+    independent: bool,
+    #[serde(default)]
+    documents: Vec<OracleDocument>,
+    #[serde(default)]
+    page_receipts: Vec<OraclePage>,
+    #[serde(default)]
     receipts: Vec<OracleReceipt>,
 }
 #[derive(Debug, Deserialize)]
@@ -66,6 +75,7 @@ struct OracleReceipt {
     document_id: String,
     page_count: usize,
     page_ordinals: Vec<u32>,
+    #[serde(default)]
     token_receipts: Vec<OracleToken>,
 }
 #[derive(Debug, Clone, Deserialize)]
@@ -74,6 +84,43 @@ struct OracleToken {
     token_ordinal: u32,
     bbox_72dpi_top_left: [f64; 4],
     token_digest: String,
+    #[serde(default)]
+    block_count: usize,
+    #[serde(default)]
+    line_count: usize,
+    #[serde(default)]
+    token_count: usize,
+    #[serde(default)]
+    furniture_count: usize,
+    #[serde(default)]
+    furniture: String,
+    #[serde(default)]
+    coordinate_dialect: String,
+    #[serde(default)]
+    geometry_digest: String,
+    #[serde(default)]
+    order_digest: String,
+}
+#[derive(Debug, Deserialize)]
+struct OracleDocument {
+    document_id: String,
+    source_sha256: String,
+    page_count: usize,
+}
+#[derive(Debug, Clone, Deserialize)]
+struct OraclePage {
+    document_id: String,
+    page_ordinal: u32,
+    java_page_number: u32,
+    block_count: usize,
+    line_count: usize,
+    token_count: usize,
+    furniture_count: usize,
+    furniture: String,
+    coordinate_dialect: String,
+    geometry_digest: String,
+    order_digest: String,
+    token_identity_digest: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -101,6 +148,8 @@ struct Report {
     rollback_target: String,
     route_state: String,
     outcomes: Vec<Outcome>,
+    #[serde(default)]
+    page_receipts: Vec<PageReceipt>,
     metrics: Metrics,
     optimization: CpuKernelCharacterization,
     gate: Gate,
@@ -114,6 +163,25 @@ struct Report {
     #[serde(default)]
     report_state: String,
 }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct PageReceipt {
+    document_id: String,
+    lane: String,
+    page_ordinal: u32,
+    java_page_number: u32,
+    status: String,
+    block_count: usize,
+    line_count: usize,
+    token_count: usize,
+    furniture_count: usize,
+    furniture: String,
+    coordinate_dialect: String,
+    geometry_digest: String,
+    order_digest: String,
+    token_identity_digest: String,
+    oracle_disagreement: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Outcome {
     ordinal: usize,
@@ -137,6 +205,8 @@ struct Outcome {
     oracle_token_receipts: usize,
     oracle_order_inversions: Option<usize>,
     oracle_bbox_mismatches: Option<usize>,
+    #[serde(default)]
+    page_receipts: Vec<PageReceipt>,
     semantic_hash: Option<String>,
     latency_ms: u128,
     throughput_tokens_per_sec: Option<u64>,
@@ -495,6 +565,50 @@ fn load_oracle(m: &Manifest) -> Result<BTreeMap<(String, u32), Vec<OracleToken>>
     let raw = fs::read(&s.fixture).map_err(|e| format!("oracle read: {e}"))?;
     let f: OracleFile = serde_yaml::from_slice(&raw).map_err(|e| format!("oracle schema: {e}"))?;
     let mut out = BTreeMap::new();
+    if f.schema_version == "layout-lattice-oracle.v1" {
+        if !f.independent || f.page_receipts.len() != m.corpus.page_denominator {
+            return Err("independent oracle page denominator mismatch".into());
+        }
+        let mut documents = BTreeMap::new();
+        for d in f.documents {
+            if d.source_sha256.len() != 64
+                || documents.insert(d.document_id, d.page_count).is_some()
+            {
+                return Err("oracle document identity mismatch".into());
+            }
+        }
+        for page in f.page_receipts {
+            if page.java_page_number != page.page_ordinal + 1
+                || page.coordinate_dialect != "top_left_72dpi"
+                || page.furniture != "absent"
+                || page.token_identity_digest.ends_with(&"0".repeat(64))
+                || out.contains_key(&(page.document_id.clone(), page.page_ordinal))
+            {
+                return Err("invalid or duplicate oracle page receipt".into());
+            }
+            out.insert(
+                (page.document_id, page.page_ordinal),
+                vec![OracleToken {
+                    page_ordinal: page.page_ordinal,
+                    token_ordinal: 0,
+                    bbox_72dpi_top_left: [0.0, 0.0, 1.0, 1.0],
+                    token_digest: page.token_identity_digest,
+                    block_count: page.block_count,
+                    line_count: page.line_count,
+                    token_count: page.token_count,
+                    furniture_count: page.furniture_count,
+                    furniture: page.furniture,
+                    coordinate_dialect: page.coordinate_dialect,
+                    geometry_digest: page.geometry_digest,
+                    order_digest: page.order_digest,
+                }],
+            );
+        }
+        if out.len() != m.corpus.page_denominator {
+            return Err("oracle must contain exactly one receipt per page".into());
+        }
+        return Ok(out);
+    }
     for r in f.receipts {
         if r.page_count != r.page_ordinals.len()
             || r.page_ordinals.iter().copied().ne(0..r.page_count as u32)
@@ -504,10 +618,7 @@ fn load_oracle(m: &Manifest) -> Result<BTreeMap<(String, u32), Vec<OracleToken>>
                 r.document_id
             ));
         }
-        // The independent fixture uses zero-based physical page indexes while
-        // LayoutDocument conserves the donors' one-based page identity.
         for fixture_page in r.page_ordinals {
-            let document_page = fixture_page + 1;
             let tokens = r
                 .token_receipts
                 .iter()
@@ -515,7 +626,7 @@ fn load_oracle(m: &Manifest) -> Result<BTreeMap<(String, u32), Vec<OracleToken>>
                 .cloned()
                 .collect();
             if out
-                .insert((r.document_id.clone(), document_page), tokens)
+                .insert((r.document_id.clone(), fixture_page), tokens)
                 .is_some()
             {
                 return Err("duplicate oracle page".into());
@@ -620,6 +731,13 @@ fn measure(
         duplicates,
     )
 }
+fn page_digest<T: serde::Serialize>(value: &T) -> String {
+    format!(
+        "sha256:{:x}",
+        Sha256::digest(serde_json::to_vec(value).expect("digest projection"))
+    )
+}
+
 fn run_unit(
     u: Unit,
     limits: LayoutDonorLimits,
@@ -628,10 +746,37 @@ fn run_unit(
     let wait = u.queued_at.elapsed().as_millis();
     let start = Instant::now();
     let source_sha256 = sha(&u.bytes);
-    let result = u.donor.extract(&u.bytes, &u.id, limits);
+    // The bakeoff must consume the audited shadow surface, not the legacy
+    // flattened LayoutDocument route: the companion lattice is the only
+    // source for page/block/line/furniture receipts.  Production routing is
+    // unaffected because this example is feature-gated and candidate-only.
+    let result = u.donor.extract_shadow(&u.bytes, &u.id, limits);
     let latency = start.elapsed().as_millis();
+    let terminal_receipts = |status: &str, disagreement: &str| {
+        (0..u.expected_pages as u32)
+            .map(|page_ordinal| PageReceipt {
+                document_id: u.id.clone(),
+                lane: u.lane.clone(),
+                page_ordinal,
+                java_page_number: page_ordinal + 1,
+                status: status.into(),
+                block_count: 0,
+                line_count: 0,
+                token_count: 0,
+                furniture_count: 0,
+                furniture: "absent".into(),
+                coordinate_dialect: "top_left_72dpi".into(),
+                geometry_digest: "sha256:typed_absence".into(),
+                order_digest: "sha256:typed_absence".into(),
+                token_identity_digest: "sha256:typed_absence".into(),
+                oracle_disagreement: disagreement.into(),
+            })
+            .collect::<Vec<_>>()
+    };
     match result {
-        Ok(doc) => {
+        Ok(observation) => {
+            let doc = observation.document;
+            let lattice = observation.lattice;
             let tokens = doc.pages.iter().map(|p| p.tokens.len()).sum();
             let (
                 spans,
@@ -649,8 +794,8 @@ fn run_unit(
             Outcome {
                 ordinal: u.ordinal,
                 unit_key: format!("{}:{}", u.id, u.lane),
-                document_id: u.id,
-                lane: u.lane,
+                document_id: u.id.clone(),
+                lane: u.lane.clone(),
                 source_sha256,
                 status: "ok".into(),
                 failure_code: None,
@@ -672,6 +817,69 @@ fn run_unit(
                 oracle_token_receipts: token_receipts,
                 oracle_order_inversions: inv,
                 oracle_bbox_mismatches: bbox,
+                page_receipts: lattice
+                    .pages
+                    .iter()
+                    .map(|page| {
+                        let blocks = &page.blocks;
+                        let lines: Vec<_> = blocks.iter().flat_map(|block| &block.lines).collect();
+                        let lattice_tokens: Vec<_> =
+                            lines.iter().flat_map(|line| &line.tokens).collect();
+                        let furniture_count = blocks
+                            .iter()
+                            .filter(|block| {
+                                !matches!(block.furniture, da_parse::FurnitureEvidence::Absent)
+                            })
+                            .count();
+                        PageReceipt {
+                            document_id: doc.document_id.clone(),
+                            lane: u.lane.clone(),
+                            page_ordinal: page.page_ordinal,
+                            java_page_number: page.java_page_number,
+                            status: "observed".into(),
+                            block_count: blocks.len(),
+                            line_count: lines.len(),
+                            token_count: lattice_tokens.len(),
+                            furniture_count,
+                            furniture: if furniture_count == 0 {
+                                "absent"
+                            } else {
+                                "observed"
+                            }
+                            .into(),
+                            coordinate_dialect: "top_left_72dpi".into(),
+                            geometry_digest: page_digest(&(
+                                page.width,
+                                page.height,
+                                page.rotation,
+                                page.crop_box,
+                            )),
+                            order_digest: page_digest(
+                                &blocks
+                                    .iter()
+                                    .map(|block| (block.source_order, block.derived_order))
+                                    .collect::<Vec<_>>(),
+                            ),
+                            token_identity_digest: page_digest(
+                                &lattice_tokens
+                                    .iter()
+                                    .map(|token| &token.text_digest)
+                                    .collect::<Vec<_>>(),
+                            ),
+                            oracle_disagreement: if blocks.iter().any(|block| {
+                                !matches!(
+                                    block.furniture,
+                                    da_parse::FurnitureEvidence::Unknown
+                                        | da_parse::FurnitureEvidence::Absent
+                                )
+                            }) {
+                                "typed_comparison:furniture".into()
+                            } else {
+                                "typed_absence:furniture_classification".into()
+                            },
+                        }
+                    })
+                    .collect(),
                 semantic_hash: hash,
                 latency_ms: latency,
                 throughput_tokens_per_sec: (latency > 0)
@@ -682,8 +890,8 @@ fn run_unit(
         Err(e) => Outcome {
             ordinal: u.ordinal,
             unit_key: format!("{}:{}", u.id, u.lane),
-            document_id: u.id,
-            lane: u.lane,
+            document_id: u.id.clone(),
+            lane: u.lane.clone(),
             source_sha256,
             status: "terminal_failure".into(),
             failure_code: Some(failure(&e).into()),
@@ -701,6 +909,7 @@ fn run_unit(
             oracle_token_receipts: 0,
             oracle_order_inversions: None,
             oracle_bbox_mismatches: None,
+            page_receipts: terminal_receipts("terminal_failure", "typed_absence:layout_document"),
             semantic_hash: None,
             latency_ms: latency,
             throughput_tokens_per_sec: None,
@@ -821,13 +1030,15 @@ fn make_report(
                 && o.oracle_order_inversions.is_some()
                 && o.oracle_bbox_mismatches.is_some()
         });
+    let page_receipt_count: usize = outcomes.iter().map(|o| o.page_receipts.len()).sum();
     let gate = Gate {
         exact_same_n: outcomes.len() == total,
         exact_unique_unit_keys: exact_unique,
         exact_page_denominator: pages_ok,
         lane_page_denominators: lane_pages,
         total_lane_pages,
-        complete_receipts: exact_unique,
+        complete_receipts: exact_unique
+            && page_receipt_count == m.corpus.page_denominator * REQUIRED_LANES.len(),
         semantic_replays_equal,
         conservation_complete: conservation,
         oracle_complete,
@@ -837,6 +1048,7 @@ fn make_report(
             && semantic_replays_equal
             && conservation
             && oracle_complete
+            && page_receipt_count == m.corpus.page_denominator * REQUIRED_LANES.len()
             && hard.is_empty()
         {
             "candidate_evidence_complete".into()
@@ -950,6 +1162,10 @@ fn make_report(
         },
         rollback_target: "java-grobid-http@0.9.0-crf".into(),
         route_state: "stage.pdfalto_layout=fallback".into(),
+        page_receipts: outcomes
+            .iter()
+            .flat_map(|o| o.page_receipts.clone())
+            .collect(),
         outcomes,
         metrics: Metrics {
             per_worker_terminal_counts: worker_terminal_counts.clone(),
