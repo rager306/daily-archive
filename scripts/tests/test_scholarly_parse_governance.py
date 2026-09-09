@@ -278,13 +278,18 @@ def test_taxonomy_mutation_is_rejected_by_exact_wire_assertion():
 def test_body_accounting_quarantine_is_data_driven_and_comment_safe():
     defaults = _load(ROOT / "data/parse/grobid_compatibility.yaml")["defaults"]
     tokens, boundaries = _body_accounting_quarantine_spec(defaults)
-    assert tokens == ["NativeBodyAccountant", "run_native_body_sequence"]
+    assert tokens == [
+        "NativeBodyAccountant",
+        "run_native_body_sequence",
+        "join_p5_shadow",
+        "check_cross_stage_semantic_invariants",
+    ]
     assert boundaries == [
         "crates/da-cli/src/source_cli.rs",
         "crates/da-ports/src/parser.rs",
     ]
     assert _body_accounting_quarantine_tokens_present(
-        "let _x: NativeBodyAccountant; run_native_body_sequence (input);",
+        "let _x: NativeBodyAccountant; run_native_body_sequence (input); join_p5_shadow(input); check_cross_stage_semantic_invariants(input);",
         tokens,
     ) == tokens
     assert _body_accounting_quarantine_tokens_present(
