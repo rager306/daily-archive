@@ -1,7 +1,9 @@
 use da_parse::{
-    DocumentRegion, LayoutBBox, LayoutDocument, LayoutPage, LayoutProvider, LayoutSpan,
-    LayoutStyleHints, LayoutToken, LayoutTokenKind, LexemeRow, SegmentationConfig,
-    SegmentationError, segment_document,
+    CoordinateDialect, DocumentRegion, FullSegmentationError, FullSemanticRegion,
+    FurnitureEvidence, FurnitureKind, LatticeBlock, LatticeLine, LatticePage, LatticeToken,
+    LayoutBBox, LayoutDocument, LayoutLattice, LayoutPage, LayoutProvider, LayoutSpan,
+    LayoutStyleHints, LayoutToken, LayoutTokenKind, LexemeRow, ReadingOrder, SegmentationConfig,
+    SegmentationError, segment_document, segment_document_full,
 };
 use sha2::{Digest, Sha256};
 
@@ -42,6 +44,53 @@ fn document(items: &[(&str, f64)]) -> LayoutDocument {
     )
     .unwrap()
 }
+fn lattice_for(doc: &LayoutDocument) -> LayoutLattice {
+    let tokens = doc.pages[0]
+        .tokens
+        .iter()
+        .map(|t| LatticeToken {
+            source_ordinal: t.source_ordinal,
+            token_ordinal: t.token_ordinal,
+            bbox: t.bbox,
+            text_digest: t.text_digest.clone(),
+            source_span: t.source_span.clone(),
+            kind: t.kind,
+        })
+        .collect();
+    LayoutLattice::new(
+        doc,
+        CoordinateDialect::AltoTopLeft72Dpi,
+        ReadingOrder::XmlSource,
+        Some(ReadingOrder::XyCutDerived),
+        vec![LatticePage {
+            page_ordinal: 0,
+            java_page_number: 1,
+            width: 200.0,
+            height: 300.0,
+            rotation: 0,
+            crop_box: None,
+            blocks: vec![LatticeBlock {
+                source_ordinal: 0,
+                source_span: LayoutSpan::present(0, doc.pages[0].tokens.len() as u32).unwrap(),
+                bbox: LayoutBBox::new(0.0, 0.0, 100.0, 300.0).unwrap(),
+                lines: vec![LatticeLine {
+                    source_ordinal: 0,
+                    source_span: LayoutSpan::present(0, doc.pages[0].tokens.len() as u32).unwrap(),
+                    bbox: LayoutBBox::new(0.0, 0.0, 100.0, 300.0).unwrap(),
+                    tokens,
+                    newline_boundary_count: 1,
+                }],
+                source_order: 0,
+                derived_order: Some(0),
+                furniture: FurnitureEvidence::Classified {
+                    kind: FurnitureKind::Header,
+                },
+            }],
+        }],
+    )
+    .unwrap()
+}
+
 fn lexemes(texts: &[&str]) -> Vec<LexemeRow> {
     texts
         .iter()
@@ -175,6 +224,64 @@ fn mixed_word_formula_image_assigns_exactly_one_region_per_token() {
     assert!(doc.pages[0].tokens[3].kind.is_visual());
     assert!(doc.pages[0].tokens[0].kind.is_lexical());
     assert!(doc.pages[0].tokens[2].kind.is_lexical());
+}
+
+#[test]
+fn full_companion_is_lattice_bound_and_keeps_furniture_out_of_body_runs() {
+    let doc = document(&[("Title", 40.0), ("Introduction", 80.0)]);
+    let lattice = lattice_for(&doc);
+    let outcome = segment_document_full(
+        &doc,
+        &lattice,
+        &lexemes(&["Title", "Introduction"]),
+        SegmentationConfig::default(),
+    )
+    .unwrap();
+
+    assert_eq!(outcome.schema_version, "da-parse.native-segmentation/v2");
+    assert_eq!(outcome.assignments.len(), 2);
+    assert_eq!(outcome.furniture.len(), 2);
+    assert!(
+        outcome
+            .assignments
+            .iter()
+            .all(|a| a.region == FullSemanticRegion::PageFurniture)
+    );
+    assert!(
+        outcome
+            .dispositions
+            .iter()
+            .any(|d| d.region == FullSemanticRegion::Body && d.absence.is_some())
+    );
+    assert_eq!(
+        outcome,
+        segment_document_full(
+            &doc,
+            &lattice,
+            &lexemes(&["Title", "Introduction"]),
+            SegmentationConfig::default(),
+        )
+        .unwrap()
+    );
+    let encoded = serde_json::to_vec(&outcome).unwrap();
+    assert_eq!(outcome, serde_json::from_slice(&encoded).unwrap());
+}
+
+#[test]
+fn full_companion_rejects_lattice_identity_drift_without_touching_v1() {
+    let doc = document(&[("Title", 40.0)]);
+    let mut lattice = lattice_for(&doc);
+    lattice.pages[0].java_page_number = 2;
+    assert!(matches!(
+        segment_document_full(
+            &doc,
+            &lattice,
+            &lexemes(&["Title"]),
+            SegmentationConfig::default(),
+        ),
+        Err(FullSegmentationError::LatticeInvalid)
+    ));
+    assert!(segment_document(&doc, &lexemes(&["Title"]), SegmentationConfig::default()).is_ok());
 }
 
 #[test]

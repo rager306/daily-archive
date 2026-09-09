@@ -4,7 +4,9 @@
 //! attached to the provider-neutral layout schema.  This module has no IO,
 //! runtime, parser, or persistence dependencies.
 
-use crate::{LayoutDocument, LayoutToken, LayoutTokenKind};
+use crate::{
+    FurnitureEvidence, FurnitureKind, LayoutDocument, LayoutLattice, LayoutToken, LayoutTokenKind,
+};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fmt;
@@ -561,4 +563,476 @@ pub fn segment_document(
     config: SegmentationConfig,
 ) -> Result<SegmentationOutcome, SegmentationError> {
     NativeSegmenter::new().segment(document, lexemes, config)
+}
+
+/// Versioned additive companion for the nine-region, S01-lattice-bound shadow.
+/// This deliberately does not alter [`NativeSegmenter`] or its v1 wire format.
+pub const FULL_SEGMENTATION_SCHEMA_VERSION: &str = "da-parse.native-segmentation/v2";
+pub const FULL_SEGMENTATION_REGION_COUNT: usize = 9;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Ord, PartialOrd)]
+#[serde(rename_all = "snake_case")]
+pub enum FullSemanticRegion {
+    Header,
+    Body,
+    References,
+    Annex,
+    Acknowledgement,
+    Toc,
+    Funding,
+    Availability,
+    PageFurniture,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FullFurnitureSubtype {
+    PageNumber,
+    Cover,
+    Footnote,
+    Headnote,
+    MarginNote,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FullLocation {
+    pub page_ordinal: u32,
+    pub block_ordinal: u32,
+    pub line_ordinal: u32,
+    pub token_ordinal: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FullTokenAssignment {
+    pub location: FullLocation,
+    pub source_ordinal: u32,
+    pub text_digest: String,
+    pub region: FullSemanticRegion,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FullRegionRun {
+    pub region: FullSemanticRegion,
+    pub start: FullLocation,
+    pub end: FullLocation,
+    pub boundary_digest: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FullFurnitureAnnotation {
+    pub location: FullLocation,
+    pub source_ordinal: u32,
+    pub subtype: FullFurnitureSubtype,
+    pub evidence: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FullRegionAbsence {
+    NoAdmittedTokens,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FullRegionDisposition {
+    pub region: FullSemanticRegion,
+    pub absence: Option<FullRegionAbsence>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FullSegmentationIdentity {
+    pub document_id: String,
+    pub provider_id: String,
+    pub source_pdf_sha256: String,
+    pub lattice_fingerprint: String,
+    pub config_fingerprint: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FullSegmentationOutcome {
+    pub schema_version: String,
+    pub identity: FullSegmentationIdentity,
+    pub assignments: Vec<FullTokenAssignment>,
+    pub runs: Vec<FullRegionRun>,
+    /// Furniture is intentionally a different ordered sequence from reading order.
+    pub furniture: Vec<FullFurnitureAnnotation>,
+    pub dispositions: Vec<FullRegionDisposition>,
+    pub order_digest: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FullSegmentationError {
+    LayoutInvalid,
+    LatticeInvalid,
+    IdentityMismatch(&'static str),
+    UnknownFurniture,
+    ConflictingFurniture,
+    MissingLatticeToken { page: u32, source: u32 },
+    UnexpectedLatticeToken { page: u32, source: u32 },
+    LatticeTokenMismatch { page: u32, source: u32 },
+    NonMonotonic,
+    Serialization,
+}
+impl fmt::Display for FullSegmentationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "full native segmentation rejected input: {self:?}")
+    }
+}
+impl std::error::Error for FullSegmentationError {}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct FullLatticeSegmenter;
+
+impl FullLatticeSegmenter {
+    pub const fn new() -> Self {
+        Self
+    }
+
+    pub fn segment(
+        &self,
+        document: &LayoutDocument,
+        lattice: &LayoutLattice,
+        lexemes: &[LexemeRow],
+        config: SegmentationConfig,
+    ) -> Result<FullSegmentationOutcome, FullSegmentationError> {
+        document
+            .validate()
+            .map_err(|_| FullSegmentationError::LayoutInvalid)?;
+        lattice
+            .validate_against(document)
+            .map_err(|_| FullSegmentationError::LatticeInvalid)?;
+        if lattice.identity.document_id != document.document_id
+            || lattice.identity.source_pdf_sha256 != document.source_pdf_sha256
+        {
+            return Err(FullSegmentationError::IdentityMismatch("layout_document"));
+        }
+        let provider = document
+            .pages
+            .iter()
+            .flat_map(|p| p.tokens.iter())
+            .next()
+            .map(|t| t.provider.id.clone())
+            .unwrap_or_default();
+        validate_sidecar(document, lexemes, &provider).map_err(|e| {
+            FullSegmentationError::IdentityMismatch(match e {
+                SegmentationError::DocumentMismatch => "document_id",
+                SegmentationError::ProviderMismatch => "provider_id",
+                _ => "lexeme_sidecar",
+            })
+        })?;
+        let lattice_fingerprint = lattice
+            .digest()
+            .map_err(|_| FullSegmentationError::Serialization)?;
+        let config_fingerprint =
+            digest_parts(&[&serde_json::to_string(&config)
+                .map_err(|_| FullSegmentationError::Serialization)?]);
+        let locations = lattice_locations(lattice, document)?;
+        let furniture = furniture_annotations(lattice, &locations)?;
+        let furniture_keys: std::collections::BTreeSet<_> = furniture
+            .iter()
+            .map(|f| (f.location.page_ordinal, f.source_ordinal))
+            .collect();
+        let mut assignments: Vec<FullTokenAssignment> = Vec::new();
+        let mut current = None;
+        let mut run_start: Option<FullLocation> = None;
+        let mut runs = Vec::new();
+        for page in &document.pages {
+            for token in &page.tokens {
+                if !token.kind.is_lexical() {
+                    continue;
+                }
+                let location = locations
+                    .get(&(token.page_ordinal, token.source_ordinal))
+                    .ok_or(FullSegmentationError::MissingLatticeToken {
+                        page: token.page_ordinal,
+                        source: token.source_ordinal,
+                    })?
+                    .clone();
+                let text = lexemes
+                    .iter()
+                    .find(|l| {
+                        l.page_ordinal == token.page_ordinal
+                            && l.source_ordinal == token.source_ordinal
+                    })
+                    .map(LexemeRow::text)
+                    .unwrap_or("");
+                let is_furniture =
+                    furniture_keys.contains(&(token.page_ordinal, token.source_ordinal));
+                let region = if is_furniture {
+                    FullSemanticRegion::PageFurniture
+                } else {
+                    full_marker(text)
+                        .unwrap_or_else(|| current.unwrap_or(FullSemanticRegion::Header))
+                };
+                if !is_furniture && current != Some(region) {
+                    if let (Some(previous), Some(start)) = (current, run_start.take()) {
+                        let end = assignments
+                            .iter()
+                            .rev()
+                            .find(|a| a.region != FullSemanticRegion::PageFurniture)
+                            .map(|a| a.location.clone())
+                            .unwrap_or_else(|| start.clone());
+                        runs.push(full_run(previous, start, end));
+                    }
+                    current = Some(region);
+                    run_start = Some(location.clone());
+                }
+                assignments.push(FullTokenAssignment {
+                    location,
+                    source_ordinal: token.source_ordinal,
+                    text_digest: token.text_digest.clone(),
+                    region,
+                });
+            }
+        }
+        if let (Some(region), Some(start)) = (current, run_start) {
+            let end = assignments
+                .iter()
+                .rev()
+                .find(|a| a.region != FullSemanticRegion::PageFurniture)
+                .map(|a| a.location.clone())
+                .unwrap_or_else(|| start.clone());
+            runs.push(full_run(region, start, end));
+        }
+        validate_assignment_order(&assignments)?;
+        let dispositions = full_regions()
+            .into_iter()
+            .map(|region| FullRegionDisposition {
+                region,
+                absence: (!assignments.iter().any(|a| a.region == region))
+                    .then_some(FullRegionAbsence::NoAdmittedTokens),
+            })
+            .collect();
+        let order_digest = digest_parts(
+            &assignments
+                .iter()
+                .map(|a| {
+                    format!(
+                        "{}:{}:{}:{}:{}",
+                        a.location.page_ordinal,
+                        a.location.block_ordinal,
+                        a.location.line_ordinal,
+                        a.location.token_ordinal,
+                        full_region_name(a.region)
+                    )
+                })
+                .collect::<Vec<_>>()
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>(),
+        );
+        Ok(FullSegmentationOutcome {
+            schema_version: FULL_SEGMENTATION_SCHEMA_VERSION.to_owned(),
+            identity: FullSegmentationIdentity {
+                document_id: document.document_id.clone(),
+                provider_id: provider,
+                source_pdf_sha256: document.source_pdf_sha256.clone(),
+                lattice_fingerprint,
+                config_fingerprint,
+            },
+            assignments,
+            runs,
+            furniture,
+            dispositions,
+            order_digest,
+        })
+    }
+}
+
+pub fn segment_document_full(
+    document: &LayoutDocument,
+    lattice: &LayoutLattice,
+    lexemes: &[LexemeRow],
+    config: SegmentationConfig,
+) -> Result<FullSegmentationOutcome, FullSegmentationError> {
+    FullLatticeSegmenter::new().segment(document, lattice, lexemes, config)
+}
+
+fn full_regions() -> [FullSemanticRegion; FULL_SEGMENTATION_REGION_COUNT] {
+    [
+        FullSemanticRegion::Header,
+        FullSemanticRegion::Body,
+        FullSemanticRegion::References,
+        FullSemanticRegion::Annex,
+        FullSemanticRegion::Acknowledgement,
+        FullSemanticRegion::Toc,
+        FullSemanticRegion::Funding,
+        FullSemanticRegion::Availability,
+        FullSemanticRegion::PageFurniture,
+    ]
+}
+fn full_region_name(r: FullSemanticRegion) -> &'static str {
+    match r {
+        FullSemanticRegion::Header => "header",
+        FullSemanticRegion::Body => "body",
+        FullSemanticRegion::References => "references",
+        FullSemanticRegion::Annex => "annex",
+        FullSemanticRegion::Acknowledgement => "acknowledgement",
+        FullSemanticRegion::Toc => "toc",
+        FullSemanticRegion::Funding => "funding",
+        FullSemanticRegion::Availability => "availability",
+        FullSemanticRegion::PageFurniture => "page_furniture",
+    }
+}
+fn full_marker(text: &str) -> Option<FullSemanticRegion> {
+    match text.trim().to_ascii_lowercase().as_str() {
+        "acknowledgement" | "acknowledgements" | "acknowledgment" | "acknowledgments" => {
+            Some(FullSemanticRegion::Acknowledgement)
+        }
+        "contents" | "table of contents" | "toc" => Some(FullSemanticRegion::Toc),
+        "funding" | "funding information" => Some(FullSemanticRegion::Funding),
+        "availability" | "data availability" | "code availability" => {
+            Some(FullSemanticRegion::Availability)
+        }
+        "references" | "bibliography" | "参考文献" => Some(FullSemanticRegion::References),
+        "appendix" | "appendices" | "annex" | "supplementary material" => {
+            Some(FullSemanticRegion::Annex)
+        }
+        "introduction"
+        | "methods"
+        | "materials and methods"
+        | "results"
+        | "discussion"
+        | "conclusion"
+        | "conclusions" => Some(FullSemanticRegion::Body),
+        _ => None,
+    }
+}
+fn full_run(region: FullSemanticRegion, start: FullLocation, end: FullLocation) -> FullRegionRun {
+    let boundary_digest = digest_parts(&[
+        full_region_name(region),
+        &format!("{:?}", start),
+        &format!("{:?}", end),
+    ]);
+    FullRegionRun {
+        region,
+        start,
+        end,
+        boundary_digest,
+    }
+}
+fn validate_assignment_order(
+    assignments: &[FullTokenAssignment],
+) -> Result<(), FullSegmentationError> {
+    if assignments.windows(2).any(|w| {
+        (
+            w[0].location.page_ordinal,
+            w[0].location.block_ordinal,
+            w[0].location.line_ordinal,
+            w[0].location.token_ordinal,
+        ) >= (
+            w[1].location.page_ordinal,
+            w[1].location.block_ordinal,
+            w[1].location.line_ordinal,
+            w[1].location.token_ordinal,
+        )
+    }) {
+        Err(FullSegmentationError::NonMonotonic)
+    } else {
+        Ok(())
+    }
+}
+fn lattice_locations(
+    lattice: &LayoutLattice,
+    document: &LayoutDocument,
+) -> Result<std::collections::BTreeMap<(u32, u32), FullLocation>, FullSegmentationError> {
+    let mut out = std::collections::BTreeMap::new();
+    for page in &lattice.pages {
+        for (bi, block) in page.blocks.iter().enumerate() {
+            for (li, line) in block.lines.iter().enumerate() {
+                for token in &line.tokens {
+                    let key = (page.page_ordinal, token.source_ordinal);
+                    if out
+                        .insert(
+                            key,
+                            FullLocation {
+                                page_ordinal: page.page_ordinal,
+                                block_ordinal: block.source_ordinal,
+                                line_ordinal: line.source_ordinal,
+                                token_ordinal: token.token_ordinal,
+                            },
+                        )
+                        .is_some()
+                    {
+                        return Err(FullSegmentationError::LatticeTokenMismatch {
+                            page: key.0,
+                            source: key.1,
+                        });
+                    }
+                    let source = document.pages[page.page_ordinal as usize]
+                        .tokens
+                        .iter()
+                        .find(|t| t.source_ordinal == token.source_ordinal)
+                        .ok_or(FullSegmentationError::UnexpectedLatticeToken {
+                            page: key.0,
+                            source: key.1,
+                        })?;
+                    if source.text_digest != token.text_digest
+                        || source.token_ordinal != token.token_ordinal
+                    {
+                        return Err(FullSegmentationError::LatticeTokenMismatch {
+                            page: key.0,
+                            source: key.1,
+                        });
+                    }
+                    let _ = (bi, li);
+                }
+            }
+        }
+    }
+    for page in document.pages.iter() {
+        for token in page.tokens.iter().filter(|t| t.kind.is_lexical()) {
+            if !out.contains_key(&(page.page_ordinal, token.source_ordinal)) {
+                return Err(FullSegmentationError::MissingLatticeToken {
+                    page: page.page_ordinal,
+                    source: token.source_ordinal,
+                });
+            }
+        }
+    }
+    Ok(out)
+}
+fn furniture_annotations(
+    lattice: &LayoutLattice,
+    locations: &std::collections::BTreeMap<(u32, u32), FullLocation>,
+) -> Result<Vec<FullFurnitureAnnotation>, FullSegmentationError> {
+    let mut out = Vec::new();
+    for page in &lattice.pages {
+        for block in &page.blocks {
+            let subtype = match block.furniture {
+                FurnitureEvidence::Absent => continue,
+                FurnitureEvidence::Unknown => return Err(FullSegmentationError::UnknownFurniture),
+                FurnitureEvidence::Classified { kind } => match kind {
+                    FurnitureKind::PageNumber => FullFurnitureSubtype::PageNumber,
+                    FurnitureKind::Footnote => FullFurnitureSubtype::Footnote,
+                    FurnitureKind::Headnote => FullFurnitureSubtype::Headnote,
+                    FurnitureKind::Marginnote => FullFurnitureSubtype::MarginNote,
+                    FurnitureKind::Header | FurnitureKind::Footer => FullFurnitureSubtype::Cover,
+                },
+            };
+            for line in &block.lines {
+                for token in &line.tokens {
+                    if let Some(location) =
+                        locations.get(&(page.page_ordinal, token.source_ordinal))
+                    {
+                        out.push(FullFurnitureAnnotation {
+                            location: location.clone(),
+                            source_ordinal: token.source_ordinal,
+                            subtype,
+                            evidence: "lattice_classified".to_owned(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+    out.sort_by_key(|f| {
+        (
+            f.location.page_ordinal,
+            f.location.block_ordinal,
+            f.location.line_ordinal,
+            f.location.token_ordinal,
+        )
+    });
+    Ok(out)
 }

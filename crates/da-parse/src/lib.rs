@@ -155,11 +155,16 @@ pub use native_personal_name::{
     RecognizedPersonalName,
 };
 pub use native_segmentation::{
-    DocumentRegion, LexemeRow, MAX_LEXEME_BYTES, MAX_PAGES as NATIVE_SEGMENTATION_MAX_PAGES,
+    DocumentRegion, FULL_SEGMENTATION_REGION_COUNT, FULL_SEGMENTATION_SCHEMA_VERSION,
+    FullFurnitureAnnotation, FullFurnitureSubtype, FullLatticeSegmenter, FullLocation,
+    FullRegionAbsence, FullRegionDisposition, FullRegionRun, FullSegmentationError,
+    FullSegmentationIdentity, FullSegmentationOutcome, FullSemanticRegion, FullTokenAssignment,
+    LexemeRow, MAX_LEXEME_BYTES, MAX_PAGES as NATIVE_SEGMENTATION_MAX_PAGES,
     MAX_REGIONS as NATIVE_SEGMENTATION_MAX_REGIONS, MAX_SECTION_DEPTH,
     MAX_SECTIONS as NATIVE_SEGMENTATION_MAX_SECTIONS, MAX_TOKENS as NATIVE_SEGMENTATION_MAX_TOKENS,
     NATIVE_SEGMENTATION_SCHEMA_VERSION, NativeSegmenter, SectionReceipt, SegmentationConfig,
     SegmentationError, SegmentationLimits, SegmentationOutcome, TokenAssignment, segment_document,
+    segment_document_full,
 };
 pub use native_visual::{
     FigureHeadReceipt, FormulaHeadReceipt, MAX_DIGEST_BYTES, MAX_PRIMITIVES, MAX_RECEIPTS,
