@@ -1,0 +1,140 @@
+schema_version: fulltext-block-semantics.v1
+compatible_with: native-body-accounting.v1
+adr_ref: ADR-075
+contract_id: native-fulltext-block-semantics-shadow
+requirement_ids: [R085, R087, R088, R091, R092, R118, R120, R122, R123, R124, R125, R127, R130, R131]
+decisions: [D127, D204]
+
+source_contract:
+  java_source: artifacts/parse_compat/java_grobid_fulltext_semantics_source.json
+  java_source_schema: java-grobid-fulltext-semantics-source.v1
+  java_revision: 0b0ab53b159b32792a01fca1d9d04fd02cf8b24b
+  java_source_sha256: 7dc607fc50453eeb6d80b0612047f71865507dfe0cd7a28d40ac734e86a2374f
+  lattice_authority: data/parse/layout_lattice_parity.yaml
+  lattice_schema: layout-lattice-parity.v1
+  lattice_sha256: 6e10a02eaeab1d1a39191451874d3b4a14b80c74dc9da45bb8f35a7b329d5f0f
+  segmentation_authority: data/parse/document_segmentation.yaml
+  segmentation_schema: document-segmentation.v2
+  segmentation_sha256: f10574125355309143b659bd7612cd1dab7e12a9be8adb020263caf4b0e64770
+  accountant_authority: data/parse/native_body_accounting.yaml
+  accountant_schema: native-body-accounting.v1
+  accountant_sha256: b00c919cf1267bd9ca531f1023a5b89ceb679a9582738258b2f4c925c3cce810
+  binding: sha256_and_schema_exact
+
+policy_locks:
+  observation_mode: shadow
+  production_authority: java-grobid-http@0.9.0-crf
+  candidate_only: true
+  auto_promote: forbidden
+  import_eligible: false
+  graph_mutation: forbidden
+  promotion: forbidden
+  parser_port_routing: forbidden
+  composition_splice: forbidden
+  target_matching: forbidden
+  resolution: forbidden
+  cross_reference_linkage: forbidden
+  raw_payloads: forbidden
+  physical_defaults: forbidden
+  no_selection: true
+  no_pooling: true
+  default_paragraph_fallback: forbidden
+
+corpus_binding:
+  authority: data/parse/layout_bakeoff.yaml
+  corpus_id: s13-same-input-pdf-corpus
+  source_identity: exact_document_id_and_sha256_from_layout_bakeoff
+  documents: 3
+  pages: 202
+  lanes: 3
+  pages_per_lane: 202
+  lane_pages: 606
+  lane_ids: [pdfalto, pdf_inspector_positioned, pdf_inspector_positioned_xy_cut]
+  body_counts: pending_independent_oracle
+
+semantic_model:
+  evaluation_axes: [paragraph, section, list_item, note, annex, marker]
+  two_level: true
+  parent_roles: [annex]
+  leaf_roles: [paragraph, section, list_item, note, marker]
+  sibling_roles_disjoint: true
+  sibling_overlap: forbidden
+  annex_parent_scope: s02_annex_units_only
+  annex_nesting: explicit_only
+  annex_leaf_double_assignment: forbidden
+  marker_subtypes: [citation, figure, table, equation]
+  marker_unknown_label: {java_label: "<other>", disposition: unsupported, fallback: forbidden}
+  note: 
+    java_model_label: null
+    source_proof: not_established
+    allowed_dispositions: [source_not_established, reviewed_absent]
+    positive_invention: forbidden
+    tei_note_inference: forbidden
+    furniture_footnote_conflation: forbidden
+  lexical_admission: [Word, Whitespace, Punctuation, Symbol]
+  visual_evidence: [Image, Formula]
+  visual_lexical_assignment: forbidden
+  visual_behavior: opaque_evidence_or_typed_absence
+
+java_label_mapping:
+  paragraph: ["<paragraph>"]
+  section: ["<section>"]
+  list_item: ["<item>"]
+  note: []
+  marker:
+    citation: ["<citation_marker>"]
+    figure: ["<figure_marker>"]
+    table: ["<table_marker>"]
+    equation: ["<equation_marker>"]
+  unsupported: ["<other>"]
+  excluded_visual: ["<figure>", "<table>", "<equation>", "<equation_label>"]
+  unknown_label_behavior: fail_closed
+  unknown_to_paragraph: forbidden
+
+boundaries:
+  identity_fields: [document_id, lane_id, source_sha256, lattice_fingerprint, config_fingerprint, page_ordinal, block_ordinal, line_ordinal, token_ordinal]
+  ordered: true
+  monotonic: true
+  parent_boundary_fields: [start_page, start_block, start_line, start_token, end_page, end_block, end_line, end_token, boundary_digest]
+  digest_only: true
+  replay: byte_identical_required
+  worker_identity: excluded_from_semantic_identity
+  duration_counters: excluded_from_semantic_identity
+
+terminal_and_absence:
+  closed: true
+  values: [pass, empty, unsupported, source_not_established, reviewed_absent, invalid_evidence, missing, checksum_mismatch, malformed, timeout, nonzero, oversize, encrypted, truncated]
+  absence_requires_disposition: true
+  upstream_terminal_propagation: required
+  silent_skip: forbidden
+  denominator_erosion: forbidden
+  conflict_policy: typed_failure
+  contribution_policy: deferred
+
+failure_taxonomy:
+  closed: true
+  values: [unknown_label, missing_identity, checksum_mismatch, duplicate_assignment, reordered_units, sibling_overlap, illegal_annex_parent, illegal_annex_nesting, body_annex_crossing, note_invention, note_footnote_conflation, marker_resolution_field, visual_lexical_kind, default_paragraph_mapping, denominator_erosion, pooled_metric, raw_payload, physical_path, promotion_attempt, import_attempt, graph_attempt, production_route_change]
+
+input_limits:
+  max_documents: 3
+  max_pages_per_lane: 202
+  max_lane_pages: 606
+  max_in_flight: 1
+  oversized_input: terminal_oversize
+
+redaction:
+  forbidden_keys: [pdf_bytes, tei_xml, raw_text, body_text, page_image, images, text, path, physical_path, hostname, executable, vendor_path]
+  forbidden_values: [absolute_paths, raw_source, raw_tei, raw_pdf, worker_identity]
+  digest_prefix: "sha256:"
+
+independent_oracle:
+  status: pending_independent_oracle
+  body_specific_counts: pending_independent_oracle
+  review_required: true
+  common_mode_with_accountant: forbidden
+
+production_boundary:
+  new_calls: forbidden
+  allowed_surfaces: [DATA_contract, source_ledger, generic_contract_test]
+  production_import_graph_promotion: forbidden
+  java_http_authority_unchanged: true
