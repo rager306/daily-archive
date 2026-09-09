@@ -167,6 +167,7 @@ pub mod derived_family_adapters;
 pub mod derived_prompt_contract;
 pub mod derived_transition_evaluator;
 pub mod document_context_stage;
+pub mod native_family_promotion_gate;
 pub mod scholarly_evidence;
 pub mod summary;
 pub use cluster::{ClusterResult, ClusterUseCase};
