@@ -41,6 +41,7 @@ mod native_body;
 mod native_callout_matching;
 mod native_citation;
 mod native_composition;
+mod native_consolidation_specialized;
 mod native_date;
 mod native_fulltext_blocks;
 mod native_fulltext_composition;
@@ -142,6 +143,12 @@ pub use native_composition::{
     ReferenceCompositionCandidate, ReferenceCompositionInput, ReferenceCompositionOutcome,
     ReferenceSequenceInput, compose_header, compose_references, run_header_sequence,
     run_reference_sequence,
+};
+pub use native_consolidation_specialized::{
+    DigestOnlyEnrichmentReceipt, MAX_SPECIALIZED_DIGESTS,
+    NATIVE_CONSOLIDATION_SPECIALIZED_SCHEMA_VERSION, NativeConsolidationSpecializedError,
+    NativeConsolidationSpecializedOutcome, SpecializedDisposition, SpecializedFamily,
+    SpecializedFamilyOutcome, SpecializedUpstreamStatus, evaluate_native_consolidation_specialized,
 };
 pub use native_date::{
     DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,
