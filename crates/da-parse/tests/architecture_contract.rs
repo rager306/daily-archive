@@ -4600,6 +4600,119 @@ fn s06_r127_p3_java_stamp_and_native_header_order_remain_bound() {
 }
 
 #[test]
+fn s01_native_family_promotion_gate_stays_out_of_production_parse_and_write_boundaries() {
+    let application_lib = read_text("crates/da-application/src/lib.rs");
+    let gate = read_text("crates/da-application/src/native_family_promotion_gate.rs");
+    let cli = read_text("crates/da-cli/src/source_cli.rs");
+    let parser_port = read_text("crates/da-ports/src/parser.rs");
+
+    // The gate is a standalone application module, not a production route or
+    // facade export.  This keeps injected review evidence separate from the
+    // parse/write composition root.
+    assert!(
+        application_lib
+            .lines()
+            .any(|line| line.trim() == "pub mod native_family_promotion_gate;"),
+        "S01: gate must remain registered as a standalone da-application module"
+    );
+    assert!(
+        !application_lib.contains("pub use native_family_promotion_gate"),
+        "S01: gate must not be facade-reexported"
+    );
+    assert!(
+        !cli.contains("native_family_promotion_gate") && !cli.contains("derive_promotion_gate"),
+        "S01: source_cli must not route through the dry-run gate"
+    );
+    assert!(
+        parser_port.contains("pub trait ParserPort") && !parser_port.contains("PromotionGate"),
+        "S01: ParserPort must remain the parse-only boundary"
+    );
+
+    // Scan only code positions.  concat! keeps the denylist itself from
+    // becoming a false positive while still making representative mutations
+    // fail visibly in this source-level contract.
+    let code = s10_code_without_comments(&gate);
+    let forbidden = [
+        concat!("da_", "parse"),
+        "PromotionService",
+        "PromotionCandidate",
+        "GraphStore",
+        "DirectGraphStore",
+        "aggregate_same_n_ablation",
+        "parse_pdf",
+        "parse_pdf_runtime",
+        "deploy_candidate",
+        "import_candidate",
+        "auto_promote_candidate",
+        "promote_candidate",
+    ];
+    for token in forbidden {
+        assert!(
+            !code.contains(token),
+            "S01: forbidden production coupling leaked into native_family_promotion_gate: {token}"
+        );
+    }
+    for token in [
+        "create_node",
+        "create_edge",
+        "set_node_property",
+        "Command::new",
+    ] {
+        assert!(
+            !code.contains(token),
+            "S01: side-effect call leaked into native_family_promotion_gate: {token}"
+        );
+    }
+    assert!(
+        code.contains("FamilyId") && code.contains("FamilyPromotionEvidence"),
+        "S01: gate must retain only the typed FamilyId/evidence derivation seam"
+    );
+
+    // Production parse remains on the approved Java GROBID route and the
+    // existing six-name DecisionPoint vocabulary remains closed.
+    assert!(
+        cli.contains("GrobidProfile") || cli.contains("grobid"),
+        "S01: source_cli lost the approved GROBID parse/profile route"
+    );
+    let fsm = read_text("crates/da-domain/src/fsm_policy.rs");
+    assert!(
+        s10_decision_point_violations(&s10_code_without_comments(&fsm)).is_empty(),
+        "S01: DecisionPoint drifted while adding the standalone gate"
+    );
+
+    let compatibility = read_text("data/parse/grobid_compatibility.yaml");
+    for pin in [
+        "import_eligible: false",
+        "auto_promote: forbidden",
+        "this_wave_promotes: none",
+        "deployed: false",
+        "rollback_target: java-grobid-http@0.9.0-crf",
+    ] {
+        assert!(
+            compatibility.contains(pin),
+            "S01: missing locked GROBID policy pin: {pin}"
+        );
+    }
+
+    let composition = read_text("data/parse/native_fulltext_composition.yaml");
+    for pin in [
+        "pooled_winner: forbidden",
+        "independently_selectable: [header, references]",
+        "s12_named_denominators:",
+        "hard_regressions:",
+        "missing_rollback",
+        "java_header_authors_equals: header_raw_total",
+        "hub_native_accepted_header: 20",
+        "hub_java_header_raw: 21",
+    ] {
+        assert!(
+            composition.contains(pin),
+            "S01: missing native composition lock/gap: {pin}"
+        );
+    }
+}
+
+#[test]
 fn s06_policy_lineage_scanner_fails_visible_on_synthetic_drift() {
     let missing_stamp = "fn stamp() { let policy_source = \"wasm\"; }";
     assert!(
