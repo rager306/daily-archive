@@ -1,65 +1,53 @@
 {
-  "schema_version": "java-grobid-body-taxonomy-source.v1",
+  "schema_version": "java-grobid-body-taxonomy-source.v2",
   "vendor": "grobid",
   "vendor_revision": "0b0ab53b159b32792a01fca1d9d04fd02cf8b24b",
   "files": {
-    "fulltext_parser": {
-      "logical_path": "grobid-core/src/main/java/org/grobid/core/engines/FullTextParser.java",
-      "sha256": "f8780d55c25f17f53e2be2b286e9f68c0e674f09c4b88e3e1f2c7bb800228796"
-    },
-    "segmentation_labels": {
-      "logical_path": "grobid-core/src/main/java/org/grobid/core/engines/label/SegmentationLabels.java",
-      "sha256": "196bdbefce20bfd9765e48f6c6a75e63d7ab2dd2b3cbfc11a1316a362760063c"
-    },
-    "tagging_labels": {
-      "logical_path": "grobid-core/src/main/java/org/grobid/core/engines/label/TaggingLabels.java",
-      "sha256": "eb0eef846e80fccfa6bc835e3f24c9eaa66cc2b66fbdd8b8074c7c30d3e775a8"
-    }
+    "fulltext_parser": {"logical_path": "grobid-core/src/main/java/org/grobid/core/engines/FullTextParser.java", "sha256": "f8780d55c25f17f53e2be2b286e9f68c0e674f09c4b88e3e1f2c7bb800228796"},
+    "segmentation_labels": {"logical_path": "grobid-core/src/main/java/org/grobid/core/engines/label/SegmentationLabels.java", "sha256": "196bdbefce20bfd9765e48f6c6a75e63d7ab2dd2b3cbfc11a1316a362760063c"},
+    "tagging_labels": {"logical_path": "grobid-core/src/main/java/org/grobid/core/engines/label/TaggingLabels.java", "sha256": "eb0eef846e80fccfa6bc835e3f24c9eaa66cc2b66fbdd8b8074c7c30d3e775a8"}
   },
   "segmentation_labels": {
-    "body": "<body>",
-    "annex": "<annex>",
-    "references": "<references>",
-    "acknowledgement": "<acknowledgement>",
-    "availability": "<availability>",
-    "funding": "<funding>",
-    "conflict": "<conflict>",
-    "contribution": "<contribution>",
-    "toc": "<toc>",
-    "page_number": "<page>",
-    "cover": "<cover>",
-    "header": "<header>",
-    "footnote": "<footnote>",
-    "headnote": "<headnote>",
-    "marginnote": "<marginnote>"
+    "body": "<body>", "annex": "<annex>", "references": "<references>",
+    "acknowledgement": "<acknowledgement>", "availability": "<availability>", "funding": "<funding>",
+    "conflict": "<conflict>", "contribution": "<contribution>", "toc": "<toc>",
+    "page_number": "<page>", "cover": "<cover>", "header": "<header>",
+    "footnote": "<footnote>", "headnote": "<headnote>", "marginnote": "<marginnote>"
+  },
+  "s02_output_mapping": {
+    "closed_outputs": ["header", "body", "references", "annex", "acknowledgement", "toc", "funding", "availability", "page_furniture"],
+    "java_to_output": {
+      "header": "header", "body": "body", "references": "references", "annex": "annex",
+      "acknowledgement": "acknowledgement", "toc": "toc", "funding": "funding", "availability": "availability",
+      "page_number": "page_furniture", "cover": "page_furniture", "footnote": "page_furniture",
+      "headnote": "page_furniture", "marginnote": "page_furniture"
+    },
+    "deferred": {
+      "conflict": {"disposition": "deferred", "scope": "out_of_scope", "implicit_mapping": "forbidden"},
+      "contribution": {"disposition": "deferred", "scope": "out_of_scope", "implicit_mapping": "forbidden"}
+    }
+  },
+  "furniture": {
+    "closed_subtypes": ["page_number", "cover", "footnote", "headnote", "margin_note"],
+    "java_label_aliases": {"marginnote": "margin_note"},
+    "excluded_from_body_reading_order": true,
+    "sequence": "separate_ordered_annotation"
   },
   "fulltext_labels": {
-    "paragraph": "<paragraph>",
-    "item": "<item>",
-    "section": "<section>",
-    "citation_marker": "<citation_marker>",
-    "figure_marker": "<figure_marker>",
-    "table_marker": "<table_marker>",
-    "equation_marker": "<equation_marker>",
-    "figure": "<figure>",
-    "table": "<table>",
-    "equation": "<equation>",
-    "equation_label": "<equation_label>",
-    "other": "<other>"
+    "paragraph": "<paragraph>", "item": "<item>", "section": "<section>", "citation_marker": "<citation_marker>",
+    "figure_marker": "<figure_marker>", "table_marker": "<table_marker>", "equation_marker": "<equation_marker>",
+    "figure": "<figure>", "table": "<table>", "equation": "<equation>", "equation_label": "<equation_label>", "other": "<other>"
   },
   "orchestration_method_lines": {
-    "processingHeaderSection": [166, 733],
-    "processingReferenceSection": [232, 1539],
+    "processingHeaderSection": [166, 733], "processingReferenceSection": [232, 1539],
     "processFigures": [278, 353, 2446, 2447, 2448, 2451, 2452, 2453, 2456],
     "processTables": [308, 377, 2635, 2639, 2640, 2643, 2647, 2648, 2651],
-    "processEquations": [331, 403, 2854, 2855, 2858],
-    "postProcessCallout": [416, 2929]
+    "processEquations": [331, 403, 2854, 2855, 2858], "postProcessCallout": [416, 2929]
   },
   "evidence_policy": {
-    "raw_java_source_embedded": false,
-    "absolute_path_embedded": false,
-    "candidate_output": false,
-    "graph_truth": false,
-    "production_authority": "java-grobid-http@0.9.0-crf"
+    "raw_java_source_embedded": false, "absolute_path_embedded": false, "candidate_output": false,
+    "graph_truth": false, "production_authority": "java-grobid-http@0.9.0-crf",
+    "observation_only": true, "import_eligible": false, "winner_selection": "forbidden",
+    "promotion": "forbidden"
   }
 }

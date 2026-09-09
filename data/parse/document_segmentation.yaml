@@ -1,30 +1,56 @@
-schema_version: document-segmentation.v1
+schema_version: document-segmentation.v2
+compatible_with: document-segmentation.v1
 adr_ref: ADR-075
 contract_id: native-document-segmentation-shadow
 requirement_ids: [R085, R106, R108, R113, R117]
 decisions: [D127, D204, D294, D295]
-# Additive S15 authority. PDF identity and page topology are referenced from
-# layout_bakeoff.yaml; this file owns segmentation labels and evaluation only.
+source_contract:
+  java_taxonomy: artifacts/parse_compat/java_grobid_body_taxonomy_source.json
+  java_taxonomy_schema: java-grobid-body-taxonomy-source.v2
+  java_revision: 0b0ab53b159b32792a01fca1d9d04fd02cf8b24b
+  layout_authority: artifacts/parse_compat/java_grobid_layout_source.json
+  layout_schema: java-grobid-layout-source.v1
+  lattice_authority: data/parse/layout_lattice_parity.yaml
+  lattice_schema: layout-lattice-parity.v1
+  binding: sha256_and_schema_exact
+# S02 is an observation-only shadow over the unchanged S01 LayoutDocument/lattice.
 policy_locks:
   observation_mode: shadow
+  production_authority: java-grobid-http@0.9.0-crf
   promotion_state: candidate
   auto_promote: forbidden
   donor_selection: forbidden
+  winner_selection: forbidden
   import_eligible: false
   graph_mutation: forbidden
+  promotion: forbidden
+  parser_port_routing: forbidden
   raw_payloads: forbidden
+  physical_defaults: forbidden
   s14_durable_evidence_mutation: forbidden
 
 regions:
-  closed_labels: [header, body, references, annex, page_furniture]
+  closed_labels: [header, body, references, annex, acknowledgement, toc, funding, availability, page_furniture]
+  java_label_mapping_authority: artifacts/parse_compat/java_grobid_body_taxonomy_source.json
   assignment_rule: exactly_one_region_per_admitted_token
   order_rule: admitted_reading_order_preserved
-  transition_precedence: [page_furniture, header, body, references, annex]
+  boundary_schema: ordered_monotonic_page_block_line_token_ranges
+  transition_precedence: [page_furniture, header, body, references, annex, acknowledgement, toc, funding, availability]
+  independently_selectable: [header, references]
   section_parent_regions: [body, annex]
   visual_structure_labels: forbidden
   lexical_token_kinds: [Word, Whitespace, Punctuation, Symbol]
+  visual_evidence_kinds: [Image, Formula]
   opaque_token_kinds: [Formula, Image]
+  visual_lexical_assignment: forbidden
   no_classifier_branch_by_genre: true
+
+furniture:
+  closed_subtypes: [page_number, cover, footnote, headnote, margin_note]
+  sequence: ordered_annotation_separate_from_body_reading_order
+  excluded_from_body_reading_order: true
+  java_aliases: {marginnote: margin_note}
+  conflict_policy: typed_failure_on_conflicting_evidence
 
 source_corpus:
   authority: data/parse/layout_bakeoff.yaml
@@ -32,15 +58,9 @@ source_corpus:
   source_identity: exact_document_id_and_sha256_from_layout_bakeoff
   corpus_n: 3
   documents:
-    - id: hub-2507.19457
-      source_sha256: ab3a5139bac83f192ad67529368d77b84b0d807e95a8e4fd0daa8d45fd046bec
-      pages: 96
-    - id: rlm-2512.24601
-      source_sha256: 8567362c22768d9b50d4a4a8d63bb28dda2c2b2051be30d67f70f645170429ca
-      pages: 43
-    - id: reca-2605.26525v1
-      source_sha256: a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8
-      pages: 63
+    - {id: hub-2507.19457, source_sha256: ab3a5139bac83f192ad67529368d77b84b0d807e95a8e4fd0daa8d45fd046bec, pages: 96}
+    - {id: rlm-2512.24601, source_sha256: 8567362c22768d9b50d4a4a8d63bb28dda2c2b2051be30d67f70f645170429ca, pages: 43}
+    - {id: reca-2605.26525v1, source_sha256: a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8, pages: 63}
   page_sum: 202
 
 lanes:
@@ -56,34 +76,28 @@ source_bound_genres:
   stratification_only: true
   classifier_branching: forbidden
   reviewed_annotation_required: true
-  labels:
-    - id: research_article
-      provenance: source_bound_reviewed
-      source_ref: layout_bakeoff.corpus.documents.page_classes
-      coverage: all_three_documents
+  labels: [{id: research_article, provenance: source_bound_reviewed, source_ref: layout_bakeoff.corpus.documents.page_classes, coverage: all_three_documents}]
   unknown_label_behavior: fail_closed
   missing_coverage_behavior: fail_closed
 
 evaluation:
-  matrix_axes: [lane, source_bound_genre, region]
-  required_rows: 45
-  row_formula: 3_lanes_x_1_reviewed_genre_x_5_regions
+  matrix_axes: [document, lane, source_bound_genre, region]
+  required_rows: 81
+  row_formula: 3_documents_x_3_lanes_x_1_reviewed_genre_x_9_regions
   independent_denominators: true
   pooled_metrics: forbidden
-  denominator_names:
-    corpus_documents: 3
-    lanes: 3
-    pages_per_lane: 202
-    lane_pages: 606
-    matrix_rows: 45
-    region_token_assignments: admitted_tokens_per_lane
-    region_boundaries: admitted_boundaries_per_lane
-    genre_documents: 3
-  metrics: [token_precision, token_recall, boundary_f1, boundary_displacement, page_furniture_false_positive_rate]
-  thresholds:
-    conservation: exact
-    ordered_boundary_digest: exact
-    quality: candidate_evidence_only
+  denominator_names: {corpus_documents: 3, lanes: 3, pages_per_lane: 202, lane_pages: 606, document_lane_outcomes: 9, matrix_rows: 81, region_token_assignments: admitted_tokens_per_document_lane_region, region_boundaries: admitted_boundaries_per_document_lane_region, genre_documents: 3}
+  metrics: [token_precision, token_recall, boundary_precision, boundary_recall, boundary_f1, boundary_displacement, page_furniture_false_positive_rate]
+  thresholds: {conservation: exact, ordered_boundary_digest: exact, quality: candidate_evidence_only}
+
+annotations:
+  ordered: true
+  identity_fields: [document_id, lane_id, source_sha256, lattice_fingerprint, config_fingerprint, page_ordinal, block_ordinal, line_ordinal, token_ordinal]
+  boundary_fields: [start_page, start_block, start_line, start_token, end_page, end_block, end_line, end_token, boundary_digest]
+  furniture_sequence: separate_ordered_sequence
+  absence: typed_absence_with_closed_reason
+  lexical_admission: [Word, Whitespace, Punctuation, Symbol]
+  visual_evidence: separate_or_typed_absence
 
 oracle:
   source_artifact: artifacts/parse_compat/document_segmentation_oracle_source.json
@@ -95,15 +109,14 @@ oracle:
   key_fields: [document_id, lane_id, page_ordinal, token_ordinal, token_digest, region, boundary_digest]
   section_fields: [section_id, parent_region, order_ordinal, section_boundary_digest]
   provenance_fields: [source_sha256, genre_id, genre_provenance]
-  source_artifact_receipt_fields: [document_id, source_sha256, lane, page_count, page_ordinal, token_ordinal, token_digest, region, boundary_digest, section_ordinal, section_boundary_digest, status]
-  forbidden_fields: [raw_text, pdf_bytes, tei_xml, page_image, physical_path, path, hostname, executable]
+  forbidden_fields: [raw_text, pdf_bytes, tei_xml, page_image, physical_path, path, hostname, executable, vendor_path]
   conservation: assigned_equals_admitted
   boundary_order: monotonic
   terminal_outcomes: [pass, empty, invalid_evidence, missing, checksum_mismatch, malformed, unsupported, timeout, nonzero, oversize, encrypted, truncated]
 
 failure_taxonomy:
   closed: true
-  values: [unknown_region, unknown_genre, missing_oracle_row, duplicate_oracle_key, overlapping_range, denominator_erosion, pooled_metric, digest_mismatch, raw_payload_leakage, promotion_attempt, s14_evidence_mutation]
+  values: [unknown_region, unknown_furniture_subtype, unknown_genre, missing_oracle_row, duplicate_oracle_key, overlapping_range, denominator_erosion, pooled_metric, digest_mismatch, coordinate_binding_drift, raw_payload_leakage, promotion_attempt, default_body_mapping, furniture_in_body, visual_lexical_kind, s14_evidence_mutation]
 
 gates:
   candidate_evidence_complete: candidate
@@ -120,6 +133,6 @@ ownership:
   formulas: out_of_scope
   captions: out_of_scope
   visual_heads: out_of_scope
-  formula_image_behavior: opaque_conserved_tokens_inside_document_region
+  formula_image_behavior: separate_visual_evidence_or_typed_absence
   fulltext_composition: forbidden
   genre_use: stratification_only
