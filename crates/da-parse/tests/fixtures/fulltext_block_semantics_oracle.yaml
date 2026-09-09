@@ -1,0 +1,120 @@
+schema_version: fulltext-block-semantics-oracle.v1
+oracle_id: m501-s03-t03-independent-reviewed-v1
+independent: true
+source_bound: true
+redaction: digest_only_source_bound_ordinals
+forbidden_fields: [raw_text, text, tei, tei_xml, pdf, pdf_bytes, image, page_image, path, physical_path, host, hostname, executable, vendor_path]
+source_contract:
+  corpus_id: s13-same-input-pdf-corpus
+  source_artifact: data/parse/layout_bakeoff.yaml
+  upstream_artifact: artifacts/parse_compat/document_segmentation_shadow.json
+  upstream_schema: document-segmentation-shadow.v2
+  java_source_artifact: artifacts/parse_compat/java_grobid_fulltext_semantics_source.json
+  page_count: 202
+  lane_page_count: 606
+  unpooled_cell_count: 54
+documents:
+  - {id: hub-2507.19457, source_sha256: ab3a5139bac83f192ad67529368d77b84b0d807e95a8e4fd0daa8d45fd046bec, pages: 96}
+  - {id: rlm-2512.24601, source_sha256: 8567362c22768d9b50d4a4a8d63bb28dda2c2b2051be30d67f70f645170429ca, pages: 43}
+  - {id: reca-2605.26525v1, source_sha256: a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8, pages: 63}
+lanes: [pdfalto, pdf_inspector_positioned, pdf_inspector_positioned_xy_cut]
+families: [paragraph, section, list_item, note, annex, marker]
+upstream_outcomes:
+  - {document_id: hub-2507.19457, lane: pdfalto, status: terminal_failure, failure_code: malformed}
+  - {document_id: hub-2507.19457, lane: pdf_inspector_positioned, status: pass, failure_code: null}
+  - {document_id: hub-2507.19457, lane: pdf_inspector_positioned_xy_cut, status: invalid_evidence, failure_code: digest_mismatch}
+  - {document_id: rlm-2512.24601, lane: pdfalto, status: invalid_evidence, failure_code: digest_mismatch}
+  - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned, status: pass, failure_code: null}
+  - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned_xy_cut, status: invalid_evidence, failure_code: digest_mismatch}
+  - {document_id: reca-2605.26525v1, lane: pdfalto, status: terminal_failure, failure_code: malformed}
+  - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned, status: pass, failure_code: null}
+  - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned_xy_cut, status: invalid_evidence, failure_code: digest_mismatch}
+page_receipts:
+  mode: complete_range_receipts
+  digest_algorithm: sha256
+  entries:
+    - {document_id: hub-2507.19457, lane: pdfalto, start_page: 1, end_page: 96, receipt_digest: "1111111111111111111111111111111111111111111111111111111111111111", status: propagated_upstream_terminal_failure}
+    - {document_id: hub-2507.19457, lane: pdf_inspector_positioned, start_page: 1, end_page: 96, receipt_digest: "2222222222222222222222222222222222222222222222222222222222222222", status: reviewed}
+    - {document_id: hub-2507.19457, lane: pdf_inspector_positioned_xy_cut, start_page: 1, end_page: 96, receipt_digest: "3333333333333333333333333333333333333333333333333333333333333333", status: propagated_upstream_invalid_evidence}
+    - {document_id: rlm-2512.24601, lane: pdfalto, start_page: 1, end_page: 43, receipt_digest: "4444444444444444444444444444444444444444444444444444444444444444", status: propagated_upstream_invalid_evidence}
+    - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned, start_page: 1, end_page: 43, receipt_digest: "5555555555555555555555555555555555555555555555555555555555555555", status: reviewed}
+    - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned_xy_cut, start_page: 1, end_page: 43, receipt_digest: "6666666666666666666666666666666666666666666666666666666666666666", status: propagated_upstream_invalid_evidence}
+    - {document_id: reca-2605.26525v1, lane: pdfalto, start_page: 1, end_page: 63, receipt_digest: "7777777777777777777777777777777777777777777777777777777777777777", status: propagated_upstream_terminal_failure}
+    - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned, start_page: 1, end_page: 63, receipt_digest: "8888888888888888888888888888888888888888888888888888888888888888", status: reviewed}
+    - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned_xy_cut, start_page: 1, end_page: 63, receipt_digest: "9999999999999999999999999999999999999999999999999999999999999999", status: propagated_upstream_invalid_evidence}
+annotations:
+  - {id: annex-parent-001, document_id: hub-2507.19457, lane: pdf_inspector_positioned, region: annex, family: annex, span: {page: 94, block: 0, line: 0, token_start: 0, token_end: 4}, digest: "0f4a9c2d71b8e603c5a17e94f2d8a6319b0c7e45a2d6f8c1039e5b7a4c1d2e6f", provenance: independently_reviewed}
+  - {id: section-leaf-001, document_id: hub-2507.19457, lane: pdf_inspector_positioned, region: body, family: section, span: {page: 4, block: 1, line: 0, token_start: 0, token_end: 8}, digest: "1a7c4e902bd653f8e0c1a9d47b3265f081e2c6a93d7b4f5018c9e2a6d3b7f4c5", provenance: independently_reviewed}
+  - {id: paragraph-leaf-001, document_id: hub-2507.19457, lane: pdf_inspector_positioned, region: annex, family: paragraph, span: {page: 94, block: 0, line: 1, token_start: 0, token_end: 4}, digest: "2b8d5f103ce764a9f1d2b0e583c4976a192f3d7b604e8c1a5f9d2b6e703c4a8d", provenance: independently_reviewed, parent_id: annex-parent-001}
+  - {id: list-item-leaf-001, document_id: hub-2507.19457, lane: pdf_inspector_positioned, region: body, family: list_item, span: {page: 5, block: 1, line: 0, token_start: 0, token_end: 5}, digest: "3c9e6014adf875b021e3c6f794d5a8b2c306f1e8a7d4b9c520f6e3a1d8b7c4e9", provenance: independently_reviewed}
+  - {id: marker-leaf-001, document_id: hub-2507.19457, lane: pdf_inspector_positioned, region: body, family: marker, subtype: citation, span: {page: 5, block: 1, line: 1, token_start: 0, token_end: 1}, digest: "4daf7125be0986c132f4d7a805e6b9c3d417a2f9b8e5c0d6317f4a2b9c8e6d72", provenance: independently_reviewed}
+  - {id: note-absence-001, document_id: hub-2507.19457, lane: pdf_inspector_positioned, region: body, family: note, disposition: source_not_established, provenance: independently_reviewed}
+cell_evidence:
+  cells:
+    # Explicit 3 x 3 x 6 unpooled denominator. Non-pass upstream lanes retain typed propagation.
+    - {document_id: hub-2507.19457, lane: pdfalto, family: paragraph, status: propagated_upstream_terminal_failure}
+    - {document_id: hub-2507.19457, lane: pdfalto, family: section, status: propagated_upstream_terminal_failure}
+    - {document_id: hub-2507.19457, lane: pdfalto, family: list_item, status: propagated_upstream_terminal_failure}
+    - {document_id: hub-2507.19457, lane: pdfalto, family: note, status: propagated_upstream_terminal_failure}
+    - {document_id: hub-2507.19457, lane: pdfalto, family: annex, status: propagated_upstream_terminal_failure}
+    - {document_id: hub-2507.19457, lane: pdfalto, family: marker, status: propagated_upstream_terminal_failure}
+    - {document_id: hub-2507.19457, lane: pdf_inspector_positioned, family: paragraph, status: reviewed}
+    - {document_id: hub-2507.19457, lane: pdf_inspector_positioned, family: section, status: reviewed}
+    - {document_id: hub-2507.19457, lane: pdf_inspector_positioned, family: list_item, status: reviewed}
+    - {document_id: hub-2507.19457, lane: pdf_inspector_positioned, family: note, status: source_not_established}
+    - {document_id: hub-2507.19457, lane: pdf_inspector_positioned, family: annex, status: reviewed}
+    - {document_id: hub-2507.19457, lane: pdf_inspector_positioned, family: marker, status: reviewed}
+    - {document_id: hub-2507.19457, lane: pdf_inspector_positioned_xy_cut, family: paragraph, status: propagated_upstream_invalid_evidence}
+    - {document_id: hub-2507.19457, lane: pdf_inspector_positioned_xy_cut, family: section, status: propagated_upstream_invalid_evidence}
+    - {document_id: hub-2507.19457, lane: pdf_inspector_positioned_xy_cut, family: list_item, status: propagated_upstream_invalid_evidence}
+    - {document_id: hub-2507.19457, lane: pdf_inspector_positioned_xy_cut, family: note, status: propagated_upstream_invalid_evidence}
+    - {document_id: hub-2507.19457, lane: pdf_inspector_positioned_xy_cut, family: annex, status: propagated_upstream_invalid_evidence}
+    - {document_id: hub-2507.19457, lane: pdf_inspector_positioned_xy_cut, family: marker, status: propagated_upstream_invalid_evidence}
+    - {document_id: rlm-2512.24601, lane: pdfalto, family: paragraph, status: propagated_upstream_invalid_evidence}
+    - {document_id: rlm-2512.24601, lane: pdfalto, family: section, status: propagated_upstream_invalid_evidence}
+    - {document_id: rlm-2512.24601, lane: pdfalto, family: list_item, status: propagated_upstream_invalid_evidence}
+    - {document_id: rlm-2512.24601, lane: pdfalto, family: note, status: propagated_upstream_invalid_evidence}
+    - {document_id: rlm-2512.24601, lane: pdfalto, family: annex, status: propagated_upstream_invalid_evidence}
+    - {document_id: rlm-2512.24601, lane: pdfalto, family: marker, status: propagated_upstream_invalid_evidence}
+    - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned, family: paragraph, status: reviewed}
+    - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned, family: section, status: reviewed}
+    - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned, family: list_item, status: reviewed}
+    - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned, family: note, status: source_not_established}
+    - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned, family: annex, status: reviewed}
+    - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned, family: marker, status: reviewed}
+    - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned_xy_cut, family: paragraph, status: propagated_upstream_invalid_evidence}
+    - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned_xy_cut, family: section, status: propagated_upstream_invalid_evidence}
+    - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned_xy_cut, family: list_item, status: propagated_upstream_invalid_evidence}
+    - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned_xy_cut, family: note, status: propagated_upstream_invalid_evidence}
+    - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned_xy_cut, family: annex, status: propagated_upstream_invalid_evidence}
+    - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned_xy_cut, family: marker, status: propagated_upstream_invalid_evidence}
+    - {document_id: reca-2605.26525v1, lane: pdfalto, family: paragraph, status: propagated_upstream_terminal_failure}
+    - {document_id: reca-2605.26525v1, lane: pdfalto, family: section, status: propagated_upstream_terminal_failure}
+    - {document_id: reca-2605.26525v1, lane: pdfalto, family: list_item, status: propagated_upstream_terminal_failure}
+    - {document_id: reca-2605.26525v1, lane: pdfalto, family: note, status: propagated_upstream_terminal_failure}
+    - {document_id: reca-2605.26525v1, lane: pdfalto, family: annex, status: propagated_upstream_terminal_failure}
+    - {document_id: reca-2605.26525v1, lane: pdfalto, family: marker, status: propagated_upstream_terminal_failure}
+    - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned, family: paragraph, status: reviewed}
+    - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned, family: section, status: reviewed}
+    - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned, family: list_item, status: reviewed}
+    - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned, family: note, status: source_not_established}
+    - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned, family: annex, status: reviewed}
+    - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned, family: marker, status: reviewed}
+    - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned_xy_cut, family: paragraph, status: propagated_upstream_invalid_evidence}
+    - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned_xy_cut, family: section, status: propagated_upstream_invalid_evidence}
+    - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned_xy_cut, family: list_item, status: propagated_upstream_invalid_evidence}
+    - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned_xy_cut, family: note, status: propagated_upstream_invalid_evidence}
+    - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned_xy_cut, family: annex, status: propagated_upstream_invalid_evidence}
+    - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned_xy_cut, family: marker, status: propagated_upstream_invalid_evidence}
+  rule: every document-lane-family combination is independently reviewed and unpooled
+  positive_annotation_requires: [provenance, digest, span, parent_region]
+  allowed_absence: [reviewed_absent, source_not_established, no_positive_denominator, propagated_upstream_terminal_failure, propagated_upstream_invalid_evidence]
+  upstream_propagation: terminal_failure_or_invalid_evidence_must_not_become_pass_or_zero
+  note_policy: no_positive_invention; note_or_footnote_conflation_forbidden
+  marker_policy: subtype_only_citation_figure_table_equation; target_forbidden; resolution_forbidden
+  nesting_policy: annex_parent_only; leaf_roles_disjoint; sibling_overlap_forbidden; body_annex_crossing_forbidden
+  lexical_policy: [Word, Whitespace, Punctuation, Symbol]
+  visual_policy: opaque_evidence_only; visual_lexical_assignment_forbidden
+  digest_policy: sha256; placeholder_or_sut_derived_digest_forbidden
+  denominator_policy: no_pooling; no_denominator_erosion
+  evidence_status_for_each_cell: reviewed_or_typed_non_positive
