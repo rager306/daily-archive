@@ -309,8 +309,9 @@ fn validate_manifest(
 fn validate_oracle(o: &Value, e: &mut Vec<String>) {
     bad(
         e,
-        at(o, &["schema_version"]).as_str() == Some("segmentation-oracle.v1"),
-        "[oracle-schema] wrong oracle schema",
+        at(o, &["schema_version"]).as_str() == Some("segmentation-oracle.v2")
+            && at(o, &["redaction"]).as_str() == Some("digest_only_source_bound_ordinals"),
+        "[oracle-schema] wrong oracle schema or redaction",
     );
     let f = strings(o, &["forbidden_fields"]);
     for x in [
@@ -319,8 +320,10 @@ fn validate_oracle(o: &Value, e: &mut Vec<String>) {
         "tei_xml",
         "page_image",
         "physical_path",
+        "path",
         "hostname",
         "executable",
+        "vendor_path",
     ] {
         bad(
             e,
@@ -328,6 +331,12 @@ fn validate_oracle(o: &Value, e: &mut Vec<String>) {
             "[redaction] forbidden raw field removed",
         );
     }
+    bad(
+        e,
+        at(o, &["genre", "provenance"]).as_str() == Some("source_bound_reviewed")
+            && at(o, &["genre", "use"]).as_str() == Some("stratification_only"),
+        "[genre-policy] oracle genre is not stratification-only",
+    );
     let mut keys = BTreeSet::new();
     let receipts = at(o, &["receipts"]).as_sequence().unwrap();
     bad(
@@ -335,6 +344,7 @@ fn validate_oracle(o: &Value, e: &mut Vec<String>) {
         receipts.len() == 9,
         "[oracle-coverage] expected nine document/lane receipts",
     );
+    let mut pages = 0_i64;
     for r in receipts {
         let key = format!(
             "{}/{}",
@@ -346,13 +356,72 @@ fn validate_oracle(o: &Value, e: &mut Vec<String>) {
             keys.insert(key),
             "[duplicate-oracle-key] duplicate receipt",
         );
-        let t = &r["token_receipts"][0];
+        pages += r["page_count"].as_i64().unwrap_or_default();
         bad(
             e,
-            REGIONS.iter().any(|x| t["region"].as_str() == Some(*x)),
-            "[unknown-region] oracle region not closed",
+            r["page_receipt_ranges"]
+                .as_sequence()
+                .map(|x| !x.is_empty())
+                .unwrap_or(false),
+            "[page-coverage] page receipts missing",
         );
+        bad(
+            e,
+            r["admitted_lexical_denominator"]
+                .as_i64()
+                .unwrap_or_default()
+                > 0,
+            "[denominator] lexical denominator missing",
+        );
+        bad(
+            e,
+            r["region_runs"]
+                .as_sequence()
+                .map(|x| x.len() == REGIONS.len())
+                .unwrap_or(false),
+            "[region-coverage] full region family missing",
+        );
+        if let Some(runs) = r["region_runs"].as_sequence() {
+            let mut seen = BTreeSet::new();
+            for run in runs {
+                let region = run["region"].as_str().unwrap_or("");
+                bad(
+                    e,
+                    REGIONS.contains(&region) && seen.insert(region.to_owned()),
+                    "[unknown-region] oracle region not closed",
+                );
+                bad(
+                    e,
+                    run["absence"].as_str() == Some("reviewed_absent")
+                        || run["start"].is_sequence(),
+                    "[absence] region lacks reviewed annotation or typed absence",
+                );
+            }
+        }
+        bad(
+            e,
+            r["furniture_sequence"]
+                .as_sequence()
+                .map(|x| !x.is_empty())
+                .unwrap_or(false),
+            "[furniture] ordered furniture evidence missing",
+        );
+        if let Some(furniture) = r["furniture_sequence"].as_sequence() {
+            for item in furniture {
+                bad(
+                    e,
+                    FURNITURE.contains(&item["subtype"].as_str().unwrap_or(""))
+                        && item["evidence"].as_str() == Some("reviewed_digest_bound"),
+                    "[furniture] subtype/evidence not closed",
+                );
+            }
+        }
     }
+    bad(
+        e,
+        pages == 606,
+        "[page-coverage] exact 606 lane-pages required",
+    );
 }
 #[test]
 fn s02_data_contract_is_complete_source_bound_and_redacted() {
