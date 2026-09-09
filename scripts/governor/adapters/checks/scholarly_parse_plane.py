@@ -406,6 +406,21 @@ def _fulltext_blocks_quarantine_tokens_present(code: str, tokens: list[str]) -> 
             hits.append(token)
     return hits
 
+def _callout_matching_quarantine_spec(defaults: Any) -> tuple[list[str], list[str]]:
+    if not isinstance(defaults, dict):
+        return [], []
+    spec = defaults.get("callout_matching_quarantine")
+    if not isinstance(spec, dict):
+        return [], []
+    tokens = [str(item).strip() for item in (spec.get("tokens") or []) if isinstance(item, str) and str(item).strip()]
+    boundaries = [str(item).strip() for item in (spec.get("boundaries") or []) if isinstance(item, str) and str(item).strip()]
+    return tokens, boundaries
+
+def _callout_matching_quarantine_tokens_present(code: str, tokens: list[str]) -> list[str]:
+    """Find S04 matcher atoms in production boundaries, excluding comments."""
+    code = _strip_header_quarantine_comments(code)
+    return [token for token in tokens if re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}(?![A-Za-z0-9_])", code)]
+
 def _body_accounting_quarantine_tokens_present(code: str, tokens: list[str]) -> list[str]:
     """Find typed names and call-sites in code, excluding line comments."""
     code = _strip_header_quarantine_comments(code)
@@ -1623,6 +1638,24 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             hits = _fulltext_blocks_quarantine_tokens_present(boundary_src, fulltext_tokens)
             if hits:
                 flag("policy_stamp", "integration", f"{file_path.relative_to(root)}#fulltext_blocks_quarantine", "S03 semantic companion remains shadow-only", hits)
+
+    callout_tokens, callout_boundaries = _callout_matching_quarantine_spec(defaults)
+    callout_quarantine = defaults.get("callout_matching_quarantine") or {}
+    # The S04 matcher has its own quarantine. Do not fold it into S03: each
+    # family must remain independently auditable and fail closed.
+    if callout_quarantine.get("production_authority") != "java_http" or callout_quarantine.get("observe_mode") != "shadow_receipt":
+        flag("policy_stamp", "integration", "data/parse/grobid_compatibility.yaml#defaults.callout_matching_quarantine", {"production_authority": "java_http", "observe_mode": "shadow_receipt"}, callout_quarantine)
+    for relative in callout_boundaries:
+        path = root / relative
+        files = sorted(path.rglob("*.rs")) if path.is_dir() else ([path] if path.is_file() else [])
+        for file_path in files:
+            try:
+                boundary_src = file_path.read_text(encoding="utf-8")
+            except OSError as error:
+                boundary_src = str(error)
+            hits = _callout_matching_quarantine_tokens_present(boundary_src, callout_tokens)
+            if hits:
+                flag("policy_stamp", "integration", f"{file_path.relative_to(root)}#callout_matching_quarantine", "S04 matcher remains shadow-only", hits)
 
     real_tei = root / "crates/da-parse/src/real_tei_tests.rs"
     if real_tei.is_file():

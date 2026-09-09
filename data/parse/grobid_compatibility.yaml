@@ -99,6 +99,23 @@ defaults:
     graph_write: forbidden
     import_eligible: false
     auto_promote: forbidden
+  # S04 callout matching is a downstream, digest-only shadow join. Keep this
+  # separate from S03 so the earlier quarantine remains independently audited.
+  callout_matching_quarantine:
+    tokens: [match_native_callouts, NativeCalloutMatchingOutcome, DigestOnlyTargetInventory]
+    boundaries:
+      - crates/da-cli/src/source_cli.rs
+      - crates/da-ports/src/parser.rs
+      - crates/da-application/src
+      - crates/da-adapters/src
+      - crates/da-parse/src/parser.rs
+      - crates/da-parse/src/projector.rs
+    production_authority: java_http
+    observe_mode: shadow_receipt
+    production_route: forbidden
+    graph_write: forbidden
+    import_eligible: false
+    auto_promote: forbidden
   # Closed P0-P9 cascade skeleton (ADR-076). production_authority is never native.
   # fsm_consult must be parse_pdf_consults or none. later names stay later.
   # P5 production_stamp records only Java ParsedArticle body observations.

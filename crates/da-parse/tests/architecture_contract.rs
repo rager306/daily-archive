@@ -2131,6 +2131,67 @@ fn s16_fulltext_blocks_quarantine_contract() {
 }
 
 #[test]
+fn s17_callout_matching_quarantine_contract() {
+    const TOKENS: [&str; 3] = [
+        "match_native_callouts",
+        "NativeCalloutMatchingOutcome",
+        "DigestOnlyTargetInventory",
+    ];
+    let production_surfaces = [
+        "crates/da-cli/src/source_cli.rs",
+        "crates/da-ports/src/parser.rs",
+        "crates/da-application/src/lib.rs",
+        "crates/da-adapters/src/lib.rs",
+        "crates/da-parse/src/parser.rs",
+        "crates/da-parse/src/projector.rs",
+    ];
+    let mut leaked = Vec::new();
+    for surface in production_surfaces {
+        let code = s10_code_without_comments(&read_text(surface));
+        for token in TOKENS {
+            if code.contains(token) {
+                leaked.push(format!("{surface}: {token}"));
+            }
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "S04 matcher escaped shadow quarantine:\n{}",
+        leaked.join("\n")
+    );
+
+    let semantics = serde_yaml::from_str::<serde_yaml::Value>(&read_text(
+        "data/parse/callout_matching_semantics.yaml",
+    ))
+    .expect("callout matching semantics");
+    assert_eq!(semantics["marker_model"]["closed"], true);
+    assert_eq!(
+        semantics["marker_model"]["vocabulary"],
+        serde_yaml::Value::Sequence(vec![
+            serde_yaml::Value::String("citation".into()),
+            serde_yaml::Value::String("figure".into()),
+            serde_yaml::Value::String("table".into()),
+            serde_yaml::Value::String("equation".into()),
+        ])
+    );
+    assert_eq!(semantics["policy_locks"]["import_eligible"], false);
+    assert_eq!(semantics["policy_locks"]["graph_write"], "forbidden");
+    assert_eq!(semantics["policy_locks"]["auto_promote"], "forbidden");
+    assert_eq!(semantics["policy_locks"]["composition_splice"], "forbidden");
+
+    let synthetic =
+        "use da_parse::NativeCalloutMatchingOutcome;\nfn production() { match_native_callouts(); }";
+    assert!(TOKENS.iter().any(|token| synthetic.contains(token)));
+    assert!(s10_code_without_comments("// match_native_callouts in prose\n").is_empty());
+
+    let fsm = s10_code_without_comments(&read_text("crates/da-domain/src/fsm_policy.rs"));
+    assert!(
+        s10_decision_point_violations(&fsm).is_empty(),
+        "S04 changed the six DecisionPoint policy"
+    );
+}
+
+#[test]
 fn native_segmentation_boundary_scanner_fails_visible_on_synthetic_violations() {
     let synthetic = "use std::fs::File;\nuse serde::Serialize;\nfn compose_header() {}\n";
     assert!(!native_date_marker_hits(synthetic, &["std::fs", "compose_header"]).is_empty());
