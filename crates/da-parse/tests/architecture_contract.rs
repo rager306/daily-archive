@@ -4447,3 +4447,182 @@ fn s06_requirement_level_scanner_fails_visible_on_synthetic_coupling() {
         "R124/R130: scanner must ignore prose and compound identifiers"
     );
 }
+
+// ───── M499/S06/T02: six W0 triggers and policy lineage remain fail-closed ─────
+//
+// R124 names the six W0 honesty triggers. The sibling contracts retain the
+// backend identity, graph-freeze/write, and F1-not-oracle checks; those are
+// deliberately not extra rows in this matrix. This table is an executable
+// DATA/checker pin, not a second governor implementation.
+const S06_R124_W0_TRIGGERS: [(&str, &str, &str); 6] = [
+    (
+        "ledger_surface",
+        "ledger_surface",
+        "data/parse/grobid_compatibility.yaml",
+    ),
+    (
+        "backend_identity",
+        "backend_identity",
+        "data/parse/grobid_compatibility.yaml",
+    ),
+    (
+        "policy_stamp",
+        "policy_stamp",
+        "data/parse/grobid_compatibility.yaml",
+    ),
+    (
+        "silent_loss",
+        "silent_loss",
+        "data/parse/grobid_compatibility.yaml",
+    ),
+    (
+        "lexical_visual_mix",
+        "lexical_visual_mix",
+        "data/parse/native_visual_heads.yaml",
+    ),
+    (
+        "region_coverage",
+        "region_coverage",
+        "data/parse/document_segmentation.yaml",
+    ),
+];
+
+#[test]
+fn s06_r124_w0_trigger_matrix_is_six_unique_data_pinned_rows() {
+    let names: Vec<_> = S06_R124_W0_TRIGGERS
+        .iter()
+        .map(|(name, _, _)| *name)
+        .collect();
+    assert_eq!(
+        names.len(),
+        6,
+        "R124: W0 honesty matrix must contain exactly six triggers, not sibling gates"
+    );
+    let unique: BTreeSet<_> = names.iter().copied().collect();
+    assert_eq!(
+        unique.len(),
+        names.len(),
+        "R124: W0 trigger names must be unique: {names:?}"
+    );
+    let checker = read_text("scripts/governor/checks/scholarly_parse_plane.yaml");
+    for (trigger, checker_pin, data_path) in S06_R124_W0_TRIGGERS {
+        assert!(
+            checker.contains(checker_pin),
+            "R124: trigger `{trigger}` lost its governor checker pin `{checker_pin}`"
+        );
+        let data = read_text(data_path);
+        assert!(
+            !data.trim().is_empty(),
+            "R124: trigger `{trigger}` lost its DATA pin source `{data_path}`"
+        );
+    }
+    for sibling in [
+        "production_route",
+        "graph_freeze",
+        "denom_honesty",
+        "dep_boundary",
+        "f1_not_oracle",
+    ] {
+        assert!(
+            !names.contains(&sibling),
+            "R124: sibling contract `{sibling}` must not inflate the six-row W0 matrix"
+        );
+    }
+}
+
+#[test]
+fn s06_r119_policy_lineage_fallback_and_consult_set_are_explicit() {
+    let source_cli = s10_code_without_comments(&read_text("crates/da-cli/src/source_cli.rs"));
+    let grammar = read_text("crates/da-application/src/parse_grammar.rs");
+    let consult = read_text("crates/da-application/src/fsm_policy_consult.rs");
+    let compat = read_text("data/parse/grobid_compatibility.yaml");
+
+    assert!(
+        grammar.contains("pub fn resolve_parse_grammar")
+            && grammar.contains("unwrap_or(\"arxiv_pdf_dot\")"),
+        "R119: grammar route must fail-open to the DATA default profile"
+    );
+    assert!(
+        grammar.contains("pub fn resolve_parse_profile")
+            && grammar.contains("unwrap_or(ProfileRoute::Structural)"),
+        "R119: profile route must fail-open to the DATA structural default"
+    );
+    assert!(
+        consult.contains(
+            "FsmPolicyError::Load(_) | FsmPolicyError::Instantiate(_) | FsmPolicyError::Io(_)"
+        ) && consult.contains("NativeFallbackPolicy::from_yaml(yaml)"),
+        "R119: policy host load failure must fall back to the native policy"
+    );
+    assert!(
+        source_cli.contains("fn stamp_policy_none")
+            && source_cli.contains(
+                "stamp_parse_grammar(m, \"arxiv_pdf_dot\", \"unavailable\", \"none\", \"none\")"
+            ),
+        "R119: missing policy must retain explicit wire policy_source=none and policy_hash=none"
+    );
+    assert!(
+        source_cli.contains("m.insert(\"policy_hash\".into(), policy_hash.into())"),
+        "R119: policy lineage must preserve policy_hash or explicit none"
+    );
+    assert_eq!(
+        compat
+            .matches("parse_pdf_consults: [grammar_route, profile_route]")
+            .count(),
+        1,
+        "R119: parse_pdf consult lineage must be exactly grammar_route then profile_route"
+    );
+    assert!(
+        !compat.contains("parse_pdf_consults: [grammar_route, profile_route, ")
+            && !compat.contains("parse_pdf_consults: [profile_route, grammar_route]"),
+        "R119: a third consult or reordered policy route must fail closed"
+    );
+}
+
+#[test]
+fn s06_r127_p3_java_stamp_and_native_header_order_remain_bound() {
+    let source_cli = s10_code_without_comments(&read_text("crates/da-cli/src/source_cli.rs"));
+    assert!(
+        source_cli.contains("stamp_p3_header_observe(&mut m, parsed.header_authors.len())"),
+        "R127: P3 java_header_n must derive from Java ParsedArticle.header_authors"
+    );
+    assert!(
+        source_cli.contains("java_http") && source_cli.contains("shadow_receipt"),
+        "R127: P3 authority must remain Java with shadow receipt"
+    );
+    let native = read_text("crates/da-parse/tests/native_composition_contract.rs");
+    assert!(
+        native.contains("fn header_sequence_is_date_then_name_then_affiliation")
+            && native.contains("CompositionComponent::Date")
+            && native.contains("CompositionComponent::Names")
+            && native.contains("CompositionComponent::Affiliations"),
+        "R127: native header sequence must remain date then name then affiliation"
+    );
+}
+
+#[test]
+fn s06_policy_lineage_scanner_fails_visible_on_synthetic_drift() {
+    let missing_stamp = "fn stamp() { let policy_source = \"wasm\"; }";
+    assert!(
+        !missing_stamp.contains("policy_hash") && !missing_stamp.contains("policy=none"),
+        "R119: synthetic missing policy stamp must be visibly malformed"
+    );
+    let forbidden = "fn leaked() { let _ = ParserPort; let _ = GraphStore; let _ = promote; }";
+    let hits = s05_quarantine_hits(forbidden);
+    assert!(
+        hits.contains(&"ParserPort".to_owned())
+            && hits.contains(&"GraphStore".to_owned())
+            && hits.contains(&"promote".to_owned()),
+        "R119/R124: production route, graph write, and promotion drift must be fail-visible: {hits:?}"
+    );
+    let drifted = S06_R124_W0_TRIGGERS
+        .iter()
+        .map(|(name, _, _)| *name)
+        .chain(["ledger_surface"])
+        .collect::<Vec<_>>();
+    let unique: BTreeSet<_> = drifted.iter().copied().collect();
+    assert_ne!(
+        drifted.len(),
+        unique.len(),
+        "R124: synthetic duplicate trigger must fail the uniqueness boundary"
+    );
+}
