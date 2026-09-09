@@ -4818,6 +4818,163 @@ fn s02_native_family_same_n_adapter_stays_single_evaluator_and_quarantined() {
 }
 
 #[test]
+fn s03_native_family_adversarial_gate_stays_quarantined() {
+    let application_lib = read_text("crates/da-application/src/lib.rs");
+    let adapter = read_text("crates/da-application/src/native_family_same_n_adapter.rs");
+    let gate = read_text("crates/da-application/src/native_family_promotion_gate.rs");
+    let cli = read_text("crates/da-cli/src/source_cli.rs");
+    let parser = read_text("crates/da-ports/src/parser.rs");
+    let graph_store = read_text("crates/da-ports/src/graph_store.rs");
+    let promotion = read_text("crates/da-application/src/promotion.rs");
+
+    // Both surfaces stay standalone: no facade route and no adversarial
+    // production module can turn this dry-run proof into a runtime path.
+    for module in [
+        "pub mod native_family_promotion_gate;",
+        "pub mod native_family_same_n_adapter;",
+    ] {
+        assert!(
+            application_lib.lines().any(|line| line.trim() == module),
+            "S03: missing standalone module declaration: {module}"
+        );
+    }
+    assert!(!application_lib.contains("pub use native_family_promotion_gate"));
+    assert!(!application_lib.contains("pub use native_family_same_n_adapter"));
+    for (name, source) in [
+        ("source_cli", cli),
+        ("ParserPort", parser),
+        ("GraphStore", graph_store),
+        ("PromotionService", promotion),
+    ] {
+        assert!(
+            !source.contains("native_family_promotion_gate")
+                && !source.contains("native_family_same_n_adapter"),
+            "S03: {name} must not route through native-family dry-run surfaces"
+        );
+    }
+
+    // Strip comments and strings before scanning production code.  The
+    // split evaluator spelling keeps the scanner's own marker out of scope.
+    let adapter_code = s02_code_without_comments_and_strings(&adapter);
+    assert_eq!(
+        adapter_code
+            .matches(concat!("aggregate_same_n_", "ablation", "("))
+            .count(),
+        1,
+        "S03: adapter must retain exactly one canonical evaluator call"
+    );
+    let forbidden = [
+        concat!("da_", "parse"),
+        "ParserPort",
+        "source_cli",
+        "PromotionService",
+        "GraphStore",
+        "DirectGraphStore",
+        "std::fs",
+        "reqwest",
+        "TcpStream",
+        "Command::new",
+        "parse_pdf",
+        "deploy_candidate",
+        "import_candidate",
+        "auto_promote_candidate",
+        "promote_candidate",
+        "create_node",
+        "create_edge",
+        "set_node_property",
+        "set_edge_property",
+        "filesystem",
+        "network",
+        "process",
+    ];
+    for token in forbidden {
+        assert!(
+            !adapter_code.contains(token),
+            "S03: forbidden production-boundary token leaked into adapter: {token}"
+        );
+    }
+    for token in [
+        "fn denominator",
+        "fn order_digest",
+        "fn conservation_ledger",
+        "sort_by",
+        "sort_unstable",
+        ".filter(",
+        "average(",
+        "mean(",
+    ] {
+        assert!(
+            !adapter_code.contains(token),
+            "S03: local evaluator/pooling helper leaked into adapter: {token}"
+        );
+    }
+
+    // The gate has the same quarantine boundary, while its source-level
+    // vocabulary remains tied to typed evidence rather than writes.
+    let gate_code = s02_code_without_comments_and_strings(&gate);
+    for token in [
+        concat!("da_", "parse"),
+        "ParserPort",
+        "PromotionService",
+        "GraphStore",
+        "DirectGraphStore",
+        "Command::new",
+        "parse_pdf",
+        "deploy_candidate",
+        "import_candidate",
+        "auto_promote_candidate",
+        "promote_candidate",
+        "create_node",
+        "create_edge",
+        "set_node_property",
+        "set_edge_property",
+    ] {
+        assert!(
+            !gate_code.contains(token),
+            "S03: forbidden production-boundary token leaked into gate: {token}"
+        );
+    }
+
+    let compatibility = read_text("data/parse/grobid_compatibility.yaml");
+    for pin in [
+        "import_eligible: false",
+        "auto_promote: forbidden",
+        "this_wave_promotes: none",
+        "deployed: false",
+        "rollback_target: java-grobid-http@0.9.0-crf",
+    ] {
+        assert!(
+            compatibility.contains(pin),
+            "S03: missing policy pin: {pin}"
+        );
+    }
+    let composition = read_text("data/parse/native_fulltext_composition.yaml");
+    assert!(composition.contains("pooled_winner: forbidden"));
+    assert!(composition.contains("independently_selectable: [header, references]"));
+
+    let fsm = read_text("crates/da-domain/src/fsm_policy.rs");
+    assert!(
+        s10_decision_point_violations(&s10_code_without_comments(&fsm)).is_empty(),
+        "S03: DecisionPoint vocabulary drifted"
+    );
+
+    // Synthetic mutations are intentionally checked by the same predicates:
+    // a second evaluator call and a graph coupling must be observable.
+    let synthetic = "fn drift() { aggregate_same_n_ablation(x); aggregate_same_n_ablation(y); let _ = GraphStore; }";
+    assert_eq!(
+        synthetic
+            .matches(concat!("aggregate_same_n_", "ablation", "("))
+            .count(),
+        2,
+        "S03: synthetic second evaluator call must be fail-visible"
+    );
+    assert!(
+        synthetic.contains("GraphStore"),
+        "S03: synthetic GraphStore coupling must be fail-visible"
+    );
+}
+
+#[test]
 fn s06_policy_lineage_scanner_fails_visible_on_synthetic_drift() {
     let missing_stamp = "fn stamp() { let policy_source = \"wasm\"; }";
     assert!(
