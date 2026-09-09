@@ -38,6 +38,7 @@ mod layout_lattice;
 mod lift;
 mod native_affiliation;
 mod native_body;
+mod native_callout_matching;
 mod native_citation;
 mod native_composition;
 mod native_date;
@@ -112,6 +113,14 @@ pub use native_body::{
     NativeBodyAccountant, NativeBodyAccounting, NativeBodyError, NativeBodyLimits,
     NativeBodySequenceCounts, NativeBodySequenceIdentity, NativeBodySequenceInput,
     NativeBodySequenceReceipt, NativeBodySequenceStep, run_native_body_sequence, source_digest,
+};
+pub use native_callout_matching::{
+    AdjacencyDisposition, CalloutMatch, CalloutPosition, CalloutTargetClass,
+    CalloutUnresolvedReason, DigestOnlyCalloutTarget, DigestOnlyTargetInventory,
+    MAX_CALLOUT_OBSERVATIONS, MajorityStyleDisposition, MajorityStyleOutcome,
+    NATIVE_CALLOUT_MATCHING_SCHEMA_VERSION, NativeCalloutMatchingError,
+    NativeCalloutMatchingOutcome, NativeCalloutUpstreamStatus, ObservedCalloutStyle,
+    inventory_digest, match_native_callouts,
 };
 pub use native_citation::{
     CitationField, CitationFieldRole, CitationSpan, NATIVE_CITATION_ANCHOR_SCANNER_ID,
