@@ -4339,3 +4339,111 @@ fn s05_rehearsal_quarantine_scanner_fails_visible_on_synthetic_coupling() {
         "S05: comments and compound identifiers tripped scanner"
     );
 }
+
+// ───── M499/S06/T01: named requirement-level evidence closure ─────
+//
+// This is intentionally an aggregator, not a second governor.  It gives the
+// milestone validator one executable source location that names the
+// requirements whose proof is distributed across the earlier contracts.
+#[test]
+fn s06_requirement_level_evidence_closure() {
+    let fsm = s10_code_without_comments(&read_text("crates/da-domain/src/fsm_policy.rs"));
+    assert!(
+        s10_decision_point_violations(&fsm).is_empty(),
+        "R118: three-automata conservation requires the approved six DecisionPoint wires"
+    );
+    for wire in [
+        "grammar_route",
+        "batch_admission",
+        "concurrency_tune",
+        "retry_policy",
+        "summary_depth",
+        "profile_route",
+    ] {
+        assert!(
+            fsm.contains(wire),
+            "R118/R119: approved DecisionPoint wire disappeared: {wire}"
+        );
+    }
+
+    let mut header_hits = Vec::new();
+    for boundary in HEADER_QUARANTINE_BOUNDARIES {
+        header_hits.extend(
+            header_quarantine_hits(&read_text(boundary))
+                .into_iter()
+                .map(|hit| format!("{boundary}: {hit}")),
+        );
+    }
+    assert!(
+        header_hits.is_empty(),
+        "R127: parse-pdf ParserPort/source_cli header quarantine leaked: {header_hits:?}"
+    );
+
+    let source_cli = read_text("crates/da-cli/src/source_cli.rs");
+    let source_cli_code = s10_code_without_comments(&source_cli);
+    assert!(
+        source_cli_code.contains("stamp_p3_header_observe(&mut m, parsed.header_authors.len())"),
+        "R127: P3 must stamp Java-lifted header_authors, not native composition"
+    );
+    assert!(
+        source_cli_code.contains("java_http") && source_cli_code.contains("shadow_receipt"),
+        "R127: P3 authority must remain java_http with shadow_receipt observation"
+    );
+    assert!(
+        source_cli_code.contains("stamp_parse_grammar") && source_cli_code.contains("none"),
+        "R119: policy-none fallback must remain explicitly stamped"
+    );
+
+    let compat = read_text("data/parse/grobid_compatibility.yaml");
+    assert!(
+        compat.contains("parse_pdf_consults: [grammar_route, profile_route]"),
+        "R119: parse_pdf consult lineage must remain exactly grammar_route then profile_route"
+    );
+    assert!(
+        compat.contains("production_authority: java_http")
+            && compat.contains("observe_mode: shadow_receipt")
+            && compat.contains("this_wave_promotes: none"),
+        "R118/R127/R130: production authority, quarantine, and no-promotion freeze drifted"
+    );
+
+    let rehearsal = read_text(S05_REHEARSAL_EXAMPLE);
+    assert!(
+        s05_quarantine_hits(&rehearsal).is_empty(),
+        "R130: offline rehearsal must remain free of parse, graph, import, and promotion coupling"
+    );
+    let application_manifest = read_text("crates/da-application/Cargo.toml");
+    assert!(
+        !manifest_dependency_names(&application_manifest)
+            .iter()
+            .any(|(_, name)| name == "da-parse"),
+        "R118/R130: onion boundary must not permit da-application -> da-parse"
+    );
+
+    let da_parse_manifest = read_text("crates/da-parse/Cargo.toml");
+    let forbidden = ["samyama", "ruvllm", "sona", "redb", "da-application"];
+    let deps = manifest_dependency_names(&da_parse_manifest);
+    for name in forbidden {
+        assert!(
+            !deps.iter().any(|(_, dependency)| dependency == name),
+            "R124: da-parse forbidden dependency leaked into manifest: {name}"
+        );
+    }
+}
+
+#[test]
+fn s06_requirement_level_scanner_fails_visible_on_synthetic_coupling() {
+    let synthetic = "fn leaked() { let _ = ParserPort; let _ = GraphStore; }";
+    let hits = s05_quarantine_hits(synthetic);
+    assert!(
+        !hits.is_empty(),
+        "R124/R130: shared quarantine scanner must expose synthetic production coupling"
+    );
+    assert!(
+        hits.contains(&"ParserPort".to_owned()) && hits.contains(&"GraphStore".to_owned()),
+        "R118/R124: synthetic parse and graph coupling must both be fail-visible: {hits:?}"
+    );
+    assert!(
+        s05_quarantine_hits("// ParserPort GraphStore\nlet source_cli_value = 1;").is_empty(),
+        "R124/R130: scanner must ignore prose and compound identifiers"
+    );
+}
