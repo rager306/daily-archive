@@ -4713,6 +4713,111 @@ fn s01_native_family_promotion_gate_stays_out_of_production_parse_and_write_boun
 }
 
 #[test]
+fn s02_native_family_same_n_adapter_stays_single_evaluator_and_quarantined() {
+    let application_lib = read_text("crates/da-application/src/lib.rs");
+    let adapter = read_text("crates/da-application/src/native_family_same_n_adapter.rs");
+    let cli = read_text("crates/da-cli/src/source_cli.rs");
+    let parser = read_text("crates/da-ports/src/parser.rs");
+    let graph_store = read_text("crates/da-ports/src/graph_store.rs");
+    let promotion = read_text("crates/da-application/src/promotion.rs");
+
+    assert!(
+        application_lib
+            .lines()
+            .any(|line| line.trim() == "pub mod native_family_same_n_adapter;"),
+        "S02: adapter must be registered as a standalone application module"
+    );
+    assert!(
+        !application_lib.contains("pub use native_family_same_n_adapter"),
+        "S02: adapter must not be broad-facade re-exported"
+    );
+    for (name, source) in [
+        ("source_cli", cli),
+        ("ParserPort", parser),
+        ("GraphStore", graph_store),
+        ("PromotionService", promotion),
+    ] {
+        assert!(
+            !source.contains("native_family_same_n_adapter"),
+            "S02: {name} must not import or route through the dry-run adapter"
+        );
+    }
+
+    // Keep the denylist out of the scanned source with split literals. This
+    // makes a forbidden coupling fail visibly without self-matching here.
+    let code = s10_code_without_comments(&adapter);
+    assert_eq!(
+        code.matches(concat!("aggregate_same_n_", "ablation", "("))
+            .count(),
+        1,
+        "S02: adapter must invoke the canonical same-n evaluator exactly once"
+    );
+    for token in [
+        concat!("da_", "parse"),
+        "ParserPort",
+        "PromotionService",
+        "GraphStore",
+        "DirectGraphStore",
+        "source_cli",
+        "Command::new",
+        "std::fs",
+        "reqwest",
+        "TcpStream",
+        "spawn(",
+        "create_node",
+        "create_edge",
+        "set_node_property",
+        "set_edge_property",
+        "deploy_candidate",
+        "import_candidate",
+        "auto_promote_candidate",
+        "promote_candidate",
+        "filesystem",
+        "network",
+        "process",
+        "average(",
+        "mean(",
+        "sort_by",
+        "sort_unstable",
+        ".filter(",
+    ] {
+        assert!(
+            !code.contains(token),
+            "S02: forbidden adapter coupling or duplicate evaluator operation: {token}"
+        );
+    }
+    for token in [
+        "fn denominator",
+        "fn order_digest",
+        "fn conservation_ledger",
+    ] {
+        assert!(
+            !code.contains(token),
+            "S02: adapter contains a local evaluator-like helper: {token}"
+        );
+    }
+
+    // Synthetic controls prove the scanner's critical negative checks are
+    // fail-visible rather than merely documenting an architectural intent.
+    let synthetic = "fn drift() { aggregate_same_n_ablation(x); rows.sort_by_key(|r| r.order); let _ = GraphStore; }";
+    assert_eq!(
+        synthetic
+            .matches(concat!("aggregate_same_n_", "ablation", "("))
+            .count(),
+        1,
+        "S02: synthetic second evaluator call must be detectable"
+    );
+    assert!(
+        synthetic.contains("sort_by"),
+        "S02: row sorting drift must be detectable"
+    );
+    assert!(
+        synthetic.contains("GraphStore"),
+        "S02: graph coupling drift must be detectable"
+    );
+}
+
+#[test]
 fn s06_policy_lineage_scanner_fails_visible_on_synthetic_drift() {
     let missing_stamp = "fn stamp() { let policy_source = \"wasm\"; }";
     assert!(
