@@ -6,7 +6,7 @@
 use serde::{Deserialize, Serialize};
 
 /// One of the five evidence families supported by the derived protocol.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FamilyId {
     Segmentation,
