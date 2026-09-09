@@ -5138,7 +5138,174 @@ fn s04_native_family_decision_packages_stay_independent_and_quarantined() {
 }
 
 #[test]
-fn s06_policy_lineage_scanner_fails_visible_on_synthetic_drift() {
+fn s05_native_family_gate_rehearsal_stops_at_human_gate_and_preserves_java() {
+    let example = read_text("crates/da-cli/examples/native_family_gate_rehearsal.rs");
+    let example_code = s02_code_without_comments_and_strings(&example);
+    let application_lib = read_text("crates/da-application/src/lib.rs");
+    let source_cli = read_text("crates/da-cli/src/source_cli.rs");
+    let parser_port = read_text("crates/da-ports/src/parser.rs");
+    let compatibility = read_text("data/parse/grobid_compatibility.yaml");
+    let composition = read_text("data/parse/native_fulltext_composition.yaml");
+    let fsm = s10_code_without_comments(&read_text("crates/da-domain/src/fsm_policy.rs"));
+
+    // The rehearsal is a standalone example only.  It must not become a
+    // fourth native-family application facade or a source_cli route.
+    assert!(example.contains("pub struct ReviewDigest"));
+    assert!(example.contains("native-family-review-digest.v1"));
+    assert!(example.contains("HumanGateRequired"));
+    assert!(example.contains("assemble_family_decision_set(input())"));
+    assert!(example.contains("init_pipeline_logging(\"native_family_gate_rehearsal\")"));
+    assert!(!application_lib.contains("native_family_gate_rehearsal"));
+    assert!(!source_cli.contains("native_family_gate_rehearsal"));
+    for module in [
+        "native_family_promotion_gate",
+        "native_family_same_n_adapter",
+        "native_family_decision_packages",
+    ] {
+        assert_eq!(
+            application_lib
+                .lines()
+                .filter(|line| line.trim() == format!("pub mod {module};"))
+                .count(),
+            1,
+            "S05: existing S01-S04 owner module must remain exactly once: {module}"
+        );
+    }
+    assert!(
+        !application_lib.contains("pub mod native_family_gate_rehearsal;")
+            && !application_lib.contains("pub use native_family_gate_rehearsal")
+    );
+
+    // Closed wire and no-effect pins are asserted against the producer text,
+    // while executable coupling is scanned after comments and strings are
+    // removed so the denylist cannot self-match its own documentation.
+    for token in [
+        "can_auto_promote",
+        "java_production_unchanged",
+        "decision_point_consults",
+        "PooledWinnerDigest::Forbidden",
+        "ReviewGate::HumanGateRequired",
+        "ReviewOutcome::Incomplete",
+        "Vec::new()",
+        "S05-R01",
+        "S05-R02",
+        "S05-R03",
+        "S05-R04",
+        "S05-R05",
+        "S05-R06",
+    ] {
+        assert!(
+            example.contains(token),
+            "S05: missing digest contract token: {token}"
+        );
+    }
+    for token in [
+        concat!("da_", "parse"),
+        "ParserPort",
+        "source_cli",
+        "GraphStore",
+        "DirectGraphStore",
+        "PromotionService",
+        "parse_pdf",
+        "std::fs",
+        "Command::new",
+        "spawn(",
+        "create_node",
+        "create_edge",
+        "set_node_property",
+        "set_edge_property",
+        "deploy_candidate",
+        "import_candidate",
+        "promote_candidate",
+        "auto_promote_candidate",
+        "aggregate_same_n_ablation",
+        "average(",
+        "mean(",
+        "metric_aggregation",
+        "recompute_metrics",
+    ] {
+        assert!(
+            !example_code.contains(token),
+            "S05: forbidden production or evaluator coupling leaked into rehearsal: {token}"
+        );
+    }
+
+    // The production composition root retains the Java parse consults and
+    // the ParserPort remains parse-only; the rehearsal is absent from both.
+    assert!(source_cli.contains("stamp_parse_grammar"));
+    assert!(source_cli.contains("grobid_profile_from_route"));
+    assert!(source_cli.contains("crate::parse_profile"));
+    assert!(
+        parser_port.contains("pub trait ParserPort")
+            && !parser_port.contains("native_family_gate_rehearsal")
+    );
+    assert!(!source_cli.contains("assemble_family_decision_set"));
+    assert!(s10_decision_point_violations(&fsm).is_empty());
+    for variant in [
+        "GrammarRoute",
+        "BatchAdmission",
+        "ConcurrencyTune",
+        "RetryPolicy",
+        "SummaryDepth",
+        "ProfileRoute",
+    ] {
+        assert!(
+            fsm.contains(variant),
+            "S05: missing DecisionPoint variant: {variant}"
+        );
+    }
+
+    for pin in [
+        "import_eligible: false",
+        "auto_promote: forbidden",
+        "this_wave_promotes: none",
+        "deployed: false",
+        "rollback_target: java-grobid-http@0.9.0-crf",
+    ] {
+        assert!(
+            compatibility.contains(pin),
+            "S05: missing compatibility pin: {pin}"
+        );
+    }
+    for pin in [
+        "pooled_winner: forbidden",
+        "independently_selectable: [header, references]",
+        "citation_names_total: 2198",
+        "references_total: 207",
+        "java_header_authors_equals: header_raw_total",
+        "hub_native_accepted_header: 20",
+        "hub_java_header_raw: 21",
+    ] {
+        assert!(
+            composition.contains(pin),
+            "S05: missing composition pin: {pin}"
+        );
+    }
+
+    // Fail-visible controls: each critical boundary mutation is paired with
+    // its exact detector token rather than relying on a broad any-match.
+    let synthetic = [
+        ("use da_parse::ParserPort;", concat!("da_", "parse")),
+        ("let _ = GraphStore::create_node();", "GraphStore"),
+        ("source_cli::native_family_gate_rehearsal();", "source_cli"),
+        ("let pooled_winner = header;", "pooled_winner"),
+        (
+            "auto_promote_candidate(candidate);",
+            "auto_promote_candidate",
+        ),
+        (
+            "aggregate_same_n_ablation(candidate);",
+            "aggregate_same_n_ablation",
+        ),
+    ];
+    for (mutation, detector) in synthetic {
+        let hits = s02_code_without_comments_and_strings(mutation);
+        assert!(
+            hits.contains(detector),
+            "S05: synthetic mutation was not fail-visible for {detector}: {mutation}"
+        );
+    }
+
     let missing_stamp = "fn stamp() { let policy_source = \"wasm\"; }";
     assert!(
         !missing_stamp.contains("policy_hash") && !missing_stamp.contains("policy=none"),
