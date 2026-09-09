@@ -116,6 +116,22 @@ defaults:
     graph_write: forbidden
     import_eligible: false
     auto_promote: forbidden
+  # S05/T04 specialized metadata stays an accountant-bound offline shadow.
+  # The dedicated s18 scanner must inspect only these production boundaries.
+  consolidation_specialized_quarantine:
+    tokens: [evaluate_native_consolidation_specialized, NativeConsolidationSpecializedOutcome, SpecializedFamilyOutcome]
+    boundaries:
+      - crates/da-cli/src/source_cli.rs
+      - crates/da-ports/src/parser.rs
+      - crates/da-application/src
+    production_authority: java_http
+    observe_mode: shadow_receipt
+    production_route: forbidden
+    graph_write: forbidden
+    import_eligible: false
+    auto_promote: forbidden
+    decision_point: 6
+    independently_selectable: [header, references]
   # Closed P0-P9 cascade skeleton (ADR-076). production_authority is never native.
   # fsm_consult must be parse_pdf_consults or none. later names stay later.
   # P5 production_stamp records only Java ParsedArticle body observations.

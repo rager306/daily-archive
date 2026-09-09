@@ -2192,6 +2192,73 @@ fn s17_callout_matching_quarantine_contract() {
 }
 
 #[test]
+fn s18_consolidation_specialized_quarantine_contract() {
+    const TOKENS: [&str; 3] = [
+        "evaluate_native_consolidation_specialized",
+        "NativeConsolidationSpecializedOutcome",
+        "SpecializedFamilyOutcome",
+    ];
+    let production_surfaces = [
+        "crates/da-cli/src/source_cli.rs",
+        "crates/da-ports/src/parser.rs",
+        "crates/da-application/src/lib.rs",
+        "crates/da-application/src",
+    ];
+    let mut leaked = Vec::new();
+    for surface in production_surfaces {
+        let path = repo_root().join(surface);
+        let files = if path.is_dir() {
+            let mut collected = Vec::new();
+            collect_rs_files(&path, &mut collected);
+            collected
+        } else {
+            vec![path]
+        };
+        for file in files {
+            let code = s10_code_without_comments(
+                &std::fs::read_to_string(&file).expect("production boundary readable"),
+            );
+            for token in TOKENS {
+                if code.contains(token) {
+                    leaked.push(format!("{}: {token}", file.display()));
+                }
+            }
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "S05 specialized companion escaped quarantine:\n{}",
+        leaked.join("\n")
+    );
+
+    let ledger = serde_yaml::from_str::<serde_yaml::Value>(&read_text(
+        "data/parse/grobid_compatibility.yaml",
+    ))
+    .expect("GROBID compatibility ledger");
+    let spec = &ledger["defaults"]["consolidation_specialized_quarantine"];
+    assert_eq!(spec["production_authority"], "java_http");
+    assert_eq!(spec["observe_mode"], "shadow_receipt");
+    assert_eq!(spec["production_route"], "forbidden");
+    assert_eq!(spec["graph_write"], "forbidden");
+    assert_eq!(spec["import_eligible"], false);
+    assert_eq!(spec["auto_promote"], "forbidden");
+    assert_eq!(spec["decision_point"], 6);
+    assert_eq!(
+        spec["independently_selectable"],
+        serde_yaml::Value::Sequence(vec![
+            serde_yaml::Value::String("header".into()),
+            serde_yaml::Value::String("references".into()),
+        ])
+    );
+
+    let synthetic = "use da_parse::NativeConsolidationSpecializedOutcome;\nfn production() { evaluate_native_consolidation_specialized(); }";
+    assert!(TOKENS.iter().any(|token| synthetic.contains(token)));
+    assert!(
+        s10_code_without_comments("// evaluate_native_consolidation_specialized()\n").is_empty()
+    );
+}
+
+#[test]
 fn native_segmentation_boundary_scanner_fails_visible_on_synthetic_violations() {
     let synthetic = "use std::fs::File;\nuse serde::Serialize;\nfn compose_header() {}\n";
     assert!(!native_date_marker_hits(synthetic, &["std::fs", "compose_header"]).is_empty());
