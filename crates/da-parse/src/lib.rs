@@ -34,6 +34,7 @@ mod envelope;
 mod http;
 mod ir;
 mod layout;
+mod layout_lattice;
 mod lift;
 mod native_affiliation;
 mod native_body;
@@ -88,6 +89,11 @@ pub use ir::TeiParseIr;
 pub use layout::{
     LAYOUT_SCHEMA_VERSION, LayoutBBox, LayoutDocument, LayoutError, LayoutPage, LayoutProvider,
     LayoutSpan, LayoutSpanAbsence, LayoutStyleHints, LayoutToken, LayoutTokenKind,
+};
+pub use layout_lattice::{
+    CoordinateDialect, FurnitureEvidence, FurnitureKind, LAYOUT_LATTICE_SCHEMA_VERSION,
+    LatticeBlock, LatticeIdentity, LatticeLine, LatticePage, LatticeToken, LayoutLattice,
+    LayoutLatticeError, MAX_LATTICE_BLOCKS, MAX_LATTICE_LINES, MAX_LATTICE_PAGES, ReadingOrder,
 };
 pub use lift::TeiLifter;
 pub use native_affiliation::{
