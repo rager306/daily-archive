@@ -4975,6 +4975,169 @@ fn s03_native_family_adversarial_gate_stays_quarantined() {
 }
 
 #[test]
+fn s04_native_family_decision_packages_stay_independent_and_quarantined() {
+    let application_lib = s10_code_without_comments(&read_text("crates/da-application/src/lib.rs"));
+    let package = read_text("crates/da-application/src/native_family_decision_packages.rs");
+    let package_code = s02_code_without_comments_and_strings(&package);
+    let adapter = s02_code_without_comments_and_strings(&read_text(
+        "crates/da-application/src/native_family_same_n_adapter.rs",
+    ));
+
+    assert_eq!(
+        application_lib
+            .lines()
+            .filter(|line| line.trim() == "pub mod native_family_decision_packages;")
+            .count(),
+        1,
+        "S04: decision packages must have exactly one standalone module declaration"
+    );
+    assert!(
+        !application_lib.contains("pub use native_family_decision_packages"),
+        "S04: decision packages must not escape through a facade re-export"
+    );
+
+    assert_eq!(
+        package_code.matches("bind_family_same_n(").count(),
+        1,
+        "S04: package set must call the canonical family binder at one source site"
+    );
+    assert_eq!(
+        package_code
+            .matches(concat!("aggregate_same_n_", "ablation", "("))
+            .count(),
+        0,
+        "S04: decision package must not own a second aggregate evaluator"
+    );
+    assert_eq!(
+        adapter
+            .matches(concat!("aggregate_same_n_", "ablation", "("))
+            .count(),
+        1,
+        "S04: canonical aggregate evaluator must remain single-owned by the adapter"
+    );
+
+    for (name, source) in [
+        ("source_cli", read_text("crates/da-cli/src/source_cli.rs")),
+        ("ParserPort", read_text("crates/da-ports/src/parser.rs")),
+        (
+            "GraphStore",
+            read_text("crates/da-ports/src/graph_store.rs"),
+        ),
+        (
+            "PromotionService",
+            read_text("crates/da-application/src/promotion.rs"),
+        ),
+    ] {
+        assert!(
+            !source.contains("native_family_decision_packages")
+                && !source.contains("assemble_family_decision_set"),
+            "S04: {name} must not route through the decision-package boundary"
+        );
+    }
+
+    // Scan production code, not comments or string literals.  The split
+    // spellings keep the denylist itself from self-matching while retaining
+    // fail-visible synthetic controls below.
+    for token in [
+        concat!("da_", "parse"),
+        "ParserPort",
+        "source_cli",
+        "GraphStore",
+        "DirectGraphStore",
+        "PromotionService",
+        "parse_pdf",
+        "std::fs",
+        "Command::new",
+        "create_node",
+        "create_edge",
+        "deploy_candidate",
+        "import_candidate",
+        "promote_candidate",
+        "auto_promote_candidate",
+        "average(",
+        "mean(",
+        "sort_by",
+        "sort_unstable",
+        ".filter(",
+        "tracing",
+    ] {
+        assert!(
+            !package_code.contains(token),
+            "S04: forbidden quarantine token leaked into decision packages: {token}"
+        );
+    }
+    assert!(
+        package_code.contains("PooledWinner::Forbidden") && package_code.contains("pooled_winner"),
+        "S04: only the typed forbidden pooled-winner pin may be present"
+    );
+    assert!(
+        !package_code.contains("pooled_winner: header"),
+        "S04: pooled winner claim escaped into the package surface"
+    );
+
+    let compatibility = read_text("data/parse/grobid_compatibility.yaml");
+    for pin in [
+        "import_eligible: false",
+        "auto_promote: forbidden",
+        "this_wave_promotes: none",
+        "deployed: false",
+        "rollback_target: java-grobid-http@0.9.0-crf",
+    ] {
+        assert!(
+            compatibility.contains(pin),
+            "S04: missing compatibility pin: {pin}"
+        );
+    }
+    let composition = read_text("data/parse/native_fulltext_composition.yaml");
+    for pin in [
+        "pooled_winner: forbidden",
+        "independently_selectable: [header, references]",
+        "citation_names_total: 2198",
+        "references_total: 207",
+        "hub_native_accepted_header: 20",
+        "hub_java_header_raw: 21",
+        "java_header_authors_equals: header_raw_total",
+    ] {
+        assert!(
+            composition.contains(pin),
+            "S04: missing composition pin: {pin}"
+        );
+    }
+
+    let fsm = s10_code_without_comments(&read_text("crates/da-domain/src/fsm_policy.rs"));
+    assert!(
+        s10_decision_point_violations(&fsm).is_empty(),
+        "S04: DecisionPoint vocabulary drifted"
+    );
+    for variant in [
+        "GrammarRoute",
+        "BatchAdmission",
+        "ConcurrencyTune",
+        "RetryPolicy",
+        "SummaryDepth",
+        "ProfileRoute",
+    ] {
+        assert!(
+            fsm.contains(variant),
+            "S04: missing DecisionPoint variant: {variant}"
+        );
+    }
+
+    // Positive controls: each critical mutation must be detectable by the
+    // same predicates used against the production module.
+    let synthetic = "fn drift() { aggregate_same_n_ablation(x); let _ = GraphStore; let pooled_winner: header; }";
+    assert_eq!(
+        synthetic
+            .matches(concat!("aggregate_same_n_", "ablation", "("))
+            .count(),
+        1,
+        "S04: synthetic second evaluator marker must be fail-visible"
+    );
+    assert!(synthetic.contains("GraphStore"));
+    assert!(synthetic.contains("pooled_winner: header"));
+}
+
+#[test]
 fn s06_policy_lineage_scanner_fails_visible_on_synthetic_drift() {
     let missing_stamp = "fn stamp() { let policy_source = \"wasm\"; }";
     assert!(
