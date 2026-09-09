@@ -43,6 +43,20 @@ pub struct FamilyIntegrityClaims {
     pub contamination: bool,
     #[serde(default)]
     pub known_gaps_elided: bool,
+    #[serde(default)]
+    pub this_wave_promotes: Option<String>,
+    #[serde(default)]
+    pub named_gap_hidden: bool,
+    #[serde(default)]
+    pub stale_identity: bool,
+    #[serde(default)]
+    pub unsafe_production_call: bool,
+    #[serde(default)]
+    pub architecture_quarantine_breach: bool,
+    #[serde(default)]
+    pub candidate_lock_violation: bool,
+    #[serde(default)]
+    pub failed_evidence: bool,
 }
 
 /// One bounded, source-family-bound reviewer-visible gap.
@@ -176,6 +190,56 @@ fn report_identity_ok(input: &FamilySameNInput, report: &AblationReport) -> bool
 }
 
 fn prevalidate(input: &FamilySameNInput) -> Option<FamilySameNBindingResult> {
+    let integrity = &input.integrity;
+    if integrity.claims_promoted
+        || integrity.deployed
+        || integrity.import_eligible
+        || integrity.auto_promote
+        || integrity
+            .this_wave_promotes
+            .as_deref()
+            .is_some_and(|value| value != "none")
+    {
+        return Some(blocked(
+            PromotionGateBlockReason::AttemptedAutomaticPromotion,
+            "integrity",
+        ));
+    }
+    let integrity_flags = [
+        (integrity.pooling, PromotionGateBlockReason::Pooling),
+        (
+            integrity.named_gap_hidden || integrity.known_gaps_elided,
+            PromotionGateBlockReason::NamedGapHidden,
+        ),
+        (
+            integrity.contamination,
+            PromotionGateBlockReason::Contamination,
+        ),
+        (
+            integrity.stale_identity,
+            PromotionGateBlockReason::StaleIdentity,
+        ),
+        (
+            integrity.unsafe_production_call,
+            PromotionGateBlockReason::UnsafeProductionCall,
+        ),
+        (
+            integrity.architecture_quarantine_breach,
+            PromotionGateBlockReason::ArchitectureQuarantineBreach,
+        ),
+        (
+            integrity.candidate_lock_violation,
+            PromotionGateBlockReason::CandidateLockViolation,
+        ),
+        (
+            integrity.failed_evidence,
+            PromotionGateBlockReason::FailedEvidence,
+        ),
+    ];
+    if let Some((true, reason)) = integrity_flags.into_iter().find(|(set, _)| *set) {
+        return Some(blocked(reason, "integrity"));
+    }
+
     if input.paper_id.trim().is_empty() {
         return Some(blocked(
             PromotionGateBlockReason::MalformedPackage,
@@ -245,19 +309,6 @@ fn prevalidate(input: &FamilySameNInput) -> Option<FamilySameNBindingResult> {
     }
     if let Err(field) = validate_named_gaps(input.family, &input.named_gaps) {
         return Some(blocked(PromotionGateBlockReason::MalformedPackage, &field));
-    }
-    if input.integrity.claims_promoted
-        || input.integrity.deployed
-        || input.integrity.import_eligible
-        || input.integrity.auto_promote
-        || input.integrity.pooling
-        || input.integrity.contamination
-        || input.integrity.known_gaps_elided
-    {
-        return Some(blocked(
-            PromotionGateBlockReason::AttemptedAutomaticPromotion,
-            "integrity",
-        ));
     }
     None
 }
@@ -620,6 +671,264 @@ mod tests {
                 field
             } if field == "integrity"
         ));
+    }
+
+    fn assert_blocked(value: FamilySameNInput, expected: PromotionGateBlockReason, field: &str) {
+        assert!(
+            matches!(
+                bind_family_same_n(value),
+                FamilySameNBindingResult::Blocked { reason, field: actual }
+                    if reason == expected && actual == field
+            ),
+            "expected {expected:?} at {field}"
+        );
+    }
+
+    #[test]
+    fn adversarial_integrity_mutation_catalog_is_fail_closed() {
+        let authority = [
+            "claims_promoted",
+            "deployed",
+            "import_eligible",
+            "auto_promote",
+            "this_wave_promotes",
+        ];
+        for name in authority {
+            let mut value = input(FamilyId::Header);
+            match name {
+                "claims_promoted" => value.integrity.claims_promoted = true,
+                "deployed" => value.integrity.deployed = true,
+                "import_eligible" => value.integrity.import_eligible = !false,
+                "auto_promote" => value.integrity.auto_promote = true,
+                "this_wave_promotes" => value.integrity.this_wave_promotes = Some("header".into()),
+                _ => unreachable!(),
+            }
+            assert_blocked(
+                value,
+                PromotionGateBlockReason::AttemptedAutomaticPromotion,
+                "integrity",
+            );
+            assert!(!name.is_empty());
+        }
+
+        let integrity = [
+            ("pooling", PromotionGateBlockReason::Pooling),
+            ("named_gap_hidden", PromotionGateBlockReason::NamedGapHidden),
+            ("contamination", PromotionGateBlockReason::Contamination),
+            ("stale_identity", PromotionGateBlockReason::StaleIdentity),
+            (
+                "unsafe_production_call",
+                PromotionGateBlockReason::UnsafeProductionCall,
+            ),
+            (
+                "architecture_quarantine_breach",
+                PromotionGateBlockReason::ArchitectureQuarantineBreach,
+            ),
+            (
+                "candidate_lock_violation",
+                PromotionGateBlockReason::CandidateLockViolation,
+            ),
+            ("failed_evidence", PromotionGateBlockReason::FailedEvidence),
+        ];
+        for (name, reason) in integrity {
+            let mut value = input(FamilyId::Header);
+            match name {
+                "pooling" => value.integrity.pooling = true,
+                "named_gap_hidden" => value.integrity.named_gap_hidden = true,
+                "contamination" => value.integrity.contamination = true,
+                "stale_identity" => value.integrity.stale_identity = true,
+                "unsafe_production_call" => value.integrity.unsafe_production_call = true,
+                "architecture_quarantine_breach" => {
+                    value.integrity.architecture_quarantine_breach = true
+                }
+                "candidate_lock_violation" => value.integrity.candidate_lock_violation = true,
+                "failed_evidence" => value.integrity.failed_evidence = true,
+                _ => unreachable!(),
+            }
+            assert_blocked(value, reason, "integrity");
+            assert!(!name.is_empty());
+        }
+
+        let mut none_wave = input(FamilyId::Header);
+        none_wave.integrity.this_wave_promotes = Some("none".into());
+        assert!(matches!(
+            bind_family_same_n(none_wave),
+            FamilySameNBindingResult::Ready { .. }
+        ));
+
+        let mut stale_candidate = input(FamilyId::Header);
+        stale_candidate.candidate.receipt.lineage.corpus = digest('0');
+        assert_blocked(
+            stale_candidate,
+            PromotionGateBlockReason::StaleIdentity,
+            "candidate.receipt.lineage.corpus",
+        );
+        let mut stale_case = input(FamilyId::Header);
+        stale_case.frozen_cases[1].corpus = digest('0');
+        assert_blocked(
+            stale_case,
+            PromotionGateBlockReason::StaleIdentity,
+            "frozen_cases.corpus",
+        );
+
+        let mut missing_candidate_row = input(FamilyId::Header);
+        missing_candidate_row.candidate_rows.pop();
+        assert_blocked(
+            missing_candidate_row,
+            PromotionGateBlockReason::DenominatorMismatch,
+            "evaluator",
+        );
+        let mut critic_corpus = input(FamilyId::Header);
+        critic_corpus.baseline_rows[0].corpus = digest('0');
+        assert_blocked(
+            critic_corpus,
+            PromotionGateBlockReason::StaleIdentity,
+            "evaluator",
+        );
+        let mut frozen_case_id = input(FamilyId::Header);
+        frozen_case_id.frozen_cases[0].case_id.clear();
+        assert_blocked(
+            frozen_case_id,
+            PromotionGateBlockReason::FailedEvidence,
+            "evaluator",
+        );
+        let mut nonfinite = input(FamilyId::Header);
+        nonfinite.baseline_rows[0].metric_one = f64::NAN;
+        assert_blocked(
+            nonfinite,
+            PromotionGateBlockReason::NonfiniteMetric,
+            "evaluator",
+        );
+        let mut invalid_order = input(FamilyId::Header);
+        invalid_order.frozen_cases[1].order = 0;
+        assert_blocked(
+            invalid_order,
+            PromotionGateBlockReason::InvalidOrder,
+            "evaluator",
+        );
+        let mut duplicate_order = input(FamilyId::Header);
+        duplicate_order.frozen_cases[1].case_id = duplicate_order.frozen_cases[0].case_id.clone();
+        assert_blocked(
+            duplicate_order,
+            PromotionGateBlockReason::InvalidOrder,
+            "evaluator",
+        );
+        let mut producer_collision = input(FamilyId::Header);
+        producer_collision.candidate_rows[0].producer = "critic-a".into();
+        assert_blocked(
+            producer_collision,
+            PromotionGateBlockReason::ProducerNotIndependent,
+            "evaluator",
+        );
+        let mut trainer_collision = input(FamilyId::Header);
+        trainer_collision.baseline_rows[0].producer = "sona-trainer".into();
+        assert_blocked(
+            trainer_collision,
+            PromotionGateBlockReason::ProducerNotIndependent,
+            "evaluator",
+        );
+        let mut conservation = input(FamilyId::Header);
+        conservation.conservation_ok = false;
+        assert_blocked(
+            conservation,
+            PromotionGateBlockReason::ConservationVeto,
+            "evaluator",
+        );
+        let mut candidate_lock = input(FamilyId::Header);
+        candidate_lock.candidate.receipt.deployed = true;
+        assert_blocked(
+            candidate_lock,
+            PromotionGateBlockReason::CandidateLockViolation,
+            "evaluator",
+        );
+        let mut nonfinite_validation_gap = input(FamilyId::Header);
+        nonfinite_validation_gap.candidate.validation_gap = f32::NAN;
+        assert_blocked(
+            nonfinite_validation_gap,
+            PromotionGateBlockReason::CandidateLockViolation,
+            "evaluator",
+        );
+
+        let mut empty_cases = input(FamilyId::Header);
+        empty_cases.frozen_cases.clear();
+        assert_blocked(
+            empty_cases,
+            PromotionGateBlockReason::FailedEvidence,
+            "frozen_cases",
+        );
+        let mut malformed_source = input(FamilyId::Header);
+        malformed_source.source_sha256 = "not-a-digest".into();
+        assert_blocked(
+            malformed_source,
+            PromotionGateBlockReason::MalformedPackage,
+            "source_sha256",
+        );
+        let mut malformed_profile = input(FamilyId::Header);
+        malformed_profile.grobid_profile = "unknown".into();
+        assert_blocked(
+            malformed_profile,
+            PromotionGateBlockReason::MalformedPackage,
+            "grobid_profile",
+        );
+        let mut missing_java = input(FamilyId::Header);
+        missing_java.proof_refs.java_rollback_target.clear();
+        assert_blocked(
+            missing_java,
+            PromotionGateBlockReason::MalformedPackage,
+            "proof_refs",
+        );
+        let mut non_java = input(FamilyId::Header);
+        non_java.proof_refs.java_rollback_target = "python-grobid@1.0".into();
+        assert_blocked(
+            non_java,
+            PromotionGateBlockReason::MalformedPackage,
+            "proof_refs",
+        );
+        let mut confused_with_prior = input(FamilyId::Header);
+        confused_with_prior.proof_refs.java_rollback_target = digest('9').as_str().into();
+        assert_blocked(
+            confused_with_prior,
+            PromotionGateBlockReason::MalformedPackage,
+            "proof_refs",
+        );
+        let mut equal_refs = input(FamilyId::Header);
+        equal_refs.proof_refs.architecture_quarantine_proof_ref =
+            equal_refs.proof_refs.java_rollback_proof_ref.clone();
+        assert_blocked(
+            equal_refs,
+            PromotionGateBlockReason::MalformedPackage,
+            "proof_refs",
+        );
+        let mut empty_rollback = input(FamilyId::Header);
+        empty_rollback.proof_refs.java_rollback_proof_ref.clear();
+        assert_blocked(
+            empty_rollback,
+            PromotionGateBlockReason::MalformedPackage,
+            "proof_refs",
+        );
+        let mut cross_family_gap = input(FamilyId::Header);
+        cross_family_gap.named_gaps[0].family = FamilyId::Body;
+        assert_blocked(
+            cross_family_gap,
+            PromotionGateBlockReason::MalformedPackage,
+            "named_gaps.family",
+        );
+
+        let mut authority_precedes_malformed = input(FamilyId::Header);
+        authority_precedes_malformed.integrity.auto_promote = true;
+        authority_precedes_malformed.source_sha256 = "malicious gap payload".into();
+        assert_blocked(
+            authority_precedes_malformed,
+            PromotionGateBlockReason::AttemptedAutomaticPromotion,
+            "integrity",
+        );
+    }
+
+    #[test]
+    fn integrity_claims_are_backward_compatible_serde_defaults() {
+        let json = serde_json::json!({"claims_promoted": false});
+        let claims: FamilyIntegrityClaims = serde_json::from_value(json).unwrap();
+        assert_eq!(claims, FamilyIntegrityClaims::default());
     }
 
     #[test]
