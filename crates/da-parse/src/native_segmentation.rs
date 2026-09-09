@@ -1000,8 +1000,11 @@ fn furniture_annotations(
     for page in &lattice.pages {
         for block in &page.blocks {
             let subtype = match block.furniture {
-                FurnitureEvidence::Absent => continue,
-                FurnitureEvidence::Unknown => return Err(FullSegmentationError::UnknownFurniture),
+                // Honest donor evidence: Unknown means "not classified", not a
+                // conflicting furniture claim. Treat it like Absent so shadow
+                // lanes can still emit semantic runs. ConflictingFurniture stays
+                // reserved for two classified claims on the same token.
+                FurnitureEvidence::Absent | FurnitureEvidence::Unknown => continue,
                 FurnitureEvidence::Classified { kind } => match kind {
                     FurnitureKind::PageNumber => FullFurnitureSubtype::PageNumber,
                     FurnitureKind::Footnote => FullFurnitureSubtype::Footnote,

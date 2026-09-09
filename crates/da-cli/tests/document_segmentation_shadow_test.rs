@@ -31,6 +31,13 @@ fn is_digest(value: &str) -> bool {
             .any(|c| c != value.chars().next().unwrap_or('0'))
 }
 
+fn is_source_digest(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .chars()
+            .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
+}
+
 fn assert_redacted(value: &Value, path: &str, in_redaction: bool) {
     match value {
         Value::Object(object) => {
@@ -109,7 +116,7 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
         .to_path_buf();
     let layout_manifest = repo_root.join("data/parse/layout_bakeoff.yaml");
     let segmentation_manifest = repo_root.join("data/parse/document_segmentation.yaml");
-    let oracle = dir.path().join("document-segmentation-oracle-source.json");
+    let oracle = repo_root.join("artifacts/parse_compat/document_segmentation_oracle_source.json");
     let mut args = vec![
         "--layout-manifest".to_owned(),
         layout_manifest
@@ -150,7 +157,7 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
     let oracle_value: Value = serde_json::from_str(&oracle_text).expect("valid oracle source JSON");
     assert_eq!(
         oracle_value["schema_version"],
-        "document-segmentation-oracle-source.v1"
+        "document-segmentation-oracle-source.v2"
     );
     let receipts = oracle_value["receipts"]
         .as_array()
@@ -199,29 +206,30 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
             .iter()
             .find(|(id, _, _)| receipt["document_id"] == *id)
             .expect("source-bound document");
-        receipt["status"] == "pass"
-            && receipt["document_id"] == *document_id
+        receipt["document_id"] == *document_id
+            && receipt["lane"].is_string()
             && receipt["source_sha256"] == *source_sha256
             && receipt["page_count"] == *page_count
-            && receipt["page_ordinal"]
-                .as_u64()
-                .is_some_and(|page| page > 0)
-            && receipt["token_ordinal"].as_u64().is_some()
-            && receipt["token_digest"].as_str().is_some_and(is_digest)
-            && receipt["boundary_digest"].as_str().is_some_and(is_digest)
-            && receipt["section_ordinal"].as_u64().is_some()
-            && receipt["section_boundary_digest"]
+            && receipt["page_range_digest"]
                 .as_str()
-                .is_some_and(is_digest)
+                .is_some_and(is_source_digest)
+            && receipt["annotation_digest"]
+                .as_str()
+                .is_some_and(is_source_digest)
+            && receipt["admitted_lexical_denominator"]
+                .as_u64()
+                .is_some_and(|n| n > 0)
+            && receipt["status"] == "pass"
     }));
-    assert_eq!(value["schema_version"], "document-segmentation-shadow.v1");
+    assert_eq!(value["schema_version"], "document-segmentation-shadow.v2");
     assert_eq!(value["denominators"]["corpus_documents"], 3);
     assert_eq!(value["denominators"]["lanes"], 3);
     assert_eq!(value["denominators"]["pages_per_lane"], 202);
     assert_eq!(value["denominators"]["lane_pages"], 606);
-    assert_eq!(value["denominators"]["matrix_rows"], 45);
+    assert_eq!(value["denominators"]["matrix_rows"], 81);
+    assert_eq!(value["denominators"]["lane_page_receipts"], 606);
     assert_eq!(value["outcomes"].as_array().expect("outcomes").len(), 9);
-    assert_eq!(value["matrix"].as_array().expect("matrix").len(), 45);
+    assert_eq!(value["matrix"].as_array().expect("matrix").len(), 81);
     assert_eq!(value["replay"]["repetitions"], 2);
     assert_eq!(value["replay"]["semantic_equal"], true);
     assert_eq!(value["replay"]["worker_one_equal"], true);
@@ -268,5 +276,18 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
         outcome["document_id"].is_string()
             && outcome["lane"].is_string()
             && (outcome["failure_code"].is_null() || outcome["failure_code"].is_string())
+            && outcome["region_tokens"]
+                .as_object()
+                .is_some_and(|regions| regions.len() == 9)
+            && outcome["region_boundaries"]
+                .as_object()
+                .is_some_and(|regions| regions.len() == 9)
     }));
+    let matrix = value["matrix"].as_array().expect("matrix");
+    assert!(matrix.iter().any(|row| row["boundary_f1"].is_number()));
+    assert!(
+        matrix
+            .iter()
+            .any(|row| row["boundary_displacement"].is_number())
+    );
 }

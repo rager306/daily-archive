@@ -91,6 +91,12 @@ fn lattice_for(doc: &LayoutDocument) -> LayoutLattice {
     .unwrap()
 }
 
+fn lattice_unknown(doc: &LayoutDocument) -> LayoutLattice {
+    let mut lattice = lattice_for(doc);
+    lattice.pages[0].blocks[0].furniture = FurnitureEvidence::Unknown;
+    lattice
+}
+
 fn lexemes(texts: &[&str]) -> Vec<LexemeRow> {
     texts
         .iter()
@@ -265,6 +271,32 @@ fn full_companion_is_lattice_bound_and_keeps_furniture_out_of_body_runs() {
     );
     let encoded = serde_json::to_vec(&outcome).unwrap();
     assert_eq!(outcome, serde_json::from_slice(&encoded).unwrap());
+}
+
+#[test]
+fn full_companion_treats_unknown_furniture_as_unclassified_not_conflict() {
+    let doc = document(&[("Title", 40.0), ("Introduction", 80.0)]);
+    let lattice = lattice_unknown(&doc);
+    let outcome = segment_document_full(
+        &doc,
+        &lattice,
+        &lexemes(&["Title", "Introduction"]),
+        SegmentationConfig::default(),
+    )
+    .expect("Unknown furniture is honest unclassified evidence, not a hard reject");
+    assert!(outcome.furniture.is_empty());
+    assert!(
+        outcome
+            .runs
+            .iter()
+            .any(|run| run.region == FullSemanticRegion::Header)
+    );
+    assert!(
+        outcome
+            .assignments
+            .iter()
+            .any(|a| a.region == FullSemanticRegion::Body)
+    );
 }
 
 #[test]
