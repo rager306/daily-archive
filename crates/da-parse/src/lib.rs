@@ -41,6 +41,7 @@ mod native_body;
 mod native_citation;
 mod native_composition;
 mod native_date;
+mod native_fulltext_blocks;
 mod native_fulltext_composition;
 mod native_personal_name;
 mod native_segmentation;
@@ -137,6 +138,13 @@ pub use native_date::{
     DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,
     NATIVE_DATE_PARSER_ID, NATIVE_DATE_PARSER_VERSION, NativeDateAmbiguous, NativeDateMalformed,
     NativeDateOutcome, NativeDateParser, NativeDateUnsupported, RecognizedDate,
+};
+pub use native_fulltext_blocks::{
+    AnnexParentRun, FullRegionAccountingUnit, FullRegionUnitKind, FulltextLeafAssignment,
+    FulltextLeafRole, FulltextRoleHint, MAX_FULLTEXT_BLOCKS, MarkerSubtype,
+    NATIVE_FULL_REGION_ACCOUNTING_SCHEMA_VERSION, NATIVE_FULLTEXT_BLOCKS_SCHEMA_VERSION,
+    NativeFullRegionAccounting, NativeFulltextBlocksConfig, NativeFulltextBlocksError,
+    NativeFulltextBlocksOutcome, NoteDisposition, account_full_regions, run_native_fulltext_blocks,
 };
 pub use native_fulltext_composition::{
     AdmissionDisposition, FulltextAdmissionReceipt, FulltextComponent, FulltextComponentManifest,
