@@ -1,0 +1,135 @@
+schema_version: callout-matching-semantics.v1
+compatible_with: fulltext-block-semantics.v1
+adr_ref: ADR-075
+contract_id: native-callout-matching-shadow
+requirement_ids: [R085, R087, R088, R091, R092, R118, R120, R122, R123, R124, R125, R127, R130, R131]
+decisions: [D127, D204]
+
+source_contract:
+  java_source: artifacts/parse_compat/java_grobid_callout_matching_source.json
+  java_source_schema: java-grobid-callout-matching-source.v1
+  java_revision: 0b0ab53b159b32792a01fca1d9d04fd02cf8b24b
+  java_source_sha256: c0729ce1f99d8af5b64071dd2b898e4c322fae9dcb3fdc33e32547300e203a0e
+  lattice_authority: data/parse/layout_lattice_parity.yaml
+  lattice_schema: layout-lattice-parity.v1
+  lattice_sha256: 6e10a02eaeab1d1a39191451874d3b4a14b80c74dc9da45bb8f35a7b329d5f0f
+  segmentation_authority: data/parse/document_segmentation.yaml
+  segmentation_schema: document-segmentation.v2
+  segmentation_sha256: f10574125355309143b659bd7612cd1dab7e12a9be8adb020263caf4b0e64770
+  accountant_authority: data/parse/native_body_accounting.yaml
+  accountant_schema: native-body-accounting.v1
+  accountant_sha256: b00c919cf1267bd9ca531f1023a5b89ceb679a9582738258b2f4c925c3cce810
+  fulltext_authority: data/parse/fulltext_block_semantics.yaml
+  fulltext_schema: fulltext-block-semantics.v1
+  binding: sha256_and_schema_exact
+
+policy_locks:
+  observation_mode: shadow
+  production_authority: java-grobid-http@0.9.0-crf
+  candidate_only: true
+  auto_promote: forbidden
+  import_eligible: false
+  graph_write: forbidden
+  graph_mutation: forbidden
+  promotion: forbidden
+  parser_port_routing: forbidden
+  composition_splice: forbidden
+  raw_payloads: forbidden
+  physical_defaults: forbidden
+  target_matching: shadow_companion_only
+  resolution: shadow_companion_only
+  cross_reference_linkage: forbidden
+  no_selection: true
+  no_pooling: true
+
+corpus_binding:
+  authority: data/parse/layout_bakeoff.yaml
+  corpus_id: s13-same-input-pdf-corpus
+  source_identity: exact_document_id_and_sha256_from_layout_bakeoff
+  documents: 3
+  pages: 202
+  lanes: 3
+  pages_per_lane: 202
+  lane_pages: 606
+  document_lane_outcomes: 9
+  s03_cells: 54
+  lane_ids: [pdfalto, pdf_inspector_positioned, pdf_inspector_positioned_xy_cut]
+  body_counts: pending_independent_oracle
+  callout_counts: pending_independent_oracle
+
+marker_model:
+  closed: true
+  vocabulary: [citation, figure, table, equation]
+  unknown_marker: {java_label: "<other>", disposition: unsupported}
+  java_label_mapping:
+    citation: "<citation_marker>"
+    figure: "<figure_marker>"
+    table: "<table_marker>"
+    equation: "<equation_marker>"
+  target_classes: [citation, figure, table, equation]
+  target_identity: digest_only
+  raw_target_text: forbidden
+
+matching_semantics:
+  target_inventory:
+    status: source_not_established
+    admission: exact_digest_and_identity_only
+    fuzzy_guess: forbidden
+    invented_target: typed_unresolved
+  majority_style:
+    source_proof: source_not_established
+    outcomes: [selected, tie, empty, source_not_established]
+    tie_disposition: ambiguous
+    empty_disposition: source_not_established
+    forced_winner: forbidden
+  adjacency:
+    source_proof: source_not_established
+    order: document_order
+    outcomes: [adjacent, non_adjacent, illegal_boundary_crossing, source_not_established]
+    sibling_crossing: forbidden
+    annex_crossing: forbidden
+    illegal_crossing_disposition: illegal_adjacency
+  equation:
+    inventory_source: source_not_established
+    positive_match: forbidden_until_inventory_proven
+    unresolved_disposition: source_not_established
+
+terminal_and_unresolved:
+  closed: true
+  upstream_terminals: [empty, unsupported, source_not_established, invalid_evidence, missing, checksum_mismatch, malformed, timeout, nonzero, oversize, encrypted, truncated]
+  unresolved_reasons: [no_target, target_not_in_inventory, ambiguous, illegal_adjacency, unsupported_equation, source_not_established]
+  upstream_terminal_propagation: required
+  silent_skip: forbidden
+  denominator_erosion: forbidden
+  zero_score_substitution: forbidden
+
+boundaries:
+  identity_fields: [document_id, lane_id, source_sha256, lattice_fingerprint, config_fingerprint, page_ordinal, block_ordinal, line_ordinal, token_ordinal]
+  ordered: true
+  monotonic: true
+  digest_only: true
+  replay: byte_identical_required
+  worker_identity: excluded_from_semantic_identity
+
+input_limits:
+  max_documents: 3
+  max_pages_per_lane: 202
+  max_lane_pages: 606
+  max_in_flight: 1
+  oversized_input: terminal_oversize
+
+redaction:
+  forbidden_keys: [pdf_bytes, tei_xml, raw_text, body_text, page_image, images, text, path, physical_path, hostname, executable, vendor_path, raw_source, raw_tei, raw_pdf]
+  forbidden_values: [absolute_paths, raw_source, raw_tei, raw_pdf, worker_identity]
+  digest_prefix: "sha256:"
+
+independent_oracle:
+  status: pending_independent_oracle
+  review_required: true
+  common_mode_with_matcher: forbidden
+
+production_boundary:
+  new_calls: forbidden
+  allowed_surfaces: [DATA_contract, source_ledger, generic_contract_test]
+  production_import_graph_promotion: forbidden
+  java_http_authority_unchanged: true
