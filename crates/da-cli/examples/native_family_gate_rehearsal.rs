@@ -28,15 +28,41 @@ pub struct ReviewDigest {
     pub blocked_rehearsals: Vec<BlockedDigest>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
+pub enum NoPromotion {
+    None,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
+pub enum PooledWinnerDigest {
+    Forbidden,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
+pub enum ReviewOutcome {
+    ReadyReview,
+    Incomplete,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
+pub enum ReviewGate {
+    HumanGateRequired,
+    NotApplicable,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AuthorityDigest {
     pub deployed: bool,
     pub import_eligible: bool,
     pub can_auto_promote: bool,
-    pub this_wave_promotes: Option<String>,
+    pub this_wave_promotes: Option<NoPromotion>,
     pub java_rollback_target: String,
-    pub pooled_winner: String,
+    pub pooled_winner: PooledWinnerDigest,
     pub independently_selectable: Vec<String>,
     pub decision_point_consults: Vec<String>,
     pub java_production_unchanged: bool,
@@ -55,8 +81,8 @@ pub struct CompositionDigest {
 #[serde(deny_unknown_fields)]
 pub struct FamilyDigest {
     pub family: String,
-    pub outcome: String,
-    pub gate: String,
+    pub outcome: ReviewOutcome,
+    pub gate: ReviewGate,
     pub binding_present: bool,
     pub visible_gap_ids: Vec<String>,
 }
@@ -194,23 +220,23 @@ fn project(
             let package = &set.packages[&family];
             let (outcome, gate) = match &package.outcome {
                 FamilyPackageOutcome::ReadyReview { .. } => (
-                    "ready_review".to_owned(),
+                    ReviewOutcome::ReadyReview,
                     package
                         .binding
                         .as_ref()
                         .map(|binding| match binding.gate {
-                            da_application::native_family_promotion_gate::PromotionGateDerivation::HumanGateRequired { .. } => "human_gate_required",
-                            _ => "unexpected",
+                            da_application::native_family_promotion_gate::PromotionGateDerivation::HumanGateRequired { .. } => ReviewGate::HumanGateRequired,
+                            _ => panic!("review package has unexpected gate"),
                         })
-                        .unwrap_or("unexpected"),
+                        .unwrap_or_else(|| panic!("review package has no binding")),
                 ),
-                FamilyPackageOutcome::Incomplete { .. } => ("incomplete".to_owned(), "not_applicable"),
-                FamilyPackageOutcome::Blocked { .. } => ("blocked".to_owned(), "blocked"),
+                FamilyPackageOutcome::Incomplete { .. } => (ReviewOutcome::Incomplete, ReviewGate::NotApplicable),
+                FamilyPackageOutcome::Blocked { .. } => panic!("happy set contains blocked package"),
             };
             FamilyDigest {
                 family: family.as_str().to_owned(),
                 outcome,
-                gate: gate.to_owned(),
+                gate,
                 binding_present: package.binding.is_some(),
                 visible_gap_ids: package.named_gaps.iter().map(|gap| gap.id.clone()).collect(),
             }
@@ -274,9 +300,12 @@ pub fn build_digest() -> ReviewDigest {
             deployed: set.deployed,
             import_eligible: set.import_eligible,
             can_auto_promote: da_application::native_family_promotion_gate::can_auto_promote(),
-            this_wave_promotes: set.this_wave_promotes.clone(),
+            this_wave_promotes: set.this_wave_promotes.as_deref().map(|value| match value {
+                "none" => NoPromotion::None,
+                other => panic!("unexpected promotion pin: {other}"),
+            }),
             java_rollback_target: set.java_rollback_target.clone(),
-            pooled_winner: "forbidden".to_owned(),
+            pooled_winner: PooledWinnerDigest::Forbidden,
             independently_selectable: set.independently_selectable.clone(),
             decision_point_consults: Vec::new(),
             java_production_unchanged: true,
@@ -299,6 +328,7 @@ pub fn render_digest(digest: &ReviewDigest) -> anyhow::Result<String> {
     Ok(json)
 }
 
+#[cfg(not(test))]
 fn main() -> anyhow::Result<()> {
     let _guard = da_cli::logging::init_pipeline_logging("native_family_gate_rehearsal");
     println!("{}", render_digest(&build_digest())?);
