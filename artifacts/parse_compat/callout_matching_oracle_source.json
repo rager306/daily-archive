@@ -1,0 +1,46 @@
+{
+  "schema_version": "callout-matching-oracle-source.v1",
+  "oracle_id": "m501-s04-t03-independent-reviewed-v1",
+  "authority": "independent_reviewed_digest_only_oracle",
+  "source_contract": {
+    "java_source_artifact": "artifacts/parse_compat/java_grobid_callout_matching_source.json",
+    "java_source_schema": "java-grobid-callout-matching-source.v1",
+    "java_source_sha256": "c0729ce1f99d8af5b64071dd2b898e4c322fae9dcb3fdc33e32547300e203a0e",
+    "lattice_artifact": "data/parse/layout_lattice_parity.yaml",
+    "lattice_schema": "layout-lattice-parity.v1",
+    "lattice_sha256": "6e10a02eaeab1d1a39191451874d3b4a14b80c74dc9da45bb8f35a7b329d5f0f",
+    "segmentation_artifact": "artifacts/parse_compat/document_segmentation_shadow.json",
+    "segmentation_schema": "document-segmentation-shadow.v2",
+    "segmentation_sha256": "f10574125355309143b659bd7612cd1dab7e12a9be8adb020263caf4b0e64770",
+    "fulltext_artifact": "data/parse/fulltext_block_semantics.yaml",
+    "fulltext_schema": "fulltext-block-semantics.v1",
+    "corpus_artifact": "data/parse/layout_bakeoff.yaml",
+    "corpus_id": "s13-same-input-pdf-corpus",
+    "documents": 3,
+    "pages": 202,
+    "lane_pages": 606,
+    "document_lane_outcomes": 9,
+    "unpooled_cells": 54
+  },
+  "independence": {
+    "review_method": "independent_digest_only_annotation",
+    "sut_imports": [],
+    "forbidden_imports": ["NativeBodyAccountant", "FullLatticeSegmenter", "native_fulltext_blocks", "native_callout_matching"],
+    "expected_values_derived_by_sut": false,
+    "pooling": false
+  },
+  "policy_locks": {
+    "observation_mode": "shadow",
+    "production_authority": "java-grobid-http@0.9.0-crf",
+    "import_eligible": false,
+    "graph_write": false,
+    "promotion": false,
+    "auto_promote": false,
+    "DecisionPoint": 6,
+    "independently_selectable": ["header", "references"]
+  },
+  "redaction": {
+    "mode": "digest_only",
+    "forbidden_keys": ["raw_text", "text", "tei", "tei_xml", "pdf", "pdf_bytes", "image", "page_image", "path", "physical_path", "host", "hostname", "executable", "vendor_path", "raw_source"]
+  }
+}

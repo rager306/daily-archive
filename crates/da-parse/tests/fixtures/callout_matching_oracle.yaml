@@ -1,0 +1,76 @@
+schema_version: callout-matching-oracle.v1
+oracle_id: m501-s04-t03-independent-reviewed-v1
+independent: true
+source_bound: true
+source_receipt:
+  corpus_id: s13-same-input-pdf-corpus
+  corpus_artifact: data/parse/layout_bakeoff.yaml
+  corpus_sha256: source-bound-layout-bakeoff
+  java_source_artifact: artifacts/parse_compat/java_grobid_callout_matching_source.json
+  oracle_source_sha256: 7912ee343a2bc7519d1d29d67ab31b4da3837681a73f74e8eacc8f59ff198c2c
+  java_source_sha256: c0729ce1f99d8af5b64071dd2b898e4c322fae9dcb3fdc33e32547300e203a0e
+  segmentation_artifact: artifacts/parse_compat/document_segmentation_shadow.json
+  segmentation_schema: document-segmentation-shadow.v2
+  segmentation_sha256: f10574125355309143b659bd7612cd1dab7e12a9be8adb020263caf4b0e64770
+  fulltext_schema: fulltext-block-semantics.v1
+  documents: 3
+  pages: 202
+  lane_pages: 606
+  document_lane_outcomes: 9
+  unpooled_cells: 54
+policy:
+  observation_mode: shadow
+  production_authority: java-grobid-http@0.9.0-crf
+  import_eligible: false
+  graph_write: false
+  promotion: false
+  auto_promote: false
+  DecisionPoint: 6
+  independently_selectable: [header, references]
+marker_vocabulary: [citation, figure, table, equation]
+source_gaps: [target_inventory, majority_style, adjacency, equation_inventory]
+forbidden_fields: [raw_text, text, tei, tei_xml, pdf, pdf_bytes, image, page_image, path, physical_path, host, hostname, executable, vendor_path, raw_source]
+documents:
+  - {id: hub-2507.19457, sha256: ab3a5139bac83f192ad67529368d77b84b0d807e95a8e4fd0daa8d45fd046bec, pages: 96}
+  - {id: rlm-2512.24601, sha256: 8567362c22768d9b50d4a4a8d63bb28dda2c2b2051be30d67f70f645170429ca, pages: 43}
+  - {id: reca-2605.26525v1, sha256: a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8, pages: 63}
+lanes: [pdfalto, pdf_inspector_positioned, pdf_inspector_positioned_xy_cut]
+upstream_outcomes:
+  - {document_id: hub-2507.19457, lane: pdfalto, status: terminal_failure, failure_code: malformed}
+  - {document_id: hub-2507.19457, lane: pdf_inspector_positioned, status: pass, failure_code: null}
+  - {document_id: hub-2507.19457, lane: pdf_inspector_positioned_xy_cut, status: invalid_evidence, failure_code: digest_mismatch}
+  - {document_id: rlm-2512.24601, lane: pdfalto, status: invalid_evidence, failure_code: digest_mismatch}
+  - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned, status: pass, failure_code: null}
+  - {document_id: rlm-2512.24601, lane: pdf_inspector_positioned_xy_cut, status: invalid_evidence, failure_code: digest_mismatch}
+  - {document_id: reca-2605.26525v1, lane: pdfalto, status: terminal_failure, failure_code: malformed}
+  - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned, status: pass, failure_code: null}
+  - {document_id: reca-2605.26525v1, lane: pdf_inspector_positioned_xy_cut, status: invalid_evidence, failure_code: digest_mismatch}
+cell_evidence:
+  generated_from: upstream_outcomes x [paragraph, section, list_item, note, annex, marker]
+  families: [paragraph, section, list_item, note, annex, marker]
+  rows: 54
+  non_pass_disposition: propagate_upstream_terminal_or_invalid_evidence
+  pass_disposition: reviewed_or_typed_non_positive
+observations:
+  - {id: hub-positioned-citation-001, document_id: hub-2507.19457, lane: pdf_inspector_positioned, subtype: citation, marker_digest: sha256:1111111111111111111111111111111111111111111111111111111111111111, target_outcome: target_not_in_inventory, review: independently_reviewed}
+  - {id: hub-positioned-figure-001, document_id: hub-2507.19457, lane: pdf_inspector_positioned, subtype: figure, marker_digest: sha256:2222222222222222222222222222222222222222222222222222222222222222, target_outcome: no_target, review: independently_reviewed}
+  - {id: hub-positioned-table-001, document_id: hub-2507.19457, lane: pdf_inspector_positioned, subtype: table, marker_digest: sha256:3333333333333333333333333333333333333333333333333333333333333333, target_outcome: ambiguous, majority_style: tie, adjacency: non_adjacent, review: independently_reviewed}
+  - {id: rlm-positioned-citation-001, document_id: rlm-2512.24601, lane: pdf_inspector_positioned, subtype: citation, marker_digest: sha256:4444444444444444444444444444444444444444444444444444444444444444, target_outcome: illegal_adjacency, adjacency: illegal_boundary_crossing, review: independently_reviewed}
+  - {id: rlm-positioned-figure-001, document_id: rlm-2512.24601, lane: pdf_inspector_positioned, subtype: figure, marker_digest: sha256:5555555555555555555555555555555555555555555555555555555555555555, target_outcome: source_not_established, review: independently_reviewed}
+  - {id: rlm-positioned-table-001, document_id: rlm-2512.24601, lane: pdf_inspector_positioned, subtype: table, marker_digest: sha256:6666666666666666666666666666666666666666666666666666666666666666, target_outcome: no_target, review: independently_reviewed}
+  - {id: reca-positioned-equation-001, document_id: reca-2605.26525v1, lane: pdf_inspector_positioned, subtype: equation, marker_digest: sha256:7777777777777777777777777777777777777777777777777777777777777777, target_outcome: source_not_established, unresolved_reason: source_not_established, review: independently_reviewed}
+  - {id: reca-positioned-citation-001, document_id: reca-2605.26525v1, lane: pdf_inspector_positioned, subtype: citation, marker_digest: sha256:8888888888888888888888888888888888888888888888888888888888888888, target_outcome: no_target, review: independently_reviewed}
+  - {id: reca-positioned-figure-001, document_id: reca-2605.26525v1, lane: pdf_inspector_positioned, subtype: figure, marker_digest: sha256:9999999999999999999999999999999999999999999999999999999999999999, target_outcome: target_not_in_inventory, review: independently_reviewed}
+  - {id: reca-positioned-table-001, document_id: reca-2605.26525v1, lane: pdf_inspector_positioned, subtype: table, marker_digest: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, target_outcome: unsupported_equation, review: independently_reviewed}
+  - {id: hub-positioned-equation-001, document_id: hub-2507.19457, lane: pdf_inspector_positioned, subtype: equation, marker_digest: sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, target_outcome: source_not_established, review: independently_reviewed}
+  - {id: rlm-positioned-equation-001, document_id: rlm-2512.24601, lane: pdf_inspector_positioned, subtype: equation, marker_digest: sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc, target_outcome: source_not_established, review: independently_reviewed}
+summary:
+  admitted: 12
+  conserved: 12
+  loss: 0
+  matched: 0
+  unpooled_unresolved: 12
+  by_subtype: {citation: 3, figure: 3, table: 3, equation: 3}
+  by_target_outcome: {no_target: 3, target_not_in_inventory: 2, ambiguous: 1, illegal_adjacency: 1, source_not_established: 4, unsupported_equation: 1}
+  majority: {selected: 0, tie: 1, empty: 0, source_not_established: 11}
+  adjacency: {adjacent: 0, non_adjacent: 1, illegal_boundary_crossing: 1, source_not_established: 10}
