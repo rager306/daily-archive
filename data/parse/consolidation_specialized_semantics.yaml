@@ -1,0 +1,110 @@
+schema_version: consolidation-specialized-semantics.v1
+contract_id: native-consolidation-specialized-shadow
+adr_ref: ADR-075
+requirement_ids: [R092, R113, R131]
+decisions: [D127, D204, D291, D292, D294, D295, D321]
+source_contract:
+  ledger: artifacts/parse_compat/java_grobid_consolidation_specialized_source.json
+  ledger_schema: java-grobid-consolidation-specialized-source.v1
+  java_revision: 0b0ab53b159b32792a01fca1d9d04fd02cf8b24b
+  java_authority: java-grobid-http@0.9.0-crf
+  lattice: data/parse/layout_lattice_parity.yaml
+  lattice_schema: layout-lattice-parity.v1
+  lattice_sha256: 6e10a02eaeab1d1a39191451874d3b4a14b80c74dc9da45bb8f35a7b329d5f0f
+  segmentation: data/parse/document_segmentation.yaml
+  segmentation_schema: document-segmentation.v2
+  segmentation_sha256: f10574125355309143b659bd7612cd1dab7e12a9be8adb020263caf4b0e64770
+  fulltext: data/parse/fulltext_block_semantics.yaml
+  fulltext_schema: fulltext-block-semantics.v1
+  fulltext_sha256: fbe1a91083b0a5944a9c1cb0beb3674a65731478665d1545623b4d715fac5819
+  binding: sha256_and_schema_exact
+families:
+  closed: true
+  required: [funding, acknowledgement, licence, copyright, software, consolidation]
+  semantics: source_seam_or_typed_source_gap
+  funding:
+    source_status: established
+    seam: FundingAcknowledgementParser.funding
+    positive_disposition: source_not_established
+    allowed_dispositions: [source_not_established, unsupported, propagated_terminal]
+  acknowledgement:
+    source_status: established
+    seam: FundingAcknowledgementParser.acknowledgement
+    positive_disposition: source_not_established
+    allowed_dispositions: [source_not_established, unsupported, propagated_terminal]
+  licence:
+    source_status: established
+    seam: LicenseClassifier
+    positive_disposition: source_not_established
+    allowed_dispositions: [source_not_established, unsupported, propagated_terminal]
+  copyright:
+    source_status: gap
+    seam: null
+    positive_disposition: source_not_established
+    allowed_dispositions: [source_not_established, unsupported, propagated_terminal]
+  software:
+    source_status: gap
+    seam: null
+    positive_disposition: source_not_established
+    allowed_dispositions: [source_not_established, unsupported, propagated_terminal]
+  consolidation:
+    source_status: established
+    seam: FulltextParser.processHeaderSection/processReferenceSection
+    positive_disposition: profile_wire_only
+    allowed_dispositions: [structural_default, rich_opt_in, enrichment_not_required, propagated_terminal]
+corpus_binding:
+  documents: 3
+  pages_per_lane: 202
+  lane_pages: 606
+  document_lane_outcomes: 9
+  unpooled_cells: 54
+  source_identity: exact_document_id_and_sha256_from_layout_bakeoff
+  upstream_receipts: [layout_lattice, document_segmentation.v2, native_body_accounting, fulltext_blocks]
+  body_counts: pending_independent_oracle
+  specialized_counts: pending_independent_oracle
+profiles:
+  corpus_default: structural
+  structural:
+    consolidateHeader: 0
+    consolidateCitations: 0
+    required: true
+  rich:
+    consolidateHeader: 1
+    consolidateCitations: 1
+    opt_in: true
+    separately_cached: true
+  independently_selectable: [header, references]
+  cache_miss_or_timeout: enrichment_not_required
+  enrichment: optional_external_enrichment
+  enrichment_required_for_base_parse: false
+policy_locks:
+  production_authority: java-grobid-http@0.9.0-crf
+  import_eligible: false
+  graph_write: forbidden
+  auto_promote: forbidden
+  production_route: forbidden
+  decision_point: 6
+  winner_selection: forbidden
+  pooling: forbidden
+  sidecar_truth: forbidden
+  no_network_or_filesystem_input: true
+outcomes:
+  closed_dispositions: [source_not_established, unsupported, enrichment_not_required, propagated_terminal]
+  terminal_propagation: all_upstream_non_pass_outcomes_reach_affected_cells
+  positive_semantics_without_source_proof: forbidden
+  invented_winner: forbidden
+redaction:
+  digest_prefix: 'sha256:'
+  forbidden_keys: [raw_pdf, pdf_bytes, raw_text, text, tei_xml, raw_tei, page_image, images, path, physical_path, hostname, executable, vendor_path, credentials]
+  forbidden_values: [hostnames, executables, credentials, physical_paths]
+independent_oracle:
+  status: pending_independent_oracle
+  cells: 54
+  formula: 3_documents_x_3_lanes_x_6_families
+  pooled_summary: forbidden
+  expected_digest_from_sut: forbidden
+production_boundary:
+  parser_port_change: forbidden
+  source_cli_change: forbidden
+  application_or_adapter_change: forbidden
+  graph_import_or_promotion: forbidden
