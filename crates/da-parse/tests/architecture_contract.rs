@@ -2094,6 +2094,43 @@ fn s15_full_segmentation_quarantine_contract() {
 }
 
 #[test]
+fn s16_fulltext_blocks_quarantine_contract() {
+    const COMPANION_MARKERS: [&str; 3] = [
+        "account_full_regions",
+        "run_native_fulltext_blocks",
+        "NativeFulltextBlocksConfig",
+    ];
+    let production_surfaces = [
+        "crates/da-cli/src/source_cli.rs",
+        "crates/da-ports/src/parser.rs",
+        "crates/da-application/src/lib.rs",
+        "crates/da-adapters/src/lib.rs",
+        "crates/da-parse/src/parser.rs",
+        "crates/da-parse/src/projector.rs",
+    ];
+    let mut leaked = Vec::new();
+    for surface in production_surfaces {
+        let code = s10_code_without_comments(&read_text(surface));
+        for marker in COMPANION_MARKERS {
+            if code.contains(marker) {
+                leaked.push(format!("{surface}: {marker}"));
+            }
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "S03 fulltext-blocks companion escaped shadow quarantine:\n{}",
+        leaked.join("\n")
+    );
+
+    let fsm = s10_code_without_comments(&read_text("crates/da-domain/src/fsm_policy.rs"));
+    assert!(
+        s10_decision_point_violations(&fsm).is_empty(),
+        "S03 quarantine must preserve the closed six-DecisionPoint policy"
+    );
+}
+
+#[test]
 fn native_segmentation_boundary_scanner_fails_visible_on_synthetic_violations() {
     let synthetic = "use std::fs::File;\nuse serde::Serialize;\nfn compose_header() {}\n";
     assert!(!native_date_marker_hits(synthetic, &["std::fs", "compose_header"]).is_empty());

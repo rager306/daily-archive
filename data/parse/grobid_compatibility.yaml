@@ -87,6 +87,18 @@ defaults:
       - crates/da-ports/src/parser.rs
     production_authority: java_http
     observe_mode: shadow_receipt
+  fulltext_blocks_quarantine:
+    tokens: [account_full_regions, run_native_fulltext_blocks, NativeFulltextBlocksConfig]
+    boundaries:
+      - crates/da-cli/src/source_cli.rs
+      - crates/da-ports/src/parser.rs
+      - crates/da-application/src
+    production_authority: java_http
+    observe_mode: shadow_receipt
+    production_route: forbidden
+    graph_write: forbidden
+    import_eligible: false
+    auto_promote: forbidden
   # Closed P0-P9 cascade skeleton (ADR-076). production_authority is never native.
   # fsm_consult must be parse_pdf_consults or none. later names stay later.
   # P5 production_stamp records only Java ParsedArticle body observations.

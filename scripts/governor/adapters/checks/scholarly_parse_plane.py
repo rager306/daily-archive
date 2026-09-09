@@ -385,6 +385,27 @@ def _body_accounting_quarantine_spec(defaults: Any) -> tuple[list[str], list[str
     return tokens, boundaries
 
 
+def _fulltext_blocks_quarantine_spec(defaults: Any) -> tuple[list[str], list[str]]:
+    """Derive S03 semantic companion atoms and production boundaries from DATA."""
+    if not isinstance(defaults, dict):
+        return [], []
+    spec = defaults.get("fulltext_blocks_quarantine")
+    if not isinstance(spec, dict):
+        return [], []
+    tokens = [str(item).strip() for item in (spec.get("tokens") or []) if isinstance(item, str) and str(item).strip()]
+    boundaries = [str(item).strip() for item in (spec.get("boundaries") or []) if isinstance(item, str) and str(item).strip()]
+    return tokens, boundaries
+
+def _fulltext_blocks_quarantine_tokens_present(code: str, tokens: list[str]) -> list[str]:
+    """Find S03 type/call atoms while ignoring comments and string literals."""
+    code = _strip_header_quarantine_comments(code)
+    hits = []
+    for token in tokens:
+        pattern = rf"(?<![A-Za-z0-9_]){re.escape(token)}\s*(?:\(|\b)" if "(" not in token else re.escape(token)
+        if re.search(pattern, code):
+            hits.append(token)
+    return hits
+
 def _body_accounting_quarantine_tokens_present(code: str, tokens: list[str]) -> list[str]:
     """Find typed names and call-sites in code, excluding line comments."""
     code = _strip_header_quarantine_comments(code)
@@ -1586,6 +1607,22 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 "native body accountant remains shadow-only",
                 hits,
             )
+
+    fulltext_tokens, fulltext_boundaries = _fulltext_blocks_quarantine_spec(defaults)
+    fulltext_quarantine = defaults.get("fulltext_blocks_quarantine") or {}
+    if fulltext_quarantine.get("production_authority") != "java_http" or fulltext_quarantine.get("observe_mode") != "shadow_receipt":
+        flag("policy_stamp", "integration", "data/parse/grobid_compatibility.yaml#defaults.fulltext_blocks_quarantine", {"production_authority": "java_http", "observe_mode": "shadow_receipt"}, fulltext_quarantine)
+    for relative in fulltext_boundaries:
+        path = root / relative
+        files = sorted(path.rglob("*.rs")) if path.is_dir() else ([path] if path.is_file() else [])
+        for file_path in files:
+            try:
+                boundary_src = file_path.read_text(encoding="utf-8")
+            except OSError as error:
+                boundary_src = str(error)
+            hits = _fulltext_blocks_quarantine_tokens_present(boundary_src, fulltext_tokens)
+            if hits:
+                flag("policy_stamp", "integration", f"{file_path.relative_to(root)}#fulltext_blocks_quarantine", "S03 semantic companion remains shadow-only", hits)
 
     real_tei = root / "crates/da-parse/src/real_tei_tests.rs"
     if real_tei.is_file():
