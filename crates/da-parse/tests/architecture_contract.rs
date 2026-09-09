@@ -4154,3 +4154,188 @@ fn s03_transition_quarantine_scanner_fails_visible_on_synthetic_coupling() {
         "S03: comments and compound identifiers must not create false positives"
     );
 }
+
+// ───── M499/S05/T03: offline rehearsal remains a quarantined CLI example ─────
+const S05_REHEARSAL_EXAMPLE: &str = "crates/da-cli/examples/derived_maturity_rehearsal.rs";
+const S05_REHEARSAL_TEST: &str = "crates/da-cli/tests/derived_maturity_rehearsal_example.rs";
+
+fn s05_quarantine_hits(text: &str) -> Vec<String> {
+    let code = s02_code_without_comments_and_strings(text);
+    let mut hits = Vec::new();
+    for marker in [
+        "da_parse",
+        "ParserPort",
+        "run_parse_pdf",
+        "parse-pdf",
+        "std::fs",
+        "std::net",
+        "std::process",
+        "reqwest",
+        "tokio",
+        "GraphStore",
+        "write_graph",
+        "PromotionService",
+        "promote",
+        "deploy",
+        "source_cli",
+    ] {
+        if marker.contains("::") || marker.contains('-') {
+            if code.contains(marker) {
+                hits.push(marker.to_owned());
+            }
+        } else if code
+            .split(|ch: char| !ch.is_ascii_alphanumeric() && ch != '_')
+            .any(|part| part == marker)
+        {
+            hits.push(marker.to_owned());
+        }
+    }
+    hits
+}
+
+#[test]
+fn s05_derived_maturity_rehearsal_is_quarantined_and_closed() {
+    let example = read_text(S05_REHEARSAL_EXAMPLE);
+    let integration = read_text(S05_REHEARSAL_TEST);
+    assert!(
+        example.len() > 10_000,
+        "S05: rehearsal example missing or truncated"
+    );
+    assert!(
+        integration.len() > 1_000,
+        "S05: independent rehearsal integration test missing or truncated"
+    );
+
+    let manifest = read_text("crates/da-cli/Cargo.toml");
+    assert_eq!(
+        manifest
+            .lines()
+            .filter(|line| line.trim() == "name = \"derived_maturity_rehearsal\"")
+            .count(),
+        1,
+        "S05: rehearsal must have exactly one manifest declaration"
+    );
+    let declaration = manifest
+        .find("name = \"derived_maturity_rehearsal\"")
+        .expect("S05: manifest declaration disappeared");
+    let last_example = manifest[..declaration].rfind("[[example]]").unwrap_or(0);
+    assert!(
+        !manifest[last_example..declaration].contains("required-features"),
+        "S05: rehearsal must not be feature-gated"
+    );
+
+    assert!(
+        example.contains("init_pipeline_logging(\"derived_maturity_rehearsal\")"),
+        "S05: mandatory pipeline logging missing"
+    );
+    for token in [
+        "adapt_family",
+        "prompt_adapted",
+        "evaluate_adapted",
+        "evaluate_transition",
+    ] {
+        assert!(
+            example.contains(token),
+            "S05: approved surface missing: {token}"
+        );
+    }
+    assert!(
+        s05_quarantine_hits(&example).is_empty(),
+        "S05: rehearsal leaked production coupling"
+    );
+
+    let source_cli = s10_code_without_comments(&read_text("crates/da-cli/src/source_cli.rs"));
+    for token in [
+        "derived_maturity_rehearsal",
+        "derived_family_adapters",
+        "derived_prompt_contract",
+        "derived_transition_evaluator",
+        "evaluate_transition",
+    ] {
+        assert!(
+            !source_cli.contains(token),
+            "S05: source_cli leaked rehearsal token `{token}`"
+        );
+    }
+    for (path, source) in rust_sources_under("crates/da-parse/src") {
+        for token in [
+            "derived_maturity_rehearsal",
+            "derived_family_adapters",
+            "derived_prompt_contract",
+            "derived_transition_evaluator",
+            "evaluate_transition",
+        ] {
+            assert!(
+                !source.contains(token),
+                "S05: parse source reached `{token}` in {path}"
+            );
+        }
+    }
+
+    let cli_lib = s10_code_without_comments(&read_text("crates/da-cli/src/lib.rs"));
+    assert!(
+        !cli_lib.contains("derived_maturity_rehearsal"),
+        "S05: rehearsal escaped into da-cli library"
+    );
+    let application_lib = s10_code_without_comments(&read_text("crates/da-application/src/lib.rs"));
+    assert!(
+        !application_lib.contains("derived_maturity_rehearsal"),
+        "S05: application exported composition root"
+    );
+    assert_eq!(
+        application_lib.matches("pub mod derived_").count(),
+        4,
+        "S05: derived application surface changed"
+    );
+    let application_manifest = read_text("crates/da-application/Cargo.toml");
+    assert!(
+        !manifest_dependency_names(&application_manifest)
+            .iter()
+            .any(|(_, name)| name == "da-parse"),
+        "S05: da-application depends on da-parse"
+    );
+
+    let fsm = read_text("crates/da-domain/src/fsm_policy.rs");
+    assert!(
+        s10_decision_point_violations(&s10_code_without_comments(&fsm)).is_empty(),
+        "S05: DecisionPoint wire set drifted"
+    );
+}
+
+#[test]
+fn s05_rehearsal_quarantine_scanner_fails_visible_on_synthetic_coupling() {
+    assert!(s05_quarantine_hits("fn clean() { let value = 1; }").is_empty());
+    for marker in [
+        "da_parse",
+        "ParserPort",
+        "run_parse_pdf",
+        "parse-pdf",
+        "std::fs",
+        "std::net",
+        "std::process",
+        "reqwest",
+        "tokio",
+        "GraphStore",
+        "write_graph",
+        "PromotionService",
+        "promote",
+        "deploy",
+        "source_cli",
+    ] {
+        let synthetic = if marker.contains("::") {
+            format!("fn leaked() {{ let _ = {marker}::value; }}")
+        } else {
+            format!("fn leaked() {{ let _ = {marker}; }}")
+        };
+        assert_eq!(
+            s05_quarantine_hits(&synthetic),
+            vec![marker.to_owned()],
+            "S05: synthetic coupling `{marker}` was not fail-visible"
+        );
+    }
+    assert!(
+        s05_quarantine_hits("// GraphStore and std::fs in prose\nlet source_cli_value = 1;")
+            .is_empty(),
+        "S05: comments and compound identifiers tripped scanner"
+    );
+}
