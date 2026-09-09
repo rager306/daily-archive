@@ -1,0 +1,96 @@
+schema_version: layout-lattice-parity.v1
+contract_id: layout-lattice-parity
+adr_ref: ADR-075
+source_authority: artifacts/parse_compat/java_grobid_layout_source.json
+corpus_authority: data/parse/layout_bakeoff.yaml
+corpus_binding:
+  corpus_id: s13-same-input-pdf-corpus
+  documents: 3
+  pages_per_lane: 202
+  lanes: 3
+  lane_pages: 606
+  exact_denominators: true
+  same_input: true
+
+production_locks:
+  production_authority: java-grobid-http@0.9.0-crf
+  candidate_lanes: [pdfalto_shadow, pdf_inspector_positioned, pdf_inspector_positioned_xy_cut]
+  candidate_only: true
+  import_eligible: false
+  graph_mutation: forbidden
+  auto_promote: forbidden
+  selected: forbidden
+  promoted: forbidden
+  parser_port_routing: forbidden
+  layout_document_v1_mutation: forbidden
+
+java_boundary:
+  source_revision: 0b0ab53b159b32792a01fca1d9d04fd02cf8b24b
+  source_files: [document_source, pdfalto_sax_handler, page, block, layout_token]
+  page_range: {kind: inclusive_1_based, absent: full_document, unknown_values: typed_unknown}
+  argv:
+    fixed: [-fullFontName, -noLineNumbers, -filesLimit]
+    defaults: [-onlyGraphsCoord, -annotation]
+    optional: [-f, -l, -annotation, -outline, -onlyGraphsCoord]
+    disabled: [-readingOrder, -ocr]
+    input_output: positional_redacted
+  modes: [thread, server]
+  thread: {runner: ProcessRunner, timeout: typed_configured_or_unknown, ulimit: unix_only_typed_configured_or_unknown}
+  server: {runner: ProcessPdfToXml.process, timeout: explicit_configured, ulimit: explicit_configured}
+  cleanup:
+    xml: required
+    data_sidecar: required
+    annotation_sidecar: typed_by_flag
+    outline_sidecar: typed_by_flag
+  asset_warning: {threshold_exclusive: 5000, disposition: warning_not_failure}
+  source_identity: {md5: caller_supplied, pdf_identity: digest_bound, physical_path: forbidden}
+
+lattice:
+  lexical_observations: [word, whitespace, punctuation, symbol]
+  visual_observations: [image, formula, illustration]
+  lexical_visual_crossing: forbidden
+  topology: [page, print_space, text_block, text_line, string]
+  page_mapping: java_1_based_to_rust_0_based
+  coordinate_dialect:
+    source: alto_hpos_vpos_width_height
+    target: top_left_72dpi_points
+    origin: top_left
+    scale: 72dpi
+    rotation: explicit_boolean_or_typed_absence
+    crop: explicit_bounded_page_geometry
+  order:
+    source: xml_sax_order
+    derived: xy_cut_separate_lane
+    newline_boundary: text_line_end
+  furniture:
+    vocabulary: [header, footer, footnote, headnote, marginnote, page_number, absent, unknown]
+    body_order: excluded
+    missing: typed_absence
+
+terminal_failures:
+  closed: true
+  vocabulary: [missing, checksum_mismatch, malformed, unsupported, timeout, nonzero, oversize, encrypted, truncated, invalid_geometry, invalid_topology, unknown_exit_code]
+  no_silent_skip: true
+  exit_codes:
+    "0": success
+    "5": success_with_warning
+    "4": write_failed
+    "98": out_of_memory
+    "126": missing_pdfalto
+    "127": missing_libxml2
+    "143": timeout_or_killed
+    "other_nonzero": unknown_exit_code
+
+redaction:
+  allowed: [semantic_unit_keys, sha256, md5_identity, counters, bounded_geometry, coordinate_dialect, order_digest, status]
+  forbidden_keys: [raw_pdf, pdf_bytes, raw_text, body_text, tei_xml, raw_tei, page_image, images, executable_path, host_path, physical_path, vendor_path]
+  forbidden_values: [raw_document_content, token_text]
+  absolute_paths: forbidden
+  vendor_checkout_paths: forbidden
+  source_payloads: forbidden
+
+replay:
+  semantic_digest: required
+  byte_identical: required
+  winner_selection: forbidden
+  disagreement: report_typed_not_select

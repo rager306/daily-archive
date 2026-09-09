@@ -1,0 +1,97 @@
+{
+  "schema_version": "java-grobid-layout-source.v1",
+  "vendor": "grobid",
+  "vendor_revision": "0b0ab53b159b32792a01fca1d9d04fd02cf8b24b",
+  "source_files": {
+    "document_source": {
+      "logical_path": "grobid-core/src/main/java/org/grobid/core/document/DocumentSource.java",
+      "sha256": "969db636abd435b632f720ad159f7526cd53aafacfbb9c2609bbb3f14287f13a",
+      "audited_surface": ["fromPdf/1", "fromPdf/3", "fromPdf/6", "pdfalto/9", "close/3", "getMD5", "setMD5"]
+    },
+    "pdfalto_sax_handler": {
+      "logical_path": "grobid-core/src/main/java/org/grobid/core/sax/PDFALTOSaxHandler.java",
+      "sha256": "cc502102be58a5145b18aa81292023f72105dde7e94158eae670e0e7ffff5bb4",
+      "audited_surface": ["startElement", "endElement", "Page", "PrintSpace", "TextBlock", "TextLine", "String", "Illustration"]
+    },
+    "page": {
+      "logical_path": "grobid-core/src/main/java/org/grobid/core/layout/Page.java",
+      "sha256": "6273b466344c48fa90c57075c23b5c96ef8a16c6d00082d720ea07fb63d087d9",
+      "audited_surface": ["number", "width", "height", "blocks", "mainArea"]
+    },
+    "block": {
+      "logical_path": "grobid-core/src/main/java/org/grobid/core/layout/Block.java",
+      "sha256": "e4c30e9a8db29a133f487a7308216cb4f24d00172675ca9ea8b1a0c92e010629",
+      "audited_surface": ["tokens", "startToken", "endToken", "page", "boundingBox", "type"]
+    },
+    "layout_token": {
+      "logical_path": "grobid-core/src/main/java/org/grobid/core/layout/LayoutToken.java",
+      "sha256": "67c31cd8a3804df51278f5fd6a0e053ecd4259e2a3e430ed329d1007afefaf9c",
+      "audited_surface": ["text", "x", "y", "width", "height", "page", "newLineAfter", "offset", "rotation"]
+    }
+  },
+  "document_source_boundary": {
+    "overloads": {
+      "from_pdf": {"page_range": "startPage/endPage; -1 means full document", "defaults": {"withImages": false, "withAnnotations": true, "withOutline": false}},
+      "from_pdf_full": {"page_range": "inclusive positive -f/-l flags; non-positive omitted", "flags": ["withImages", "withAnnotations", "withOutline"]}
+    },
+    "argv": {
+      "executable_identity": "platform-selected pdfalto or pdfalto_server basename; physical path redacted",
+      "fixed_flags": ["-fullFontName", "-noLineNumbers", "-filesLimit 2000"],
+      "default_flags": ["-onlyGraphsCoord", "-annotation"],
+      "disabled_flags": ["-readingOrder", "-ocr"],
+      "server_flags": ["--timeout", "--ulimit"],
+      "input_output": "source PDF and temporary XML are positional arguments; values are not persisted"
+    },
+    "execution": {
+      "thread_mode": "ProcessRunner with optional join timeout; Unix-like hosts wrap argv with ulimit -Sv and exec",
+      "server_mode": "ProcessPdfToXml.process with pdfalto_server and explicit timeout/ulimit",
+      "timeout_default": "unknown: legacy constant commented out; configured timeout is external to this source contract",
+      "memory_limit": "unknown: configured GrobidProperties value; numeric value intentionally not invented",
+      "temporary_xml": "generated in configured temp area with opaque key and .lxml suffix; cleanupXml enabled for fromPdf",
+      "data_cleanup": "close removes XML and optional _data, annotation, and outline sidecars according to cleanup flags",
+      "file_warning_boundary": {"asset_directory_files_gt": 5000, "disposition": "warning; retain first 5000 assets", "failure": false}
+    },
+    "identity": {
+      "md5": "DocumentSource stores caller-supplied MD5 string; no digest is computed by this boundary",
+      "source_identity": "PDF file identity is carried by the source object; physical path is redacted"
+    }
+  },
+  "layout_topology": {
+    "page": "1-based source page marker is mapped to zero-based Rust ordinal by the shadow contract",
+    "body_elements": ["PrintSpace", "TextBlock", "TextLine", "String"],
+    "visual_element": "Illustration remains visual evidence and is not lexicalized",
+    "lexical_order": "SAX source order with a newline boundary emitted at TextLine end",
+    "coordinates": "ALTO HPOS/VPOS/WIDTH/HEIGHT are source geometry; target normalization is declared separately by layout_lattice_parity.v1",
+    "empty_or_null": "Java logs and does not add null/empty blocks; shadow evidence must account for these as typed outcomes"
+  },
+  "exit_disposition": {
+    "success": [0],
+    "success_with_warning": [5],
+    "typed_failure": [4, 98, 126, 127, 143],
+    "other_nonzero": "typed_failure:unknown_exit_code",
+    "labels": {
+      "0": "success",
+      "5": "success_with_warning:streaming_disabled_output_usable",
+      "4": "typed_failure:write_failed",
+      "98": "typed_failure:out_of_memory",
+      "126": "typed_failure:missing_pdfalto",
+      "127": "typed_failure:missing_libxml2",
+      "143": "typed_failure:timeout_or_killed"
+    }
+  },
+  "evidence_policy": {
+    "raw_java_source_embedded": false,
+    "raw_pdf": false,
+    "raw_text": false,
+    "raw_tei_xml": false,
+    "images": false,
+    "executable_path": false,
+    "host_path": false,
+    "physical_path": false,
+    "production_authority": "java-grobid-http@0.9.0-crf",
+    "candidate_only": ["pdfalto_shadow", "pdf_inspector_positioned", "pdf_inspector_positioned_xy_cut"],
+    "graph_truth": false,
+    "import_eligible": false,
+    "auto_promote": false
+  }
+}
