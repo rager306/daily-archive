@@ -558,6 +558,12 @@ fn load_manifest(path: &Path) -> Result<LoadedManifest, String> {
     }
     Ok((m, out))
 }
+fn is_sha256(value: &str) -> bool {
+    value
+        .strip_prefix("sha256:")
+        .is_some_and(|hex| hex.len() == 64 && hex.bytes().all(|byte| byte.is_ascii_hexdigit()))
+}
+
 fn load_oracle(m: &Manifest) -> Result<BTreeMap<(String, u32), Vec<OracleToken>>, String> {
     let Some(s) = &m.oracle else {
         return Ok(BTreeMap::new());
@@ -569,19 +575,46 @@ fn load_oracle(m: &Manifest) -> Result<BTreeMap<(String, u32), Vec<OracleToken>>
         if !f.independent || f.page_receipts.len() != m.corpus.page_denominator {
             return Err("independent oracle page denominator mismatch".into());
         }
+        let expected_documents: BTreeMap<_, _> = m
+            .corpus
+            .documents
+            .iter()
+            .map(|document| (document.id.as_str(), (&document.sha256, document.pages)))
+            .collect();
         let mut documents = BTreeMap::new();
         for d in f.documents {
-            if d.source_sha256.len() != 64
+            let Some((expected_sha, expected_pages)) =
+                expected_documents.get(d.document_id.as_str())
+            else {
+                return Err("oracle document is not in manifest".into());
+            };
+            if d.source_sha256 != **expected_sha
+                || d.page_count != *expected_pages
                 || documents.insert(d.document_id, d.page_count).is_some()
             {
-                return Err("oracle document identity mismatch".into());
+                return Err("oracle document identity or denominator mismatch".into());
             }
         }
+        if documents.len() != expected_documents.len() {
+            return Err("oracle must bind every manifest document exactly once".into());
+        }
         for page in f.page_receipts {
-            if page.java_page_number != page.page_ordinal + 1
+            let Some((_, expected_pages)) = expected_documents.get(page.document_id.as_str())
+            else {
+                return Err("oracle page document is not in manifest".into());
+            };
+            if page.page_ordinal >= *expected_pages as u32
+                || page.java_page_number != page.page_ordinal + 1
                 || page.coordinate_dialect != "top_left_72dpi"
                 || page.furniture != "absent"
-                || page.token_identity_digest.ends_with(&"0".repeat(64))
+                || page.block_count == 0
+                || page.line_count == 0
+                || page.token_count == 0
+                || page.furniture_count != 0
+                || !is_sha256(&page.geometry_digest)
+                || !is_sha256(&page.order_digest)
+                || !is_sha256(&page.token_identity_digest)
+                || page.token_identity_digest == format!("sha256:{}", "0".repeat(64))
                 || out.contains_key(&(page.document_id.clone(), page.page_ordinal))
             {
                 return Err("invalid or duplicate oracle page receipt".into());
@@ -604,8 +637,18 @@ fn load_oracle(m: &Manifest) -> Result<BTreeMap<(String, u32), Vec<OracleToken>>
                 }],
             );
         }
-        if out.len() != m.corpus.page_denominator {
-            return Err("oracle must contain exactly one receipt per page".into());
+        let expected_keys: BTreeSet<_> = expected_documents
+            .iter()
+            .flat_map(|(document_id, (_, pages))| {
+                (0..*pages as u32).map(move |page| ((*document_id, page)))
+            })
+            .collect();
+        let actual_keys: BTreeSet<_> = out
+            .keys()
+            .map(|(document_id, page)| (document_id.as_str(), *page))
+            .collect();
+        if actual_keys != expected_keys {
+            return Err("oracle must contain exactly one receipt for every document page".into());
         }
         return Ok(out);
     }
@@ -731,6 +774,49 @@ fn measure(
         duplicates,
     )
 }
+fn oracle_page_disagreement(
+    receipt: &PageReceipt,
+    oracle: &BTreeMap<(String, u32), Vec<OracleToken>>,
+) -> String {
+    let Some(rows) = oracle.get(&(receipt.document_id.clone(), receipt.page_ordinal)) else {
+        return "typed_absence:oracle_page".into();
+    };
+    let Some(expected) = rows.first() else {
+        return "typed_absence:oracle_observation".into();
+    };
+    let mut disagreements = Vec::new();
+    if receipt.block_count != expected.block_count {
+        disagreements.push("block_topology");
+    }
+    if receipt.line_count != expected.line_count {
+        disagreements.push("line_topology");
+    }
+    if receipt.token_count != expected.token_count {
+        disagreements.push("token_count");
+    }
+    if receipt.furniture_count != expected.furniture_count
+        || receipt.furniture != expected.furniture
+    {
+        disagreements.push("furniture");
+    }
+    if receipt.coordinate_dialect != expected.coordinate_dialect
+        || receipt.geometry_digest != expected.geometry_digest
+    {
+        disagreements.push("geometry");
+    }
+    if receipt.order_digest != expected.order_digest {
+        disagreements.push("reading_order");
+    }
+    if receipt.token_identity_digest != expected.token_digest {
+        disagreements.push("token_identity");
+    }
+    if disagreements.is_empty() {
+        "match".into()
+    } else {
+        format!("disagreement:{}", disagreements.join(","))
+    }
+}
+
 fn page_digest<T: serde::Serialize>(value: &T) -> String {
     format!(
         "sha256:{:x}",
@@ -866,17 +952,46 @@ fn run_unit(
                                     .map(|token| &token.text_digest)
                                     .collect::<Vec<_>>(),
                             ),
-                            oracle_disagreement: if blocks.iter().any(|block| {
-                                !matches!(
-                                    block.furniture,
-                                    da_parse::FurnitureEvidence::Unknown
-                                        | da_parse::FurnitureEvidence::Absent
-                                )
-                            }) {
-                                "typed_comparison:furniture".into()
-                            } else {
-                                "typed_absence:furniture_classification".into()
-                            },
+                            oracle_disagreement: oracle_page_disagreement(
+                                &PageReceipt {
+                                    document_id: doc.document_id.clone(),
+                                    lane: u.lane.clone(),
+                                    page_ordinal: page.page_ordinal,
+                                    java_page_number: page.java_page_number,
+                                    status: "observed".into(),
+                                    block_count: blocks.len(),
+                                    line_count: lines.len(),
+                                    token_count: lattice_tokens.len(),
+                                    furniture_count,
+                                    furniture: if furniture_count == 0 {
+                                        "absent"
+                                    } else {
+                                        "observed"
+                                    }
+                                    .into(),
+                                    coordinate_dialect: "top_left_72dpi".into(),
+                                    geometry_digest: page_digest(&(
+                                        page.width,
+                                        page.height,
+                                        page.rotation,
+                                        page.crop_box,
+                                    )),
+                                    order_digest: page_digest(
+                                        &blocks
+                                            .iter()
+                                            .map(|block| (block.source_order, block.derived_order))
+                                            .collect::<Vec<_>>(),
+                                    ),
+                                    token_identity_digest: page_digest(
+                                        &lattice_tokens
+                                            .iter()
+                                            .map(|token| &token.text_digest)
+                                            .collect::<Vec<_>>(),
+                                    ),
+                                    oracle_disagreement: String::new(),
+                                },
+                                oracle,
+                            ),
                         }
                     })
                     .collect(),

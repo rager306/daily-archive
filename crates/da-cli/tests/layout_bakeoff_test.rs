@@ -97,6 +97,62 @@ lanes:
     )
 }
 
+fn manifest_with_oracle(
+    source: &std::path::Path,
+    checksum: &str,
+    oracle: &std::path::Path,
+) -> String {
+    format!(
+        r#"schema_version: layout-bakeoff.v1
+corpus:
+  id: test-corpus
+  corpus_n: 1
+  page_denominator: 1
+  documents:
+    - id: test-paper
+      source_pdf: {}
+      sha256: {}
+      pages: 1
+lanes:
+  required: [pdfalto, pdf_inspector_positioned, pdf_inspector_positioned_xy_cut]
+  same_input: true
+  all_lanes_required: true
+oracle:
+  fixture: {}
+"#,
+        source.display(),
+        checksum,
+        oracle.display()
+    )
+}
+
+fn oracle_page(source_sha256: &str, token_digest: &str) -> String {
+    format!(
+        r#"schema_version: layout-lattice-oracle.v1
+oracle_id: test-independent-oracle
+independent: true
+documents:
+  - document_id: test-paper
+    source_sha256: {}
+    page_count: 1
+page_receipts:
+  - document_id: test-paper
+    page_ordinal: 0
+    java_page_number: 1
+    block_count: 1
+    line_count: 1
+    token_count: 1
+    furniture_count: 0
+    furniture: absent
+    coordinate_dialect: top_left_72dpi
+    geometry_digest: sha256:1111111111111111111111111111111111111111111111111111111111111111
+    order_digest: sha256:2222222222222222222222222222222222222222222222222222222222222222
+    token_identity_digest: {}
+"#,
+        source_sha256, token_digest
+    )
+}
+
 #[test]
 fn bakeoff_emits_one_redacted_receipt_per_lane_and_replays_semantics() {
     let dir = tempdir().unwrap();
@@ -336,6 +392,112 @@ fn bakeoff_resume_rejects_partial_when_queue_capacity_changes() {
     );
     assert_eq!(report["outcomes"].as_array().unwrap().len(), 3);
     assert!(!partial_path.exists());
+}
+
+#[test]
+fn bakeoff_binds_independent_oracle_and_emits_page_receipt_denominators() {
+    let dir = tempdir().unwrap();
+    let source = dir.path().join("input.pdf");
+    let manifest_path = dir.path().join("manifest.yaml");
+    let oracle_path = dir.path().join("oracle.yaml");
+    let report_path = dir.path().join("report.json");
+    let bytes = b"not-a-pdf-for-independent-oracle-binding";
+    fs::write(&source, bytes).unwrap();
+    let token_digest = format!("sha256:{}", "3".repeat(64));
+    fs::write(&oracle_path, oracle_page(&digest(bytes), &token_digest)).unwrap();
+    fs::write(
+        &manifest_path,
+        manifest_with_oracle(&source, &digest(bytes), &oracle_path),
+    )
+    .unwrap();
+
+    let binary = runner();
+    let output = invoke(&binary, &manifest_path, &report_path, "2", &[]);
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: Value = serde_json::from_slice(&fs::read(&report_path).unwrap()).unwrap();
+    assert_eq!(report["corpus_n"], 1);
+    assert_eq!(report["page_denominator"], 1);
+    assert_eq!(report["outcomes"].as_array().unwrap().len(), 3);
+    // The synthetic bytes are intentionally not a real PDF. The oracle is
+    // nevertheless loaded and bound before execution; emitted receipts are
+    // bounded and every receipt carries a typed semantic status.
+    let receipts = report["page_receipts"].as_array().unwrap();
+    assert!(receipts.len() <= 3);
+    assert_eq!(report["gate"]["total_lane_pages"], 0);
+    assert!(report["gate"]["complete_receipts"].is_boolean());
+    assert!(report["gate"]["oracle_complete"].is_boolean());
+    for receipt in receipts {
+        assert_eq!(receipt["page_ordinal"], 0);
+        assert_eq!(receipt["java_page_number"], 1);
+        assert!(receipt["status"].is_string());
+        assert!(receipt["oracle_disagreement"].is_string());
+    }
+    assert!(
+        report["outcomes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|outcome| {
+                outcome["status"] == "terminal_failure"
+                    && outcome["oracle_receipts"] == 0
+                    && outcome["oracle_order_inversions"].is_null()
+            })
+    );
+}
+
+#[test]
+fn bakeoff_rejects_independent_oracle_mutations_before_writing_report() {
+    let mutations = [
+        "source_sha256",
+        "placeholder_digest",
+        "missing_page",
+        "invalid_denominator",
+    ];
+    for label in mutations {
+        let dir = tempdir().unwrap();
+        let source = dir.path().join("input.pdf");
+        let manifest_path = dir.path().join("manifest.yaml");
+        let oracle_path = dir.path().join("oracle.yaml");
+        let report_path = dir.path().join("report.json");
+        let bytes = format!("not-a-pdf-{label}").into_bytes();
+        fs::write(&source, &bytes).unwrap();
+        let base = oracle_page(&digest(&bytes), &format!("sha256:{}", "4".repeat(64)));
+        let mutated = match label {
+            "source_sha256" => base.replace(&digest(&bytes), "SOURCE_SHA"),
+            "placeholder_digest" => base.replace(&"4".repeat(64), &"0".repeat(64)),
+            "missing_page" => base.replace("  - document_id: test-paper\n", ""),
+            "invalid_denominator" => base.replace("    page_ordinal: 0", "    page_ordinal: 1"),
+            _ => unreachable!("listed mutation must be handled"),
+        };
+        fs::write(&oracle_path, mutated).unwrap();
+        fs::write(
+            &manifest_path,
+            manifest_with_oracle(&source, &digest(&bytes), &oracle_path),
+        )
+        .unwrap();
+
+        let output = invoke(&runner(), &manifest_path, &report_path, "2", &[]);
+        assert!(
+            !output.status.success(),
+            "mutation {label} unexpectedly passed"
+        );
+        assert!(!report_path.exists(), "mutation {label} wrote a report");
+        let diagnostics = format!(
+            "{}{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(
+            diagnostics.contains("oracle")
+                || diagnostics.contains("denominator")
+                || diagnostics.contains("invalid"),
+            "mutation {label} lacked typed oracle diagnostics: {diagnostics}"
+        );
+    }
 }
 
 #[test]
