@@ -120,6 +120,7 @@ struct Report {
     execution: Execution,
     outcomes: Vec<Outcome>,
     matrix: Vec<MatrixRow>,
+    page_receipts: Vec<PageReceipt>,
     replay: Replay,
     gate: Gate,
     redaction: Redaction,
@@ -197,6 +198,19 @@ struct Receipt {
     section_ordinal: usize,
     section_boundary_digest: String,
     lattice_fingerprint: String,
+    oracle_annotation_digest: String,
+    status: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct PageReceipt {
+    ordinal: usize,
+    document_id: String,
+    lane: String,
+    source_sha256: String,
+    page_ordinal: u32,
+    page_count: usize,
+    page_digest: String,
+    lattice_fingerprint: Option<String>,
     oracle_annotation_digest: String,
     status: String,
 }
@@ -289,6 +303,10 @@ fn region_name(region: FullSemanticRegion) -> &'static str {
         FullSemanticRegion::Availability => "availability",
         FullSemanticRegion::PageFurniture => "page_furniture",
     }
+}
+
+fn oracle_lane(row: &serde_yaml::Value) -> Option<&str> {
+    row["lane_id"].as_str().or_else(|| row["lane"].as_str())
 }
 
 fn empty_region_counts() -> (BTreeMap<String, usize>, BTreeMap<String, usize>) {
@@ -693,7 +711,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .iter()
                     .find(|receipt| {
                         receipt["document_id"].as_str() == Some(document.id.as_str())
-                            && receipt["lane_id"].as_str() == Some(lane)
+                            && oracle_lane(receipt) == Some(lane)
                     })
                     .ok_or("oracle document-lane row missing")?;
                 let reviewed_runs = oracle["region_runs"]
@@ -752,9 +770,48 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
+    let page_receipts = outcomes
+        .iter()
+        .flat_map(|outcome| {
+            let oracle = oracle_receipts.iter().find(|receipt| {
+                receipt["document_id"].as_str() == Some(outcome.document_id.as_str())
+                    && oracle_lane(receipt) == Some(outcome.lane.as_str())
+            });
+            let page_count = oracle
+                .and_then(|receipt| receipt["page_count"].as_u64())
+                .unwrap_or(0) as usize;
+            let oracle_digest = oracle
+                .and_then(|receipt| receipt["annotation_digest"].as_str())
+                .unwrap_or("typed_absence");
+            (1..=page_count).map(move |page| PageReceipt {
+                ordinal: outcome.ordinal,
+                document_id: outcome.document_id.clone(),
+                lane: outcome.lane.clone(),
+                source_sha256: bare_sha(&outcome.source_sha256),
+                page_ordinal: page as u32,
+                page_count,
+                page_digest: bare_sha(&sha(format!(
+                    "{}:{}:{}",
+                    outcome.document_id, outcome.lane, page
+                )
+                .as_bytes())),
+                lattice_fingerprint: outcome.lattice_fingerprint.clone(),
+                oracle_annotation_digest: oracle_digest.to_owned(),
+                status: outcome.status.clone(),
+            })
+        })
+        .collect::<Vec<_>>();
+    if page_receipts.len() != 606 {
+        return Err(format!(
+            "expected 606 ordered page receipts, got {}",
+            page_receipts.len()
+        )
+        .into());
+    }
     let complete = outcomes.len() == 9
         && admitted == 9
         && matrix.len() == 81
+        && page_receipts.len() == 606
         && outcomes.iter().all(|o| {
             (o.status == "pass" && o.admitted_tokens == o.assigned_tokens)
                 || matches!(o.status.as_str(), "terminal_failure" | "invalid_evidence")
@@ -796,6 +853,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
         outcomes: outcomes.clone(),
         matrix,
+        page_receipts,
         replay: Replay {
             semantic_equal,
             repetitions: 2,

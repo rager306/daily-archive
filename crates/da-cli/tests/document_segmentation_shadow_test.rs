@@ -230,6 +230,27 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
     assert_eq!(value["denominators"]["lane_page_receipts"], 606);
     assert_eq!(value["outcomes"].as_array().expect("outcomes").len(), 9);
     assert_eq!(value["matrix"].as_array().expect("matrix").len(), 81);
+    let page_receipts = value["page_receipts"].as_array().expect("page receipts");
+    assert_eq!(page_receipts.len(), 606);
+    assert_eq!(
+        page_receipts
+            .iter()
+            .filter_map(|receipt| receipt["page_ordinal"].as_u64())
+            .count(),
+        606
+    );
+    assert!(page_receipts.iter().all(|receipt| {
+        receipt["document_id"].is_string()
+            && receipt["lane"].is_string()
+            && receipt["source_sha256"]
+                .as_str()
+                .is_some_and(is_source_digest)
+            && receipt["page_digest"].as_str().is_some_and(is_digest)
+            && receipt["oracle_annotation_digest"].is_string()
+            && receipt["page_ordinal"]
+                .as_u64()
+                .is_some_and(|page| page > 0)
+    }));
     assert_eq!(value["replay"]["repetitions"], 2);
     assert_eq!(value["replay"]["semantic_equal"], true);
     assert_eq!(value["replay"]["worker_one_equal"], true);

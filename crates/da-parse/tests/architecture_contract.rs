@@ -2030,6 +2030,70 @@ fn native_segmentation_is_pure_and_quarantined_from_runtime_surfaces() {
 }
 
 #[test]
+fn s15_full_segmentation_quarantine_contract() {
+    const COMPANION_MARKERS: [&str; 4] = [
+        "segment_document_full",
+        "FullLatticeSegmenter",
+        "FullSemanticRegion",
+        "native-segmentation/v2",
+    ];
+    let production_surfaces = [
+        "crates/da-cli/src/source_cli.rs",
+        "crates/da-ports/src/parser.rs",
+        "crates/da-application/src/lib.rs",
+        "crates/da-adapters/src/lib.rs",
+        "crates/da-parse/src/parser.rs",
+        "crates/da-parse/src/projector.rs",
+    ];
+    let mut leaked = Vec::new();
+    for surface in production_surfaces {
+        let code = s10_code_without_comments(&read_text(surface));
+        for marker in COMPANION_MARKERS {
+            if code.contains(marker) {
+                leaked.push(format!("{surface}: {marker}"));
+            }
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "S02 full-family companion escaped shadow quarantine:\n{}",
+        leaked.join("\n")
+    );
+
+    let manifest = serde_yaml::from_str::<serde_yaml::Value>(&read_text(
+        "data/parse/document_segmentation.yaml",
+    ))
+    .expect("segmentation manifest");
+    assert_eq!(manifest["policy_locks"]["observation_mode"], "shadow");
+    assert_eq!(
+        manifest["policy_locks"]["production_authority"],
+        "java-grobid-http@0.9.0-crf"
+    );
+    assert_eq!(manifest["policy_locks"]["auto_promote"], "forbidden");
+    assert_eq!(manifest["policy_locks"]["winner_selection"], "forbidden");
+    assert_eq!(manifest["policy_locks"]["graph_mutation"], "forbidden");
+    assert_eq!(manifest["policy_locks"]["import_eligible"], false);
+    assert_eq!(
+        manifest["regions"]["independently_selectable"],
+        serde_yaml::Value::Sequence(vec![
+            serde_yaml::Value::String("header".into()),
+            serde_yaml::Value::String("references".into()),
+        ])
+    );
+    assert_eq!(manifest["source_bound_genres"]["stratification_only"], true);
+    assert_eq!(
+        manifest["source_bound_genres"]["classifier_branching"],
+        "forbidden"
+    );
+
+    let fsm = s10_code_without_comments(&read_text("crates/da-domain/src/fsm_policy.rs"));
+    assert!(
+        s10_decision_point_violations(&fsm).is_empty(),
+        "S02 quarantine must preserve the closed six-DecisionPoint policy"
+    );
+}
+
+#[test]
 fn native_segmentation_boundary_scanner_fails_visible_on_synthetic_violations() {
     let synthetic = "use std::fs::File;\nuse serde::Serialize;\nfn compose_header() {}\n";
     assert!(!native_date_marker_hits(synthetic, &["std::fs", "compose_header"]).is_empty());
