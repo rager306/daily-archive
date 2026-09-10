@@ -1,0 +1,77 @@
+schema_version: rest-batch-asset-parity.v1
+source_contract:
+  ledger_schema: java-grobid-rest-batch-asset-source.v1
+  java_authority: java-grobid-http@0.9.0-crf
+  java_revision: 0b0ab53b159b32792a01fca1d9d04fd02cf8b24b
+  binding: sha256_and_schema_exact
+  existing_registry: data/parse/api_compatibility_ledger.yaml
+  registry_role: observation_cross_reference_not_parallel_registry
+closed_dispositions:
+  - existing_typed_transport
+  - existing_local_batch_composition
+  - product_required_gap
+  - not_required_by_current_journey
+  - unsupported_without_source
+  - forbidden_this_wave
+  - propagated_terminal
+denominators:
+  inventory: 19
+  demand_review: 19
+  executable: 4
+  corpus_documents: 3
+  corpus_pages_per_lane: 202
+  corpus_lane_pages: 606
+  corpus_document_lane_outcomes: 9
+  corpus_cells_are_dependency_identity_only: true
+product_journey_matrix:
+  - journey: parse-pdf
+    evidence: parse.entrypoint.grobid_parser.parse_pdf
+    acceptance: ParsedArticle projection through existing ParserPort
+  - journey: da-parse-batch
+    evidence: parse.batch.local_composition
+    acceptance: bounded ordered results through existing typed transports and cache
+  - journey: demand_rule
+    evidence: caller_and_acceptance_required
+    acceptance: absence of caller or acceptance proof is not a product gap
+policy_locks:
+  import_eligible: false
+  graph_write: forbidden
+  auto_promote: forbidden
+  production_route: forbidden
+  independently_selectable: [header, references]
+  generic_arbitrary_route: forbidden
+  implementation_parity_claim: false
+implemented_new_endpoints: 0
+product_demand_verdict: no_independently_evidenced_gap
+implementation_parity_claim: false
+inventory_completeness_is_not_implementation_parity: true
+demand_review:
+  - {operation_id: rest.processFulltextDocument, caller_evidence: parse-pdf, acceptance_obligation: ParsedArticle_projection, disposition: existing_typed_transport, rationale_code: current_required_transport}
+  - {operation_id: rest.processFulltextAssetDocument, caller_evidence: none, acceptance_obligation: none, disposition: not_required_by_current_journey, rationale_code: asset_archive_not_graph_truth}
+  - {operation_id: rest.processFulltextDocumentHTML, caller_evidence: none, acceptance_obligation: none, disposition: not_required_by_current_journey, rationale_code: visualization_not_parse_result}
+  - {operation_id: rest.processHeaderDocument, caller_evidence: da-parse-batch, acceptance_obligation: typed_header_result, disposition: existing_typed_transport, rationale_code: sanctioned_header_carrier}
+  - {operation_id: rest.processReferences, caller_evidence: da-parse-batch, acceptance_obligation: typed_references_result, disposition: existing_typed_transport, rationale_code: sanctioned_references_carrier}
+  - {operation_id: rest.processHeaderFundingDocument, caller_evidence: none, acceptance_obligation: none, disposition: forbidden_this_wave, rationale_code: unsupported_product_surface}
+  - {operation_id: rest.annotatePDF, caller_evidence: none, acceptance_obligation: none, disposition: unsupported_without_source, rationale_code: no_current_typed_carrier}
+  - {operation_id: rest.processDate, caller_evidence: parse-compat-shadow-only, acceptance_obligation: none, disposition: forbidden_this_wave, rationale_code: shadow_not_runtime}
+  - {operation_id: rest.processCitation, caller_evidence: none, acceptance_obligation: none, disposition: unsupported_without_source, rationale_code: no_current_typed_carrier}
+  - {operation_id: rest.processCitationListTEI, caller_evidence: none, acceptance_obligation: none, disposition: unsupported_without_source, rationale_code: no_current_typed_carrier}
+  - {operation_id: rest.processAffiliations, caller_evidence: none, acceptance_obligation: none, disposition: unsupported_without_source, rationale_code: no_current_typed_carrier}
+  - {operation_id: rest.processHeaderNames, caller_evidence: none, acceptance_obligation: none, disposition: unsupported_without_source, rationale_code: no_current_typed_carrier}
+  - {operation_id: rest.processCitationNames, caller_evidence: none, acceptance_obligation: none, disposition: unsupported_without_source, rationale_code: no_current_typed_carrier}
+  - {operation_id: rest.createTraining, caller_evidence: none, acceptance_obligation: none, disposition: forbidden_this_wave, rationale_code: training_not_product_journey}
+  - {operation_id: rest.createTrainingFromCorpus, caller_evidence: none, acceptance_obligation: none, disposition: forbidden_this_wave, rationale_code: training_not_product_journey}
+  - {operation_id: rest.trainTagger, caller_evidence: none, acceptance_obligation: none, disposition: forbidden_this_wave, rationale_code: training_not_product_journey}
+  - {operation_id: rest.batchProcessFulltext, caller_evidence: da-parse-batch, acceptance_obligation: bounded_ordered_results, disposition: existing_local_batch_composition, rationale_code: no_java_batch_source_needed}
+  - {operation_id: rest.batchProcessAssets, caller_evidence: none, acceptance_obligation: none, disposition: propagated_terminal, rationale_code: asset_surface_not_required}
+  - {operation_id: rest.batchTraining, caller_evidence: none, acceptance_obligation: none, disposition: propagated_terminal, rationale_code: training_surface_not_required}
+identity_bindings:
+  sanctioned_transports:
+    - {operation_id: rest.processFulltextDocument, ledger_entry: parse.endpoint.process_fulltext_document, request_identity: fulltext-v1, result_identity: fulltext=v1}
+    - {operation_id: rest.processHeaderDocument, ledger_entry: parse.endpoint.process_header_document, request_identity: header-v1, result_identity: header=v1}
+    - {operation_id: rest.processReferences, ledger_entry: parse.endpoint.process_references_document, request_identity: references-v1, result_identity: references=v1}
+  local_batch: {operation_id: rest.batchProcessFulltext, ledger_entry: parse.batch.local_composition, request_identity: batch.v1, result_identity: batch.result.v1}
+redaction:
+  raw_java_source_embedded: false
+  raw_payloads: false
+  forbidden_fields: [raw_pdf, pdf_bytes, raw_text, text, tei_xml, raw_tei, images, page_image, path, physical_path, hostname, executable, vendor_path, credentials]
