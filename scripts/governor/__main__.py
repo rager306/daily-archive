@@ -52,6 +52,11 @@ def main() -> int:
     traj.add_argument("--root", default=None)
     traj.add_argument("--check-only", action="store_true")
 
+    # ── Subcommand: review (read-only review registry validation/status) ──
+    review = sub.add_parser("review", help="Validate a controlled evidence registry; review prose itself is never a work source")
+    review.add_argument("--root", default=None)
+    review.add_argument("--registry", default="scripts/governor/checks/grobid_absorption_review.yaml")
+
     parser.add_argument(
         "--phase",
         choices=["preflight", "active", "closeout"],
@@ -108,6 +113,8 @@ def main() -> int:
         args.root = args.root
         args.check_only = args.check_only
         # fall through to default trajectory logic
+    elif args.command == "review":
+        return _run_review_registry(args)
 
 
     project_root = Path(args.root).resolve() if args.root else _detect_root()
@@ -188,6 +195,31 @@ def main() -> int:
     verdict_value = report.verdict.value if hasattr(report.verdict, "value") else str(report.verdict)
     if verdict_value == "blocked":
         return 1
+    return 0
+
+
+def _run_review_registry(args) -> int:
+    """Validate a review registry and report unresolved/enclosed counts (read-only)."""
+    from governor.adapters.checks.grobid_review_registry import check_grobid_review_registry
+
+    project_root = Path(args.root).resolve() if args.root else _detect_root()
+    flags = check_grobid_review_registry(project_root, getattr(args, "registry", None))
+    status_flags = [f for f in flags if f.flag == "grobid_review_registry_status"]
+    invalid = [f for f in flags if f.flag in {
+        "grobid_review_registry_invalid",
+        "grobid_review_registry_fixture_missing",
+        "grobid_review_registry_fixture_invalid",
+    }]
+    broken = [f for f in flags if f.flag == "grobid_review_registry_broken"]
+    for flag in flags:
+        print(f"  - {flag.flag} [{flag.severity}]: {flag.evidence}")
+    if invalid or broken:
+        print("review registry: INVALID", file=sys.stderr)
+        return 2
+    if status_flags:
+        print(f"review registry: {status_flags[-1].evidence}")
+    else:
+        print("review registry: no status")
     return 0
 
 

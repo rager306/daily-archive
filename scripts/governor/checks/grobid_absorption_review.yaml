@@ -1,0 +1,22 @@
+# GROBID absorption review registry contract (read-only control metadata).
+#
+# DATA for the Governor `grobid_review_registry` validation path. This does NOT
+# ingest review prose as enforcement. It checks registry integrity only:
+# every JSONL line validates against the committed GAR schema, IDs are unique
+# and ordered, dependencies resolve, evidence paths exist, and status counts
+# distinguish unresolved findings from invalid records and enclosed history.
+schema_version: grobid-review-registry.v1
+policy_id: grobid_review_registry
+dimension: scholarly_parse_plane
+severity: medium
+anchor: "GAR-001..GAR-016, doc/review control registry"
+registry:
+  findings: doc/review/grobid-absorption-review-2026-09-10.jsonl
+  finding_schema: doc/review/grobid-absorption-review-2026-09-10.schema.json
+  id_pattern: "^GAR-[0-9]{3}$"
+  id_range: [GAR-001, GAR-016]
+  allow_status: [open, in_progress, blocked, resolved, accepted_risk, superseded]
+  unresolved_status: [open, in_progress, blocked]
+  owner_field: assessment.owning_wave
+  owner_unassigned_value: unassigned
+  owner_allow: [M502-2w7y8k/S01, M502-2w7y8k/S02, M502-2w7y8k/S03, M502-2w7y8k/S04, M502-2w7y8k/S05, M502-2w7y8k/S06, M502-2w7y8k/S07, M502-2w7y8k/S08, M502-2w7y8k/S09, unassigned]

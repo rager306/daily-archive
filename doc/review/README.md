@@ -11,7 +11,25 @@ Recomputed from `pipeline-integrity-review.jsonl` on **2026-08-19** after M401 S
 | Resolved | 22 | PIR-001..PIR-022 |
 | Open | 0 | — |
 
+An independent controlled 2026-09-10 absorption review now lives in
+`grobid-absorption-review-2026-09-10.jsonl` (GAR-001..GAR-016: 15
+unresolved / 1 enclosed). Its machine summary is
+`grobid-absorption-review-2026-09-10-summary.md`. Narrative is not engine
+input: no prose inside this directory requires work, changes scope, or
+substitutes for runtime verification.
+
 M397 closed canonical composition, StageId, cache source/profile/schema identity, revision-owned corpus materialization and cross-command equivalence. Subsequent waves closed the remaining register rows: M398 temporal AST (PIR-006..PIR-012), M399 live ACAP/promotion/scheduler (PIR-014..PIR-016), M400 multimodal graph candidates (PIR-018..PIR-020), M401 honest multi-process read plane plus read-only verified agent loop (PIR-017, PIR-021). A 200-paper corpus rebuild/seal is still an operational follow-up, not a finding in this register.
+
+## Current control posture (2026-09-10)
+
+Status semantics: open records are unresolved review observations. They do
+not create missions, targets, waves, slices, tasks, success criteria or
+acceptance conditions. PIR prose never executes through Governor or GSD on
+its own; execution continues only through the one authoritative roadmap
+engine in `.gsd/`, which has its own explicit user authorization. GSD
+auto does not start from `doc/review`; the revoked subagent behavior that
+copied findings into planning is archived as a process failure, not a
+control signal.
 
 ## Long-horizon execution map
 
@@ -28,11 +46,16 @@ A revision-aware corpus rebuild and honest ontology acceptance remain operationa
 
 | File | Purpose |
 |---|---|
-| `pipeline-integrity-review.jsonl` | Canonical review dataset: one atomic finding per line |
-| `pipeline-integrity-review.schema.json` | JSON Schema Draft 2020-12 for each JSONL record |
+| `pipeline-integrity-review.jsonl` | Historical canonical review dataset: PIR-001..PIR-022, all resolved; do not reopen it |
+| `pipeline-integrity-review.schema.json` | JSON Schema Draft 2020-12 for each PIR record |
+| `grobid-absorption-review-2026-09-10.jsonl` | Active corrective register: GAR-001..GAR-016 (15 unresolved / 1 enclosed); owned by M502-2w7y8k S01..S09 |
+| `grobid-absorption-review-2026-09-10.schema.json` | JSON Schema Draft 2020-12 for each GAR record, including `completion_evidence` for enclosed findings |
+| `grobid-absorption-review-2026-09-10-summary.md` | Human-readable audit summary, exclusions and ADR correction matrix |
 | `manifest.yaml` | Dataset identity, standards, policy and Governor integration |
 | `HUMAN-REVIEW-TEMPLATE.md` | Evidence-first disposition template for a human reviewer |
 | `README.md` | Usage, lifecycle and reusable LLM review prompt |
+
+The PIR register is historical (22 resolved / 0 open). The GAR register is the active corrective register behind `governor review`. A finding may move to `resolved` / `accepted_risk` / `superseded` only with machine-verifiable `completion_evidence` (mode, ref, pass result, artifact paths, observation date, source revision) — a planned `verification` list or prose alone never closes a record.
 
 ## Why JSONL
 

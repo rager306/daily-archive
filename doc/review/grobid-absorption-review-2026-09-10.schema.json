@@ -255,6 +255,53 @@
     "risk": {
       "minLength": 10,
       "type": "string"
+    },
+    "completion_evidence": {
+      "additionalProperties": false,
+      "description": "Machine-verifiable closure proof. REQUIRED when status is resolved, accepted_risk or superseded; forbidden to claim runtime verification from a planned verification list or prose alone.",
+      "properties": {
+        "artifacts": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "mode": {
+          "enum": [
+            "governor_rule",
+            "command",
+            "artifact",
+            "runtime",
+            "human"
+          ]
+        },
+        "observed_at": {
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "type": "string"
+        },
+        "ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "result": {
+          "const": "pass"
+        },
+        "source_revision": {
+          "minLength": 5,
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode",
+        "ref",
+        "result",
+        "artifacts",
+        "observed_at",
+        "source_revision"
+      ],
+      "type": "object"
     }
   },
   "required": [
