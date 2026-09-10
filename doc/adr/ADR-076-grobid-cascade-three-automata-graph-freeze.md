@@ -31,15 +31,17 @@
 
 ## 1. Context
 
-ADR-075 and M464-z84in2 shipped a staged native **platform**. The compatibility ledger still records:
+ADR-075 and M464-z84in2 shipped a staged native **platform**. The compatibility ledger still records the following **snapshot taken at decision time**; the ledger file itself is authoritative (current counts in §9.1):
 
-| Ledger state | Count (2026-09-04) | Meaning |
+| Ledger state | Count (2026-09-04 snapshot) | Meaning |
 |---|---|---|
 | `proxy` | 5 | Java HTTP we actually call (`isalive`, fulltext, header, references, teiCoordinates) |
 | `fallback` | 6 | Internal cascade still inside the JAR (pdfalto, segmentation, header/refs composition, visual, consolidation) |
 | `shadow` | 5 | Native leaves exist, disconnected from production `TeiLifter` |
 | `candidate` | 2 | TEI lift + ruVLLM ablation aggregator |
 | `absent` | 19 | Including required `GET /api/health` and `GET /api/version` |
+
+> **Superseded snapshot (2026-09-10):** `proxy` 7 · `fallback` 1 · `shadow` 12 · `candidate` 2 · `absent` 16 = **38** capabilities in `data/parse/grobid_compatibility.yaml`. See §9.1.
 
 Acceptance evidence can report `verdict=PASS` with `no_silent_loss=false` and `production_route=forbidden`. Native date/name/affiliation/citation/visual modules explicitly do not touch `TeiParseIr`. Layout donors populate only Word/Whitespace/Punctuation/Symbol while the enum also lists Image/Formula. Policy WASM is reachable from a demo CLI. Mixing that with ACAP article FSM and graph materialization would treat a Java proxy receipt as scientific truth.
 
@@ -123,6 +125,8 @@ Each stage result is exactly one of: `java_ok` | `native_shadow` | `typed_absenc
 
 W0 is not a parser. It is the condition under which later waves are allowed to exist without lying.
 
+Later families opened after M465 — callout matching, specialized consolidation, fulltext blocks, feature/tagger/training and REST batch/asset — are **not** part of W0–W6. They were opened as shadow families across M493–M501 with their own family-parity DATA contracts and `sNN_` quarantine scanners. Their absence from the table above is scope, not omission; see §9.2.
+
 ## 5. Governor W0 honesty gates
 
 Extend `scripts/governor/checks/scholarly_parse_plane.yaml` (do not add a parallel ledger):
@@ -162,3 +166,32 @@ Costs: dual Java/native continues; M464 remains complete as platform history; M4
 - `data/parse/grobid_compatibility.yaml`
 - `scripts/governor/checks/scholarly_parse_plane.yaml`
 - M465-sqt7w0
+
+## 9. Dated corrections (2026-09-10) — added by M502-2w7y8k/S01
+
+This section records documentary drift found during the 2026-09-08…09-10 absorption review. It corrects the **snapshot text** above; it does not change the decision in §2, and it is not a new decision.
+
+### 9.1 Ledger counts moved
+
+| Ledger state | §1 snapshot (2026-09-04) | Actual (2026-09-10) |
+|---|---|---|
+| `proxy` | 5 | **7** (adds `rest.health`, `rest.version`) |
+| `fallback` | 6 | **1** (`bibliographic_consolidation` profile selection only) |
+| `shadow` | 5 | **12** |
+| `candidate` | 2 | 2 |
+| `absent` | 19 | **16** |
+| total | 37 | **38** |
+
+The `fallback → shadow` reclassification is justified by added native modules plus shadow receipts, not by weakening the gate. `rest.health`/`rest.version` are no longer `absent`, which is what R121 requires.
+
+### 9.2 Later families live outside W0–W6
+
+Callout matching, specialized consolidation, fulltext blocks, feature/tagger/training and REST batch/asset were opened as shadow families in M493–M501, each with a family-parity DATA contract, an independent oracle and a unique `sNN_` quarantine scanner. None is wired into `parse-pdf`, so their production status is unchanged: Java remains the only production authority.
+
+### 9.3 Open correctness findings are tracked outside this ADR
+
+ADR-076 owns **sequencing and honesty**; it deliberately does not enumerate measurements. The 2026-09-10 registry `doc/review/grobid-absorption-review-2026-09-10.jsonl` (GAR-001…GAR-016; 15 unresolved / 1 superseded) owns them under programme `M502-2w7y8k`. Among them: boundary metrics measure counts rather than positions (GAR-001), P9 emits a historic `conserved` verdict beside `computed_this_run=false` (GAR-005), synthetic executions share report space with corpus denominators (GAR-006), and oracle digests are not recomputable from source bytes (GAR-011). Executable guarantees belong in DATA contracts, scanners and fixtures — not in ADR prose.
+
+### 9.4 Ledger fields still missing
+
+No capability row in `data/parse/grobid_compatibility.yaml` carries a `license` field. Only `defaults.baseline.license=Apache-2.0` (Java GROBID) exists, and `defaults.candidate.license` holds the non-license string `project`. pdfalto is GPLv2. R137 requires per-component license/provenance/redistribution evidence; it is owned by M502-2w7y8k/S07 (GAR-004).
