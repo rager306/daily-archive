@@ -2259,6 +2259,83 @@ fn s18_consolidation_specialized_quarantine_contract() {
 }
 
 #[test]
+fn s19_feature_tagger_quarantine_contract() {
+    const TOKENS: [&str; 3] = [
+        "NativeFeatureTagger",
+        "NativeFeatureInput",
+        "FeatureUpstreamStatus",
+    ];
+    let production_surfaces = [
+        "crates/da-cli/src/source_cli.rs",
+        "crates/da-ports/src/parser.rs",
+        "crates/da-application/src",
+        "crates/da-adapters/src",
+    ];
+    let mut leaked = Vec::new();
+    for surface in production_surfaces {
+        let path = repo_root().join(surface);
+        let files = if path.is_dir() {
+            let mut collected = Vec::new();
+            collect_rs_files(&path, &mut collected);
+            collected
+        } else {
+            vec![path]
+        };
+        for file in files {
+            let code = s10_code_without_comments(
+                &std::fs::read_to_string(&file).expect("production boundary readable"),
+            );
+            for token in TOKENS {
+                if code.contains(token) {
+                    leaked.push(format!("{}: {token}", file.display()));
+                }
+            }
+        }
+    }
+    assert!(
+        leaked.is_empty(),
+        "S06 feature companion escaped quarantine:\n{}",
+        leaked.join("\n")
+    );
+    let ledger = serde_yaml::from_str::<serde_yaml::Value>(&read_text(
+        "data/parse/grobid_compatibility.yaml",
+    ))
+    .expect("GROBID compatibility ledger");
+    let spec = &ledger["defaults"]["feature_tagger_training_quarantine"];
+    assert_eq!(spec["production_authority"], "java_http");
+    assert_eq!(spec["observe_mode"], "shadow_receipt");
+    assert_eq!(spec["production_route"], "forbidden");
+    assert_eq!(spec["graph_write"], "forbidden");
+    assert_eq!(spec["import_eligible"], false);
+    assert_eq!(spec["auto_promote"], "forbidden");
+    assert_eq!(spec["training_and_model_runtime"], "forbidden");
+    assert_eq!(spec["same_n_required"], true);
+    assert_eq!(spec["decision_point"], 6);
+    assert_eq!(
+        spec["independently_selectable"],
+        serde_yaml::Value::Sequence(vec![
+            serde_yaml::Value::String("header".into()),
+            serde_yaml::Value::String("references".into())
+        ])
+    );
+    assert_eq!(spec["dispositions"].as_sequence().unwrap().len(), 3);
+    let synthetic = "use da_parse::NativeFeatureTagger; fn production(x: NativeFeatureInput) { let _ = FeatureUpstreamStatus::Pass; }";
+    assert_eq!(
+        TOKENS
+            .iter()
+            .filter(|token| synthetic.contains(**token))
+            .count(),
+        3
+    );
+    assert!(
+        s10_code_without_comments(
+            "// NativeFeatureTagger NativeFeatureInput FeatureUpstreamStatus\n"
+        )
+        .is_empty()
+    );
+}
+
+#[test]
 fn native_segmentation_boundary_scanner_fails_visible_on_synthetic_violations() {
     let synthetic = "use std::fs::File;\nuse serde::Serialize;\nfn compose_header() {}\n";
     assert!(!native_date_marker_hits(synthetic, &["std::fs", "compose_header"]).is_empty());

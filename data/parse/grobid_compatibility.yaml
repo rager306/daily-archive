@@ -132,6 +132,26 @@ defaults:
     auto_promote: forbidden
     decision_point: 6
     independently_selectable: [header, references]
+  # S06/T04 feature/tagger/training remains a digest-only advisory shadow.
+  # Java HTTP owns production parsing; no engine, trainer, model, or promotion path is exposed.
+  feature_tagger_training_quarantine:
+    tokens: [NativeFeatureTagger, NativeFeatureInput, FeatureUpstreamStatus]
+    boundaries:
+      - crates/da-cli/src/source_cli.rs
+      - crates/da-ports/src/parser.rs
+      - crates/da-application/src
+      - crates/da-adapters/src
+    production_authority: java_http
+    observe_mode: shadow_receipt
+    production_route: forbidden
+    graph_write: forbidden
+    import_eligible: false
+    auto_promote: forbidden
+    decision_point: 6
+    independently_selectable: [header, references]
+    dispositions: [port_structural_subset, replace_runtime_abstraction, defer_insufficient_evidence]
+    training_and_model_runtime: forbidden
+    same_n_required: true
   # Closed P0-P9 cascade skeleton (ADR-076). production_authority is never native.
   # fsm_consult must be parse_pdf_consults or none. later names stay later.
   # P5 production_stamp records only Java ParsedArticle body observations.

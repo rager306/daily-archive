@@ -25,6 +25,8 @@ from governor.adapters.checks.scholarly_parse_plane import (
     _native_rules_not_consulted_tokens,
     _body_accounting_quarantine_spec,
     _body_accounting_quarantine_tokens_present,
+    _feature_tagger_training_quarantine_spec,
+    _feature_tagger_training_quarantine_tokens_present,
     _scan_bare_from_env_parse,
     _visual_heads_quarantine_spec,
 )
@@ -325,7 +327,48 @@ def test_checker_rejects_native_body_ledger_mutations(tmp_path: Path):
         ledger.write_text(original, encoding="utf-8")
 
 
+def test_feature_tagger_training_quarantine_is_data_bound_and_closed():
+    registry = yaml.safe_load((ROOT / "data/parse/grobid_compatibility.yaml").read_text(encoding="utf-8"))
+    defaults = registry["defaults"]
+    tokens, boundaries = _feature_tagger_training_quarantine_spec(defaults)
+    assert tokens == ["NativeFeatureTagger", "NativeFeatureInput", "FeatureUpstreamStatus"]
+    assert boundaries == [
+        "crates/da-cli/src/source_cli.rs",
+        "crates/da-ports/src/parser.rs",
+        "crates/da-application/src",
+        "crates/da-adapters/src",
+    ]
+    spec = defaults["feature_tagger_training_quarantine"]
+    assert spec["production_authority"] == "java_http"
+    assert spec["observe_mode"] == "shadow_receipt"
+    assert spec["production_route"] == "forbidden"
+    assert spec["graph_write"] == "forbidden"
+    assert spec["import_eligible"] is False
+    assert spec["auto_promote"] == "forbidden"
+    assert spec["training_and_model_runtime"] == "forbidden"
+    assert spec["same_n_required"] is True
+    assert set(spec["dispositions"]) == {"port_structural_subset", "replace_runtime_abstraction", "defer_insufficient_evidence"}
+    assert _feature_tagger_training_quarantine_tokens_present(
+        "use da_parse::NativeFeatureTagger; fn f(x: NativeFeatureInput) { let _ = FeatureUpstreamStatus::Pass; }", tokens
+    ) == tokens
+    assert _feature_tagger_training_quarantine_tokens_present(
+        "// NativeFeatureTagger NativeFeatureInput FeatureUpstreamStatus\n", tokens
+    ) == []
+
+
+def test_checker_flags_feature_tagger_training_leak(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    target = tmp_path / "crates/da-ports/src/parser.rs"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("fn parse() { let _ = NativeFeatureTagger; }\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp" and "feature_tagger_training_quarantine" in item.evidence]
+    assert matching, flags
+    assert "NativeFeatureTagger" in matching[0].evidence
+
+
 def test_checker_clean_root_has_no_s19_flags():
+
     """Live root stays clean except DATA-rooted PARSE_BARE constructor hits.
 
     Fail-closed lifetime analysis may still flag remaining corpus PDF constructors

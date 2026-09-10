@@ -439,6 +439,22 @@ def _callout_matching_quarantine_tokens_present(code: str, tokens: list[str]) ->
     code = _strip_header_quarantine_comments(code)
     return [token for token in tokens if re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}(?![A-Za-z0-9_])", code)]
 
+def _feature_tagger_training_quarantine_spec(defaults: Any) -> tuple[list[str], list[str]]:
+    """Derive S06 feature/tagger/training atoms and boundaries from ledger DATA."""
+    if not isinstance(defaults, dict):
+        return [], []
+    spec = defaults.get("feature_tagger_training_quarantine")
+    if not isinstance(spec, dict):
+        return [], []
+    tokens = [str(item).strip() for item in (spec.get("tokens") or []) if isinstance(item, str) and str(item).strip()]
+    boundaries = [str(item).strip() for item in (spec.get("boundaries") or []) if isinstance(item, str) and str(item).strip()]
+    return tokens, boundaries
+
+def _feature_tagger_training_quarantine_tokens_present(code: str, tokens: list[str]) -> list[str]:
+    """Find S06 typed atoms in production boundaries, excluding comments."""
+    code = _strip_header_quarantine_comments(code)
+    return [token for token in tokens if re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}(?![A-Za-z0-9_])", code)]
+
 def _body_accounting_quarantine_tokens_present(code: str, tokens: list[str]) -> list[str]:
     """Find typed names and call-sites in code, excluding line comments."""
     code = _strip_header_quarantine_comments(code)
@@ -1692,6 +1708,37 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             hits = _callout_matching_quarantine_tokens_present(boundary_src, callout_tokens)
             if hits:
                 flag("policy_stamp", "integration", f"{file_path.relative_to(root)}#callout_matching_quarantine", "S04 matcher remains shadow-only", hits)
+
+    feature_tokens, feature_boundaries = _feature_tagger_training_quarantine_spec(defaults)
+    feature_quarantine = defaults.get("feature_tagger_training_quarantine") or {}
+    expected_feature = {
+        "production_authority": "java_http",
+        "observe_mode": "shadow_receipt",
+        "production_route": "forbidden",
+        "graph_write": "forbidden",
+        "import_eligible": False,
+        "auto_promote": "forbidden",
+        "decision_point": 6,
+        "independently_selectable": ["header", "references"],
+        "training_and_model_runtime": "forbidden",
+        "same_n_required": True,
+    }
+    for key, expected in expected_feature.items():
+        if feature_quarantine.get(key) != expected:
+            flag("policy_stamp", "integration", "data/parse/grobid_compatibility.yaml#defaults.feature_tagger_training_quarantine", expected, feature_quarantine.get(key))
+    if set(feature_quarantine.get("dispositions") or []) != {"port_structural_subset", "replace_runtime_abstraction", "defer_insufficient_evidence"}:
+        flag("policy_stamp", "integration", "data/parse/grobid_compatibility.yaml#defaults.feature_tagger_training_quarantine.dispositions", "closed advisory dispositions", feature_quarantine.get("dispositions"))
+    for relative in feature_boundaries:
+        path = root / relative
+        files = sorted(path.rglob("*.rs")) if path.is_dir() else ([path] if path.is_file() else [])
+        for file_path in files:
+            try:
+                boundary_src = file_path.read_text(encoding="utf-8")
+            except OSError as error:
+                boundary_src = str(error)
+            hits = _feature_tagger_training_quarantine_tokens_present(boundary_src, feature_tokens)
+            if hits:
+                flag("policy_stamp", "integration", f"{file_path.relative_to(root)}#feature_tagger_training_quarantine", "feature companion remains shadow-only", hits)
 
     real_tei = root / "crates/da-parse/src/real_tei_tests.rs"
     if real_tei.is_file():
