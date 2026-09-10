@@ -1,0 +1,281 @@
+{
+  "$id": "https://daily-archive.local/schemas/grobid-absorption-review.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Schema for one JSONL review finding about GROBID absorption. Each line in the dataset MUST validate independently.",
+  "properties": {
+    "assessment": {
+      "additionalProperties": false,
+      "properties": {
+        "assessed_at": {
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "owning_wave": {
+          "minLength": 2,
+          "type": "string"
+        },
+        "source_revision": {
+          "minLength": 5,
+          "type": "string"
+        }
+      },
+      "required": [
+        "assessed_at",
+        "source_revision",
+        "owning_wave"
+      ],
+      "type": "object"
+    },
+    "claim": {
+      "minLength": 10,
+      "type": "string"
+    },
+    "dependencies": {
+      "items": {
+        "pattern": "^GAR-[0-9]{3}$",
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "evidence": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "line_hint": {
+            "type": "string"
+          },
+          "note": {
+            "minLength": 3,
+            "type": "string"
+          },
+          "path": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "note"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "finding_id": {
+      "pattern": "^GAR-[0-9]{3}$",
+      "type": "string"
+    },
+    "governor": {
+      "additionalProperties": false,
+      "properties": {
+        "coverage": {
+          "enum": [
+            "existing",
+            "partial",
+            "gap",
+            "external",
+            "not_applicable"
+          ]
+        },
+        "existing_rules": {
+          "type": "array",
+          "uniqueItems": true
+        },
+        "proposed_rule_id": {
+          "pattern": "^[a-z][a-z0-9_]+$",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "coverage",
+        "existing_rules",
+        "proposed_rule_id"
+      ],
+      "type": "object"
+    },
+    "labels": {
+      "items": {
+        "pattern": "^[a-z0-9][a-z0-9_-]*$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "maturity": {
+      "additionalProperties": false,
+      "properties": {
+        "current": {
+          "maximum": 5,
+          "minimum": 0,
+          "type": "number"
+        },
+        "target": {
+          "maximum": 5,
+          "minimum": 0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "current",
+        "target"
+      ],
+      "type": "object"
+    },
+    "priority": {
+      "enum": [
+        "P0",
+        "P1",
+        "P2",
+        "P3"
+      ],
+      "type": "string"
+    },
+    "remediation": {
+      "additionalProperties": false,
+      "properties": {
+        "acceptance_criteria": {
+          "items": {
+            "minLength": 4,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "objective": {
+          "minLength": 8,
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "minLength": 4,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "objective",
+        "steps",
+        "acceptance_criteria"
+      ],
+      "type": "object"
+    },
+    "review_id": {
+      "pattern": "^REV-[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+$",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "grobid-absorption-review.v1"
+    },
+    "severity": {
+      "enum": [
+        "blocker",
+        "high",
+        "medium",
+        "low",
+        "info"
+      ],
+      "type": "string"
+    },
+    "standards": {
+      "items": {
+        "minLength": 2,
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "status": {
+      "enum": [
+        "open",
+        "in_progress",
+        "blocked",
+        "resolved",
+        "accepted_risk",
+        "superseded"
+      ],
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 180,
+      "minLength": 8,
+      "type": "string"
+    },
+    "verification": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "type": "string"
+          },
+          "expected": {
+            "minLength": 3,
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "governor_rule",
+              "command",
+              "artifact",
+              "runtime",
+              "human",
+              "llm"
+            ],
+            "type": "string"
+          },
+          "ref": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "ref",
+          "expected"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "risk": {
+      "minLength": 10,
+      "type": "string"
+    }
+  },
+  "required": [
+    "claim",
+    "dependencies",
+    "evidence",
+    "finding_id",
+    "governor",
+    "labels",
+    "maturity",
+    "priority",
+    "remediation",
+    "review_id",
+    "risk",
+    "schema_version",
+    "severity",
+    "standards",
+    "status",
+    "title",
+    "verification"
+  ],
+  "title": "daily-archive GROBID absorption review finding",
+  "type": "object"
+}
