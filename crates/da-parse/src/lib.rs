@@ -43,6 +43,7 @@ mod native_citation;
 mod native_composition;
 mod native_consolidation_specialized;
 mod native_date;
+mod native_feature_tagger;
 mod native_fulltext_blocks;
 mod native_fulltext_composition;
 mod native_personal_name;
@@ -154,6 +155,11 @@ pub use native_date::{
     DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,
     NATIVE_DATE_PARSER_ID, NATIVE_DATE_PARSER_VERSION, NativeDateAmbiguous, NativeDateMalformed,
     NativeDateOutcome, NativeDateParser, NativeDateUnsupported, RecognizedDate,
+};
+pub use native_feature_tagger::{
+    FeatureDisposition, FeatureUpstreamStatus, NATIVE_FEATURE_COLUMNS,
+    NATIVE_FEATURE_SCHEMA_VERSION, NativeFeatureError, NativeFeatureInput, NativeFeatureOutput,
+    NativeFeatureTagger, StructuralFeatureRow,
 };
 pub use native_fulltext_blocks::{
     AnnexParentRun, FullRegionAccountingUnit, FullRegionUnitKind, FulltextLeafAssignment,
