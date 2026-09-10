@@ -1,0 +1,116 @@
+schema_version: rest-batch-asset-demand-oracle.v1
+source_contract:
+  ledger_path: artifacts/parse_compat/java_grobid_rest_batch_asset_source.json
+  ledger_schema: java-grobid-rest-batch-asset-source.v1
+  java_authority: java-grobid-http@0.9.0-crf
+  java_revision: 0b0ab53b159b32792a01fca1d9d04fd02cf8b24b
+  oracle_source: artifacts/parse_compat/rest_batch_asset_oracle_source.json
+  binding: source_sha_and_schema_exact
+review_policy:
+  independent_of_sut: true
+  caller_and_acceptance_required_for_gap: true
+  pooled_endpoint_score: forbidden
+  placeholder_score: forbidden
+  generic_arbitrary_route: forbidden
+  route_substitution: forbidden
+interface_decision:
+  selected: zero_new_endpoint_inventory_only
+  alternatives_rejected:
+    - extend_ParseEndpoint
+    - generic_arbitrary_route_api
+  rationale: no_independently_evidenced_gap
+closed_dispositions:
+  - existing_typed_transport
+  - existing_local_batch_composition
+  - product_required_gap
+  - not_required_by_current_journey
+  - unsupported_without_source
+  - forbidden_this_wave
+  - propagated_terminal
+denominators:
+  inventory: 19
+  demand_review: 19
+  executable: 4
+  corpus_documents: 3
+  corpus_pages_per_lane: 202
+  corpus_lane_pages: 606
+  corpus_document_lane_outcomes: 9
+  upstream_terminal_outcomes: 6
+  s03_s05_cells: 54
+  corpus_metrics_are_dependency_identity_only: true
+product_journey_evidence:
+  - journey_id: parse-pdf
+    caller_class: da-application.parse_pdf
+    acceptance_obligation: ParsedArticle_projection
+    evidence_kind: current_typed_journey
+  - journey_id: da-parse-batch
+    caller_class: da-cli.parse_batch
+    acceptance_obligation: bounded_ordered_results
+    evidence_kind: current_local_composition
+  - journey_id: demand-rule
+    caller_class: independent-review
+    acceptance_obligation: caller_plus_acceptance_required
+    evidence_kind: review_policy
+sanctioned_carriers:
+  - carrier_id: typed-fulltext
+    operation_id: rest.processFulltextDocument
+    static_method: POST
+    static_route: /api/processFulltextDocument
+    request_identity: fulltext-v1
+    result_identity: fulltext=v1
+    coverage: parse-pdf
+  - carrier_id: typed-header
+    operation_id: rest.processHeaderDocument
+    static_method: POST
+    static_route: /api/processHeaderDocument
+    request_identity: header-v1
+    result_identity: header=v1
+    coverage: da-parse-batch
+  - carrier_id: typed-references
+    operation_id: rest.processReferences
+    static_method: POST
+    static_route: /api/processReferences
+    request_identity: references-v1
+    result_identity: references=v1
+    coverage: da-parse-batch
+  - carrier_id: local-bounded-batch
+    operation_id: rest.batchProcessFulltext
+    static_method: composition
+    static_route: local-parse-batch
+    request_identity: batch.v1
+    result_identity: batch.result.v1
+    coverage: da-parse-batch
+product_demand_verdict: no_independently_evidenced_gap
+implemented_new_endpoints: 0
+review_rows:
+  - {operation_id: rest.processFulltextDocument, static_method: POST, static_route: /api/processFulltextDocument, request_identity: java.fulltext.multipart.v1, result_identity: java.tei.document.v1, caller_class: da-application.parse_pdf, current_journey_evidence: parse-pdf, acceptance_obligation: ParsedArticle_projection, disposition: existing_typed_transport, rationale_code: covered_by_typed_fulltext}
+  - {operation_id: rest.processFulltextAssetDocument, static_method: POST, static_route: /api/processFulltextAssetDocument, request_identity: java.fulltext.asset.multipart.v1, result_identity: java.asset.archive.v1, caller_class: none, current_journey_evidence: none, acceptance_obligation: none, disposition: not_required_by_current_journey, rationale_code: no_asset_acceptance}
+  - {operation_id: rest.processFulltextDocumentHTML, static_method: POST, static_route: /api/processFulltextDocumentHTML, request_identity: java.fulltext.html.multipart.v1, result_identity: java.html.visualization.v1, caller_class: none, current_journey_evidence: none, acceptance_obligation: none, disposition: not_required_by_current_journey, rationale_code: visualization_not_parse_result}
+  - {operation_id: rest.processHeaderDocument, static_method: POST, static_route: /api/processHeaderDocument, request_identity: header-v1, result_identity: header.tei.v1, caller_class: da-cli.parse_batch, current_journey_evidence: da-parse-batch, acceptance_obligation: typed_header_result, disposition: existing_typed_transport, rationale_code: covered_by_typed_header}
+  - {operation_id: rest.processReferences, static_method: POST, static_route: /api/processReferences, request_identity: references-v1, result_identity: references.tei.v1, caller_class: da-cli.parse_batch, current_journey_evidence: da-parse-batch, acceptance_obligation: typed_references_result, disposition: existing_typed_transport, rationale_code: covered_by_typed_references}
+  - {operation_id: rest.processHeaderFundingDocument, static_method: POST, static_route: /api/processHeaderFundingDocument, request_identity: java.header.funding.multipart.v1, result_identity: header.funding.tei.v1, caller_class: none, current_journey_evidence: none, acceptance_obligation: none, disposition: forbidden_this_wave, rationale_code: no_current_product_surface}
+  - {operation_id: rest.annotatePDF, static_method: POST, static_route: /api/annotatePDF, request_identity: java.annotation.pdf.multipart.v1, result_identity: java.annotation.archive.v1, caller_class: none, current_journey_evidence: none, acceptance_obligation: none, disposition: unsupported_without_source, rationale_code: no_typed_carrier}
+  - {operation_id: rest.processDate, static_method: POST, static_route: /api/processDate, request_identity: java.date.multipart.v1, result_identity: java.date.tei.v1, caller_class: none, current_journey_evidence: parse-compat-shadow-only, acceptance_obligation: none, disposition: forbidden_this_wave, rationale_code: shadow_not_runtime}
+  - {operation_id: rest.processCitation, static_method: POST, static_route: /api/processCitation, request_identity: java.citation.multipart.v1, result_identity: java.citation.tei.v1, caller_class: none, current_journey_evidence: none, acceptance_obligation: none, disposition: unsupported_without_source, rationale_code: no_typed_carrier}
+  - {operation_id: rest.processCitationListTEI, static_method: POST, static_route: /api/processCitationListTEI, request_identity: java.citation.list.tei.v1, result_identity: java.citation.list.tei.v1, caller_class: none, current_journey_evidence: none, acceptance_obligation: none, disposition: unsupported_without_source, rationale_code: no_typed_carrier}
+  - {operation_id: rest.processAffiliations, static_method: POST, static_route: /api/processAffiliations, request_identity: java.affiliation.multipart.v1, result_identity: java.affiliation.tei.v1, caller_class: none, current_journey_evidence: none, acceptance_obligation: none, disposition: unsupported_without_source, rationale_code: no_typed_carrier}
+  - {operation_id: rest.processHeaderNames, static_method: POST, static_route: /api/processHeaderNames, request_identity: java.header.names.multipart.v1, result_identity: java.names.tei.v1, caller_class: none, current_journey_evidence: none, acceptance_obligation: none, disposition: unsupported_without_source, rationale_code: no_typed_carrier}
+  - {operation_id: rest.processCitationNames, static_method: POST, static_route: /api/processCitationNames, request_identity: java.citation.names.multipart.v1, result_identity: java.names.tei.v1, caller_class: none, current_journey_evidence: none, acceptance_obligation: none, disposition: unsupported_without_source, rationale_code: no_typed_carrier}
+  - {operation_id: rest.createTraining, static_method: POST, static_route: /api/createTraining, request_identity: java.training.request.v1, result_identity: java.training.archive.v1, caller_class: none, current_journey_evidence: none, acceptance_obligation: none, disposition: forbidden_this_wave, rationale_code: training_not_product_journey}
+  - {operation_id: rest.createTrainingFromCorpus, static_method: POST, static_route: /api/createTrainingFromCorpus, request_identity: java.training.corpus.request.v1, result_identity: java.training.archive.v1, caller_class: none, current_journey_evidence: none, acceptance_obligation: none, disposition: forbidden_this_wave, rationale_code: training_not_product_journey}
+  - {operation_id: rest.trainTagger, static_method: POST, static_route: /api/trainTagger, request_identity: java.training.tagger.request.v1, result_identity: java.training.model.v1, caller_class: none, current_journey_evidence: none, acceptance_obligation: none, disposition: forbidden_this_wave, rationale_code: training_not_product_journey}
+  - {operation_id: rest.batchProcessFulltext, static_method: not_established, static_route: local-parse-batch, request_identity: batch.v1, result_identity: batch.result.v1, caller_class: da-cli.parse_batch, current_journey_evidence: da-parse-batch, acceptance_obligation: bounded_ordered_results, disposition: existing_local_batch_composition, rationale_code: local_carrier_not_java_endpoint}
+  - {operation_id: rest.batchProcessAssets, static_method: not_established, static_route: not_established, request_identity: source_not_established, result_identity: source_not_established, caller_class: none, current_journey_evidence: none, acceptance_obligation: none, disposition: propagated_terminal, rationale_code: asset_surface_not_required}
+  - {operation_id: rest.batchTraining, static_method: not_established, static_route: not_established, request_identity: source_not_established, result_identity: source_not_established, caller_class: none, current_journey_evidence: none, acceptance_obligation: none, disposition: propagated_terminal, rationale_code: training_surface_not_required}
+policy_locks:
+  import_eligible: false
+  graph_write: forbidden
+  auto_promote: forbidden
+  production_route: forbidden
+  independently_selectable: [header, references]
+  generic_arbitrary_route: forbidden
+  implementation_parity_claim: false
+redaction:
+  raw_payloads: false
+  raw_java_source_embedded: false
+  forbidden_fields: [raw_pdf, pdf_bytes, raw_text, text, tei_xml, raw_tei, images, page_image, path, physical_path, hostname, executable, vendor_path, credentials]
