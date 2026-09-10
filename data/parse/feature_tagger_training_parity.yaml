@@ -1,0 +1,99 @@
+schema_version: feature-tagger-training-parity.v1
+ledger_id: java-grobid-feature-tagger-training
+adr_ref: ADR-075
+source_contract:
+  authority: java-grobid-http@0.9.0-crf
+  vendor_revision: 0.9.0-crf
+  source_schema: java-grobid-feature-tagger-training-source.v1
+  source_sha256: sha256:c7de6bd7853101755e24d7f715b5043520e3a501392eb43e67ccad2c007fb3e6
+  binding: sha256_and_schema_exact
+  source_documents: 3
+inventory:
+  feature_source_units: 14
+  features_vector_classes: 13
+  feature_factory_units: 1
+  tagger_engines: 4
+  training_entry_points: [Trainer, AbstractTrainer]
+  model_lifecycle: [.old, .new, model-load]
+  completeness_claim: inventory_only_not_implementation_parity
+print_vector:
+  ordered_columns: [token, line_status, block_status, font, font_size, relative_position, capitalisation, digitisation, punctuation, lexicon_flags, label]
+  order_binding: exact
+field_policy:
+  required: [token, line_status, block_status]
+  optional: [font, font_size, relative_position]
+  lexicon_backed: [proper_name, common_name, first_name, location_name, year, month, email, http]
+tagger_factory:
+  GenericTagger: cacheable_by_model_identity
+  TaggerFactory: inventory_only
+  cache: identity_bound
+  failed_model: terminal_typed_failure
+  custom_path: observed_only_no_physical_path
+  constructors: forbidden_in_shadow
+engines:
+  - WAPITI
+  - CRFPP
+  - DELFT
+  - DUMMY
+training_surfaces:
+  trainer_entry_points: [Trainer, AbstractTrainer]
+  generator_modes:
+    - mode: segmentation_from_layout
+      identity: layout_bound
+      mixing: forbidden
+    - mode: segmentation_from_tei
+      identity: tei_bound
+      mixing: forbidden
+    - mode: segmentation_from_reference
+      identity: reference_bound
+      mixing: forbidden
+  lifecycle:
+    - transition: .old_to_new
+      state: observed_only
+    - transition: new_to_model_load
+      state: forbidden_in_shadow
+corpus_binding:
+  documents: 3
+  pages_per_lane: 202
+  lanes: 3
+  lane_pages: 606
+  document_lane_outcomes: 9
+  outcome_denominator: exact
+  upstream_identities: source_documents_only
+inventoried:
+  feature_source_units: 14
+  engines: [WAPITI, CRFPP, DELFT, DUMMY]
+  training_surfaces: [Trainer, AbstractTrainer, segmentation_generators, model_lifecycle]
+executable_in_shadow:
+  status: empty_until_independent_structural_proof
+  allowed: []
+unsupported_lexicon_backed:
+  fields: [proper_name, common_name, first_name, location_name, year, month, email, http]
+  disposition: closed_typed_gap
+source_not_established:
+  fields: [lexicon_dictionary_contents, model_quality, training_equivalence]
+  disposition: closed_typed_gap
+forbidden_this_wave:
+  surfaces: [tagger_construction, model_loading, training, evaluation, production_splice, visual_feature_payload]
+  disposition: closed_typed_gap
+policy_locks:
+  import_eligible: false
+  production_route: forbidden
+  auto_promote: forbidden
+  graph_write: forbidden
+  model_weights: forbidden
+  raw_payload: forbidden
+  dspy: forbidden
+  gepa: forbidden
+  java_http_production_authority: true
+claims:
+  implementation_parity: false
+  training_equivalence: false
+  model_quality: false
+  inventory_completeness: true
+redaction:
+  forbidden_keys: [raw_pdf, raw_text, raw_tei, pdf_bytes, tei_xml, page_image, image_bytes, model_payload, weights, credentials, physical_path, vendor_path, executable, hostname, secret]
+  raw_content: forbidden
+  physical_paths: forbidden
+  secrets: forbidden
+  model_payloads: forbidden
