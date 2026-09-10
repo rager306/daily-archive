@@ -1,0 +1,58 @@
+schema_version: feature-tagger-training-oracle.v1
+review_status: independently_reviewed
+representation: digest_only_source_bound_ordinals
+expected_rows_not_from_sut_helpers: true
+source_schema: java-grobid-feature-tagger-training-source.v1
+source_artifact_sha256: sha256:c7de6bd7853101755e24d7f715b5043520e3a501392eb43e67ccad2c007fb3e6
+corpus:
+  documents:
+    - {identity: document-a, source_sha256: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+    - {identity: document-b, source_sha256: sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb}
+    - {identity: document-c, source_sha256: sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc}
+  lanes: [layout, tei, reference]
+  pages_per_lane: 202
+  lane_pages: 606
+  document_lane_outcomes: 9
+inventory:
+  feature_source_units: 14
+  features_vector_classes: 13
+  feature_factory_units: 1
+  tagger_engines: [WAPITI, CRFPP, DELFT, DUMMY]
+  training_entry_points: [Trainer, AbstractTrainer]
+  generator_modes: [segmentation_from_layout, segmentation_from_tei, segmentation_from_reference]
+  lifecycle: [.old, .new, model-load]
+outcomes:
+  - {ordinal: 0, document_id: document-a, lane: layout, page_count: 202, status: pass}
+  - {ordinal: 1, document_id: document-a, lane: tei, page_count: 202, status: invalid_evidence}
+  - {ordinal: 2, document_id: document-a, lane: reference, page_count: 202, status: terminal_failure}
+  - {ordinal: 3, document_id: document-b, lane: layout, page_count: 202, status: pass}
+  - {ordinal: 4, document_id: document-b, lane: tei, page_count: 202, status: invalid_evidence}
+  - {ordinal: 5, document_id: document-b, lane: reference, page_count: 202, status: terminal_failure}
+  - {ordinal: 6, document_id: document-c, lane: layout, page_count: 202, status: invalid_evidence}
+  - {ordinal: 7, document_id: document-c, lane: tei, page_count: 202, status: terminal_failure}
+  - {ordinal: 8, document_id: document-c, lane: reference, page_count: 202, status: pass}
+structural_annotation:
+  positive_reviewed_rows: 4
+  receipt_count: 4
+  denominator_is_not_pooled: true
+  columns: [token, line_status, block_status, font, font_size, relative_position, capitalisation, digitisation, punctuation, lexicon_flags, label]
+  receipts:
+    - {ordinal: 0, document_id: document-a, lane: layout, source_ordinal: 11, token_digest: sha256:1111111111111111111111111111111111111111111111111111111111111111, disposition: structural_pass, admitted: 2, conserved: 2, loss: 0}
+    - {ordinal: 1, document_id: document-a, lane: tei, source_ordinal: 11, token_digest: sha256:2222222222222222222222222222222222222222222222222222222222222222, disposition: propagated_terminal, terminal_code: invalid_evidence, admitted: 0, conserved: 0, loss: 2}
+    - {ordinal: 2, document_id: document-b, lane: layout, source_ordinal: 7, token_digest: sha256:3333333333333333333333333333333333333333333333333333333333333333, disposition: structural_pass, admitted: 1, conserved: 1, loss: 0}
+    - {ordinal: 3, document_id: document-c, lane: reference, source_ordinal: 4, token_digest: sha256:4444444444444444444444444444444444444444444444444444444444444444, disposition: propagated_terminal, terminal_code: terminal_failure, admitted: 0, conserved: 0, loss: 1}
+  unsupported: [proper_name, common_name, first_name, location_name, year, month, email, http]
+  visual_disposition: unsupported_visual
+  training_disposition: source_not_established
+  model_disposition: forbidden_this_wave
+forbidden_fields: [raw_pdf, raw_text, raw_tei, pdf_bytes, tei_xml, page_image, image_bytes, model_payload, weights, credentials, physical_path, vendor_path, executable, hostname, secret]
+claims:
+  implementation_parity: false
+  training_equivalence: false
+  model_quality: false
+  pooling: false
+  production_splice: false
+redaction:
+  raw_content: forbidden
+  forbidden_payload_presence: false
+  secrets: forbidden
