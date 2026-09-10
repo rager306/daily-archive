@@ -3275,6 +3275,19 @@ def _run_all_tests() -> int:
         test_data_integrity_canonical_edge_contract_rule_malformed_is_flagged,
         test_data_integrity_arxiv_doi_literal_in_production_rust_is_flagged,
         test_data_integrity_arxiv_doi_literal_in_test_rust_is_ignored,
+        test_grobid_review_registry_pass_on_valid_registry,
+        test_grobid_review_registry_missing_finding_is_flagged,
+        test_grobid_review_registry_unresolved_todo_evidence_is_flagged,
+        test_grobid_review_registry_missing_evidence_is_flagged,
+        test_grobid_review_registry_resolved_without_closure_is_flagged,
+        test_grobid_review_registry_invalid_json_is_flagged,
+        test_grobid_review_registry_missing_contract_is_flagged,
+        test_grobid_review_registry_malformed_contract_is_flagged,
+        test_grobid_review_registry_wrong_item_type_is_flagged,
+        test_grobid_review_registry_wrong_object_type_is_flagged,
+        test_grobid_review_registry_enclosed_without_completion_evidence_is_flagged,
+        test_grobid_review_registry_unknown_owner_is_flagged,
+        test_grobid_review_registry_unknown_owner_is_flagged_even_when_enclosed,
     ]
     passed = 0
     failed = 0
@@ -3289,6 +3302,272 @@ def _run_all_tests() -> int:
     print(f"\nResults: {passed} passed, {failed} failed, {len(tests)} total")
     return 1 if failed else 0
 
+
+
+
+def _write_grobid_review_registry(root: Path) -> Path:
+    """Write a minimal valid GAR review registry into a temp root."""
+    contract = root / "scripts/governor/checks/grobid_absorption_review.yaml"
+    contract.parent.mkdir(parents=True, exist_ok=True)
+    contract.write_text(
+        "schema_version: grobid-review-registry.v1\n"
+        "policy_id: grobid_review_registry\n"
+        "dimension: scholarly_parse_plane\n"
+        "severity: medium\n"
+        "registry:\n"
+        "  findings: doc/review/review.jsonl\n"
+        "  finding_schema: doc/review/review.schema.json\n"
+        '  id_pattern: "^GAR-[0-9]{3}$"\n'
+        "  id_range: [GAR-001, GAR-002]\n"
+        "  allow_status: [open, resolved, superseded]\n"
+        "  unresolved_status: [open]\n"
+        "  owner_field: assessment.owning_wave\n"
+        "  owner_unassigned_value: unassigned\n",
+        encoding="utf-8",
+    )
+    schema = root / "doc/review/review.schema.json"
+    schema.parent.mkdir(parents=True, exist_ok=True)
+    schema.write_text(
+        json.dumps(
+            {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["finding_id", "status", "dependencies", "evidence", "assessment"],
+                "properties": {
+                    "finding_id": {"pattern": "^GAR-[0-9]{3}$"},
+                    "status": {"enum": ["open", "resolved", "superseded"]},
+                    "dependencies": {"type": "array", "items": {"pattern": "^GAR-[0-9]{3}$"}, "uniqueItems": True},
+                    "evidence": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": ["path", "note"],
+                            "properties": {"path": {}, "note": {"minLength": 3}},
+                        },
+                    },
+                    "assessment": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["owning_wave"],
+                        "properties": {"owning_wave": {}},
+                    },
+                    "completion_evidence": {
+                        "type": "object",
+                        "required": ["mode", "ref", "result", "artifacts", "observed_at", "source_revision"],
+                        "properties": {
+                            "mode": {},
+                            "ref": {},
+                            "result": {},
+                            "artifacts": {},
+                            "observed_at": {},
+                            "source_revision": {},
+                        },
+                    },
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    evidence = root / "crates/da-cli/examples/document_segmentation_shadow.rs"
+    evidence.parent.mkdir(parents=True, exist_ok=True)
+    evidence.write_text("// fixture\n", encoding="utf-8")
+    findings = root / "doc/review/review.jsonl"
+    findings.write_text(
+        json.dumps(
+            {
+                "finding_id": "GAR-001",
+                "status": "open",
+                "dependencies": [],
+                "evidence": [{"path": "crates/da-cli/examples/document_segmentation_shadow.rs", "note": "real file"}],
+                "assessment": {"owning_wave": "unassigned"},
+            }
+        )
+        + "\n"
+        + json.dumps(
+            {
+                "finding_id": "GAR-002",
+                "status": "superseded",
+                "dependencies": [],
+                "evidence": [{"path": "doc/review/review.jsonl", "note": "self reference"}],
+                "assessment": {"owning_wave": "unassigned"},
+                "completion_evidence": {
+                    "mode": "governor_rule",
+                    "ref": "grobid_review_registry_broken",
+                    "result": "pass",
+                    "artifacts": ["doc/review/review.jsonl"],
+                    "observed_at": "2026-09-10",
+                    "source_revision": "test-fixture",
+                },
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return contract
+
+
+def _review_flags(root: Path):
+    from governor.adapters.checks.grobid_review_registry import check_grobid_review_registry
+
+    return check_grobid_review_registry(root)
+
+
+def test_grobid_review_registry_pass_on_valid_registry():
+    root = _make_root()
+    _write_grobid_review_registry(root)
+    flags = _review_flags(root)
+    allowed = {"grobid_review_registry_status", "grobid_review_registry_scope_warning"}
+    assert not [f for f in flags if f.flag not in allowed], flags
+    status = next(f for f in flags if f.flag == "grobid_review_registry_status")
+    assert "records=2" in status.evidence
+    assert "unresolved=1" in status.evidence
+    assert "enclosed=1" in status.evidence
+
+
+def test_grobid_review_registry_missing_finding_is_flagged():
+    root = _make_root()
+    _write_grobid_review_registry(root)
+    (root / "doc/review/review.jsonl").unlink()
+    flags = _review_flags(root)
+    assert any(f.flag == "grobid_review_registry_fixture_missing" for f in flags)
+
+
+def test_grobid_review_registry_unresolved_todo_evidence_is_flagged():
+    root = _make_root()
+    _write_grobid_review_registry(root)
+    path = root / "doc/review/review.jsonl"
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    rows[0]["evidence"] = [{"path": "TODO: missing", "note": "todo"}]
+    path.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+    flags = _review_flags(root)
+    assert any(
+        f.flag == "grobid_review_registry_broken" and "TODO: missing" in f.evidence for f in flags
+    )
+
+
+def test_grobid_review_registry_missing_evidence_is_flagged():
+    root = _make_root()
+    _write_grobid_review_registry(root)
+    path = root / "doc/review/review.jsonl"
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    rows[0]["evidence"] = [{"path": "missing/file.rs", "note": "absent"}]
+    path.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+    flags = _review_flags(root)
+    assert any(
+        f.flag == "grobid_review_registry_broken" and "missing/file.rs" in f.evidence for f in flags
+    )
+
+
+def test_grobid_review_registry_resolved_without_closure_is_flagged():
+    root = _make_root()
+    _write_grobid_review_registry(root)
+    path = root / "doc/review/review.jsonl"
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    rows[1]["status"] = "resolved"
+    rows[1]["evidence"] = [{"path": "missing/file.rs", "note": "absent"}]
+    path.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+    flags = _review_flags(root)
+    # Missing evidence must fail even on enclosed history: closure needs proof, not prose.
+    assert any(
+        f.flag == "grobid_review_registry_broken" and "missing/file.rs" in f.evidence for f in flags
+    )
+
+
+def test_grobid_review_registry_invalid_json_is_flagged():
+    root = _make_root()
+    _write_grobid_review_registry(root)
+    (root / "doc/review/review.jsonl").write_text("{not json\n", encoding="utf-8")
+    flags = _review_flags(root)
+    assert any(f.flag == "grobid_review_registry_fixture_invalid" for f in flags)
+
+def test_grobid_review_registry_missing_contract_is_flagged():
+    root = _make_root()
+    _write_grobid_review_registry(root)
+    (root / "scripts/governor/checks/grobid_absorption_review.yaml").unlink()
+    flags = _review_flags(root)
+    assert any(
+        f.flag == "grobid_review_registry_fixture_missing" and "contract missing" in f.evidence
+        for f in flags
+    )
+
+
+def test_grobid_review_registry_malformed_contract_is_flagged():
+    root = _make_root()
+    _write_grobid_review_registry(root)
+    (root / "scripts/governor/checks/grobid_absorption_review.yaml").write_text(
+        "registry: [unbalanced\n", encoding="utf-8"
+    )
+    flags = _review_flags(root)
+    assert any(f.flag == "grobid_review_registry_invalid" for f in flags)
+
+
+def test_grobid_review_registry_wrong_item_type_is_flagged():
+    root = _make_root()
+    _write_grobid_review_registry(root)
+    path = root / "doc/review/review.jsonl"
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    rows[0]["dependencies"] = ["not-a-GAR-ID"]
+    path.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+    flags = _review_flags(root)
+    assert any(f.flag == "grobid_review_registry_fixture_invalid" for f in flags)
+
+
+def test_grobid_review_registry_wrong_object_type_is_flagged():
+    root = _make_root()
+    _write_grobid_review_registry(root)
+    path = root / "doc/review/review.jsonl"
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    rows[0]["assessment"] = ["not-an-object"]
+    path.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+    flags = _review_flags(root)
+    assert any(f.flag == "grobid_review_registry_fixture_invalid" for f in flags)
+
+
+def test_grobid_review_registry_unknown_owner_is_flagged_even_when_enclosed():
+    root = _make_root()
+    contract = _write_grobid_review_registry(root)
+    text = contract.read_text(encoding="utf-8")
+    text += "  owner_allow: [M502-2w7y8k/S01]\n"
+    contract.write_text(text, encoding="utf-8")
+    path = root / "doc/review/review.jsonl"
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    rows[0]["assessment"]["owning_wave"] = "M502-2w7y8k/S09"
+    path.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+    flags = _review_flags(root)
+    assert any(
+        f.flag == "grobid_review_registry_broken" and "unknown owner" in f.evidence for f in flags
+    )
+
+
+def test_grobid_review_registry_enclosed_without_completion_evidence_is_flagged():
+    root = _make_root()
+    _write_grobid_review_registry(root)
+    path = root / "doc/review/review.jsonl"
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    rows[1]["status"] = "resolved"
+    rows[1].pop("completion_evidence", None)
+    # Evidence path itself exists, so only the missing closure proof must fail.
+    rows[1]["evidence"] = [{"path": "doc/review/review.jsonl", "note": "existing file"}]
+    path.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+    flags = _review_flags(root)
+    assert any(
+        f.flag == "grobid_review_registry_broken" and "closure proof" in f.evidence for f in flags
+    )
+
+
+def test_grobid_review_registry_unknown_owner_is_flagged():
+    root = _make_root()
+    contract = _write_grobid_review_registry(root)
+    text = contract.read_text(encoding="utf-8")
+    text += "  owner_allow: [M502-2w7y8k/S01]\n"
+    contract.write_text(text, encoding="utf-8")
+    flags = _review_flags(root)
+    # Temp fixture owners are "unassigned", which is outside this allow-list.
+    assert any(
+        f.flag == "grobid_review_registry_broken" and "unknown owner" in f.evidence for f in flags
+    )
 
 if __name__ == "__main__":
     sys.exit(_run_all_tests())
