@@ -197,6 +197,7 @@ fn assert_report_is_redacted(text: &str, value: &Value) {
 
 #[tokio::main]
 async fn main() {
+    let _log_guard = da_cli::logging::init_pipeline_logging("rest_batch_asset_shadow");
     let mut args = std::env::args().skip(1);
     assert_eq!(
         args.next().as_deref(),

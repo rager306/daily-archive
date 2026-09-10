@@ -253,6 +253,7 @@ fn build(oracle: &Oracle) -> Vec<Receipt> {
         .collect()
 }
 fn main() {
+    let _log_guard = da_cli::logging::init_pipeline_logging("feature_tagger_training_shadow");
     let args = Args::parse();
     let oracle: Oracle = serde_yaml::from_str(ORACLE).expect("independent oracle");
     assert_eq!(oracle.schema_version, "feature-tagger-training-oracle.v1");

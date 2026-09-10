@@ -4,6 +4,7 @@
 use da_parse::{LayoutDocument, NativeBodySequenceInput, run_native_body_sequence};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("native_body_accounting_shadow");
     let document = LayoutDocument::new("shadow-example", "a".repeat(64), vec![])?;
     let receipt = run_native_body_sequence(NativeBodySequenceInput {
         document: &document,

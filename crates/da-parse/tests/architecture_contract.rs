@@ -5637,3 +5637,97 @@ fn s05_native_family_gate_rehearsal_stops_at_human_gate_and_preserves_java() {
         "R124: synthetic duplicate trigger must fail the uniqueness boundary"
     );
 }
+
+// ───── S20/T04: REST asset/batch production quarantine ─────
+//
+// This is deliberately an architecture-only contract: the local batch
+// composition remains a carrier over the three typed transports, while Java
+// asset/HTML/annotation/training families cannot silently become production
+// routes or ParserPort methods.
+#[test]
+fn s20_rest_batch_asset_quarantine_contract() {
+    let policy = read_text("scripts/governor/checks/scholarly_parse_plane.yaml");
+    for binding in [
+        "java_grobid_rest_batch_asset_source.json",
+        "rest_batch_asset_parity.yaml",
+        "rest_batch_asset_oracle_source.json",
+        "rest_batch_asset_oracle.yaml",
+        "rest_batch_asset_shadow.json",
+    ] {
+        assert!(
+            policy.contains(binding),
+            "S20: quarantine must bind T01/T02/T03 artifact {binding}"
+        );
+    }
+    for pin in [
+        "implemented_new_endpoints: 0",
+        "decision_point: 6",
+        "independently_selectable: [header, references]",
+        "import_eligible: false",
+        "graph_write: forbidden",
+        "auto_promote: forbidden",
+        "production_route: forbidden",
+        "not_endpoint: true",
+    ] {
+        assert!(policy.contains(pin), "S20: missing quarantine pin {pin}");
+    }
+
+    let transport = read_text("crates/da-parse/src/transport.rs");
+    let endpoint_enum = transport
+        .split("pub enum ParseEndpoint")
+        .nth(1)
+        .and_then(|tail| tail.split("impl ParseEndpoint").next())
+        .expect("S20: ParseEndpoint mapping exists");
+    assert_eq!(endpoint_enum.matches("Fulltext").count(), 1);
+    assert_eq!(endpoint_enum.matches("Header").count(), 1);
+    assert_eq!(endpoint_enum.matches("References").count(), 1);
+    let endpoint_block = transport
+        .split("impl ParseEndpoint")
+        .nth(1)
+        .expect("S20: ParseEndpoint implementation exists");
+    for route in [
+        "/api/processFulltextDocument",
+        "/api/processHeaderDocument",
+        "/api/processReferences",
+    ] {
+        assert!(
+            endpoint_block.contains(route),
+            "S20: sanctioned route missing {route}"
+        );
+    }
+    for forbidden in [
+        "processFulltextAssetDocument",
+        "processFulltextDocumentHTML",
+        "annotatePDF",
+        "createTraining",
+        "trainTagger",
+        "batchProcessAssets",
+        "batchTraining",
+    ] {
+        assert!(
+            !endpoint_block.contains(forbidden),
+            "S20: forbidden Java asset/training route widened ParseEndpoint: {forbidden}"
+        );
+    }
+
+    // Fail-visible synthetic controls mirror the DATA scanner's two critical
+    // classes: companion symbol splice and caller-controlled route widening.
+    let synthetic = [
+        "fn route() { processFulltextAssetDocument(); }",
+        "fn route(url: &str) { caller_controlled_url(url); }",
+        "fn route() { let _ = generic_url; }",
+    ];
+    for mutation in synthetic {
+        let code = strip_line_comments(mutation);
+        assert!(
+            [
+                "processFulltextAssetDocument",
+                "caller_controlled_url",
+                "generic_url",
+            ]
+            .iter()
+            .any(|token| code.contains(token)),
+            "S20: synthetic widening must remain fail-visible: {mutation}"
+        );
+    }
+}

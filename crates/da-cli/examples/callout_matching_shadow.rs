@@ -281,6 +281,7 @@ fn run_once() -> Matching {
     }
 }
 fn main() {
+    let _log_guard = da_cli::logging::init_pipeline_logging("callout_matching_shadow");
     let args = <Args as clap::Parser>::parse();
     let (accounting, _, _) = pipeline();
     let matching = run_once();

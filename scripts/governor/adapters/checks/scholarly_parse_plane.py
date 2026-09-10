@@ -751,6 +751,75 @@ def _check_java_absent_endpoints(
             )
 
 
+def _check_rest_batch_asset_quarantine(root: Path, contract: dict[str, Any], flag: Any) -> None:
+    spec = contract.get("rest_batch_asset_quarantine") or {}
+    bindings = spec.get("source_bindings") or []
+    for binding in bindings:
+        relative = str(binding.get("path") or "")
+        path = root / relative
+        if not path.is_file():
+            flag("rest_batch_asset_quarantine", "integration", relative, "tracked source binding", "missing")
+            continue
+        observed = _sha256(path)
+        if observed != binding.get("sha256"):
+            flag("rest_batch_asset_quarantine", "integration", relative, binding.get("sha256"), observed)
+            continue
+        try:
+            value = json.loads(path.read_text(encoding="utf-8")) if path.suffix == ".json" else yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, yaml.YAMLError) as error:
+            flag("rest_batch_asset_quarantine", "integration", relative, binding.get("schema_version"), str(error))
+            continue
+        observed_schema = value.get("schema_version") if isinstance(value, dict) else None
+        if binding.get("schema_version") == "ledger_version:1":
+            valid_schema = isinstance(value, dict) and value.get("ledger_version") == 1
+        else:
+            valid_schema = observed_schema == binding.get("schema_version")
+        if not valid_schema:
+            flag("rest_batch_asset_quarantine", "integration", relative, binding.get("schema_version"), observed_schema if isinstance(value, dict) else type(value).__name__)
+
+    closed = set((spec.get("dispositions") or {}).get("closed") or [])
+    expected_closed = {"existing_typed_transport", "existing_local_batch_composition", "product_required_gap", "not_required_by_current_journey", "unsupported_without_source", "forbidden_this_wave", "propagated_terminal"}
+    if closed != expected_closed:
+        flag("rest_batch_asset_quarantine", "integration", "scholarly_parse_plane.yaml#rest_batch_asset_quarantine.dispositions", sorted(expected_closed), sorted(closed))
+    if (spec.get("dispositions") or {}).get("implemented_new_endpoints") != 0:
+        flag("rest_batch_asset_quarantine", "promotion_quarantine", "scholarly_parse_plane.yaml#rest_batch_asset_quarantine.dispositions", 0, (spec.get("dispositions") or {}).get("implemented_new_endpoints"))
+
+    sanctioned = spec.get("sanctioned_endpoints") or []
+    expected = [
+        ("rest.processFulltextDocument", "POST", "/api/processFulltextDocument", "fulltext-v1", "fulltext=v1"),
+        ("rest.processHeaderDocument", "POST", "/api/processHeaderDocument", "header-v1", "header=v1"),
+        ("rest.processReferences", "POST", "/api/processReferences", "references-v1", "references=v1"),
+    ]
+    actual = [(row.get("id"), row.get("method"), row.get("route"), row.get("request"), row.get("result")) for row in sanctioned if isinstance(row, dict)]
+    if actual != expected:
+        flag("rest_batch_asset_quarantine", "integration", "scholarly_parse_plane.yaml#rest_batch_asset_quarantine.sanctioned_endpoints", expected, actual)
+
+    policy = spec.get("policy") or {}
+    expected_policy = {"rollback_target": "java-grobid-http@0.9.0-crf", "structural_parse_independent_of_enrichment": True, "decision_point": 6, "independently_selectable": ["header", "references"], "import_eligible": False, "graph_write": "forbidden", "auto_promote": "forbidden", "production_route": "forbidden"}
+    for key, value in expected_policy.items():
+        if policy.get(key) != value:
+            flag("rest_batch_asset_quarantine", "promotion_quarantine", f"scholarly_parse_plane.yaml#rest_batch_asset_quarantine.policy.{key}", value, policy.get(key))
+    if (spec.get("local_batch") or {}).get("not_endpoint") is not True:
+        flag("rest_batch_asset_quarantine", "integration", "scholarly_parse_plane.yaml#rest_batch_asset_quarantine.local_batch", True, spec.get("local_batch"))
+
+    roots = (spec.get("scan") or {}).get("roots") or []
+    forbidden = (spec.get("scan") or {}).get("forbidden_tokens") or []
+    route_markers = (spec.get("scan") or {}).get("forbidden_route_markers") or []
+    for relative in roots:
+        path = root / relative
+        files = sorted(path.rglob("*.rs")) if path.is_dir() else ([path] if path.is_file() else [])
+        for file_path in files:
+            try:
+                source = file_path.read_text(encoding="utf-8")
+            except OSError as error:
+                flag("rest_batch_asset_quarantine", "integration", str(file_path.relative_to(root)), "readable source", str(error))
+                continue
+            code = re.sub(r"//[^\n]*", "", source)
+            for token in forbidden + route_markers:
+                if re.search(rf"(?<![A-Za-z0-9_]){re.escape(str(token))}(?![A-Za-z0-9_])", code):
+                    flag("rest_batch_asset_quarantine", "promotion_quarantine", f"{file_path.relative_to(root)}#rest_batch_asset_quarantine", "no forbidden asset/training/arbitrary-route symbol", token)
+
+
 def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     """Validate the source-bound scholarly parse policy and its fixtures.
 
@@ -857,6 +926,7 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     _check_header_quarantine(root, registry, registry_path, flag)
     _check_bibliography_quarantine(root, registry, registry_path, flag)
     _check_visual_heads_quarantine(root, registry, registry_path, flag)
+    _check_rest_batch_asset_quarantine(root, contract, flag)
     header_ids = (
         "rest.processDate",
         "rest.processHeaderNames",

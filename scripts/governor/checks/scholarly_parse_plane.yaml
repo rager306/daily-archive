@@ -44,6 +44,7 @@ closed_taxonomy:
     - zero_count_from_absence
     - family_promote_cap
     - worker_identity_leak
+    - rest_batch_asset_quarantine
 planes:
   dependency_boundary:
     required_evidence: [source_path, source_sha256, forbidden_dependencies]
@@ -69,6 +70,53 @@ planes:
     production_route: forbidden
     graph_write: forbidden
     import_eligible: false
+rest_batch_asset_quarantine:
+  source_bindings:
+    - path: data/parse/api_compatibility_ledger.yaml
+      sha256: 531aec95aea02b0b47265c5459c83ebf943ae06e4a4e6cc31a81a97db6155f45
+      schema_version: ledger_version:1
+    - path: data/parse/grobid_compatibility.yaml
+      sha256: f53fc41a865e067bc20b133b58ec38b590569dc5ad4b093e0234b3120444d944
+      schema_version: grobid-compatibility.v1
+    - path: artifacts/parse_compat/java_grobid_rest_batch_asset_source.json
+      sha256: fcd645d6d6ac27d79a4e247d78a2dbb456886e8c92b54a812488ff23b029f8b3
+      schema_version: java-grobid-rest-batch-asset-source.v1
+    - path: data/parse/rest_batch_asset_parity.yaml
+      sha256: 332dc94e2eae2c18ea4e1946e457d161bb8ec24c927a471eefb73c7c4367a583
+      schema_version: rest-batch-asset-parity.v1
+    - path: artifacts/parse_compat/rest_batch_asset_oracle_source.json
+      sha256: 060514591b78026915f4718863ebb715990263ec6d49f18cef9deff18bc833c7
+      schema_version: rest-batch-asset-demand-oracle-source.v1
+    - path: crates/da-parse/tests/fixtures/rest_batch_asset_oracle.yaml
+      sha256: 87c681d3c3ddc776942688e92cb3c7eb7516a99e257cd983e95cfd1bee52953f
+      schema_version: rest-batch-asset-demand-oracle.v1
+    - path: artifacts/parse_compat/rest_batch_asset_shadow.json
+      sha256: 2dc2dcdf480671aafadf5aa692c8f51e205221e2077db92d1956b24f429cba69
+      schema_version: rest-batch-asset-shadow.v1
+  dispositions:
+    closed: [existing_typed_transport, existing_local_batch_composition, product_required_gap, not_required_by_current_journey, unsupported_without_source, forbidden_this_wave, propagated_terminal]
+    implemented_new_endpoints: 0
+  sanctioned_endpoints:
+    - {id: rest.processFulltextDocument, method: POST, route: /api/processFulltextDocument, request: fulltext-v1, result: fulltext=v1}
+    - {id: rest.processHeaderDocument, method: POST, route: /api/processHeaderDocument, request: header-v1, result: header=v1}
+    - {id: rest.processReferences, method: POST, route: /api/processReferences, request: references-v1, result: references=v1}
+  local_batch:
+    route: local-parse-batch
+    carrier: da-cli::parse_batch
+    not_endpoint: true
+  policy:
+    rollback_target: java-grobid-http@0.9.0-crf
+    structural_parse_independent_of_enrichment: true
+    decision_point: 6
+    independently_selectable: [header, references]
+    import_eligible: false
+    graph_write: forbidden
+    auto_promote: forbidden
+    production_route: forbidden
+  scan:
+    roots: [crates/da-cli/src, crates/da-ports/src, crates/da-application/src, crates/da-adapters/src, crates/da-parse/src]
+    forbidden_tokens: [processFulltextAssetDocument, processFulltextDocumentHTML, annotatePDF, createTraining, trainTagger, batchProcessAssets, batchTraining]
+    forbidden_route_markers: [caller_controlled_url, arbitrary_route, generic_url]
 bindings:
   source_data:
     - path: data/parse/native_fulltext_composition.yaml
@@ -76,11 +124,11 @@ bindings:
     - path: data/parse/comparison_contract.yaml
       sha256: 6a65786e458db789a0e6a068deffcdbc00349363250f9686f53f78442f038c27
     - path: data/parse/api_compatibility_ledger.yaml
-      sha256: 7ea0eb7c9e8520268d69948d10291a800c8bdae4f825a51a95130739dc70e05b
+      sha256: 531aec95aea02b0b47265c5459c83ebf943ae06e4a4e6cc31a81a97db6155f45
     - path: data/parse/acceptance_manifest.yaml
       sha256: 9c85b1d3bcec35614d15f7170a1e3f121beca0ce69e64105cb0698e474fa512e
     - path: data/parse/grobid_compatibility.yaml
-      sha256: 03b2471e4e1e9b45fe39f080a9358ecb2541b2130380b5aebc981b4f90be42d8
+      sha256: f53fc41a865e067bc20b133b58ec38b590569dc5ad4b093e0234b3120444d944
     - path: data/parse/native_visual_heads.yaml
       sha256: cbcacf8973d1265b95de48515c4f3b285e45a6b40a3d8608d8027dac36675a36
     - path: data/parse/document_segmentation.yaml

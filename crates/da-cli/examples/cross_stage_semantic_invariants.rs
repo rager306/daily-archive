@@ -195,6 +195,7 @@ fn visual() -> NativeVisualSequenceReceipt {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("cross_stage_semantic_invariants");
     let join = join();
     let (java_p4, java_p6, java_p7) = java_observations();
     let report = check_cross_stage_semantic_invariants(CrossStageSemanticInvariantsInput {

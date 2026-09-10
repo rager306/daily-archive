@@ -174,6 +174,7 @@ fn execute() -> Value {
 }
 
 fn main() {
+    let _log_guard = da_cli::logging::init_pipeline_logging("fulltext_block_semantics_shadow");
     let mut report = PathBuf::from("artifacts/parse_compat/fulltext_block_semantics_shadow.json");
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {

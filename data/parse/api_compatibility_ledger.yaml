@@ -103,6 +103,25 @@ policy_locks:
   llm_promotion: forbidden
   free_label_invention: forbidden
   sidecar_status: candidate_evidence_only
+# S07/T04 additive REST asset/batch quarantine observation. This remains an
+# observation block in the existing registry, not a second capability ledger;
+# the independent oracle and shadow report are bound by the governor policy.
+rest_batch_asset_quarantine:
+  source_artifacts:
+    - artifacts/parse_compat/java_grobid_rest_batch_asset_source.json
+    - data/parse/rest_batch_asset_parity.yaml
+    - artifacts/parse_compat/rest_batch_asset_oracle_source.json
+    - crates/da-parse/tests/fixtures/rest_batch_asset_oracle.yaml
+    - artifacts/parse_compat/rest_batch_asset_shadow.json
+  sanctioned_endpoints: [parse.endpoint.process_fulltext_document, parse.endpoint.process_header_document, parse.endpoint.process_references_document]
+  local_batch_carrier: parse.batch.local_composition
+  implemented_new_endpoints: 0
+  product_gap: none_independently_evidenced
+  production_route: forbidden
+  graph_write: forbidden
+  import_eligible: false
+  auto_promote: forbidden
+
 # S06/T05 additive batch/cache observation (structured record; see the
 # header comment). Every value below is cross-validated against the live
 # da-parse vocabulary — drift fails per exact field.

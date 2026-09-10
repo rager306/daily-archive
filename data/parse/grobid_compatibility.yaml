@@ -37,6 +37,21 @@ defaults:
   # wire token is processHeaderFundingDocument. This list — not
   # capabilities[].state — is the sole source of the forbidden set, so a
   # mutation of state cannot remove an endpoint from the checked set.
+  rest_batch_asset_quarantine:
+    source_artifacts:
+      - artifacts/parse_compat/java_grobid_rest_batch_asset_source.json
+      - data/parse/rest_batch_asset_parity.yaml
+      - artifacts/parse_compat/rest_batch_asset_oracle_source.json
+      - crates/da-parse/tests/fixtures/rest_batch_asset_oracle.yaml
+      - artifacts/parse_compat/rest_batch_asset_shadow.json
+    implemented_new_endpoints: 0
+    sanctioned_parse_endpoints: [processFulltextDocument, processHeaderDocument, processReferences]
+    local_batch_is_composition: true
+    structural_parse_independent_of_enrichment: true
+    production_route: forbidden
+    graph_write: forbidden
+    import_eligible: false
+    auto_promote: forbidden
   java_absent_endpoints:
   - processHeaderFundingDocument
   - processFulltextDocumentHTML
