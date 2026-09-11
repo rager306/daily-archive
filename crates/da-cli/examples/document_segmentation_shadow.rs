@@ -16,7 +16,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 const REPORT_SCHEMA: &str = "document-segmentation-shadow.v2";
-const ORACLE_SOURCE_SCHEMA: &str = "document-segmentation-oracle-source.v2";
+const ORACLE_SOURCE_SCHEMA: &str = "document-segmentation-oracle-source.v3";
 const ORACLE_SOURCE_DEFAULT: &str =
     "artifacts/parse_compat/document_segmentation_oracle_source.json";
 const ORACLE_FIXTURE: &str = "crates/da-parse/tests/fixtures/segmentation_oracle.yaml";
@@ -319,6 +319,68 @@ fn region_name(region: FullSemanticRegion) -> &'static str {
 
 fn oracle_lane(row: &serde_yaml::Value) -> Option<&str> {
     row["lane_id"].as_str().or_else(|| row["lane"].as_str())
+}
+
+fn validate_oracle_source(value: &serde_json::Value) -> Result<(), Box<dyn std::error::Error>> {
+    if value["schema_version"] != ORACLE_SOURCE_SCHEMA
+        || value["canonicalization"]["encoding"] != "utf-8"
+        || value["canonicalization"]["line_endings"] != "LF"
+        || value["canonicalization"]["trailing_newline"] != false
+        || value["canonicalization"]["digest"] != "sha256 over exact canonical bytes"
+    {
+        return Err("unsupported v3 oracle canonicalization".into());
+    }
+    let receipts = value["receipts"]
+        .as_array()
+        .ok_or("oracle source receipts missing")?;
+    if receipts.len() != 9 {
+        return Err("oracle source must contain nine receipts".into());
+    }
+    for receipt in receipts {
+        let page_bytes = receipt["canonical_page_range"]["bytes"]
+            .as_str()
+            .ok_or("oracle page canonical bytes missing")?;
+        let annotation_bytes = receipt["canonical_annotation"]["bytes"]
+            .as_str()
+            .ok_or("oracle annotation canonical bytes missing")?;
+        for (kind, bytes, digest) in [
+            (
+                "page range",
+                page_bytes,
+                receipt["canonical_page_range"]["sha256"].as_str(),
+            ),
+            (
+                "annotation",
+                annotation_bytes,
+                receipt["canonical_annotation"]["sha256"].as_str(),
+            ),
+        ] {
+            if bytes.contains('\r') || sha(bytes.as_bytes()) != digest.unwrap_or("") {
+                return Err(format!("oracle {kind} digest mismatch").into());
+            }
+        }
+        let measured = receipt["denominator"]["value"]
+            .as_u64()
+            .ok_or("measured denominator missing")?;
+        if receipt["denominator"]["kind"] != "measured"
+            || receipt["denominator"]["source"].as_str().is_none()
+            || receipt["admitted_lexical_denominator"] != measured
+        {
+            return Err("oracle measured denominator binding mismatch".into());
+        }
+        if receipt["proxy_denominator"]["kind"] != "proxy"
+            || receipt["proxy_denominator"]["formula"] != "page_count × 10"
+            || receipt["proxy_denominator"]["use"] != "diagnostic comparison only"
+        {
+            return Err("oracle proxy denominator is not diagnostic-only".into());
+        }
+        if receipt["page_range_digest"] != receipt["canonical_page_range"]["sha256"]
+            || receipt["annotation_digest"] != receipt["canonical_annotation"]["sha256"]
+        {
+            return Err("oracle published digest binding mismatch".into());
+        }
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -894,6 +956,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let semantic_equal = first_digest == semantic_digest(&replay_outcomes);
     let worker_one_equal = first_digest == semantic_digest(&worker_one_outcomes);
     let genre = manifest.source_bound_genres.labels[0].id.clone();
+    let oracle_bytes = fs::read(&oracle_path)?;
+    let oracle_value: serde_json::Value = serde_json::from_slice(&oracle_bytes)?;
+    validate_oracle_source(&oracle_value)?;
+    let oracle_source_receipts = oracle_value["receipts"]
+        .as_array()
+        .ok_or("oracle source receipts missing")?;
     let oracle_fixture: serde_yaml::Value = serde_yaml::from_slice(&fs::read(ORACLE_FIXTURE)?)?;
     let oracle_receipts = oracle_fixture["receipts"]
         .as_sequence()
@@ -930,10 +998,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     run["region"].as_str() == Some(region)
                         && run["absence"] != serde_yaml::Value::Null
                 });
+                let source_receipt = oracle_source_receipts
+                    .iter()
+                    .find(|receipt| {
+                        receipt["document_id"].as_str() == Some(document.id.as_str())
+                            && receipt["lane"].as_str() == Some(lane)
+                    })
+                    .ok_or("oracle source document-lane row missing")?;
                 let admitted_tokens = if reviewed_absent {
                     0
                 } else {
-                    oracle["admitted_lexical_denominator"].as_u64().unwrap_or(0) as usize
+                    source_receipt["denominator"]["value"]
+                        .as_u64()
+                        .ok_or("measured oracle denominator missing")? as usize
                 };
                 let assigned_tokens = lane_outcome
                     .and_then(|o| o.region_tokens.get(region).copied())
@@ -959,21 +1036,53 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     (Some(precision), Some(recall)) if precision + recall > 0.0 => {
                         Some(2.0 * precision * recall / (precision + recall))
                     }
+                    (Some(_), Some(_)) => Some(0.0),
                     _ => None,
                 };
-                let boundary_displacement = (!boundary_match.displacements.is_empty()).then_some(
+                let diagnostic_distances =
+                    if predicted_boundaries.is_empty() || reviewed_boundaries.is_empty() {
+                        Vec::new()
+                    } else {
+                        predicted_boundaries
+                            .iter()
+                            .map(|predicted| {
+                                reviewed_boundaries
+                                    .iter()
+                                    .map(|reviewed| boundary_distance(*predicted, *reviewed))
+                                    .min()
+                                    .unwrap_or_default()
+                            })
+                            .collect::<Vec<_>>()
+                    };
+                let boundary_displacement = if !boundary_match.displacements.is_empty() {
+                    Some(
+                        boundary_match
+                            .displacements
+                            .iter()
+                            .map(|value| *value as f64)
+                            .sum::<f64>()
+                            / boundary_match.displacements.len() as f64,
+                    )
+                } else if !diagnostic_distances.is_empty() {
+                    Some(
+                        diagnostic_distances
+                            .iter()
+                            .map(|value| *value as f64)
+                            .sum::<f64>()
+                            / diagnostic_distances.len() as f64,
+                    )
+                } else {
+                    None
+                };
+                let boundary_displacement_max = if !boundary_match.displacements.is_empty() {
                     boundary_match
                         .displacements
                         .iter()
+                        .max()
                         .map(|value| *value as f64)
-                        .sum::<f64>()
-                        / boundary_match.displacements.len() as f64,
-                );
-                let boundary_displacement_max = boundary_match
-                    .displacements
-                    .iter()
-                    .max()
-                    .map(|value| *value as f64);
+                } else {
+                    diagnostic_distances.iter().max().map(|value| *value as f64)
+                };
                 matrix.push(MatrixRow {
                     document_id: document.id.clone(),
                     lane: lane.into(),
@@ -1005,14 +1114,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let page_receipts = outcomes
         .iter()
         .flat_map(|outcome| {
-            let oracle = oracle_receipts.iter().find(|receipt| {
+            let source_receipt = oracle_source_receipts.iter().find(|receipt| {
                 receipt["document_id"].as_str() == Some(outcome.document_id.as_str())
-                    && oracle_lane(receipt) == Some(outcome.lane.as_str())
+                    && receipt["lane"].as_str() == Some(outcome.lane.as_str())
             });
-            let page_count = oracle
+            let page_count = source_receipt
                 .and_then(|receipt| receipt["page_count"].as_u64())
                 .unwrap_or(0) as usize;
-            let oracle_digest = oracle
+            let oracle_digest = source_receipt
                 .and_then(|receipt| receipt["annotation_digest"].as_str())
                 .unwrap_or("typed_absence");
             (1..=page_count).map(move |page| PageReceipt {
@@ -1161,15 +1270,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect::<Vec<_>>();
     if receipts.len() != 9 {
         return Err("all nine document-lane outcomes must produce receipts".into());
-    }
-    let oracle_bytes = fs::read(&oracle_path)?;
-    let oracle_value: serde_json::Value = serde_json::from_slice(&oracle_bytes)?;
-    if oracle_value["schema_version"] != ORACLE_SOURCE_SCHEMA
-        || oracle_value["receipts"]
-            .as_array()
-            .is_none_or(|rows| rows.len() != 9)
-    {
-        return Err("independent oracle source is missing or malformed".into());
     }
     Ok(())
 }

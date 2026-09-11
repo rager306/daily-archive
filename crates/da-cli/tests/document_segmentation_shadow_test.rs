@@ -6,18 +6,8 @@ use std::path::PathBuf;
 use std::process::Command;
 use tempfile::tempdir;
 
-fn runner() -> PathBuf {
-    std::env::var_os("DOCUMENT_SEGMENTATION_SHADOW_BIN")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| {
-            std::env::current_exe()
-                .expect("integration test executable")
-                .parent()
-                .expect("deps directory")
-                .parent()
-                .expect("debug directory")
-                .join("examples/document_segmentation_shadow")
-        })
+fn runner() -> Option<PathBuf> {
+    std::env::var_os("DOCUMENT_SEGMENTATION_SHADOW_BIN").map(PathBuf::from)
 }
 
 fn is_digest(value: &str) -> bool {
@@ -36,6 +26,10 @@ fn is_source_digest(value: &str) -> bool {
         && value
             .chars()
             .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
+}
+
+fn is_published_digest(value: &str) -> bool {
+    value.strip_prefix("sha256:").is_some_and(is_source_digest)
 }
 
 fn assert_redacted(value: &Value, path: &str, in_redaction: bool) {
@@ -140,8 +134,27 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
             ".gsd/tmp/pdfalto-segmentation-runtime".to_owned(),
         ]);
     }
-    let output = Command::new(runner())
-        .args(args)
+    let mut command = if let Some(binary) = runner() {
+        let mut command = Command::new(binary);
+        command.args(&args);
+        command
+    } else {
+        let mut command = Command::new("cargo");
+        command.args([
+            "run",
+            "-q",
+            "-p",
+            "da-cli",
+            "--features",
+            "pdf-layout",
+            "--example",
+            "document_segmentation_shadow",
+            "--",
+        ]);
+        command.args(&args);
+        command
+    };
+    let output = command
         .current_dir(&repo_root)
         .output()
         .expect("run feature-gated shadow example");
@@ -157,12 +170,22 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
     let oracle_value: Value = serde_json::from_str(&oracle_text).expect("valid oracle source JSON");
     assert_eq!(
         oracle_value["schema_version"],
-        "document-segmentation-oracle-source.v2"
+        "document-segmentation-oracle-source.v3"
     );
     let receipts = oracle_value["receipts"]
         .as_array()
         .expect("oracle receipts");
     assert_eq!(receipts.len(), 9);
+    assert_eq!(oracle_value["canonicalization"]["encoding"], "utf-8");
+    assert_eq!(oracle_value["canonicalization"]["line_endings"], "LF");
+    assert_eq!(oracle_value["canonicalization"]["trailing_newline"], false);
+    assert!(receipts.iter().all(|receipt| {
+        receipt["canonical_page_range"]["bytes"].as_str().is_some()
+            && receipt["canonical_annotation"]["bytes"].as_str().is_some()
+            && receipt["denominator"]["kind"] == "measured"
+            && receipt["proxy_denominator"]["kind"] == "proxy"
+            && receipt["proxy_denominator"]["use"] == "diagnostic comparison only"
+    }));
     let expected_keys = [
         ("hub-2507.19457", "pdfalto"),
         ("hub-2507.19457", "pdf_inspector_positioned"),
@@ -212,10 +235,10 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
             && receipt["page_count"] == *page_count
             && receipt["page_range_digest"]
                 .as_str()
-                .is_some_and(is_source_digest)
+                .is_some_and(is_published_digest)
             && receipt["annotation_digest"]
                 .as_str()
-                .is_some_and(is_source_digest)
+                .is_some_and(is_published_digest)
             && receipt["admitted_lexical_denominator"]
                 .as_u64()
                 .is_some_and(|n| n > 0)
