@@ -70,6 +70,20 @@ marker_model:
   target_identity: digest_only
   raw_target_text: forbidden
 
+citation_identity:
+  schema_version: citation-identity.v1
+  entry_identity: revision_scoped_bibliography_record
+  occurrence_identity: revision_scoped_in_text_anchor
+  work_identity: stable_work_level_target
+  target_states: [resolved_work, unresolved, ambiguous]
+  unresolved_reasons: [missing_target, target_not_in_inventory, malformed_target, revision_invalidated]
+  ambiguous_reasons: [multiple_work_candidates, conflicting_revision_evidence]
+  entry_occurrence_separation: required
+  occurrence_entry_link: optional_revision_local_vid
+  target_link_scope: [paper_revision, cited_work]
+  guessed_work_link: forbidden
+  invalidated_revision_target: unresolved
+
 matching_semantics:
   target_inventory:
     status: source_not_established
@@ -127,6 +141,14 @@ independent_oracle:
   status: pending_independent_oracle
   review_required: true
   common_mode_with_matcher: forbidden
+
+reading_order:
+  model: partial_order
+  constraints: [definite_predecessor_successor, alternative_predecessor, unresolved_anchor]
+  total_order_inference: forbidden
+  unresolved_reasons: [missing_anchor, conflicting_evidence, insufficient_coordinates, revision_invalidated]
+  source_revision_scope: required
+  revision_transition: invalidate_prior_constraints
 
 production_boundary:
   new_calls: forbidden

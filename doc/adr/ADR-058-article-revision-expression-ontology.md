@@ -72,6 +72,18 @@ schema_version = 1
 - `SUPERSEDES` links newer revision to the immediately previous observed revision. Missing intermediate revisions are allowed but explicit (`v5 SUPERSEDES v1` means observed predecessor, not proof that v2-v4 do not exist).
 - Claims/entities remain shared semantic identities when appropriate, but evidence edges retain revision provenance.
 
+### Citation identity and reading order
+
+Citation semantics are revision-scoped at the observation layer and work-scoped at the target layer:
+
+- `CitationEntry` is the bibliography record in a specific `PaperRevision`.
+- `CitationOccurrence` is an in-text anchor in that revision and may link to an entry, but is never the entry itself.
+- `CitationWorkLink` targets the stable cited work identity; it does not collapse the source entry or occurrence into that work.
+- Target resolution is typed as `resolved_work`, `unresolved`, or `ambiguous`. Missing, malformed, absent-in-inventory, conflicting, and revision-invalidated targets remain typed non-links; fuzzy or invented work links are forbidden.
+- Reading order is a partial order over revision-local anchors: definite predecessor/successor constraints, alternatives, and unresolved anchors are retained without inferring a total order. A revision transition invalidates the prior revision's constraints and local entry/occurrence links.
+
+The data contracts in `data/parse/callout_matching_semantics.yaml` and `data/parse/document_segmentation.yaml` are the candidate-only source-bound expression of this model. They do not authorize graph writes or D127 admission.
+
 ## Non-decisions and locks
 
 - Accepted by explicit user decision on 2026-08-11 (D223). Production ontology materialization is authorized only through the planned revision-aware use case and remains D127-locked.

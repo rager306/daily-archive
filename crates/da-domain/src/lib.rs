@@ -15,6 +15,7 @@ pub mod article_manifest;
 pub mod assurance;
 pub mod boundary_agent;
 pub mod catalog;
+pub mod citation_identity;
 pub mod cluster;
 pub mod context_conservation;
 pub mod corpus_checkpoint;
@@ -96,6 +97,11 @@ pub use assurance::{
     LayerAssuranceResult, MissingnessReason, MutationFamilyObservation, ReplayObservation,
     TransitionAdmissionCode, TransitionAdmissionError, WriteDelta, admit_stage_transition,
     admit_transition, corpus_report_digest,
+};
+pub use citation_identity::{
+    AmbiguousCitationReason, CitationEntry, CitationOccurrence, CitationTarget, CitationWorkLink,
+    ReadingOrder, ReadingOrderConstraint, UnresolvedCitationReason, UnresolvedOrderReason,
+    citation_entry_vid, citation_occurrence_vid,
 };
 pub use edge_contract::{
     EdgeContract, contract_edge_types, contract_edge_types_or_yaml, edge_contracts,
