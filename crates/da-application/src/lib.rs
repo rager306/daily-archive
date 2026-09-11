@@ -84,7 +84,8 @@ pub use da_ports::CandidateManifest;
 pub use parse_learning_evaluation::{
     ABLATION_SCHEMA_VERSION, AblationReport, CRITIC_SCHEMA_VERSION, ContaminationAssessment,
     CriticObservation, CriticStatus, EvaluationError, FrozenEvalCase, ProducerProvenance,
-    aggregate_same_n_ablation, aggregate_same_n_ablation_with_provenance,
+    PromotionQualification, PromotionQualityPolicy, aggregate_same_n_ablation,
+    aggregate_same_n_ablation_with_provenance, qualify_candidate_quality,
 };
 pub use parse_policy_training::{
     PersistedCandidate, TrainingConfig, TrainingError, TrainingOutcome, train_microlora_candidate,

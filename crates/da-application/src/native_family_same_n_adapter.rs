@@ -414,6 +414,11 @@ pub const fn evaluation_error_reason(error: &EvaluationError) -> PromotionGateBl
         EvaluationError::CorpusMismatch => PromotionGateBlockReason::StaleIdentity,
         EvaluationError::ConservationVeto => PromotionGateBlockReason::ConservationVeto,
         EvaluationError::CandidateLockViolation => PromotionGateBlockReason::CandidateLockViolation,
+        EvaluationError::NonFiniteCandidateQuality
+        | EvaluationError::ValidationGapExceeded
+        | EvaluationError::ValidationQualityBelowThreshold => {
+            PromotionGateBlockReason::FailedEvidence
+        }
     }
 }
 

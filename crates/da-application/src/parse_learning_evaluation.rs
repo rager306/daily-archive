@@ -93,7 +93,10 @@ pub struct AblationReport {
     pub candidate_metric_one: f64,
     pub baseline_metric_two: f64,
     pub candidate_metric_two: f64,
+    /// Recomputed from the candidate's explicit train/validation measurements.
     pub validation_gap: f64,
+    #[serde(default)]
+    pub quality_qualification: PromotionQualification,
     pub critic_failures: u64,
     pub producer_independent: bool,
     pub contamination_detected: bool,
@@ -129,6 +132,70 @@ pub enum EvaluationError {
     ConservationVeto,
     #[error("candidate lock violation")]
     CandidateLockViolation,
+    #[error("candidate train and validation measurements are not finite")]
+    NonFiniteCandidateQuality,
+    #[error("candidate validation gap exceeds the configured threshold")]
+    ValidationGapExceeded,
+    #[error("candidate validation quality is below the configured threshold")]
+    ValidationQualityBelowThreshold,
+}
+
+/// Numeric policy is intentionally separate from review-package completeness.
+/// A complete package can still fail this policy, and a passing policy never
+/// grants human authorization or production/import rights.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PromotionQualityPolicy {
+    pub minimum_validation_quality: f64,
+    pub maximum_validation_gap: f64,
+}
+
+impl Default for PromotionQualityPolicy {
+    fn default() -> Self {
+        Self {
+            minimum_validation_quality: 0.0,
+            // f32 measurements are widened here; retain a small explicit
+            // representation margin for values such as 0.8 - 0.7.
+            maximum_validation_gap: 0.100001,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PromotionQualification {
+    Qualified,
+    /// Rejected is the safe default: an unmeasured candidate never qualifies.
+    #[default]
+    Rejected,
+}
+
+/// Evaluate measured candidate quality only. The manifest's stored gap is a
+/// legacy receipt field and is deliberately ignored as an authority input.
+pub fn qualify_candidate_quality(
+    candidate: &CandidateManifest,
+    policy: PromotionQualityPolicy,
+) -> Result<PromotionQualification, EvaluationError> {
+    candidate
+        .validate()
+        .map_err(|_| EvaluationError::CandidateLockViolation)?;
+    let train = candidate.train_quality as f64;
+    let validation = candidate.validation_quality as f64;
+    if !train.is_finite()
+        || !validation.is_finite()
+        || !policy.minimum_validation_quality.is_finite()
+        || !policy.maximum_validation_gap.is_finite()
+    {
+        return Err(EvaluationError::NonFiniteCandidateQuality);
+    }
+    let gap = train - validation;
+    Ok(
+        if validation >= policy.minimum_validation_quality && gap <= policy.maximum_validation_gap {
+            PromotionQualification::Qualified
+        } else {
+            PromotionQualification::Rejected
+        },
+    )
 }
 
 fn digest<T: Serialize + ?Sized>(value: &T) -> Sha256Digest {
@@ -282,7 +349,11 @@ pub fn aggregate_same_n_ablation_with_provenance(
         candidate_metric_one: c1,
         baseline_metric_two: b2,
         candidate_metric_two: c2,
-        validation_gap: candidate.validation_gap as f64,
+        validation_gap: candidate.train_quality as f64 - candidate.validation_quality as f64,
+        quality_qualification: qualify_candidate_quality(
+            candidate,
+            PromotionQualityPolicy::default(),
+        )?,
         critic_failures: bf + cf,
         producer_independent: true,
         contamination_detected: false,
@@ -380,6 +451,54 @@ mod tests {
         };
         (cases, rows("critic-a"), rows("critic-b"))
     }
+    #[test]
+    fn promotion_package_vs_quality() {
+        let mut value = candidate();
+        value.validation_gap = 99.0;
+        let policy = PromotionQualityPolicy {
+            minimum_validation_quality: 0.65,
+            maximum_validation_gap: 0.100001,
+        };
+        assert_eq!(
+            qualify_candidate_quality(&value, policy),
+            Ok(PromotionQualification::Qualified)
+        );
+        let (cases, baseline, candidate_rows) = inputs();
+        let report = aggregate_same_n_ablation(
+            &value,
+            &cases,
+            &baseline,
+            &candidate_rows,
+            true,
+            "sona-trainer",
+        )
+        .unwrap();
+        assert_eq!(
+            report.validation_gap,
+            value.train_quality as f64 - value.validation_quality as f64
+        );
+        assert_eq!(
+            report.quality_qualification,
+            PromotionQualification::Qualified
+        );
+
+        value.validation_quality = 0.2;
+        assert_eq!(
+            qualify_candidate_quality(&value, policy),
+            Ok(PromotionQualification::Rejected)
+        );
+    }
+
+    #[test]
+    fn explicit_train_validation_counts_are_required_for_numeric_qualification() {
+        let mut value = candidate();
+        value.validation_count = 0;
+        assert_eq!(
+            qualify_candidate_quality(&value, PromotionQualityPolicy::default()),
+            Err(EvaluationError::CandidateLockViolation)
+        );
+    }
+
     #[test]
     fn same_n_and_failures_are_visible() {
         let (cases, mut b, c) = inputs();
