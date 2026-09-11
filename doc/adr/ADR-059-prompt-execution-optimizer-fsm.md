@@ -102,3 +102,28 @@ deployment authority.
 5. Frozen offline evaluation emits candidate reports only.
 6. Whole-pipeline metrics capture tokens, latency, cost and failures.
 7. `optimizer_enabled=false`, `deployed=false`, `import_eligible=false`.
+
+## Normative prompt contract and change control
+
+`data/ontology/prompt_tasks.yaml` is the authority for prompt-level normative
+rules. Each rule has a stable `rule_id`, an explicit `scope`, `authority`,
+preconditions, evidence obligations, an allowlisted verification operation and
+`optimizer_immutable: true`. Verification operations are identifiers with typed
+parameter declarations; free-form checks are not an approved contract surface.
+
+The immutable proof boundary covers grounding, no-invention, candidate-only
+status, evidence binding and abstention. An optimizer may change wording,
+ordering and examples, but may not remove or weaken a rule, change its authority,
+remove an evidence obligation, expand the verification vocabulary, grant graph
+authority or set `import_eligible=true`. The prompt files carry the same rule
+IDs and immutable markers so a human editor can audit the binding without
+reconstructing it from prose.
+
+A normative change requires a new or explicitly reviewed rule identity, authority
+review, fixture update and a passing negative-mutation check. The registry loader
+fails closed for missing evidence/preconditions, unresolved task bindings,
+non-ADR-059 authority, duplicate identities, unapproved verification operations
+and mutation cases that do not expect `reject`. Tests cover removing an evidence
+obligation, downgrading authority and replacing an approved operation with a
+free-form check; each mutation must be rejected before a registry digest can be
+used.

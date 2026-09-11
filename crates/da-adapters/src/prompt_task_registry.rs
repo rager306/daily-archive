@@ -9,12 +9,72 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     path::Path,
 };
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PromptContract {
+    pub schema_version: String,
+    pub authority: String,
+    pub policy_owner: String,
+    pub immutable_proof_boundary: ImmutableProofBoundary,
+    pub rules: Vec<PromptRule>,
+    pub task_rule_bindings: BTreeMap<String, Vec<String>>,
+    pub approved_verification_operations: Vec<VerificationOperation>,
+    pub change_control: ChangeControl,
+    pub negative_mutation_cases: Vec<NegativeMutationCase>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ImmutableProofBoundary {
+    pub clauses: Vec<String>,
+    pub optimizer_may_change: Vec<String>,
+    pub optimizer_may_not_change: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PromptRule {
+    pub rule_id: String,
+    pub scope: String,
+    pub authority: String,
+    pub preconditions: Vec<String>,
+    pub evidence_obligations: Vec<String>,
+    pub verification_operations: Vec<String>,
+    pub optimizer_immutable: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct VerificationOperation {
+    pub operation_id: String,
+    pub parameters: BTreeMap<String, String>,
+    pub result: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ChangeControl {
+    pub required_for_normative_change: Vec<String>,
+    pub forbidden: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NegativeMutationCase {
+    pub case_id: String,
+    pub target_rule_id: String,
+    pub mutation: String,
+    pub expected: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct PromptTaskRegistry {
     pub schema_version: String,
     pub optimizer_enabled: bool,
     pub max_validation_gap_basis_points: u32,
+    pub prompt_contract: PromptContract,
     pub routes: Vec<PromptRoutePolicy>,
     pub output_schemas: Vec<PromptOutputSchema>,
     pub tasks: Vec<PromptTaskSpec>,
@@ -41,6 +101,7 @@ impl PromptTaskRegistry {
         if routes.len() != self.routes.len() || schemas.len() != self.output_schemas.len() {
             return Err("duplicate prompt route/schema identity".into());
         }
+        validate_prompt_contract(&self.prompt_contract)?;
         for route in &self.routes {
             route.validate()?;
             if let Some(key) = &route.endpoint_override_env {
@@ -123,6 +184,87 @@ pub fn load_prompt_task_registry(path: &Path) -> Result<PromptTaskRegistry, Stri
     registry.validate()?;
     Ok(registry)
 }
+fn validate_prompt_contract(contract: &PromptContract) -> Result<(), String> {
+    if contract.schema_version != "prompt-contract.v1"
+        || contract.authority != "ADR-059"
+        || contract.policy_owner != "data/ontology/prompt_tasks.yaml"
+    {
+        return Err("prompt contract authority/schema/owner invalid".into());
+    }
+    let approved = contract
+        .approved_verification_operations
+        .iter()
+        .map(|operation| operation.operation_id.as_str())
+        .collect::<BTreeSet<_>>();
+    if approved.len() != contract.approved_verification_operations.len() || approved.is_empty() {
+        return Err("prompt verification operation identities invalid".into());
+    }
+    let mut rule_ids = BTreeSet::new();
+    for rule in &contract.rules {
+        if rule.authority != "ADR-059"
+            || rule.rule_id.trim().is_empty()
+            || rule.scope.trim().is_empty()
+            || rule.preconditions.is_empty()
+            || rule.evidence_obligations.is_empty()
+            || !rule.optimizer_immutable
+        {
+            return Err(format!(
+                "normative prompt rule {} is not immutable and evidence-bound",
+                rule.rule_id
+            ));
+        }
+        if !rule_ids.insert(rule.rule_id.as_str()) {
+            return Err(format!("duplicate normative prompt rule {}", rule.rule_id));
+        }
+        for operation in &rule.verification_operations {
+            if !approved.contains(operation.as_str()) {
+                return Err(format!(
+                    "rule {} uses unapproved verification operation {}",
+                    rule.rule_id, operation
+                ));
+            }
+        }
+    }
+    for (task_id, bindings) in &contract.task_rule_bindings {
+        if bindings.is_empty()
+            || bindings
+                .iter()
+                .any(|rule_id| !rule_ids.contains(rule_id.as_str()))
+        {
+            return Err(format!(
+                "task {} has unresolved prompt rule binding",
+                task_id
+            ));
+        }
+    }
+    let mut case_ids = BTreeSet::new();
+    for case in &contract.negative_mutation_cases {
+        if !rule_ids.contains(case.target_rule_id.as_str())
+            || case.expected != "reject"
+            || !case_ids.insert(case.case_id.as_str())
+        {
+            return Err(format!(
+                "negative prompt mutation case {} is invalid",
+                case.case_id
+            ));
+        }
+    }
+    if contract.immutable_proof_boundary.clauses.is_empty()
+        || contract
+            .immutable_proof_boundary
+            .optimizer_may_not_change
+            .is_empty()
+        || contract
+            .change_control
+            .required_for_normative_change
+            .is_empty()
+        || contract.change_control.forbidden.is_empty()
+    {
+        return Err("prompt proof/change-control boundary is incomplete".into());
+    }
+    Ok(())
+}
+
 fn validate_env_key(value: &str) -> Result<(), String> {
     let mut chars = value.chars();
     if !matches!(chars.next(), Some('A'..='Z'))
@@ -176,5 +318,33 @@ mod tests {
         std::fs::write(&p,"schema_version: prompt-task-registry.v1\noptimizer_enabled: true\nmax_validation_gap_basis_points: 500\nroutes: []\noutput_schemas: []\ntasks: []\nunknown: true\n").unwrap();
         assert!(load_prompt_task_registry(&p).is_err());
         std::fs::remove_file(p).unwrap();
+    }
+
+    #[test]
+    fn normative_prompt_mutations_fail_closed() {
+        let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/ontology/prompt_tasks.yaml");
+        let mut registry = load_prompt_task_registry(&p).unwrap();
+
+        registry.prompt_contract.rules[0]
+            .evidence_obligations
+            .clear();
+        assert!(
+            registry.validate().is_err(),
+            "removing an evidence obligation must fail"
+        );
+
+        let mut registry = load_prompt_task_registry(&p).unwrap();
+        registry.prompt_contract.rules[0].authority = "unreviewed-source".into();
+        assert!(
+            registry.validate().is_err(),
+            "downgrading authority must fail"
+        );
+
+        let mut registry = load_prompt_task_registry(&p).unwrap();
+        registry.prompt_contract.rules[0].verification_operations = vec!["free_form.check".into()];
+        assert!(
+            registry.validate().is_err(),
+            "free-form verification must fail"
+        );
     }
 }

@@ -1,6 +1,97 @@
 schema_version: prompt-task-registry.v1
 optimizer_enabled: false
 max_validation_gap_basis_points: 500
+prompt_contract:
+  schema_version: prompt-contract.v1
+  authority: ADR-059
+  policy_owner: data/ontology/prompt_tasks.yaml
+  immutable_proof_boundary:
+    clauses: [grounding, no_invention, candidate_only, evidence_binding, abstention]
+    optimizer_may_change: [wording, ordering, examples]
+    optimizer_may_not_change: [rule_id, authority, preconditions, evidence_obligations, verification_operations, candidate_only, import_eligible]
+  rules:
+    - rule_id: PR-SUM-001
+      scope: article_summary.system_template
+      authority: ADR-059
+      preconditions: [grounded_article_text_present, output_schema_resolved]
+      evidence_obligations: [ground_every_claim_in_source, no_invented_numbers_names_or_claims]
+      verification_operations: [evidence.quote_verbatim, output.json_schema]
+      optimizer_immutable: true
+    - rule_id: PR-SUM-002
+      scope: article_summary.system_template
+      authority: ADR-059
+      preconditions: [source_text_supplied]
+      evidence_obligations: [populate_methods_metrics_datasets_only_from_source]
+      verification_operations: [evidence.quote_verbatim]
+      optimizer_immutable: true
+    - rule_id: PR-FIG-001
+      scope: figure_analysis.system_template
+      authority: ADR-059
+      preconditions: [grounded_context_present, figure_media_checksum_bound]
+      evidence_obligations: [citations_are_verbatim, citation_identifiers_copied_from_context]
+      verification_operations: [evidence.quote_verbatim, evidence.identifier_in_context, output.json_schema]
+      optimizer_immutable: true
+    - rule_id: PR-FIG-003
+      scope: figure_analysis.system_template
+      authority: ADR-059
+      preconditions: [candidate_output_schema_resolved]
+      evidence_obligations: [never_claim_graph_authority, relationship_endpoints_declared]
+      verification_operations: [policy.candidate_only, output.json_schema]
+      optimizer_immutable: true
+    - rule_id: PR-CRIT-001
+      scope: critic.system_prompt
+      authority: ADR-059
+      preconditions: [low_confidence_pairs_present, evidence_fields_present]
+      evidence_obligations: [same_order_as_input, abstain_when_insufficient_evidence]
+      verification_operations: [output.array_order, output.json_schema]
+      optimizer_immutable: true
+    - rule_id: PR-CRIT-002
+      scope: critic.system_prompt
+      authority: ADR-059
+      preconditions: [pair_evidence_is_supplied]
+      evidence_obligations: [ground_reason_in_supplied_fields, never_use_outside_knowledge]
+      verification_operations: [evidence.identifier_in_context]
+      optimizer_immutable: true
+  task_rule_bindings:
+    article_summary: [PR-SUM-001, PR-SUM-002]
+    figure_analysis: [PR-FIG-001, PR-FIG-003]
+    critic: [PR-CRIT-001, PR-CRIT-002]
+  approved_verification_operations:
+    - operation_id: evidence.quote_verbatim
+      parameters: {source_field: string, quote: string, max_length: integer}
+      result: evidence_ref
+    - operation_id: evidence.identifier_in_context
+      parameters: {context_field: string, identifier: string}
+      result: evidence_ref
+    - operation_id: output.json_schema
+      parameters: {schema_id: string}
+      result: validation_receipt
+    - operation_id: output.array_order
+      parameters: {input_count: integer, output_count: integer}
+      result: validation_receipt
+    - operation_id: policy.candidate_only
+      parameters: {import_eligible: boolean, graph_authority: boolean}
+      result: policy_receipt
+  change_control:
+    required_for_normative_change: [new_rule_id, authority_review, fixture_update, negative_mutation_pass]
+    forbidden: [silent_rule_removal, authority_downgrade, evidence_obligation_removal, verification_operation_expansion]
+  negative_mutation_cases:
+    - case_id: mutate-remove-grounding
+      target_rule_id: PR-SUM-001
+      mutation: remove_grounding_obligation
+      expected: reject
+    - case_id: mutate-enable-authority
+      target_rule_id: PR-FIG-003
+      mutation: set_graph_authority_true
+      expected: reject
+    - case_id: mutate-free-form-verification
+      target_rule_id: PR-CRIT-002
+      mutation: replace_approved_operation_with_free_text
+      expected: reject
+    - case_id: mutate-remove-abstention
+      target_rule_id: PR-CRIT-001
+      mutation: remove_abstain_outcome
+      expected: reject
 routes:
   - route_policy_id: ninerouter-summary-default
     model_binding_id: paper-summary-generate-default
