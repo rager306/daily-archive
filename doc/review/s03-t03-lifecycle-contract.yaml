@@ -1,0 +1,44 @@
+schema_version: s03-t03-lifecycle-contract.v1
+authority: D350
+reconciliation_decision: D351
+identity:
+  milestone_id: M502-2w7y8k
+  slice_id: S03
+  task_id: T03
+expected:
+  task_status: complete
+  lifecycle_status: completed
+  waiver_required: false
+  waiver_count: 0
+non_goals:
+  - reopen S03
+  - revert T03
+  - change retained S04/T02-T03 rows
+  - authorize new P9 or oracle execution
+  - authorize external bytes, download, or redistribution
+  - authorize release readiness
+contrast:
+  retained_rows:
+    - identity: M502-2w7y8k/S04/T02
+      task_status: skipped
+      lifecycle_status: cancelled
+      waiver_required: true
+      waiver_count: 1
+    - identity: M502-2w7y8k/S04/T03
+      task_status: skipped
+      lifecycle_status: cancelled
+      waiver_required: true
+      waiver_count: 1
+protected_manifest:
+  path: data/parse/acceptance_manifest.yaml
+  fields:
+    policy_locks.import_eligible: false
+    policy_locks.auto_promote: forbidden
+    policy_locks.production_route: forbidden
+    external_holdout_contract.execution_status: not_executed
+    release_decision_package.package_status: pending_human_review
+    release_decision_package.quality.status: blocked
+    release_decision_package.rights.status: blocked
+    release_decision_package.prohibited_authorizations.graph_write_or_import: blocked
+    release_decision_package.human_release_review.prose_alone_authorizes_release: false
+  immutable_reason: Lifecycle reconciliation is not release, import, graph-write, splice, or promotion authorization.
