@@ -134,27 +134,32 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
             ".gsd/tmp/pdfalto-segmentation-runtime".to_owned(),
         ]);
     }
-    let mut command = if let Some(binary) = runner() {
-        let mut command = Command::new(binary);
-        command.args(&args);
-        command
+    let binary = if let Some(binary) = runner() {
+        binary
     } else {
-        let mut command = Command::new("cargo");
-        command.args([
-            "run",
-            "-q",
-            "-p",
-            "da-cli",
-            "--features",
-            "pdf-layout",
-            "--example",
-            "document_segmentation_shadow",
-            "--",
-        ]);
-        command.args(&args);
-        command
+        let build = Command::new("cargo")
+            .args([
+                "build",
+                "-q",
+                "-p",
+                "da-cli",
+                "--features",
+                "pdf-layout",
+                "--example",
+                "document_segmentation_shadow",
+            ])
+            .current_dir(&repo_root)
+            .output()
+            .expect("build feature-gated shadow example");
+        assert!(
+            build.status.success(),
+            "example build failed: {}",
+            String::from_utf8_lossy(&build.stderr)
+        );
+        repo_root.join("target/debug/examples/document_segmentation_shadow")
     };
-    let output = command
+    let output = Command::new(binary)
+        .args(&args)
         .current_dir(&repo_root)
         .output()
         .expect("run feature-gated shadow example");
