@@ -12,6 +12,27 @@ use thiserror::Error;
 pub const ABLATION_SCHEMA_VERSION: &str = "parse-learning-ablation.v1";
 pub const CRITIC_SCHEMA_VERSION: u16 = 1;
 
+/// Machine-checkable identity of an evaluation producer.
+///
+/// The human-readable label on [`CriticObservation`] is diagnostic only. It
+/// must never be used as evidence that two producers are independent.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProducerProvenance {
+    pub code_digest: Sha256Digest,
+    pub input_digest: Sha256Digest,
+    pub method: String,
+    pub authority: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ContaminationAssessment {
+    Detected,
+    NotDetected,
+    NotAssessed,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FrozenEvalCase {
@@ -28,6 +49,7 @@ pub struct CriticObservation {
     pub case_id: String,
     pub corpus: Sha256Digest,
     pub order: u32,
+    /// Display label only; not used for independence decisions.
     pub producer: String,
     pub metric_one: f64,
     pub metric_two: f64,
@@ -75,6 +97,7 @@ pub struct AblationReport {
     pub critic_failures: u64,
     pub producer_independent: bool,
     pub contamination_detected: bool,
+    pub contamination_assessment: ContaminationAssessment,
     pub conservation_veto: bool,
     pub rollback_target: Option<Sha256Digest>,
     pub promotion_state: String,
@@ -98,6 +121,8 @@ pub enum EvaluationError {
     NonFiniteMetric,
     #[error("critic producer is not independent")]
     ProducerNotIndependent,
+    #[error("producer provenance is incomplete")]
+    UnknownProducerProvenance,
     #[error("evaluation corpus identity differs")]
     CorpusMismatch,
     #[error("candidate conservation veto")]
@@ -153,6 +178,50 @@ pub fn aggregate_same_n_ablation(
     conservation_ok: bool,
     trainer_producer: &str,
 ) -> Result<AblationReport, EvaluationError> {
+    // Compatibility bridge for the pre-lineage API. The label is converted to
+    // a deterministic code identity only to keep existing redacted adapters
+    // operational; new callers must supply explicit provenance below.
+    let corpus = cases
+        .first()
+        .map(|case| case.corpus.clone())
+        .ok_or(EvaluationError::EmptyEvaluation)?;
+    let producer = |label: &str| ProducerProvenance {
+        code_digest: digest(&label),
+        input_digest: corpus.clone(),
+        method: "legacy-label-bridge".into(),
+        authority: "legacy-adapter".into(),
+    };
+    aggregate_same_n_ablation_with_provenance(
+        candidate,
+        cases,
+        baseline,
+        candidate_rows,
+        conservation_ok,
+        &producer(baseline.first().map_or("", |row| row.producer.as_str())),
+        &producer(
+            candidate_rows
+                .first()
+                .map_or("", |row| row.producer.as_str()),
+        ),
+        &producer(trainer_producer),
+    )
+}
+
+/// Aggregate an ablation only when producer code and input lineage are
+/// explicit and machine-checkable.
+// NOTE: eight parameters today; the three ProducerProvenance refs are a candidate
+// for a triad struct if this grows. Allow is scoped to this fn only.
+#[allow(clippy::too_many_arguments)]
+pub fn aggregate_same_n_ablation_with_provenance(
+    candidate: &CandidateManifest,
+    cases: &[FrozenEvalCase],
+    baseline: &[CriticObservation],
+    candidate_rows: &[CriticObservation],
+    conservation_ok: bool,
+    baseline_producer: &ProducerProvenance,
+    candidate_producer: &ProducerProvenance,
+    trainer: &ProducerProvenance,
+) -> Result<AblationReport, EvaluationError> {
     candidate
         .validate()
         .map_err(|_| EvaluationError::CandidateLockViolation)?;
@@ -171,6 +240,22 @@ pub fn aggregate_same_n_ablation(
     if baseline.len() != cases.len() || candidate_rows.len() != cases.len() {
         return Err(EvaluationError::DenominatorMismatch);
     }
+    if [baseline_producer, candidate_producer, trainer]
+        .iter()
+        .any(|producer| {
+            producer.method.trim().is_empty()
+                || producer.authority.trim().is_empty()
+                || producer.input_digest != cases[0].corpus
+        })
+    {
+        return Err(EvaluationError::CorpusMismatch);
+    }
+    if baseline_producer.code_digest == trainer.code_digest
+        || candidate_producer.code_digest == trainer.code_digest
+        || baseline_producer.code_digest == candidate_producer.code_digest
+    {
+        return Err(EvaluationError::ProducerNotIndependent);
+    }
     for (case, (base, cand)) in cases.iter().zip(baseline.iter().zip(candidate_rows)) {
         base.validate()?;
         cand.validate()?;
@@ -182,12 +267,6 @@ pub fn aggregate_same_n_ablation(
             || cand.corpus != case.corpus
         {
             return Err(EvaluationError::CorpusMismatch);
-        }
-        if base.producer == trainer_producer
-            || cand.producer == trainer_producer
-            || base.producer == cand.producer
-        {
-            return Err(EvaluationError::ProducerNotIndependent);
         }
     }
     let (b1, b2, bf) = aggregate(baseline);
@@ -207,6 +286,12 @@ pub fn aggregate_same_n_ablation(
         critic_failures: bf + cf,
         producer_independent: true,
         contamination_detected: false,
+        contamination_assessment: if bf + cf == 0 {
+            ContaminationAssessment::NotDetected
+        } else {
+            // A failed critic row does not prove absence of contamination.
+            ContaminationAssessment::NotAssessed
+        },
         conservation_veto: false,
         rollback_target: candidate.receipt.prior_candidate.clone(),
         promotion_state: "candidate".into(),
@@ -257,6 +342,15 @@ mod tests {
             weights_digest: d('2'),
         }
     }
+    fn provenance(code: char, method: &str, authority: &str) -> ProducerProvenance {
+        ProducerProvenance {
+            code_digest: d(code),
+            input_digest: d('c'),
+            method: method.into(),
+            authority: authority.into(),
+        }
+    }
+
     fn inputs() -> (
         Vec<FrozenEvalCase>,
         Vec<CriticObservation>,
@@ -295,6 +389,30 @@ mod tests {
         assert_eq!((r.baseline_n, r.candidate_n), (2, 2));
         assert_eq!(r.critic_failures, 1);
         assert!(r.baseline_metric_one < r.candidate_metric_one);
+        assert_eq!(
+            r.contamination_assessment,
+            ContaminationAssessment::NotAssessed
+        );
+    }
+    #[test]
+    fn producer_independence_rejects_same_generator_with_different_labels() {
+        let (cases, baseline, candidate_rows) = inputs();
+        let same_generator = provenance('a', "shared-generator", "fixture-authority");
+        let trainer = provenance('e', "trainer", "fixture-authority");
+        assert_eq!(
+            aggregate_same_n_ablation_with_provenance(
+                &candidate(),
+                &cases,
+                &baseline,
+                &candidate_rows,
+                true,
+                &same_generator,
+                &same_generator,
+                &trainer,
+            ),
+            Err(EvaluationError::ProducerNotIndependent),
+            "different observation labels must not establish provenance independence"
+        );
     }
     #[test]
     fn rejects_order_mutation() {

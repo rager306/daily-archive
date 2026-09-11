@@ -410,6 +410,7 @@ pub const fn evaluation_error_reason(error: &EvaluationError) -> PromotionGateBl
         EvaluationError::MalformedRow => PromotionGateBlockReason::MalformedPackage,
         EvaluationError::NonFiniteMetric => PromotionGateBlockReason::NonfiniteMetric,
         EvaluationError::ProducerNotIndependent => PromotionGateBlockReason::ProducerNotIndependent,
+        EvaluationError::UnknownProducerProvenance => PromotionGateBlockReason::StaleIdentity,
         EvaluationError::CorpusMismatch => PromotionGateBlockReason::StaleIdentity,
         EvaluationError::ConservationVeto => PromotionGateBlockReason::ConservationVeto,
         EvaluationError::CandidateLockViolation => PromotionGateBlockReason::CandidateLockViolation,
