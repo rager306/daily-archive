@@ -301,6 +301,72 @@ pub enum MaturityDerivation {
     },
 }
 
+/// Human authorization is orthogonal to evidence maturity.
+///
+/// `Pending` is the safe default: a complete review package is not a human
+/// decision. In particular, `human_decision_ref` is diagnostic provenance and
+/// must never be interpreted as an authorization grant.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
+pub enum HumanAuthorization {
+    Pending,
+    Authorized { decision_ref: String },
+}
+
+/// The machine-checkable result of separating review-package readiness from
+/// human authorization. A `ReviewReady` result may still be `Pending`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReviewReadiness {
+    pub maturity: MaturityState,
+    pub evidence_refs: Vec<String>,
+    pub authorization: HumanAuthorization,
+}
+
+impl ReviewReadiness {
+    /// Production/import behavior is allowed only after an explicit,
+    /// non-empty human authorization. Readiness alone never grants rights.
+    pub fn authorizes_production_or_import(&self) -> bool {
+        self.maturity == MaturityState::ReviewReady
+            && matches!(
+                &self.authorization,
+                HumanAuthorization::Authorized { decision_ref }
+                    if !decision_ref.trim().is_empty()
+            )
+    }
+}
+
+/// Derive review-package completeness without conflating it with a human gate.
+///
+/// This is the canonical readiness surface for callers that need to decide
+/// whether review work can begin. The older `derive_maturity` function keeps
+/// its closed ladder and `HumanGateRequired` terminal state for wire/backward
+/// compatibility; this function deliberately reports the evidence terminal as
+/// `ReviewReady` and leaves authorization `Pending`.
+pub fn derive_review_readiness(
+    set: &FamilyEvidenceSet,
+) -> Result<ReviewReadiness, MaturityDerivation> {
+    match derive_maturity(set) {
+        MaturityDerivation::Reached {
+            state: MaturityState::HumanGateRequired,
+            evidence_refs,
+        } => Ok(ReviewReadiness {
+            maturity: MaturityState::ReviewReady,
+            evidence_refs,
+            authorization: HumanAuthorization::Pending,
+        }),
+        MaturityDerivation::Reached {
+            state,
+            evidence_refs,
+        } => Ok(ReviewReadiness {
+            maturity: state,
+            evidence_refs,
+            authorization: HumanAuthorization::Pending,
+        }),
+        blocked @ MaturityDerivation::Blocked { .. } => Err(blocked),
+    }
+}
+
 fn blocked(
     reason: BlockedReason,
     missing_or_offending: impl Into<Option<String>>,
@@ -721,6 +787,65 @@ mod tests {
             blocked_reason(derive_maturity(&family)),
             BlockedReason::MalformedReceipt
         );
+    }
+
+    #[test]
+    fn fsm_readiness_authorization_keeps_review_ready_pending() {
+        let mut family = set();
+        for (slot, kind) in [
+            (&mut family.inventory, ReceiptKind::Inventory),
+            (&mut family.oracle, ReceiptKind::Oracle),
+            (&mut family.atom, ReceiptKind::Atom),
+            (&mut family.sequence, ReceiptKind::Sequence),
+            (&mut family.shadow, ReceiptKind::Shadow),
+            (&mut family.review, ReceiptKind::Review),
+        ] {
+            *slot = Some(receipt(kind, kind.as_str()));
+        }
+        family.human_decision_ref = Some("diagnostic-only-ref".into());
+
+        let readiness =
+            derive_review_readiness(&family).expect("complete evidence is review-ready");
+        assert_eq!(readiness.maturity, MaturityState::ReviewReady);
+        assert_eq!(readiness.evidence_refs.len(), ReceiptKind::ALL.len());
+        assert_eq!(readiness.authorization, HumanAuthorization::Pending);
+        assert!(!readiness.authorizes_production_or_import());
+
+        let authorized = ReviewReadiness {
+            authorization: HumanAuthorization::Authorized {
+                decision_ref: "human-approval-1".into(),
+            },
+            ..readiness.clone()
+        };
+        assert!(authorized.authorizes_production_or_import());
+        assert!(
+            !ReviewReadiness {
+                authorization: HumanAuthorization::Authorized {
+                    decision_ref: "  ".into(),
+                },
+                ..readiness
+            }
+            .authorizes_production_or_import()
+        );
+    }
+
+    #[test]
+    fn incomplete_evidence_is_not_review_ready_and_human_gate_is_not_granted() {
+        let mut family = set();
+        family.inventory = Some(receipt(ReceiptKind::Inventory, "inventory-ref"));
+        let readiness = derive_review_readiness(&family).expect("inventory is a valid prefix");
+        assert_eq!(readiness.maturity, MaturityState::InventoryBound);
+        assert_eq!(readiness.authorization, HumanAuthorization::Pending);
+        assert!(!readiness.authorizes_production_or_import());
+
+        family.review = Some(receipt(ReceiptKind::Review, "review-ref"));
+        assert!(matches!(
+            derive_review_readiness(&family),
+            Err(MaturityDerivation::Blocked {
+                reason: BlockedReason::LadderGap,
+                ..
+            })
+        ));
     }
 
     #[test]
