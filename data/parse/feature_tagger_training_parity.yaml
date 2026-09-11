@@ -97,3 +97,112 @@ redaction:
   physical_paths: forbidden
   secrets: forbidden
   model_payloads: forbidden
+
+# S07/T01: rights and provenance inventory for every training-related input.
+# This ledger is deliberately stricter than source inventory: an upstream name
+# or digest does not establish a right to redistribute corpus data or weights.
+license_provenance_inventory:
+  schema_version: feature-component-license-inventory.v1
+  authority: ADR-075
+  review_state: machine_checked_data; independent_rights_review_required
+  boundary_vocabulary: [data-only, subprocess, http, rust-workspace]
+  license_status_vocabulary: [verified, blocked]
+  redistribution_status_vocabulary: [allowed_with_notice, source_offer_required, not_distributed, blocked]
+  policy:
+    unknown_rights: blocked
+    model_weights: not_distributed
+    corpus_payload: not_distributed
+    training_runtime: forbidden
+    production_route: forbidden
+    graph_write: forbidden
+    auto_promote: forbidden
+    gpl_linking: forbidden
+  components:
+    - component_id: java-grobid-feature-tagger-source
+      role: feature-source-and-factory-inventory
+      upstream: java-grobid-http@0.9.0-crf
+      upstream_version: 0.9.0-crf
+      license: unknown
+      license_status: blocked
+      license_evidence: source_contract.source_documents
+      modifications: inventory_only; no source or executable copied into runtime
+      interface_class: data-only
+      boundary: data-only
+      runtime_surface: none
+      redistribution: blocked
+      attribution_notice_artifact: required_before_source_redistribution
+      source_offer_artifact: required_before_source_redistribution
+      blocked_reason: upstream_source_license_and_notice_terms_not_independently_bound
+      gpl_violation_status: no_linking; no_distribution
+    - component_id: feature-tagger-training-corpus
+      role: labelled_training_corpus
+      upstream: source_contract.source_documents
+      upstream_version: vendor_revision
+      license: unknown
+      license_status: blocked
+      license_evidence: corpus_binding
+      modifications: digest_and_denominator_inventory_only
+      interface_class: data-only
+      boundary: data-only
+      runtime_surface: none
+      redistribution: blocked
+      attribution_notice_artifact: required_before_corpus_release
+      source_offer_artifact: required_before_corpus_release
+      blocked_reason: corpus_rights_and_redistribution_terms_not_established
+      gpl_violation_status: no_distribution
+    - component_id: feature-tagger-model-weights
+      role: model_weights_and_model_lifecycle
+      upstream: java-grobid-feature-tagger-training
+      upstream_version: vendor_revision
+      license: unknown
+      license_status: blocked
+      license_evidence: source_not_established.model_quality
+      modifications: none; model loading is forbidden in shadow
+      interface_class: data-only
+      boundary: data-only
+      runtime_surface: none
+      redistribution: blocked
+      attribution_notice_artifact: required_before_weight_release
+      source_offer_artifact: required_before_weight_release
+      blocked_reason: weight provenance license and source offer are absent
+      gpl_violation_status: no_distribution; no_runtime_link
+    - component_id: tagger-engines
+      role: WAPITI_CRFPP_DELFT_DUMMY_engine_inventory
+      upstream: source_contract.source_documents
+      upstream_version: vendor_revision
+      license: unknown
+      license_status: blocked
+      license_evidence: engines
+      modifications: inventory_only; constructors and execution are forbidden
+      interface_class: subprocess
+      boundary: subprocess
+      runtime_surface: none
+      redistribution: blocked
+      attribution_notice_artifact: required_before_engine_distribution
+      source_offer_artifact: required_before_engine_distribution
+      blocked_reason: engine-specific license and distribution obligations are not verified
+      gpl_violation_status: no_linking; execution_not_enabled
+    - component_id: da-parse-feature-parity-ledger
+      role: evidence-only compatibility ledger
+      upstream: this_repository
+      upstream_version: workspace
+      license: MIT
+      license_status: verified
+      license_evidence: Cargo.toml
+      modifications: project-authored inventory and typed gaps
+      interface_class: rust-workspace
+      boundary: rust-workspace
+      runtime_surface: none
+      redistribution: allowed_with_notice
+      attribution_notice_artifact: Cargo.toml
+      source_offer_artifact: not_applicable
+      gpl_violation_status: no_gpl_dependency_declared
+  assertions:
+    every_component_has_license_status: true
+    every_blocked_component_has_reason: true
+    no_gpl_dependency_is_linked: true
+    no_new_distribution: true
+    subprocess_boundary_is_explicit: true
+    model_weights_are_not_distributed: true
+    corpus_payload_is_not_distributed: true
+    unknown_redistribution_is_blocked: true

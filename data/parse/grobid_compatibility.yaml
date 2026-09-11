@@ -1532,3 +1532,123 @@ native_visual_shadow:
     local_pdf_oracle: independent_pdf_geometry_truth
     native_head_scores: shadow_only
     coordinates: typed_optional_source_digest_bound
+
+# S07/T01: license, provenance, and redistribution inventory. Every external
+# component is named here even when it is not eligible for redistribution.
+# Unknown rights are typed blocked rather than inferred from a repository URL.
+license_provenance_inventory:
+  schema_version: parse-component-license-inventory.v1
+  authority: ADR-075
+  review_state: machine_checked_data; independent_rights_review_required
+  redistribution_policy:
+    new_distribution: forbidden
+    import_eligible: false
+    graph_write: forbidden
+    auto_promote: forbidden
+    gpl_linking: forbidden
+    unknown_rights: blocked
+    blocked_components_must_not_enter_runtime: true
+  boundary_vocabulary: [subprocess, http, rust-source-port, rust-workspace, data-only]
+  license_status_vocabulary: [verified, blocked]
+  redistribution_status_vocabulary: [allowed_with_notice, source_offer_required, not_distributed, blocked]
+  components:
+    - component_id: java-grobid-0.9.0-crf
+      role: parser_service_and_layout_donor
+      upstream: https://github.com/kermitt2/grobid
+      upstream_version: 0.9.0-crf
+      license: Apache-2.0
+      license_status: verified
+      license_evidence: https://grobid.readthedocs.io/en/latest/
+      modifications: none; consumed as an external service
+      interface_class: http
+      boundary: http
+      runtime_surface: java_grobid_http_at_127.0.0.1_8070
+      redistribution: not_distributed
+      attribution_notice_artifact: required_in_release_notice
+      source_offer_artifact: not_required_for_unmodified_service
+      gpl_violation_status: no_gpl_linking
+    - component_id: opendataloader-pdf-xycut
+      role: reading_order_layout_donor
+      upstream: https://github.com/opendataloader-project/opendataloader-pdf
+      upstream_version: arxiv-2504.10258
+      license: Apache-2.0
+      license_status: verified
+      license_evidence: crates/da-domain/src/xy_cut.rs
+      modifications: reduced_to_neutral_line_boxes_and_corpus_needs
+      interface_class: rust-source-port
+      boundary: rust-workspace
+      runtime_surface: da-domain_shadow_layout_ordering
+      redistribution: allowed_with_notice
+      attribution_notice_artifact: crates/da-domain/src/xy_cut.rs
+      source_offer_artifact: not_required_for_source_available_dependency
+      gpl_violation_status: no_gpl_linking
+    - component_id: pdf-craft-cv-structure
+      role: statistical_structure_layout_donor
+      upstream: https://github.com/oomol-lab/pdf-craft
+      upstream_version: not_pinned
+      license: AGPL-3.0-compatible-study-unverified
+      license_status: blocked
+      license_evidence: crates/da-domain/src/cv_structure.rs
+      modifications: reduced_algorithms_only; no upstream runtime imported
+      interface_class: data-only
+      boundary: rust-source-port
+      runtime_surface: da-domain_shadow_structure_analysis
+      redistribution: blocked
+      attribution_notice_artifact: source_comment_only_not_a_rights_clearance
+      source_offer_artifact: required_before_any_redistribution
+      blocked_reason: upstream_license_and_derivative_scope_not_independently_verified
+      gpl_violation_status: no_gpl_linking; blocked_from_distribution
+    - component_id: pdffigures2
+      role: figure_and_table_layout_donor
+      upstream: https://github.com/allenai/pdffigures2
+      upstream_version: 0.0.12-SNAPSHOT
+      license: unknown
+      license_status: blocked
+      license_evidence: crates/da-adapters/src/pdffigures2.rs
+      modifications: none_to_external_jar; adapter_only_validates_redacted_output
+      interface_class: subprocess
+      boundary: subprocess
+      runtime_surface: java_jar_invocation
+      redistribution: blocked
+      attribution_notice_artifact: required_before_release
+      source_offer_artifact: required_before_jar_distribution
+      blocked_reason: jar_license_and_redistribution_terms_not_bound_to_a_verified_notice_artifact
+      gpl_violation_status: no_linking_claim; distribution_blocked
+    - component_id: feature-tagger-training-corpus-and-models
+      role: training_corpus_model_weights_and_tagger_engines
+      upstream: java-grobid-feature-tagger-training
+      upstream_version: 0.9.0-crf
+      license: unknown
+      license_status: blocked
+      license_evidence: data/parse/feature_tagger_training_parity.yaml
+      modifications: inventory_only_no_runtime_or_model_loading
+      interface_class: data-only
+      boundary: data-only
+      runtime_surface: none
+      redistribution: blocked
+      attribution_notice_artifact: required_before_any_corpus_or_weight_release
+      source_offer_artifact: required_before_any_corpus_or_weight_release
+      blocked_reason: corpus_provenance_weight_rights_and_training_equivalence_not_established
+      gpl_violation_status: no_distribution; no_runtime_model
+    - component_id: project-owned-da-parse
+      role: compatibility_proxy_and_shadow_adapters
+      upstream: this_repository
+      upstream_version: workspace
+      license: MIT
+      license_status: verified
+      license_evidence: Cargo.toml
+      modifications: project_implementation
+      interface_class: rust-workspace
+      boundary: rust-workspace
+      runtime_surface: da-parse_and_da-adapters
+      redistribution: allowed_with_notice
+      attribution_notice_artifact: Cargo.toml
+      source_offer_artifact: not_applicable
+      gpl_violation_status: no_gpl_dependency_declared
+  assertions:
+    every_component_has_license_status: true
+    every_blocked_component_has_reason: true
+    no_gpl_dependency_is_linked: true
+    no_new_external_component_is_distributed: true
+    subprocess_and_http_are_the_only_external_runtime_boundaries: true
+    model_weights_are_not_distributed: true
