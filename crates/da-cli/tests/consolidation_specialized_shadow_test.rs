@@ -74,11 +74,14 @@ fn consolidation_specialized_shadow_report_is_deterministic_and_quarantined() {
         value["schema_version"],
         "consolidation-specialized-shadow.v1"
     );
-    assert_eq!(value["denominators"]["unpooled_cells"], 54);
-    assert_eq!(value["denominators"]["lane_pages"], 606);
-    assert_eq!(value["denominators"]["admitted"], 54);
-    assert_eq!(value["denominators"]["conserved"], 54);
-    assert_eq!(value["denominators"]["loss"], 0);
+    assert_eq!(value["reference_population"]["unpooled_cells"], 54);
+    assert_eq!(value["reference_population"]["lane_pages"], 606);
+    assert_eq!(value["executed_population"]["corpus_execution"], false);
+    assert_eq!(value["evaluated_population"]["status"], "not_evaluated");
+    assert_eq!(value["outcomes"]["quality_claims"], serde_json::json!([]));
+    assert_eq!(value["outcomes"]["accounting_contour"]["admitted"], 54);
+    assert_eq!(value["outcomes"]["accounting_contour"]["conserved"], 54);
+    assert_eq!(value["outcomes"]["accounting_contour"]["loss"], 0);
     assert_eq!(value["cells"].as_array().unwrap().len(), 54);
     assert_eq!(value["replay"]["semantic_equal"], true);
     assert_eq!(value["replay"]["worker_one_equal"], true);

@@ -82,20 +82,34 @@ fn feature_tagger_training_shadow_report_is_deterministic_and_quarantined() {
         ("training_entry_points", 2),
         ("generator_modes", 3),
         ("lifecycle", 3),
-        ("receipts", 4),
-        ("reviewed_structural_rows", 4),
-        ("executable_structural_rows", 4),
-        ("admitted", 4),
-        ("conserved", 4),
-        ("loss", 0),
     ] {
         assert_eq!(
-            value["denominators"][key], expected,
-            "denominator {key}: {:?}",
-            value["denominators"]
+            value["reference_population"].get(key),
+            Some(&serde_json::json!(expected)),
+            "reference population {key}: {:?}",
+            value["reference_population"]
         );
     }
-    assert_eq!(value["denominators"]["propagated_terminal_loss"], 4);
+    assert_eq!(value["executed_population"]["objects"], 4);
+    assert_eq!(value["outcomes"]["accounting_contour"]["receipts"], 4);
+    assert_eq!(
+        value["outcomes"]["accounting_contour"]["reviewed_structural_rows"],
+        4
+    );
+    assert_eq!(
+        value["outcomes"]["accounting_contour"]["executable_structural_rows"],
+        4
+    );
+    assert_eq!(value["outcomes"]["accounting_contour"]["admitted"], 4);
+    assert_eq!(value["outcomes"]["accounting_contour"]["conserved"], 4);
+    assert_eq!(value["outcomes"]["accounting_contour"]["loss"], 0);
+    assert_eq!(
+        value["outcomes"]["accounting_contour"]["propagated_terminal_loss"],
+        4
+    );
+    assert_eq!(value["executed_population"]["corpus_execution"], false);
+    assert_eq!(value["evaluated_population"]["status"], "not_evaluated");
+    assert_eq!(value["outcomes"]["quality_claims"], serde_json::json!([]));
     assert_eq!(value["receipts"].as_array().unwrap().len(), 4);
     assert_eq!(value["receipts"][0]["disposition"], "structural_pass");
     assert_eq!(value["receipts"][1]["disposition"], "propagated_terminal");

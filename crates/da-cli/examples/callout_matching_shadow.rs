@@ -25,7 +25,10 @@ struct Report {
     source_sha256: String,
     data_sha256: String,
     oracle_sha256: String,
-    corpus: Corpus,
+    reference_population: Corpus,
+    executed_population: serde_json::Value,
+    evaluated_population: serde_json::Value,
+    outcomes: serde_json::Value,
     accounting: Accounting,
     matching: Matching,
     replay_equal: bool,
@@ -35,6 +38,8 @@ struct Report {
 }
 #[derive(Serialize)]
 struct Corpus {
+    identity: &'static str,
+    role: &'static str,
     documents: usize,
     pages: usize,
     lane_pages: usize,
@@ -294,13 +299,18 @@ fn main() {
         source_sha256: sha(SOURCE.as_bytes()),
         data_sha256: sha(DATA.as_bytes()),
         oracle_sha256: sha(ORACLE.as_bytes()),
-        corpus: Corpus {
+        reference_population: Corpus {
+            identity: "reviewed_three_document_layout_reference",
+            role: "identity_only",
             documents: 3,
             pages: 202,
             lane_pages: 606,
             document_lane_outcomes: 9,
             oracle_cells: 54,
         },
+        executed_population: serde_json::json!({"documents":1,"pages":1,"objects":4,"execution_evidence":"tracked_offline_fixture:callout-shadow","corpus_execution":false}),
+        evaluated_population: serde_json::json!({"status":"not_evaluated","documents":0,"oracle":"none","reason":"synthetic_terminal_fixture_without_corpus_execution"}),
+        outcomes: serde_json::json!({"accounting_contour":{"admitted":accounting.admitted,"conserved":accounting.conserved,"loss":accounting.loss,"upstream_terminal":0},"quality_claims":[]}),
         accounting: Accounting {
             admitted: accounting.admitted,
             conserved: accounting.conserved,

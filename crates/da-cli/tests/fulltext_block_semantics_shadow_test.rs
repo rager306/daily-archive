@@ -79,13 +79,16 @@ fn fulltext_shadow_is_real_accountant_bound_deterministic_and_quarantined() {
         value["schema_version"],
         "fulltext-block-semantics-shadow.v1"
     );
-    assert_eq!(value["denominators"]["unpooled_cells"], 54);
-    assert_eq!(value["denominators"]["lane_pages"], 606);
+    assert_eq!(value["reference_population"]["unpooled_cells"], 54);
+    assert_eq!(value["reference_population"]["lane_pages"], 606);
+    assert_eq!(value["executed_population"]["corpus_execution"], false);
+    assert_eq!(value["evaluated_population"]["status"], "not_evaluated");
+    assert_eq!(value["outcomes"]["quality_claims"], serde_json::json!([]));
     assert_eq!(
-        value["upstream"]["admitted"],
-        value["upstream"]["conserved"]
+        value["outcomes"]["accounting_contour"]["admitted"],
+        value["outcomes"]["accounting_contour"]["conserved"]
     );
-    assert_eq!(value["upstream"]["loss"], 0);
+    assert_eq!(value["outcomes"]["accounting_contour"]["loss"], 0);
     assert_eq!(value["semantic"]["replay_equal"], true);
     assert_eq!(value["semantic"]["worker_one_equal"], true);
     assert_eq!(value["policy"]["production_authority"], "java_http");

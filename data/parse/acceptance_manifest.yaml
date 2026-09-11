@@ -7,6 +7,18 @@ policy_locks:
   auto_promote: forbidden
   production_route: forbidden
   fallback_target: java-grobid-http@0.9.0-crf
+population_contract:
+  schema_version: shadow-populations.v1
+  report_paths:
+    - crates/da-cli/examples/fulltext_block_semantics_shadow.rs
+    - crates/da-cli/examples/callout_matching_shadow.rs
+    - crates/da-cli/examples/consolidation_specialized_shadow.rs
+    - crates/da-cli/examples/feature_tagger_training_shadow.rs
+  required_blocks: [reference_population, executed_population, evaluated_population, outcomes]
+  forbidden_legacy_blocks: [denominators, corpus]
+  executed_population_required_fields: [corpus_execution, execution_evidence]
+  synthetic_corpus_execution: false
+  quality_requires_evaluated_status: evaluated
 comparison_rules:
   allowed_classes: [publisher_acceptance, layout_omnidocbench]
   allowed_row_states: [bound, catalogued, bytes_absent]

@@ -913,6 +913,11 @@ class TrajectoryService:
         # Boundary contracts prevent silent loss of canonical and derived information.
         drift_flags.extend(self._check_information_preservation())
 
+        # R133: shadow reports must keep reference, executed, evaluated and outcome
+        # populations non-mixable; corpus-sized numbers without execution evidence
+        # fail closed rather than becoming synthetic quality claims.
+        drift_flags.extend(self._check_shadow_population_contract())
+
         # ACAP validates multi-layer FSM, metrics, cache/prompt/optimizer and reports.
         drift_flags.extend(self._check_article_context_assurance())
 
@@ -1276,6 +1281,58 @@ class TrajectoryService:
                 ),
                 dimension="article_context_assurance",
             ))
+        return flags
+
+    def _check_shadow_population_contract(self) -> list[DriftFlag]:
+        """Fail closed when shadow reports mix corpus identity with execution claims."""
+        path = self.root / "data/parse/acceptance_manifest.yaml"
+        try:
+            manifest = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+            contract = manifest["population_contract"]
+            paths = contract["report_paths"]
+            required = set(contract["required_blocks"])
+            forbidden = set(contract["forbidden_legacy_blocks"])
+            executed_required = set(contract["executed_population_required_fields"])
+        except (OSError, KeyError, TypeError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="shadow_population_contract_invalid",
+                severity="high",
+                evidence=f"cannot load population contract: {error}",
+                dimension="population_honesty",
+            )]
+
+        flags: list[DriftFlag] = []
+        for relative in paths:
+            source_path = self.root / str(relative)
+            if not source_path.is_file():
+                flags.append(DriftFlag(
+                    flag="shadow_population_report_missing",
+                    severity="high",
+                    evidence=f"missing report source {relative}",
+                    dimension="population_honesty",
+                ))
+                continue
+            text = source_path.read_text(encoding="utf-8", errors="replace")
+            # Inspect serialized report keys, not Rust type names such as Corpus.
+            serialized = set(re.findall(r'"([a-z_]+)"\s*:', text))
+            missing = sorted(required - serialized)
+            legacy = sorted(name for name in forbidden if re.search(rf'"{re.escape(name)}"\s*:', text))
+            missing_executed = sorted(
+                name for name in executed_required
+                if not re.search(rf'"{re.escape(name)}"\s*:', text)
+            )
+            quality_claims = re.search(r'"quality_claims"\s*:\s*\[(?!\s*\])', text)
+            if missing or legacy or missing_executed or quality_claims:
+                details = (
+                    f"{relative}: missing={missing}; legacy={legacy}; "
+                    f"missing_executed={missing_executed}; quality_claims_present={bool(quality_claims)}"
+                )
+                flags.append(DriftFlag(
+                    flag="shadow_population_contract_broken",
+                    severity="high",
+                    evidence=details,
+                    dimension="population_honesty",
+                ))
         return flags
 
     def _check_information_preservation(self) -> list[DriftFlag]:

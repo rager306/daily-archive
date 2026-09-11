@@ -1,7 +1,7 @@
 #![cfg(feature = "pdf-layout")]
 
 use serde_json::Value;
-use std::{fs, path::PathBuf, process::Command};
+use std::{fs, process::Command};
 use tempfile::tempdir;
 
 fn run_example(report: &std::path::Path) -> std::process::Output {
@@ -94,9 +94,12 @@ fn callout_matching_shadow_is_composed_terminal_and_quarantined() {
             .starts_with("sha256:")
     );
     assert_eq!(
-        value["corpus"],
-        serde_json::json!({"documents":3,"pages":202,"lane_pages":606,"document_lane_outcomes":9,"oracle_cells":54})
+        value["reference_population"],
+        serde_json::json!({"documents":3,"pages":202,"lane_pages":606,"document_lane_outcomes":9,"oracle_cells":54,"identity":"reviewed_three_document_layout_reference","role":"identity_only"})
     );
+    assert_eq!(value["executed_population"]["corpus_execution"], false);
+    assert_eq!(value["evaluated_population"]["status"], "not_evaluated");
+    assert_eq!(value["outcomes"]["quality_claims"], serde_json::json!([]));
     assert_eq!(
         value["accounting"]["admitted"],
         value["accounting"]["conserved"]
