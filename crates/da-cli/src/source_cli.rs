@@ -219,7 +219,9 @@ pub(crate) fn stamp_p8_consolidation_observe(
 }
 
 /// P9 conservation is a candidate_lift honesty receipt.
-/// Tracked Conserved on preserved TEI is a DATA claim, not a this-run compare.
+/// A preserved-TEI conservation claim is historical evidence, not a this-run
+/// comparison. Keep the two verdict namespaces separate so an aggregator
+/// cannot count the reference claim as current-document conservation.
 /// The comparator stays in da-parse; parse-pdf does not call it.
 pub(crate) fn stamp_p9_conservation_observe(m: &mut serde_yaml::Mapping) {
     let mut p9 = serde_yaml::Mapping::new();
@@ -228,8 +230,22 @@ pub(crate) fn stamp_p9_conservation_observe(m: &mut serde_yaml::Mapping) {
     p9.insert("observe_mode".into(), "candidate_lift".into());
     p9.insert("engine_called".into(), false.into());
     p9.insert("computed_this_run".into(), false.into());
-    p9.insert("tracked_on_preserved_tei".into(), true.into());
-    p9.insert("tracked_verdict".into(), "conserved".into());
+
+    let current = serde_yaml::Mapping::from_iter([
+        ("verdict_namespace".into(), "current_run".into()),
+        ("verdict".into(), "NotEvaluated".into()),
+        ("evaluation_state".into(), "unmeasured".into()),
+    ]);
+    p9.insert("current_run".into(), current.into());
+
+    let reference = serde_yaml::Mapping::from_iter([
+        ("verdict_namespace".into(), "historical_reference".into()),
+        ("artifact_identity".into(), "preserved_tei".into()),
+        ("artifact_digest".into(), "not_recorded".into()),
+        ("evidence_state".into(), "historical".into()),
+        ("verdict".into(), "conserved".into()),
+    ]);
+    p9.insert("reference_evidence".into(), reference.into());
     merge_cascade_observe(m, "P9", p9);
 }
 
@@ -3664,14 +3680,43 @@ mod tests {
             Some(false),
             "tracked Conserved is not a this-run compare"
         );
+        let current = p9
+            .get("current_run")
+            .and_then(|v| v.as_mapping())
+            .expect("P9 current_run");
         assert_eq!(
-            p9.get("tracked_on_preserved_tei").and_then(|v| v.as_bool()),
-            Some(true)
+            current.get("verdict_namespace").and_then(|v| v.as_str()),
+            Some("current_run")
         );
         assert_eq!(
-            p9.get("tracked_verdict").and_then(|v| v.as_str()),
+            current.get("verdict").and_then(|v| v.as_str()),
+            Some("NotEvaluated")
+        );
+        assert_eq!(
+            current.get("evaluation_state").and_then(|v| v.as_str()),
+            Some("unmeasured")
+        );
+        let reference = p9
+            .get("reference_evidence")
+            .and_then(|v| v.as_mapping())
+            .expect("P9 reference_evidence");
+        assert_eq!(
+            reference.get("verdict_namespace").and_then(|v| v.as_str()),
+            Some("historical_reference")
+        );
+        assert_eq!(
+            reference.get("artifact_identity").and_then(|v| v.as_str()),
+            Some("preserved_tei")
+        );
+        assert_eq!(
+            reference.get("artifact_digest").and_then(|v| v.as_str()),
+            Some("not_recorded")
+        );
+        assert_eq!(
+            reference.get("verdict").and_then(|v| v.as_str()),
             Some("conserved")
         );
+        assert!(!p9.contains_key("tracked_verdict"));
     }
 
     #[test]
