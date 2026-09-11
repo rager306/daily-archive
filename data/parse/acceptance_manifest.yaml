@@ -27,6 +27,40 @@ comparison_rules:
   same_n: required
   catalogued_bytes_are_executed: false
   omnidocbench_is_tei_oracle: false
+external_holdout_contract:
+  schema_version: external-holdout-readonly.v1
+  purpose: transferability_and_cost_probe_only
+  execution_status: not_executed
+  byte_policy:
+    external_bytes: bytes_absent
+    load_external_bytes: forbidden
+    download_external_bytes: forbidden
+    materialize_external_files: forbidden
+    external_rows_are_evidence: false
+  identity_binding:
+    digest: sha256
+    input: canonical_dataset_id_plus_identity
+    digest_is_byte_hash: false
+    digest_is_authority_binding: true
+    mismatch_behavior: fail_visible
+  denominator_policy:
+    local_bound_rows_only: true
+    bytes_absent_rows_in_local_denominator: false
+    catalogued_rows_in_local_denominator: false
+    external_probe_changes_local_denominator: forbidden
+    same_n_local_proxy_required: true
+  document_level_reporting:
+    unit: document
+    uncertainty_method: bounded_interval_per_document; no pooled corpus claim
+    report_required_before_execution_claim: true
+    fields: [document_id, state, identity_sha256, uncertainty_low, uncertainty_high, cost_lower_bound, cost_upper_bound]
+  cost_bounds:
+    currency: USD
+    basis: estimated_external_bytes_and_runtime; no external bytes loaded
+    lower_bound_includes: [manifest_validation, local_proxy_execution]
+    upper_bound_includes: [human_review, permitted_external_acquisition_if_later_approved]
+    unknown_cost_is_not_zero: true
+    release_claim_allowed: false
 classes:
   publisher_acceptance:
     comparison_kind: tei_family
@@ -40,6 +74,7 @@ classes:
         identity: sciencialab/grobid-evaluation/PMC_sample_1943
         dataset_id: sciencialab/grobid-evaluation
         source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
+        identity_sha256: 7bea12a9bb565e88a9f77bad6cc7ac868807fa5a28988151e6c8d1fad356c4e0
         expected_n: 1943
         gold_format: jats_nxml
       - id: biorxiv-10k-test-2000
@@ -47,6 +82,7 @@ classes:
         identity: sciencialab/grobid-evaluation/biorxiv-10k-test-2000
         dataset_id: sciencialab/grobid-evaluation
         source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
+        identity_sha256: 44b60aafbe0c2e6858a62fa71a3292e6fe6a30c9e0197472d914e91f480dcc5d
         expected_n: 2000
         gold_format: jats_xml
       - id: PLOS_1000
@@ -54,6 +90,7 @@ classes:
         identity: sciencialab/grobid-evaluation/PLOS_1000
         dataset_id: sciencialab/grobid-evaluation
         source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
+        identity_sha256: dc995a65f1cb7ae61ad9b7e134bf6077e40cfa2eae4d4159ed7b284cabec4b38
         expected_n: 1000
         gold_format: jats_xml
       - id: eLife_984
@@ -61,6 +98,7 @@ classes:
         identity: sciencialab/grobid-evaluation/eLife_984
         dataset_id: sciencialab/grobid-evaluation
         source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
+        identity_sha256: 926c4cb33a97c7aa084a93a535f524acce7265102da8c52e1ad17667365af416
         expected_n: 984
         gold_format: jats_xml
     local_proxy:
@@ -101,6 +139,7 @@ classes:
         identity: opendatalab/OmniDocBench/data_source=academic_literature,research_report
         dataset_id: opendatalab/OmniDocBench
         source_url: https://huggingface.co/datasets/opendatalab/OmniDocBench
+        identity_sha256: 48125092fb4d92518d843a028ca51b32c9a102ecebb893cb938d3ef8abd4563a
         expected_n: 1651
         filter: data_source in [academic_literature, research_report]
         gold_format: json_annotations
