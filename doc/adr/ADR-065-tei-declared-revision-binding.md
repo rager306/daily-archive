@@ -40,6 +40,22 @@ The revision is therefore **declared by the document itself**, never invented;
 the binding method is recorded per paper in the materialization report
 (`binding_method: tei_declared_revision`) so lineage stays auditable.
 
+## Freshness and trust boundary
+
+Derived evidence now carries a bounded `FreshnessIdentity` containing the
+selected target revision, observed revision, source and representation
+SHA-256 digests, parser identity, configuration identity, cache key, and the
+observation timestamp. The timestamp is provenance only; no wall-clock oracle
+is used. `assess_freshness` first requires the identity to target the selected
+revision, then returns `fresh`, `stale`, or `superseded` from revision
+identity alone. Consequently, equal digests do not make an observation valid
+for a different revision.
+
+`DeclaredRevisionTrust::TeiDeclared` is the sole authoritative declaration.
+Any external comparison is represented as `DeferredCrossCheck` with its own
+receipt reference and cannot overwrite the TEI claim. Missing fields,
+non-SHA-256 digests, and target mismatches fail closed with typed errors.
+
 ## Consequences
 
 - Corpus rebuild (M437): 173/200 gold papers bound via

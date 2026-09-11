@@ -242,6 +242,90 @@ pub struct BoundReceipt {
     pub grobid_profile: String,
 }
 
+/// Immutable lineage for a derived observation. `observed_at` is provenance,
+/// not a wall-clock freshness oracle: freshness is derived only against an
+/// explicitly selected target revision.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FreshnessIdentity {
+    pub target_revision: String,
+    pub observed_revision: String,
+    pub source_digest: String,
+    pub representation_digest: String,
+    pub parser_identity: String,
+    pub config_identity: String,
+    pub cache_key: String,
+    pub observed_at: String,
+}
+
+/// The bounded result of comparing an observation with the selected target.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FreshnessOutcome {
+    Fresh,
+    Stale,
+    Superseded,
+}
+
+/// TEI is authoritative for the declared revision. Other sources may only
+/// produce a deferred receipt; they cannot silently replace the declaration.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
+pub enum DeclaredRevisionTrust {
+    TeiDeclared { revision: String },
+    DeferredCrossCheck { receipt_ref: String },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FreshnessIdentityError {
+    EmptyField,
+    InvalidDigest,
+    TargetRevisionMismatch,
+}
+
+/// Compare identity with the selected target without consulting the current
+/// time. Versioned arXiv revisions use their numeric suffix when available;
+/// opaque revision identifiers conservatively treat a mismatch as superseded.
+pub fn assess_freshness(
+    identity: &FreshnessIdentity,
+    selected_target_revision: &str,
+) -> Result<FreshnessOutcome, FreshnessIdentityError> {
+    for value in [
+        identity.target_revision.as_str(),
+        identity.observed_revision.as_str(),
+        selected_target_revision,
+        identity.parser_identity.as_str(),
+        identity.config_identity.as_str(),
+        identity.cache_key.as_str(),
+        identity.observed_at.as_str(),
+    ] {
+        if value.trim().is_empty() {
+            return Err(FreshnessIdentityError::EmptyField);
+        }
+    }
+    if !valid_digest(&identity.source_digest) || !valid_digest(&identity.representation_digest) {
+        return Err(FreshnessIdentityError::InvalidDigest);
+    }
+    if identity.target_revision != selected_target_revision {
+        return Err(FreshnessIdentityError::TargetRevisionMismatch);
+    }
+    if identity.observed_revision == selected_target_revision {
+        return Ok(FreshnessOutcome::Fresh);
+    }
+    Ok(
+        match revision_number(&identity.observed_revision)
+            .zip(revision_number(selected_target_revision))
+        {
+            Some((observed, target)) if observed < target => FreshnessOutcome::Stale,
+            _ => FreshnessOutcome::Superseded,
+        },
+    )
+}
+
+fn revision_number(value: &str) -> Option<u32> {
+    value.rsplit_once('v')?.1.parse().ok()
+}
+
 /// The complete, injected receipt set for one paper and one evidence family.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -846,6 +930,83 @@ mod tests {
                 ..
             })
         ));
+    }
+
+    fn freshness_identity() -> FreshnessIdentity {
+        FreshnessIdentity {
+            target_revision: "arxiv:1234.5678v3".into(),
+            observed_revision: "arxiv:1234.5678v3".into(),
+            source_digest: "a".repeat(64),
+            representation_digest: "b".repeat(64),
+            parser_identity: "grobid-0.9.0-crf".into(),
+            config_identity: "structural-v1".into(),
+            cache_key: "cache-key-1".into(),
+            observed_at: "2026-09-11T00:00:00Z".into(),
+        }
+    }
+
+    #[test]
+    fn freshness_identity_is_revision_bound_without_wall_clock_oracle() {
+        let identity = freshness_identity();
+        assert_eq!(
+            assess_freshness(&identity, "arxiv:1234.5678v3"),
+            Ok(FreshnessOutcome::Fresh)
+        );
+
+        let mut stale = identity.clone();
+        stale.observed_revision = "arxiv:1234.5678v2".into();
+        assert_eq!(
+            assess_freshness(&stale, "arxiv:1234.5678v3"),
+            Ok(FreshnessOutcome::Stale)
+        );
+
+        let mut superseded = identity;
+        superseded.observed_revision = "arxiv:1234.5678v4".into();
+        assert_eq!(
+            assess_freshness(&superseded, "arxiv:1234.5678v3"),
+            Ok(FreshnessOutcome::Superseded)
+        );
+    }
+
+    #[test]
+    fn equal_digests_do_not_rescue_stale_or_superseded_revision() {
+        let mut identity = freshness_identity();
+        identity.observed_revision = "arxiv:1234.5678v2".into();
+        assert_eq!(identity.source_digest, "a".repeat(64));
+        assert_eq!(identity.representation_digest, "b".repeat(64));
+        assert_eq!(
+            assess_freshness(&identity, "arxiv:1234.5678v3"),
+            Ok(FreshnessOutcome::Stale)
+        );
+    }
+
+    #[test]
+    fn freshness_identity_fails_closed_and_tei_trust_is_explicit() {
+        let mut identity = freshness_identity();
+        identity.source_digest = "not-a-sha256".into();
+        assert_eq!(
+            assess_freshness(&identity, "arxiv:1234.5678v3"),
+            Err(FreshnessIdentityError::InvalidDigest)
+        );
+        assert_eq!(
+            assess_freshness(&freshness_identity(), "arxiv:1234.5678v4"),
+            Err(FreshnessIdentityError::TargetRevisionMismatch)
+        );
+
+        let declared = DeclaredRevisionTrust::TeiDeclared {
+            revision: "arxiv:1234.5678v3".into(),
+        };
+        let deferred = DeclaredRevisionTrust::DeferredCrossCheck {
+            receipt_ref: "cross-check-1".into(),
+        };
+        assert_eq!(
+            serde_json::to_value(declared).unwrap()["status"],
+            "tei_declared"
+        );
+        assert_eq!(
+            serde_json::to_value(deferred).unwrap()["status"],
+            "deferred_cross_check"
+        );
     }
 
     #[test]
