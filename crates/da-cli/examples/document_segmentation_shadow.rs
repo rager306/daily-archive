@@ -98,6 +98,13 @@ struct GenreLabel {
 struct EvaluationSpec {
     required_rows: usize,
     pooled_metrics: String,
+    coordinate_binding: CoordinateBinding,
+}
+#[derive(Debug, Deserialize)]
+struct CoordinateBinding {
+    unit: String,
+    page_origin: String,
+    tolerance: u32,
 }
 #[derive(Debug, Deserialize)]
 struct PolicyLocks {
@@ -177,6 +184,8 @@ struct Outcome {
     lattice_fingerprint: Option<String>,
     region_tokens: BTreeMap<String, usize>,
     region_boundaries: BTreeMap<String, usize>,
+    #[serde(skip)]
+    region_boundary_coordinates: BTreeMap<String, Vec<BoundaryPair>>,
     latency_ms: u128,
     #[serde(skip)]
     receipt: Option<Receipt>,
@@ -223,12 +232,15 @@ struct MatrixRow {
     admitted_tokens: usize,
     assigned_tokens: usize,
     boundary_count: usize,
+    count_agreement: usize,
+    count_difference: usize,
     token_precision: Option<f64>,
     token_recall: Option<f64>,
     boundary_precision: Option<f64>,
     boundary_recall: Option<f64>,
     boundary_f1: Option<f64>,
     boundary_displacement: Option<f64>,
+    boundary_displacement_max: Option<f64>,
     page_furniture_false_positive_rate: Option<f64>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -309,10 +321,186 @@ fn oracle_lane(row: &serde_yaml::Value) -> Option<&str> {
     row["lane_id"].as_str().or_else(|| row["lane"].as_str())
 }
 
-fn empty_region_counts() -> (BTreeMap<String, usize>, BTreeMap<String, usize>) {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct BoundaryCoordinate {
+    page: u32,
+    block: u32,
+    line: u32,
+    token: u32,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct BoundaryPair {
+    start: BoundaryCoordinate,
+    end: BoundaryCoordinate,
+}
+
+fn yaml_coordinate(value: &serde_yaml::Value, page_origin: &str) -> Option<BoundaryCoordinate> {
+    let values = value.as_sequence()?;
+    let page = values.first()?.as_u64()? as u32;
+    let page = match page_origin {
+        "one_based" => page.checked_sub(1)?,
+        "zero_based" => page,
+        _ => return None,
+    };
+    Some(BoundaryCoordinate {
+        page,
+        block: values.get(1)?.as_u64()? as u32,
+        line: values.get(2)?.as_u64()? as u32,
+        token: values.get(3)?.as_u64()? as u32,
+    })
+}
+
+fn reviewed_boundary(run: &serde_yaml::Value, page_origin: &str) -> Option<BoundaryPair> {
+    Some(BoundaryPair {
+        start: yaml_coordinate(&run["start"], page_origin)?,
+        end: yaml_coordinate(&run["end"], page_origin)?,
+    })
+}
+
+fn predicted_boundary(run: &da_parse::FullRegionRun) -> BoundaryPair {
+    let coordinate = |location: &da_parse::FullLocation| BoundaryCoordinate {
+        page: location.page_ordinal,
+        block: location.block_ordinal,
+        line: location.line_ordinal,
+        token: location.token_ordinal,
+    };
+    BoundaryPair {
+        start: coordinate(&run.start),
+        end: coordinate(&run.end),
+    }
+}
+
+fn coordinate_distance(left: BoundaryCoordinate, right: BoundaryCoordinate) -> u32 {
+    left.page.abs_diff(right.page)
+        + left.block.abs_diff(right.block)
+        + left.line.abs_diff(right.line)
+        + left.token.abs_diff(right.token)
+}
+
+fn boundary_distance(left: BoundaryPair, right: BoundaryPair) -> u32 {
+    coordinate_distance(left.start, right.start) + coordinate_distance(left.end, right.end)
+}
+
+#[derive(Debug, Default)]
+struct BoundaryMatch {
+    matched: usize,
+    false_positives: usize,
+    false_negatives: usize,
+    displacements: Vec<u32>,
+}
+
+fn match_boundaries(
+    predicted: &[BoundaryPair],
+    reviewed: &[BoundaryPair],
+    tolerance: u32,
+) -> BoundaryMatch {
+    let mut candidates = predicted
+        .iter()
+        .enumerate()
+        .flat_map(|(predicted_index, predicted_boundary)| {
+            reviewed
+                .iter()
+                .enumerate()
+                .filter_map(move |(reviewed_index, reviewed_boundary)| {
+                    // Document, lane, region, and page are the matching scope;
+                    // page identity is not a quality denominator. Require both
+                    // endpoints to remain on the same page as their reviewed pair.
+                    (predicted_boundary.start.page == reviewed_boundary.start.page
+                        && predicted_boundary.end.page == reviewed_boundary.end.page)
+                        .then(|| {
+                            let distance =
+                                boundary_distance(*predicted_boundary, *reviewed_boundary);
+                            (
+                                distance <= tolerance,
+                                distance,
+                                predicted_index,
+                                reviewed_index,
+                            )
+                        })
+                })
+        })
+        .filter(|(within_tolerance, _, _, _)| *within_tolerance)
+        .map(|(_, distance, predicted_index, reviewed_index)| {
+            (distance, predicted_index, reviewed_index)
+        })
+        .collect::<Vec<_>>();
+    candidates.sort_unstable();
+    let mut used_predicted = vec![false; predicted.len()];
+    let mut used_reviewed = vec![false; reviewed.len()];
+    let mut result = BoundaryMatch::default();
+    for (distance, predicted_index, reviewed_index) in candidates {
+        if !used_predicted[predicted_index] && !used_reviewed[reviewed_index] {
+            used_predicted[predicted_index] = true;
+            used_reviewed[reviewed_index] = true;
+            result.matched += 1;
+            result.displacements.push(distance);
+        }
+    }
+    result.false_positives = predicted.len() - result.matched;
+    result.false_negatives = reviewed.len() - result.matched;
+    result
+}
+
+#[cfg(test)]
+mod segmentation_boundary_metrics {
+    use super::*;
+
+    fn boundary(token: u32) -> BoundaryPair {
+        BoundaryPair {
+            start: BoundaryCoordinate {
+                page: 1,
+                block: 0,
+                line: token,
+                token: 0,
+            },
+            end: BoundaryCoordinate {
+                page: 1,
+                block: 0,
+                line: token,
+                token: 9,
+            },
+        }
+    }
+
+    #[test]
+    fn permuted_boundaries_keep_count_agreement_but_fail_positional_precision() {
+        let reviewed = [boundary(1), boundary(10)];
+        // Same cardinality, but starts and ends are cross-paired. Count agreement
+        // remains 1 while no complete positional boundary matches.
+        let permuted = [
+            BoundaryPair {
+                start: reviewed[0].start,
+                end: reviewed[1].end,
+            },
+            BoundaryPair {
+                start: reviewed[1].start,
+                end: reviewed[0].end,
+            },
+        ];
+        let result = match_boundaries(&permuted, &reviewed, 0);
+        assert_eq!(permuted.len(), reviewed.len());
+        assert_eq!(permuted.len() == reviewed.len(), true);
+        let positional_precision = result.matched as f64 / permuted.len() as f64;
+        assert_eq!(positional_precision, 0.0);
+        assert_eq!(result.matched, 0);
+        assert_eq!(result.false_positives, 2);
+        assert_eq!(result.false_negatives, 2);
+    }
+}
+
+fn empty_region_counts() -> (
+    BTreeMap<String, usize>,
+    BTreeMap<String, usize>,
+    BTreeMap<String, Vec<BoundaryPair>>,
+) {
     let tokens = REGIONS.iter().map(|name| ((*name).into(), 0)).collect();
     let boundaries = REGIONS.iter().map(|name| ((*name).into(), 0)).collect();
-    (tokens, boundaries)
+    let coordinates = REGIONS
+        .iter()
+        .map(|name| ((*name).into(), Vec::new()))
+        .collect();
+    (tokens, boundaries, coordinates)
 }
 
 fn failed_outcome(job: Job, status: &str, code: &str, latency_ms: u128) -> Outcome {
@@ -335,6 +523,7 @@ fn failed_outcome(job: Job, status: &str, code: &str, latency_ms: u128) -> Outco
         lattice_fingerprint: None,
         region_tokens: empty_region_counts().0,
         region_boundaries: empty_region_counts().1,
+        region_boundary_coordinates: empty_region_counts().2,
         latency_ms,
         receipt: None,
     }
@@ -394,10 +583,17 @@ fn run_job(job: Job, limits: LayoutDonorLimits, config: SegmentationConfig) -> O
         .iter()
         .map(|name| ((*name).into(), 0))
         .collect::<BTreeMap<_, _>>();
+    let mut region_boundary_coordinates = REGIONS
+        .iter()
+        .map(|name| ((*name).into(), Vec::new()))
+        .collect::<BTreeMap<_, _>>();
     for run in &segmentation.runs {
-        *region_boundaries
-            .entry(region_name(run.region).into())
-            .or_insert(0) += 1;
+        let region = region_name(run.region).to_owned();
+        *region_boundaries.entry(region.clone()).or_insert(0) += 1;
+        region_boundary_coordinates
+            .entry(region)
+            .or_default()
+            .push(predicted_boundary(run));
     }
     let token = segmentation.assignments.first();
     let run = segmentation.runs.first();
@@ -442,6 +638,7 @@ fn run_job(job: Job, limits: LayoutDonorLimits, config: SegmentationConfig) -> O
         lattice_fingerprint: Some(bare_sha(&segmentation.identity.lattice_fingerprint)),
         region_tokens,
         region_boundaries,
+        region_boundary_coordinates,
         latency_ms: started.elapsed().as_millis().saturating_add(wait),
         receipt,
     }
@@ -498,6 +695,7 @@ fn execute_jobs(
                     lattice_fingerprint: None,
                     region_tokens: empty_region_counts().0,
                     region_boundaries: empty_region_counts().1,
+                    region_boundary_coordinates: empty_region_counts().2,
                     latency_ms: 0,
                     receipt: None,
                 }
@@ -577,6 +775,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         || manifest.lanes.required_ids != LANES
         || manifest.evaluation.required_rows != 81
         || manifest.evaluation.pooled_metrics != "forbidden"
+        || manifest.evaluation.coordinate_binding.unit != "page_block_line_token"
+        || manifest.evaluation.coordinate_binding.page_origin != "one_based"
         || manifest.lanes.silent_skip != "forbidden"
         || manifest.lanes.pooling != "forbidden"
     {
@@ -718,10 +918,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .as_sequence()
                     .cloned()
                     .unwrap_or_default();
-                let expected_boundaries = reviewed_runs
+                let reviewed_boundaries = reviewed_runs
                     .iter()
                     .filter(|run| run["region"].as_str() == Some(region))
-                    .count();
+                    .filter_map(|run| {
+                        reviewed_boundary(run, &manifest.evaluation.coordinate_binding.page_origin)
+                    })
+                    .collect::<Vec<_>>();
+                let expected_boundaries = reviewed_boundaries.len();
                 let reviewed_absent = reviewed_runs.iter().any(|run| {
                     run["region"].as_str() == Some(region)
                         && run["absence"] != serde_yaml::Value::Null
@@ -737,6 +941,39 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let boundary_count = lane_outcome
                     .and_then(|o| o.region_boundaries.get(region).copied())
                     .unwrap_or(0);
+                let predicted_boundaries = lane_outcome
+                    .and_then(|o| o.region_boundary_coordinates.get(region))
+                    .cloned()
+                    .unwrap_or_default();
+                let boundary_match = match_boundaries(
+                    &predicted_boundaries,
+                    &reviewed_boundaries,
+                    manifest.evaluation.coordinate_binding.tolerance,
+                );
+                let matched = boundary_match.matched as f64;
+                let boundary_precision = (predicted_boundaries.len() > 0)
+                    .then_some(matched / predicted_boundaries.len() as f64);
+                let boundary_recall = (reviewed_boundaries.len() > 0)
+                    .then_some(matched / reviewed_boundaries.len() as f64);
+                let boundary_f1 = match (boundary_precision, boundary_recall) {
+                    (Some(precision), Some(recall)) if precision + recall > 0.0 => {
+                        Some(2.0 * precision * recall / (precision + recall))
+                    }
+                    _ => None,
+                };
+                let boundary_displacement = (!boundary_match.displacements.is_empty()).then_some(
+                    boundary_match
+                        .displacements
+                        .iter()
+                        .map(|value| *value as f64)
+                        .sum::<f64>()
+                        / boundary_match.displacements.len() as f64,
+                );
+                let boundary_displacement_max = boundary_match
+                    .displacements
+                    .iter()
+                    .max()
+                    .map(|value| *value as f64);
                 matrix.push(MatrixRow {
                     document_id: document.id.clone(),
                     lane: lane.into(),
@@ -745,24 +982,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     admitted_tokens,
                     assigned_tokens,
                     boundary_count,
+                    count_agreement: usize::from(boundary_count == expected_boundaries),
+                    count_difference: boundary_count.abs_diff(expected_boundaries),
                     token_precision: (assigned_tokens > 0 && admitted_tokens > 0).then_some(
                         assigned_tokens.min(admitted_tokens) as f64 / assigned_tokens as f64,
                     ),
                     token_recall: (assigned_tokens > 0 && admitted_tokens > 0).then_some(
                         assigned_tokens.min(admitted_tokens) as f64 / admitted_tokens as f64,
                     ),
-                    boundary_precision: (boundary_count > 0 && expected_boundaries > 0).then_some(
-                        boundary_count.min(expected_boundaries) as f64 / boundary_count as f64,
-                    ),
-                    boundary_recall: (boundary_count > 0 && expected_boundaries > 0).then_some(
-                        boundary_count.min(expected_boundaries) as f64 / expected_boundaries as f64,
-                    ),
-                    boundary_f1: (boundary_count > 0 && expected_boundaries > 0).then_some(
-                        2.0 * boundary_count.min(expected_boundaries) as f64
-                            / (boundary_count + expected_boundaries) as f64,
-                    ),
-                    boundary_displacement: (boundary_count > 0 && expected_boundaries > 0)
-                        .then_some((boundary_count as f64 - expected_boundaries as f64).abs()),
+                    boundary_precision,
+                    boundary_recall,
+                    boundary_f1,
+                    boundary_displacement,
+                    boundary_displacement_max,
                     page_furniture_false_positive_rate: (region == "page_furniture"
                         && assigned_tokens > 0)
                         .then_some(0.0),
