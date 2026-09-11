@@ -19,7 +19,36 @@ files:
   gar_registry_contract: scripts/governor/checks/grobid_absorption_review.yaml
   human_template: doc/review/HUMAN-REVIEW-TEMPLATE.md
   readme: doc/review/README.md
+  release_decision_package: data/parse/acceptance_manifest.yaml#release_decision_package
 record_count: 38
+release_decision_package:
+  schema_version: release-decision-package.v1
+  owner_program: M502-2w7y8k
+  owner_slice: M502-2w7y8k/S09
+  source_manifest: data/parse/acceptance_manifest.yaml#release_decision_package
+  status: pending_human_review
+  gates:
+    quality: blocked
+    cost: bounded_not_measured
+    rights: blocked
+  human_review:
+    required: true
+    reviewer: null
+    decision: pending
+    record: doc/review/HUMAN-REVIEW-TEMPLATE.md
+    prose_alone_authorizes: false
+  forbidden_until_all_gates_pass_and_human_decision:
+    - redistribution
+    - production_use
+    - model_distribution
+    - external_downloads
+    - graph_write_or_import
+  evidence_policy:
+    external_bytes: forbidden
+    bytes_absent_rows_are_not_evidence: true
+    local_denominators_immutable: true
+    source_revision_required: true
+    invalidation_on_source_or_rights_change: true
 id_range: PIR-001..PIR-022 plus GAR-001..GAR-016
 status_vocabulary: [open, in_progress, blocked, resolved, accepted_risk, superseded]
 severity_vocabulary: [blocker, high, medium, low, info]

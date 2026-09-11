@@ -61,6 +61,59 @@ external_holdout_contract:
     upper_bound_includes: [human_review, permitted_external_acquisition_if_later_approved]
     unknown_cost_is_not_zero: true
     release_claim_allowed: false
+release_decision_package:
+  schema_version: release-decision-package.v1
+  purpose: bounded_evaluation_and_release_review_only
+  package_status: pending_human_review
+  evidence_revision: git:6f328bdfb9b136deecd0ded7917c086e8ad5899b
+  required_gates: [quality, cost, rights]
+  quality:
+    status: blocked
+    evidence:
+      acceptance_manifest: data/parse/acceptance_manifest.yaml
+      local_proxy_contract: data/parse/layout_bakeoff.yaml
+      external_holdout_status: not_executed
+    required_claims:
+      same_n_local_proxy: true
+      document_level_uncertainty: required
+      external_bytes_absent: true
+      pooled_external_quality_claim: forbidden
+    release_effect: does_not_authorize_production_use
+  cost:
+    status: bounded_not_measured
+    evidence:
+      cost_bounds: data/parse/acceptance_manifest.yaml#external_holdout_contract.cost_bounds
+    required_fields: [currency, cost_lower_bound, cost_upper_bound, unknown_cost_is_not_zero]
+    unknown_cost_is_not_zero: true
+    release_effect: does_not_authorize_external_downloads
+  rights:
+    status: blocked
+    evidence:
+      review_manifest: doc/review/manifest.yaml
+      corrective_register: doc/review/grobid-absorption-review-2026-09-10.jsonl
+    required_claims:
+      component_license_provenance: required
+      redistribution_permission: not_established
+      model_distribution_permission: not_established
+      external_dataset_permission: not_established
+    release_effect: does_not_authorize_redistribution
+  prohibited_authorizations:
+    redistribution: blocked
+    production_use: blocked
+    model_distribution: blocked
+    external_downloads: blocked
+    graph_write_or_import: blocked
+  human_release_review:
+    required: true
+    reviewer: null
+    decision: pending
+    decision_record: doc/review/HUMAN-REVIEW-TEMPLATE.md
+    prose_alone_authorizes_release: false
+    authorization_requires: [named_reviewer, explicit_decision, passing_quality_gate, passing_cost_gate, passing_rights_gate]
+  invalidation:
+    on_source_revision_change: required
+    on_manifest_identity_change: required
+    on_rights_evidence_change: required
 classes:
   publisher_acceptance:
     comparison_kind: tei_family
