@@ -1,4 +1,5 @@
 use serde_yaml::Value;
+use sha2::{Digest as ShaDigest, Sha256};
 use std::collections::HashSet;
 
 const FIXTURE: &str = include_str!("fixtures/segmentation_oracle.yaml");
@@ -46,6 +47,27 @@ fn digest(value: &Value, field: &str) -> Result<(), String> {
     Ok(())
 }
 
+fn canonical_sha256(bytes: &str) -> String {
+    format!("sha256:{:x}", Sha256::digest(bytes.as_bytes()))
+}
+
+fn source_digest(source_row: &serde_json::Value, field: &str) -> Result<String, String> {
+    let artifact = source_row[field]
+        .as_object()
+        .ok_or_else(|| format!("missing canonical {field}"))?;
+    let bytes = artifact["bytes"]
+        .as_str()
+        .ok_or_else(|| format!("missing canonical {field}.bytes"))?;
+    let declared = artifact["sha256"]
+        .as_str()
+        .ok_or_else(|| format!("missing canonical {field}.sha256"))?;
+    let computed = canonical_sha256(bytes);
+    if declared != computed {
+        return Err(format!("canonical {field} digest is not recomputable"));
+    }
+    Ok(computed)
+}
+
 fn validate_oracle(fixture: &Value, source: &serde_json::Value) -> Result<(), String> {
     if fixture["schema_version"].as_str() != Some("segmentation-oracle.v2")
         || fixture["redaction"].as_str() != Some("digest_only_source_bound_ordinals")
@@ -67,6 +89,17 @@ fn validate_oracle(fixture: &Value, source: &serde_json::Value) -> Result<(), St
         return Err("expected nine oracle rows".into());
     }
     let mut keys = HashSet::new();
+    if source["schema_version"].as_str() != Some("document-segmentation-oracle-source.v3") {
+        return Err("source does not publish canonicalization v3".into());
+    }
+    if source["canonicalization"]["encoding"].as_str() != Some("utf-8")
+        || source["canonicalization"]["line_endings"].as_str() != Some("LF")
+        || source["canonicalization"]["trailing_newline"].as_bool() != Some(false)
+        || source["canonicalization"]["digest"].as_str()
+            != Some("sha256 over exact canonical bytes")
+    {
+        return Err("canonicalization contract is incomplete".into());
+    }
     for (expected, (row, source_row)) in EXPECTED.iter().zip(rows.iter().zip(source_rows)) {
         let key = (
             row["document_id"].as_str().ok_or("missing document")?,
@@ -98,15 +131,29 @@ fn validate_oracle(fixture: &Value, source: &serde_json::Value) -> Result<(), St
                 "page denominator or page receipt drift for {key:?}: {ranges:?}"
             ));
         }
-        if row["admitted_lexical_denominator"].as_u64() != Some(expected.2 * 10)
-            || source_row["admitted_lexical_denominator"].as_u64()
-                != row["admitted_lexical_denominator"].as_u64()
+        let denominator = source_row["denominator"]
+            .as_object()
+            .ok_or("missing typed denominator")?;
+        if denominator["kind"].as_str() != Some("measured")
+            || denominator["source"].as_str().is_none()
+            || denominator["value"].as_u64().is_none()
+            || row["admitted_lexical_denominator"].as_u64() != denominator["value"].as_u64()
+            || source_row["proxy_denominator"]["kind"].as_str() != Some("proxy")
+            || source_row["proxy_denominator"]["formula"].as_str() != Some("page_count × 10")
+            || source_row["proxy_denominator"]["value"].as_u64() != Some(expected.2 * 10)
         {
-            return Err("admitted lexical denominator drift".into());
+            return Err("denominator is formula-derived or unbound".into());
         }
-        digest(&row["annotation_digest"], "annotation_digest")?;
-        if source_row["annotation_digest"].as_str() != row["annotation_digest"].as_str() {
-            return Err("annotation digest mismatch".into());
+        let page_digest = source_digest(source_row, "canonical_page_range")?;
+        let annotation_digest = source_digest(source_row, "canonical_annotation")?;
+        if source_row["page_range_digest"].as_str() != Some(page_digest.as_str())
+            || source_row["annotation_digest"].as_str() != Some(annotation_digest.as_str())
+            || row["page_receipt_ranges"][0]["receipt_digest"].as_str()
+                != Some(page_digest.trim_start_matches("sha256:"))
+            || row["annotation_digest"].as_str()
+                != Some(annotation_digest.trim_start_matches("sha256:"))
+        {
+            return Err("reviewer recomputation mismatch".into());
         }
         let runs = row["region_runs"]
             .as_sequence()
@@ -182,13 +229,13 @@ fn load_inputs() -> (Value, serde_json::Value) {
 }
 
 #[test]
-fn independent_real_oracle_binds_all_nine_reviewed_receipts() {
+fn oracle_reconstruction_binds_all_nine_reviewed_receipts() {
     let (fixture, source) = load_inputs();
     validate_oracle(&fixture, &source).unwrap();
 }
 
 #[test]
-fn exact_page_accounting_is_unpooled_and_replay_stable() {
+fn oracle_reconstruction_keeps_page_accounting_unpooled_and_replay_stable() {
     let (fixture, source) = load_inputs();
     let pages = fixture["receipts"]
         .as_sequence()
@@ -202,10 +249,14 @@ fn exact_page_accounting_is_unpooled_and_replay_stable() {
         serde_yaml::to_string(&fixture).unwrap(),
         serde_yaml::to_string(&fixture).unwrap()
     );
+    assert!(source["receipts"].as_array().unwrap().iter().all(|row| {
+        row["denominator"]["kind"] == "measured"
+            && row["denominator"]["value"].as_u64().unwrap() > 0
+    }));
 }
 
 #[test]
-fn reviewed_absence_and_furniture_are_outside_body_order() {
+fn oracle_reconstruction_keeps_reviewed_absence_and_furniture_outside_body_order() {
     let (fixture, _) = load_inputs();
     for row in fixture["receipts"].as_sequence().unwrap() {
         let runs = row["region_runs"].as_sequence().unwrap();
@@ -216,7 +267,7 @@ fn reviewed_absence_and_furniture_are_outside_body_order() {
 }
 
 #[test]
-fn oracle_rejects_adversarial_mutations() {
+fn oracle_reconstruction_rejects_adversarial_mutations() {
     let (fixture, source) = load_inputs();
     let mut missing = fixture.clone();
     missing["receipts"].as_sequence_mut().unwrap().pop();
@@ -259,4 +310,14 @@ fn oracle_rejects_adversarial_mutations() {
     let mut furniture = fixture.clone();
     furniture["receipts"][0]["furniture_sequence"][0]["subtype"] = Value::String("body".into());
     assert!(validate_oracle(&furniture, &source).is_err());
+
+    let mut canonical_bytes = source.clone();
+    canonical_bytes["receipts"][0]["canonical_page_range"]["bytes"] = serde_json::Value::String(
+        "document_id=hub-2507.19457\nlane=pdfalto\npage_range=1-97".into(),
+    );
+    assert!(
+        validate_oracle(&fixture, &canonical_bytes)
+            .unwrap_err()
+            .contains("recomputable")
+    );
 }
