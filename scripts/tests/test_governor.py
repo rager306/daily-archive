@@ -7,6 +7,7 @@ Or:       python3 tests/test_governor.py
 import gzip
 import json
 import os
+import subprocess
 import sys
 import shutil
 import tempfile
@@ -3283,6 +3284,8 @@ def _run_all_tests() -> int:
         test_grobid_review_registry_invalid_json_is_flagged,
         test_grobid_review_registry_missing_contract_is_flagged,
         test_grobid_review_registry_malformed_contract_is_flagged,
+        test_grobid_review_registry_non_mapping_contract_is_flagged,
+        test_grobid_review_registry_cli_rejects_non_mapping_contract_cleanly,
         test_grobid_review_registry_wrong_item_type_is_flagged,
         test_grobid_review_registry_wrong_object_type_is_flagged,
         test_grobid_review_registry_enclosed_without_completion_evidence_is_flagged,
@@ -3512,6 +3515,34 @@ def test_grobid_review_registry_wrong_item_type_is_flagged():
     path.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
     flags = _review_flags(root)
     assert any(f.flag == "grobid_review_registry_fixture_invalid" for f in flags)
+
+
+def test_grobid_review_registry_non_mapping_contract_is_flagged():
+    for payload in ("plain scalar\n", "- list item\n", "42\n"):
+        root = _make_root()
+        contract = _write_grobid_review_registry(root)
+        contract.write_text(payload, encoding="utf-8")
+        flags = _review_flags(root)
+        assert any(f.flag == "grobid_review_registry_invalid" for f in flags), payload
+        assert not any("AttributeError" in f.evidence for f in flags), flags
+
+
+def test_grobid_review_registry_cli_rejects_non_mapping_contract_cleanly():
+    root = _make_root()
+    contract = _write_grobid_review_registry(root)
+    contract.write_text("- list item\n", encoding="utf-8")
+    scripts_dir = Path(__file__).resolve().parent.parent
+    result = subprocess.run(
+        [sys.executable, "-m", "governor", "review", "--root", str(root), "--registry", str(contract)],
+        cwd=root,
+        env={**os.environ, "PYTHONPATH": str(scripts_dir)},
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 2
+    assert "review registry: INVALID" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert "AttributeError" not in result.stderr
 
 
 def test_grobid_review_registry_wrong_object_type_is_flagged():

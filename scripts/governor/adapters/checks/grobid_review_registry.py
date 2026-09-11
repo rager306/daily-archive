@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -80,6 +81,13 @@ def check_grobid_review_registry(root: Path, contract_rel: str | None = None) ->
             flag="grobid_review_registry_invalid",
             severity="high",
             evidence=f"cannot load {contract_path}: {error}",
+            dimension="scholarly_parse_plane",
+        )]
+    if not isinstance(contract, Mapping):
+        return [DriftFlag(
+            flag="grobid_review_registry_invalid",
+            severity="high",
+            evidence=f"review contract must be a YAML mapping, got {type(contract).__name__}: {contract_path}",
             dimension="scholarly_parse_plane",
         )]
     flags: list[DriftFlag] = []
