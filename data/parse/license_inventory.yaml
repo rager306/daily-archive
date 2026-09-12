@@ -1,0 +1,69 @@
+# License inventory — per-component for GROBID absorption pipeline
+# Commercial use: NONE (internal research). GPL linking risk: NONE (subprocess only).
+
+schema_version: license-inventory.v1
+commercial_use: false
+production_authority: java-grobid-http@0.9.0-crf
+
+components:
+  java_grobid_http:
+    version: 0.9.0-crf
+    license: Apache-2.0
+    license_file: /root/vendor-source/grobid/LICENSE
+    boundary: http_call
+    linking: none
+    distribution: none
+    risk: low
+  pdfalto:
+    version: unknown
+    license: GPL-2.0
+    license_file: /root/vendor-source/pdfalto/LICENSE
+    boundary: subprocess_argv
+    linking: forbidden
+    distribution: forbidden
+    replacement: pdf-inspector (MIT)
+    risk: medium (subprocess-only, no commercial use)
+  pdf_inspector:
+    version: unknown
+    license: MIT
+    license_file: /root/vendor-source/pdf-inspector/LICENSE
+    boundary: cargo_dep
+    linking: allowed
+    distribution: allowed
+    risk: none
+  ruvector:
+    license: MIT
+    boundary: cargo_dep
+    risk: none
+  samyama_graph:
+    license: Apache-2.0
+    boundary: cargo_dep
+    risk: none
+
+weights_and_models:
+  delft_models:
+    path: /root/vendor-source/grobid/grobid-home/models/
+    license: UNVERIFIED
+    note: "license_gru directory contains model_weights.hdf5 and GloVe-840B traces; needs legal review before redistribution"
+    risk: unknown
+  glove_embeddings:
+    license: UNVERIFIED
+    note: "GloVe-840B traces found in delft config.json"
+    risk: unknown
+
+corpus:
+  internal_gold:
+    count: 200
+    source: arxiv
+    licenses: mixed (CC-BY, CC-BY-NC, arXiv default)
+    redistribution: forbidden_without_per_article_check
+    risk: medium
+  external_holdout:
+    status: not_executed
+    note: "GAR-015: independent article set for parity verification"
+
+policy:
+  commercial_use: false
+  gpl_linking: forbidden
+  redistribution_without_license_check: forbidden
+  pdf_inspector_replaces_pdfalto: true
