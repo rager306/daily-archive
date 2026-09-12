@@ -1,0 +1,32 @@
+schema_version: external-holdout-results.v1
+date: '2026-09-12'
+gar_finding: GAR-015
+manifest: data/parse/holdout_manifests.yaml
+batch_report: /tmp/holdout_batch_report.json
+summary:
+  total: 5
+  succeeded: 2
+  failed_timeout: 3
+  grobid_url: http://localhost:8070
+  duration_seconds: 148
+  note: 3/5 GROBID timeouts on large PDFs (2.9MB, 0.7MB, 1.9MB) — retryable with increased
+    GROBID timeout
+results:
+- paper_id: '1203.2295'
+  outcome: ok
+  result_identity: endpoint=fulltext;schema=v1;legacy-equivalent
+- paper_id: '2401.17167'
+  outcome: error
+  error_code: timeout
+- paper_id: '2411.07228'
+  outcome: error
+  error_code: timeout
+- paper_id: '2505.16270'
+  outcome: ok
+  result_identity: endpoint=fulltext;schema=v1;legacy-equivalent
+- paper_id: '2608.22118'
+  outcome: error
+  error_code: timeout
+conclusion: Production parse-batch works on external non-gold articles. GROBID timeouts
+  on large PDFs are retryable. Full holdout needs GROBID timeout increase or batch
+  retry with cached mode.

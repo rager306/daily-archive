@@ -82,6 +82,11 @@ pub const DEFAULT_LEARNING_REDB_INDEX_PATH: &str = "artifacts/parse-learning/ind
 pub const DEFAULT_LEARNING_RVF_CAPACITY: usize = 100_000;
 pub const DEFAULT_LEARNING_REDB_CAPACITY: usize = 100_000;
 
+/// Default per-request HTTP timeout (seconds) — mirrors da-parse DEFAULT_TIMEOUT_SECS.
+pub const DEFAULT_TIMEOUT_SECS: u64 = 120;
+/// Upper bound on the CLI timeout override (1 hour) — GROBID large-PDF headroom.
+pub const MAX_TIMEOUT_SECS: u64 = 3600;
+
 /// Upper resource caps (overflow protection at the composition root).
 pub const MAX_WORKERS: usize = 64;
 /// Upper resource caps (overflow protection at the composition root).
@@ -202,6 +207,8 @@ pub enum ParseConfigError {
         max_in_flight: usize,
         queue_capacity: usize,
     },
+    /// `--timeout-secs` is 0 or above the closed upper bound.
+    InvalidTimeout,
     /// Learning RVF and rebuildable index paths overlap.
     LearningPathOverlaps,
     /// Learning storage capacity is outside the closed safe bound.
@@ -257,6 +264,10 @@ impl std::fmt::Display for ParseConfigError {
                 formatter,
                 "max-in-flight ({max_in_flight}) must not exceed queue-capacity ({queue_capacity})"
             ),
+            Self::InvalidTimeout => write!(
+                formatter,
+                "--timeout-secs must be between 1 and {MAX_TIMEOUT_SECS}"
+            ),
             Self::LearningPathOverlaps => write!(
                 formatter,
                 "learning RVF and redb index paths must not overlap"
@@ -298,6 +309,8 @@ pub struct ParseRuntimeOverrides {
     pub queue_capacity: Option<usize>,
     /// `--max-in-flight` (CLI-only bound; defaults to `workers`)
     pub max_in_flight: Option<usize>,
+    /// `--timeout-secs` (per-request HTTP timeout; default 120s, raise for large PDFs)
+    pub timeout_secs: Option<u64>,
     /// `--redb-index <path>` (present ⇒ enabled) / `--no-redb` (present ⇒ disabled)
     pub redb_enabled: Option<bool>,
     /// `--redb-index-path`
@@ -320,6 +333,7 @@ pub struct ParseRuntimeConfig {
     workers: NonZeroUsize,
     queue_capacity: NonZeroUsize,
     max_in_flight: NonZeroUsize,
+    timeout_secs: u64,
     redb: ParseRedbIndexConfig,
     learning: LearningStorageConfig,
 }
@@ -364,6 +378,11 @@ impl ParseRuntimeConfig {
     /// the worker count).
     pub const fn max_in_flight(&self) -> NonZeroUsize {
         self.max_in_flight
+    }
+
+    /// Resolved per-request HTTP timeout (seconds).
+    pub const fn timeout_secs(&self) -> u64 {
+        self.timeout_secs
     }
 
     /// redb accelerator settings.
@@ -502,6 +521,13 @@ pub fn resolve(
             queue_capacity: queue_capacity.get(),
         });
     }
+    // timeout-secs: CLI-only (no env); 0 rejected, bounded [1, 3600].
+    let timeout_secs = match overrides.timeout_secs {
+        Some(0) => return Err(ParseConfigError::InvalidTimeout),
+        Some(value) if value > MAX_TIMEOUT_SECS => return Err(ParseConfigError::InvalidTimeout),
+        Some(value) => value,
+        None => DEFAULT_TIMEOUT_SECS,
+    };
 
     // redb accelerator: enabled flag + path (required iff enabled).
     let redb_enabled = match overrides.redb_enabled {
@@ -580,6 +606,7 @@ pub fn resolve(
         workers,
         queue_capacity,
         max_in_flight,
+        timeout_secs,
         redb,
         learning,
     })

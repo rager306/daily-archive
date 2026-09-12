@@ -358,6 +358,7 @@ fn args_for(h: &Harness, resume: bool) -> ParseBatchArgs {
         backend: None,
         cache_root: None,
         batch_size: None,
+        timeout_secs: None,
         workers: None,
         queue_capacity: None,
         max_in_flight: None,

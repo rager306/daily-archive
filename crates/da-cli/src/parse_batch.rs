@@ -92,6 +92,11 @@ pub struct ParseBatchArgs {
     #[arg(long)]
     pub max_in_flight: Option<usize>,
 
+    /// Per-request HTTP timeout in seconds (default 120; raise for large
+    /// PDFs where GROBID needs more than 2 minutes).
+    #[arg(long)]
+    pub timeout_secs: Option<u64>,
+
     /// Resume from the durable cursor evidence bound to this exact input
     /// fingerprint (accelerator lookup, else the previous terminal report).
     #[arg(long)]
@@ -134,6 +139,7 @@ impl ParseBatchArgs {
             workers: self.workers,
             queue_capacity: self.queue_capacity,
             max_in_flight: self.max_in_flight,
+            timeout_secs: self.timeout_secs,
             redb_enabled: if self.redb_index.is_some() {
                 Some(true)
             } else if self.no_redb {
@@ -762,7 +768,8 @@ pub async fn run_with_env(
     }
 
     // 7. Wiring: D204-identity backend + atomic payload cache + executor.
-    let backend = GrobidHttpBackend::new(Some(config.grobid_url()));
+    let backend = GrobidHttpBackend::new(Some(config.grobid_url()))
+        .with_timeout(std::time::Duration::from_secs(config.timeout_secs()));
     let cache = FileParseArtifactCache::new(config.cache_root());
     let two_stage = da_parse::TwoStageParseCache::new(cache);
     let executor = ParseBatchExecutor::new(backend, two_stage);
