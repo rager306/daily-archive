@@ -1,7 +1,17 @@
 schema_version: parse-acceptance.v1
 adr_ref: ADR-075
 manifest_id: scholarly-parse-acceptance-s20
-requirement_ids: [R085, R091, R105, R107, R109, R110, R113, R114, R116, R117]
+requirement_ids:
+- R085
+- R091
+- R105
+- R107
+- R109
+- R110
+- R113
+- R114
+- R116
+- R117
 policy_locks:
   import_eligible: false
   auto_promote: forbidden
@@ -10,19 +20,34 @@ policy_locks:
 population_contract:
   schema_version: shadow-populations.v1
   report_paths:
-    - crates/da-cli/examples/fulltext_block_semantics_shadow.rs
-    - crates/da-cli/examples/callout_matching_shadow.rs
-    - crates/da-cli/examples/consolidation_specialized_shadow.rs
-    - crates/da-cli/examples/feature_tagger_training_shadow.rs
-  required_blocks: [reference_population, executed_population, evaluated_population, outcomes]
-  forbidden_legacy_blocks: [denominators, corpus]
-  executed_population_required_fields: [corpus_execution, execution_evidence]
+  - artifacts/parse_compat/fulltext_block_semantics_shadow.json
+  - artifacts/parse_compat/callout_matching_shadow.json
+  - artifacts/parse_compat/consolidation_specialized_shadow.json
+  - artifacts/parse_compat/feature_tagger_training_shadow.json
+  required_blocks:
+  - reference_population
+  - executed_population
+  - evaluated_population
+  - outcomes
+  forbidden_legacy_blocks:
+  - denominators
+  - corpus
+  executed_population_required_fields:
+  - corpus_execution
+  - execution_evidence
   synthetic_corpus_execution: false
   quality_requires_evaluated_status: evaluated
 comparison_rules:
-  allowed_classes: [publisher_acceptance, layout_omnidocbench]
-  allowed_row_states: [bound, catalogued, bytes_absent]
-  allowed_comparison_kinds: [tei_family, layout_markdown]
+  allowed_classes:
+  - publisher_acceptance
+  - layout_omnidocbench
+  allowed_row_states:
+  - bound
+  - catalogued
+  - bytes_absent
+  allowed_comparison_kinds:
+  - tei_family
+  - layout_markdown
   missing_behavior: fail_visible
   same_n: required
   catalogued_bytes_are_executed: false
@@ -53,12 +78,23 @@ external_holdout_contract:
     unit: document
     uncertainty_method: bounded_interval_per_document; no pooled corpus claim
     report_required_before_execution_claim: true
-    fields: [document_id, state, identity_sha256, uncertainty_low, uncertainty_high, cost_lower_bound, cost_upper_bound]
+    fields:
+    - document_id
+    - state
+    - identity_sha256
+    - uncertainty_low
+    - uncertainty_high
+    - cost_lower_bound
+    - cost_upper_bound
   cost_bounds:
     currency: USD
     basis: estimated_external_bytes_and_runtime; no external bytes loaded
-    lower_bound_includes: [manifest_validation, local_proxy_execution]
-    upper_bound_includes: [human_review, permitted_external_acquisition_if_later_approved]
+    lower_bound_includes:
+    - manifest_validation
+    - local_proxy_execution
+    upper_bound_includes:
+    - human_review
+    - permitted_external_acquisition_if_later_approved
     unknown_cost_is_not_zero: true
     release_claim_allowed: false
 release_decision_package:
@@ -66,7 +102,10 @@ release_decision_package:
   purpose: bounded_evaluation_and_release_review_only
   package_status: pending_human_review
   evidence_revision: git:6f328bdfb9b136deecd0ded7917c086e8ad5899b
-  required_gates: [quality, cost, rights]
+  required_gates:
+  - quality
+  - cost
+  - rights
   quality:
     status: blocked
     evidence:
@@ -83,7 +122,11 @@ release_decision_package:
     status: bounded_not_measured
     evidence:
       cost_bounds: data/parse/acceptance_manifest.yaml#external_holdout_contract.cost_bounds
-    required_fields: [currency, cost_lower_bound, cost_upper_bound, unknown_cost_is_not_zero]
+    required_fields:
+    - currency
+    - cost_lower_bound
+    - cost_upper_bound
+    - unknown_cost_is_not_zero
     unknown_cost_is_not_zero: true
     release_effect: does_not_authorize_external_downloads
   rights:
@@ -109,7 +152,12 @@ release_decision_package:
     decision: pending
     decision_record: doc/review/HUMAN-REVIEW-TEMPLATE.md
     prose_alone_authorizes_release: false
-    authorization_requires: [named_reviewer, explicit_decision, passing_quality_gate, passing_cost_gate, passing_rights_gate]
+    authorization_requires:
+    - named_reviewer
+    - explicit_decision
+    - passing_quality_gate
+    - passing_cost_gate
+    - passing_rights_gate
   invalidation:
     on_source_revision_change: required
     on_manifest_identity_change: required
@@ -117,85 +165,86 @@ release_decision_package:
 classes:
   publisher_acceptance:
     comparison_kind: tei_family
-    purpose: official publisher-style GROBID acceptance identities; local proxy is not a publisher identity
+    purpose: official publisher-style GROBID acceptance identities; local proxy is
+      not a publisher identity
     authority: https://huggingface.co/datasets/sciencialab/grobid-evaluation
     license: CC-BY
     expected_structure: article_directory_with_pdf_and_gold_jats_xml
     rows:
-      - id: PMC_sample_1943
-        state: bytes_absent
-        identity: sciencialab/grobid-evaluation/PMC_sample_1943
-        dataset_id: sciencialab/grobid-evaluation
-        source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
-        identity_sha256: 7bea12a9bb565e88a9f77bad6cc7ac868807fa5a28988151e6c8d1fad356c4e0
-        expected_n: 1943
-        gold_format: jats_nxml
-      - id: biorxiv-10k-test-2000
-        state: bytes_absent
-        identity: sciencialab/grobid-evaluation/biorxiv-10k-test-2000
-        dataset_id: sciencialab/grobid-evaluation
-        source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
-        identity_sha256: 44b60aafbe0c2e6858a62fa71a3292e6fe6a30c9e0197472d914e91f480dcc5d
-        expected_n: 2000
-        gold_format: jats_xml
-      - id: PLOS_1000
-        state: bytes_absent
-        identity: sciencialab/grobid-evaluation/PLOS_1000
-        dataset_id: sciencialab/grobid-evaluation
-        source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
-        identity_sha256: dc995a65f1cb7ae61ad9b7e134bf6077e40cfa2eae4d4159ed7b284cabec4b38
-        expected_n: 1000
-        gold_format: jats_xml
-      - id: eLife_984
-        state: bytes_absent
-        identity: sciencialab/grobid-evaluation/eLife_984
-        dataset_id: sciencialab/grobid-evaluation
-        source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
-        identity_sha256: 926c4cb33a97c7aa084a93a535f524acce7265102da8c52e1ad17667365af416
-        expected_n: 984
-        gold_format: jats_xml
+    - id: PMC_sample_1943
+      state: bytes_absent
+      identity: sciencialab/grobid-evaluation/PMC_sample_1943
+      dataset_id: sciencialab/grobid-evaluation
+      source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
+      identity_sha256: 7bea12a9bb565e88a9f77bad6cc7ac868807fa5a28988151e6c8d1fad356c4e0
+      expected_n: 1943
+      gold_format: jats_nxml
+    - id: biorxiv-10k-test-2000
+      state: bytes_absent
+      identity: sciencialab/grobid-evaluation/biorxiv-10k-test-2000
+      dataset_id: sciencialab/grobid-evaluation
+      source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
+      identity_sha256: 44b60aafbe0c2e6858a62fa71a3292e6fe6a30c9e0197472d914e91f480dcc5d
+      expected_n: 2000
+      gold_format: jats_xml
+    - id: PLOS_1000
+      state: bytes_absent
+      identity: sciencialab/grobid-evaluation/PLOS_1000
+      dataset_id: sciencialab/grobid-evaluation
+      source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
+      identity_sha256: dc995a65f1cb7ae61ad9b7e134bf6077e40cfa2eae4d4159ed7b284cabec4b38
+      expected_n: 1000
+      gold_format: jats_xml
+    - id: eLife_984
+      state: bytes_absent
+      identity: sciencialab/grobid-evaluation/eLife_984
+      dataset_id: sciencialab/grobid-evaluation
+      source_url: https://huggingface.co/datasets/sciencialab/grobid-evaluation
+      identity_sha256: 926c4cb33a97c7aa084a93a535f524acce7265102da8c52e1ad17667365af416
+      expected_n: 984
+      gold_format: jats_xml
     local_proxy:
       proxy_of: scholarly_pdf_plus_java_tei
       same_n: true
       rows:
-        - id: hub-2507.19457
-          state: bound
-          identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.hub-2507.19457
-          pdf_path: data/sources/arxiv/cs-cl/2507.19457/source/2507.19457.pdf
-          pdf_sha256: ab3a5139bac83f192ad67529368d77b84b0d807e95a8e4fd0daa8d45fd046bec
-          tei_ref: data/parse/regression_cases.yaml#cases.reg.tei.hub-bibliography-2507.19457
-          tei_sha256: 985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b79e7ec4
-        - id: rlm-2512.24601
-          state: bound
-          identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.rlm-2512.24601
-          pdf_path: data/sources/arxiv/cs-ai/2512.24601/source/original.pdf
-          pdf_sha256: 8567362c22768d9b50d4a4a8d63bb28dda2c2b2051be30d67f70f645170429ca
-          tei_ref: data/parse/regression_cases.yaml#cases.reg.tei.rlm-2512.24601
-          tei_sha256: e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3
-        - id: reca-2605.26525v1
-          state: bound
-          identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.reca-2605.26525v1
-          pdf_path: data/sources/arxiv/cs-cv/2605.26525v1/source/2605.26525v1.pdf
-          pdf_sha256: a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8
-          tei_ref: data/parse/regression_cases.yaml#cases.reg.tei.reca-bibliography-2605.26525
-          tei_sha256: dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040
-        
+      - id: hub-2507.19457
+        state: bound
+        identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.hub-2507.19457
+        pdf_path: data/sources/arxiv/cs-cl/2507.19457/source/2507.19457.pdf
+        pdf_sha256: ab3a5139bac83f192ad67529368d77b84b0d807e95a8e4fd0daa8d45fd046bec
+        tei_ref: data/parse/regression_cases.yaml#cases.reg.tei.hub-bibliography-2507.19457
+        tei_sha256: 985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b79e7ec4
+      - id: rlm-2512.24601
+        state: bound
+        identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.rlm-2512.24601
+        pdf_path: data/sources/arxiv/cs-ai/2512.24601/source/original.pdf
+        pdf_sha256: 8567362c22768d9b50d4a4a8d63bb28dda2c2b2051be30d67f70f645170429ca
+        tei_ref: data/parse/regression_cases.yaml#cases.reg.tei.rlm-2512.24601
+        tei_sha256: e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3
+      - id: reca-2605.26525v1
+        state: bound
+        identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.reca-2605.26525v1
+        pdf_path: data/sources/arxiv/cs-cv/2605.26525v1/source/2605.26525v1.pdf
+        pdf_sha256: a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8
+        tei_ref: data/parse/regression_cases.yaml#cases.reg.tei.reca-bibliography-2605.26525
+        tei_sha256: dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040
   layout_omnidocbench:
     comparison_kind: layout_markdown
-    purpose: scientific OmniDocBench layout and Markdown comparison only; never TEI conservation
+    purpose: scientific OmniDocBench layout and Markdown comparison only; never TEI
+      conservation
     authority: https://huggingface.co/datasets/opendatalab/OmniDocBench
     license: Apache-2.0
     expected_structure: pdf_pages_with_json_block_and_span_annotations
     rows:
-      - id: omnidocbench-scientific
-        state: bytes_absent
-        identity: opendatalab/OmniDocBench/data_source=academic_literature,research_report
-        dataset_id: opendatalab/OmniDocBench
-        source_url: https://huggingface.co/datasets/opendatalab/OmniDocBench
-        identity_sha256: 48125092fb4d92518d843a028ca51b32c9a102ecebb893cb938d3ef8abd4563a
-        expected_n: 1651
-        filter: data_source in [academic_literature, research_report]
-        gold_format: json_annotations
+    - id: omnidocbench-scientific
+      state: bytes_absent
+      identity: opendatalab/OmniDocBench/data_source=academic_literature,research_report
+      dataset_id: opendatalab/OmniDocBench
+      source_url: https://huggingface.co/datasets/opendatalab/OmniDocBench
+      identity_sha256: 48125092fb4d92518d843a028ca51b32c9a102ecebb893cb938d3ef8abd4563a
+      expected_n: 1651
+      filter: data_source in [academic_literature, research_report]
+      gold_format: json_annotations
     local_proxy:
       proxy_of: scientific_layout_pages
       same_n: true
@@ -204,15 +253,15 @@ classes:
       oracle_ref: crates/da-parse/tests/fixtures/layout_oracle.yaml
       source_ref: data/parse/layout_bakeoff.yaml#corpus
       rows:
-        - id: hub-2507.19457
-          state: bound
-          identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.hub-2507.19457
-          page_count: 96
-        - id: rlm-2512.24601
-          state: bound
-          identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.rlm-2512.24601
-          page_count: 43
-        - id: reca-2605.26525v1
-          state: bound
-          identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.reca-2605.26525v1
-          page_count: 63
+      - id: hub-2507.19457
+        state: bound
+        identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.hub-2507.19457
+        page_count: 96
+      - id: rlm-2512.24601
+        state: bound
+        identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.rlm-2512.24601
+        page_count: 43
+      - id: reca-2605.26525v1
+        state: bound
+        identity_ref: data/parse/layout_bakeoff.yaml#corpus.documents.reca-2605.26525v1
+        page_count: 63
