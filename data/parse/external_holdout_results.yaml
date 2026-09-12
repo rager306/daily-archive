@@ -1,32 +1,42 @@
-schema_version: external-holdout-results.v1
+schema_version: external-holdout-results.v2
 date: '2026-09-12'
 gar_finding: GAR-015
 manifest: data/parse/holdout_manifests.yaml
-batch_report: /tmp/holdout_batch_report.json
+batch_report: artifacts/parse_compat/holdout_results.json
+timeout_secs: 900
+timeout_note: Default 120s caused 3/5 timeouts; --timeout-secs 900 (new CLI flag,
+  commit 319ae9c58) allows large PDFs to complete.
 summary:
   total: 5
-  succeeded: 2
-  failed_timeout: 3
+  succeeded: 5
+  failed: 0
   grobid_url: http://localhost:8070
-  duration_seconds: 148
-  note: 3/5 GROBID timeouts on large PDFs (2.9MB, 0.7MB, 1.9MB) — retryable with increased
-    GROBID timeout
+  duration_seconds: 209
 results:
 - paper_id: '1203.2295'
   outcome: ok
   result_identity: endpoint=fulltext;schema=v1;legacy-equivalent
+  raw_disposition: computed_uncached
+  projector_disposition: computed_uncached
 - paper_id: '2401.17167'
-  outcome: error
-  error_code: timeout
+  outcome: ok
+  result_identity: endpoint=fulltext;schema=v1;legacy-equivalent
+  raw_disposition: computed_uncached
+  projector_disposition: computed_uncached
 - paper_id: '2411.07228'
-  outcome: error
-  error_code: timeout
+  outcome: ok
+  result_identity: endpoint=fulltext;schema=v1;legacy-equivalent
+  raw_disposition: computed_uncached
+  projector_disposition: computed_uncached
 - paper_id: '2505.16270'
   outcome: ok
   result_identity: endpoint=fulltext;schema=v1;legacy-equivalent
+  raw_disposition: computed_uncached
+  projector_disposition: computed_uncached
 - paper_id: '2608.22118'
-  outcome: error
-  error_code: timeout
-conclusion: Production parse-batch works on external non-gold articles. GROBID timeouts
-  on large PDFs are retryable. Full holdout needs GROBID timeout increase or batch
-  retry with cached mode.
+  outcome: ok
+  result_identity: endpoint=fulltext;schema=v1;legacy-equivalent
+  raw_disposition: computed_uncached
+  projector_disposition: computed_uncached
+conclusion: Production parse-batch fully succeeds on external non-gold articles with
+  increased timeout. GAR-015 holdout evidence complete for this 5-article pilot.
