@@ -1,6 +1,23 @@
 # Changelog
 
-## 2026-09-08 — M498-0u7k1j/S05 T02: Java body observation closure sealed
+## 2026-09-12 — волна техдолга: holdout 5/5, reader bug, gold sources 200/200
+
+GAR-015 external holdout закрыт: добавлен CLI флаг `parse-batch --timeout-secs`
+(bound [1,3600], InvalidTimeout, `GrobidHttpBackend::with_timeout` wiring; timeout
+исключён из content identity per ADR-075) — 5/5 внешних статей успешно распарсены
+через production GROBID за 209s (было 2/5 при дефолтных 120s). Найден и исправлен
+баг governor graph reader: Section text prop — `text` (ingest.rs:812), не
+`raw_text`; ложный `graph_section_text_missing` на 28346 nodes устранён.
+`gold_corpus_manifest` регенерирован с корнем `data/sources` (не `arxiv/`):
+200/200 gold fixtures source-ready, `gold_unavailable_source_debt` устранён
+(4 gnn-ch глав жили в `data/sources/textbook/` с chapter.html). M440 ASSESSMENT
+получил post-seal note — reverse-ADR audit violations 1→0. `external_holdout_results`
+конвертирован JSON→YAML (*.json forbidden в data/parse SCHEMA, ADR-075).
+Governor preflight: 5 флагов → 1 (только информационный target/ bloat).
+105/105 governor тестов PASS. Locks неизменны: D127, production authority,
+три автомата, no auto-promote.
+
+2026-09-08 — M498-0u7k1j/S05 T02: Java body observation closure sealed
 
 Java P5 body observation remains the production stamp; the native accountant, offline join, cross-stage checker, and visual/reference shadow families remain quarantined. Rust architecture coverage now checks the four DATA body-accounting tokens in lockstep with the compatibility registry, while import, graph-write, and promotion remain frozen.
 
