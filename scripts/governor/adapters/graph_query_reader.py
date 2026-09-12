@@ -86,7 +86,12 @@ def _parse_snapshot(snapshot: Path) -> _SnapshotModel:
                     for label in labels:
                         model.label_vids.setdefault(label, set()).add(vid)
                 if _SECTION_LABEL in labels:
-                    raw = (rec.get("props") or {}).get("raw_text")
+                    # Section text prop: production ingest writes "text"
+                    # (ingest.rs:812); "raw_text" is the legacy name kept
+                    # for older snapshots.
+                    raw = (rec.get("props") or {}).get("text")
+                    if not isinstance(raw, str):
+                        raw = (rec.get("props") or {}).get("raw_text")
                     if isinstance(raw, str):
                         model.section_raw_text_lens.append(len(raw))
                 if _ENTITY_LABEL in labels and vid:
