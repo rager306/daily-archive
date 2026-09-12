@@ -1,0 +1,45 @@
+# FSM Interaction Map — cross-automata invalidation contract
+# D349/D351: defines which source changes invalidate which derived state.
+# This is a DATA contract, not a runtime controller.
+
+schema_version: fsm-interaction-map.v1
+automata:
+  parse_workflow:
+    authority: java-grobid-http@0.9.0-crf
+    states: [admit, layout, segmentation, header, references, body, visual, callout, consolidation, conservation]
+    terminal: [conservation]
+  evidence_maturity:
+    states: [inventory_bound, oracle_bound, atom_proven, sequence_proven, shadow_observed, review_ready, human_gate_required]
+    terminal: [human_gate_required]
+  authorization:
+    states: [not_requested, pending, granted, denied, revoked]
+    terminal: [denied, revoked]
+  article_assurance:
+    authority: ACAP
+    frozen: true
+
+invalidation_rules:
+  - trigger: source_pdf_changed
+    invalidates: [evidence_maturity, article_assurance]
+    action: full_rederivation
+  - trigger: parser_identity_changed
+    invalidates: [evidence_maturity]
+    action: reparse_and_rederive
+  - trigger: policy_hash_changed
+    invalidates: [authorization]
+    action: reauthorize
+  - trigger: model_weights_changed
+    invalidates: [evidence_maturity, authorization]
+    action: full_rederivation_and_reauthorize
+
+non_authorizing_states:
+  - review_ready
+  - human_gate_required
+  - shadow_observed
+  - inventory_bound
+
+invariants:
+  - review_ready_plus_pending_does_not_authorize_import
+  - human_gate_required_is_not_granted
+  - shadow_evidence_cannot_authorize_production
+  - D127_import_eligible_stays_false
