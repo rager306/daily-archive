@@ -30,6 +30,7 @@ mod batch;
 mod cache;
 mod conservation;
 mod cross_stage_semantic_invariants;
+mod debug_tape;
 mod envelope;
 mod http;
 mod ir;
@@ -89,6 +90,7 @@ pub use cross_stage_semantic_invariants::{
     JavaP6Observation, JavaP7Observation, NativeBucketReport, NativeVisualHeadReport,
     check_cross_stage_semantic_invariants,
 };
+pub use debug_tape::{DebugSection, model_invocation_counts, parse_debug_sections};
 pub use envelope::{TeiEnvelope, TeiIdentity, TeiResultIdentity};
 pub use http::{
     GrobidHttpBackend, GrobidParser, HealthProbe, ProbeFailure, VersionProbe,

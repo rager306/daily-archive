@@ -27,7 +27,7 @@
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use da_parse::{ParseBackendRequest, ParseEndpoint};
+use da_parse::{ParseBackendRequest, ParseEndpoint, model_invocation_counts, parse_debug_sections};
 use serde::Serialize;
 use std::path::PathBuf;
 
@@ -49,6 +49,12 @@ struct Args {
 }
 
 #[derive(Serialize)]
+struct ModelCoverage {
+    model: String,
+    invocations: usize,
+}
+
+#[derive(Serialize)]
 struct Tape {
     schema_version: &'static str,
     endpoint: String,
@@ -60,6 +66,14 @@ struct Tape {
     capture_state: &'static str,
     dump_bytes: usize,
     dump_sha256: Option<String>,
+    /// Total model sections found: invocations, not distinct models.
+    sections: usize,
+    /// Distinct models exercised, in first-appearance order.
+    distinct_models: usize,
+    /// Per-model invocation counts: the coverage view a later slice compares
+    /// against, so "the date model ran 46 times" cannot be confused with
+    /// "the dump contained this many models".
+    models_observed: Vec<ModelCoverage>,
     failure_code: Option<String>,
     failure_phase: Option<String>,
     /// Contract notes a reader must have before trusting the tape.
@@ -152,6 +166,16 @@ async fn main() -> Result<()> {
     };
 
     let dump_sha256 = (!dump.is_empty()).then(|| sha256_hex(&dump));
+    // Coverage is derived from the dump itself rather than from the request: a
+    // model can be invoked many times inside one request, and a filtered run
+    // proves only that the filter was applied, never that a model did not run.
+    let dump_text = String::from_utf8_lossy(&dump);
+    let sections = parse_debug_sections(&dump_text).len();
+    let models_observed = model_invocation_counts(&dump_text)
+        .into_iter()
+        .map(|(model, invocations)| ModelCoverage { model, invocations })
+        .collect::<Vec<_>>();
+    let distinct_models = models_observed.len();
     if !dump.is_empty() {
         std::fs::write(
             args.out.join(format!("{}.debug.txt", endpoint.as_str())),
@@ -171,6 +195,9 @@ async fn main() -> Result<()> {
         capture_state,
         dump_bytes: dump.len(),
         dump_sha256,
+        sections,
+        distinct_models,
+        models_observed,
         failure_code,
         failure_phase,
         notes: vec![
@@ -185,10 +212,12 @@ async fn main() -> Result<()> {
     std::fs::write(&tape_path, serde_json::to_vec_pretty(&tape)?).context("write tape")?;
 
     println!(
-        "stage tape: endpoint={} state={} dump_bytes={} backend_version={} tape={}",
+        "stage tape: endpoint={} state={} dump_bytes={} sections={} distinct_models={} backend_version={} tape={}",
         tape.endpoint,
         tape.capture_state,
         tape.dump_bytes,
+        tape.sections,
+        tape.distinct_models,
         tape.backend_version,
         tape_path.display()
     );
