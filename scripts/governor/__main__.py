@@ -200,17 +200,13 @@ def main() -> int:
 
 def _run_review_registry(args) -> int:
     """Validate a review registry and report unresolved/enclosed counts (read-only)."""
-    from governor.adapters.checks.grobid_review_registry import check_grobid_review_registry
+    from governor.adapters.checks.review_registry_dispatch import check_review_registry
 
     project_root = Path(args.root).resolve() if args.root else _detect_root()
-    flags = check_grobid_review_registry(project_root, getattr(args, "registry", None))
-    status_flags = [f for f in flags if f.flag == "grobid_review_registry_status"]
-    invalid = [f for f in flags if f.flag in {
-        "grobid_review_registry_invalid",
-        "grobid_review_registry_fixture_missing",
-        "grobid_review_registry_fixture_invalid",
-    }]
-    broken = [f for f in flags if f.flag == "grobid_review_registry_broken"]
+    flags = check_review_registry(project_root, getattr(args, "registry", None))
+    status_flags = [f for f in flags if f.flag.endswith("_status")]
+    invalid = [f for f in flags if f.flag.endswith(("_invalid", "_missing"))]
+    broken = [f for f in flags if f.flag.endswith("_broken")]
     for flag in flags:
         print(f"  - {flag.flag} [{flag.severity}]: {flag.evidence}")
     if invalid or broken:

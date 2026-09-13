@@ -18,6 +18,16 @@ unresolved / 1 enclosed). Its machine summary is
 input: no prose inside this directory requires work, changes scope, or
 substitutes for runtime verification.
 
+A planning-only long-horizon register now lives in
+`grobid-rust-horizon-review.json` (stages H01..H13, all unresolved by default).
+It records the GROBID-to-Rust migration waves with per-stage ADR refs, separate
+implementation and verification evidence, tested source, GitNexus/CBM freshness
+(recorded here as a documented staleness limitation), negative tests and
+ADR-051 matrix rows. `claim_scope: planning` forbids every stage from claiming an
+implementation PASS; a closure claim needs `claim_scope: evidence` plus
+machine-verifiable `completion_evidence`. Its DATA contract is
+`scripts/governor/checks/grobid_rust_horizon_review.yaml`.
+
 M397 closed canonical composition, StageId, cache source/profile/schema identity, revision-owned corpus materialization and cross-command equivalence. Subsequent waves closed the remaining register rows: M398 temporal AST (PIR-006..PIR-012), M399 live ACAP/promotion/scheduler (PIR-014..PIR-016), M400 multimodal graph candidates (PIR-018..PIR-020), M401 honest multi-process read plane plus read-only verified agent loop (PIR-017, PIR-021). A 200-paper corpus rebuild/seal is still an operational follow-up, not a finding in this register.
 
 ## Current control posture (2026-09-10)
@@ -51,6 +61,8 @@ A revision-aware corpus rebuild and honest ontology acceptance remain operationa
 | `grobid-absorption-review-2026-09-10.jsonl` | Active corrective register: GAR-001..GAR-016 (15 unresolved / 1 enclosed); owned by M502-2w7y8k S01..S09 |
 | `grobid-absorption-review-2026-09-10.schema.json` | JSON Schema Draft 2020-12 for each GAR record, including `completion_evidence` for enclosed findings |
 | `grobid-absorption-review-2026-09-10-summary.md` | Human-readable audit summary, exclusions and ADR correction matrix |
+| `grobid-rust-horizon-review.json` | Planning-only long-horizon register: H01..H13, unresolved by default; no stage may claim a PASS |
+| `grobid-rust-horizon-review.schema.json` | JSON Schema Draft 2020-12 for the horizon registry document |
 | `manifest.yaml` | Dataset identity, standards, policy and Governor integration |
 | `HUMAN-REVIEW-TEMPLATE.md` | Evidence-first disposition template for a human reviewer |
 | `README.md` | Usage, lifecycle and reusable LLM review prompt |
@@ -164,6 +176,17 @@ PYTHONPATH=scripts uv run --with pyyaml python -m governor --validate-yaml
 PYTHONPATH=scripts uv run --with pyyaml python -m governor --phase preflight
 PYTHONPATH=scripts uv run --with pyyaml python -m governor --phase active
 PYTHONPATH=scripts uv run --with pyyaml python -m governor --phase closeout
+```
+
+`governor review` selects the registry validator from the contract's declared
+`format`. The default GAR contract validates the JSONL register; the horizon
+contract selects the H01..H13 stage validator.
+
+```bash
+# Default GAR registry
+PYTHONPATH=scripts python3 -m governor review
+# Long-horizon stage registry
+PYTHONPATH=scripts python3 -m governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml
 ```
 
 When implementing a `proposed_rule_id`:

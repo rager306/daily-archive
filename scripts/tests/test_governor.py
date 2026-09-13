@@ -3291,6 +3291,23 @@ def _run_all_tests() -> int:
         test_grobid_review_registry_enclosed_without_completion_evidence_is_flagged,
         test_grobid_review_registry_unknown_owner_is_flagged,
         test_grobid_review_registry_unknown_owner_is_flagged_even_when_enclosed,
+        test_grobid_horizon_review_pass_on_pending_registry,
+        test_grobid_horizon_review_dispatch_selects_horizon,
+        test_grobid_horizon_review_missing_review_is_flagged,
+        test_grobid_horizon_review_invalid_json_is_flagged,
+        test_grobid_horizon_review_planning_pass_claim_is_flagged,
+        test_grobid_horizon_review_claim_without_closure_is_flagged,
+        test_grobid_horizon_review_missing_evidence_path_is_flagged,
+        test_grobid_horizon_review_evidence_overlap_is_flagged,
+        test_grobid_horizon_review_missing_adr_refs_is_flagged,
+        test_grobid_horizon_review_missing_negative_tests_is_flagged,
+        test_grobid_horizon_review_matrix_missing_reason_is_flagged,
+        test_grobid_horizon_review_index_limitation_missing_is_flagged,
+        test_grobid_horizon_review_stage_range_gap_is_flagged,
+        test_grobid_horizon_review_unknown_status_is_flagged,
+        test_grobid_horizon_review_cli_accepts_contract_cleanly,
+        test_grobid_horizon_review_cli_rejects_missing_review_cleanly,
+        test_grobid_horizon_review_real_registry_is_valid,
     ]
     passed = 0
     failed = 0
@@ -3599,6 +3616,415 @@ def test_grobid_review_registry_unknown_owner_is_flagged():
     assert any(
         f.flag == "grobid_review_registry_broken" and "unknown owner" in f.evidence for f in flags
     )
+
+def _horizon_contract(root: Path) -> Path:
+    """Write the long-horizon review contract for a temp root and return its path."""
+    contract = root / "scripts/governor/checks/grobid_rust_horizon_review.yaml"
+    contract.parent.mkdir(parents=True, exist_ok=True)
+    contract.write_text(
+        "schema_version: grobid-horizon-review-registry.v1\n"
+        "policy_id: grobid_horizon_review\n"
+        "format: horizon-json-v1\n"
+        "dimension: scholarly_parse_plane\n"
+        "severity: medium\n"
+        "registry:\n"
+        "  review: doc/review/horizon.json\n"
+        "  review_schema: doc/review/horizon.schema.json\n"
+        '  stage_id_pattern: "^H[0-9]{2}$"\n'
+        "  stage_id_range: [H01, H02]\n"
+        "  allow_status: [pending, in_progress, blocked, complete, superseded]\n"
+        "  unresolved_status: [pending, in_progress, blocked]\n"
+        "  required_stage_fields: [stage_id, title, scope, status, depends_on, owner, adr_refs, "
+        "implementation_evidence, verification_evidence, tested_source, index_freshness, negative_tests, "
+        "test_matrix, implementation_pass, verification_pass]\n"
+        '  contours: ["7 Architecture Invariant", "5 Adapter Integration"]\n'
+        "  test_types: [Integration, E2E journey]\n"
+        "  owner_field: owner\n"
+        "  owner_unassigned_value: unassigned\n"
+        "  owner_allow: [unassigned]\n",
+        encoding="utf-8",
+    )
+    return contract
+
+
+def _horizon_schema(root: Path) -> Path:
+    """Write a permissive top-level schema so code-level policy checks are exercised."""
+    schema = root / "doc/review/horizon.schema.json"
+    schema.parent.mkdir(parents=True, exist_ok=True)
+    schema.write_text(
+        json.dumps(
+            {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": False,
+                "required": [
+                    "schema_version",
+                    "review_id",
+                    "policy_id",
+                    "created_at",
+                    "claim_scope",
+                    "status_semantics",
+                    "review_policy",
+                    "stages",
+                ],
+                "properties": {
+                    "schema_version": {"const": "grobid-rust-horizon-review.v1"},
+                    "review_id": {"type": "string"},
+                    "policy_id": {"const": "grobid_horizon_review"},
+                    "created_at": {"type": "string"},
+                    "claim_scope": {"enum": ["planning", "evidence"]},
+                    "status_semantics": {"type": "string"},
+                    "review_policy": {"type": "object"},
+                    "stages": {"type": "array", "items": {"type": "object"}},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    return schema
+
+
+def _horizon_stage(stage_id: str, **overrides) -> dict:
+    stage = {
+        "stage_id": stage_id,
+        "title": f"{stage_id} fixture stage",
+        "scope": f"{stage_id} fixture scope long enough for the contract",
+        "status": "pending",
+        "depends_on": [],
+        "owner": "unassigned",
+        "adr_refs": ["ADR-051"],
+        "implementation_evidence": [
+            {"path": "crates/da-parse/src/lib.rs", "note": "fixture anchor", "state": "present"}
+        ],
+        "verification_evidence": [
+            {
+                "mode": "command",
+                "ref": "cargo test -p da-parse --lib",
+                "expected": "fixture verification",
+                "status": "pending",
+            }
+        ],
+        "tested_source": {"revision": "git:fixture-revision", "verified": False, "note": "fixture"},
+        "index_freshness": {
+            "state": "stale",
+            "limitation": "fixture index is not fresh for this isolated test root",
+        },
+        "negative_tests": [
+            {"id": f"{stage_id}-N1", "scenario": "fixture negative scenario", "expected": "fixture negative expectation"}
+        ],
+        "test_matrix": [
+            {
+                "contour": "7 Architecture Invariant",
+                "type": "E2E journey",
+                "applicability": "applicable",
+                "reason": "governor check",
+            },
+            {
+                "contour": "5 Adapter Integration",
+                "type": "Integration",
+                "applicability": "not_applicable",
+                "reason": "no adapter in the fixture",
+            },
+        ],
+        "implementation_pass": False,
+        "verification_pass": False,
+    }
+    stage.update(overrides)
+    return stage
+
+
+def _write_grobid_horizon_review(root: Path) -> Path:
+    """Write a minimal valid long-horizon review registry into a temp root."""
+    _horizon_contract(root)
+    _horizon_schema(root)
+    anchor = root / "crates/da-parse/src/lib.rs"
+    anchor.parent.mkdir(parents=True, exist_ok=True)
+    anchor.write_text("// fixture anchor\n", encoding="utf-8")
+    review_path = root / "doc/review/horizon.json"
+    document = {
+        "schema_version": "grobid-rust-horizon-review.v1",
+        "review_id": "REV-2026-09-12-fixture-horizon",
+        "policy_id": "grobid_horizon_review",
+        "created_at": "2026-09-12",
+        "claim_scope": "planning",
+        "status_semantics": "Fixture stages are unresolved planning records without acceptance authority.",
+        "review_policy": {
+            "no_claim_from_adr_only": True,
+            "no_pass_without_verified_source": True,
+            "implementation_and_verification_evidence_separate": True,
+            "index_freshness_required_or_limited": True,
+            "negative_tests_required": True,
+            "matrix_applicability_requires_reason": True,
+        },
+        "stages": [_horizon_stage("H01"), _horizon_stage("H02", depends_on=["H01"])],
+    }
+    review_path.write_text(json.dumps(document, indent=2), encoding="utf-8")
+    return review_path
+
+
+def _horizon_flags(root: Path):
+    from governor.adapters.checks.grobid_horizon_review import check_grobid_horizon_review
+
+    return check_grobid_horizon_review(root)
+
+
+def _load_horizon(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _save_horizon(path: Path, document: dict) -> None:
+    path.write_text(json.dumps(document, indent=2), encoding="utf-8")
+
+
+def _horizon_broken(flags) -> list:
+    return [f for f in flags if f.flag == "grobid_horizon_review_broken"]
+
+
+def test_grobid_horizon_review_pass_on_pending_registry():
+    root = _make_root()
+    _write_grobid_horizon_review(root)
+    flags = _horizon_flags(root)
+    allowed = {"grobid_horizon_review_status", "grobid_horizon_review_scope_warning"}
+    assert not [f for f in flags if f.flag not in allowed], flags
+    status = next(f for f in flags if f.flag == "grobid_horizon_review_status")
+    assert "stages=2" in status.evidence
+    assert "unresolved=2" in status.evidence
+    assert "claims=0" in status.evidence
+
+
+def test_grobid_horizon_review_dispatch_selects_horizon():
+    from governor.adapters.checks.review_registry_dispatch import check_review_registry
+
+    root = _make_root()
+    _write_grobid_horizon_review(root)
+    flags = check_review_registry(root, "scripts/governor/checks/grobid_rust_horizon_review.yaml")
+    assert any(f.flag == "grobid_horizon_review_status" for f in flags), flags
+    assert not _horizon_broken(flags), flags
+
+
+def test_grobid_horizon_review_missing_review_is_flagged():
+    root = _make_root()
+    _write_grobid_horizon_review(root)
+    (root / "doc/review/horizon.json").unlink()
+    flags = _horizon_flags(root)
+    assert any(f.flag == "grobid_horizon_review_fixture_missing" for f in flags)
+
+
+def test_grobid_horizon_review_invalid_json_is_flagged():
+    root = _make_root()
+    _write_grobid_horizon_review(root)
+    (root / "doc/review/horizon.json").write_text("{not json\n", encoding="utf-8")
+    flags = _horizon_flags(root)
+    assert any(f.flag == "grobid_horizon_review_fixture_invalid" for f in flags)
+
+
+def test_grobid_horizon_review_planning_pass_claim_is_flagged():
+    root = _make_root()
+    path = _write_grobid_horizon_review(root)
+    document = _load_horizon(path)
+    document["stages"][0]["implementation_pass"] = True
+    _save_horizon(path, document)
+    flags = _horizon_flags(root)
+    assert any(
+        f.flag == "grobid_horizon_review_broken" and "claim_scope=planning" in f.evidence for f in flags
+    ), flags
+
+
+def test_grobid_horizon_review_claim_without_closure_is_flagged():
+    root = _make_root()
+    path = _write_grobid_horizon_review(root)
+    document = _load_horizon(path)
+    document["claim_scope"] = "evidence"
+    stage = document["stages"][0]
+    stage["status"] = "complete"
+    stage["implementation_pass"] = True
+    stage["verification_pass"] = True
+    stage["tested_source"]["verified"] = True
+    _save_horizon(path, document)
+    flags = _horizon_flags(root)
+    assert any(
+        f.flag == "grobid_horizon_review_broken" and "closure without completion_evidence" in f.evidence
+        for f in flags
+    ), flags
+
+
+def test_grobid_horizon_review_missing_evidence_path_is_flagged():
+    root = _make_root()
+    path = _write_grobid_horizon_review(root)
+    document = _load_horizon(path)
+    document["stages"][0]["implementation_evidence"] = [
+        {"path": "missing/file.rs", "note": "absent", "state": "present"}
+    ]
+    _save_horizon(path, document)
+    flags = _horizon_flags(root)
+    assert any(
+        f.flag == "grobid_horizon_review_broken" and "missing/file.rs" in f.evidence for f in flags
+    ), flags
+
+
+def test_grobid_horizon_review_evidence_overlap_is_flagged():
+    root = _make_root()
+    path = _write_grobid_horizon_review(root)
+    document = _load_horizon(path)
+    document["stages"][0]["verification_evidence"] = [
+        {
+            "mode": "artifact",
+            "ref": "crates/da-parse/src/lib.rs",
+            "expected": "reuses the implementation anchor",
+            "status": "pending",
+        }
+    ]
+    _save_horizon(path, document)
+    flags = _horizon_flags(root)
+    assert any(
+        f.flag == "grobid_horizon_review_broken" and "overlap" in f.evidence for f in flags
+    ), flags
+
+
+def test_grobid_horizon_review_missing_adr_refs_is_flagged():
+    root = _make_root()
+    path = _write_grobid_horizon_review(root)
+    document = _load_horizon(path)
+    document["stages"][0]["adr_refs"] = []
+    _save_horizon(path, document)
+    flags = _horizon_flags(root)
+    assert any(
+        f.flag == "grobid_horizon_review_broken" and "at least one ADR ref" in f.evidence for f in flags
+    ), flags
+
+
+def test_grobid_horizon_review_missing_negative_tests_is_flagged():
+    root = _make_root()
+    path = _write_grobid_horizon_review(root)
+    document = _load_horizon(path)
+    document["stages"][0]["negative_tests"] = []
+    _save_horizon(path, document)
+    flags = _horizon_flags(root)
+    assert any(
+        f.flag == "grobid_horizon_review_broken" and "negative tests" in f.evidence for f in flags
+    ), flags
+
+
+def test_grobid_horizon_review_matrix_missing_reason_is_flagged():
+    root = _make_root()
+    path = _write_grobid_horizon_review(root)
+    document = _load_horizon(path)
+    document["stages"][0]["test_matrix"][0]["reason"] = ""
+    _save_horizon(path, document)
+    flags = _horizon_flags(root)
+    assert any(
+        f.flag == "grobid_horizon_review_broken" and "applicability reason" in f.evidence for f in flags
+    ), flags
+
+
+def test_grobid_horizon_review_index_limitation_missing_is_flagged():
+    root = _make_root()
+    path = _write_grobid_horizon_review(root)
+    document = _load_horizon(path)
+    document["stages"][0]["index_freshness"] = {"state": "stale", "limitation": ""}
+    _save_horizon(path, document)
+    flags = _horizon_flags(root)
+    assert any(
+        f.flag == "grobid_horizon_review_broken" and "without a documented limitation" in f.evidence
+        for f in flags
+    ), flags
+
+
+def test_grobid_horizon_review_stage_range_gap_is_flagged():
+    root = _make_root()
+    path = _write_grobid_horizon_review(root)
+    document = _load_horizon(path)
+    document["stages"] = [document["stages"][0]]
+    _save_horizon(path, document)
+    flags = _horizon_flags(root)
+    assert any(
+        f.flag == "grobid_horizon_review_broken" and "coverage mismatch" in f.evidence for f in flags
+    ), flags
+
+
+def test_grobid_horizon_review_unknown_status_is_flagged():
+    root = _make_root()
+    path = _write_grobid_horizon_review(root)
+    document = _load_horizon(path)
+    document["stages"][1]["status"] = "in_progress"
+    _save_horizon(path, document)
+    contract = root / "scripts/governor/checks/grobid_rust_horizon_review.yaml"
+    text = contract.read_text(encoding="utf-8").replace(
+        "  allow_status: [pending, in_progress, blocked, complete, superseded]\n",
+        "  allow_status: [pending]\n",
+    )
+    contract.write_text(text, encoding="utf-8")
+    flags = _horizon_flags(root)
+    assert any(
+        f.flag == "grobid_horizon_review_broken" and "unknown status" in f.evidence for f in flags
+    ), flags
+
+
+def test_grobid_horizon_review_cli_accepts_contract_cleanly():
+    root = _make_root()
+    _write_grobid_horizon_review(root)
+    scripts_dir = Path(__file__).resolve().parent.parent
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "governor",
+            "review",
+            "--root",
+            str(root),
+            "--registry",
+            "scripts/governor/checks/grobid_rust_horizon_review.yaml",
+        ],
+        cwd=root,
+        env={**os.environ, "PYTHONPATH": str(scripts_dir)},
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "review registry: stages=2" in result.stdout
+    assert "claim_scope=planning" not in result.stdout
+
+
+def test_grobid_horizon_review_cli_rejects_missing_review_cleanly():
+    root = _make_root()
+    _write_grobid_horizon_review(root)
+    (root / "doc/review/horizon.json").unlink()
+    scripts_dir = Path(__file__).resolve().parent.parent
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "governor",
+            "review",
+            "--root",
+            str(root),
+            "--registry",
+            "scripts/governor/checks/grobid_rust_horizon_review.yaml",
+        ],
+        cwd=root,
+        env={**os.environ, "PYTHONPATH": str(scripts_dir)},
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 2
+    assert "review registry: INVALID" in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_grobid_horizon_review_real_registry_is_valid():
+    from governor.adapters.checks.grobid_horizon_review import check_grobid_horizon_review
+
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    flags = check_grobid_horizon_review(repo_root)
+    blockers = [
+        f
+        for f in flags
+        if f.flag.endswith(("_broken", "_invalid", "_missing"))
+    ]
+    assert blockers == [], blockers
+    status = next(f for f in flags if f.flag == "grobid_horizon_review_status")
+    assert "stages=13" in status.evidence
+
 
 if __name__ == "__main__":
     sys.exit(_run_all_tests())

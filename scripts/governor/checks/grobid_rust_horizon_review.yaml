@@ -1,0 +1,59 @@
+# GROBID Rust long-horizon review registry contract (read-only control metadata).
+#
+# DATA for the Governor `grobid_horizon_review` validation path selected through
+# `governor review --registry <this file>`. This does NOT ingest review prose as
+# enforcement. It checks registry integrity and planning honesty only:
+# stages are unresolved by default, implementation and verification evidence are
+# separate, planning may not claim a PASS, index freshness is either current or
+# has a documented limitation, negative tests exist, and every ADR-051 test
+# matrix row states applicability with a reason.
+schema_version: grobid-horizon-review-registry.v1
+policy_id: grobid_horizon_review
+format: horizon-json-v1
+dimension: scholarly_parse_plane
+severity: medium
+anchor: "H01..H13, doc/review/grobid-rust-horizon-review.json"
+registry:
+  review: doc/review/grobid-rust-horizon-review.json
+  review_schema: doc/review/grobid-rust-horizon-review.schema.json
+  stage_id_pattern: "^H[0-9]{2}$"
+  stage_id_range: [H01, H13]
+  allow_status: [pending, in_progress, blocked, complete, superseded]
+  unresolved_status: [pending, in_progress, blocked]
+  required_stage_fields:
+    - stage_id
+    - title
+    - scope
+    - status
+    - depends_on
+    - owner
+    - adr_refs
+    - implementation_evidence
+    - verification_evidence
+    - tested_source
+    - index_freshness
+    - negative_tests
+    - test_matrix
+    - implementation_pass
+    - verification_pass
+  # ADR-051 two-axis matrix vocabulary (7 contours x 8 test types).
+  contours:
+    - "1 Determinism Infrastructure"
+    - "2 Domain Semantic"
+    - "3 Application Functional"
+    - "4 Port Contract Suite"
+    - "5 Adapter Integration"
+    - "6 System Journey E2E"
+    - "7 Architecture Invariant"
+  test_types:
+    - Unit
+    - Property
+    - Serde roundtrip
+    - Contract
+    - Integration
+    - Business logic
+    - Mutation
+    - E2E journey
+  owner_field: owner
+  owner_unassigned_value: unassigned
+  owner_allow: [unassigned, M505-o169s4]

@@ -1,0 +1,1271 @@
+{
+  "schema_version": "grobid-rust-horizon-review.v1",
+  "review_id": "REV-2026-09-12-grobid-rust-horizon",
+  "policy_id": "grobid_horizon_review",
+  "created_at": "2026-09-12",
+  "claim_scope": "planning",
+  "status_semantics": "Stages are unresolved by default. pending/in_progress/blocked are unresolved; complete requires current closure evidence. Review prose does not create milestones, waves, slices, tasks or acceptance conditions; execution continues only through the authoritative .gsd/ roadmap.",
+  "review_policy": {
+    "no_claim_from_adr_only": true,
+    "no_pass_without_verified_source": true,
+    "implementation_and_verification_evidence_separate": true,
+    "index_freshness_required_or_limited": true,
+    "negative_tests_required": true,
+    "matrix_applicability_requires_reason": true
+  },
+  "stages": [
+    {
+      "stage_id": "H01",
+      "title": "Baseline M505 closure and identity separation",
+      "scope": "Close the GROBID baseline update milestone with release provenance, a digest-pinned image, proven rollback and separated historical/new baseline identities before any native absorption wave starts.",
+      "status": "pending",
+      "depends_on": [],
+      "owner": "M505-o169s4",
+      "adr_refs": [
+        "ADR-040",
+        "ADR-051",
+        "ADR-053"
+      ],
+      "implementation_evidence": [
+        {
+          "path": ".gsd/phases/505-o169s4-baseline-grobid/505-ROADMAP.md",
+          "note": "M505 slice boundary for release provenance and rollback.",
+          "state": "present"
+        },
+        {
+          "path": ".gsd/phases/505-o169s4-baseline-grobid/505-RESEARCH.md",
+          "note": "Source map and the real open M505 borders.",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/src/backend.rs",
+          "note": "Backend identity surface that the baseline swap must stamp.",
+          "state": "partial"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H01 stays unresolved with no PASS claim.",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "governor architecture && cargo test -p da-parse --lib cache_identity",
+          "expected": "M505 closeout gates green with distinct baseline identities.",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+        "verified": false,
+        "note": "M505 work is in an uncommitted working tree; no current closeout gate has passed."
+      },
+      "index_freshness": {
+        "state": "stale",
+        "gitnexus": {
+          "repo": "daily-archive",
+          "indexed_at": "2026-09-12T11:52:51.060Z",
+          "commit": "3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+          "branch": "feat/da-parse"
+        },
+        "codebase_memory": {
+          "project": "daily-archive",
+          "branch": "feat/da-parse"
+        },
+        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); CBM project daily-archive is on the same branch without a recorded commit pin. The uncommitted M505 identity changes in the working tree are NOT represented, so index line numbers are not admissible as evidence until re-index; this review cites committed anchors only."
+      },
+      "negative_tests": [
+        {
+          "id": "H01-N1",
+          "scenario": "Close M505 while architecture or data_contract gates are red and only smoke passed.",
+          "expected": "Closeout must fail; H01 stays pending.",
+          "ref": "505-RESEARCH.md M505 open borders"
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "7 Architecture Invariant",
+          "type": "E2E journey",
+          "applicability": "applicable",
+          "reason": "Closeout gates are governor plus cargo-metadata checks."
+        },
+        {
+          "contour": "5 Adapter Integration",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "Container health/version and one structural parse must be exercised against the real service."
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "not_applicable",
+          "reason": "A baseline identity swap introduces no domain algebraic invariant."
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false
+    },
+    {
+      "stage_id": "H02",
+      "title": "Stage tapes and independent oracle",
+      "scope": "Capture per-stage tapes with an independent source/invariant oracle: PDF/config/model/lexicon/pdfalto identities, split TEI from debug output, occurrence coverage, and models-filter negatives on a frozen split.",
+      "status": "pending",
+      "depends_on": [
+        "H01"
+      ],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-051",
+        "ADR-052",
+        "ADR-053"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/http.rs",
+          "note": "Existing HTTP boundary where bounded capture is anchored.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/src/transport.rs",
+          "note": "Transport layer that must expose per-request identity.",
+          "state": "partial"
+        },
+        {
+          "path": ".gsd/phases/505-o169s4-baseline-grobid/505-RESEARCH.md",
+          "note": "Debug API and models-filter findings that the tape must encode.",
+          "state": "present"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H02 stays unresolved with no PASS claim.",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --lib stage_tape",
+          "expected": "Two-request TEI/debug capture with occurrence coverage and independent oracle.",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+        "verified": false,
+        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+      },
+      "index_freshness": {
+        "state": "stale",
+        "gitnexus": {
+          "repo": "daily-archive",
+          "indexed_at": "2026-09-12T11:52:51.060Z",
+          "commit": "3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+          "branch": "feat/da-parse"
+        },
+        "codebase_memory": {
+          "project": "daily-archive",
+          "branch": "feat/da-parse"
+        },
+        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); CBM project daily-archive is on the same branch without a recorded commit pin. The uncommitted M505 identity changes in the working tree are NOT represented, so index line numbers are not admissible as evidence until re-index; this review cites committed anchors only."
+      },
+      "negative_tests": [
+        {
+          "id": "H02-N1",
+          "scenario": "Treat a missing debug section as proof the Java cascade did not compute it.",
+          "expected": "Uncaptured section is reported as not observed, never as absent computation."
+        },
+        {
+          "id": "H02-N2",
+          "scenario": "Assume generateTeiIds=false removes all random IDs.",
+          "expected": "Identifier normalization preserves ref/target links; residual differences are recorded."
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "6 System Journey E2E",
+          "type": "E2E journey",
+          "applicability": "applicable",
+          "reason": "Two-request TEI plus debug capture is an end-to-end parser journey."
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Serde roundtrip",
+          "applicability": "applicable",
+          "reason": "Tape records must roundtrip their wire format across capture and replay."
+        },
+        {
+          "contour": "4 Port Contract Suite",
+          "type": "Contract",
+          "applicability": "not_applicable",
+          "reason": "Taping is HTTP/adapter bound, not a shared trait contract."
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false
+    },
+    {
+      "stage_id": "H03",
+      "title": "Batch durable publication",
+      "scope": "Make batch publication durable before ack: kill between sink/checkpoint/report, three or more mid-sink document failures, accelerator deletion, and a committed prefix derived only from durable manifests.",
+      "status": "pending",
+      "depends_on": [
+        "H02"
+      ],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-040",
+        "ADR-051",
+        "ADR-052"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/batch.rs",
+          "note": "Batch orchestration that must publish before acknowledgement.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-adapters/src/pipeline_cache.rs",
+          "note": "Durable publication/checkpoint cache surface.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-adapters/src/parse_cache.rs",
+          "note": "Parse checkpoint surface involved in resume contiguity.",
+          "state": "partial"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H03 stays unresolved with no PASS claim.",
+          "status": "pending"
+        },
+        {
+          "mode": "runtime",
+          "ref": "kill-between-sink/checkpoint/report fault test over crates/da-parse/src/batch.rs",
+          "expected": "No loss; committed prefix equals durable manifests; deletion-index recovery.",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+        "verified": false,
+        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+      },
+      "index_freshness": {
+        "state": "stale",
+        "gitnexus": {
+          "repo": "daily-archive",
+          "indexed_at": "2026-09-12T11:52:51.060Z",
+          "commit": "3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+          "branch": "feat/da-parse"
+        },
+        "codebase_memory": {
+          "project": "daily-archive",
+          "branch": "feat/da-parse"
+        },
+        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); CBM project daily-archive is on the same branch without a recorded commit pin. The uncommitted M505 identity changes in the working tree are NOT represented, so index line numbers are not admissible as evidence until re-index; this review cites committed anchors only."
+      },
+      "negative_tests": [
+        {
+          "id": "H03-N1",
+          "scenario": "Let the accelerator advance ahead of the durable report and resume from it.",
+          "expected": "Resume validates contiguity/hash from durable manifests only; accelerator-only prefix is rejected."
+        },
+        {
+          "id": "H03-N2",
+          "scenario": "Hide retry inside batch so a failed sink looks committed.",
+          "expected": "Failure is surfaced; no silent retry inside batch."
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "5 Adapter Integration",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "Real cache/sink filesystem behavior under kill."
+        },
+        {
+          "contour": "7 Architecture Invariant",
+          "type": "E2E journey",
+          "applicability": "applicable",
+          "reason": "Governor enforces committed-prefix-from-durable-manifests."
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Mutation",
+          "applicability": "not_applicable",
+          "reason": "Durability is an operational fault property, not a domain function."
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false
+    },
+    {
+      "stage_id": "H04",
+      "title": "Composition admission",
+      "scope": "Admit native composition only with title/affiliation preservation, unknown-subtree preserve-or-Unsupported, digest substitution rejection, citation-to-bibl identity, and candidate-only status.",
+      "status": "pending",
+      "depends_on": [
+        "H02"
+      ],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-053",
+        "ADR-055",
+        "ADR-065"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/native_composition.rs",
+          "note": "Native composition entry point under admission.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/src/conservation.rs",
+          "note": "Conservation checks used by the admission contract.",
+          "state": "partial"
+        },
+        {
+          "path": "doc/adr/ADR-053-article-preparation-multi-layer-document-model.md",
+          "note": "Layer ownership and candidate-only boundary.",
+          "state": "present"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H04 stays unresolved with no PASS claim.",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --lib native_composition admission",
+          "expected": "Preserved/unsupported subtrees, digest substitution rejected, candidate-only.",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+        "verified": false,
+        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+      },
+      "index_freshness": {
+        "state": "stale",
+        "gitnexus": {
+          "repo": "daily-archive",
+          "indexed_at": "2026-09-12T11:52:51.060Z",
+          "commit": "3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+          "branch": "feat/da-parse"
+        },
+        "codebase_memory": {
+          "project": "daily-archive",
+          "branch": "feat/da-parse"
+        },
+        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); CBM project daily-archive is on the same branch without a recorded commit pin. The uncommitted M505 identity changes in the working tree are NOT represented, so index line numbers are not admissible as evidence until re-index; this review cites committed anchors only."
+      },
+      "negative_tests": [
+        {
+          "id": "H04-N1",
+          "scenario": "Accept a document whose source digest was substituted but structurally parses.",
+          "expected": "Digest substitution is rejected before admission."
+        },
+        {
+          "id": "H04-N2",
+          "scenario": "Promote candidate composition to graph truth because it parses locally.",
+          "expected": "Admission stays candidate-only; D127 remains false."
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "3 Application Functional",
+          "type": "Business logic",
+          "applicability": "applicable",
+          "reason": "Admission policy is a use-case rule."
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "applicable",
+          "reason": "Conservation relations must hold over arbitrary subtrees."
+        },
+        {
+          "contour": "6 System Journey E2E",
+          "type": "E2E journey",
+          "applicability": "not_applicable",
+          "reason": "No full system journey is required at the admission stage."
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false
+    },
+    {
+      "stage_id": "H05",
+      "title": "Global budgets and bounded reorder",
+      "scope": "Bound RAM/staging/CPU/scratch for a slow ordinal-0 document and concurrent batches without deadlock; distinguish an HTTP timeout from a killed Java process.",
+      "status": "pending",
+      "depends_on": [
+        "H03"
+      ],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-040",
+        "ADR-051",
+        "ADR-052"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/batch.rs",
+          "note": "Batch scheduling where global budgets and reorder apply.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-adapters/src/parse_cursor.rs",
+          "note": "Cursor/reorder surface that must stay bounded.",
+          "state": "partial"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H05 stays unresolved with no PASS claim.",
+          "status": "pending"
+        },
+        {
+          "mode": "runtime",
+          "ref": "concurrent batch budget probe with a slow ordinal-0 document",
+          "expected": "Bounded resources, no deadlock, timeout reported as timeout not Java death.",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+        "verified": false,
+        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+      },
+      "index_freshness": {
+        "state": "stale",
+        "gitnexus": {
+          "repo": "daily-archive",
+          "indexed_at": "2026-09-12T11:52:51.060Z",
+          "commit": "3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+          "branch": "feat/da-parse"
+        },
+        "codebase_memory": {
+          "project": "daily-archive",
+          "branch": "feat/da-parse"
+        },
+        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); CBM project daily-archive is on the same branch without a recorded commit pin. The uncommitted M505 identity changes in the working tree are NOT represented, so index line numbers are not admissible as evidence until re-index; this review cites committed anchors only."
+      },
+      "negative_tests": [
+        {
+          "id": "H05-N1",
+          "scenario": "Treat an HTTP timeout as proof the Java process was killed.",
+          "expected": "Outcome distinguishes transport timeout from process termination; resources are reclaimed deterministically."
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "5 Adapter Integration",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "Real concurrency and process behavior."
+        },
+        {
+          "contour": "7 Architecture Invariant",
+          "type": "E2E journey",
+          "applicability": "applicable",
+          "reason": "Governor enforces the no-unbounded-staging contract."
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Unit",
+          "applicability": "not_applicable",
+          "reason": "Budgets are runtime policy, not domain logic."
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false
+    },
+    {
+      "stage_id": "H06",
+      "title": "Local job ledger with atomic CAS",
+      "scope": "Submit to restart to claim to commit job lifecycle with stale-worker/cancel race safety and atomic CAS; reuse scheduler TaskLease/RetryPolicy; decide Samyama scope before storing ledger state.",
+      "status": "pending",
+      "depends_on": [
+        "H03",
+        "H05"
+      ],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-040",
+        "ADR-051",
+        "ADR-053"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-adapters/src/pipeline_ledger.rs",
+          "note": "Existing ledger surface that must expose atomic CAS.",
+          "state": "partial"
+        },
+        {
+          "path": ".gsd/phases/505-o169s4-baseline-grobid/505-RESEARCH.md",
+          "note": "Target job lifecycle model and storage-authority constraint.",
+          "state": "present"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H06 stays unresolved with no PASS claim.",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-adapters --lib pipeline_ledger cas",
+          "expected": "Atomic CAS; stale fence rejects; recovery equivalence.",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+        "verified": false,
+        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+      },
+      "index_freshness": {
+        "state": "stale",
+        "gitnexus": {
+          "repo": "daily-archive",
+          "indexed_at": "2026-09-12T11:52:51.060Z",
+          "commit": "3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+          "branch": "feat/da-parse"
+        },
+        "codebase_memory": {
+          "project": "daily-archive",
+          "branch": "feat/da-parse"
+        },
+        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); CBM project daily-archive is on the same branch without a recorded commit pin. The uncommitted M505 identity changes in the working tree are NOT represented, so index line numbers are not admissible as evidence until re-index; this review cites committed anchors only."
+      },
+      "negative_tests": [
+        {
+          "id": "H06-N1",
+          "scenario": "Treat scheduler persist_if_dirty read-check-write as a multi-process atomic fence.",
+          "expected": "Non-atomic path is rejected; the ledger uses proven CAS."
+        },
+        {
+          "id": "H06-N2",
+          "scenario": "Create a new JSONL/SQLite state store for the ledger.",
+          "expected": "Reuse scheduler types and the approved storage authority; no new store."
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "4 Port Contract Suite",
+          "type": "Contract",
+          "applicability": "applicable",
+          "reason": "Ledger semantics must hold across the storage implementation contract."
+        },
+        {
+          "contour": "5 Adapter Integration",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "Real CAS atomicity under restart and races."
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "applicable",
+          "reason": "Epoch/lease monotonicity properties."
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false
+    },
+    {
+      "stage_id": "H07",
+      "title": "Layout, token and lexicon feature ABI",
+      "scope": "Define the model-specific layout/token/lexicon feature ABI: PDF provider comparison, superscripts/multilingual/page boundaries, exact column order and scales, explicit unsupported.",
+      "status": "pending",
+      "depends_on": [
+        "H02"
+      ],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-051",
+        "ADR-053",
+        "ADR-065"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/native_feature_tagger.rs",
+          "note": "Current native feature layer with 11 structural columns.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/src/layout.rs",
+          "note": "Layout extraction feeding the feature ABI.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/src/layout_lattice.rs",
+          "note": "Layout lattice used for provider comparison.",
+          "state": "partial"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H07 stays unresolved with no PASS claim.",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --lib feature_abi",
+          "expected": "Exact model-specific column order/scales; unsupported features explicit.",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+        "verified": false,
+        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+      },
+      "index_freshness": {
+        "state": "stale",
+        "gitnexus": {
+          "repo": "daily-archive",
+          "indexed_at": "2026-09-12T11:52:51.060Z",
+          "commit": "3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+          "branch": "feat/da-parse"
+        },
+        "codebase_memory": {
+          "project": "daily-archive",
+          "branch": "feat/da-parse"
+        },
+        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); CBM project daily-archive is on the same branch without a recorded commit pin. The uncommitted M505 identity changes in the working tree are NOT represented, so index line numbers are not admissible as evidence until re-index; this review cites committed anchors only."
+      },
+      "negative_tests": [
+        {
+          "id": "H07-N1",
+          "scenario": "Silently drop unsupported lexicon-backed features so the vector still looks complete.",
+          "expected": "Unsupported is explicit; the ABI fails closed rather than padding."
+        },
+        {
+          "id": "H07-N2",
+          "scenario": "Reorder columns per model without a recorded ABI version.",
+          "expected": "Column order and scale are pinned to the ABI fingerprint."
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Unit",
+          "applicability": "applicable",
+          "reason": "ABI column mapping is a pure function."
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "applicable",
+          "reason": "Order and scale invariants over random feature vectors."
+        },
+        {
+          "contour": "6 System Journey E2E",
+          "type": "E2E journey",
+          "applicability": "not_applicable",
+          "reason": "The ABI is a local contract, not a journey."
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false
+    },
+    {
+      "stage_id": "H08",
+      "title": "Scalar CRF decoder",
+      "scope": "Implement a scalar CRF decoder: model reader/templates/features/transitions/ties, oracle label parity, malformed-weight rejection, and licensing resolved before any distribution.",
+      "status": "pending",
+      "depends_on": [
+        "H07"
+      ],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-040",
+        "ADR-051",
+        "ADR-065"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/native_feature_tagger.rs",
+          "note": "Feature layer feeding the CRF decoder.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/src/native_segmentation.rs",
+          "note": "Segmentation labels the decoder must reproduce.",
+          "state": "partial"
+        },
+        {
+          "path": ".gsd/phases/505-o169s4-baseline-grobid/505-RESEARCH.md",
+          "note": "Wapiti-not-ruVLLM route and missing pure-Rust decoder evidence.",
+          "state": "present"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H08 stays unresolved with no PASS claim.",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --lib scalar_crf parity",
+          "expected": "Oracle label parity on a frozen split; malformed weights rejected.",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+        "verified": false,
+        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+      },
+      "index_freshness": {
+        "state": "stale",
+        "gitnexus": {
+          "repo": "daily-archive",
+          "indexed_at": "2026-09-12T11:52:51.060Z",
+          "commit": "3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+          "branch": "feat/da-parse"
+        },
+        "codebase_memory": {
+          "project": "daily-archive",
+          "branch": "feat/da-parse"
+        },
+        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); CBM project daily-archive is on the same branch without a recorded commit pin. The uncommitted M505 identity changes in the working tree are NOT represented, so index line numbers are not admissible as evidence until re-index; this review cites committed anchors only."
+      },
+      "negative_tests": [
+        {
+          "id": "H08-N1",
+          "scenario": "Ship a pure-Rust decoder claim backed by an FFI/Viterbi shortcut comparator.",
+          "expected": "Status stays comparator-only until a true pure-Rust decoder reaches oracle parity."
+        },
+        {
+          "id": "H08-N2",
+          "scenario": "Distribute model assets before licensing is resolved.",
+          "expected": "No distribution until licenses are cleared; the stage stays blocked."
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Unit",
+          "applicability": "applicable",
+          "reason": "The decoder decision function is unit-testable."
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "applicable",
+          "reason": "Tie-breaking and monotonic transition invariants."
+        },
+        {
+          "contour": "5 Adapter Integration",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "Parity against the Java oracle on real models."
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false
+    },
+    {
+      "stage_id": "H09",
+      "title": "Complete native header",
+      "scope": "Complete the native header path from PDF through layout and segmentation to header, name, affiliation, date, linking and TEI with title/email/ids; Java invocation count zero within scope, fallback counted.",
+      "status": "pending",
+      "depends_on": [
+        "H04",
+        "H08"
+      ],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-053",
+        "ADR-065"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/native_affiliation.rs",
+          "note": "Affiliation linking under audit.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/src/native_personal_name.rs",
+          "note": "Personal-name extraction under audit.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/src/native_segmentation.rs",
+          "note": "Segmentation stage feeding header extraction.",
+          "state": "partial"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H09 stays unresolved with no PASS claim.",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --lib native_header",
+          "expected": "Full native header with Java invocation zero within scope; fallback counted.",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+        "verified": false,
+        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+      },
+      "index_freshness": {
+        "state": "stale",
+        "gitnexus": {
+          "repo": "daily-archive",
+          "indexed_at": "2026-09-12T11:52:51.060Z",
+          "commit": "3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+          "branch": "feat/da-parse"
+        },
+        "codebase_memory": {
+          "project": "daily-archive",
+          "branch": "feat/da-parse"
+        },
+        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); CBM project daily-archive is on the same branch without a recorded commit pin. The uncommitted M505 identity changes in the working tree are NOT represented, so index line numbers are not admissible as evidence until re-index; this review cites committed anchors only."
+      },
+      "negative_tests": [
+        {
+          "id": "H09-N1",
+          "scenario": "Infer affiliation linking from name presence alone.",
+          "expected": "Linking is distinct from name presence; unresolved links are Unsupported, not invented."
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "6 System Journey E2E",
+          "type": "E2E journey",
+          "applicability": "applicable",
+          "reason": "PDF to header to TEI is an end-to-end family journey."
+        },
+        {
+          "contour": "5 Adapter Integration",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "Compare against Java header output on a frozen split."
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Serde roundtrip",
+          "applicability": "applicable",
+          "reason": "TEI header roundtrip stability."
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false
+    },
+    {
+      "stage_id": "H10",
+      "title": "Complete native bibliography",
+      "scope": "Complete the native bibliography path: boundary, fields, name/date, stable IDs and callouts; multiline and page-crossing references; never invent a DOI.",
+      "status": "pending",
+      "depends_on": [
+        "H04",
+        "H08"
+      ],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-053",
+        "ADR-058",
+        "ADR-065"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/native_citation.rs",
+          "note": "Citation extraction under audit.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/src/native_callout_matching.rs",
+          "note": "Callout matching that ties citations to targets.",
+          "state": "partial"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H10 stays unresolved with no PASS claim.",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --lib native_bibliography",
+          "expected": "Boundary/field/identity parity; stable IDs; no invented DOI.",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+        "verified": false,
+        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+      },
+      "index_freshness": {
+        "state": "stale",
+        "gitnexus": {
+          "repo": "daily-archive",
+          "indexed_at": "2026-09-12T11:52:51.060Z",
+          "commit": "3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+          "branch": "feat/da-parse"
+        },
+        "codebase_memory": {
+          "project": "daily-archive",
+          "branch": "feat/da-parse"
+        },
+        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); CBM project daily-archive is on the same branch without a recorded commit pin. The uncommitted M505 identity changes in the working tree are NOT represented, so index line numbers are not admissible as evidence until re-index; this review cites committed anchors only."
+      },
+      "negative_tests": [
+        {
+          "id": "H10-N1",
+          "scenario": "Invent a DOI when the reference lacks one.",
+          "expected": "An absent DOI stays absent; no synthesis."
+        },
+        {
+          "id": "H10-N2",
+          "scenario": "Break citation-to-bibl identity across page breaks.",
+          "expected": "Citation and bibl targets stay linked across multiline and page-crossing references."
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "applicable",
+          "reason": "Identity and link invariants over references."
+        },
+        {
+          "contour": "6 System Journey E2E",
+          "type": "E2E journey",
+          "applicability": "applicable",
+          "reason": "Bibliography family end-to-end."
+        },
+        {
+          "contour": "5 Adapter Integration",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "Java oracle comparison on a frozen split."
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false
+    },
+    {
+      "stage_id": "H11",
+      "title": "Body, abstract, annex and notes",
+      "scope": "Parse body, abstract, annex and notes with reading order, columns, sentence alignment and cross-page sections; byte conservation is not the only correctness criterion.",
+      "status": "pending",
+      "depends_on": [
+        "H09",
+        "H10"
+      ],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-053",
+        "ADR-065"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/native_body.rs",
+          "note": "Native body extraction under audit.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/src/native_fulltext_blocks.rs",
+          "note": "Fulltext block ordering under audit.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/src/native_fulltext_composition.rs",
+          "note": "Fulltext composition under audit.",
+          "state": "partial"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H11 stays unresolved with no PASS claim.",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --lib native_body reading_order",
+          "expected": "Correct reading order and cross-page sections; semantic conservation beyond bytes.",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+        "verified": false,
+        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+      },
+      "index_freshness": {
+        "state": "stale",
+        "gitnexus": {
+          "repo": "daily-archive",
+          "indexed_at": "2026-09-12T11:52:51.060Z",
+          "commit": "3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+          "branch": "feat/da-parse"
+        },
+        "codebase_memory": {
+          "project": "daily-archive",
+          "branch": "feat/da-parse"
+        },
+        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); CBM project daily-archive is on the same branch without a recorded commit pin. The uncommitted M505 identity changes in the working tree are NOT represented, so index line numbers are not admissible as evidence until re-index; this review cites committed anchors only."
+      },
+      "negative_tests": [
+        {
+          "id": "H11-N1",
+          "scenario": "Accept byte conservation as sufficient body correctness.",
+          "expected": "Reading order and sentence alignment are required separately."
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "applicable",
+          "reason": "Reading-order and conservation invariants."
+        },
+        {
+          "contour": "6 System Journey E2E",
+          "type": "E2E journey",
+          "applicability": "applicable",
+          "reason": "Full body family journey."
+        },
+        {
+          "contour": "5 Adapter Integration",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "Java oracle comparison on a frozen split."
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false
+    },
+    {
+      "stage_id": "H12",
+      "title": "Visual and funding families",
+      "scope": "Parse independent figures, tables and formulas as thin family slices: cells, units and caption links, with NotObserved kept distinct from a zero count.",
+      "status": "pending",
+      "depends_on": [
+        "H11"
+      ],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-053",
+        "ADR-060"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/native_visual.rs",
+          "note": "Native visual/family surface under audit.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-adapters/src/layout_visual.rs",
+          "note": "Layout-to-visual adapter under audit.",
+          "state": "partial"
+        },
+        {
+          "path": "doc/adr/ADR-060-scientific-figure-understanding-pipeline.md",
+          "note": "Figure understanding boundary and candidate-only rule.",
+          "state": "present"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H12 stays unresolved with no PASS claim.",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --lib native_visual",
+          "expected": "Cells/units/caption links; NotObserved distinct from zero.",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+        "verified": false,
+        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+      },
+      "index_freshness": {
+        "state": "stale",
+        "gitnexus": {
+          "repo": "daily-archive",
+          "indexed_at": "2026-09-12T11:52:51.060Z",
+          "commit": "3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+          "branch": "feat/da-parse"
+        },
+        "codebase_memory": {
+          "project": "daily-archive",
+          "branch": "feat/da-parse"
+        },
+        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); CBM project daily-archive is on the same branch without a recorded commit pin. The uncommitted M505 identity changes in the working tree are NOT represented, so index line numbers are not admissible as evidence until re-index; this review cites committed anchors only."
+      },
+      "negative_tests": [
+        {
+          "id": "H12-N1",
+          "scenario": "Report a missing figure as zero figures observed.",
+          "expected": "NotObserved is typed and distinct from a zero count."
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "applicable",
+          "reason": "Typed-missingness invariants."
+        },
+        {
+          "contour": "5 Adapter Integration",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "Table and figure extraction against real PDFs."
+        },
+        {
+          "contour": "6 System Journey E2E",
+          "type": "E2E journey",
+          "applicability": "applicable",
+          "reason": "Per-family thin-slice journey."
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false
+    },
+    {
+      "stage_id": "H13",
+      "title": "Learning ablations and operational performance",
+      "scope": "Run learning policy ablations (rules/retrieval/SONA, real PromptExecutionPort inference, decision-to-dispatch, heldout lift without weakening hard gates) plus operational/performance qualification (Java CPU and invocations, latency tails/RSS/queue age, recovery/rollback); SIMD/PGO only after profile and scalar equivalence.",
+      "status": "pending",
+      "depends_on": [
+        "H02",
+        "H05",
+        "H06",
+        "H09",
+        "H10",
+        "H11",
+        "H12"
+      ],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-040",
+        "ADR-051",
+        "ADR-059"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-adapters/src/parse_experience_rvf.rs",
+          "note": "RVF learning authority carve-out surface.",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-adapters/src/parse_learning_index.rs",
+          "note": "Learning index that must stay a rebuildable accelerator.",
+          "state": "partial"
+        },
+        {
+          "path": "doc/adr/ADR-059-prompt-execution-optimizer-fsm.md",
+          "note": "Optimizer FSM and no-auto-promote boundary.",
+          "state": "present"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H13 stays unresolved with no PASS claim.",
+          "status": "pending"
+        },
+        {
+          "mode": "runtime",
+          "ref": "heldout policy ablation plus Java CPU/invocation and latency-tail qualification",
+          "expected": "Heldout lift with hard gates intact; perf numbers reproducible; learning optional.",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+        "verified": false,
+        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+      },
+      "index_freshness": {
+        "state": "stale",
+        "gitnexus": {
+          "repo": "daily-archive",
+          "indexed_at": "2026-09-12T11:52:51.060Z",
+          "commit": "3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
+          "branch": "feat/da-parse"
+        },
+        "codebase_memory": {
+          "project": "daily-archive",
+          "branch": "feat/da-parse"
+        },
+        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); CBM project daily-archive is on the same branch without a recorded commit pin. The uncommitted M505 identity changes in the working tree are NOT represented, so index line numbers are not admissible as evidence until re-index; this review cites committed anchors only."
+      },
+      "negative_tests": [
+        {
+          "id": "H13-N1",
+          "scenario": "Promote a learned policy because it lifts heldout score while weakening a hard gate.",
+          "expected": "Hard gates are never weakened; lift-only claims are rejected."
+        },
+        {
+          "id": "H13-N2",
+          "scenario": "Adopt SIMD/PGO before scalar equivalence is proven.",
+          "expected": "SIMD/PGO is gated on profile and scalar equivalence."
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "6 System Journey E2E",
+          "type": "E2E journey",
+          "applicability": "applicable",
+          "reason": "Policy decision to dispatch end-to-end."
+        },
+        {
+          "contour": "5 Adapter Integration",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "Real inference port and performance measurement."
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "applicable",
+          "reason": "FSM transition and budget invariants."
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false
+    }
+  ]
+}

@@ -1,0 +1,219 @@
+{
+  "$id": "https://daily-archive.local/schemas/grobid-rust-horizon-review.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "daily-archive GROBID Rust long-horizon review registry",
+  "description": "Schema for the durable, planning-only review control of the long-horizon GROBID -> Rust migration. Structural shape only: policy invariants such as stage coverage, evidence path resolution, planning PASS prohibition, index freshness limitation, negative-test presence and matrix applicability reasons are enforced by the Governor adapter from the DATA contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "review_id",
+    "policy_id",
+    "created_at",
+    "claim_scope",
+    "status_semantics",
+    "review_policy",
+    "stages"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "grobid-rust-horizon-review.v1"
+    },
+    "review_id": {
+      "pattern": "^REV-[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+$",
+      "type": "string"
+    },
+    "policy_id": {
+      "const": "grobid_horizon_review"
+    },
+    "created_at": {
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "type": "string"
+    },
+    "claim_scope": {
+      "enum": ["planning", "evidence"],
+      "description": "planning forbids every implementation_pass/verification_pass claim; evidence allows a PASS claim only with current closure evidence."
+    },
+    "status_semantics": {
+      "minLength": 40,
+      "type": "string"
+    },
+    "review_policy": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "no_claim_from_adr_only",
+        "no_pass_without_verified_source",
+        "implementation_and_verification_evidence_separate",
+        "index_freshness_required_or_limited",
+        "negative_tests_required",
+        "matrix_applicability_requires_reason"
+      ],
+      "properties": {
+        "no_claim_from_adr_only": {"type": "boolean"},
+        "no_pass_without_verified_source": {"type": "boolean"},
+        "implementation_and_verification_evidence_separate": {"type": "boolean"},
+        "index_freshness_required_or_limited": {"type": "boolean"},
+        "negative_tests_required": {"type": "boolean"},
+        "matrix_applicability_requires_reason": {"type": "boolean"}
+      }
+    },
+    "stages": {
+      "items": {"$ref": "#/$defs/stage"},
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "$defs": {
+    "stage": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "stage_id",
+        "title",
+        "scope",
+        "status",
+        "depends_on",
+        "owner",
+        "adr_refs",
+        "implementation_evidence",
+        "verification_evidence",
+        "tested_source",
+        "index_freshness",
+        "negative_tests",
+        "test_matrix",
+        "implementation_pass",
+        "verification_pass"
+      ],
+      "properties": {
+        "stage_id": {"pattern": "^H[0-9]{2}$", "type": "string"},
+        "title": {"minLength": 8, "maxLength": 160, "type": "string"},
+        "scope": {"minLength": 20, "type": "string"},
+        "status": {
+          "enum": ["pending", "in_progress", "blocked", "complete", "superseded"]
+        },
+        "depends_on": {
+          "items": {"pattern": "^H[0-9]{2}$", "type": "string"},
+          "type": "array",
+          "uniqueItems": true
+        },
+        "owner": {"minLength": 2, "type": "string"},
+        "adr_refs": {
+          "items": {"pattern": "^ADR-[0-9]{3}$", "type": "string"},
+          "type": "array",
+          "uniqueItems": true
+        },
+        "implementation_evidence": {
+          "items": {"$ref": "#/$defs/implementation_evidence"},
+          "type": "array"
+        },
+        "verification_evidence": {
+          "items": {"$ref": "#/$defs/verification_evidence"},
+          "type": "array"
+        },
+        "tested_source": {"$ref": "#/$defs/tested_source"},
+        "index_freshness": {"$ref": "#/$defs/index_freshness"},
+        "negative_tests": {
+          "items": {"$ref": "#/$defs/negative_test"},
+          "type": "array"
+        },
+        "test_matrix": {
+          "items": {"$ref": "#/$defs/matrix_row"},
+          "type": "array"
+        },
+        "implementation_pass": {"type": "boolean"},
+        "verification_pass": {"type": "boolean"},
+        "completion_evidence": {"$ref": "#/$defs/completion_evidence"}
+      }
+    },
+    "implementation_evidence": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["path", "note"],
+      "properties": {
+        "path": {"minLength": 1, "type": "string"},
+        "symbol": {"type": "string"},
+        "note": {"minLength": 3, "type": "string"},
+        "state": {"enum": ["present", "partial", "planned"]}
+      }
+    },
+    "verification_evidence": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["mode", "ref", "expected"],
+      "properties": {
+        "mode": {
+          "enum": ["governor_rule", "command", "artifact", "runtime", "human"]
+        },
+        "ref": {"minLength": 1, "type": "string"},
+        "expected": {"minLength": 3, "type": "string"},
+        "status": {"enum": ["pending", "pass", "fail"]}
+      }
+    },
+    "tested_source": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["revision", "verified"],
+      "properties": {
+        "revision": {"minLength": 5, "type": "string"},
+        "verified": {"type": "boolean"},
+        "note": {"type": "string"}
+      }
+    },
+    "index_freshness": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["state"],
+      "properties": {
+        "state": {"enum": ["fresh", "stale", "unknown"]},
+        "gitnexus": {"type": "object"},
+        "codebase_memory": {"type": "object"},
+        "limitation": {"minLength": 20, "type": "string"}
+      }
+    },
+    "negative_test": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["id", "scenario", "expected"],
+      "properties": {
+        "id": {"minLength": 2, "type": "string"},
+        "scenario": {"minLength": 5, "type": "string"},
+        "expected": {"minLength": 3, "type": "string"},
+        "ref": {"type": "string"}
+      }
+    },
+    "matrix_row": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["contour", "type", "applicability"],
+      "properties": {
+        "contour": {"minLength": 2, "type": "string"},
+        "type": {"minLength": 2, "type": "string"},
+        "applicability": {"enum": ["applicable", "not_applicable"]},
+        "reason": {"minLength": 3, "type": "string"}
+      }
+    },
+    "completion_evidence": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["mode", "ref", "result", "artifacts", "observed_at", "source_revision"],
+      "properties": {
+        "mode": {
+          "enum": ["governor_rule", "command", "artifact", "runtime", "human"]
+        },
+        "ref": {"minLength": 1, "type": "string"},
+        "result": {"const": "pass"},
+        "artifacts": {
+          "items": {"minLength": 1, "type": "string"},
+          "minItems": 1,
+          "type": "array"
+        },
+        "observed_at": {
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "type": "string"
+        },
+        "source_revision": {"minLength": 5, "type": "string"}
+      }
+    }
+  }
+}
