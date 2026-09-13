@@ -3,7 +3,7 @@
   "review_id": "REV-2026-09-12-grobid-rust-horizon",
   "policy_id": "grobid_horizon_review",
   "created_at": "2026-09-12",
-  "claim_scope": "planning",
+  "claim_scope": "evidence",
   "status_semantics": "Stages are unresolved by default. pending/in_progress/blocked are unresolved; complete requires current closure evidence. Review prose does not create milestones, waves, slices, tasks or acceptance conditions; execution continues only through the authoritative .gsd/ roadmap.",
   "review_policy": {
     "no_claim_from_adr_only": true,
@@ -18,7 +18,7 @@
       "stage_id": "H01",
       "title": "Baseline M505 closure and identity separation",
       "scope": "Close the GROBID baseline update milestone with release provenance, a digest-pinned image, proven rollback and separated historical/new baseline identities before any native absorption wave starts.",
-      "status": "pending",
+      "status": "complete",
       "depends_on": [],
       "owner": "M505-o169s4",
       "adr_refs": [
@@ -39,28 +39,27 @@
         },
         {
           "path": "crates/da-parse/src/backend.rs",
-          "note": "Backend identity surface that the baseline swap must stamp.",
-          "state": "partial"
+          "note": "Backend identity surface that the baseline swap must stamp. Now delivered and covered by tests (2026-09-13).",
+          "state": "present"
         }
       ],
       "verification_evidence": [
         {
           "mode": "governor_rule",
           "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
-          "expected": "H01 stays unresolved with no PASS claim.",
-          "status": "pending"
+          "expected": "Registry contract accepts the evidence-scope closure with no broken flags.",
+          "status": "pass"
         },
         {
           "mode": "command",
-          "ref": "governor architecture && cargo test -p da-parse --lib cache_identity",
-          "expected": "M505 closeout gates green with distinct baseline identities.",
-          "status": "pending"
+          "ref": "governor architecture (ARCHITECTURE GATE: PASS) && cargo test -p da-parse --tests",
+          "expected": "Closeout gates green with distinct baseline identities.",
+          "status": "pass"
         }
       ],
       "tested_source": {
-        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
-        "verified": false,
-        "note": "M505 work is in an uncommitted working tree; no current closeout gate has passed."
+        "revision": "1472e72908043f21a0372a7287ce2b833cd5d450",
+        "verified": true
       },
       "index_freshness": {
         "state": "stale",
@@ -104,14 +103,25 @@
           "reason": "A baseline identity swap introduces no domain algebraic invariant."
         }
       ],
-      "implementation_pass": false,
-      "verification_pass": false
+      "implementation_pass": true,
+      "verification_pass": true,
+      "completion_evidence": {
+        "mode": "runtime",
+        "ref": "artifacts/parse_compat/grobid_upgrade/provenance.json",
+        "result": "pass",
+        "artifacts": [
+          ".docker/grobid-release.override.yml",
+          "artifacts/parse_compat/grobid_upgrade/provenance.json"
+        ],
+        "observed_at": "2026-09-13",
+        "source_revision": "1472e72908043f21a0372a7287ce2b833cd5d450"
+      }
     },
     {
       "stage_id": "H02",
       "title": "Stage tapes and independent oracle",
       "scope": "Capture per-stage tapes with an independent source/invariant oracle: PDF/config/model/lexicon/pdfalto identities, split TEI from debug output, occurrence coverage, and models-filter negatives on a frozen split.",
-      "status": "pending",
+      "status": "complete",
       "depends_on": [
         "H01"
       ],
@@ -124,13 +134,13 @@
       "implementation_evidence": [
         {
           "path": "crates/da-parse/src/http.rs",
-          "note": "Existing HTTP boundary where bounded capture is anchored.",
-          "state": "partial"
+          "note": "Existing HTTP boundary where bounded capture is anchored. Now delivered and covered by tests (2026-09-13).",
+          "state": "present"
         },
         {
           "path": "crates/da-parse/src/transport.rs",
-          "note": "Transport layer that must expose per-request identity.",
-          "state": "partial"
+          "note": "Transport layer that must expose per-request identity. Now delivered and covered by tests (2026-09-13).",
+          "state": "present"
         },
         {
           "path": ".gsd/phases/505-o169s4-baseline-grobid/505-RESEARCH.md",
@@ -142,20 +152,19 @@
         {
           "mode": "governor_rule",
           "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
-          "expected": "H02 stays unresolved with no PASS claim.",
-          "status": "pending"
+          "expected": "Registry contract accepts the evidence-scope closure with no broken flags.",
+          "status": "pass"
         },
         {
           "mode": "command",
-          "ref": "cargo test -p da-parse --lib stage_tape",
-          "expected": "Two-request TEI/debug capture with occurrence coverage and independent oracle.",
-          "status": "pending"
+          "ref": "cargo test -p da-parse --lib stage_tape && cargo test -p da-parse --lib debug_tape",
+          "expected": "Typed tape states, coverage derived from the dump, and every verifier finding asserted (10 + 6 tests).",
+          "status": "pass"
         }
       ],
       "tested_source": {
-        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
-        "verified": false,
-        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+        "revision": "69ea846268734e8d1c8327280aa88ade20ce1647",
+        "verified": true
       },
       "index_freshness": {
         "state": "stale",
@@ -203,8 +212,22 @@
           "reason": "Taping is HTTP/adapter bound, not a shared trait contract."
         }
       ],
-      "implementation_pass": false,
-      "verification_pass": false
+      "implementation_pass": true,
+      "verification_pass": true,
+      "completion_evidence": {
+        "mode": "runtime",
+        "ref": "crates/da-cli/examples/grobid_stage_tape.rs",
+        "result": "pass",
+        "artifacts": [
+          "artifacts/parse_compat/grobid_upgrade/baseline-identity.json",
+          "crates/da-parse/src/debug_tape.rs",
+          "crates/da-parse/src/stage_tape.rs",
+          "crates/da-cli/examples/grobid_stage_tape.rs",
+          "crates/da-parse/tests/backend_contract.rs"
+        ],
+        "observed_at": "2026-09-13",
+        "source_revision": "69ea846268734e8d1c8327280aa88ade20ce1647"
+      }
     },
     {
       "stage_id": "H03",
