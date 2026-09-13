@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-09-12 (2) — закрытие техдолга repo-gate, версионная идентичность GROBID 0.9.1, uv-проект
+
+Восстановлен красный repo-gate, унаследованный от HEAD `3b327d7ce` (затронутые
+файлы не изменялись в этой сессии). Архитектурный контракт: реестр `FamilyCatalog`
+перенесён из production-дерева `da-application` в offline-обвязку
+`crates/da-cli/examples/derived_maturity_rehearsal/` (main.rs + module), S04-тест
+переписан без ослабления; маркер `NativeFulltext` уточнён до
+`NativeFulltextComposition`, так как широкий маркер ловил законное семейство
+`NativeFulltextBlocks` (отдельный контракт S16). DATA-контракты: объявлены
+секции `population_contract`, `external_holdout_contract`,
+`release_decision_package`, `rest_batch_asset_quarantine` и поле
+`identity_sha256`; ожидания segmentation подняты к `document-segmentation.v2`
+(`compatible_with v1` сохранён); `native_body_accounting` приведён к taxonomy v2;
+перегенерирован каскад stale SHA-пинов; `deny_unknown_fields` сохранён, у части
+полей `serde(default)` удалён (требования усилены), негативные `rejects_*` тесты
+не ослаблены. Также исправлены 5 устаревших дайджестов
+`governor/fixtures/scholarly_parse_plane/contract.positive.json` и привязка
+мутации в `acceptance_evidence_test` (отступ 8/10 → фактические 6/8).
+Итог: `cargo test -p da-parse --tests` 754/0 (было 63 падения),
+`cargo test -p da-cli --tests` 424/0, `pytest scripts/tests` 438/0.
+
+Версионная идентичность GROBID: probe `/api/version` fail-closed в batch и
+load-путях, version-bound ключи стадий, `--allow-versionless-identity` только как
+явный opt-out. Три offline-примера (`catalog_sweep_runner`,
+`gold_corpus_canary`, `pipeline_figures`) больше не штампуют исторический
+`0.9.0-crf`. Production переключён на 0.9.1 через
+`.docker/grobid-release.override.yml` с сохранённым rollback-образом 0.9.0 и
+неперезаписанными историческими пинами; `provenance.json` приведён к
+фактическому состоянию (`production_switched_and_verified`, live 0.9.1).
+
+Добавлен planning-реестр горизонта GROBID→Rust H01–H13
+(`doc/review/grobid-rust-horizon-review.json` + governor DATA-контракт,
+dispatcher и 17 тестов): валидность реестра не равна PASS реализации, закрытие
+стадии требует machine-verifiable evidence. GAR-реестр сохранён без массового
+закрытия.
+
+Python переведён на uv: `pyproject.toml` (PyYAML, jsonschema, dev pytest) и
+`uv.lock`; прямой `python3` не имел jsonschema/pytest и давал ложный INVALID
+реестра. Проверки: `uv run python -m governor review`, `uv run python -m pytest
+scripts/tests -q`.
+
+Ограничения и честные оговорки: `layout_bakeoff_test` требовал example,
+собранный с feature `pdf-layout`, — предусловие gate, а не дефект кода;
+CBM-индекс `root-daily-archive` не обновился (count(n) = 490198 до и после двух
+попыток, процессы остались) и не может служить доказательством по этим
+изменениям — опора на GitNexus (82868/121150) и прямое чтение исходников.
+Полный `governor architecture` одним прогоном в этом окружении не завершается;
+все его шаги проверены по отдельности.
+
 ## 2026-09-12 — волна техдолга: holdout 5/5, reader bug, gold sources 200/200
 
 GAR-015 external holdout закрыт: добавлен CLI флаг `parse-batch --timeout-secs`
