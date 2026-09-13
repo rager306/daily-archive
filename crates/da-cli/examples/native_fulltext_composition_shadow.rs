@@ -215,7 +215,7 @@ fn receipt(
         evidence_state: state.into(),
         schema_version: "native-composition.outcome/v1".into(),
         source_sha256: source.into(),
-        artifact_sha256: ARTIFACT.into(),
+        artifact_sha256: String::new(),
         fallback_target: NATIVE_FULLTEXT_FALLBACK_TARGET.into(),
     }
 }

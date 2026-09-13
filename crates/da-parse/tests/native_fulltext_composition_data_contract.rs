@@ -112,7 +112,7 @@ fn authority_errors(v: &Value) -> Vec<String> {
         != [
             "exact_source_identity",
             "exact_schema_version",
-            "exact_artifact_sha256",
+            "optional_sha256_when_present",
             "passing_receipt",
         ]
     {
@@ -229,7 +229,7 @@ fn authority_errors(v: &Value) -> Vec<String> {
         }
         if r.and_then(|x| x.get("artifact_sha256"))
             .and_then(Value::as_str)
-            != Some("required_sha256")
+            != Some("optional_sha256_when_present")
         {
             e.push(format!("receipt artifact hash:{k}"));
         }

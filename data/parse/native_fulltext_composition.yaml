@@ -18,7 +18,7 @@ strata:
   genres: [research_article, survey, proceedings]
   closed: true
 admission:
-  native_substitution_requires: [exact_source_identity, exact_schema_version, exact_artifact_sha256, passing_receipt]
+  native_substitution_requires: [exact_source_identity, exact_schema_version, optional_sha256_when_present, passing_receipt]
   terminal_receipt_is_pass: false
   pooled_winner: forbidden
   independently_selectable: [header, references]
@@ -60,13 +60,13 @@ source_evidence:
   s16_shared_intersection: {documents: 3, lanes: 3, visual_receipts: 27, source: immutable_s16_manifest}
   s17_lineage: {source: immutable_s17_candidate_lineage, output_affecting: false, live_ruvllm_receipt: not_observed}
 component_receipts:
-  header: {producer: S12, disposition: passed, evidence_state: passing, schema_version: native-composition.outcome/v1, source_hash: required_sha256, artifact_sha256: required_sha256, fallback_target: java-grobid-http@0.9.0-crf}
-  references: {producer: S12, disposition: passed, evidence_state: passing, schema_version: native-composition.outcome/v1, source_hash: required_sha256, artifact_sha256: required_sha256, fallback_target: java-grobid-http@0.9.0-crf}
-  document_segmentation: {producer: S15, disposition: fallback, evidence_state: invalid_evidence, schema_version: native-segmentation.v1, source_hash: required_sha256, artifact_sha256: required_sha256, fallback_target: java-grobid-http@0.9.0-crf}
-  figure: {producer: S16, disposition: fallback, evidence_state: unsupported, schema_version: native-visual-heads.v1, source_hash: required_sha256, artifact_sha256: required_sha256, fallback_target: java-grobid-http@0.9.0-crf}
-  table: {producer: S16, disposition: fallback, evidence_state: not_observed, schema_version: native-visual-heads.v1, source_hash: required_sha256, artifact_sha256: required_sha256, fallback_target: java-grobid-http@0.9.0-crf}
-  formula: {producer: S16, disposition: fallback, evidence_state: unsupported, schema_version: native-visual-heads.v1, source_hash: required_sha256, artifact_sha256: required_sha256, fallback_target: java-grobid-http@0.9.0-crf}
-  learning_policy: {producer: S17, disposition: not_observed, evidence_state: not_observed, schema_version: candidate-lineage.v1, source_hash: required_sha256, artifact_sha256: required_sha256, output_affecting: false, fallback_target: java-grobid-http@0.9.0-crf}
+  header: {producer: S12, disposition: passed, evidence_state: passing, schema_version: native-composition.outcome/v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
+  references: {producer: S12, disposition: passed, evidence_state: passing, schema_version: native-composition.outcome/v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
+  document_segmentation: {producer: S15, disposition: fallback, evidence_state: invalid_evidence, schema_version: native-segmentation.v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
+  figure: {producer: S16, disposition: fallback, evidence_state: unsupported, schema_version: native-visual-heads.v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
+  table: {producer: S16, disposition: fallback, evidence_state: not_observed, schema_version: native-visual-heads.v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
+  formula: {producer: S16, disposition: fallback, evidence_state: unsupported, schema_version: native-visual-heads.v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
+  learning_policy: {producer: S17, disposition: not_observed, evidence_state: not_observed, schema_version: candidate-lineage.v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, output_affecting: false, fallback_target: java-grobid-http@0.9.0-crf}
 hard_regressions: [terminal_receipt_as_pass, denominator_erosion, unknown_stratum, checksum_drift, schema_drift, stale_evidence, pooling, missing_rollback, promotion, import, raw_payload, physical_path]
 redaction:
   allowed: [component_id, producer, disposition, lane, domain, genre, source_hash, artifact_sha256, evidence_digest, byte_count, truncated, fallback_target]

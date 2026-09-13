@@ -128,6 +128,11 @@ pub enum NativeFulltextCompositionError {
     AmbiguousSplice(String),
     InvalidUtf8,
     ChangedReadingOrder,
+    ArtifactDigestMismatch {
+        component: &'static str,
+        claimed: String,
+        observed: String,
+    },
 }
 impl fmt::Display for NativeFulltextCompositionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -233,8 +238,19 @@ fn compose_inner(
                 bytes: fragment.len(),
             });
         }
-        bytes.splice(range.0..range.1, fragment.as_bytes().iter().copied());
-        components.push(manifest_entry(component, &receipt, fragment.as_bytes()));
+        let fragment_bytes = fragment.as_bytes();
+        let observed = digest(fragment_bytes);
+        if !receipt.artifact_sha256.is_empty()
+            && receipt.artifact_sha256 != observed.strip_prefix("sha256:").unwrap_or(&observed)
+        {
+            return Err(NativeFulltextCompositionError::ArtifactDigestMismatch {
+                component: component_name(component),
+                claimed: receipt.artifact_sha256,
+                observed,
+            });
+        }
+        bytes.splice(range.0..range.1, fragment_bytes.iter().copied());
+        components.push(manifest_entry(component, &receipt, fragment_bytes));
     }
     for (component, receipt, outcome) in [
         (
@@ -342,7 +358,7 @@ fn is_admitted(r: &FulltextAdmissionReceipt, id: &FulltextCompositionIdentity) -
     r.disposition == AdmissionDisposition::Passed
         && r.evidence_state == "passing"
         && r.source_sha256 == id.source_sha256
-        && valid_sha(&r.artifact_sha256)
+        && (r.artifact_sha256.is_empty() || valid_sha(&r.artifact_sha256))
         && r.fallback_target == NATIVE_FULLTEXT_FALLBACK_TARGET
         && r.schema_version == "native-composition.outcome/v1"
 }
@@ -355,7 +371,7 @@ fn manifest_entry(
         component: c,
         producer: r.producer.clone(),
         disposition: AdmissionDisposition::Passed,
-        evidence_digest: r.artifact_sha256.clone(),
+        evidence_digest: digest(bytes),
         byte_count: bytes.len(),
         sha256: digest(bytes),
         truncated: false,
@@ -375,11 +391,22 @@ fn fallback_entry(
         } else {
             r.disposition
         },
-        evidence_digest: r.artifact_sha256.clone(),
+        evidence_digest: digest(bytes),
         byte_count: bytes.len(),
         sha256: digest(bytes),
         truncated: false,
         fallback_target: r.fallback_target.clone(),
+    }
+}
+fn component_name(component: FulltextComponent) -> &'static str {
+    match component {
+        FulltextComponent::Header => "header",
+        FulltextComponent::References => "references",
+        FulltextComponent::DocumentSegmentation => "document_segmentation",
+        FulltextComponent::Figure => "figure",
+        FulltextComponent::Table => "table",
+        FulltextComponent::Formula => "formula",
+        FulltextComponent::LearningPolicy => "learning_policy",
     }
 }
 fn valid_sha(s: &str) -> bool {

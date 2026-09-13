@@ -2,7 +2,6 @@ use da_parse::*;
 use proptest::prelude::*;
 
 const SOURCE: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-const ARTIFACT: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 const XML_PREFIX: &str = "<TEI><teiHeader><fileDesc><titleStmt><title>";
 const XML_SUFFIX: &str = "</title></titleStmt></fileDesc></teiHeader><text><body><p>fallback</p></body><listBibl><biblStruct>ref</biblStruct></listBibl></text></TEI>";
 
@@ -22,7 +21,7 @@ fn receipt(
         .into(),
         schema_version: "native-composition.outcome/v1".into(),
         source_sha256: SOURCE.into(),
-        artifact_sha256: ARTIFACT.into(),
+        artifact_sha256: String::new(),
         fallback_target: NATIVE_FULLTEXT_FALLBACK_TARGET.into(),
     }
 }

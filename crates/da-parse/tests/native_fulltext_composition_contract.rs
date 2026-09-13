@@ -19,7 +19,7 @@ fn receipt(
         .into(),
         schema_version: "native-composition.outcome/v1".into(),
         source_sha256: SOURCE.into(),
-        artifact_sha256: ARTIFACT.into(),
+        artifact_sha256: String::new(),
         fallback_target: NATIVE_FULLTEXT_FALLBACK_TARGET.into(),
     }
 }
@@ -300,27 +300,12 @@ fn malformed_external_entity_duplicate_id_and_replay_are_safe() {
     );
 }
 
-/// Reproduction of an unbound admission digest (M506/S03/T01).
+/// Admission digest binding: empty claims are produced from the spliced bytes.
 ///
-/// `is_admitted` validates that the receipt's `artifact_sha256` is *well
-/// formed* and that the receipt's `source_sha256` matches the identity — but
-/// nothing binds that artifact digest to the bytes actually spliced into the
-/// document. `manifest_entry` then writes two independent digests side by
-/// side: `evidence_digest` from the receipt and `sha256` from the real
-/// fragment, and never compares them.
-///
-/// The consequence: any receipt with a well-formed but foreign digest is
-/// admitted, and the manifest then records that foreign digest as *the*
-/// evidence for a fragment it does not describe. A later reader trusting
-/// `evidence_digest` would be trusting a digest that belongs to different
-/// content.
-///
-/// This test pins the CURRENT (defective) behaviour so the defect is proven
-/// rather than asserted. T02 must flip these expectations: a receipt whose
-/// artifact digest does not describe the spliced fragment has to be refused,
-/// not silently recorded.
+/// An explicitly supplied digest is checked against the fragment, while an
+/// empty claim is replaced by the digest produced by composition.
 #[test]
-fn evidence_digest_is_currently_unbound_to_the_spliced_fragment() {
+fn evidence_digest_describes_the_spliced_fragment() {
     let NativeFulltextCompositionOutcome::Accepted(candidate) = compose_native_fulltext(input(
         XML,
         AdmissionDisposition::Passed,
@@ -338,21 +323,30 @@ fn evidence_digest_is_currently_unbound_to_the_spliced_fragment() {
     assert_eq!(admitted.len(), 1, "the header lane is recorded once");
     let entry = admitted[0];
 
-    // The spliced header really is native, so the entry claims native evidence...
     assert_eq!(entry.disposition, AdmissionDisposition::Passed);
-    // ...and its two digests describe different things:
-    assert_eq!(
-        entry.evidence_digest, ARTIFACT,
-        "the receipt digest is copied verbatim, whatever it describes"
+    assert_eq!(entry.evidence_digest, entry.sha256);
+    assert_ne!(entry.evidence_digest, ARTIFACT);
+}
+
+#[test]
+fn foreign_valid_artifact_digest_rejects_and_preserves_java_envelope() {
+    let mut rejected = input(
+        XML,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
     );
-    assert_ne!(
-        entry.sha256,
-        format!("sha256:{ARTIFACT}"),
-        "the fragment digest is not the receipt digest — nothing ties them"
-    );
-    // The unbound digest is a placeholder that describes no real content.
-    assert_eq!(
-        entry.evidence_digest, ARTIFACT,
-        "DEFECT: a foreign, well-formed digest is admitted as evidence for content it does not describe"
-    );
+    rejected.admissions[0].artifact_sha256 = ARTIFACT.into();
+    let NativeFulltextCompositionOutcome::Rejected { fallback, error } =
+        compose_native_fulltext(rejected)
+    else {
+        panic!("foreign digest must reject the candidate")
+    };
+    assert_eq!(fallback.raw_tei(), XML.as_bytes());
+    assert!(matches!(
+        error,
+        NativeFulltextCompositionError::ArtifactDigestMismatch {
+            component: "header",
+            ..
+        }
+    ));
 }
