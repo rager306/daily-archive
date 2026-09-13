@@ -492,6 +492,17 @@ cargo test -p da-adapters --features pdf-classifier --test hub_ocr_probe -- --no
 # CLI build with pre-GROBID triage (off by default):
 #   cargo build -p da-cli --features pdf-classifier
 
+# Feature-gated shadow/contract tests (pdf-layout, off by default).
+# Nine da-cli test files are `#![cfg(feature = "pdf-layout")]` because the
+# examples they drive carry `required-features = ["pdf-layout"]`. A plain
+# `cargo test -p da-cli --tests` compiles them to EMPTY targets, so their
+# coverage is nominal unless the feature is enabled. `cargo test --test NAME`
+# does NOT build examples, so provision the runners first:
+cargo build -p da-cli --features pdf-layout --examples  # example runners
+cargo test  -p da-cli --features pdf-layout --tests     # 447 tests (vs 418 default)
+# `governor architecture` runs both as its last steps
+# (da-cli feature-gated example runners / contracts).
+
 # Sweep cache materialization (M440; offline, no services needed)
 # 1) Coverage audit (read-only): bindability per paper via ADR-065 fallback
 cargo run -p da-cli --example catalog_materialize_runner -- --audit-only

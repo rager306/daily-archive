@@ -1,3 +1,17 @@
+//! Layout bakeoff runner contract.
+//!
+//! The runner under test is the `layout_bakeoff` example, which Cargo declares
+//! with `required-features = ["pdf-layout"]`. Without this gate the test target
+//! is still built and run by a plain `cargo test -p da-cli --tests`, where the
+//! example binary does not exist — that produced a false "prebuilt runner
+//! missing" failure driven by a hidden precondition rather than a product
+//! defect. Declaring the same feature here makes the requirement explicit and
+//! machine-checked: a default run compiles this target to nothing, and
+//! `cargo test -p da-cli --features pdf-layout` builds the example and runs the
+//! real contract. Follows the sibling convention in
+//! `fulltext_block_semantics_shadow_test.rs`.
+#![cfg(feature = "pdf-layout")]
+
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::fs;

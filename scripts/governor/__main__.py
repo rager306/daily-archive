@@ -374,6 +374,20 @@ def _run_architecture_gate(args) -> int:
             ("da-application tests", ["cargo", "test", "-p", "da-application", "--tests"]),
             ("da-adapters tests", ["cargo", "test", "-p", "da-adapters", "--tests"]),
             ("da-cli tests", ["cargo", "test", "-p", "da-cli", "--tests"]),
+            # Feature-gated example contracts. Nine da-cli test files declare
+            # `#![cfg(feature = "pdf-layout")]` because the examples they drive
+            # carry `required-features = ["pdf-layout"]`; a plain
+            # `cargo test -p da-cli --tests` compiles them to empty targets, so
+            # without these two steps their coverage is nominal rather than
+            # real. `cargo test --test NAME` does NOT build examples, so the
+            # examples must be provisioned explicitly first. Running `--tests`
+            # (not a hardcoded target list) keeps future gated test files in
+            # scope automatically. Both steps run LAST: enabling the feature
+            # here would otherwise force a rebuild for every step above.
+            ("da-cli feature-gated example runners", ["cargo", "build", "-p", "da-cli",
+                                                        "--features", "pdf-layout", "--examples"]),
+            ("da-cli feature-gated example contracts", ["cargo", "test", "-p", "da-cli",
+                                                         "--features", "pdf-layout", "--tests"]),
         ])
     
     failed = 0

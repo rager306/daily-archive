@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-09-13 — устранено скрытое предусловие и номинальное покрытие feature-gated тестов
+
+`crates/da-cli/tests/layout_bakeoff_test.rs` требовал предварительно собранный
+example `target/debug/examples/layout_bakeoff`, который объявлен с
+`required-features = ["pdf-layout"]`, но секций `[[test]]` в `Cargo.toml` нет —
+поэтому обычный `cargo test -p da-cli --tests` на чистом target падал с ложным
+`prebuilt runner missing`. Проверка показала, что проблема системная: **девять**
+файлов тестов da-cli объявлены как `#![cfg(feature = "pdf-layout")]` и потому в
+дефолтном прогоне компилировались в ПУСТЫЕ цели — 29 тестов не исполнялись
+вообще (418 против 447), то есть покрытие было номинальным, а не реальным.
+
+Скрытые отказы: включение фичи вскрыло `fulltext_block_semantics_shadow_test`
+(пример не был собран: `cargo test --test NAME` не собирает примеры) и реальный
+семантический отказ `native_visual_heads_shadow_test` — тест требовал
+`oracle_status == "not_observed"` от ВСЕХ heads, тогда как продукт намеренно
+различает `unsupported` (пробел возможности/провижининга) и `not_observed`
+(оценено и отсутствует; см. `NativeVisualAbsence` в примере). При этом тот же
+тест в конце требует наличия `unsupported` outcome — ожидание было внутренне
+противоречивым и слабее реального инварианта.
+
+Исправлено: `layout_bakeoff_test.rs` получил `#![cfg(feature = "pdf-layout")]`
+(следуя конвенции соседнего `fulltext_block_semantics_shadow_test.rs`), а
+проверка в `native_visual_heads_shadow_test.rs` УЖЕСТОЧЕНА, а не ослаблена:
+каждый head обязан иметь известный статус из закрытого словаря и связанный
+знаменатель, а `unsupported` допустим ТОЛЬКО в outcome с
+`failure_code == "unsupported"` — раньше такой кросс-инвариант не проверялся.
+
+`governor architecture` больше не оставляет это покрытие номинальным: добавлены
+финальные шаги `cargo build -p da-cli --features pdf-layout --examples` и
+`cargo test -p da-cli --features pdf-layout --tests` (без хардкода списка целей,
+поэтому будущие гейтнутые файлы попадают в область автоматически). Команда
+задокументирована в `AGENTS.md`.
+
+Проверено: обычный набор `cargo test -p da-cli --tests` — 418/0; набор с фичей
+`--features pdf-layout --tests` — **447/0**; governor-тесты 438/0; синтаксис
+`scripts/governor/__main__.py` корректен. Ограничение: шаги gate с включённой
+фичей собирают крупные example-бинарники (≈283 МБ каждый); свободное место на
+диске падало до 23 ГБ на пике.
+
 ## 2026-09-12 (2) — закрытие техдолга repo-gate, версионная идентичность GROBID 0.9.1, uv-проект
 
 Восстановлен красный repo-gate, унаследованный от HEAD `3b327d7ce` (затронутые

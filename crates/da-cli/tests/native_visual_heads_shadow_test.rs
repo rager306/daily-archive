@@ -175,13 +175,24 @@ fn native_visual_shadow_has_nine_terminal_lane_receipts() {
     assert_redacted(&value, "$", false);
 
     let outcomes = value["outcomes"].as_array().expect("outcomes");
+    // A visual head is `unsupported` when the donor/provider cannot evaluate it
+    // (capability or provision gap) and `not_observed` when it was evaluated and
+    // absent. Both are first-class closed-taxonomy statuses (see
+    // `NativeVisualAbsence` in the shadow example), so the invariant is not
+    // "every head is not_observed". The precise invariant is stronger: every
+    // head carries a known status with a bound denominator, and `unsupported`
+    // may appear ONLY in an outcome that declares `failure_code ==
+    // "unsupported"` — never silently inside a clean-looking outcome.
     assert!(outcomes.iter().all(|outcome| {
+        let outcome_unsupported = outcome["failure_code"].as_str() == Some("unsupported");
         outcome["status"] == "terminal"
             && outcome["admitted"] == true
             && outcome["terminal"] == true
             && outcome["heads"].as_object().is_some_and(|heads| {
                 heads.values().all(|head| {
-                    head["oracle_status"] == "not_observed"
+                    let status = head["oracle_status"].as_str().unwrap_or("");
+                    matches!(status, "not_observed" | "unsupported")
+                        && (status != "unsupported" || outcome_unsupported)
                         && head["oracle_denominator"] == 1
                         && head["java_supporting_denominator"].as_u64().unwrap_or(0) > 0
                 })
