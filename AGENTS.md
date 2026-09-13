@@ -513,6 +513,10 @@ cargo run -p da-cli --example grobid_stage_tape -- \
   --out /tmp/tape --endpoint fulltext --models segmentation
 # `--models` filters the RESPONSE only; it does not reduce Java computation,
 # and a filtered tape is marked `filtered` rather than `captured`.
+# Verify a stored tape: re-hashes the source PDF and the stored dump, probes the
+# live release, and exits non-zero on any finding (substitution, absence, drift,
+# recorded failure, no sections). A tape nothing verifies is not evidence.
+cargo run -p da-cli --example grobid_stage_tape -- --verify /tmp/tape/tape.json
 
 # Sweep cache materialization (M440; offline, no services needed)
 # 1) Coverage audit (read-only): bindability per paper via ADR-065 fallback
