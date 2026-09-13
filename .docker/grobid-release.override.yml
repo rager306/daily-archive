@@ -1,6 +1,19 @@
 # M505: explicit production release pin. Historical base remains the rollback.
 # Use with: docker compose -f .docker/docker-compose.yml -f .docker/grobid-release.override.yml --env-file .env up -d --no-deps grobid
 # Roll back: GROBID_IMAGE=grobid/grobid@sha256:24ba90eb1c959f65d812bcdb2cf79c677fa5fd7b95235de616b8bc9fa1317849 docker compose -f .docker/docker-compose.yml --env-file .env up -d --no-deps grobid
+#
+# IMPORTANT: the digest above is the canonical rollback identity, but a locally
+# cached image is NOT a durable guarantee — it can disappear (image GC/prune),
+# and the rollback command above fails with "No such image" if it does. That
+# happened once and went unnoticed because nothing checked it. Before relying on
+# rollback, confirm the image is present and, if not, restore it BY DIGEST:
+#
+#   docker image inspect grobid/grobid@sha256:24ba90eb1c959f65d812bcdb2cf79c677fa5fd7b95235de616b8bc9fa1317849 >/dev/null \
+#     || docker pull grobid/grobid@sha256:24ba90eb1c959f65d812bcdb2cf79c677fa5fd7b95235de616b8bc9fa1317849
+#
+# Pulling by digest (not by tag) guarantees the exact audited release is
+# restored. Rollback readiness was last proven end-to-end by starting a
+# container from this image and reading /api/version == 0.9.0.
 services:
   grobid:
     image: grobid/grobid@sha256:223957791ac2bbe48609dcc58a689b16b60baeae13a8734ef440ae6bfb38f4cd

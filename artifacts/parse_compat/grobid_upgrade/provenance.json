@@ -16,6 +16,23 @@
   "production_live_image": "grobid/grobid@sha256:223957791ac2bbe48609dcc58a689b16b60baeae13a8734ef440ae6bfb38f4cd",
   "rollback_image_retained": true,
   "rollback_image": "grobid/grobid@sha256:24ba90eb1c959f65d812bcdb2cf79c677fa5fd7b95235de616b8bc9fa1317849",
+  "rollback": {
+    "canonical_digest": "grobid/grobid@sha256:24ba90eb1c959f65d812bcdb2cf79c677fa5fd7b95235de616b8bc9fa1317849",
+    "local_presence_is_durable": false,
+    "decay_observed": true,
+    "decay_note": "the locally cached rollback image disappeared between sessions even though this record claimed it was retained; a documented rollback command would have failed with 'No such image'. A local image cache is not a durable guarantee.",
+    "restored_by": "docker pull grobid/grobid@sha256:24ba90eb1c959f65d812bcdb2cf79c677fa5fd7b95235de616b8bc9fa1317849",
+    "restore_command": "docker image inspect grobid/grobid@sha256:24ba90eb1c959f65d812bcdb2cf79c677fa5fd7b95235de616b8bc9fa1317849 >/dev/null || docker pull grobid/grobid@sha256:24ba90eb1c959f65d812bcdb2cf79c677fa5fd7b95235de616b8bc9fa1317849",
+    "verified_end_to_end": true,
+    "verification": {
+      "method": "start a container from the rollback image on a spare port and read /api/version",
+      "container": "daily-archive-grobid-rollback-check",
+      "endpoint": "http://127.0.0.1:18071/api/version",
+      "observed_version": "0.9.0",
+      "observed_revision": "0.9.0",
+      "container_removed_after_check": true
+    }
+  },
   "candidate_container_state": "exited_stopped",
   "release_pin": ".docker/grobid-release.override.yml",
   "verification_artifacts": [
