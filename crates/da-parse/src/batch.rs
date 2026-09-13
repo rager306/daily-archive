@@ -50,6 +50,7 @@ use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tokio::sync::{Mutex, Semaphore, mpsc};
+use tokio::task::JoinSet;
 
 use crate::backend::{ParseBackend, ParseBackendRequest};
 use crate::cache::{
@@ -1248,6 +1249,7 @@ struct QueuedItem {
     /// execution permit: a worker may finish computation while waiting for
     /// an earlier ordinal without releasing the publication window.
     publication_permit: tokio::sync::OwnedSemaphorePermit,
+    shared_publication_permit: tokio::sync::OwnedSemaphorePermit,
 }
 
 #[derive(Debug)]
@@ -1868,6 +1870,7 @@ struct WorkerContext<B: ParseBackend, C: ParseArtifactCache> {
     shared: Arc<RunShared>,
     rx: Arc<Mutex<mpsc::Receiver<QueuedItem>>>,
     semaphore: Arc<Semaphore>,
+    shared_execution: Arc<Semaphore>,
     sink: Arc<dyn ParseBatchResultSink>,
     checkpoint: Arc<dyn BatchCheckpoint>,
 }
@@ -1889,8 +1892,17 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
             let Ok(execution_permit) = self.semaphore.clone().acquire_owned().await else {
                 break;
             };
+            // All executors sharing a budget take the shared execution permit
+            // after their local cap and before entering the backend. Both
+            // permits are owned by this worker and therefore release on
+            // normal completion or cancellation.
+            let Ok(shared_execution_permit) = self.shared_execution.clone().acquire_owned().await
+            else {
+                break;
+            };
             self.shared.counters.note_in_flight(1);
-            self.execute_one(queued, execution_permit).await;
+            self.execute_one(queued, execution_permit, shared_execution_permit)
+                .await;
             self.shared.counters.note_in_flight(-1);
         }
     }
@@ -1899,6 +1911,7 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
         &self,
         queued: QueuedItem,
         execution_permit: tokio::sync::OwnedSemaphorePermit,
+        shared_execution_permit: tokio::sync::OwnedSemaphorePermit,
     ) {
         let execution = execute_document(
             self.backend.as_ref(),
@@ -1916,6 +1929,7 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
         // a publication gap; the queued item's permit remains held until the
         // sink and checkpoint path has finished.
         drop(execution_permit);
+        drop(shared_execution_permit);
         let succeeded = outcome.is_success();
         tracing::debug!(
             ordinal = outcome.ordinal(),
@@ -1999,6 +2013,45 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
         // of the field keeps that lifetime enforced and greppable instead of
         // relying on an implicit end-of-scope drop.
         drop(queued.publication_permit);
+        drop(queued.shared_publication_permit);
+    }
+}
+
+/// Process-local shared limits for concurrently running parse batches.
+///
+/// The two semaphores intentionally represent different resource classes:
+/// publication slots bound admitted results retained until ordered durable
+/// publication, while execution slots bound active backend/projection work.
+/// The value is explicitly injected through [`Arc`] and has no global or
+/// cross-process scope.
+#[derive(Debug)]
+pub struct ParseBatchBudget {
+    publication: Arc<Semaphore>,
+    execution: Arc<Semaphore>,
+    publication_capacity: NonZeroUsize,
+    execution_capacity: NonZeroUsize,
+}
+
+impl ParseBatchBudget {
+    /// Create a shared process-local budget with nonzero publication and
+    /// execution capacities.
+    pub fn new(publication: NonZeroUsize, execution: NonZeroUsize) -> Self {
+        Self {
+            publication: Arc::new(Semaphore::new(publication.get())),
+            execution: Arc::new(Semaphore::new(execution.get())),
+            publication_capacity: publication,
+            execution_capacity: execution,
+        }
+    }
+
+    /// Configured shared admitted-to-publication capacity.
+    pub const fn publication_capacity(&self) -> NonZeroUsize {
+        self.publication_capacity
+    }
+
+    /// Configured shared active-execution capacity.
+    pub const fn execution_capacity(&self) -> NonZeroUsize {
+        self.execution_capacity
     }
 }
 
@@ -2024,6 +2077,7 @@ pub struct ParseBatchExecutor<B: ParseBackend, C: ParseArtifactCache> {
     /// Maximum number of admitted-but-not-yet-published ordinal results.
     /// This is executor tuning, not batch input identity or wire schema.
     publication_window: Option<NonZeroUsize>,
+    shared_budget: Option<Arc<ParseBatchBudget>>,
 }
 
 impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecutor<B, C> {
@@ -2034,7 +2088,20 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
             cache: Arc::new(cache),
             projector_schema_fingerprint: PROJECT_ARTICLE_SCHEMA_FINGERPRINT.to_string(),
             publication_window: None,
+            shared_budget: None,
         }
+    }
+
+    /// Share process-local publication and execution capacity with other
+    /// executors. Local limits remain effective for this run as well.
+    pub fn with_shared_budget(mut self, budget: Arc<ParseBatchBudget>) -> Self {
+        self.shared_budget = Some(budget);
+        self
+    }
+
+    /// The explicitly injected process-local shared budget, if any.
+    pub fn shared_budget(&self) -> Option<Arc<ParseBatchBudget>> {
+        self.shared_budget.clone()
     }
 
     /// Set the ordinal publication window. The permit is held from feeder
@@ -2121,11 +2188,16 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
         // derived from the existing execution bound without changing the
         // ParseBatchLimits v1 wire contract.
         let publication_window = self.publication_window.unwrap_or(limits.max_in_flight());
-        let publication_semaphore = Arc::new(Semaphore::new(publication_window.get()));
-
-        let mut workers = Vec::new();
+        let shared_budget = self.shared_budget.clone().unwrap_or_else(|| {
+            Arc::new(ParseBatchBudget::new(
+                publication_window,
+                NonZeroUsize::new(max_in_flight).expect("batch limit is nonzero"),
+            ))
+        });
+        let local_publication_semaphore = Arc::new(Semaphore::new(publication_window.get()));
+        let mut workers = JoinSet::new();
         for _ in 0..limits.workers().get() {
-            workers.push(tokio::spawn(
+            workers.spawn(
                 WorkerContext {
                     backend: self.backend.clone(),
                     cache: self.cache.clone(),
@@ -2135,11 +2207,12 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
                     shared: shared.clone(),
                     rx: rx.clone(),
                     semaphore: semaphore.clone(),
+                    shared_execution: shared_budget.execution.clone(),
                     sink: sink.clone(),
                     checkpoint: checkpoint.clone(),
                 }
                 .work(),
-            ));
+            );
         }
 
         // Feeder: admits items at/after the resume cursor into the bounded
@@ -2149,7 +2222,13 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
             // Reserve before enqueue so a slow ordinal zero bounds both the
             // queue and the completed-but-unpublished outcome set. The
             // permit travels with the item until its sink acknowledgment.
-            let Ok(publication_permit) = publication_semaphore.clone().acquire_owned().await else {
+            let Ok(publication_permit) = local_publication_semaphore.clone().acquire_owned().await
+            else {
+                break;
+            };
+            let Ok(shared_publication_permit) =
+                shared_budget.publication.clone().acquire_owned().await
+            else {
                 break;
             };
             shared.counters.note_queue_depth(1);
@@ -2158,6 +2237,7 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
                     item,
                     enqueued_at: Instant::now(),
                     publication_permit,
+                    shared_publication_permit,
                 })
                 .await
                 .is_err()
@@ -2166,9 +2246,7 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
             }
         }
         drop(tx);
-        for worker in workers {
-            let _ = worker.await;
-        }
+        while workers.join_next().await.is_some() {}
 
         let saved_next = shared.tracker.lock().await.saved_next;
         let completed = shared.counters.succeeded.load(Ordering::SeqCst)

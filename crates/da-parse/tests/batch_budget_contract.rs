@@ -12,8 +12,9 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use async_trait::async_trait;
 use da_parse::{
     CacheMode, ParseArtifactCache, ParseBackend, ParseBackendFailure, ParseBackendRequest,
-    ParseBatch, ParseBatchExecutor, ParseBatchMemoryCheckpoint, ParseBatchResultSink,
-    ParseBatchSinkError, ParseCacheFailure, RawStageRead, TeiEnvelope, TeiIdentity,
+    ParseBatch, ParseBatchBudget, ParseBatchExecutor, ParseBatchMemoryCheckpoint,
+    ParseBatchResultSink, ParseBatchSinkError, ParseCacheFailure, RawStageRead, TeiEnvelope,
+    TeiIdentity,
 };
 use tokio::sync::{Mutex, Notify};
 
@@ -160,4 +161,156 @@ async fn blocked_frontier_does_not_admit_beyond_publication_window() {
     assert_eq!(sink.ordinals().await, vec![0, 1, 2, 3]);
     assert_eq!(summary.cursor().next_ordinal(), 4);
     assert_eq!(checkpoint.cursor().await.unwrap().next_ordinal(), 4);
+}
+
+fn admitted_batch() -> ParseBatch {
+    ParseBatch::admit(
+        CacheMode::Off,
+        da_parse::ParseBatchLimits::new(nz(4), nz(4), nz(4), nz(4)),
+        requests(),
+        None,
+    )
+    .expect("fixture admits")
+}
+
+#[tokio::test(start_paused = true)]
+async fn shared_publication_budget_limits_concurrent_batches() {
+    let backend = BlockingBackend::default();
+    let budget = Arc::new(ParseBatchBudget::new(nz(1), nz(4)));
+    let first = Arc::new(
+        ParseBatchExecutor::new(backend.clone(), MissCache)
+            .with_publication_window(nz(4))
+            .with_shared_budget(budget.clone()),
+    );
+    let second = Arc::new(
+        ParseBatchExecutor::new(backend.clone(), MissCache)
+            .with_publication_window(nz(4))
+            .with_shared_budget(budget),
+    );
+    let first_sink = Arc::new(OrderedSink::default());
+    let second_sink = Arc::new(OrderedSink::default());
+    let first_checkpoint = Arc::new(ParseBatchMemoryCheckpoint::new());
+    let second_checkpoint = Arc::new(ParseBatchMemoryCheckpoint::new());
+
+    let first_run = tokio::spawn({
+        let sink = first_sink.clone();
+        let checkpoint = first_checkpoint.clone();
+        async move { first.run(admitted_batch(), sink, checkpoint).await }
+    });
+    backend.state.frontier_started.notified().await;
+
+    let second_run = tokio::spawn({
+        let sink = second_sink.clone();
+        let checkpoint = second_checkpoint.clone();
+        async move { second.run(admitted_batch(), sink, checkpoint).await }
+    });
+    tokio::task::yield_now().await;
+    assert_eq!(
+        backend.call_count(),
+        1,
+        "the shared publication slot must keep the second batch out of the feeder"
+    );
+    assert!(second_sink.ordinals().await.is_empty());
+
+    backend.release_frontier();
+    let first_summary = first_run.await.expect("first executor completes");
+    let second_summary = second_run.await.expect("second executor completes");
+    assert_eq!(first_summary.succeeded(), 4);
+    assert_eq!(second_summary.succeeded(), 4);
+    assert_eq!(first_sink.ordinals().await, vec![0, 1, 2, 3]);
+    assert_eq!(second_sink.ordinals().await, vec![0, 1, 2, 3]);
+}
+
+#[derive(Debug, Default)]
+struct SharedExecutionState {
+    active: AtomicUsize,
+    peak: AtomicUsize,
+    calls: AtomicUsize,
+    first_started: Notify,
+    released: AtomicBool,
+    release_signal: Notify,
+}
+
+#[derive(Debug, Clone, Default)]
+struct SharedExecutionBackend {
+    state: Arc<SharedExecutionState>,
+}
+
+impl SharedExecutionBackend {
+    fn peak(&self) -> usize {
+        self.state.peak.load(Ordering::SeqCst)
+    }
+
+    fn release(&self) {
+        self.state.released.store(true, Ordering::SeqCst);
+        self.state.release_signal.notify_waiters();
+    }
+}
+
+#[async_trait]
+impl ParseBackend for SharedExecutionBackend {
+    async fn fetch_tei(
+        &self,
+        _request: ParseBackendRequest,
+    ) -> Result<TeiEnvelope, ParseBackendFailure> {
+        self.state.calls.fetch_add(1, Ordering::SeqCst);
+        let now = self.state.active.fetch_add(1, Ordering::SeqCst) + 1;
+        self.state.peak.fetch_max(now, Ordering::SeqCst);
+        self.state.first_started.notify_waiters();
+        while !self.state.released.load(Ordering::SeqCst) {
+            self.state.release_signal.notified().await;
+        }
+        self.state.active.fetch_sub(1, Ordering::SeqCst);
+        Ok(TeiEnvelope::new(
+            b"<TEI><teiHeader/><text><body>shared execution fixture</body></text></TEI>".to_vec(),
+            TeiIdentity::new("budget-test", "budget-test-v1"),
+        ))
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn shared_execution_budget_caps_concurrent_backend_work() {
+    let backend = SharedExecutionBackend::default();
+    let budget = Arc::new(ParseBatchBudget::new(nz(8), nz(1)));
+    let first = Arc::new(
+        ParseBatchExecutor::new(backend.clone(), MissCache)
+            .with_publication_window(nz(4))
+            .with_shared_budget(budget.clone()),
+    );
+    let second = Arc::new(
+        ParseBatchExecutor::new(backend.clone(), MissCache)
+            .with_publication_window(nz(4))
+            .with_shared_budget(budget),
+    );
+    let first_run = tokio::spawn({
+        let sink = Arc::new(OrderedSink::default());
+        let checkpoint = Arc::new(ParseBatchMemoryCheckpoint::new());
+        async move { first.run(admitted_batch(), sink, checkpoint).await }
+    });
+    backend.state.first_started.notified().await;
+    let second_run = tokio::spawn({
+        let sink = Arc::new(OrderedSink::default());
+        let checkpoint = Arc::new(ParseBatchMemoryCheckpoint::new());
+        async move { second.run(admitted_batch(), sink, checkpoint).await }
+    });
+    tokio::task::yield_now().await;
+    assert_eq!(backend.state.calls.load(Ordering::SeqCst), 1);
+    assert_eq!(backend.peak(), 1);
+
+    backend.release();
+    assert_eq!(
+        first_run
+            .await
+            .expect("first executor completes")
+            .succeeded(),
+        4
+    );
+    assert_eq!(
+        second_run
+            .await
+            .expect("second executor completes")
+            .succeeded(),
+        4
+    );
+    assert_eq!(backend.peak(), 1, "shared execution cap must remain one");
 }
