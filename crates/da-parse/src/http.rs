@@ -641,6 +641,73 @@ impl GrobidHttpBackend {
         self.exchange_once(ParseEndpoint::References, request.pdf_bytes().len(), form)
             .await
     }
+
+    /// The debug-only multipart fields.
+    ///
+    /// Kept pure so the wire contract is assertable without a live transport:
+    /// [`reqwest::multipart::Form`] does not expose its parts, so the fields a
+    /// debug request would carry are decided here and covered by unit tests.
+    /// `debugMode` is always `1`; the optional `models` filter is trimmed,
+    /// de-blanked and comma-joined, and is omitted entirely when nothing is
+    /// left — an empty filter must not become an empty `models=` field, which
+    /// GROBID would read as a filter that matches no model.
+    fn debug_fields(models: Option<&[String]>) -> Vec<(&'static str, String)> {
+        let mut fields = vec![("debugMode", "1".to_string())];
+        if let Some(models) = models {
+            let joined = models
+                .iter()
+                .map(|model| model.trim())
+                .filter(|model| !model.is_empty())
+                .collect::<Vec<_>>()
+                .join(",");
+            if !joined.is_empty() {
+                fields.push(("models", joined));
+            }
+        }
+        fields
+    }
+
+    /// Build the offline debug form for one endpoint.
+    ///
+    /// Starts from the endpoint's normal closed allowlist and appends the
+    /// debug-only fields. Reusing the allowlist builder is deliberate: the
+    /// debug request cannot drift from the production wire form, and because
+    /// the field is added only here, a normal parse request can never carry
+    /// `debugMode`.
+    fn debug_form(
+        endpoint: ParseEndpoint,
+        request: &ParseBackendRequest,
+        models: Option<&[String]>,
+    ) -> Result<reqwest::multipart::Form, ParseBackendFailure> {
+        let mut form = match endpoint {
+            ParseEndpoint::Fulltext => Self::fulltext_form(request)?,
+            ParseEndpoint::Header => Self::header_form(request)?,
+            ParseEndpoint::References => Self::references_form(request)?,
+        };
+        for (name, value) in Self::debug_fields(models) {
+            form = form.text(name, value);
+        }
+        Ok(form)
+    }
+
+    /// Capture the raw model debug dump for one endpoint (offline evidence).
+    ///
+    /// With `debugMode=1` GROBID replaces the normal answer with
+    /// `text/plain`, so a caller that wants both TEI and the dump must issue
+    /// two requests — one normal, one debug. The response body is returned
+    /// verbatim (no lossy decoding here); the byte bound from
+    /// [`Self::with_response_byte_limit`] still applies, which matters because
+    /// a full dump is much larger than the corresponding TEI.
+    pub(crate) async fn debug_capture(
+        &self,
+        endpoint: ParseEndpoint,
+        request: &ParseBackendRequest,
+        models: Option<&[String]>,
+    ) -> Result<Vec<u8>, ParseBackendFailure> {
+        let form = Self::debug_form(endpoint, request, models)?;
+        self.exchange_once(endpoint, request.pdf_bytes().len(), form)
+            .await
+    }
 }
 
 fn build_client(timeout: std::time::Duration) -> reqwest::Client {
@@ -780,6 +847,28 @@ impl GrobidParser {
         self.transport.probe_version().await
     }
 
+    /// Capture the raw model debug dump for one endpoint.
+    ///
+    /// Offline evidence only. This is deliberately **not** part of
+    /// [`ParseBackend`]/`ParserPort`: it exists so the offline stage-tape
+    /// recorder can freeze what the Java cascade actually computed per model,
+    /// and it is never a production parse route. `debugMode=1` makes GROBID
+    /// answer with `text/plain` instead of TEI, so TEI and dump are two
+    /// separate requests.
+    pub async fn debug_capture(
+        &self,
+        endpoint: ParseEndpoint,
+        request: &ParseBackendRequest,
+        models: Option<&[String]>,
+    ) -> Result<String, ParseBackendFailure> {
+        let bytes = self
+            .transport
+            .debug_capture(endpoint, request, models)
+            .await?;
+        String::from_utf8(bytes)
+            .map_err(|_| ParseBackendFailure::invalid_response(FailurePhase::ReadBody, Some(200)))
+    }
+
     /// Provider-neutral transport seam behind this facade (R105).
     ///
     /// The `impl ParserPort` (crate::parser) drives the composition over this
@@ -791,7 +880,77 @@ impl GrobidParser {
 
 #[cfg(test)]
 mod tests {
-    use super::grobid_model_fingerprint;
+    use super::{GrobidHttpBackend, grobid_model_fingerprint};
+
+    #[test]
+    fn debug_fields_always_enable_debug_mode_and_omit_an_empty_filter() {
+        assert_eq!(
+            GrobidHttpBackend::debug_fields(None),
+            vec![("debugMode", "1".to_string())]
+        );
+        // A blank/whitespace-only filter must not become an empty `models=`
+        // field: GROBID would read that as a filter matching no model.
+        assert_eq!(
+            GrobidHttpBackend::debug_fields(Some(&["   ".to_string(), String::new()])),
+            vec![("debugMode", "1".to_string())]
+        );
+    }
+
+    #[test]
+    fn debug_fields_trim_and_join_the_model_filter() {
+        let fields = GrobidHttpBackend::debug_fields(Some(&[
+            " header ".to_string(),
+            "citation".to_string(),
+            String::new(),
+        ]));
+        assert_eq!(
+            fields,
+            vec![
+                ("debugMode", "1".to_string()),
+                ("models", "header,citation".to_string()),
+            ]
+        );
+    }
+
+    /// The leak invariant, asserted against the source rather than assumed:
+    /// the `debugMode` field is emitted in exactly one place, inside
+    /// `debug_fields`, and no `.text("debugMode")` call exists anywhere else.
+    /// The production form builders therefore cannot carry it — a normal parse
+    /// request cannot silently become a debug request.
+    ///
+    /// The counts target the emission forms, not the string: prose and this
+    /// test itself mention `debugMode`, so counting raw occurrences would
+    /// measure documentation rather than behaviour.
+    #[test]
+    fn debug_mode_is_emitted_from_exactly_one_place() {
+        let source = include_str!("http.rs");
+        // Count only production code: this test's own fixtures contain the
+        // same literal, so scanning the whole file would measure the test.
+        let code = source
+            .split_once("mod tests")
+            .map(|(production, _)| production)
+            .expect("test module marker present");
+        let emitted = code.matches("(\"debugMode\",").count();
+        assert_eq!(
+            emitted, 1,
+            "debugMode must be emitted from exactly one production site, found {emitted}"
+        );
+        let direct_text_calls = code.matches(".text(\"debugMode\"").count();
+        assert_eq!(
+            direct_text_calls, 0,
+            "debugMode must not be set by a direct .text() call outside debug_fields, found {direct_text_calls}"
+        );
+        let (before, _) = code
+            .split_once("(\"debugMode\",")
+            .expect("debugMode tuple literal present");
+        assert!(
+            before
+                .rsplit("fn ")
+                .next()
+                .is_some_and(|head| head.starts_with("debug_fields")),
+            "the single debugMode emission must live inside debug_fields"
+        );
+    }
 
     #[test]
     fn grobid_model_fingerprint_is_runtime_and_never_invents_a_release() {
