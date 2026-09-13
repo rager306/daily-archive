@@ -345,7 +345,7 @@
       "stage_id": "H04",
       "title": "Composition admission",
       "scope": "Admit native composition only with title/affiliation preservation, unknown-subtree preserve-or-Unsupported, digest substitution rejection, citation-to-bibl identity, and candidate-only status.",
-      "status": "in_progress",
+      "status": "complete",
       "depends_on": [
         "H02"
       ],
@@ -358,13 +358,18 @@
       "implementation_evidence": [
         {
           "path": "crates/da-parse/src/native_composition.rs",
-          "note": "Native composition entry point under admission.",
-          "state": "partial"
+          "note": "Native composition entry point under admission; bibliography targets are resolved against inserted bibl nodes.",
+          "state": "present"
         },
         {
-          "path": "crates/da-parse/src/conservation.rs",
-          "note": "Conservation checks used by the admission contract.",
-          "state": "partial"
+          "path": "crates/da-parse/src/native_fulltext_composition.rs",
+          "note": "Admission binds an optional receipt digest to the actual spliced fragment and fails closed on mismatch.",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/native_fulltext_composition_contract.rs",
+          "note": "Runtime negatives cover digest substitution, title/affiliation loss, foreign bibliography targets, and unknown subtree disappearance.",
+          "state": "present"
         },
         {
           "path": "doc/adr/ADR-053-article-preparation-multi-layer-document-model.md",
@@ -375,21 +380,27 @@
       "verification_evidence": [
         {
           "mode": "command",
-          "ref": "cargo test -p da-parse --test native_fulltext_composition_contract evidence_digest_is_currently_unbound",
-          "expected": "Proves the defect exists: a well-formed but foreign artifact digest is admitted as evidence for a fragment it does not describe (evidence_digest != sha256 of the spliced fragment).",
+          "ref": "cargo test -p da-parse --test native_fulltext_composition_contract",
+          "expected": "Composition contract passes, including rejection of a well-formed foreign artifact digest and the H04 preservation/target negatives.",
           "status": "pass"
         },
         {
           "mode": "command",
           "ref": "cargo test -p da-parse --tests",
-          "expected": "The rest of the composition and conservation contracts stay green while the defect is reproduced: 777/0.",
+          "expected": "All da-parse integration contracts pass after the admission and DATA contract changes.",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "PYTHONPATH=scripts uv run --project . python -m governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "The review registry is structurally valid and reports H04 among the complete stages; any external fixture debt remains a warning, not a false PASS claim.",
           "status": "pass"
         }
       ],
       "tested_source": {
-        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
-        "verified": false,
-        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+        "revision": "runtime-verified-2026-09-13",
+        "verified": true,
+        "note": "Current runtime and governor checks were executed after the H04 implementation and DATA-contract updates."
       },
       "index_freshness": {
         "state": "stale",
@@ -437,8 +448,23 @@
           "reason": "No full system journey is required at the admission stage."
         }
       ],
-      "implementation_pass": false,
-      "verification_pass": false
+      "implementation_pass": true,
+      "verification_pass": true,
+      "completion_evidence": {
+        "mode": "runtime",
+        "ref": "cargo test -p da-parse --test native_fulltext_composition_contract",
+        "result": "pass",
+        "artifacts": [
+          "crates/da-parse/src/native_fulltext_composition.rs",
+          "crates/da-parse/src/native_composition.rs",
+          "crates/da-parse/tests/native_fulltext_composition_contract.rs",
+          "data/parse/comparison_contract.yaml",
+          "scripts/governor/checks/scholarly_parse_plane.yaml",
+          "governor/fixtures/scholarly_parse_plane/contract.positive.json"
+        ],
+        "observed_at": "2026-09-13",
+        "source_revision": "runtime-verified-2026-09-13"
+      }
     },
     {
       "stage_id": "H05",
