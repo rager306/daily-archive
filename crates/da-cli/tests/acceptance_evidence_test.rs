@@ -121,8 +121,8 @@ fn isolated_manifest_mutations_fail_with_stable_machine_codes() {
         ),
         (
             "silent_skip",
-            "        - id: hub-2507.19457\n          state: bound",
-            "        - id: hub-2507.19457\n          state: bytes_absent",
+            "      - id: hub-2507.19457\n        state: bound",
+            "      - id: hub-2507.19457\n        state: bytes_absent",
         ),
     ];
     for (code, old, new) in mutations {

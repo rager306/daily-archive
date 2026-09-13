@@ -6,11 +6,11 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::derived_evidence_maturity::{
+use da_application::derived_evidence_maturity::{
     BlockedReason, BoundReceipt, FamilyEvidenceSet, FamilyId, ReceiptKind,
 };
-use crate::derived_prompt_contract::{FamilyPromptSpec, PromptRender, render_prompt};
-use crate::derived_transition_evaluator::{
+use da_application::derived_prompt_contract::{FamilyPromptSpec, PromptRender, render_prompt};
+use da_application::derived_transition_evaluator::{
     ClaimedTransition, DenominatorObservation, EvidenceOrigin, TransitionEvaluation,
     TransitionObservations, evaluate_transition,
 };
@@ -437,8 +437,8 @@ pub fn evaluate_adapted(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::derived_evidence_maturity::MaturityState;
-    use crate::derived_transition_evaluator::DenominatorScope;
+    use da_application::derived_evidence_maturity::MaturityState;
+    use da_application::derived_transition_evaluator::DenominatorScope;
 
     fn input(family: FamilyId) -> FamilyAdapterInput {
         FamilyAdapterInput {

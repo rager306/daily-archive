@@ -56,6 +56,23 @@ fn contains_surface(input: &str, value: &str) -> bool {
     value.is_empty() || input.contains(value)
 }
 
+/// True when the serialized outcome reproduces the raw input as a JSON string
+/// value. A plain substring search would false-positive on short inputs that
+/// happen to occur inside static vocabulary (e.g. `k` inside `single_token`),
+/// so the redaction property is checked at value granularity.
+fn json_has_exact_string_value(value: &serde_json::Value, needle: &str) -> bool {
+    match value {
+        serde_json::Value::String(inner) => inner == needle,
+        serde_json::Value::Array(items) => items
+            .iter()
+            .any(|item| json_has_exact_string_value(item, needle)),
+        serde_json::Value::Object(map) => map
+            .values()
+            .any(|item| json_has_exact_string_value(item, needle)),
+        _ => false,
+    }
+}
+
 fn assert_recognized_provenance(input: &str, outcome: &NativePersonalNameOutcome) {
     let NativePersonalNameOutcome::Recognized { name } = outcome else {
         return;
@@ -106,7 +123,9 @@ proptest! {
             prop_assert_eq!(&first, &replay);
             prop_assert_eq!(serde_json::to_vec(&replay).unwrap(), bytes.clone());
             if !input.is_empty() {
-                prop_assert!(!String::from_utf8_lossy(&bytes).contains(&input));
+                let value: serde_json::Value =
+                    serde_json::from_slice(&bytes).expect("serialized outcome is JSON");
+                prop_assert!(!json_has_exact_string_value(&value, &input));
             }
             assert_recognized_provenance(&input, &first);
         }

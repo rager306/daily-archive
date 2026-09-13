@@ -330,8 +330,26 @@ struct LedgerFile {
     #[allow(dead_code)]
     scope_note: String,
     policy_locks: PolicyLocks,
+    rest_batch_asset_quarantine: RestBatchAssetQuarantine,
     batch_cache_observation: BatchCacheObservation,
     entries: Vec<LedgerEntry>,
+}
+
+/// S07/T04 additive REST asset/batch quarantine observation. It stays an
+/// observation block (not a second capability ledger): zero new endpoints are
+/// implemented and the production route is forbidden.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RestBatchAssetQuarantine {
+    source_artifacts: Vec<String>,
+    sanctioned_endpoints: Vec<String>,
+    local_batch_carrier: String,
+    implemented_new_endpoints: u32,
+    product_gap: String,
+    production_route: String,
+    graph_write: String,
+    import_eligible: bool,
+    auto_promote: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -442,6 +460,7 @@ struct AcceptanceRow {
     identity: Option<String>,
     dataset_id: Option<String>,
     source_url: Option<String>,
+    identity_sha256: Option<String>,
     expected_n: Option<u64>,
     gold_format: Option<String>,
     filter: Option<String>,
@@ -484,6 +503,207 @@ struct AcceptanceClasses {
     layout_omnidocbench: AcceptanceClass,
 }
 
+/// Shadow-population honesty contract (S20): which blocks every shadow
+/// report must carry, which legacy blocks are forbidden, and which fields an
+/// *executed* population row must prove. `deny_unknown_fields` keeps the
+/// vocabulary closed.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PopulationContract {
+    schema_version: String,
+    report_paths: Vec<String>,
+    required_blocks: Vec<String>,
+    forbidden_legacy_blocks: Vec<String>,
+    executed_population_required_fields: Vec<String>,
+    synthetic_corpus_execution: bool,
+    quality_requires_evaluated_status: String,
+}
+
+/// Read-only external-holdout byte policy: external bytes are never loaded.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutBytePolicy {
+    external_bytes: String,
+    load_external_bytes: String,
+    download_external_bytes: String,
+    materialize_external_files: String,
+    external_rows_are_evidence: bool,
+}
+
+/// Identity binding of external rows (digest of canonical identity, never a
+/// byte hash).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutIdentityBinding {
+    digest: String,
+    input: String,
+    digest_is_byte_hash: bool,
+    digest_is_authority_binding: bool,
+    mismatch_behavior: String,
+}
+
+/// Denominator policy: only local bound rows count toward the local proxy.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutDenominatorPolicy {
+    local_bound_rows_only: bool,
+    bytes_absent_rows_in_local_denominator: bool,
+    catalogued_rows_in_local_denominator: bool,
+    external_probe_changes_local_denominator: String,
+    same_n_local_proxy_required: bool,
+}
+
+/// Document-level reporting shape required before any execution claim.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutDocumentReporting {
+    unit: String,
+    uncertainty_method: String,
+    report_required_before_execution_claim: bool,
+    fields: Vec<String>,
+}
+
+/// Bounded cost envelope with an explicit "unknown is not zero" lock.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutCostBounds {
+    currency: String,
+    basis: String,
+    lower_bound_includes: Vec<String>,
+    upper_bound_includes: Vec<String>,
+    unknown_cost_is_not_zero: bool,
+    release_claim_allowed: bool,
+}
+
+/// Additive S20 external-holdout contract (advisory-only transferability
+/// probe; no external bytes, no release claim).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutContract {
+    schema_version: String,
+    purpose: String,
+    execution_status: String,
+    byte_policy: ExternalHoldoutBytePolicy,
+    identity_binding: ExternalHoldoutIdentityBinding,
+    denominator_policy: ExternalHoldoutDenominatorPolicy,
+    document_level_reporting: ExternalHoldoutDocumentReporting,
+    cost_bounds: ExternalHoldoutCostBounds,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReleaseQualityEvidence {
+    acceptance_manifest: String,
+    local_proxy_contract: String,
+    external_holdout_status: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReleaseQualityClaims {
+    same_n_local_proxy: bool,
+    document_level_uncertainty: String,
+    external_bytes_absent: bool,
+    pooled_external_quality_claim: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReleaseQualityGate {
+    status: String,
+    evidence: ReleaseQualityEvidence,
+    required_claims: ReleaseQualityClaims,
+    release_effect: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReleaseCostEvidence {
+    cost_bounds: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReleaseCostGate {
+    status: String,
+    evidence: ReleaseCostEvidence,
+    required_fields: Vec<String>,
+    unknown_cost_is_not_zero: bool,
+    release_effect: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReleaseRightsEvidence {
+    review_manifest: String,
+    corrective_register: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReleaseRightsClaims {
+    component_license_provenance: String,
+    redistribution_permission: String,
+    model_distribution_permission: String,
+    external_dataset_permission: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReleaseRightsGate {
+    status: String,
+    evidence: ReleaseRightsEvidence,
+    required_claims: ReleaseRightsClaims,
+    release_effect: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReleaseProhibitedAuthorizations {
+    redistribution: String,
+    production_use: String,
+    model_distribution: String,
+    external_downloads: String,
+    graph_write_or_import: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct HumanReleaseReview {
+    required: bool,
+    reviewer: Option<String>,
+    decision: String,
+    decision_record: String,
+    prose_alone_authorizes_release: bool,
+    authorization_requires: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReleaseInvalidation {
+    on_source_revision_change: String,
+    on_manifest_identity_change: String,
+    on_rights_evidence_change: String,
+}
+
+/// S20 release-decision package: bounded evaluation/review only; it never
+/// authorizes production, redistribution, redistribution, or downloads.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReleaseDecisionPackage {
+    schema_version: String,
+    purpose: String,
+    package_status: String,
+    evidence_revision: String,
+    required_gates: Vec<String>,
+    quality: ReleaseQualityGate,
+    cost: ReleaseCostGate,
+    rights: ReleaseRightsGate,
+    prohibited_authorizations: ReleaseProhibitedAuthorizations,
+    human_release_review: HumanReleaseReview,
+    invalidation: ReleaseInvalidation,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct AcceptanceManifest {
@@ -492,7 +712,10 @@ struct AcceptanceManifest {
     manifest_id: String,
     requirement_ids: Vec<String>,
     policy_locks: AcceptancePolicyLocks,
+    population_contract: PopulationContract,
     comparison_rules: AcceptanceRules,
+    external_holdout_contract: ExternalHoldoutContract,
+    release_decision_package: ReleaseDecisionPackage,
     classes: AcceptanceClasses,
 }
 
@@ -710,6 +933,63 @@ fn validate_ledger(l: &LedgerFile) -> Vec<String> {
     for anchor in ANCHOR_ENTRY_IDS {
         if !seen.contains(anchor) {
             errs.push(format!("[missing-anchor-entry] ledger lost `{anchor}`"));
+        }
+    }
+    errs.extend(validate_rest_batch_asset_quarantine(
+        &l.rest_batch_asset_quarantine,
+    ));
+    errs
+}
+
+/// S07/T04: the ledger's REST asset/batch block is an observation, not a
+/// second capability ledger. It must keep zero new endpoints, the forbidden
+/// production route, and physically present source artifacts.
+fn validate_rest_batch_asset_quarantine(q: &RestBatchAssetQuarantine) -> Vec<String> {
+    let mut errs = Vec::new();
+    if q.production_route != "forbidden"
+        || q.graph_write != "forbidden"
+        || q.auto_promote != "forbidden"
+        || q.import_eligible
+    {
+        errs.push("[rest-batch-asset-quarantine-lock] quarantine locks eroded".into());
+    }
+    if q.implemented_new_endpoints != 0 {
+        errs.push(format!(
+            "[rest-batch-asset-quarantine-implementation] expected 0 new endpoints, got {}",
+            q.implemented_new_endpoints
+        ));
+    }
+    if q.product_gap != "none_independently_evidenced" {
+        errs.push(format!(
+            "[rest-batch-asset-quarantine-product-gap] unrecognized product_gap `{}`",
+            q.product_gap
+        ));
+    }
+    if q.local_batch_carrier != "parse.batch.local_composition" {
+        errs.push(format!(
+            "[rest-batch-asset-quarantine-carrier] local_batch_carrier `{}`",
+            q.local_batch_carrier
+        ));
+    }
+    let expected_endpoints = [
+        "parse.endpoint.process_fulltext_document",
+        "parse.endpoint.process_header_document",
+        "parse.endpoint.process_references_document",
+    ];
+    if q.sanctioned_endpoints != expected_endpoints {
+        errs.push(format!(
+            "[rest-batch-asset-quarantine-endpoints] sanctioned endpoints drifted: {:?}",
+            q.sanctioned_endpoints
+        ));
+    }
+    if q.source_artifacts.is_empty() {
+        errs.push("[rest-batch-asset-quarantine-sources] no source artifacts declared".into());
+    }
+    for rel in &q.source_artifacts {
+        if !repo_root().join(rel).is_file() {
+            errs.push(format!(
+                "[rest-batch-asset-quarantine-sources] missing source artifact `{rel}`"
+            ));
         }
     }
     errs
@@ -1499,18 +1779,29 @@ fn validate_registry_config_keys(registry: &serde_yaml::Value) -> Vec<String> {
 /// The observation ledger tree stays exactly the sanctioned data/parse file
 /// set — no parallel ledger tree may appear (R113/R117).
 fn data_parse_tree_errs(entries: Vec<(String, bool)>) -> Vec<String> {
-    const SANCTIONED: [&str; 11] = [
+    const SANCTIONED: [&str; 22] = [
         "SCHEMA.yaml",
-        "api_compatibility_ledger.yaml",
-        "comparison_contract.yaml",
-        "grobid_compatibility.yaml",
-        "regression_cases.yaml",
-        "layout_bakeoff.yaml",
-        "document_segmentation.yaml",
-        "native_visual_heads.yaml",
-        "native_fulltext_composition.yaml",
-        "native_body_accounting.yaml",
         "acceptance_manifest.yaml",
+        "api_compatibility_ledger.yaml",
+        "callout_matching_semantics.yaml",
+        "comparison_contract.yaml",
+        "consolidation_specialized_semantics.yaml",
+        "document_segmentation.yaml",
+        "external_holdout_results.yaml",
+        "feature_tagger_training_parity.yaml",
+        "fulltext_block_semantics.yaml",
+        "grobid_compatibility.yaml",
+        "holdout_manifests.yaml",
+        "layout_bakeoff.yaml",
+        "layout_lattice_parity.yaml",
+        "license_inventory.yaml",
+        "native_body_accounting.yaml",
+        "native_fulltext_composition.yaml",
+        "native_visual_heads.yaml",
+        "p5_cross_stage.yaml",
+        "p5_shadow_join.yaml",
+        "regression_cases.yaml",
+        "rest_batch_asset_parity.yaml",
     ];
     let mut errs = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
@@ -2420,6 +2711,12 @@ fn validate_acceptance_row(
             {
                 errs.push(format!("[acceptance-catalogue-identity-missing] {ctx}"));
             }
+            if row.state == "bytes_absent" {
+                match row.identity_sha256.as_deref() {
+                    Some(sha) if acceptance_sha256(sha) => {}
+                    _ => errs.push(format!("[acceptance-remote-identity-sha256-missing] {ctx}")),
+                }
+            }
         }
         _ => errs.push(format!("[acceptance-unknown-row-state] {ctx}")),
     }
@@ -2609,6 +2906,233 @@ fn validate_acceptance_manifest(m: &AcceptanceManifest) -> Vec<String> {
     {
         errs.push("[acceptance-same-n-mismatch] TEI and layout proxy identities differ".into());
     }
+    errs.extend(validate_population_contract(&m.population_contract));
+    errs.extend(validate_external_holdout_contract(
+        &m.external_holdout_contract,
+    ));
+    errs.extend(validate_release_decision_package(
+        &m.release_decision_package,
+    ));
+    errs
+}
+
+/// S20 shadow-population honesty: closed required/forbidden block vocabulary
+/// and an explicit "no synthetic corpus execution" lock.
+fn validate_population_contract(p: &PopulationContract) -> Vec<String> {
+    let mut errs = Vec::new();
+    if p.schema_version != "shadow-populations.v1" {
+        errs.push("[population-contract-schema] expected shadow-populations.v1".into());
+    }
+    let expected_required = [
+        "reference_population",
+        "executed_population",
+        "evaluated_population",
+        "outcomes",
+    ];
+    if p.required_blocks != expected_required {
+        errs.push("[population-contract-blocks] required shadow blocks drifted".into());
+    }
+    let expected_forbidden = ["denominators", "corpus"];
+    if p.forbidden_legacy_blocks != expected_forbidden {
+        errs.push("[population-contract-legacy-blocks] forbidden legacy blocks drifted".into());
+    }
+    let expected_executed = ["corpus_execution", "execution_evidence"];
+    if p.executed_population_required_fields != expected_executed {
+        errs.push(
+            "[population-contract-executed-fields] executed-population fields drifted".into(),
+        );
+    }
+    if p.synthetic_corpus_execution {
+        errs.push(
+            "[population-contract-synthetic] synthetic corpus execution must stay forbidden".into(),
+        );
+    }
+    if p.quality_requires_evaluated_status != "evaluated" {
+        errs.push("[population-contract-status] quality must require evaluated status".into());
+    }
+    if p.report_paths.is_empty() {
+        errs.push("[population-contract-reports] no shadow reports declared".into());
+    }
+    for rel in &p.report_paths {
+        if !repo_root().join(rel).is_file() {
+            errs.push(format!(
+                "[population-contract-reports] missing shadow report `{rel}`"
+            ));
+        }
+    }
+    errs
+}
+
+/// S20 external holdout is an advisory transferability probe: no external
+/// bytes are ever loaded, no pooled denominator, no release claim.
+fn validate_external_holdout_contract(e: &ExternalHoldoutContract) -> Vec<String> {
+    let mut errs = Vec::new();
+    if e.schema_version != "external-holdout-readonly.v1" {
+        errs.push("[external-holdout-schema] expected external-holdout-readonly.v1".into());
+    }
+    if e.purpose != "transferability_and_cost_probe_only" {
+        errs.push("[external-holdout-purpose] purpose drifted".into());
+    }
+    if e.execution_status != "not_executed" {
+        errs.push("[external-holdout-status] external holdout must stay not_executed".into());
+    }
+    let b = &e.byte_policy;
+    if b.external_bytes != "bytes_absent"
+        || b.load_external_bytes != "forbidden"
+        || b.download_external_bytes != "forbidden"
+        || b.materialize_external_files != "forbidden"
+        || b.external_rows_are_evidence
+    {
+        errs.push("[external-holdout-bytes] external byte policy eroded".into());
+    }
+    let i = &e.identity_binding;
+    if i.digest != "sha256"
+        || i.input != "canonical_dataset_id_plus_identity"
+        || i.digest_is_byte_hash
+        || !i.digest_is_authority_binding
+        || i.mismatch_behavior != "fail_visible"
+    {
+        errs.push("[external-holdout-identity] identity binding drifted".into());
+    }
+    let d = &e.denominator_policy;
+    if !d.local_bound_rows_only
+        || d.bytes_absent_rows_in_local_denominator
+        || d.catalogued_rows_in_local_denominator
+        || d.external_probe_changes_local_denominator != "forbidden"
+        || !d.same_n_local_proxy_required
+    {
+        errs.push("[external-holdout-denominator] denominator policy eroded".into());
+    }
+    let r = &e.document_level_reporting;
+    if r.unit != "document"
+        || r.uncertainty_method.is_empty()
+        || !r.report_required_before_execution_claim
+        || r.fields.is_empty()
+    {
+        errs.push("[external-holdout-reporting] document-level reporting drifted".into());
+    }
+    let c = &e.cost_bounds;
+    if c.currency != "USD"
+        || c.basis.is_empty()
+        || c.lower_bound_includes.is_empty()
+        || c.upper_bound_includes.is_empty()
+        || !c.unknown_cost_is_not_zero
+        || c.release_claim_allowed
+    {
+        errs.push("[external-holdout-cost] cost bounds eroded".into());
+    }
+    errs
+}
+
+/// S20 release-decision package stays a bounded review artifact: every gate
+/// is held, no authorization is granted, and a named human decision is still
+/// required.
+fn validate_release_decision_package(p: &ReleaseDecisionPackage) -> Vec<String> {
+    let mut errs = Vec::new();
+    if p.schema_version != "release-decision-package.v1" {
+        errs.push("[release-decision-schema] expected release-decision-package.v1".into());
+    }
+    if p.purpose != "bounded_evaluation_and_release_review_only"
+        || !p.evidence_revision.starts_with("git:")
+    {
+        errs.push("[release-decision-identity] purpose or evidence revision drifted".into());
+    }
+    if p.package_status != "pending_human_review" {
+        errs.push("[release-decision-status] package must stay pending_human_review".into());
+    }
+    let expected_gates = ["quality", "cost", "rights"];
+    if p.required_gates != expected_gates {
+        errs.push("[release-decision-gates] required gates drifted".into());
+    }
+    let q = &p.quality;
+    if q.status != "blocked"
+        || q.release_effect != "does_not_authorize_production_use"
+        || !q.required_claims.same_n_local_proxy
+        || q.required_claims.document_level_uncertainty != "required"
+        || !q.required_claims.external_bytes_absent
+        || q.required_claims.pooled_external_quality_claim != "forbidden"
+    {
+        errs.push("[release-decision-quality] quality gate claims eroded".into());
+    }
+    if !repo_root().join(&q.evidence.acceptance_manifest).is_file()
+        || !repo_root().join(&q.evidence.local_proxy_contract).is_file()
+    {
+        errs.push("[release-decision-quality] quality evidence references missing files".into());
+    }
+    if q.evidence.external_holdout_status != "not_executed" {
+        errs.push("[release-decision-quality] external holdout status drifted".into());
+    }
+    let c = &p.cost;
+    let expected_cost_fields = [
+        "currency",
+        "cost_lower_bound",
+        "cost_upper_bound",
+        "unknown_cost_is_not_zero",
+    ];
+    if c.status != "bounded_not_measured"
+        || c.required_fields != expected_cost_fields
+        || !c.unknown_cost_is_not_zero
+        || c.release_effect != "does_not_authorize_external_downloads"
+    {
+        errs.push("[release-decision-cost] cost gate eroded".into());
+    }
+    if c.evidence.cost_bounds
+        != "data/parse/acceptance_manifest.yaml#external_holdout_contract.cost_bounds"
+    {
+        errs.push("[release-decision-cost] cost evidence reference drifted".into());
+    }
+    let rights = &p.rights;
+    if rights.status != "blocked"
+        || rights.release_effect != "does_not_authorize_redistribution"
+        || rights.required_claims.component_license_provenance != "required"
+        || rights.required_claims.redistribution_permission != "not_established"
+        || rights.required_claims.model_distribution_permission != "not_established"
+        || rights.required_claims.external_dataset_permission != "not_established"
+    {
+        errs.push("[release-decision-rights] rights gate eroded".into());
+    }
+    if !repo_root().join(&rights.evidence.review_manifest).is_file()
+        || !repo_root()
+            .join(&rights.evidence.corrective_register)
+            .is_file()
+    {
+        errs.push("[release-decision-rights] rights evidence references missing files".into());
+    }
+    let a = &p.prohibited_authorizations;
+    if a.redistribution != "blocked"
+        || a.production_use != "blocked"
+        || a.model_distribution != "blocked"
+        || a.external_downloads != "blocked"
+        || a.graph_write_or_import != "blocked"
+    {
+        errs.push("[release-decision-authorizations] prohibited authorizations eroded".into());
+    }
+    let h = &p.human_release_review;
+    let expected_auth = [
+        "named_reviewer",
+        "explicit_decision",
+        "passing_quality_gate",
+        "passing_cost_gate",
+        "passing_rights_gate",
+    ];
+    if !h.required
+        || h.reviewer.is_some()
+        || h.decision != "pending"
+        || h.prose_alone_authorizes_release
+        || h.authorization_requires != expected_auth
+    {
+        errs.push("[release-decision-human-review] human release review drifted".into());
+    }
+    if !repo_root().join(&h.decision_record).is_file() {
+        errs.push("[release-decision-human-review] decision record missing".into());
+    }
+    let inv = &p.invalidation;
+    if inv.on_source_revision_change != "required"
+        || inv.on_manifest_identity_change != "required"
+        || inv.on_rights_evidence_change != "required"
+    {
+        errs.push("[release-decision-invalidation] invalidation triggers drifted".into());
+    }
     errs
 }
 
@@ -2646,6 +3170,56 @@ fn acceptance_manifest_loads_and_passes_contract_validation() {
         "acceptance manifest contract violations:\n{}",
         errs.join("\n")
     );
+}
+
+#[test]
+fn additive_s20_sections_are_declared_and_locked() {
+    let manifest: AcceptanceManifest = expect_loaded(ACCEPTANCE_REL_PATH);
+    let population = &manifest.population_contract;
+    assert_eq!(population.schema_version, "shadow-populations.v1");
+    assert_eq!(
+        population.required_blocks,
+        [
+            "reference_population",
+            "executed_population",
+            "evaluated_population",
+            "outcomes"
+        ]
+    );
+    assert!(!population.report_paths.is_empty());
+    assert!(!population.synthetic_corpus_execution);
+    assert_eq!(population.quality_requires_evaluated_status, "evaluated");
+
+    let holdout = &manifest.external_holdout_contract;
+    assert_eq!(holdout.schema_version, "external-holdout-readonly.v1");
+    assert_eq!(holdout.execution_status, "not_executed");
+    assert_eq!(holdout.byte_policy.external_bytes, "bytes_absent");
+    assert!(!holdout.byte_policy.external_rows_are_evidence);
+    assert_eq!(
+        holdout
+            .denominator_policy
+            .external_probe_changes_local_denominator,
+        "forbidden"
+    );
+    assert!(holdout.cost_bounds.unknown_cost_is_not_zero);
+
+    let release = &manifest.release_decision_package;
+    assert_eq!(release.schema_version, "release-decision-package.v1");
+    assert_eq!(release.package_status, "pending_human_review");
+    assert!(release.human_release_review.required);
+    assert!(release.human_release_review.reviewer.is_none());
+    assert!(!release.human_release_review.prose_alone_authorizes_release);
+    assert_eq!(release.prohibited_authorizations.production_use, "blocked");
+
+    let ledger: LedgerFile = expect_loaded(LEDGER_REL_PATH);
+    let quarantine = &ledger.rest_batch_asset_quarantine;
+    assert_eq!(quarantine.production_route, "forbidden");
+    assert_eq!(quarantine.graph_write, "forbidden");
+    assert_eq!(quarantine.auto_promote, "forbidden");
+    assert!(!quarantine.import_eligible);
+    assert_eq!(quarantine.implemented_new_endpoints, 0);
+    assert_eq!(quarantine.product_gap, "none_independently_evidenced");
+    assert!(!quarantine.source_artifacts.is_empty());
 }
 
 #[test]
@@ -7324,7 +7898,11 @@ fn s12_rejects_wave_admission_drift_on_synthetic_clones() {
 #[test]
 fn document_segmentation_contract() {
     let contract: serde_yaml::Value = expect_loaded("data/parse/document_segmentation.yaml");
-    assert_eq!(contract["schema_version"], "document-segmentation.v1");
+    assert_eq!(contract["schema_version"], "document-segmentation.v2");
+    assert_eq!(
+        contract["compatible_with"], "document-segmentation.v1",
+        "v2 must stay explicitly backward compatible with v1"
+    );
     assert_eq!(contract["policy_locks"]["import_eligible"], false);
     assert_eq!(contract["policy_locks"]["graph_mutation"], "forbidden");
     assert_eq!(contract["policy_locks"]["raw_payloads"], "forbidden");
@@ -7332,7 +7910,7 @@ fn document_segmentation_contract() {
     let regions = contract["regions"]["closed_labels"]
         .as_sequence()
         .expect("closed segmentation regions");
-    assert_eq!(regions.len(), 5);
+    assert_eq!(regions.len(), 9, "v2 closes the full nine-region family");
     assert!(regions.iter().all(|value| value.as_str().is_some()));
     assert_eq!(
         contract["regions"]["assignment_rule"],
@@ -7342,12 +7920,28 @@ fn document_segmentation_contract() {
         contract["regions"]["order_rule"],
         "admitted_reading_order_preserved"
     );
+    let furniture = contract["furniture"]["closed_subtypes"]
+        .as_sequence()
+        .expect("closed furniture subtypes");
+    assert_eq!(furniture.len(), 5);
+    assert_eq!(
+        contract["furniture"]["excluded_from_body_reading_order"],
+        true
+    );
+    let lane_ids = contract["lanes"]["closed_ids"]
+        .as_sequence()
+        .expect("closed lane ids");
+    assert_eq!(lane_ids.len(), 3);
+    assert_eq!(
+        contract["lanes"]["required_ids"],
+        contract["lanes"]["closed_ids"]
+    );
     assert_eq!(contract["evaluation"]["independent_denominators"], true);
     assert_eq!(contract["evaluation"]["pooled_metrics"], "forbidden");
-    assert_eq!(contract["evaluation"]["required_rows"], 45);
+    assert_eq!(contract["evaluation"]["required_rows"], 81);
     assert_eq!(
         contract["evaluation"]["row_formula"],
-        "3_lanes_x_1_reviewed_genre_x_5_regions"
+        "3_documents_x_3_lanes_x_1_reviewed_genre_x_9_regions"
     );
     assert_eq!(contract["lanes"]["silent_skip"], "forbidden");
     assert_eq!(

@@ -289,7 +289,7 @@ fn source_and_data_contract_is_closed_and_exactly_bound() {
             "{:x}",
             Sha256::digest(fs::read(root().join(FULLTEXT)).unwrap())
         ),
-        "fbe1a91083b0a5944a9c1cb0beb3674a65731478665d1545623b4d715fac5819"
+        "b39736cf64e3914c7fe9f59f43be7e8ef0b5c7621d6541aeb1195cce50302989"
     );
 }
 

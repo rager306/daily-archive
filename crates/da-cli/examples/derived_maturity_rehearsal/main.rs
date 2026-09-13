@@ -2,16 +2,18 @@
 //! This example consumes only synthetic identity receipts. It never parses,
 //! calls a provider, reads a fixture, writes graph state, imports, or promotes.
 
+mod derived_family_adapters;
+
 use da_application::derived_evidence_maturity::{
     BlockedReason, BoundReceipt, FamilyId, MaturityState, ReceiptKind,
-};
-use da_application::derived_family_adapters::{
-    AdapterResult, FamilyAdapterInput, adapt_family, evaluate_adapted, prompt_adapted,
 };
 use da_application::derived_prompt_contract::PromptRender;
 use da_application::derived_transition_evaluator::{
     ClaimedTransition, DenominatorObservation, DenominatorScope, EvidenceOrigin,
     evaluate_transition,
+};
+use derived_family_adapters::{
+    AdapterResult, FamilyAdapterInput, adapt_family, evaluate_adapted, prompt_adapted,
 };
 use serde::Serialize;
 
@@ -120,10 +122,7 @@ fn input(family: FamilyId) -> FamilyAdapterInput {
     }
 }
 
-fn adapted(
-    family: FamilyId,
-    prefix: usize,
-) -> da_application::derived_family_adapters::AdaptedFamily {
+fn adapted(family: FamilyId, prefix: usize) -> derived_family_adapters::AdaptedFamily {
     let mut value = input(family);
     value.receipts = ReceiptKind::ALL
         .into_iter()

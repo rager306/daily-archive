@@ -2547,8 +2547,14 @@ fn native_fulltext_composition_is_pure_and_stays_outside_every_runtime_route() {
             .lines()
             .enumerate()
         {
+            // Marker precision matters: a bare `NativeFulltext` prefix also
+            // matches the unrelated `NativeFulltextBlocks` family, which is a
+            // legitimate parse-plane sibling with its own quarantine contract
+            // (`s16_fulltext_blocks_quarantine_contract`). This scanner's
+            // subject is the composer, so it matches the composer's own
+            // identifiers only.
             if raw.contains("native_fulltext_composition")
-                || raw.contains("NativeFulltext")
+                || raw.contains("NativeFulltextComposition")
                 || raw.contains("compose_native_fulltext")
             {
                 leaked.push(format!("{rel}:{}: {}", line_no + 1, raw.trim()));
@@ -4214,7 +4220,6 @@ fn s02_derived_prompt_contract_stays_out_of_production_parse_and_write_boundarie
     for (path, source) in rust_sources_under("crates/da-application/src") {
         if path == "crates/da-application/src/lib.rs"
             || path == "crates/da-application/src/derived_prompt_contract.rs"
-            || path == "crates/da-application/src/derived_family_adapters.rs"
         {
             continue;
         }
@@ -4263,7 +4268,21 @@ fn s04_derived_family_adapters_stays_out_of_production_parse_and_write_boundarie
         "S04: da-application must not depend on da-parse"
     );
 
-    let adapter = read_text("crates/da-application/src/derived_family_adapters.rs");
+    let application_lib = s10_code_without_comments(&read_text("crates/da-application/src/lib.rs"));
+    assert!(
+        !application_lib.contains("derived_family_adapters"),
+        "S04: adapter must stay out of the production application surface"
+    );
+
+    for (path, source) in rust_sources_under("crates/da-application/src") {
+        assert!(
+            !source.contains("derived_family_adapters"),
+            "S04: adapter escaped into production application source in {path}"
+        );
+    }
+
+    let adapter =
+        read_text("crates/da-cli/examples/derived_maturity_rehearsal/derived_family_adapters.rs");
     assert!(
         adapter.contains("pub fn adapt_family")
             && adapter.contains("pub fn prompt_adapted")
@@ -4287,13 +4306,6 @@ fn s04_derived_family_adapters_stays_out_of_production_parse_and_write_boundarie
             "S04: adapter leaked runtime coupling token `{forbidden}`"
         );
     }
-
-    let lib = s10_code_without_comments(&read_text("crates/da-application/src/lib.rs"));
-    assert_eq!(
-        lib.matches("pub mod derived_family_adapters;").count(),
-        1,
-        "S04: adapter must have exactly one production module export"
-    );
 
     let cli = s10_code_without_comments(&read_text("crates/da-cli/src/source_cli.rs"));
     for token in [
@@ -4418,7 +4430,6 @@ fn s03_derived_transition_evaluator_stays_out_of_production_parse_and_write_boun
         }
         if path != "crates/da-application/src/lib.rs"
             && path != "crates/da-application/src/derived_transition_evaluator.rs"
-            && path != "crates/da-application/src/derived_family_adapters.rs"
         {
             for token in S03_TRANSITION_API_TOKENS {
                 assert!(
@@ -4462,7 +4473,7 @@ fn s03_transition_quarantine_scanner_fails_visible_on_synthetic_coupling() {
 }
 
 // ───── M499/S05/T03: offline rehearsal remains a quarantined CLI example ─────
-const S05_REHEARSAL_EXAMPLE: &str = "crates/da-cli/examples/derived_maturity_rehearsal.rs";
+const S05_REHEARSAL_EXAMPLE: &str = "crates/da-cli/examples/derived_maturity_rehearsal/main.rs";
 const S05_REHEARSAL_TEST: &str = "crates/da-cli/tests/derived_maturity_rehearsal_example.rs";
 
 fn s05_quarantine_hits(text: &str) -> Vec<String> {
@@ -4590,7 +4601,7 @@ fn s05_derived_maturity_rehearsal_is_quarantined_and_closed() {
     );
     assert_eq!(
         application_lib.matches("pub mod derived_").count(),
-        4,
+        3,
         "S05: derived application surface changed"
     );
     let application_manifest = read_text("crates/da-application/Cargo.toml");
