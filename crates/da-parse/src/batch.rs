@@ -924,6 +924,20 @@ pub trait BatchCheckpoint: Send + Sync {
     /// Durably record `cursor` (the contiguous acknowledged terminal
     /// prefix position).
     async fn save(&self, cursor: &BatchCursor) -> Result<(), ParseBatchSinkError>;
+
+    /// Whether a saved cursor survives this process.
+    ///
+    /// This is a durability obligation, not a hint: a store that answers `true`
+    /// promises the next process can resume from it, so the cursor may only be
+    /// advanced over content that store can also recover. A `false` store is a
+    /// per-run seam (tests, in-memory composition) where the cursor is a
+    /// bookkeeping position and no such obligation exists.
+    ///
+    /// Defaults to `false` so a new implementation must opt in deliberately
+    /// rather than inherit an obligation it cannot meet.
+    fn is_durable(&self) -> bool {
+        false
+    }
 }
 
 /// In-memory [`ParseBatchResultSink`] (provider-neutral composition/test
@@ -1237,6 +1251,13 @@ struct CursorTracker {
     acked_next: u32,
     saved_next: u32,
     checkpoint_broken: bool,
+    /// Lowest ordinal that terminated without durably recoverable content.
+    ///
+    /// A durable cursor must never advance past this ordinal: the content for
+    /// it exists only in memory, and an interrupted run writes no terminal
+    /// report, so advancing would let the next resume skip a document whose
+    /// result exists nowhere. Frozen once set, like `checkpoint_broken`.
+    unrecoverable_at: Option<u32>,
 }
 
 #[derive(Debug, Default)]
@@ -1298,16 +1319,37 @@ struct RunShared {
 /// saved cursor positions are strictly monotonic. A failed save freezes
 /// the durable cursor at the last durably saved position — later outcomes
 /// stay recorded but are never claimed as resumable.
-async fn acknowledge(shared: &RunShared, checkpoint: &dyn BatchCheckpoint, ordinal: u32) {
+async fn acknowledge(
+    shared: &RunShared,
+    checkpoint: &dyn BatchCheckpoint,
+    ordinal: u32,
+    recoverable: bool,
+) {
     let mut tracker = shared.tracker.lock().await;
     tracker.acked.insert(ordinal);
     while tracker.acked.contains(&tracker.acked_next) {
         tracker.acked_next += 1;
     }
-    if tracker.acked_next > tracker.saved_next && !tracker.checkpoint_broken {
-        let cursor = BatchCursor::at(shared.input_fingerprint.clone(), tracker.acked_next);
+    // The durability obligation only binds a store that claims to survive this
+    // process. A per-run checkpoint keeps its former bookkeeping semantics, so
+    // in-memory composition is unchanged.
+    if checkpoint.is_durable() && !recoverable {
+        tracker.unrecoverable_at = Some(
+            tracker
+                .unrecoverable_at
+                .map_or(ordinal, |lowest| lowest.min(ordinal)),
+        );
+    }
+    // A durable cursor may only cover the prefix that is both acknowledged AND
+    // durably recoverable: content published by this run (or served from a hit)
+    // is recoverable, while content computed without publishing exists only in
+    // memory, so the cursor stops before it.
+    let ceiling = tracker.unrecoverable_at.unwrap_or(u32::MAX);
+    let target = tracker.acked_next.min(ceiling);
+    if target > tracker.saved_next && !tracker.checkpoint_broken {
+        let cursor = BatchCursor::at(shared.input_fingerprint.clone(), target);
         if checkpoint.save(&cursor).await.is_ok() {
-            tracker.saved_next = tracker.acked_next;
+            tracker.saved_next = target;
         } else {
             tracker.checkpoint_broken = true;
             shared
@@ -1876,8 +1918,20 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
             let Some(next_outcome) = publication.pending.remove(&next_ordinal) else {
                 break;
             };
+            // Durability is decided by the outcome's own stage dispositions,
+            // so the cursor can only cover content a later run can read again.
+            // A FAILED document is exempt: it produced no content by
+            // definition and re-attempting it would reproduce the same
+            // deterministic failure, so the established "processed" semantics
+            // stand for it. The hazard is a document that SUCCEEDED while its
+            // content was never published (cache off, or a read-only miss).
+            // Read before the sink takes ownership.
+            let recoverable =
+                !next_outcome.is_success() || next_outcome.dispositions().is_durably_recoverable();
             match self.sink.record(next_outcome).await {
-                Ok(()) => acknowledge(&self.shared, &*self.checkpoint, next_ordinal).await,
+                Ok(()) => {
+                    acknowledge(&self.shared, &*self.checkpoint, next_ordinal, recoverable).await;
+                }
                 Err(_) => {
                     counters.sink_errors.fetch_add(1, Ordering::SeqCst);
                 }
@@ -1974,6 +2028,7 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
                 acked_next: resumed_from,
                 saved_next: resumed_from,
                 checkpoint_broken: false,
+                unrecoverable_at: None,
             }),
             publication: Mutex::new(PublicationState {
                 next_ordinal: resumed_from,

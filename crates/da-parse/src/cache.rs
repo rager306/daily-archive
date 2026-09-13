@@ -212,6 +212,21 @@ pub enum CacheStageDisposition {
 }
 
 impl CacheStageDisposition {
+    /// Whether this disposition leaves the stage content durably recoverable.
+    ///
+    /// `Hit` content already lives in the stage and `ComputedPublished` content
+    /// was just written there, so either can be read again. The two computed
+    /// dispositions produced content that exists only in memory for this run,
+    /// and an interrupted run writes no terminal report — so nothing survives
+    /// to be resumed from.
+    ///
+    /// This is the signal a durable resume cursor must consult before claiming
+    /// an ordinal complete: advancing over `ComputedUncached` or
+    /// `ComputedUnpublished` would let the next run skip a document whose
+    /// result exists nowhere.
+    pub const fn is_durably_recoverable(self) -> bool {
+        matches!(self, Self::Hit | Self::ComputedPublished)
+    }
     /// Stable snake_case name (identical to the serde wire form).
     pub const fn as_str(self) -> &'static str {
         match self {
@@ -253,6 +268,18 @@ impl ParseCacheDispositions {
     /// Stable schema version of this instance.
     pub const fn schema_version(&self) -> u32 {
         self.schema_version
+    }
+
+    /// Whether a later run can recover this ordinal's expensive content.
+    ///
+    /// The criterion is the raw stage: it is what required the Java call, and a
+    /// projector can be rebuilt from a stored raw TEI without the backend
+    /// (`raw_hit_reprojects_after_projector_schema_rotation_without_backend`
+    /// pins that). Requiring the projector too would freeze the cursor on a
+    /// perfectly resumable run, which is why this deliberately looks at `raw`
+    /// alone rather than both stages.
+    pub const fn is_durably_recoverable(&self) -> bool {
+        self.raw.is_durably_recoverable()
     }
 
     /// Raw-TEI stage disposition.

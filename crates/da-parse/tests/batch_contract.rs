@@ -1309,6 +1309,38 @@ impl BatchCheckpoint for FakeCheckpoint {
     }
 }
 
+/// Same as [`FakeCheckpoint`] but declares the durability obligation.
+///
+/// Used to exercise the rule that a cross-process resume store may only be
+/// advanced over content it can recover. The plain fake deliberately stays
+/// non-durable so in-memory composition keeps its bookkeeping semantics.
+struct FakeDurableCheckpoint {
+    inner: FakeCheckpoint,
+}
+
+impl FakeDurableCheckpoint {
+    fn new() -> Self {
+        Self {
+            inner: FakeCheckpoint::new(),
+        }
+    }
+
+    fn last_saved(&self) -> Option<BatchCursor> {
+        self.inner.last_saved()
+    }
+}
+
+#[async_trait]
+impl BatchCheckpoint for FakeDurableCheckpoint {
+    async fn save(&self, cursor: &BatchCursor) -> Result<(), ParseBatchSinkError> {
+        self.inner.save(cursor).await
+    }
+
+    fn is_durable(&self) -> bool {
+        true
+    }
+}
+
 fn exec_limits(max_documents: usize) -> ParseBatchLimits {
     ParseBatchLimits::new(nz(2), nz(4), nz(2), nz(max_documents))
 }
@@ -2231,4 +2263,59 @@ async fn stage_keys_and_payloads_keep_their_s06_identity_pins() {
         serde_json::to_value(&article).unwrap(),
         "cached projection is wire-equal to the fresh one"
     );
+}
+
+// ───────────── durable cursor vs unpublished content (M506/S02/T03) ─────────────
+
+/// The residual risk after the executor's own contract was confirmed correct.
+///
+/// The executor freezes the cursor when the *sink* fails, and that is proven
+/// behaviour. What was never checked is the complementary case: the sink
+/// succeeds, the outcome is terminal, but its content was never durably
+/// published — which is exactly what `CacheMode::Off` and a `ReadOnly` miss
+/// produce (`ComputedUncached` / `ComputedUnpublished`).
+///
+/// A durable cursor that advances anyway claims those ordinals are done while
+/// their results exist nowhere: no payload in the artifact cache, and no
+/// terminal report either, because an interrupted run deliberately writes no
+/// report. The next run's resume would then skip them and the work disappears
+/// without a trace.
+///
+/// The obligation binds only a store that claims to survive the process: a
+/// per-run checkpoint keeps its bookkeeping semantics, which is why the plain
+/// `FakeCheckpoint` above is deliberately non-durable.
+#[tokio::test(start_paused = true)]
+async fn durable_cursor_never_advances_past_unpublished_content() {
+    for (mode, publishes) in [
+        (CacheMode::Off, false),
+        (CacheMode::ReadOnly, false),
+        (CacheMode::WriteThrough, true),
+    ] {
+        let executor = ParseBatchExecutor::new(FakeBackend::new(), FakeCache::default());
+        let batch = admitted(mode, &["cursor-a", "cursor-b"]);
+        let checkpoint = Arc::new(FakeDurableCheckpoint::new());
+        let sink = Arc::new(FakeSink::new());
+        let summary = executor.run(batch, sink, checkpoint.clone()).await;
+
+        // Precondition: the mode really decided not to publish anything, and
+        // the sink really did accept every outcome (so this is not the
+        // already-proven sink-failure path).
+        assert_eq!(summary.succeeded(), 2, "{mode}: both documents terminate");
+        assert_eq!(summary.sink_errors(), 0, "{mode}: sink accepted everything");
+
+        let saved = checkpoint.last_saved().map(|cursor| cursor.next_ordinal());
+        if publishes {
+            assert_eq!(
+                saved,
+                Some(2),
+                "{mode}: durable content exists, so the cursor may advance"
+            );
+        } else {
+            assert_eq!(
+                saved, None,
+                "{mode}: nothing was durably published, so a durable cursor must not \
+                 claim these ordinals (a later resume would skip content that exists nowhere)"
+            );
+        }
+    }
 }

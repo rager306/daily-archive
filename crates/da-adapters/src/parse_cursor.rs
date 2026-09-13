@@ -229,6 +229,13 @@ impl BatchCheckpoint for RedbCursorCheckpoint {
             .save_cursor(cursor.input_fingerprint(), cursor.next_ordinal())
             .map_err(|error| ParseBatchSinkError(error.to_string()))
     }
+
+    /// The redb accelerator is a cross-process resume store, so it carries the
+    /// durability obligation: the executor must not advance this cursor over
+    /// content the store cannot recover.
+    fn is_durable(&self) -> bool {
+        true
+    }
 }
 
 #[cfg(test)]
