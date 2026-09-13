@@ -233,7 +233,7 @@
       "stage_id": "H03",
       "title": "Batch durable publication",
       "scope": "Make batch publication durable before ack: kill between sink/checkpoint/report, three or more mid-sink document failures, accelerator deletion, and a committed prefix derived only from durable manifests.",
-      "status": "in_progress",
+      "status": "complete",
       "depends_on": [
         "H02"
       ],
@@ -275,9 +275,8 @@
         }
       ],
       "tested_source": {
-        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
-        "verified": false,
-        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+        "revision": "da31b375835b7d802b919cd04e884426a29c6d0b",
+        "verified": true
       },
       "index_freshness": {
         "state": "stale",
@@ -325,8 +324,22 @@
           "reason": "Durability is an operational fault property, not a domain function."
         }
       ],
-      "implementation_pass": false,
-      "verification_pass": false
+      "implementation_pass": true,
+      "verification_pass": true,
+      "completion_evidence": {
+        "mode": "runtime",
+        "ref": "crates/da-cli/tests/parse_batch_test.rs",
+        "result": "pass",
+        "artifacts": [
+          "crates/da-parse/src/batch.rs",
+          "crates/da-parse/src/cache.rs",
+          "crates/da-adapters/src/parse_cursor.rs",
+          "crates/da-parse/tests/batch_contract.rs",
+          "crates/da-cli/tests/parse_batch_test.rs"
+        ],
+        "observed_at": "2026-09-13",
+        "source_revision": "da31b375835b7d802b919cd04e884426a29c6d0b"
+      }
     },
     {
       "stage_id": "H04",
