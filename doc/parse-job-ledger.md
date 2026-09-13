@@ -46,11 +46,17 @@ Source inspection confirms the current Samyama integration is process-local:
 accelerator, not canonical state. Therefore neither Samyama HOT memory nor the
 redb cursor can be claimed as the ledger authority.
 
-T02 must first introduce or identify a narrow approved Samyama durable commit and
-single-owner process-lock primitive. It must not silently promote redb, JSONL,
-SQLite, a fake remote store, or the scientific graph plane into authority. Until
-that primitive exists, this T01 port remains the authority-neutral contract and
-its fake tests only prove transition semantics.
+T02 uses the existing `samyama::persistence::PersistenceManager` as that narrow
+primitive. `PersistenceManager::new(base_path)` creates RocksDB-backed storage
+and WAL directories; the RocksDB directory lock provides single-owner process
+semantics, while `persist_create_node`,
+`persist_update_node_properties_versioned`, and `checkpoint()` form the durable
+ACK boundary. The adapter stores one serialized job record and an ordered event
+list per `ParseJobLedger` node in the dedicated `daily_archive_parse_jobs`
+tenant. A failed commit poisons the in-process ledger (fail closed) until the
+caller reloads it; a second opener is mapped to typed `OwnerBusy` when Samyama
+reports a lock failure. This is operational state only: no import, ingestion,
+promotion, JSONL, redb, SQLite, or scientific graph writes are involved.
 
 ## Observability and failure visibility
 

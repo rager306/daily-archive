@@ -34,6 +34,7 @@ pub mod parse_cache;
 #[cfg(feature = "redb")]
 pub mod parse_cursor;
 pub mod parse_experience_rvf;
+pub mod parse_job_ledger;
 #[cfg(feature = "redb")]
 pub mod parse_learning_index;
 pub mod pdffigures2;
@@ -87,6 +88,7 @@ pub use layout_visual::{
 
 pub use openalex_adapter::OpenAlexHttpAdapter;
 pub use parse_experience_rvf::RvfFileStore;
+pub use parse_job_ledger::SamyamaJobLedger;
 #[cfg(feature = "pdf-classifier")]
 pub use pdf_classifier::PdfInspectorClassifier;
 pub use pdffigures2::PdfFigures2Adapter;
