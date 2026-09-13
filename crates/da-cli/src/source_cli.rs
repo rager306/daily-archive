@@ -62,6 +62,14 @@ fn stamp_grobid_profile(m: &mut serde_yaml::Mapping, route: da_domain::fsm_polic
     );
 }
 
+/// Record the ACTUAL probed Java GROBID `/api/version` string beside the
+/// profile stamp (ADR-076 W0 `backend_identity`). Never invented; always the
+/// live probe, so an article parsed by one Java release can never be read as
+/// another release's output.
+fn stamp_grobid_backend_version(m: &mut serde_yaml::Mapping, version: &str) {
+    m.insert("grobid_backend_version".into(), version.trim().into());
+}
+
 fn merge_cascade_observe(m: &mut serde_yaml::Mapping, stage: &str, row: serde_yaml::Mapping) {
     let mut observe = match m.remove("cascade_observe") {
         Some(serde_yaml::Value::Mapping(existing)) => existing,
@@ -1933,16 +1941,26 @@ pub fn run_parse_pdf(
         anyhow::bail!("parse-pdf requires --pdf <path>");
     };
     let rt = tokio::runtime::Runtime::new()?;
-    let parsed = rt.block_on(async {
+    let (parsed, backend_version) = rt.block_on(async {
         // D204 corpus default is structural via DATA profile_route.native.default.
         // Rich is a closed consult variant; it is not the corpus default and
         // still requires Crossref. Bibliography enrichment stays on the
         // separately cached OpenAlex/Crossref enrich stage from the host.
         let parser = GrobidParser::from_env().with_profile(grobid_profile);
-        parser
+        // The LIVE release is part of the article's parse identity: probe it
+        // once and fail closed. There is no silent versionless fallback
+        // (ADR-076 W0 `backend_identity` / R121).
+        let probe = parser.probe_version().await.map_err(|failure| {
+            anyhow::anyhow!(
+                "grobid version probe: {failure} (required for parse identity; \
+                 there is no silent versionless fallback)"
+            )
+        })?;
+        let parsed = parser
             .parse_pdf(pdf, paper_id)
             .await
-            .map_err(|e| anyhow::anyhow!("grobid: {e}"))
+            .map_err(|e| anyhow::anyhow!("grobid: {e}"))?;
+        Ok::<_, anyhow::Error>((parsed, probe.version))
     })?;
 
     let dir = std::path::Path::new("data/processed").join(paper_id);
@@ -2001,6 +2019,7 @@ pub fn run_parse_pdf(
         None => stamp_policy_none(&mut m),
     }
     stamp_grobid_profile(&mut m, grobid_route);
+    stamp_grobid_backend_version(&mut m, &backend_version);
     stamp_p0_admit_observe(&mut m, grammar.is_some(), true);
     stamp_p1_layout_observe(&mut m, parsed.layout_json.is_some());
     stamp_p2_segmentation_observe(&mut m, parsed.sections.len());
@@ -4067,6 +4086,25 @@ mod tests {
             m.get("grammar_profile").and_then(|v| v.as_str()),
             Some("page_outline")
         );
+    }
+
+    #[test]
+    fn stamp_grobid_backend_version_records_the_actual_probed_release() {
+        let mut m = serde_yaml::Mapping::new();
+        assert!(m.get("grobid_backend_version").is_none());
+        stamp_grobid_backend_version(&mut m, "  0.9.1  ");
+        assert_eq!(
+            m.get("grobid_backend_version").and_then(|v| v.as_str()),
+            Some("0.9.1"),
+            "the live probed release, trimmed, is recorded verbatim"
+        );
+        // Companion to the profile stamp; neither implies the other.
+        let mut profile_only = serde_yaml::Mapping::new();
+        stamp_grobid_profile(
+            &mut profile_only,
+            da_domain::fsm_policy::ProfileRoute::Structural,
+        );
+        assert!(profile_only.get("grobid_backend_version").is_none());
     }
 
     #[test]

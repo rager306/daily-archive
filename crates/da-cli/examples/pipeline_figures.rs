@@ -3,13 +3,16 @@
 use anyhow::{Context, Result};
 use chrono::{Duration, Utc};
 use clap::Parser;
+use da_adapters::pipeline_stages::HISTORICAL_GROBID_MODEL_FINGERPRINT;
 use da_adapters::{FigureDetectionStage, FilePipelineCache, GrobidParseStage, PdfFigures2Adapter};
 use da_application::{
     FigureContextStage, FigureSectionLocator, PipelineOrchestrator, StageDisposition,
 };
 use da_domain::FigureSemanticContext;
+use da_parse::grobid_model_fingerprint;
 use da_ports::clock::SystemClock;
 use da_ports::pipeline_cache::{CacheLookup, PipelineCache, SourceFormat, SourceIdentity};
+use da_ports::pipeline_stage::PipelineStageExecutor;
 use da_ports::{FigureDetectionPort, FigureDetectionRequest, ParserPort};
 use kg_pipeline::PipelineBuilder;
 use sha2::{Digest, Sha256};
@@ -36,6 +39,69 @@ struct Args {
         default_value = "FigureSemanticContext@serde-v2-summary-provenance"
     )]
     context_schema: String,
+    /// Explicitly opt into the historical (versionless) GROBID identity:
+    /// skip the mandatory `/api/version` probe and stamp
+    /// `grobid/grobid:0.9.0-crf`. Without this flag a probe failure fails the
+    /// run — there is no silent legacy fallback. Use only to read/replay
+    /// historical parse-cache entries.
+    #[arg(long)]
+    allow_versionless_identity: bool,
+}
+
+/// Resolved GROBID model identity for the parse-stage contract
+/// (ADR-076 W0 `backend_identity`).
+#[derive(Debug, Clone)]
+enum BackendIdentity {
+    /// The live `/api/version` probe succeeded and produced this non-blank
+    /// `grobid/grobid:{version}` fingerprint.
+    Probed { fingerprint: String },
+    /// Explicit `--allow-versionless-identity`: the historical baseline is
+    /// stamped on purpose to read/replay legacy parse-cache entries.
+    Historical,
+}
+
+impl BackendIdentity {
+    fn fingerprint(&self) -> &str {
+        match self {
+            Self::Probed { fingerprint } => fingerprint,
+            Self::Historical => HISTORICAL_GROBID_MODEL_FINGERPRINT,
+        }
+    }
+}
+
+/// Probe `/api/version` once and resolve the parse-stage model identity.
+///
+/// Default is fail-closed: a transport error, 5xx, unparseable payload, or
+/// blank version aborts the run — never invent a release and never silently
+/// assume the historical baseline. `--allow-versionless-identity` is the only
+/// path that stamps the historical identity, and it is announced on stderr.
+async fn resolve_backend_identity(
+    parser: &da_parse::GrobidParser,
+    allow_versionless_identity: bool,
+) -> Result<BackendIdentity> {
+    if allow_versionless_identity {
+        eprintln!(
+            "pipeline figures: --allow-versionless-identity set; using historical GROBID identity {HISTORICAL_GROBID_MODEL_FINGERPRINT} (legacy read/replay only)"
+        );
+        return Ok(BackendIdentity::Historical);
+    }
+    match parser.probe_version().await {
+        Ok(probe) => match grobid_model_fingerprint(&probe.version) {
+            Some(fingerprint) => {
+                eprintln!(
+                    "pipeline figures: GROBID /api/version={} model identity={fingerprint}",
+                    probe.version
+                );
+                Ok(BackendIdentity::Probed { fingerprint })
+            }
+            None => anyhow::bail!(
+                "GROBID /api/version returned a blank version; refusing to invent a model identity. Pass --allow-versionless-identity to use the historical {HISTORICAL_GROBID_MODEL_FINGERPRINT} identity explicitly"
+            ),
+        },
+        Err(failure) => anyhow::bail!(
+            "GROBID /api/version probe failed: {failure}; refusing to stamp a historical model identity. Pass --allow-versionless-identity to use the historical {HISTORICAL_GROBID_MODEL_FINGERPRINT} identity explicitly"
+        ),
+    }
 }
 
 #[tokio::main]
@@ -46,9 +112,18 @@ async fn main() -> Result<()> {
         .with_context(|| format!("read canonical PDF {}", args.pdf.display()))?;
     let pdf_sha256 = hex::encode(Sha256::digest(&pdf_bytes));
     let retry_after = (Utc::now() + Duration::minutes(10)).to_rfc3339();
-    let parser: Arc<dyn ParserPort> = Arc::new(da_cli::parse_profile::corpus_grobid_parser());
+    let parser = da_cli::parse_profile::corpus_grobid_parser();
+    // ADR-076 W0 `backend_identity`: probe `/api/version` exactly once so the
+    // parse-stage cache key binds the ACTUAL GROBID release. Fail closed
+    // unless `--allow-versionless-identity` opts into the historical identity.
+    let backend_identity =
+        resolve_backend_identity(&parser, args.allow_versionless_identity).await?;
+    let parser: Arc<dyn ParserPort> = Arc::new(parser);
     let detector: Arc<dyn FigureDetectionPort> = Arc::new(PdfFigures2Adapter::new(&args.jar));
-    let parse_stage = Arc::new(GrobidParseStage::new(parser, &args.pdf, &retry_after));
+    let stage = GrobidParseStage::new(parser, &args.pdf, &retry_after);
+    let mut contract = stage.contract();
+    contract.model_fingerprint = Some(backend_identity.fingerprint().to_string());
+    let parse_stage = Arc::new(stage.with_contract(contract));
     let figure_stage = Arc::new(FigureDetectionStage::new(
         detector,
         FigureDetectionRequest {

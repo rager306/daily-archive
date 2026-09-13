@@ -20,6 +20,11 @@ const DEMAND_SOURCE: &str = "artifacts/parse_compat/rest_batch_asset_oracle_sour
 const DATA: &str = "data/parse/rest_batch_asset_parity.yaml";
 const TEI: &str = "<TEI xmlns=\"http://www.tei-c.org/ns/1.0\"><teiHeader><fileDesc><titleStmt><title>shadow</title></titleStmt></fileDesc></teiHeader><text><body><p>shadow</p></body></text></TEI>";
 
+/// Fixed service version the offline stub reports from `GET /api/version`.
+/// The production CLI probes it before admission; the shadow run is a
+/// versioned run (never the legacy identity).
+const STUB_BACKEND_VERSION: &str = "shadow-stub-0.9.0-crf";
+
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -63,7 +68,10 @@ async fn spawn_stub() -> String {
             tokio::spawn(async move {
                 let request = read_request(&mut stream).await.unwrap_or_default();
                 let path = request.split_whitespace().nth(1).unwrap_or_default();
-                let (status, body) = match path {
+                let version_body =
+                    format!("{{\"name\":\"GROBID\",\"version\":\"{STUB_BACKEND_VERSION}\"}}");
+                let (status, body): (&str, &[u8]) = match path {
+                    "/api/version" => ("200 OK", version_body.as_bytes()),
                     "/api/processFulltextDocument"
                     | "/api/processHeaderDocument"
                     | "/api/processReferences" => ("200 OK", TEI.as_bytes()),
@@ -127,10 +135,12 @@ async fn run(
         backend: None,
         cache_root: None,
         batch_size: None,
+        timeout_secs: None,
         workers: None,
         queue_capacity: None,
         max_in_flight: None,
         resume: false,
+        allow_versionless_identity: false,
         redb_index: None,
         no_redb: false,
         redb_index_path: None,

@@ -14,6 +14,16 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+/// Historical baseline model identity for the Java GROBID transport
+/// (`grobid/grobid:0.9.0-crf`, the D204/D321 baseline).
+///
+/// This is a legacy/rollback default only. Runtime callers that parsed
+/// against a live service must stamp the ACTUAL probed release through
+/// [`GrobidParseStage::with_backend_version`] so a Java GROBID upgrade
+/// rotates the parse cache key instead of reusing another release's TEI
+/// (ADR-076 W0 `backend_identity`).
+pub const HISTORICAL_GROBID_MODEL_FINGERPRINT: &str = "grobid/grobid:0.9.0-crf";
+
 pub struct GrobidParseStage {
     parser: Arc<dyn ParserPort>,
     pdf_path: PathBuf,
@@ -40,7 +50,7 @@ impl GrobidParseStage {
                     "consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula"
                         .into(),
                 prompt_fingerprint: None,
-                model_fingerprint: Some("grobid/grobid:0.9.0-crf".into()),
+                model_fingerprint: Some(HISTORICAL_GROBID_MODEL_FINGERPRINT.into()),
                 output_schema_fingerprint: PROJECT_ARTICLE_SCHEMA_FINGERPRINT.into(),
             },
         }
@@ -48,6 +58,19 @@ impl GrobidParseStage {
 
     pub fn with_contract(mut self, contract: StageContract) -> Self {
         self.contract = contract;
+        self
+    }
+
+    /// Stamp the ACTUAL probed `/api/version` string into this stage's cache
+    /// identity at runtime (`model_fingerprint = grobid/grobid:{version}`),
+    /// overriding the historical baseline default. Blank input is ignored and
+    /// keeps the baseline. Callers wiring a live Java GROBID parse must use
+    /// this with the probed release so two releases never share stage entries
+    /// (ADR-076 W0 `backend_identity`).
+    pub fn with_backend_version(mut self, version: &str) -> Self {
+        if let Some(fingerprint) = da_parse::grobid_model_fingerprint(version) {
+            self.contract.model_fingerprint = Some(fingerprint);
+        }
         self
     }
 
@@ -598,6 +621,36 @@ mod tests {
         ) -> FigureDetectionPortResult<FigureDetectionResult> {
             Err(FigureDetectionError::Timeout { timeout_ms: 20 })
         }
+    }
+
+    #[test]
+    fn grobid_parse_stage_backend_version_rotates_model_identity() {
+        let parser: Arc<dyn ParserPort> = Arc::new(FakeParser {
+            calls: AtomicUsize::new(0),
+        });
+        let baseline = GrobidParseStage::new(parser.clone(), "/catalog/paper.pdf", "t");
+        assert_eq!(
+            baseline.contract().model_fingerprint.as_deref(),
+            Some(HISTORICAL_GROBID_MODEL_FINGERPRINT)
+        );
+        let versioned = GrobidParseStage::new(parser.clone(), "/catalog/paper.pdf", "t")
+            .with_backend_version("0.9.1");
+        assert_eq!(
+            versioned.contract().model_fingerprint.as_deref(),
+            Some("grobid/grobid:0.9.1")
+        );
+        assert_ne!(
+            baseline.contract().model_fingerprint,
+            versioned.contract().model_fingerprint,
+            "different releases never share a parse stage identity"
+        );
+        // Blank never invents a release: the baseline stays.
+        let blank =
+            GrobidParseStage::new(parser, "/catalog/paper.pdf", "t").with_backend_version("   ");
+        assert_eq!(
+            blank.contract().model_fingerprint.as_deref(),
+            Some(HISTORICAL_GROBID_MODEL_FINGERPRINT)
+        );
     }
 
     #[tokio::test]

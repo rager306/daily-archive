@@ -6,6 +6,7 @@
 use anyhow::{Context, Result};
 use chrono::{Duration, Utc};
 use clap::Parser;
+use da_adapters::pipeline_stages::HISTORICAL_GROBID_MODEL_FINGERPRINT;
 use da_adapters::{
     FdApiEmbedder, FilePipelineCache, GrobidParseStage, HtmlParseStage, HtmlParser,
     ParsedArticleEmbeddingStage, RuleBasedExtractor, RuleExtractionStage,
@@ -13,7 +14,7 @@ use da_adapters::{
 use da_application::{PipelineOrchestrator, PipelineRunReport, StageDisposition};
 use da_cli::gold_corpus::{CanonicalSourceKind, GoldCorpusManifest};
 use da_domain::eval::{ExtractionMetrics, GoldEntity, PredictedEntity};
-use da_parse::PROJECT_ARTICLE_SCHEMA_FINGERPRINT;
+use da_parse::{PROJECT_ARTICLE_SCHEMA_FINGERPRINT, grobid_model_fingerprint};
 use da_ports::extractor::ExtractedEntity;
 use da_ports::pipeline_cache::{
     CacheLookup, PipelineCache, SourceFormat, SourceIdentity, StageOutcome,
@@ -50,6 +51,13 @@ struct Args {
     /// Add the cacheable paper embedding stage after parse.
     #[arg(long)]
     include_embedding: bool,
+    /// Explicitly opt into the historical (versionless) GROBID identity:
+    /// skip the mandatory `/api/version` probe for PDF sources and stamp
+    /// `grobid/grobid:0.9.0-crf`. Without this flag a probe failure fails the
+    /// run — there is no silent legacy fallback. Use only to read/replay
+    /// historical parse-cache entries.
+    #[arg(long)]
+    allow_versionless_identity: bool,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -128,6 +136,62 @@ struct CanaryReport {
     papers: Vec<PaperCanaryReport>,
 }
 
+/// Resolved GROBID model identity for the parse-stage contract
+/// (ADR-076 W0 `backend_identity`).
+#[derive(Debug, Clone)]
+enum BackendIdentity {
+    /// The live `/api/version` probe succeeded and produced this non-blank
+    /// `grobid/grobid:{version}` fingerprint.
+    Probed { fingerprint: String },
+    /// Explicit `--allow-versionless-identity`: the historical baseline is
+    /// stamped on purpose to read/replay legacy parse-cache entries.
+    Historical,
+}
+
+impl BackendIdentity {
+    fn fingerprint(&self) -> &str {
+        match self {
+            Self::Probed { fingerprint } => fingerprint,
+            Self::Historical => HISTORICAL_GROBID_MODEL_FINGERPRINT,
+        }
+    }
+}
+
+/// Probe `/api/version` once and resolve the parse-stage model identity.
+///
+/// Default is fail-closed: a transport error, 5xx, unparseable payload, or
+/// blank version aborts the run — never invent a release and never silently
+/// assume the historical baseline. `--allow-versionless-identity` is the only
+/// path that stamps the historical identity, and it is announced on stderr.
+async fn resolve_backend_identity(
+    parser: &da_parse::GrobidParser,
+    allow_versionless_identity: bool,
+) -> Result<BackendIdentity> {
+    if allow_versionless_identity {
+        eprintln!(
+            "gold canary: --allow-versionless-identity set; using historical GROBID identity {HISTORICAL_GROBID_MODEL_FINGERPRINT} (legacy read/replay only)"
+        );
+        return Ok(BackendIdentity::Historical);
+    }
+    match parser.probe_version().await {
+        Ok(probe) => match grobid_model_fingerprint(&probe.version) {
+            Some(fingerprint) => {
+                eprintln!(
+                    "gold canary: GROBID /api/version={} model identity={fingerprint}",
+                    probe.version
+                );
+                Ok(BackendIdentity::Probed { fingerprint })
+            }
+            None => anyhow::bail!(
+                "GROBID /api/version returned a blank version; refusing to invent a model identity. Pass --allow-versionless-identity to use the historical {HISTORICAL_GROBID_MODEL_FINGERPRINT} identity explicitly"
+            ),
+        },
+        Err(failure) => anyhow::bail!(
+            "GROBID /api/version probe failed: {failure}; refusing to stamp a historical model identity. Pass --allow-versionless-identity to use the historical {HISTORICAL_GROBID_MODEL_FINGERPRINT} identity explicitly"
+        ),
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let _log_guard = da_cli::logging::init_pipeline_logging("gold_corpus_canary");
@@ -175,6 +239,22 @@ async fn main() -> Result<()> {
     let cache = Arc::new(FilePipelineCache::new(&args.cache_root));
     let mut papers = Vec::with_capacity(records.len());
 
+    // ADR-076 W0 `backend_identity`: probe `/api/version` exactly once, and
+    // only when this batch actually contains a PDF to parse. HTML-only
+    // batches never contact GROBID. The probe is mandatory unless
+    // `--allow-versionless-identity` opts into the historical identity.
+    let pdf_backend = if records
+        .iter()
+        .any(|record| record.source.kind == CanonicalSourceKind::Pdf)
+    {
+        let parser = da_cli::parse_profile::corpus_grobid_parser()
+            .with_timeout(std::time::Duration::from_secs(args.grobid_timeout_seconds));
+        let identity = resolve_backend_identity(&parser, args.allow_versionless_identity).await?;
+        Some((Arc::new(parser), identity))
+    } else {
+        None
+    };
+
     for record in records {
         let source_path = record
             .source
@@ -196,34 +276,31 @@ async fn main() -> Result<()> {
             Arc<dyn da_ports::pipeline_stage::PipelineStageExecutor>,
             SourceFormat,
         ) = match record.source.kind {
-            CanonicalSourceKind::Pdf => (
-                "grobid_parse",
-                Arc::new(
-                    GrobidParseStage::new(
-                        Arc::new(
-                            da_cli::parse_profile::corpus_grobid_parser()
-                                .with_timeout(std::time::Duration::from_secs(
-                                    args.grobid_timeout_seconds,
-                                )),
-                        ),
-                        source_path,
-                        retry_after,
-                    )
-                    .with_contract(StageContract {
-                        stage_id: "grobid_parse".into(),
-                        implementation_fingerprint: "GrobidParser@tei-navigation-v3".into(),
-                        configuration_fingerprint:
-                            "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note,formula"
-                                .into(),
-                        prompt_fingerprint: None,
-                        model_fingerprint: Some("grobid/grobid:0.9.0-crf".into()),
-                        output_schema_fingerprint:
-                            PROJECT_ARTICLE_SCHEMA_FINGERPRINT.into(),
-                    })
-                    .with_retry_delay_seconds(args.retry_delay_seconds),
-                ),
-                SourceFormat::Pdf,
-            ),
+            CanonicalSourceKind::Pdf => {
+                let (parser, identity) = pdf_backend
+                    .as_ref()
+                    .expect("a PDF record implies a resolved PDF backend identity");
+                (
+                    "grobid_parse",
+                    Arc::new(
+                        GrobidParseStage::new(parser.clone(), source_path, retry_after)
+                            .with_contract(StageContract {
+                                stage_id: "grobid_parse".into(),
+                                implementation_fingerprint:
+                                    "GrobidParser@tei-navigation-v3".into(),
+                                configuration_fingerprint:
+                                    "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note,formula"
+                                        .into(),
+                                prompt_fingerprint: None,
+                                model_fingerprint: Some(identity.fingerprint().to_string()),
+                                output_schema_fingerprint:
+                                    PROJECT_ARTICLE_SCHEMA_FINGERPRINT.into(),
+                            })
+                            .with_retry_delay_seconds(args.retry_delay_seconds),
+                    ),
+                    SourceFormat::Pdf,
+                )
+            }
             CanonicalSourceKind::Html => (
                 "html_parse",
                 Arc::new(HtmlParseStage::new(

@@ -43,7 +43,7 @@ use da_parse::{
     ParseBatchCursorError, ParseBatchItem, ParseBatchLimits, ParseCacheDispositions,
     ParseCacheFailure, ParseCacheStage, ParseDocumentFailure, ParseDocumentOutcome,
     ParseDocumentSuccess, RAW_TEI_STAGE_ID, ReferencesDialectV1, RetryAfter,
-    ordered_input_fingerprint,
+    ordered_input_fingerprint, ordered_input_fingerprint_with_backend_version,
 };
 use da_ports::parser::ParsedArticle;
 use serde_json::{Value, json};
@@ -74,6 +74,18 @@ fn ordered_items(requests: Vec<ParseBackendRequest>) -> Vec<ParseBatchItem> {
         .enumerate()
         .map(|(ordinal, request)| ParseBatchItem::new(ordinal as u32, request))
         .collect()
+}
+
+/// Admit a batch with a probed backend version (`None` = versionless).
+fn admitted_with_version(mode: CacheMode, ids: &[&str], version: Option<&str>) -> ParseBatch {
+    ParseBatch::admit_with_backend_version(
+        mode,
+        exec_limits(64),
+        requests_for(ids),
+        None,
+        version.map(str::to_string),
+    )
+    .expect("test batch admits")
 }
 
 fn fixture_article(paper_id: &str) -> ParsedArticle {
@@ -475,6 +487,30 @@ fn input_fingerprint_is_stable_order_sensitive_and_content_bound() {
         )]));
     assert_ne!(rich, references);
     assert_ne!(header, references);
+}
+
+#[test]
+fn input_fingerprint_binds_the_backend_version_with_legacy_equality() {
+    let items = ordered_items(vec![request("2507.19457", 1), request("2512.24601", 2)]);
+    let legacy = ordered_input_fingerprint(&items);
+
+    // Explicit versionless identity is byte-identical to the historical
+    // fingerprint (pre-version cursors and reports stay resumable).
+    assert_eq!(
+        legacy,
+        ordered_input_fingerprint_with_backend_version(&items, None)
+    );
+    assert_eq!(
+        legacy,
+        ordered_input_fingerprint_with_backend_version(&items, Some("   "))
+    );
+
+    let version_a = ordered_input_fingerprint_with_backend_version(&items, Some("0.9.0-crf"));
+    let version_b = ordered_input_fingerprint_with_backend_version(&items, Some("0.9.1"));
+    assert_ne!(legacy, version_a, "the version enters the fingerprint");
+    assert_ne!(legacy, version_b);
+    assert_ne!(version_a, version_b, "versions never share a fingerprint");
+    assert_eq!(version_a.len(), 64);
 }
 
 // ───────────────────── admission: the only Err gate ───────────────────
@@ -1390,6 +1426,79 @@ async fn articles_are_byte_equal_across_all_four_modes() {
             ),
         }
     }
+}
+
+#[tokio::test(start_paused = true)]
+async fn backend_version_isolates_stage_caches_across_identical_bytes() {
+    let backend = FakeBackend::new();
+    let backend_handle = backend.clone();
+    let cache = FakeCache::default();
+    let cache_handle = cache.clone();
+    let executor = ParseBatchExecutor::new(backend, cache);
+
+    // Version A write-through publishes both stages for one document.
+    let sink_a = Arc::new(FakeSink::new());
+    let summary_a = executor
+        .run(
+            admitted_with_version(CacheMode::WriteThrough, &["ver-doc"], Some("0.9.0-crf")),
+            sink_a,
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(summary_a.raw_writes(), 1);
+    assert_eq!(summary_a.projector_writes(), 1);
+    assert_eq!(backend_handle.call_count("ver-doc"), 1);
+
+    // Version A replay hits both stages with zero backend calls.
+    let summary_a_replay = executor
+        .run(
+            admitted_with_version(CacheMode::ReadOnly, &["ver-doc"], Some("0.9.0-crf")),
+            Arc::new(FakeSink::new()),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(summary_a_replay.raw_hits(), 1);
+    assert_eq!(summary_a_replay.projector_hits(), 1);
+    assert_eq!(summary_a_replay.backend_calls(), 0);
+
+    // Version B emits the SAME bytes (the fake backend ignores the version)
+    // yet shares neither stage: the version segment isolates both keys.
+    let summary_b = executor
+        .run(
+            admitted_with_version(CacheMode::ReadOnly, &["ver-doc"], Some("0.9.1")),
+            Arc::new(FakeSink::new()),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(summary_b.raw_hits(), 0, "version B shares no raw entry");
+    assert_eq!(
+        summary_b.projector_hits(),
+        0,
+        "version B shares no projection entry"
+    );
+    assert_eq!(summary_b.backend_calls(), 1);
+
+    // The explicit versionless identity is likewise isolated from A.
+    let summary_legacy = executor
+        .run(
+            admitted_with_version(CacheMode::ReadOnly, &["ver-doc"], None),
+            Arc::new(FakeSink::new()),
+            Arc::new(ParseBatchMemoryCheckpoint::new()),
+        )
+        .await;
+    assert_eq!(summary_legacy.raw_hits(), 0);
+    assert_eq!(summary_legacy.projector_hits(), 0);
+    assert_eq!(summary_legacy.backend_calls(), 1);
+
+    // Only version A published canonical entries (read-only never writes),
+    // so the store proves the isolation rather than merely the counters.
+    assert_eq!(cache_handle.keys_with_prefix(RAW_KEY_PREFIX).len(), 1);
+    assert_eq!(cache_handle.keys_with_prefix(PROJECTOR_KEY_PREFIX).len(), 1);
+    assert_eq!(
+        backend_handle.call_count("ver-doc"),
+        3,
+        "A + B + legacy each fetched once"
+    );
 }
 
 #[tokio::test(start_paused = true)]

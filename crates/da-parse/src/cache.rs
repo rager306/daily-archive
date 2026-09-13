@@ -532,11 +532,53 @@ pub fn raw_tei_stage_key_with_backend_version(
 /// else. A projector schema fix changes the key and orphans old entries
 /// while the raw stage survives untouched. Format:
 /// `parse.project_article.v1:<64 hex>`.
+///
+/// This is the explicit historical (versionless) entry point: it is
+/// byte-identical to [`project_article_stage_key_with_backend_version`] with
+/// `None`, so pre-version projection entries keep their exact key.
 pub fn project_article_stage_key(
     paper_id: &str,
     pdf_sha256: &str,
     raw_payload_sha256: &str,
     projector_schema_fingerprint: &str,
+) -> String {
+    project_article_stage_key_for_version(
+        paper_id,
+        pdf_sha256,
+        raw_payload_sha256,
+        projector_schema_fingerprint,
+        None,
+    )
+}
+
+/// Same as [`project_article_stage_key`] plus an optional backend version
+/// segment. `None` is byte-identical to [`project_article_stage_key`], so
+/// versionless runs keep historical projection keys. A probed service
+/// version is a content-key input (R121): two backend versions that emit
+/// byte-equal raw TEI still never share a projection entry, so a projection
+/// is never presented under a foreign producer identity.
+pub fn project_article_stage_key_with_backend_version(
+    paper_id: &str,
+    pdf_sha256: &str,
+    raw_payload_sha256: &str,
+    projector_schema_fingerprint: &str,
+    backend_version: Option<&str>,
+) -> String {
+    project_article_stage_key_for_version(
+        paper_id,
+        pdf_sha256,
+        raw_payload_sha256,
+        projector_schema_fingerprint,
+        backend_version.map(str::trim).filter(|v| !v.is_empty()),
+    )
+}
+
+fn project_article_stage_key_for_version(
+    paper_id: &str,
+    pdf_sha256: &str,
+    raw_payload_sha256: &str,
+    projector_schema_fingerprint: &str,
+    backend_version: Option<&str>,
 ) -> String {
     let mut hasher = Sha256::new();
     hasher.update(PROJECT_ARTICLE_STAGE_KEY_DOMAIN);
@@ -552,6 +594,9 @@ pub fn project_article_stage_key(
         b"schema_fingerprint",
         projector_schema_fingerprint.as_bytes(),
     );
+    if let Some(version) = backend_version {
+        write_key_segment(&mut hasher, b"backend_version", version.as_bytes());
+    }
     format!(
         "{}:{}",
         PROJECT_ARTICLE_STAGE_ID,

@@ -164,6 +164,10 @@ struct CliContentPipeline {
     tables: bool,
     /// Figure candidate branch (M409).
     figures: bool,
+    /// ACTUAL probed Java GROBID release, resolved ONCE per execution before
+    /// the first PDF cache lookup (ADR-076 W0 `backend_identity`). HTML
+    /// primaries never initialize it. A probe failure fails the load closed.
+    backend_version: tokio::sync::OnceCell<String>,
 }
 
 /// Typed reasons the orchestrated journey is skipped for a load request
@@ -191,6 +195,16 @@ fn journey_skip_reason(
 }
 
 impl CliContentPipeline {
+    /// Probe the Java GROBID `/api/version` once per execution and cache it.
+    /// Fails closed: a probe error aborts the load instead of silently using
+    /// the historical versionless identity (ADR-076 W0 / R121).
+    async fn resolve_backend_version(&self) -> Result<&str, String> {
+        self.backend_version
+            .get_or_try_init(probe_grobid_backend_version)
+            .await
+            .map(String::as_str)
+    }
+
     /// Journey-mode content branch (M404 S02): route the request through the
     /// canonical orchestrated article journey. Fails closed on HTML primaries,
     /// versionless sources, missing cache, and D127 unlock attempts — the
@@ -198,6 +212,7 @@ impl CliContentPipeline {
     async fn run_content_journey(
         &self,
         req: LoadContentRequest<'_>,
+        backend_version: &str,
     ) -> Result<LoadContentOutcome, String> {
         let Some(ports) = &self.journey else {
             return Err("journey ports missing".into());
@@ -254,6 +269,7 @@ impl CliContentPipeline {
             with_tables,
             with_figures,
             figure_branch,
+            Some(backend_version),
         )
         .await?;
         let hits = report
@@ -316,7 +332,10 @@ impl LoadContentPipeline for CliContentPipeline {
                 self.cache.is_some(),
                 req.enable_import,
             ) {
-                None => return self.run_content_journey(req).await,
+                None => {
+                    let backend_version = self.resolve_backend_version().await?;
+                    return self.run_content_journey(req, backend_version).await;
+                }
                 Some(reason) => tracing::warn!(
                     article_id = req.paper_id,
                     reason,
@@ -343,6 +362,14 @@ impl LoadContentPipeline for CliContentPipeline {
         let source_identity =
             source_identity_for_assets(req.paper_id, req.primary_path, is_html, req.assets)?;
 
+        // Version identity is a PDF/GROBID concern only: an HTML primary keeps
+        // the historical versionless key without probing GROBID.
+        let backend_version = if is_html {
+            None
+        } else {
+            Some(self.resolve_backend_version().await?)
+        };
+
         let (parsed, mut cache_records, parse_payload_sha) = parse_with_cache(
             self.cache.as_deref(),
             req.paper_id,
@@ -350,6 +377,7 @@ impl LoadContentPipeline for CliContentPipeline {
             is_html,
             source_identity.clone(),
             grobid_profile,
+            backend_version,
         )
         .await?;
 
@@ -693,6 +721,24 @@ fn parse_cache_key(source: SourceIdentity, is_html: bool, profile: GrobidProfile
     }
 }
 
+/// Same as [`parse_cache_key`] plus the ACTUAL probed Java GROBID release for
+/// a PDF parse. `None` (or blank) is byte-identical to [`parse_cache_key`], so
+/// pre-version parse entries keep their exact key; a present release isolates
+/// the parse entry to that Java GROBID version (ADR-076 W0
+/// `backend_identity`). HTML primaries never carry a GROBID version.
+fn parse_cache_key_with_backend_version(
+    source: SourceIdentity,
+    is_html: bool,
+    profile: GrobidProfile,
+    backend_version: Option<&str>,
+) -> StageCacheKey {
+    let mut key = parse_cache_key(source, is_html, profile);
+    if !is_html {
+        key.model_fingerprint = backend_version.and_then(da_parse::grobid_model_fingerprint);
+    }
+    key
+}
+
 // The legacy rich-PDF/HTML-only read fallback lives verbatim in
 // `da_adapters::parse_cache` (S06/T03) and is used unchanged below, so the
 // legacy identity and its reports stay byte-stable across the extraction.
@@ -706,9 +752,10 @@ async fn parse_with_cache(
     is_html: bool,
     source: SourceIdentity,
     profile: GrobidProfile,
+    backend_version: Option<&str>,
 ) -> Result<(ParsedArticle, Vec<LoadCacheRecord>, String), String> {
     let primary_str = primary_path.display().to_string();
-    let key = parse_cache_key(source, is_html, profile);
+    let key = parse_cache_key_with_backend_version(source, is_html, profile, backend_version);
 
     // Async produce needs to be outside the sync cache helper: pre-run only on miss path
     // is handled by checking lookup first when cache is present.
@@ -1033,6 +1080,28 @@ fn decode_f32_le(bytes: &[u8], expected_dimensions: usize) -> Result<Vec<f32>, S
     Ok(out)
 }
 
+/// Probe a live Java GROBID `/api/version` and return the probed release.
+///
+/// The probe is mandatory for a versioned PDF parse: a failure is returned so
+/// the load fails closed rather than silently reusing the historical
+/// versionless identity (ADR-076 W0 / R121).
+async fn probe_grobid_backend_version_with(parser: &GrobidParser) -> Result<String, String> {
+    match parser.probe_version().await {
+        Ok(probe) => Ok(probe.version),
+        Err(failure) => Err(format!(
+            "load backend version: {failure} (the /api/version probe is required; \
+             there is no silent versionless fallback for a PDF parse)"
+        )),
+    }
+}
+
+/// Probe the live Java GROBID release once per load execution.
+async fn probe_grobid_backend_version() -> Result<String, String> {
+    let parser = GrobidParser::from_env()
+        .with_profile(crate::parse_profile::consult_corpus_grobid_profile());
+    probe_grobid_backend_version_with(&parser).await
+}
+
 async fn parse_primary(
     primary_path: &str,
     paper_id: &str,
@@ -1108,6 +1177,7 @@ fn make_content_pipeline(
         equations: args.equations,
         tables: args.tables,
         figures: args.figures,
+        backend_version: tokio::sync::OnceCell::new(),
     })
 }
 
@@ -1922,6 +1992,94 @@ mod tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[test]
+    fn parse_cache_key_version_isolation_preserves_legacy_identity() {
+        let root = std::env::temp_dir().join(format!(
+            "da-parse-version-key-{}-{}",
+            std::process::id(),
+            REPORT_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let pdf = root.join("paper.pdf");
+        std::fs::write(&pdf, b"version-key").unwrap();
+        let source = source_identity_for_assets("test.paper", &pdf, false, &[]).unwrap();
+
+        let legacy = parse_cache_key(source.clone(), false, GrobidProfile::structural());
+        let none = parse_cache_key_with_backend_version(
+            source.clone(),
+            false,
+            GrobidProfile::structural(),
+            None,
+        );
+        let blank = parse_cache_key_with_backend_version(
+            source.clone(),
+            false,
+            GrobidProfile::structural(),
+            Some("   "),
+        );
+        // Explicit versionless identity is byte-identical to the historical
+        // parse key, so pre-version entries stay readable.
+        assert_eq!(legacy.key_sha256().unwrap(), none.key_sha256().unwrap());
+        assert_eq!(legacy.key_sha256().unwrap(), blank.key_sha256().unwrap());
+
+        let v1 = parse_cache_key_with_backend_version(
+            source.clone(),
+            false,
+            GrobidProfile::structural(),
+            Some("0.9.0-crf"),
+        );
+        let v2 = parse_cache_key_with_backend_version(
+            source.clone(),
+            false,
+            GrobidProfile::structural(),
+            Some("0.9.1"),
+        );
+        let v1_again = parse_cache_key_with_backend_version(
+            source.clone(),
+            false,
+            GrobidProfile::structural(),
+            Some("0.9.0-crf"),
+        );
+        assert_eq!(
+            v1.model_fingerprint.as_deref(),
+            Some("grobid/grobid:0.9.0-crf")
+        );
+        assert_eq!(v1.key_sha256().unwrap(), v1_again.key_sha256().unwrap());
+        assert_ne!(legacy.key_sha256().unwrap(), v1.key_sha256().unwrap());
+        assert_ne!(
+            v1.key_sha256().unwrap(),
+            v2.key_sha256().unwrap(),
+            "different GROBID releases never share a parse entry"
+        );
+
+        // HTML primaries never carry a GROBID release identity, so an HTML
+        // run stays byte-identical regardless of the probed PDF backend.
+        let html = root.join("paper.html");
+        std::fs::write(&html, b"<html><body>x</body></html>").unwrap();
+        let html_source = source_identity_for_assets("test.paper", &html, true, &[]).unwrap();
+        let html_key = parse_cache_key_with_backend_version(
+            html_source,
+            true,
+            GrobidProfile::structural(),
+            Some("0.9.1"),
+        );
+        assert_eq!(html_key.model_fingerprint, None);
+        assert!(html_key.implementation_fingerprint.contains("HtmlParser"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn load_version_probe_fails_closed_without_silent_fallback() {
+        // Port 1 is not a listening GROBID service: the probe must surface a
+        // typed error instead of silently using the versionless identity.
+        let parser = GrobidParser::new(Some("http://127.0.0.1:1"));
+        let error = probe_grobid_backend_version_with(&parser)
+            .await
+            .expect_err("an unreachable service must fail the identity probe");
+        assert!(error.contains("required"), "{error}");
+        assert!(error.contains("no silent versionless fallback"), "{error}");
+    }
+
     #[tokio::test]
     async fn parse_reads_exact_legacy_rich_pdf_only_key_without_canonical_write() {
         let root = std::env::temp_dir().join(format!(
@@ -1971,6 +2129,8 @@ mod tests {
             false,
             source_identity_for_assets("test.paper", &pdf, false, &[]).unwrap(),
             GrobidProfile::rich(),
+            // Explicit versionless identity: reads the historical legacy key.
+            None,
         )
         .await
         .unwrap();

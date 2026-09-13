@@ -1039,7 +1039,8 @@ fn s05_proxy_result_identities_exclude_tuning_and_stay_d204_collision_free() {
 use da_parse::{
     CacheIntegrityCode, PROJECT_ARTICLE_SCHEMA_FINGERPRINT, PROJECT_ARTICLE_STAGE_ID,
     ParseCacheStage, ProjectArticlePayload, RAW_TEI_PAYLOAD_SCHEMA_VERSION, RAW_TEI_STAGE_ID,
-    RawTeiEnvelopePayload, project_article_stage_key, raw_tei_stage_key,
+    RawTeiEnvelopePayload, project_article_stage_key,
+    project_article_stage_key_with_backend_version, raw_tei_stage_key,
     raw_tei_stage_key_with_backend_version,
 };
 
@@ -1146,6 +1147,69 @@ fn backend_version_is_omitted_until_stamped_then_restored() {
     let (verified, _) =
         RawTeiEnvelopePayload::decode_and_verify(&payload.encode(), &result).expect("verify");
     assert_eq!(verified.identity().backend_version(), Some("0.9.0-crf"));
+}
+
+#[test]
+fn backend_version_isolates_raw_and_projection_stage_keys() {
+    let request = s06_fulltext_request("paper-key", b"source-a".to_vec());
+    let (pdf_sha, raw_sha) = ("pdf-sha", "raw-sha");
+
+    // Explicit versionless identity is byte-identical to the historical
+    // projector entry point (pre-version projection entries stay readable).
+    let legacy = project_article_stage_key(
+        "paper-key",
+        pdf_sha,
+        raw_sha,
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+    );
+    assert_eq!(
+        legacy,
+        project_article_stage_key_with_backend_version(
+            "paper-key",
+            pdf_sha,
+            raw_sha,
+            PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+            None,
+        )
+    );
+    assert_eq!(
+        legacy,
+        project_article_stage_key_with_backend_version(
+            "paper-key",
+            pdf_sha,
+            raw_sha,
+            PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+            Some("   "),
+        )
+    );
+
+    let proj_a = project_article_stage_key_with_backend_version(
+        "paper-key",
+        pdf_sha,
+        raw_sha,
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        Some("0.9.0-crf"),
+    );
+    let proj_b = project_article_stage_key_with_backend_version(
+        "paper-key",
+        pdf_sha,
+        raw_sha,
+        PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        Some("0.9.1"),
+    );
+    assert!(proj_a.starts_with(PROJECT_ARTICLE_STAGE_ID));
+    assert_ne!(proj_a, proj_b, "versions never share a projection entry");
+    assert_ne!(legacy, proj_a);
+    assert_ne!(legacy, proj_b);
+
+    // Raw stage: identical source bytes under two versions never share an
+    // entry, and neither shares the versionless historical key.
+    let raw_a = raw_tei_stage_key_with_backend_version(&request, Some("0.9.0-crf"));
+    let raw_b = raw_tei_stage_key_with_backend_version(&request, Some("0.9.1"));
+    let raw_legacy = raw_tei_stage_key(&request);
+    assert_ne!(raw_a, raw_b);
+    assert_ne!(raw_a, raw_legacy);
+    assert_ne!(raw_b, raw_legacy);
 }
 
 #[test]

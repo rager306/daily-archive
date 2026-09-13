@@ -29,6 +29,24 @@ use sha2::{Digest, Sha256};
 const PIPELINE_LEDGER_YAML: &str =
     include_str!("../../../data/ontology/pipeline_stage_contracts.yaml");
 
+/// Historical baseline model identity for the Java GROBID transport
+/// (`grobid/grobid:0.9.0-crf`, the D204/D321 baseline).
+///
+/// Legacy/rollback default only. A caller that parses against a live service
+/// MUST set [`MultimodalProductionSettings::backend_version`] to the ACTUAL
+/// probed `/api/version` so a GROBID upgrade rotates the parse cache key
+/// instead of reusing another release's TEI (ADR-076 W0 `backend_identity`).
+const HISTORICAL_GROBID_MODEL_FINGERPRINT: &str = "grobid/grobid:0.9.0-crf";
+
+/// Resolve the parse-stage model identity at runtime: the ACTUAL probed
+/// release when present, else the explicit historical baseline for legacy
+/// reads. Blank input is treated as absent (never a collapsed identity).
+fn grobid_parse_model_fingerprint(backend_version: Option<&str>) -> String {
+    backend_version
+        .and_then(da_parse::grobid_model_fingerprint)
+        .unwrap_or_else(|| HISTORICAL_GROBID_MODEL_FINGERPRINT.to_string())
+}
+
 pub struct ProductionContext {
     pub store: Arc<SamyamaGraphStore>,
     pub cache: Option<Arc<FilePipelineCache>>,
@@ -278,6 +296,10 @@ pub struct MultimodalProductionSettings {
     pub parser: Arc<dyn ParserPort>,
     /// GROBID consolidation profile (production: DATA profile_route consult).
     pub grobid_profile: GrobidProfile,
+    /// ACTUAL probed Java GROBID `/api/version` string, when the caller
+    /// resolved one. `None` keeps the historical baseline parse identity for
+    /// legacy reads; a live composition should probe once and set it.
+    pub backend_version: Option<String>,
     /// Figure/table detector (production: `PdfFigures2Adapter::from_env()`).
     pub detector: Arc<dyn FigureDetectionPort>,
     /// Multimodal LLM port (production: prompt-task registry + model registry
@@ -311,6 +333,12 @@ impl MultimodalProductionSettings {
         Ok(Self {
             parser,
             grobid_profile,
+            // The `/api/version` probe is async; `from_env` is synchronous and
+            // the composition has no live caller yet. The composition owner
+            // must probe once and set this before composing (see the field
+            // doc); `None` here is the explicit legacy baseline, not a silent
+            // fallback for a live run.
+            backend_version: None,
             detector,
             model,
             retry_after,
@@ -394,6 +422,10 @@ pub fn compose_multimodal_production(
 
     // parse stage — GROBID profile bound into the configuration fingerprint.
     let profile_fp = settings.grobid_profile.configuration_fingerprint();
+    // Runtime model identity: the ACTUAL probed release when the composition
+    // owner resolved one, otherwise the explicit historical baseline for
+    // legacy reads. Never a switch default (see the const doc).
+    let model_fingerprint = grobid_parse_model_fingerprint(settings.backend_version.as_deref());
     let parse_stage = Arc::new(
         GrobidParseStage::new(
             settings.parser.clone(),
@@ -405,7 +437,7 @@ pub fn compose_multimodal_production(
             implementation_fingerprint: "GrobidParser@tei-navigation-v3".into(),
             configuration_fingerprint: profile_fp.clone(),
             prompt_fingerprint: None,
-            model_fingerprint: Some("grobid/grobid:0.9.0-crf".into()),
+            model_fingerprint: Some(model_fingerprint),
             output_schema_fingerprint: PROJECT_ARTICLE_SCHEMA_FINGERPRINT.into(),
         }),
     );
@@ -845,10 +877,40 @@ mod tests {
                 },
             }),
             retry_after: "2026-08-17T01:00:00Z".into(),
+            backend_version: None,
             context_output_schema: "FigureSemanticContext@serde-v2-summary-provenance".into(),
             analysis_prompt_fingerprint: "prompt-fixture-sha".into(),
             analysis_schema_fingerprint: "schema-fixture-sha".into(),
         }
+    }
+
+    #[test]
+    fn multimodal_parse_identity_uses_probed_backend_version_at_runtime() {
+        // A live probed release, not the hardcoded baseline, drives the
+        // parse-stage model identity the orchestrator keys on.
+        assert_eq!(
+            super::grobid_parse_model_fingerprint(Some("0.9.1")),
+            "grobid/grobid:0.9.1"
+        );
+        assert_ne!(
+            super::grobid_parse_model_fingerprint(Some("0.9.1")),
+            HISTORICAL_GROBID_MODEL_FINGERPRINT,
+            "a live probe must not fall back to the historical baseline"
+        );
+        // Different releases never share an identity.
+        assert_ne!(
+            super::grobid_parse_model_fingerprint(Some("0.9.0-crf")),
+            super::grobid_parse_model_fingerprint(Some("0.9.1"))
+        );
+        // Absent/blank keeps the explicit legacy baseline.
+        assert_eq!(
+            super::grobid_parse_model_fingerprint(None),
+            HISTORICAL_GROBID_MODEL_FINGERPRINT
+        );
+        assert_eq!(
+            super::grobid_parse_model_fingerprint(Some("   ")),
+            HISTORICAL_GROBID_MODEL_FINGERPRINT
+        );
     }
 
     fn fake_binding() -> MultimodalArticleBinding {

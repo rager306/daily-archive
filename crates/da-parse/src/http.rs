@@ -50,6 +50,21 @@ pub enum ProbeFailure {
     InvalidResponse,
 }
 
+impl std::fmt::Display for ProbeFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unavailable => {
+                formatter.write_str("GROBID probe unavailable (transport error or 5xx)")
+            }
+            Self::InvalidResponse => formatter.write_str(
+                "GROBID probe returned an unexpected status or an uninterpretable payload",
+            ),
+        }
+    }
+}
+
+impl std::error::Error for ProbeFailure {}
+
 /// Successful `GET /api/health` (JSON object, status recorded, body not identity).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HealthProbe {
@@ -62,6 +77,25 @@ pub struct VersionProbe {
     pub version: String,
     pub name: Option<String>,
     pub revision: Option<String>,
+}
+
+/// Historical production model-identity segment for the Java GROBID service
+/// transport: `grobid/grobid:{version}`.
+///
+/// Callers pass the ACTUAL probed `/api/version` string (R121); this helper
+/// never invents a version and returns `None` for blank input, so a blank
+/// probe can never collapse two producers onto one identity. The value is
+/// the `model_fingerprint` input for `StageCacheKey` / stage contracts, so
+/// two Java GROBID releases never share parse evidence even when they emit
+/// byte-equal TEI.
+///
+/// This is a runtime identity, never a switch default: a code change that
+/// hardcodes a release here (e.g. when upgrading GROBID) would rotate every
+/// cache key without a probe. Preserve the historical baseline only as an
+/// explicit rollback/legacy constant at the call site.
+pub fn grobid_model_fingerprint(version: &str) -> Option<String> {
+    let version = version.trim();
+    (!version.is_empty()).then(|| format!("grobid/grobid:{version}"))
 }
 
 fn parse_version_payload(bytes: &[u8]) -> Result<VersionProbe, ProbeFailure> {
@@ -275,7 +309,10 @@ impl GrobidHttpBackend {
     ///
     /// Accepts JSON `{name, version, revision}` (version required) or a non-empty
     /// plain version string. Transport/5xx → Unavailable. Empty/unparseable →
-    /// InvalidResponse. The string is diagnostic until T02 stamps identity.
+    /// InvalidResponse. The payload never enters [`TeiIdentity`] by itself;
+    /// the composition root stamps the probed string through
+    /// [`GrobidHttpBackend::with_backend_version`] (and the batch layer
+    /// carries it into cache/fingerprint identity).
     pub async fn probe_version(&self) -> Result<VersionProbe, ProbeFailure> {
         let url = format!("{}/api/version", self.url);
         let response = self
@@ -749,5 +786,31 @@ impl GrobidParser {
     /// backend; only the facade shell keeps filesystem/env concerns.
     pub(crate) fn backend(&self) -> &GrobidHttpBackend {
         &self.transport
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::grobid_model_fingerprint;
+
+    #[test]
+    fn grobid_model_fingerprint_is_runtime_and_never_invents_a_release() {
+        // The ACTUAL probed release, in the historical production format.
+        assert_eq!(
+            grobid_model_fingerprint("0.9.0-crf").as_deref(),
+            Some("grobid/grobid:0.9.0-crf")
+        );
+        assert_eq!(
+            grobid_model_fingerprint("  0.9.1  ").as_deref(),
+            Some("grobid/grobid:0.9.1")
+        );
+        // Different releases never share an identity.
+        assert_ne!(
+            grobid_model_fingerprint("0.9.0-crf"),
+            grobid_model_fingerprint("0.9.1")
+        );
+        // Blank is "absent", not a collapsed identity.
+        assert_eq!(grobid_model_fingerprint(""), None);
+        assert_eq!(grobid_model_fingerprint("   "), None);
     }
 }

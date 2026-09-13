@@ -115,6 +115,24 @@ pub fn load_parse_contract(profile: &GrobidProfile) -> StageContract {
     }
 }
 
+/// Same as [`load_parse_contract`] plus the ACTUAL probed Java GROBID release.
+///
+/// `None` (or blank) is byte-identical to [`load_parse_contract`], so
+/// pre-version journey entries stay readable; a present release is stamped as
+/// `model_fingerprint` so the orchestrator keys the parse stage to that Java
+/// GROBID version (ADR-076 W0 `backend_identity`). The orchestrator builds
+/// its key from this exact contract, and `journey_cache_key` reconstructs
+/// the payload key from the same snapshotted contract, so the executed key
+/// and the lookup key cannot drift.
+pub fn load_parse_contract_with_backend_version(
+    profile: &GrobidProfile,
+    backend_version: Option<&str>,
+) -> StageContract {
+    let mut contract = load_parse_contract(profile);
+    contract.model_fingerprint = backend_version.and_then(da_parse::grobid_model_fingerprint);
+    contract
+}
+
 /// Reconstruct the orchestrator's exact cache key for one journey step from
 /// dependency output digests and the snapshotted executor contract.
 fn journey_cache_key(
@@ -218,6 +236,7 @@ pub async fn run_journey_content(
     with_tables: bool,
     with_figures: bool,
     figure_branch: Option<FigureBranchSettings>,
+    backend_version: Option<&str>,
 ) -> Result<(LoadContentOutcome, PipelineRunReport), String> {
     let journey = if with_figures {
         ArticleJourneyComposition::with_figures(&stage_registry, "da-load-journey")
@@ -238,7 +257,10 @@ pub async fn run_journey_content(
             pdf_path.display().to_string(),
             &retry_after,
         )
-        .with_contract(load_parse_contract(&grobid_profile)),
+        .with_contract(load_parse_contract_with_backend_version(
+            &grobid_profile,
+            backend_version,
+        )),
     );
     let extract_stage = Arc::new(RuleExtractionStage::new(
         ports.extractor.clone(),

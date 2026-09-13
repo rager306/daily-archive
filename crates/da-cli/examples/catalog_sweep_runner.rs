@@ -12,6 +12,7 @@
 
 use anyhow::Result;
 use clap::Parser;
+use da_adapters::pipeline_stages::HISTORICAL_GROBID_MODEL_FINGERPRINT;
 use da_adapters::{
     FdApiEmbedder, FilePipelineCache, GrobidParseStage, ParsedArticleEmbeddingStage,
     RuleBasedExtractor, RuleExtractionStage,
@@ -20,7 +21,7 @@ use da_application::{PipelineOrchestrator, PipelineRunReport, StageDisposition};
 use da_cli::catalog_sweep::{
     ArticleMetrics, CatalogEntry, DeviationKind, SweepThresholds, classify_deviations,
 };
-use da_parse::{GrobidParser, PROJECT_ARTICLE_SCHEMA_FINGERPRINT};
+use da_parse::{GrobidParser, PROJECT_ARTICLE_SCHEMA_FINGERPRINT, grobid_model_fingerprint};
 use da_ports::pipeline_cache::{PipelineCache, SourceIdentity};
 use da_ports::pipeline_stage::{PipelineStageExecutor, StageContract};
 use kg_pipeline::PipelineBuilder;
@@ -67,6 +68,13 @@ struct Args {
     /// canonical article-catalog root by default.
     #[arg(long, default_value = "data/sources/arxiv/article_catalog/arxiv")]
     catalog_root: PathBuf,
+    /// Explicitly opt into the historical (versionless) GROBID identity:
+    /// skip the mandatory `/api/version` probe and stamp
+    /// `grobid/grobid:0.9.0-crf`. Without this flag a probe failure fails the
+    /// run — there is no silent legacy fallback. Use only to read/replay
+    /// historical parse-cache entries.
+    #[arg(long)]
+    allow_versionless_identity: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -379,12 +387,69 @@ fn collect_metrics(
 
 use da_ports::pipeline_cache::CacheLookup;
 
+/// Resolved GROBID model identity for the parse-stage contract
+/// (ADR-076 W0 `backend_identity`).
+#[derive(Debug, Clone)]
+enum BackendIdentity {
+    /// The live `/api/version` probe succeeded and produced this non-blank
+    /// `grobid/grobid:{version}` fingerprint.
+    Probed { fingerprint: String },
+    /// Explicit `--allow-versionless-identity`: the historical baseline is
+    /// stamped on purpose to read/replay legacy parse-cache entries.
+    Historical,
+}
+
+impl BackendIdentity {
+    fn fingerprint(&self) -> &str {
+        match self {
+            Self::Probed { fingerprint } => fingerprint,
+            Self::Historical => HISTORICAL_GROBID_MODEL_FINGERPRINT,
+        }
+    }
+}
+
+/// Probe `/api/version` once and resolve the parse-stage model identity.
+///
+/// Default is fail-closed: a transport error, 5xx, unparseable payload, or
+/// blank version aborts the run — never invent a release and never silently
+/// assume the historical baseline. `--allow-versionless-identity` is the only
+/// path that stamps the historical identity, and it is announced on stderr.
+async fn resolve_backend_identity(
+    parser: &GrobidParser,
+    allow_versionless_identity: bool,
+) -> Result<BackendIdentity> {
+    if allow_versionless_identity {
+        eprintln!(
+            "catalog sweep: --allow-versionless-identity set; using historical GROBID identity {HISTORICAL_GROBID_MODEL_FINGERPRINT} (legacy read/replay only)"
+        );
+        return Ok(BackendIdentity::Historical);
+    }
+    match parser.probe_version().await {
+        Ok(probe) => match grobid_model_fingerprint(&probe.version) {
+            Some(fingerprint) => {
+                eprintln!(
+                    "catalog sweep: GROBID /api/version={} model identity={fingerprint}",
+                    probe.version
+                );
+                Ok(BackendIdentity::Probed { fingerprint })
+            }
+            None => anyhow::bail!(
+                "GROBID /api/version returned a blank version; refusing to invent a model identity. Pass --allow-versionless-identity to use the historical {HISTORICAL_GROBID_MODEL_FINGERPRINT} identity explicitly"
+            ),
+        },
+        Err(failure) => anyhow::bail!(
+            "GROBID /api/version probe failed: {failure}; refusing to stamp a historical model identity. Pass --allow-versionless-identity to use the historical {HISTORICAL_GROBID_MODEL_FINGERPRINT} identity explicitly"
+        ),
+    }
+}
+
 async fn process_one(
     entry: &CatalogEntry,
     cache: Arc<FilePipelineCache>,
     parser: Arc<GrobidParser>,
     extractor: Arc<RuleBasedExtractor>,
     embedder: Option<Arc<FdApiEmbedder>>,
+    backend_identity: &BackendIdentity,
     thresholds: &SweepThresholds,
 ) -> PaperSweepRecord {
     let t0 = Instant::now();
@@ -402,7 +467,7 @@ async fn process_one(
                 implementation_fingerprint: "GrobidParser@tei-navigation-v3".into(),
                 configuration_fingerprint: "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note,formula".into(),
                 prompt_fingerprint: None,
-                model_fingerprint: Some("grobid/grobid:0.9.0-crf".into()),
+                model_fingerprint: Some(backend_identity.fingerprint().to_string()),
                 output_schema_fingerprint: PROJECT_ARTICLE_SCHEMA_FINGERPRINT.into(),
             })
             .with_retry_delay_seconds(30),
@@ -626,51 +691,62 @@ async fn main() -> Result<()> {
     let failures = Arc::new(std::sync::atomic::AtomicUsize::new(0));
 
     let mut handles = Vec::new();
-    for _ in 0..args.workers.clamp(1, 16) {
-        let queue = queue.clone();
-        let results = results.clone();
-        let done = done.clone();
-        let failures = failures.clone();
-        let cache = cache.clone();
-        let parser = parser.clone();
-        let extractor = extractor.clone();
-        let embedder = embedder.clone();
-        let thresholds = thresholds.clone();
-        let pending = pending.clone();
-        handles.push(tokio::spawn(async move {
-            loop {
-                let index = queue.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-                if index >= total {
-                    break;
+    if total > 0 {
+        // ADR-076 W0 `backend_identity`: resolve the ACTUAL GROBID release
+        // exactly once before any PDF is parsed. The probe is mandatory
+        // unless `--allow-versionless-identity` opts into the historical
+        // identity. When nothing is pending this block is skipped, so
+        // resume-only / source-anomaly runs never contact GROBID.
+        let backend_identity =
+            Arc::new(resolve_backend_identity(&parser, args.allow_versionless_identity).await?);
+        for _ in 0..args.workers.clamp(1, 16) {
+            let queue = queue.clone();
+            let results = results.clone();
+            let done = done.clone();
+            let failures = failures.clone();
+            let cache = cache.clone();
+            let parser = parser.clone();
+            let extractor = extractor.clone();
+            let embedder = embedder.clone();
+            let thresholds = thresholds.clone();
+            let pending = pending.clone();
+            let backend_identity = backend_identity.clone();
+            handles.push(tokio::spawn(async move {
+                loop {
+                    let index = queue.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    if index >= total {
+                        break;
+                    }
+                    let entry = &pending[index];
+                    let t0 = Instant::now();
+                    let record = process_one(
+                        entry,
+                        cache.clone(),
+                        parser.clone(),
+                        extractor.clone(),
+                        embedder.clone(),
+                        &backend_identity,
+                        &thresholds,
+                    )
+                    .await;
+                    if record.outcome == "failed" {
+                        failures.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    }
+                    let n = done.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+                    if n.is_multiple_of(10) || n == total {
+                        let elapsed = started.elapsed().as_secs();
+                        let rate = (n as u64).checked_div(elapsed).unwrap_or(0);
+                        println!(
+                            "progress {n}/{total} failed={} rate={rate}/s elapsed={elapsed}s",
+                            failures.load(std::sync::atomic::Ordering::SeqCst)
+                        );
+                        let _ = std::io::stdout().flush();
+                    }
+                    let _ = t0;
+                    results.lock().unwrap().push(record);
                 }
-                let entry = &pending[index];
-                let t0 = Instant::now();
-                let record = process_one(
-                    entry,
-                    cache.clone(),
-                    parser.clone(),
-                    extractor.clone(),
-                    embedder.clone(),
-                    &thresholds,
-                )
-                .await;
-                if record.outcome == "failed" {
-                    failures.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-                }
-                let n = done.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
-                if n.is_multiple_of(10) || n == total {
-                    let elapsed = started.elapsed().as_secs();
-                    let rate = (n as u64).checked_div(elapsed).unwrap_or(0);
-                    println!(
-                        "progress {n}/{total} failed={} rate={rate}/s elapsed={elapsed}s",
-                        failures.load(std::sync::atomic::Ordering::SeqCst)
-                    );
-                    let _ = std::io::stdout().flush();
-                }
-                let _ = t0;
-                results.lock().unwrap().push(record);
-            }
-        }));
+            }));
+        }
     }
     for h in handles {
         h.await.map_err(|e| anyhow::anyhow!("worker join: {e}"))?;

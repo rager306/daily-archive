@@ -55,7 +55,8 @@ use crate::backend::{ParseBackend, ParseBackendRequest};
 use crate::cache::{
     CacheMode, CacheStageDisposition, PROJECT_ARTICLE_SCHEMA_FINGERPRINT, ParseArtifactCache,
     ParseCacheDispositions, ParseCacheFailure, ProjectArticlePayload, RawTeiEnvelopePayload,
-    project_article_stage_key, raw_tei_stage_key, sha256_hex,
+    project_article_stage_key_with_backend_version, raw_tei_stage_key_with_backend_version,
+    sha256_hex,
 };
 use crate::envelope::{TeiEnvelope, TeiResultIdentity};
 use crate::lift::TeiLifter;
@@ -270,6 +271,10 @@ pub(crate) fn endpoint_dialect_wire(request: &ParseBackendRequest) -> String {
 /// physical roots and accelerator settings (locations). The fingerprint is
 /// pure input CONTENT identity — the exact binding a [`BatchCursor`] may
 /// resume against.
+///
+/// This is the explicit historical (versionless) entry point: it is
+/// byte-identical to [`ordered_input_fingerprint_with_backend_version`] with
+/// `None`, so pre-version cursors and reports stay resumable.
 pub fn ordered_input_fingerprint(items: &[ParseBatchItem]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(FINGERPRINT_DOMAIN);
@@ -284,6 +289,38 @@ pub fn ordered_input_fingerprint(items: &[ParseBatchItem]) -> String {
         write_segment(&mut hasher, b"pdf_bytes", item.request().pdf_bytes());
     }
     hex::encode(hasher.finalize())
+}
+
+/// Same as [`ordered_input_fingerprint`] plus an optional backend version
+/// segment. `None` is byte-identical to [`ordered_input_fingerprint`], so
+/// versionless runs keep historical fingerprint/cursor identity. A probed
+/// service version is an input-CONTENT identity component (R121): work
+/// produced by one backend version must never be resumed or reported under
+/// another, so a versioned fingerprint never matches a versionless (or
+/// differently-versioned) cursor, report or accelerator row.
+pub fn ordered_input_fingerprint_with_backend_version(
+    items: &[ParseBatchItem],
+    backend_version: Option<&str>,
+) -> String {
+    match backend_version.map(str::trim).filter(|v| !v.is_empty()) {
+        None => ordered_input_fingerprint(items),
+        Some(version) => {
+            let mut hasher = Sha256::new();
+            hasher.update(FINGERPRINT_DOMAIN);
+            for item in items {
+                hasher.update(b"item");
+                hasher.update(item.ordinal().to_le_bytes());
+                write_segment(&mut hasher, b"paper_id", item.paper_id().as_bytes());
+                let endpoint = item.request().endpoint();
+                write_segment(&mut hasher, b"endpoint", endpoint.as_str().as_bytes());
+                let dialect_wire = endpoint_dialect_wire(item.request());
+                write_segment(&mut hasher, b"dialect", dialect_wire.as_bytes());
+                write_segment(&mut hasher, b"pdf_bytes", item.request().pdf_bytes());
+            }
+            write_segment(&mut hasher, b"backend_version", version.as_bytes());
+            hex::encode(hasher.finalize())
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -533,21 +570,41 @@ pub struct ParseBatch {
     input_fingerprint: String,
     cursor: BatchCursor,
     items: Vec<ParseBatchItem>,
+    backend_version: Option<String>,
 }
 
 impl ParseBatch {
-    /// Admit an ordered document set under `mode` and `limits`.
+    /// Admit an ordered document set under `mode` and `limits` with the
+    /// explicit historical (versionless) identity.
     ///
-    /// Validation order: non-empty → document bound → empty ids →
-    /// duplicates → cursor. Admission assigns stable ordinals `0..n` in
-    /// input order and stamps the ordered input fingerprint; a provided
-    /// resume cursor must match that fingerprint or admission fails before
-    /// any document work.
+    /// This is the compatibility entry point: it is byte-identical to
+    /// [`Self::admit_with_backend_version`] with `None`, so pre-version
+    /// callers keep their exact fingerprint, cursor lineage and stage keys.
     pub fn admit(
         mode: CacheMode,
         limits: ParseBatchLimits,
         requests: Vec<ParseBackendRequest>,
         resume_cursor: Option<BatchCursor>,
+    ) -> Result<Self, ParseBatchAdmissionError> {
+        Self::admit_with_backend_version(mode, limits, requests, resume_cursor, None)
+    }
+
+    /// Admit an ordered document set under `mode` and `limits`, stamping
+    /// `backend_version` (a probed service version, when one was observed)
+    /// into the ordered input fingerprint.
+    ///
+    /// Validation order: non-empty → document bound → empty ids →
+    /// duplicates → cursor. Admission assigns stable ordinals `0..n` in
+    /// input order and stamps the ordered input fingerprint; a provided
+    /// resume cursor must match that fingerprint or admission fails before
+    /// any document work. `None` (or blank) is the explicit versionless
+    /// identity and reproduces the historical fingerprint exactly.
+    pub fn admit_with_backend_version(
+        mode: CacheMode,
+        limits: ParseBatchLimits,
+        requests: Vec<ParseBackendRequest>,
+        resume_cursor: Option<BatchCursor>,
+        backend_version: Option<String>,
     ) -> Result<Self, ParseBatchAdmissionError> {
         if requests.is_empty() {
             return Err(ParseBatchAdmissionError::EmptyBatch);
@@ -569,12 +626,18 @@ impl ParseBatch {
                 });
             }
         }
+        // Blank is "absent" (the probe never yields an empty version), so a
+        // blank value can never reach a key or fingerprint as a segment.
+        let backend_version = backend_version
+            .map(|version| version.trim().to_string())
+            .filter(|version| !version.is_empty());
         let items: Vec<ParseBatchItem> = requests
             .into_iter()
             .enumerate()
             .map(|(ordinal, request)| ParseBatchItem::new(ordinal as u32, request))
             .collect();
-        let input_fingerprint = ordered_input_fingerprint(&items);
+        let input_fingerprint =
+            ordered_input_fingerprint_with_backend_version(&items, backend_version.as_deref());
         let cursor = match resume_cursor {
             Some(cursor) => {
                 cursor
@@ -590,12 +653,19 @@ impl ParseBatch {
             input_fingerprint,
             cursor,
             items,
+            backend_version,
         })
     }
 
     /// Cache mode of this run (cost strategy — never part of the identity).
     pub const fn mode(&self) -> CacheMode {
         self.mode
+    }
+
+    /// Probed backend version stamped into this batch's content identity
+    /// (`None` = explicit historical/versionless identity).
+    pub fn backend_version(&self) -> Option<&str> {
+        self.backend_version.as_deref()
     }
 
     /// Execution bounds of this run (excluded from the identity).
@@ -1323,6 +1393,7 @@ async fn execute_document<B: ParseBackend, C: ParseArtifactCache>(
     backend: &B,
     cache: &C,
     projector_schema_fingerprint: &str,
+    backend_version: Option<&str>,
     mode: CacheMode,
     item: &ParseBatchItem,
 ) -> DocumentExecution {
@@ -1362,7 +1433,7 @@ async fn execute_document<B: ParseBackend, C: ParseArtifactCache>(
             }
         }
         CacheMode::ReadOnly | CacheMode::WriteThrough => {
-            let raw_key = raw_tei_stage_key(request);
+            let raw_key = raw_tei_stage_key_with_backend_version(request, backend_version);
             let mut stats = DocumentStats::default();
             match cache.read_raw(&raw_key).await {
                 Err(failure) => {
@@ -1393,11 +1464,12 @@ async fn execute_document<B: ParseBackend, C: ParseArtifactCache>(
                         }
                     };
                     let raw_sha256 = sha256_hex(envelope.raw_tei());
-                    let projector_key = project_article_stage_key(
+                    let projector_key = project_article_stage_key_with_backend_version(
                         &paper_id,
                         &pdf_sha256,
                         &raw_sha256,
                         projector_schema_fingerprint,
+                        backend_version,
                     );
                     // Write-through commits raw BEFORE any projector-stage
                     // interaction; read-only never writes.
@@ -1528,11 +1600,12 @@ async fn execute_document<B: ParseBackend, C: ParseArtifactCache>(
                         }
                     };
                     let raw_disposition = mode.stage_disposition_for(true);
-                    let projector_key = project_article_stage_key(
+                    let projector_key = project_article_stage_key_with_backend_version(
                         &paper_id,
                         &pdf_sha256,
                         &raw_sha256,
                         projector_schema_fingerprint,
+                        backend_version,
                     );
                     match cache.read_projected(&projector_key).await {
                         Err(failure) => failure_outcome(
@@ -1644,7 +1717,7 @@ async fn execute_document<B: ParseBackend, C: ParseArtifactCache>(
                     );
                 }
             };
-            let raw_key = raw_tei_stage_key(request);
+            let raw_key = raw_tei_stage_key_with_backend_version(request, backend_version);
             let raw_sha256 = sha256_hex(envelope.raw_tei());
             let raw_disposition = match cache
                 .write_raw(
@@ -1662,11 +1735,12 @@ async fn execute_document<B: ParseBackend, C: ParseArtifactCache>(
                     ComputedUnpublished
                 }
             };
-            let projector_key = project_article_stage_key(
+            let projector_key = project_article_stage_key_with_backend_version(
                 &paper_id,
                 &pdf_sha256,
                 &raw_sha256,
                 projector_schema_fingerprint,
+                backend_version,
             );
             let article = project_timed(&paper_id, pdf_hash, &envelope, &mut stats);
             let projector_payload = ProjectArticlePayload::build(
@@ -1706,6 +1780,7 @@ struct WorkerContext<B: ParseBackend, C: ParseArtifactCache> {
     backend: Arc<B>,
     cache: Arc<C>,
     projector_schema_fingerprint: String,
+    backend_version: Option<String>,
     mode: CacheMode,
     shared: Arc<RunShared>,
     rx: Arc<Mutex<mpsc::Receiver<QueuedItem>>>,
@@ -1743,6 +1818,7 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
             self.backend.as_ref(),
             self.cache.as_ref(),
             &self.projector_schema_fingerprint,
+            self.backend_version.as_deref(),
             self.mode,
             &queued.item,
         )
@@ -1872,6 +1948,7 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
         let started = Instant::now();
         let limits = *batch.limits();
         let mode = batch.mode();
+        let backend_version = batch.backend_version().map(str::to_string);
         let input_fingerprint = batch.input_fingerprint().to_string();
         let resumed_from = batch.cursor().next_ordinal();
         let admitted = batch.total_documents() as u32;
@@ -1919,6 +1996,7 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
                     backend: self.backend.clone(),
                     cache: self.cache.clone(),
                     projector_schema_fingerprint: self.projector_schema_fingerprint.clone(),
+                    backend_version: backend_version.clone(),
                     mode,
                     shared: shared.clone(),
                     rx: rx.clone(),

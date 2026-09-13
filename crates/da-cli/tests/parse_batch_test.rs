@@ -41,12 +41,12 @@ use da_cli::parse_batch::{
 use da_parse::{
     CacheMode, FailureCode, GrobidProfile, PROJECT_ARTICLE_SCHEMA_FINGERPRINT, ParseArtifactCache,
     ParseBackendRequest, ParseDocumentFailure, ProjectArticlePayload, RetryAfter,
-    project_article_stage_key, raw_tei_stage_key,
+    project_article_stage_key_with_backend_version, raw_tei_stage_key_with_backend_version,
 };
 // Fingerprint recomputation is only exercised by the redb-gated forced
 // interruption test (the interrupted run leaves NO report to read it from).
 #[cfg(feature = "redb")]
-use da_parse::{ParseBatchItem, ordered_input_fingerprint};
+use da_parse::{ParseBatchItem, ordered_input_fingerprint_with_backend_version};
 use da_ports::pipeline_cache::{
     CacheLookup, PipelineCache, SourceFormat, SourceIdentity, StageCacheKey,
 };
@@ -63,6 +63,9 @@ const TEI_FIXTURE: &str = r#"<TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader
 <biblStruct><analytic><title level="a" type="main">First Citation</title></analytic><idno type="DOI">10.1000/cite.1</idno></biblStruct>
 <biblStruct><analytic><title level="a" type="main">Second Citation</title></analytic><idno type="arXiv">arXiv:2001.00002v1</idno></biblStruct>
 </listBibl></div></back></text></TEI>"#;
+
+/// Fixed service version the deterministic stub reports from `GET /api/version`.
+const STUB_VERSION: &str = "0.9.0-crf";
 
 const MARKER_ALPHA: &str = "MARKER-ALPHA-1f4e";
 const MARKER_BETA: &str = "MARKER-BETA-9a20";
@@ -108,6 +111,28 @@ enum Plan {
 }
 
 async fn spawn_stub(plans: Vec<(&'static str, Plan)>) -> (SocketAddr, RequestLog) {
+    spawn_stub_with_version(plans, STUB_VERSION).await
+}
+
+/// Spawn the stub reporting a specific service version from
+/// `GET /api/version` (version-isolation tests).
+async fn spawn_stub_with_version(
+    plans: Vec<(&'static str, Plan)>,
+    version: &'static str,
+) -> (SocketAddr, RequestLog) {
+    spawn_stub_with_version_response(plans, Some(version)).await
+}
+
+/// Spawn a stub whose `GET /api/version` fails with 503 (probe fail-closed
+/// tests: a real service outage must never yield a silent legacy identity).
+async fn spawn_stub_without_version(plans: Vec<(&'static str, Plan)>) -> (SocketAddr, RequestLog) {
+    spawn_stub_with_version_response(plans, None).await
+}
+
+async fn spawn_stub_with_version_response(
+    plans: Vec<(&'static str, Plan)>,
+    version: Option<&'static str>,
+) -> (SocketAddr, RequestLog) {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .expect("bind stub GROBID");
@@ -119,7 +144,7 @@ async fn spawn_stub(plans: Vec<(&'static str, Plan)>) -> (SocketAddr, RequestLog
         while let Ok((stream, _)) = listener.accept().await {
             let log = Arc::clone(&log_for_task);
             let plans = Arc::clone(&plans);
-            tokio::spawn(serve_connection(stream, plans, log));
+            tokio::spawn(serve_connection(stream, plans, log, version));
         }
     });
     (addr, log)
@@ -129,11 +154,40 @@ async fn serve_connection(
     mut stream: tokio::net::TcpStream,
     plans: Arc<Vec<(&'static str, Plan)>>,
     log: RequestLog,
+    version: Option<&'static str>,
 ) {
     let Some((path, body)) = read_request(&mut stream).await else {
         return;
     };
-    log.lock().expect("request log").push((path, body.clone()));
+    log.lock()
+        .expect("request log")
+        .push((path.clone(), body.clone()));
+
+    // `GET /api/version` is the mandatory identity probe the production CLI
+    // performs before admission (ADR-076 / R121).
+    if path == "/api/version" {
+        let (head, version_body) = match version {
+            Some(version) => {
+                let body = format!("{{\"name\":\"GROBID\",\"version\":\"{version}\"}}");
+                let head = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    body.len()
+                );
+                (head, body)
+            }
+            None => (
+                "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                    .to_string(),
+                String::new(),
+            ),
+        };
+        let mut response = head.into_bytes();
+        response.extend_from_slice(version_body.as_bytes());
+        let _ = stream.write_all(&response).await;
+        let _ = stream.shutdown().await;
+        return;
+    }
+
     let plan = plans
         .iter()
         .find(|(marker, _)| {
@@ -302,6 +356,77 @@ async fn harness_with_plans(plans: Vec<(&'static str, Plan)>) -> Harness {
     }
 }
 
+/// Build a harness around an already-spawned stub (probe-failure and
+/// explicit-legacy tests need a stub with a broken `/api/version`).
+async fn harness_with_stub(stub: (SocketAddr, RequestLog)) -> Harness {
+    let temp = TempDir::new().expect("tempdir");
+    let manifest = temp.path().join("manifest.json");
+    let report = temp.path().join("report.json");
+    let cache_root = temp.path().join("cache");
+    write_default_manifest(&manifest, temp.path());
+    Harness {
+        _temp: temp,
+        manifest,
+        report,
+        cache_root,
+        stub,
+    }
+}
+
+/// The default mixed plan: success / busy / success / malformed.
+fn default_plans() -> Vec<(&'static str, Plan)> {
+    vec![
+        (MARKER_ALPHA, Plan::Tei),
+        (MARKER_BETA, Plan::Busy),
+        (MARKER_GAMMA, Plan::Tei),
+        (MARKER_DELTA, Plan::Malformed),
+    ]
+}
+
+/// Run one manifest against an explicit stub/cache/report combination (the
+/// version-isolation test shares a cache root across two service versions).
+#[allow(clippy::too_many_arguments)]
+async fn run_manifest(
+    manifest: &Path,
+    report: &Path,
+    cache_root: &Path,
+    stub: &(SocketAddr, RequestLog),
+    mode: &str,
+    resume: bool,
+) -> Result<(), ParseBatchCliError> {
+    let args = ParseBatchArgs {
+        manifest: manifest.to_path_buf(),
+        report: report.to_path_buf(),
+        mode: None,
+        grobid_url: None,
+        backend: None,
+        cache_root: None,
+        batch_size: None,
+        timeout_secs: None,
+        workers: None,
+        queue_capacity: None,
+        max_in_flight: None,
+        resume,
+        allow_versionless_identity: false,
+        redb_index: None,
+        no_redb: false,
+        redb_index_path: None,
+        learning_rvf_path: None,
+        learning_redb_index_path: None,
+    };
+    let mut env: HashMap<String, String> = HashMap::new();
+    env.insert("DA_GROBID_URL".to_string(), format!("http://{}", stub.0));
+    env.insert(
+        "DA_PARSE_CACHE_ROOT".to_string(),
+        cache_root.display().to_string(),
+    );
+    env.insert("DA_PARSE_CACHE_MODE".to_string(), mode.to_string());
+    env.insert("DA_PARSE_WORKERS".to_string(), "2".to_string());
+    env.insert("DA_PARSE_QUEUE_CAPACITY".to_string(), "8".to_string());
+    let lookup = |key: &str| env.get(key).cloned();
+    run_with_env(&args, &lookup).await
+}
+
 fn write_default_manifest(manifest_path: &Path, dir: &Path) {
     let documents: Vec<_> = DOCS
         .iter()
@@ -363,6 +488,7 @@ fn args_for(h: &Harness, resume: bool) -> ParseBatchArgs {
         queue_capacity: None,
         max_in_flight: None,
         resume,
+        allow_versionless_identity: false,
         redb_index: None,
         no_redb: false,
         redb_index_path: None,
@@ -391,6 +517,32 @@ fn attempts_for(h: &Harness, marker: &str) -> usize {
 
 fn total_attempts(h: &Harness) -> usize {
     h.stub.1.lock().expect("request log").len()
+}
+
+/// Count of `/api/version` identity probes (one per non-legacy run).
+fn identity_probes(h: &Harness) -> usize {
+    identity_probes_of(&h.stub.1)
+}
+
+fn identity_probes_of(log: &RequestLog) -> usize {
+    log.lock()
+        .expect("request log")
+        .iter()
+        .filter(|(path, _)| path == "/api/version")
+        .count()
+}
+
+/// Count of parse-route attempts (excludes the identity probe).
+fn parse_attempts(h: &Harness) -> usize {
+    parse_attempts_of(&h.stub.1)
+}
+
+fn parse_attempts_of(log: &RequestLog) -> usize {
+    log.lock()
+        .expect("request log")
+        .iter()
+        .filter(|(path, _)| path.starts_with("/api/process"))
+        .count()
 }
 
 fn success_identity(report: &ParseBatchReportV1, ordinal: u32) -> String {
@@ -433,18 +585,37 @@ fn fulltext_request(paper_id: &str, marker: &str) -> ParseBackendRequest {
     ParseBackendRequest::new(paper_id, pdf_bytes(marker))
 }
 
+/// The ordered input fingerprint the CLI would compute for the default
+/// manifest under `version` (`None` = explicit versionless identity).
+fn fingerprint_for_default_manifest(manifest: &Path, version: Option<&str>) -> String {
+    let entries = load_manifest(manifest).expect("manifest");
+    let items: Vec<da_parse::ParseBatchItem> = entries
+        .iter()
+        .enumerate()
+        .map(|(ordinal, entry)| {
+            let bytes = std::fs::read(&entry.pdf_path).expect("fixture pdf");
+            da_parse::ParseBatchItem::new(
+                ordinal as u32,
+                ParseBackendRequest::new(entry.paper_id.clone(), bytes),
+            )
+        })
+        .collect();
+    da_parse::ordered_input_fingerprint_with_backend_version(&items, version)
+}
+
 /// The (raw, projected) stage keys the batch run published for one
 /// successful document (TEI fixture ⇒ known raw payload sha).
 fn stage_keys_for(paper_id: &str, marker: &str) -> (String, String) {
     let request = fulltext_request(paper_id, marker);
     let pdf_sha256 = sha256_hex(&pdf_bytes(marker));
     let raw_sha256 = sha256_hex(TEI_FIXTURE.as_bytes());
-    let raw_key = raw_tei_stage_key(&request);
-    let projected_key = project_article_stage_key(
+    let raw_key = raw_tei_stage_key_with_backend_version(&request, Some(STUB_VERSION));
+    let projected_key = project_article_stage_key_with_backend_version(
         paper_id,
         &pdf_sha256,
         &raw_sha256,
         PROJECT_ARTICLE_SCHEMA_FINGERPRINT,
+        Some(STUB_VERSION),
     );
     (raw_key, projected_key)
 }
@@ -576,7 +747,8 @@ async fn mixed_write_through_reports_typed_outcomes_bounded_settings_and_redacti
     // (later documents survive earlier failures).
     assert_typed_malformed(report.documents[3].result.as_ref().unwrap_err());
     assert_eq!(attempts_for(&h, MARKER_DELTA), 1);
-    assert_eq!(total_attempts(&h), 4);
+    assert_eq!(parse_attempts(&h), 4);
+    assert_eq!(identity_probes(&h), 1, "exactly one version probe per run");
 
     // Redaction: no base URL, no TEI namespace, no raw PDF/TEI bytes, no
     // physical roots anywhere in the report. (The closed backend identity
@@ -614,7 +786,7 @@ async fn read_only_replay_serves_hits_without_extra_backend_calls() {
     let h = harness().await;
     run_with(&h, env_map(&h, Some("write-through")), false).await;
     let first = read_report(&h);
-    let http_after_first = total_attempts(&h);
+    let http_after_first = parse_attempts(&h);
 
     run_with(&h, env_map(&h, Some("read-only")), false).await;
     let replay = read_report(&h);
@@ -626,7 +798,8 @@ async fn read_only_replay_serves_hits_without_extra_backend_calls() {
     // Only the busy/malformed documents are re-attempted (neither ever
     // reached the cache).
     assert_eq!(replay.summary.backend_calls, 2);
-    assert_eq!(total_attempts(&h), http_after_first + 2);
+    assert_eq!(parse_attempts(&h), http_after_first + 2);
+    assert_eq!(identity_probes(&h), 2, "each run probes once");
     assert_eq!(attempts_for(&h, MARKER_ALPHA), 1);
     // Semantic parity: successful terminal signals are identical across
     // modes (the projector cache served checksum-verified identical bytes).
@@ -692,7 +865,7 @@ async fn resume_after_completed_run_skips_every_document_without_backend() {
     let h = harness().await;
     run_with(&h, env_map(&h, Some("write-through")), false).await;
     let first = read_report(&h);
-    let http_after_first = total_attempts(&h);
+    let http_after_first = parse_attempts(&h);
 
     run_with(&h, env_map(&h, Some("read-only")), true).await;
     let resumed = read_report(&h);
@@ -703,14 +876,15 @@ async fn resume_after_completed_run_skips_every_document_without_backend() {
     assert_eq!(resumed.summary.backend_calls, 0);
     assert!(resumed.documents.is_empty());
     assert_eq!(resumed.cursor, first.cursor);
-    assert_eq!(total_attempts(&h), http_after_first);
+    assert_eq!(parse_attempts(&h), http_after_first);
+    assert_eq!(identity_probes(&h), 2);
 }
 
 #[tokio::test]
 async fn resume_with_foreign_fingerprint_fails_closed_before_backend() {
     let h = harness().await;
     run_with(&h, env_map(&h, Some("write-through")), false).await;
-    let http_after_first = total_attempts(&h);
+    let http_after_first = parse_attempts(&h);
 
     // A different manifest content = a different ordered input fingerprint.
     let delta_path = h._temp.path().join("doc-delta.pdf");
@@ -741,8 +915,158 @@ async fn resume_with_foreign_fingerprint_fails_closed_before_backend() {
         matches!(error, ParseBatchCliError::ResumeEvidenceUnavailable(_)),
         "{error}"
     );
-    // Failed closed BEFORE the backend: no new HTTP attempts, no report rewrite.
-    assert_eq!(total_attempts(&h), http_after_first);
+    // Failed closed BEFORE any parse work (only the identity probe ran):
+    // no new parse attempts, no report rewrite.
+    assert_eq!(parse_attempts(&h), http_after_first);
+}
+
+// ───────────────────── backend version identity (R121) ─────────────────────
+
+#[tokio::test]
+async fn probed_backend_version_is_stamped_and_separates_from_the_legacy_identity() {
+    let h = harness().await;
+    run_with(&h, env_map(&h, Some("write-through")), false).await;
+    let report = read_report(&h);
+
+    // The probed service version is stamped into the canonical report and
+    // enters the ordered input fingerprint.
+    assert_eq!(report.backend_version.as_deref(), Some(STUB_VERSION));
+    assert_eq!(identity_probes(&h), 1, "one identity probe per run");
+    let versioned = fingerprint_for_default_manifest(&h.manifest, Some(STUB_VERSION));
+    let versionless = fingerprint_for_default_manifest(&h.manifest, None);
+    assert_eq!(report.input_fingerprint, versioned);
+    assert_ne!(
+        versioned, versionless,
+        "the probed version must change the input fingerprint"
+    );
+}
+
+#[tokio::test]
+async fn version_probe_failure_fails_closed_without_a_legacy_fallback() {
+    let h = harness_with_stub(spawn_stub_without_version(default_plans()).await).await;
+    let env = env_map(&h, Some("write-through"));
+    let lookup = |key: &str| env.get(key).cloned();
+
+    let error = run_with_env(&args_for(&h, false), &lookup)
+        .await
+        .expect_err("a failed /api/version probe must fail the run");
+    assert_eq!(
+        error,
+        ParseBatchCliError::BackendVersionUnavailable(da_parse::ProbeFailure::Unavailable)
+    );
+    // No parse work and no report before the producer identity is known.
+    assert_eq!(parse_attempts(&h), 0);
+    assert_eq!(identity_probes(&h), 1);
+    assert!(!h.report.exists(), "no report on a fail-closed probe");
+}
+
+#[tokio::test]
+async fn allow_versionless_identity_is_the_only_explicit_historical_path() {
+    let h = harness_with_stub(spawn_stub_without_version(default_plans()).await).await;
+    let mut args = args_for(&h, false);
+    args.allow_versionless_identity = true;
+    let env = env_map(&h, Some("write-through"));
+    let lookup = |key: &str| env.get(key).cloned();
+
+    run_with_env(&args, &lookup)
+        .await
+        .expect("the explicit versionless identity must run without a probe");
+    let report = read_report(&h);
+    assert_eq!(
+        report.backend_version, None,
+        "the explicit historical identity stays unversioned"
+    );
+    assert_eq!(identity_probes(&h), 0, "explicit legacy never probes");
+    assert_eq!(parse_attempts(&h), 4);
+    assert_eq!(
+        report.input_fingerprint,
+        fingerprint_for_default_manifest(&h.manifest, None),
+        "historical identity reproduces the pre-version fingerprint exactly"
+    );
+}
+
+#[tokio::test]
+async fn different_backend_versions_do_not_share_cache_or_resume_evidence() {
+    let temp = TempDir::new().expect("tempdir");
+    let manifest = temp.path().join("manifest.json");
+    write_default_manifest(&manifest, temp.path());
+    let cache_root = temp.path().join("cache");
+    let report_v1 = temp.path().join("report-v1.json");
+    let report_v2 = temp.path().join("report-v2.json");
+    let stub_v1 = spawn_stub_with_version(default_plans(), "0.9.0-crf").await;
+    let stub_v2 = spawn_stub_with_version(default_plans(), "0.9.1").await;
+
+    // Version A populates the shared cache root.
+    run_manifest(
+        &manifest,
+        &report_v1,
+        &cache_root,
+        &stub_v1,
+        "write-through",
+        false,
+    )
+    .await
+    .expect("version A run");
+    let first = ParseBatchReportV1::from_json(&std::fs::read(&report_v1).unwrap()).unwrap();
+    assert_eq!(first.backend_version.as_deref(), Some("0.9.0-crf"));
+    assert_eq!(parse_attempts_of(&stub_v1.1), 4);
+
+    // Version B over the SAME inputs and cache root must not serve A's
+    // raw or projection entries.
+    run_manifest(
+        &manifest,
+        &report_v2,
+        &cache_root,
+        &stub_v2,
+        "read-only",
+        false,
+    )
+    .await
+    .expect("version B run");
+    let second = ParseBatchReportV1::from_json(&std::fs::read(&report_v2).unwrap()).unwrap();
+    assert_eq!(second.backend_version.as_deref(), Some("0.9.1"));
+    assert_eq!(second.summary.raw_hits, 0, "version B shares no raw entry");
+    assert_eq!(
+        second.summary.projector_hits, 0,
+        "version B shares no projection entry"
+    );
+    assert_eq!(
+        second.summary.backend_calls, 4,
+        "version B recomputes every document"
+    );
+    assert_eq!(parse_attempts_of(&stub_v2.1), 4);
+    assert_ne!(first.input_fingerprint, second.input_fingerprint);
+
+    // Version B cannot resume from version A evidence (foreign fingerprint).
+    let error = run_manifest(
+        &manifest,
+        &report_v1,
+        &cache_root,
+        &stub_v2,
+        "read-only",
+        true,
+    )
+    .await
+    .expect_err("cross-version resume must fail closed");
+    assert!(
+        matches!(error, ParseBatchCliError::ResumeEvidenceUnavailable(_)),
+        "{error}"
+    );
+
+    // Same-version resume reuses the exact evidence (no backend calls).
+    run_manifest(
+        &manifest,
+        &report_v2,
+        &cache_root,
+        &stub_v2,
+        "read-only",
+        true,
+    )
+    .await
+    .expect("same-version resume");
+    let resumed = ParseBatchReportV1::from_json(&std::fs::read(&report_v2).unwrap()).unwrap();
+    assert_eq!(resumed.summary.skipped_on_resume, 4);
+    assert_eq!(resumed.summary.backend_calls, 0);
 }
 
 // ───────────────────────── fail-closed config / manifest ─────────────────────────
@@ -1377,7 +1701,7 @@ async fn forced_interruption_resumes_from_the_durable_redb_cursor() {
             .enumerate()
             .map(|(ordinal, request)| ParseBatchItem::new(ordinal as u32, request))
             .collect();
-        ordered_input_fingerprint(&items)
+        ordered_input_fingerprint_with_backend_version(&items, Some(STUB_VERSION))
     };
 
     // Run 2: resume against the exact input fingerprint. NO report exists,

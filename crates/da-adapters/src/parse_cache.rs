@@ -482,6 +482,53 @@ mod tests {
         assert_eq!(outcome.resolved_from, None);
     }
 
+    #[test]
+    fn legacy_lookup_never_serves_a_versionless_entry_for_a_versioned_key() {
+        // Regression for the version-vs-legacy hazard: the legacy lookup
+        // clones the canonical key, so the probed `model_fingerprint` must
+        // carry through and prevent a versioned run from reusing another
+        // release's versionless legacy entry.
+        let root = tempfile::tempdir().unwrap();
+        let cache = FilePipelineCache::new(root.path());
+        let canonical = rich_pdf_only_key();
+        cache
+            .store_success(
+                &legacy_pdf_only_key(&canonical),
+                b"legacy-parsed-article",
+                BTreeMap::new(),
+                "2026-08-14T00:00:00Z",
+            )
+            .unwrap();
+
+        let mut versioned = canonical.clone();
+        versioned.model_fingerprint = Some("grobid/grobid:0.9.1".into());
+        let outcome = lookup_with_legacy_parse_identity(
+            &cache,
+            &versioned,
+            false,
+            GrobidProfile::rich(),
+            "2026-08-14T00:01:00Z",
+        )
+        .unwrap();
+        assert_eq!(
+            outcome.lookup,
+            CacheLookup::Miss,
+            "a versioned run must not reuse a versionless legacy entry"
+        );
+        assert_eq!(outcome.resolved_from, None);
+
+        // The explicit versionless key still serves the legacy entry.
+        let legacy_ok = lookup_with_legacy_parse_identity(
+            &cache,
+            &canonical,
+            false,
+            GrobidProfile::rich(),
+            "2026-08-14T00:01:00Z",
+        )
+        .unwrap();
+        assert!(matches!(legacy_ok.lookup, CacheLookup::Hit(_)));
+    }
+
     #[tokio::test]
     async fn stage_key_translation_rejects_foreign_and_malformed_keys() {
         let dir = tempfile::tempdir().unwrap();

@@ -16,7 +16,10 @@ use chrono::{TimeZone, Utc};
 use da_adapters::{FilePipelineCache, SamyamaGraphStore};
 use da_application::revision_materialization::RevisionManifestationInput;
 use da_application::{PipelineRunReport, StageDisposition};
-use da_cli::load_journey::{JourneyPorts, load_parse_contract, run_journey_content};
+use da_cli::load_journey::{
+    JourneyPorts, load_parse_contract, load_parse_contract_with_backend_version,
+    run_journey_content,
+};
 use da_domain::entity::EntityType;
 use da_domain::{LoadCacheRecord, StageIdRegistry};
 use da_parse::GrobidProfile;
@@ -230,6 +233,15 @@ async fn run_journey(
     store: &Arc<SamyamaGraphStore>,
     cache: Arc<FilePipelineCache>,
 ) -> Result<(da_application::LoadContentOutcome, PipelineRunReport), String> {
+    run_journey_versioned(ports, store, cache, None).await
+}
+
+async fn run_journey_versioned(
+    ports: &JourneyPorts,
+    store: &Arc<SamyamaGraphStore>,
+    cache: Arc<FilePipelineCache>,
+    backend_version: Option<&str>,
+) -> Result<(da_application::LoadContentOutcome, PipelineRunReport), String> {
     let pdf_dir = tempdir("pdf");
     let pdf_path = pdf_dir.join(format!("{PAPER_ID}v1.pdf"));
     std::fs::write(&pdf_path, b"%PDF-fixture").expect("pdf fixture");
@@ -249,6 +261,7 @@ async fn run_journey(
         false,
         false,
         None,
+        backend_version,
     )
     .await
 }
@@ -409,6 +422,78 @@ async fn journey_content_completes_and_replays_over_file_cache() {
     }
 }
 
+#[tokio::test]
+async fn journey_parse_key_binds_probed_backend_version_and_isolates_releases() {
+    // Contract-level: None/blank is byte-identical to the historical
+    // contract; a probed release is stamped into model_fingerprint.
+    let profile = GrobidProfile::rich();
+    assert_eq!(
+        load_parse_contract_with_backend_version(&profile, None),
+        load_parse_contract(&profile)
+    );
+    assert_eq!(
+        load_parse_contract_with_backend_version(&profile, Some("   ")),
+        load_parse_contract(&profile)
+    );
+    assert_eq!(
+        load_parse_contract_with_backend_version(&profile, Some("0.9.1"))
+            .model_fingerprint
+            .as_deref(),
+        Some("grobid/grobid:0.9.1")
+    );
+    assert_ne!(
+        load_parse_contract_with_backend_version(&profile, Some("0.9.1")),
+        load_parse_contract_with_backend_version(&profile, Some("0.9.0-crf")),
+        "different releases never share a parse contract"
+    );
+
+    // End-to-end: the orchestrator keys the parse stage from the stage
+    // contract and `journey_cache_key` reconstructs the payload key from the
+    // same snapshotted contract, so the executed key and the lookup key
+    // cannot drift: the same release replays from cache, a different release
+    // does not reuse another release's entry.
+    let store = Arc::new(SamyamaGraphStore::new());
+    let cache = Arc::new(FilePipelineCache::new(tempdir("cache-versioned")));
+    let ports = JourneyPorts {
+        parser: Arc::new(FakeParser),
+        extractor: Arc::new(FakeExtractor),
+        embedder: Arc::new(FakeEmbedder),
+        detector: None,
+    };
+    let parse_status = |outcome: &da_application::LoadContentOutcome| {
+        outcome
+            .cache_records
+            .iter()
+            .find(|record| record.stage_id == "parse")
+            .map(|record| record.status.clone())
+            .expect("parse cache record")
+    };
+
+    let (first, report) = run_journey_versioned(&ports, &store, cache.clone(), Some("0.9.1"))
+        .await
+        .expect("version A run");
+    assert!(report.completed);
+    assert_eq!(parse_status(&first), "miss", "cold version A parses");
+
+    let (replay, _) = run_journey_versioned(&ports, &store, cache.clone(), Some("0.9.1"))
+        .await
+        .expect("version A replay");
+    assert_eq!(
+        parse_status(&replay),
+        "hit",
+        "same release replays from the exact same parse key"
+    );
+
+    let (other, _) = run_journey_versioned(&ports, &store, cache, Some("0.9.0-crf"))
+        .await
+        .expect("version B run");
+    assert_eq!(
+        parse_status(&other),
+        "miss",
+        "a different release must not reuse another release's parse entry"
+    );
+}
+
 struct FakeDetector;
 
 #[async_trait]
@@ -536,6 +621,7 @@ async fn journey_with_equations_materializes_candidates_and_replays() {
             false,
             false,
             None,
+            None,
         )
         .await
     }
@@ -632,6 +718,7 @@ async fn journey_with_tables_runs_detection_anchored_branch() {
             true,
             true,
             false,
+            None,
             None,
         )
         .await
@@ -732,6 +819,7 @@ async fn journey_tables_without_detector_fails_closed_at_composition() {
         true,
         true,
         false,
+        None,
         None,
     )
     .await
@@ -1003,6 +1091,7 @@ async fn journey_with_figures_runs_per_image_branch() {
             true,
             true,
             Some(branch.clone()),
+            None,
         )
         .await
     };

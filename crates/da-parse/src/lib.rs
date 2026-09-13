@@ -66,6 +66,7 @@ pub use batch::{
     ParseBatchItem, ParseBatchLimits, ParseBatchMemoryCheckpoint, ParseBatchResultSink,
     ParseBatchRunSummary, ParseBatchSinkError, ParseDocumentFailure, ParseDocumentOutcome,
     ParseDocumentSuccess, ordered_input_fingerprint,
+    ordered_input_fingerprint_with_backend_version,
 };
 pub use cache::{
     CacheIntegrityCode, CacheMode, CacheStageDisposition, MEMORY_TIER_DEFAULT_CAPACITY,
@@ -74,7 +75,8 @@ pub use cache::{
     PROJECT_ARTICLE_STAGE_ID, ParseArtifactCache, ParseCacheDispositions, ParseCacheFailure,
     ParseCacheStage, ProjectArticlePayload, RAW_TEI_PAYLOAD_SCHEMA_VERSION, RAW_TEI_STAGE_ID,
     RawStageRead, RawTeiEnvelopePayload, TwoStageParseCache, project_article_stage_key,
-    raw_tei_stage_key, raw_tei_stage_key_with_backend_version,
+    project_article_stage_key_with_backend_version, raw_tei_stage_key,
+    raw_tei_stage_key_with_backend_version,
 };
 pub use conservation::{
     ByteRange, ConservationDelta, ConservationEngine, ConservationEntry, ConservationFamily,
@@ -88,7 +90,10 @@ pub use cross_stage_semantic_invariants::{
     check_cross_stage_semantic_invariants,
 };
 pub use envelope::{TeiEnvelope, TeiIdentity, TeiResultIdentity};
-pub use http::{GrobidHttpBackend, GrobidParser, HealthProbe, ProbeFailure, VersionProbe};
+pub use http::{
+    GrobidHttpBackend, GrobidParser, HealthProbe, ProbeFailure, VersionProbe,
+    grobid_model_fingerprint,
+};
 pub use ir::TeiParseIr;
 pub use layout::{
     LAYOUT_SCHEMA_VERSION, LayoutBBox, LayoutDocument, LayoutError, LayoutPage, LayoutProvider,

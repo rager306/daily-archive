@@ -29,7 +29,7 @@ use da_parse::{
     BatchCursor, CacheMode, GrobidHttpBackend, HeaderDialectV1, ParseBackendRequest, ParseBatch,
     ParseBatchCollector, ParseBatchExecutor, ParseBatchItem, ParseBatchLimits,
     ParseBatchMemoryCheckpoint, ParseBatchRunSummary, ParseDocumentFailure, ParseDocumentOutcome,
-    ReferencesDialectV1, ordered_input_fingerprint,
+    ProbeFailure, ReferencesDialectV1, ordered_input_fingerprint_with_backend_version,
 };
 use serde::{Deserialize, Serialize};
 
@@ -101,6 +101,13 @@ pub struct ParseBatchArgs {
     /// fingerprint (accelerator lookup, else the previous terminal report).
     #[arg(long)]
     pub resume: bool,
+
+    /// Explicitly opt into the historical (versionless) identity: skip the
+    /// `/api/version` probe and use pre-version cache/fingerprint keys.
+    /// Without this flag a probe failure fails the run — there is no silent
+    /// legacy fallback. Use only to read/replay historical entries.
+    #[arg(long)]
+    pub allow_versionless_identity: bool,
 
     /// Enable the redb accelerator at this path (feature `redb`).
     #[arg(long, conflicts_with = "no_redb")]
@@ -184,6 +191,10 @@ pub enum ParseBatchCliError {
     SourceRead(String),
     /// The previous terminal report could not be used as resume evidence.
     ResumeEvidenceUnavailable(String),
+    /// The backend service version could not be probed and the explicit
+    /// versionless identity was not requested — fail closed instead of
+    /// silently stamping a legacy identity (ADR-076 / R121).
+    BackendVersionUnavailable(ProbeFailure),
     /// The atomic terminal report could not be written.
     ReportWrite(String),
 }
@@ -221,6 +232,10 @@ impl std::fmt::Display for ParseBatchCliError {
             Self::ResumeEvidenceUnavailable(detail) => write!(
                 formatter,
                 "parse-batch resume: no durable cursor evidence matches this input fingerprint ({detail})"
+            ),
+            Self::BackendVersionUnavailable(failure) => write!(
+                formatter,
+                "parse-batch backend version: {failure} (the /api/version probe is required; pass --allow-versionless-identity to use the historical versionless identity explicitly)"
             ),
             Self::ReportWrite(detail) => {
                 write!(formatter, "parse-batch report write: {detail}")
@@ -528,6 +543,10 @@ pub struct ParseBatchReportV1 {
     pub schema_version: u32,
     /// Ordered input content fingerprint of the admitted batch.
     pub input_fingerprint: String,
+    /// Probed backend service version stamped into the run identity
+    /// (`None`/omitted = explicit historical versionless identity).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub backend_version: Option<String>,
     /// Cache mode of the run (cost strategy, not identity).
     pub cache_mode: CacheMode,
     /// Effective bounds of the run (excluded from identity).
@@ -548,6 +567,7 @@ impl ParseBatchReportV1 {
         Self {
             schema_version: PARSE_BATCH_REPORT_SCHEMA_VERSION,
             input_fingerprint: summary.input_fingerprint().to_string(),
+            backend_version: None,
             cache_mode: summary.mode(),
             limits: *summary.limits(),
             cursor: summary.cursor().clone(),
@@ -690,6 +710,12 @@ pub async fn run_with_env(
     // 1. Composition config: closed validation BEFORE anything opens.
     let overrides = args.overrides()?;
     let config = resolve(&overrides, env)?;
+    // The accelerator feature check is pure config validation: fail closed
+    // before any backend/network contact.
+    #[cfg(not(feature = "redb"))]
+    if config.redb().enabled() {
+        return Err(ParseBatchCliError::RedbNotCompiled);
+    }
 
     // 2. Manifest (paths read only here) → logical requests (bytes only).
     let entries = load_manifest(&args.manifest)?;
@@ -699,10 +725,35 @@ pub async fn run_with_env(
         .enumerate()
         .map(|(ordinal, request)| ParseBatchItem::new(ordinal as u32, request.clone()))
         .collect();
-    let fingerprint = ordered_input_fingerprint(&items);
 
-    // 3. Optional accelerator (opened before the backend; enabled means
-    //    required — corruption/IO failure is a typed error, never silent).
+    // 3. Backend transport (D204 profile identity untouched) + the ACTUAL
+    //    service version probe. The probe is mandatory by default: a failure
+    //    fails closed instead of silently stamping a legacy identity. Only
+    //    the explicit `--allow-versionless-identity` flag skips it.
+    let backend = GrobidHttpBackend::new(Some(config.grobid_url()))
+        .with_timeout(std::time::Duration::from_secs(config.timeout_secs()));
+    let backend_version = if args.allow_versionless_identity {
+        None
+    } else {
+        match backend.probe_version().await {
+            Ok(probe) => Some(probe.version),
+            Err(failure) => return Err(ParseBatchCliError::BackendVersionUnavailable(failure)),
+        }
+    };
+    let backend = match backend_version.as_ref() {
+        Some(version) => backend.with_backend_version(version.clone()),
+        None => backend,
+    };
+
+    // 4. Ordered input fingerprint binds the probed version (when present),
+    //    so a versioned run never resumes or reads another version's
+    //    evidence. `None` reproduces the historical fingerprint exactly.
+    let fingerprint =
+        ordered_input_fingerprint_with_backend_version(&items, backend_version.as_deref());
+
+    // 5. Optional accelerator (opened after the identity probe; enabled
+    //    means required — corruption/IO failure is a typed error, never
+    //    silent).
     #[cfg(feature = "redb")]
     let accelerator: Option<Arc<da_adapters::parse_cursor::ParseCursorAccelerator>> =
         match config.redb().enabled() {
@@ -718,12 +769,8 @@ pub async fn run_with_env(
             }
             false => None,
         };
-    #[cfg(not(feature = "redb"))]
-    if config.redb().enabled() {
-        return Err(ParseBatchCliError::RedbNotCompiled);
-    }
 
-    // 4. Resume cursor (accelerator lookup → canonical report fallback).
+    // 6. Resume cursor (accelerator lookup → canonical report fallback).
     #[cfg(feature = "redb")]
     let accelerator_lookup = match accelerator.as_ref() {
         Some(accel) => Some(
@@ -745,16 +792,17 @@ pub async fn run_with_env(
         None
     };
 
-    // 5. Admission (typed, fail-closed — before any backend open).
-    let batch = ParseBatch::admit(
+    // 7. Admission (typed, fail-closed — before any parse work).
+    let batch = ParseBatch::admit_with_backend_version(
         config.cache_mode(),
         config.batch_limits(),
         requests,
         resume_cursor,
+        backend_version.clone(),
     )
     .map_err(|error| ParseBatchCliError::ManifestInvalid(admission_message(&error)))?;
 
-    // 6. Index the (rebuildable) accelerator manifest after admission.
+    // 8. Index the (rebuildable) accelerator manifest after admission.
     #[cfg(feature = "redb")]
     if let Some(accel) = accelerator.as_ref() {
         let index_entries: Vec<(u32, String)> = batch
@@ -767,14 +815,13 @@ pub async fn run_with_env(
             .map_err(|error| ParseBatchCliError::RedbUnavailable(error.to_string()))?;
     }
 
-    // 7. Wiring: D204-identity backend + atomic payload cache + executor.
-    let backend = GrobidHttpBackend::new(Some(config.grobid_url()))
-        .with_timeout(std::time::Duration::from_secs(config.timeout_secs()));
+    // 9. Wiring: the (version-stamped) backend + atomic payload cache +
+    //    executor. The batch carries the same version into stage keys.
     let cache = FileParseArtifactCache::new(config.cache_root());
     let two_stage = da_parse::TwoStageParseCache::new(cache);
     let executor = ParseBatchExecutor::new(backend, two_stage);
 
-    // 8. Durable checkpoint: accelerator mirror (feature-gated) or memory.
+    // 10. Durable checkpoint: accelerator mirror (feature-gated) or memory.
     #[cfg(feature = "redb")]
     let checkpoint: Arc<dyn da_parse::BatchCheckpoint> = match accelerator.as_ref() {
         Some(accel) => Arc::new(da_adapters::parse_cursor::RedbCursorCheckpoint::new(
@@ -786,13 +833,14 @@ pub async fn run_with_env(
     let checkpoint: Arc<dyn da_parse::BatchCheckpoint> =
         Arc::new(ParseBatchMemoryCheckpoint::new());
 
-    // 9. Bounded execution to one typed terminal outcome per document.
+    // 11. Bounded execution to one typed terminal outcome per document.
     let sink = Arc::new(ParseBatchCollector::new());
     let summary = executor.run(batch, sink.clone(), checkpoint).await;
     let documents = sink.outcomes_sorted().await;
 
-    // 10. Atomic versioned terminal report (canonical durable evidence).
-    let report = ParseBatchReportV1::build(&summary, &documents);
+    // 12. Atomic versioned terminal report (canonical durable evidence).
+    let mut report = ParseBatchReportV1::build(&summary, &documents);
+    report.backend_version = backend_version.clone();
     let bytes = serde_json::to_vec_pretty(&report)
         .map_err(|error| ParseBatchCliError::ReportWrite(error.to_string()))?;
     write_atomic(&args.report, &bytes)
