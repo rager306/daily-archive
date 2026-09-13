@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "milestone": "M506-98qg7g",
+  "slice": "S01",
+  "task": "T01",
+  "purpose": "Frozen baseline identity for the GROBID-to-Rust migration: what the released capability actually is, where each part lives, and how to re-derive it. Recorded before any parser work so later slices compare against facts rather than assumptions.",
+  "barrier": {
+    "prerequisite": "M505-o169s4",
+    "prerequisite_status": "complete",
+    "prerequisite_completed_at": "2026-09-13T03:11:20.372Z",
+    "note": "M505 was closed via the documented waiver path (slices skipped because the free-form session cannot mint a canonical Attempt); all ten tasks were delivered and verified before closure. Implementation could therefore begin."
+  },
+  "vendor_identity": {
+    "path": "/root/vendor-source/grobid",
+    "tag": "0.9.1",
+    "commit": "523bb8e97f357e93682dc4eaa6d22faa8b5b93de",
+    "derivation": "git describe --tags --exact-match && git rev-parse HEAD"
+  },
+  "release_identity": {
+    "production_image": "grobid/grobid@sha256:223957791ac2bbe48609dcc58a689b16b60baeae13a8734ef440ae6bfb38f4cd",
+    "production_tag": "grobid/grobid:0.9.1-crf",
+    "rollback_image": "grobid/grobid@sha256:24ba90eb1c959f65d812bcdb2cf79c677fa5fd7b95235de616b8bc9fa1317849",
+    "rollback_tag": "grobid/grobid:0.9.0-crf",
+    "live_version_probe": {
+      "endpoint": "http://127.0.0.1:8070/api/version",
+      "observed": {
+        "version": "0.9.1",
+        "revision": "0.9.1"
+      }
+    },
+    "release_pin": ".docker/grobid-release.override.yml",
+    "rollback_note": "The rollback image is the canonical revert target and is pinned by digest. A locally cached image is not a durable guarantee: the 0.9.0-crf image had silently disappeared once while provenance claimed it was retained. See provenance.json rollback block for the explicit state and the restore-by-digest command."
+  },
+  "artifact_identity": {
+    "why_this_matters": "The GROBID models and lexicons are NOT in the source checkout. At tag 0.9.1 grobid-core/src/main/resources contains only xslt and xq, so the model identity is carried by the release image rather than by files in git. Any migration step that assumed models could be read from the vendor tree would be built on a false premise; the authoritative artifacts are measured below from inside the pinned image.",
+    "source_tree_note": {
+      "path": "/root/vendor-source/grobid/grobid-core/src/main/resources",
+      "subdirs_present": [
+        "xslt",
+        "xq"
+      ],
+      "models_present": false,
+      "lexicons_present": false
+    },
+    "image_home": "/opt/grobid/grobid-home",
+    "models": {
+      "files": 29,
+      "tree_sha256": "ccb893277f15d65b03d9f730d1cd8cdfdde60880c59266cb29a9a109ec1b5472",
+      "families": [
+        "affiliation-address",
+        "citation",
+        "copyright_gru",
+        "date",
+        "figure",
+        "fulltext",
+        "funding-acknowledgement",
+        "header",
+        "license_gru",
+        "name",
+        "patent",
+        "reference-segmenter",
+        "segmentation",
+        "table"
+      ],
+      "family_count": 14,
+      "observed_sizes": {
+        "header": "70M",
+        "segmentation": "182M"
+      },
+      "derivation": "find <home>/models -type f | sort | xargs sha256sum | sha256sum"
+    },
+    "lexicon": {
+      "files": 50,
+      "tree_sha256": "bcc1a00d97146663a082f1522965ef67f3760d2b005b342c5e9816223b6b762b",
+      "groups": [
+        "countries",
+        "journals",
+        "names",
+        "organisations",
+        "patent",
+        "places",
+        "publishers",
+        "senses",
+        "wordforms"
+      ],
+      "group_count": 9,
+      "derivation": "find <home>/lexicon -type f | sort | xargs sha256sum | sha256sum"
+    },
+    "pdfalto": {
+      "files": 257,
+      "tree_sha256": "abb64da7d6e16e85923d2032f99ec85f52a487b2132f03f55bc15520a1eb117e",
+      "layout": [
+        "languages",
+        "lin-64"
+      ],
+      "derivation": "find <home>/pdfalto -type f | sort | xargs sha256sum | sha256sum",
+      "note": "Bundled inside the release image; there is no pdfalto on PATH in the container, so its identity is the directory tree hash above rather than a version string."
+    },
+    "other_runtime_assets": [
+      "config",
+      "language-detection",
+      "sentence-segmentation",
+      "schemas",
+      "scripts",
+      "lib"
+    ]
+  },
+  "index_freshness": {
+    "gitnexus": {
+      "project": "daily-archive",
+      "path": "/root/daily-archive",
+      "reindexed_at": "2026-09-13T03:21:15Z",
+      "nodes": 82873,
+      "edges": 121139,
+      "clusters": 1052,
+      "flows": 300,
+      "command": "/usr/bin/gitnexus analyze --force"
+    },
+    "codebase_memory_mcp": {
+      "project": "root-daily-archive",
+      "path": "/root/daily-archive",
+      "nodes": 491300,
+      "edges": 613909,
+      "measured_via": "mcp_call codebase-memory-mcp query_graph count(n)",
+      "staleness_note": "Indexed before commit 1472e7290, which changed only release documentation and a provenance artifact (no Rust source), so the code graph reflects the current source. Re-index through the CLI, not MCP: an MCP index_repository call exceeds the client timeout and tears the session connection down.",
+      "legacy_collision": "A second, stale project named 'daily-archive' exists for the same root path (485834 nodes). Always address 'root-daily-archive' explicitly or the query silently reads the old index."
+    }
+  },
+  "reproduce": [
+    "cd /root/vendor-source/grobid && git describe --tags --exact-match && git rev-parse HEAD",
+    "curl -sS http://127.0.0.1:8070/api/version",
+    "docker image inspect grobid/grobid@sha256:223957791ac2bbe48609dcc58a689b16b60baeae13a8734ef440ae6bfb38f4cd --format '{{index .RepoDigests 0}}'",
+    "docker run --rm --entrypoint bash <image> -c 'H=/opt/grobid/grobid-home; find $H/models -type f | sort | xargs sha256sum | sha256sum'"
+  ],
+  "policy": {
+    "import_eligible": false,
+    "graph_write": "forbidden",
+    "auto_promote": "forbidden",
+    "note": "Baseline recording only. D127 remains in force; no graph writes and no native promotion are implied by this artifact."
+  }
+}
