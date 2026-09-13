@@ -114,6 +114,59 @@ fn input(
 const XML: &str = "<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"java-ref\">Java ref</biblStruct></listBibl></text></TEI>";
 
 #[test]
+fn header_splice_conserves_title_affiliation_and_unknown_subtree() {
+    let xml = "<TEI><teiHeader><fileDesc><titleStmt><title>Java title</title><affiliation>Java affiliation</affiliation><custom><nested>must survive</nested></custom></titleStmt></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"java-ref\">Java ref</biblStruct></listBibl></text></TEI>";
+    let NativeFulltextCompositionOutcome::Accepted(candidate) = compose_native_fulltext(input(
+        xml,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
+    )) else {
+        panic!("header composition should be admitted")
+    };
+    let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+    for fragment in [
+        "<title>Java title</title>",
+        "<affiliation>Java affiliation</affiliation>",
+        "<custom><nested>must survive</nested></custom>",
+    ] {
+        assert!(output.contains(fragment), "header lost {fragment}");
+    }
+}
+
+#[test]
+fn bibliography_anchor_must_resolve_to_composed_reference() {
+    let xml = "<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>body <ref type=\"bibr\" target=\"#bibl-9\">[1]</ref></p></body><listBibl><biblStruct xml:id=\"java-ref\">Java ref</biblStruct></listBibl></text></TEI>";
+    let mut composed = input(
+        xml,
+        AdmissionDisposition::Unsupported,
+        AdmissionDisposition::Passed,
+    );
+    composed.references = compose_references(ReferenceCompositionInput {
+        references: NativeReferenceListOutcome::Recognized {
+            references: vec![NativeReference {
+                ordinal: 0,
+                source: "Smith 2024".into(),
+                span: CitationSpan { start: 0, end: 10 },
+                provenance: "fixture".into(),
+            }],
+        },
+        fields: vec![],
+        anchors: NativeCitationAnchorScanner::new()
+            .scan("<ref type=\"bibr\" target=\"#bibl-9\">[1]</ref>"),
+    });
+    let NativeFulltextCompositionOutcome::Rejected { fallback, error } =
+        compose_native_fulltext(composed)
+    else {
+        panic!("foreign bibliography target must reject composition")
+    };
+    assert_eq!(fallback.raw_tei(), xml.as_bytes());
+    assert!(matches!(
+        error,
+        NativeFulltextCompositionError::AmbiguousSplice(_)
+    ));
+}
+
+#[test]
 fn accepted_header_and_references_are_independent_and_other_families_fallback() {
     let NativeFulltextCompositionOutcome::Accepted(candidate) = compose_native_fulltext(input(
         XML,

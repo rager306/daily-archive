@@ -192,8 +192,9 @@ fn compose_inner(
                 FulltextComponent::Header,
             ));
         };
-        let fragment = header_xml(composition)?;
         let range = ranges.unique("teiHeader")?;
+        let existing_header = &java[range.0..range.1];
+        let fragment = header_xml(composition, existing_header)?;
         replacements.push((
             range,
             fragment,
@@ -398,6 +399,40 @@ fn fallback_entry(
         fallback_target: r.fallback_target.clone(),
     }
 }
+fn preserve_header_children(existing: &str) -> String {
+    let Ok(document) = XmlDocument::parse(existing) else {
+        return String::new();
+    };
+    let structural = [
+        "teiHeader",
+        "fileDesc",
+        "titleStmt",
+        "date",
+        "author",
+        "forename",
+        "surname",
+    ];
+    let mut ranges = Vec::new();
+    for (name, start, end) in &document.tags {
+        if structural.iter().any(|item| item == name) || name.starts_with("#id:") {
+            continue;
+        }
+        let range = document.element_range((*start, *end), name);
+        if !ranges.contains(&range)
+            && !ranges
+                .iter()
+                .any(|known: &(usize, usize)| known.0 <= range.0 && range.1 <= known.1)
+        {
+            ranges.push(range);
+        }
+    }
+    ranges.sort_by_key(|range| range.0);
+    ranges
+        .into_iter()
+        .map(|(start, end)| existing[start..end].to_owned())
+        .collect()
+}
+
 fn component_name(component: FulltextComponent) -> &'static str {
     match component {
         FulltextComponent::Header => "header",
@@ -424,7 +459,11 @@ fn esc(s: &str) -> String {
 
 fn header_xml(
     c: &crate::HeaderCompositionCandidate,
+    existing: &[u8],
 ) -> Result<String, NativeFulltextCompositionError> {
+    let existing =
+        std::str::from_utf8(existing).map_err(|_| NativeFulltextCompositionError::InvalidUtf8)?;
+    let preserved = preserve_header_children(existing);
     let mut out = String::from("<teiHeader><fileDesc><titleStmt>");
     for a in &c.candidate.authors {
         out.push_str("<author xml:id=\"author-");
@@ -439,6 +478,7 @@ fn header_xml(
         out.push_str(&esc(&a.name.surname));
         out.push_str("</surname></author>");
     }
+    out.push_str(&preserved);
     out.push_str("</titleStmt><date when=\"");
     out.push_str(&c.candidate.date.year.to_string());
     if let Some(month) = c.candidate.date.month {
@@ -453,6 +493,21 @@ fn header_xml(
 fn references_xml(
     c: &crate::ReferenceCompositionCandidate,
 ) -> Result<String, NativeFulltextCompositionError> {
+    for anchor in &c.candidate.anchors {
+        if let Some(target) = &anchor.target {
+            let target = target.strip_prefix('#').unwrap_or(target);
+            let resolves = c
+                .candidate
+                .references
+                .iter()
+                .any(|reference| format!("bibl-{}", reference.ordinal) == target);
+            if !resolves {
+                return Err(NativeFulltextCompositionError::AmbiguousSplice(format!(
+                    "unresolved bibliography target: {target}"
+                )));
+            }
+        }
+    }
     let mut out = String::from("<listBibl>");
     for r in &c.candidate.references {
         out.push_str("<biblStruct xml:id=\"bibl-");
