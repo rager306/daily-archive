@@ -49,6 +49,7 @@ pub mod navigation;
 pub mod negative_memory;
 pub mod ordered_mutation;
 pub mod paper;
+pub mod parse_job;
 pub mod pdf_toc;
 pub mod pipeline_cache_lineage;
 pub mod pipeline_ledger;

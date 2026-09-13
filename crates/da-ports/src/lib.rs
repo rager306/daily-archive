@@ -22,6 +22,7 @@ pub mod llm_client;
 pub mod multimodal_llm;
 pub mod negative_memory;
 pub mod openalex;
+pub mod parse_job;
 pub mod parse_learning;
 pub mod parser;
 pub mod path_config;
@@ -80,6 +81,8 @@ pub use parse_learning::{
     PromotionState, RVF_SCHEMA_VERSION, ReasoningBankReceipt, RvfAppendReceipt, RvfExperienceStore,
     RvfRecord, RvfStoreError, Sha256Digest, SplitIdentity, reject_raw_content,
 };
+
+pub use parse_job::JobLedger;
 
 pub use parser::{
     CalloutUnresolvedReason, CharSpan, CitationAnchor, CitationEntry, DeclaredArxivIdentity,
