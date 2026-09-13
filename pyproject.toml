@@ -1,0 +1,28 @@
+# Python tooling environment for governance/verification scripts.
+#
+# This repo's runtime product is Rust. Python exists only for the governor CLI
+# (scripts/governor) and its tests. All Python execution MUST go through uv:
+#
+#   PYTHONPATH=scripts uv run python -m governor review
+#   PYTHONPATH=scripts uv run python scripts/tests/test_governor.py
+#
+# `package = false` keeps uv from trying to build/install this repo as a
+# distribution; it only manages the dependency environment in .venv.
+
+[project]
+name = "daily-archive-tooling"
+version = "0.0.0"
+description = "Governor CLI and verification tooling for daily-archive"
+requires-python = ">=3.11"
+dependencies = [
+  "PyYAML>=6.0",
+  "jsonschema>=4.0",
+]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
