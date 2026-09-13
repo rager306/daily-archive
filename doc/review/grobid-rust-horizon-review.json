@@ -233,11 +233,11 @@
       "stage_id": "H03",
       "title": "Batch durable publication",
       "scope": "Make batch publication durable before ack: kill between sink/checkpoint/report, three or more mid-sink document failures, accelerator deletion, and a committed prefix derived only from durable manifests.",
-      "status": "pending",
+      "status": "in_progress",
       "depends_on": [
         "H02"
       ],
-      "owner": "unassigned",
+      "owner": "M506-98qg7g/S02",
       "adr_refs": [
         "ADR-040",
         "ADR-051",
@@ -262,16 +262,16 @@
       ],
       "verification_evidence": [
         {
-          "mode": "governor_rule",
-          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
-          "expected": "H03 stays unresolved with no PASS claim.",
-          "status": "pending"
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test batch_contract durable_cursor_never_advances_past_unpublished_content",
+          "expected": "A durable cursor freezes before content that was never durably published (CacheMode::Off / read-only miss).",
+          "status": "pass"
         },
         {
-          "mode": "runtime",
-          "ref": "kill-between-sink/checkpoint/report fault test over crates/da-parse/src/batch.rs",
-          "expected": "No loss; committed prefix equals durable manifests; deletion-index recovery.",
-          "status": "pending"
+          "mode": "command",
+          "ref": "cargo test -p da-cli --features redb --test parse_batch_test",
+          "expected": "Interruption-resume and accelerator rebuild keep working: 20/20 with the durability obligation in place.",
+          "status": "pass"
         }
       ],
       "tested_source": {
