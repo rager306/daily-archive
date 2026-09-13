@@ -49,6 +49,10 @@ pub const DA_PARSE_BATCH_SIZE_KEY: &str = "DA_PARSE_BATCH_SIZE";
 pub const DA_PARSE_WORKERS_KEY: &str = "DA_PARSE_WORKERS";
 /// Admission queue capacity bound.
 pub const DA_PARSE_QUEUE_CAPACITY_KEY: &str = "DA_PARSE_QUEUE_CAPACITY";
+/// Ordinal publication window (process-local tuning; excluded from identity).
+pub const DA_PARSE_PUBLICATION_WINDOW_KEY: &str = "DA_PARSE_PUBLICATION_WINDOW";
+/// Shared active execution capacity (process-local tuning; excluded from identity).
+pub const DA_PARSE_EXECUTION_CAPACITY_KEY: &str = "DA_PARSE_EXECUTION_CAPACITY";
 /// redb accelerator on/off (`true` | `false`).
 pub const DA_PARSE_REDB_INDEX_ENABLED_KEY: &str = "DA_PARSE_REDB_INDEX_ENABLED";
 /// redb accelerator file path (required only when enabled).
@@ -75,6 +79,10 @@ pub const DEFAULT_BATCH_DOCUMENTS: usize = 1000;
 pub const DEFAULT_WORKERS: usize = 4;
 /// Default admission queue capacity.
 pub const DEFAULT_QUEUE_CAPACITY: usize = 64;
+/// Default admitted-to-publication window.
+pub const DEFAULT_PUBLICATION_WINDOW: usize = 4;
+/// Default shared active-execution capacity.
+pub const DEFAULT_EXECUTION_CAPACITY: usize = 4;
 /// Default canonical RVF experience path.
 pub const DEFAULT_LEARNING_RVF_PATH: &str = "artifacts/parse-learning/experience.rvf";
 /// Default rebuildable learning index path.
@@ -307,6 +315,10 @@ pub struct ParseRuntimeOverrides {
     pub workers: Option<usize>,
     /// `--queue-capacity`
     pub queue_capacity: Option<usize>,
+    /// `--publication-window` (ordinal publication bound).
+    pub publication_window: Option<usize>,
+    /// `--execution-capacity` (process-local shared execution bound).
+    pub execution_capacity: Option<usize>,
     /// `--max-in-flight` (CLI-only bound; defaults to `workers`)
     pub max_in_flight: Option<usize>,
     /// `--timeout-secs` (per-request HTTP timeout; default 120s, raise for large PDFs)
@@ -332,6 +344,8 @@ pub struct ParseRuntimeConfig {
     max_documents: NonZeroUsize,
     workers: NonZeroUsize,
     queue_capacity: NonZeroUsize,
+    publication_window: NonZeroUsize,
+    execution_capacity: NonZeroUsize,
     max_in_flight: NonZeroUsize,
     timeout_secs: u64,
     redb: ParseRedbIndexConfig,
@@ -372,6 +386,16 @@ impl ParseRuntimeConfig {
     /// Admission queue capacity bound.
     pub const fn queue_capacity(&self) -> NonZeroUsize {
         self.queue_capacity
+    }
+
+    /// Ordinal publication window.
+    pub const fn publication_window(&self) -> NonZeroUsize {
+        self.publication_window
+    }
+
+    /// Process-local shared active execution capacity.
+    pub const fn execution_capacity(&self) -> NonZeroUsize {
+        self.execution_capacity
     }
 
     /// Simultaneously executing documents (CLI-only bound; defaults to
@@ -507,6 +531,20 @@ pub fn resolve(
         DEFAULT_QUEUE_CAPACITY,
         MAX_QUEUE_CAPACITY,
     )?;
+    let publication_window = resolve_bound(
+        overrides.publication_window,
+        DA_PARSE_PUBLICATION_WINDOW_KEY,
+        env,
+        DEFAULT_PUBLICATION_WINDOW,
+        MAX_IN_FLIGHT,
+    )?;
+    let execution_capacity = resolve_bound(
+        overrides.execution_capacity,
+        DA_PARSE_EXECUTION_CAPACITY_KEY,
+        env,
+        DEFAULT_EXECUTION_CAPACITY,
+        MAX_IN_FLIGHT,
+    )?;
     // max-in-flight is a CLI-only bound defaulting to the worker count.
     let max_in_flight = match overrides.max_in_flight {
         Some(value) => {
@@ -605,6 +643,8 @@ pub fn resolve(
         max_documents,
         workers,
         queue_capacity,
+        publication_window,
+        execution_capacity,
         max_in_flight,
         timeout_secs,
         redb,

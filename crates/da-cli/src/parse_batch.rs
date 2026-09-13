@@ -27,7 +27,7 @@ use clap::Args;
 use da_adapters::parse_cache::FileParseArtifactCache;
 use da_parse::{
     BatchCursor, CacheMode, GrobidHttpBackend, HeaderDialectV1, ParseBackendRequest, ParseBatch,
-    ParseBatchCollector, ParseBatchExecutor, ParseBatchItem, ParseBatchLimits,
+    ParseBatchBudget, ParseBatchCollector, ParseBatchExecutor, ParseBatchItem, ParseBatchLimits,
     ParseBatchMemoryCheckpoint, ParseBatchRunSummary, ParseDocumentFailure, ParseDocumentOutcome,
     ProbeFailure, ReferencesDialectV1, ordered_input_fingerprint_with_backend_version,
 };
@@ -88,6 +88,14 @@ pub struct ParseBatchArgs {
     #[arg(long)]
     pub queue_capacity: Option<usize>,
 
+    /// Ordinal publication window (env DA_PARSE_PUBLICATION_WINDOW).
+    #[arg(long)]
+    pub publication_window: Option<usize>,
+
+    /// Process-local shared execution capacity (env DA_PARSE_EXECUTION_CAPACITY).
+    #[arg(long)]
+    pub execution_capacity: Option<usize>,
+
     /// Simultaneously executing documents (CLI-only; default: workers).
     #[arg(long)]
     pub max_in_flight: Option<usize>,
@@ -145,6 +153,8 @@ impl ParseBatchArgs {
             batch_size: self.batch_size,
             workers: self.workers,
             queue_capacity: self.queue_capacity,
+            publication_window: self.publication_window,
+            execution_capacity: self.execution_capacity,
             max_in_flight: self.max_in_flight,
             timeout_secs: self.timeout_secs,
             redb_enabled: if self.redb_index.is_some() {
@@ -449,6 +459,18 @@ pub struct ParseBatchRunSummaryWire {
     pub max_in_flight_observed: usize,
     /// Observed maximum queue depth (bounded-load gauge).
     pub max_queue_depth_observed: usize,
+    /// Configured process-local publication capacity.
+    pub configured_publication_capacity: usize,
+    /// Configured process-local execution capacity.
+    pub configured_execution_capacity: usize,
+    /// Peak admitted results retained before ordered publication.
+    pub max_publication_outstanding_observed: usize,
+    /// Peak out-of-order results waiting behind the frontier.
+    pub max_reorder_depth_observed: usize,
+    /// Semaphore acquisitions that observed a full budget before waiting.
+    pub budget_waits: u64,
+    /// Budget scope, explicitly not shared between CLI processes.
+    pub budget_scope: String,
     /// Durable sink errors.
     pub sink_errors: u64,
     /// Checkpoint errors.
@@ -474,6 +496,12 @@ impl From<&ParseBatchRunSummary> for ParseBatchRunSummaryWire {
             projector_write_failures: summary.projector_write_failures(),
             max_in_flight_observed: summary.max_in_flight_observed(),
             max_queue_depth_observed: summary.max_queue_depth_observed(),
+            configured_publication_capacity: summary.configured_publication_capacity(),
+            configured_execution_capacity: summary.configured_execution_capacity(),
+            max_publication_outstanding_observed: summary.max_publication_outstanding_observed(),
+            max_reorder_depth_observed: summary.max_reorder_depth_observed(),
+            budget_waits: summary.budget_waits(),
+            budget_scope: summary.budget_scope().to_string(),
             sink_errors: summary.sink_errors(),
             checkpoint_errors: summary.checkpoint_errors(),
         }
@@ -816,7 +844,13 @@ pub async fn run_with_env(
     //    executor. The batch carries the same version into stage keys.
     let cache = FileParseArtifactCache::new(config.cache_root());
     let two_stage = da_parse::TwoStageParseCache::new(cache);
-    let executor = ParseBatchExecutor::new(backend, two_stage);
+    let budget = Arc::new(ParseBatchBudget::new(
+        config.publication_window(),
+        config.execution_capacity(),
+    ));
+    let executor = ParseBatchExecutor::new(backend, two_stage)
+        .with_publication_window(config.publication_window())
+        .with_shared_budget(budget);
 
     // 10. Durable checkpoint: accelerator mirror (feature-gated) or memory.
     //
@@ -860,7 +894,7 @@ pub async fn run_with_env(
 /// Stable machine-readable stdout line (no paths, no URLs, no payloads).
 fn print_run_summary(summary: &ParseBatchRunSummary) {
     println!(
-        "parse-batch: mode={} admitted={} resumed_from={} skipped_on_resume={} completed={} succeeded={} failed={} backend_calls={} raw_hits={} raw_legacy_hits={} raw_writes={} projector_hits={} projector_writes={} max_in_flight_observed={} max_queue_depth_observed={} cursor_next={} input_fingerprint={} report_schema={}",
+        "parse-batch: mode={} admitted={} resumed_from={} skipped_on_resume={} completed={} succeeded={} failed={} backend_calls={} raw_hits={} raw_legacy_hits={} raw_writes={} projector_hits={} projector_writes={} configured_publication={} configured_execution={} max_in_flight_observed={} max_queue_depth_observed={} max_publication_outstanding={} max_reorder_depth={} budget_waits={} budget_scope={} cursor_next={} input_fingerprint={} report_schema={}",
         summary.mode().as_str(),
         summary.admitted(),
         summary.resumed_from_ordinal(),
@@ -874,8 +908,14 @@ fn print_run_summary(summary: &ParseBatchRunSummary) {
         summary.raw_writes(),
         summary.projector_hits(),
         summary.projector_writes(),
+        summary.configured_publication_capacity(),
+        summary.configured_execution_capacity(),
         summary.max_in_flight_observed(),
         summary.max_queue_depth_observed(),
+        summary.max_publication_outstanding_observed(),
+        summary.max_reorder_depth_observed(),
+        summary.budget_waits(),
+        summary.budget_scope(),
         summary.cursor().next_ordinal(),
         summary.input_fingerprint(),
         PARSE_BATCH_REPORT_SCHEMA_VERSION,

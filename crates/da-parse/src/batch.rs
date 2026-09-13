@@ -889,7 +889,7 @@ impl ParseDocumentOutcome {
 // ---------------------------------------------------------------------------
 
 /// Stable schema version of the run summary vocabulary.
-pub const PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION: u32 = 1;
+pub const PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION: u32 = 2;
 
 /// Failure of the durable result-sink or checkpoint seam. The message is
 /// caller-owned text — the executor never attaches payload, path or
@@ -1025,8 +1025,14 @@ pub struct ParseBatchRunSummary {
     projector_hits: u64,
     projector_writes: u64,
     projector_write_failures: u64,
+    configured_publication_capacity: usize,
+    configured_execution_capacity: usize,
     max_in_flight_observed: usize,
     max_queue_depth_observed: usize,
+    max_publication_outstanding_observed: usize,
+    max_reorder_depth_observed: usize,
+    budget_waits: u64,
+    budget_scope: &'static str,
     sink_errors: u64,
     checkpoint_errors: u64,
 }
@@ -1112,9 +1118,33 @@ impl ParseBatchRunSummary {
     pub const fn max_in_flight_observed(&self) -> usize {
         self.max_in_flight_observed
     }
+    /// Configured publication slots for this run (process-local shared budget).
+    pub const fn configured_publication_capacity(&self) -> usize {
+        self.configured_publication_capacity
+    }
+    /// Configured active execution slots for this run (process-local shared budget).
+    pub const fn configured_execution_capacity(&self) -> usize {
+        self.configured_execution_capacity
+    }
     /// Peak bounded-queue backlog (admitted, not yet received by a worker).
     pub const fn max_queue_depth_observed(&self) -> usize {
         self.max_queue_depth_observed
+    }
+    /// Peak number of admitted results retained before ordered publication.
+    pub const fn max_publication_outstanding_observed(&self) -> usize {
+        self.max_publication_outstanding_observed
+    }
+    /// Peak number of out-of-order results waiting behind the frontier.
+    pub const fn max_reorder_depth_observed(&self) -> usize {
+        self.max_reorder_depth_observed
+    }
+    /// Number of semaphore acquisitions that had to wait.
+    pub const fn budget_waits(&self) -> u64 {
+        self.budget_waits
+    }
+    /// Budget scope. This is never shared between CLI processes.
+    pub const fn budget_scope(&self) -> &'static str {
+        self.budget_scope
     }
     /// Sink acknowledgments that failed (outcomes stay unclaimed).
     pub const fn sink_errors(&self) -> u64 {
@@ -1127,8 +1157,9 @@ impl ParseBatchRunSummary {
 }
 
 impl Serialize for ParseBatchRunSummary {
+    #[rustfmt::skip]
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut state = serializer.serialize_struct("ParseBatchRunSummary", 23)?;
+        let mut state = serializer.serialize_struct("ParseBatchRunSummary", 30)?;
         state.serialize_field("schema_version", &self.schema_version)?;
         state.serialize_field("mode", &self.mode)?;
         state.serialize_field("limits", &self.limits)?;
@@ -1148,8 +1179,18 @@ impl Serialize for ParseBatchRunSummary {
         state.serialize_field("projector_hits", &self.projector_hits)?;
         state.serialize_field("projector_writes", &self.projector_writes)?;
         state.serialize_field("projector_write_failures", &self.projector_write_failures)?;
+        let configured_publication = &self.configured_publication_capacity;
+        let configured_execution = &self.configured_execution_capacity;
+        let publication_outstanding = &self.max_publication_outstanding_observed;
+        let reorder_depth = &self.max_reorder_depth_observed;
+        state.serialize_field("configured_publication_capacity", configured_publication)?;
+        state.serialize_field("configured_execution_capacity", configured_execution)?;
         state.serialize_field("max_in_flight_observed", &self.max_in_flight_observed)?;
         state.serialize_field("max_queue_depth_observed", &self.max_queue_depth_observed)?;
+        state.serialize_field("max_publication_outstanding_observed", publication_outstanding)?;
+        state.serialize_field("max_reorder_depth_observed", reorder_depth)?;
+        state.serialize_field("budget_waits", &self.budget_waits)?;
+        state.serialize_field("budget_scope", &self.budget_scope)?;
         state.serialize_field("sink_errors", &self.sink_errors)?;
         state.serialize_field("checkpoint_errors", &self.checkpoint_errors)?;
         state.end()
@@ -1180,8 +1221,14 @@ impl<'de> Deserialize<'de> for ParseBatchRunSummary {
             projector_hits: u64,
             projector_writes: u64,
             projector_write_failures: u64,
+            configured_publication_capacity: usize,
+            configured_execution_capacity: usize,
             max_in_flight_observed: usize,
             max_queue_depth_observed: usize,
+            max_publication_outstanding_observed: usize,
+            max_reorder_depth_observed: usize,
+            budget_waits: u64,
+            budget_scope: String,
             sink_errors: u64,
             checkpoint_errors: u64,
         }
@@ -1212,8 +1259,14 @@ impl<'de> Deserialize<'de> for ParseBatchRunSummary {
             projector_hits: repr.projector_hits,
             projector_writes: repr.projector_writes,
             projector_write_failures: repr.projector_write_failures,
+            configured_publication_capacity: repr.configured_publication_capacity,
+            configured_execution_capacity: repr.configured_execution_capacity,
             max_in_flight_observed: repr.max_in_flight_observed,
             max_queue_depth_observed: repr.max_queue_depth_observed,
+            max_publication_outstanding_observed: repr.max_publication_outstanding_observed,
+            max_reorder_depth_observed: repr.max_reorder_depth_observed,
+            budget_waits: repr.budget_waits,
+            budget_scope: Box::leak(repr.budget_scope.into_boxed_str()),
             sink_errors: repr.sink_errors,
             checkpoint_errors: repr.checkpoint_errors,
         })
@@ -1283,6 +1336,10 @@ struct RunCounters {
     checkpoint_errors: AtomicU64,
     queue_depth: AtomicUsize,
     max_queue_depth: AtomicUsize,
+    publication_outstanding: AtomicUsize,
+    max_publication_outstanding: AtomicUsize,
+    max_reorder_depth: AtomicUsize,
+    budget_waits: AtomicU64,
     in_flight: AtomicUsize,
     max_in_flight: AtomicUsize,
 }
@@ -1889,6 +1946,12 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
             // The in-flight permit covers the whole durable write path
             // (execution + sink record + acknowledgment), so bounded
             // execution and durable prefix advancement stay in step.
+            if self.semaphore.available_permits() == 0 {
+                self.shared
+                    .counters
+                    .budget_waits
+                    .fetch_add(1, Ordering::SeqCst);
+            }
             let Ok(execution_permit) = self.semaphore.clone().acquire_owned().await else {
                 break;
             };
@@ -1896,6 +1959,12 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
             // after their local cap and before entering the backend. Both
             // permits are owned by this worker and therefore release on
             // normal completion or cancellation.
+            if self.shared_execution.available_permits() == 0 {
+                self.shared
+                    .counters
+                    .budget_waits
+                    .fetch_add(1, Ordering::SeqCst);
+            }
             let Ok(shared_execution_permit) = self.shared_execution.clone().acquire_owned().await
             else {
                 break;
@@ -1976,6 +2045,19 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
         let ordinal = queued.item.ordinal();
         let mut publication = self.shared.publication.lock().await;
         publication.pending.insert(ordinal, outcome);
+        let pending = publication.pending.len();
+        self.shared
+            .counters
+            .publication_outstanding
+            .store(pending, Ordering::SeqCst);
+        self.shared
+            .counters
+            .max_publication_outstanding
+            .fetch_max(pending, Ordering::SeqCst);
+        self.shared
+            .counters
+            .max_reorder_depth
+            .fetch_max(pending.saturating_sub(1), Ordering::SeqCst);
         loop {
             let next_ordinal = publication.next_ordinal;
             let Some(next_outcome) = publication.pending.remove(&next_ordinal) else {
@@ -2000,6 +2082,11 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
                 }
             }
             publication.next_ordinal += 1;
+            let pending = publication.pending.len();
+            self.shared
+                .counters
+                .publication_outstanding
+                .store(pending, Ordering::SeqCst);
         }
         drop(publication);
         if succeeded {
@@ -2222,10 +2309,16 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
             // Reserve before enqueue so a slow ordinal zero bounds both the
             // queue and the completed-but-unpublished outcome set. The
             // permit travels with the item until its sink acknowledgment.
+            if local_publication_semaphore.available_permits() == 0 {
+                shared.counters.budget_waits.fetch_add(1, Ordering::SeqCst);
+            }
             let Ok(publication_permit) = local_publication_semaphore.clone().acquire_owned().await
             else {
                 break;
             };
+            if shared_budget.publication.available_permits() == 0 {
+                shared.counters.budget_waits.fetch_add(1, Ordering::SeqCst);
+            }
             let Ok(shared_publication_permit) =
                 shared_budget.publication.clone().acquire_owned().await
             else {
@@ -2276,8 +2369,17 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
                 .counters
                 .projector_write_failures
                 .load(Ordering::SeqCst),
+            configured_publication_capacity: shared_budget.publication_capacity().get(),
+            configured_execution_capacity: shared_budget.execution_capacity().get(),
             max_in_flight_observed: shared.counters.max_in_flight.load(Ordering::SeqCst),
             max_queue_depth_observed: shared.counters.max_queue_depth.load(Ordering::SeqCst),
+            max_publication_outstanding_observed: shared
+                .counters
+                .max_publication_outstanding
+                .load(Ordering::SeqCst),
+            max_reorder_depth_observed: shared.counters.max_reorder_depth.load(Ordering::SeqCst),
+            budget_waits: shared.counters.budget_waits.load(Ordering::SeqCst),
+            budget_scope: "process-local",
             sink_errors: shared.counters.sink_errors.load(Ordering::SeqCst),
             checkpoint_errors: shared.counters.checkpoint_errors.load(Ordering::SeqCst),
         };
