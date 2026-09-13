@@ -1497,10 +1497,10 @@ fn s06_batch_cache_vocabulary_stays_byte_pinned_for_the_data_ledger() {
         assert_eq!(code.as_str(), wire);
     }
 
-    // Schema versions of the batch / cursor / run-summary vocabularies.
+    // Schema versions of the batch / cursor / run-summary vocabularies (S06/T04).
     assert_eq!(PARSE_BATCH_SCHEMA_VERSION, 1);
     assert_eq!(PARSE_BATCH_CURSOR_SCHEMA_VERSION, 1);
-    assert_eq!(PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION, 1);
+    assert_eq!(PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION, 2);
 }
 
 // ───── S09/T05: the native personal-name shadow candidate never touches cache identity ─────

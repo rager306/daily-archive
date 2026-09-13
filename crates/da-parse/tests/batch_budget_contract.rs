@@ -268,6 +268,89 @@ impl ParseBackend for SharedExecutionBackend {
     }
 }
 
+#[derive(Debug, Clone, Default)]
+struct VariablePayloadBackend;
+
+#[async_trait]
+impl ParseBackend for VariablePayloadBackend {
+    async fn fetch_tei(
+        &self,
+        request: ParseBackendRequest,
+    ) -> Result<TeiEnvelope, ParseBackendFailure> {
+        let ordinal = request
+            .paper_id()
+            .strip_prefix("window-")
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or_default();
+        let payload = format!("<TEI><text>{}</text></TEI>", "x".repeat(64 + ordinal * 31));
+        Ok(TeiEnvelope::new(
+            payload.into_bytes(),
+            TeiIdentity::new("budget-test", "budget-test-v1"),
+        ))
+    }
+}
+
+#[derive(Debug, Default)]
+struct PayloadAccountingSink {
+    encoded: Mutex<Vec<Vec<u8>>>,
+    peak_retained_bytes: AtomicUsize,
+}
+
+#[async_trait]
+impl ParseBatchResultSink for PayloadAccountingSink {
+    async fn record(
+        &self,
+        outcome: da_parse::ParseDocumentOutcome,
+    ) -> Result<(), ParseBatchSinkError> {
+        let encoded = serde_json::to_vec(&outcome).expect("outcome wire encoding");
+        let mut retained = self.encoded.lock().await;
+        retained.push(encoded);
+        let bytes = retained.iter().map(Vec::len).sum::<usize>();
+        self.peak_retained_bytes.fetch_max(bytes, Ordering::SeqCst);
+        Ok(())
+    }
+}
+
+impl PayloadAccountingSink {
+    async fn encoded(&self) -> Vec<Vec<u8>> {
+        self.encoded.lock().await.clone()
+    }
+
+    fn peak_retained_bytes(&self) -> usize {
+        self.peak_retained_bytes.load(Ordering::SeqCst)
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn measured_payload_bytes_are_separate_from_bounded_document_slots() {
+    let executor =
+        ParseBatchExecutor::new(VariablePayloadBackend, MissCache).with_publication_window(nz(2));
+    let sink = Arc::new(PayloadAccountingSink::default());
+    let checkpoint = Arc::new(ParseBatchMemoryCheckpoint::new());
+    let summary = executor
+        .run(admitted_batch(), sink.clone(), checkpoint)
+        .await;
+    let encoded = sink.encoded().await;
+
+    assert_eq!(summary.succeeded(), 4);
+    assert_eq!(encoded.len(), 4, "every full outcome must reach the sink");
+    assert!(
+        encoded
+            .windows(2)
+            .any(|pair| pair[0].len() != pair[1].len())
+    );
+    assert!(
+        summary.max_publication_outstanding_observed() <= 2,
+        "document-slot peak is bounded independently of payload size"
+    );
+    assert_eq!(
+        sink.peak_retained_bytes(),
+        encoded.iter().map(Vec::len).sum::<usize>(),
+        "payload accounting must retain complete, non-truncated outcomes"
+    );
+    assert!(summary.max_reorder_depth_observed() <= 2);
+}
+
 #[tokio::test(start_paused = true)]
 async fn shared_execution_budget_caps_concurrent_backend_work() {
     let backend = SharedExecutionBackend::default();

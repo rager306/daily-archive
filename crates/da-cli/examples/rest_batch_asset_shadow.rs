@@ -138,6 +138,8 @@ async fn run(
         timeout_secs: None,
         workers: None,
         queue_capacity: None,
+        publication_window: None,
+        execution_capacity: None,
         max_in_flight: None,
         resume: false,
         allow_versionless_identity: false,

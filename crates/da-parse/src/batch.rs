@@ -50,7 +50,7 @@ use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tokio::sync::{Mutex, Semaphore, mpsc};
-use tokio::task::JoinSet;
+use tokio::task::JoinHandle;
 
 use crate::backend::{ParseBackend, ParseBackendRequest};
 use crate::cache::{
@@ -2282,9 +2282,9 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
             ))
         });
         let local_publication_semaphore = Arc::new(Semaphore::new(publication_window.get()));
-        let mut workers = JoinSet::new();
+        let mut workers: Vec<JoinHandle<()>> = Vec::with_capacity(limits.workers().get());
         for _ in 0..limits.workers().get() {
-            workers.spawn(
+            workers.push(tokio::spawn(
                 WorkerContext {
                     backend: self.backend.clone(),
                     cache: self.cache.clone(),
@@ -2299,7 +2299,7 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
                     checkpoint: checkpoint.clone(),
                 }
                 .work(),
-            );
+            ));
         }
 
         // Feeder: admits items at/after the resume cursor into the bounded
@@ -2339,7 +2339,14 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
             }
         }
         drop(tx);
-        while workers.join_next().await.is_some() {}
+        // Await workers during a normal run. If this future is dropped (for
+        // example, a process-death simulation after durable work was started),
+        // JoinHandle drop detaches the workers instead of aborting them. They
+        // finish already-admitted items, observe the closed channel, release
+        // their permits and exit without leaving detached capacity holders.
+        for worker in workers {
+            let _ = worker.await;
+        }
 
         let saved_next = shared.tracker.lock().await.saved_next;
         let completed = shared.counters.succeeded.load(Ordering::SeqCst)

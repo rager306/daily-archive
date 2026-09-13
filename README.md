@@ -349,6 +349,14 @@ cargo test -p da-cli --lib proptest        # graph_tasks parser (6)
 # cargo run -p da-cli --example materialization_profile -- --case NAME:PAPERS:RUN:RESOURCE:IDENTITY ...
 # Current measured 200-paper process-local rebuild: 18.59s, 229 MB RSS,
 # strict-semantic equal to durable graph, replay applied=0, D127=false.
+# Parse-batch resource boundary (M506/S04): publication/execution slots,
+# queue depth and reorder depth are measured by the deterministic
+# `batch_budget_contract` suite. Retained serialized outcome bytes are measured
+# separately from document-count slots; payload size, process RSS, scratch,
+# staging and Java CPU/liveness are not implied by the slot bound and remain
+# explicit H05 no-claim until profiled with a real FilePipelineCache/GROBID run.
+# HTTP timeout negatives identify transport timeout only; they do not prove that
+# the Java process exited.
 # RocksDB is not active on this in-memory + .sgsnap path; tune it only for a
 # separately profiled persistent/daemon flow.
 # prepare-workers=4 is the measured default on this 12-vCPU host: 30-paper

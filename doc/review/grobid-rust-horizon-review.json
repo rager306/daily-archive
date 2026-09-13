@@ -470,11 +470,11 @@
       "stage_id": "H05",
       "title": "Global budgets and bounded reorder",
       "scope": "Bound RAM/staging/CPU/scratch for a slow ordinal-0 document and concurrent batches without deadlock; distinguish an HTTP timeout from a killed Java process.",
-      "status": "pending",
+      "status": "in_progress",
       "depends_on": [
         "H03"
       ],
-      "owner": "unassigned",
+      "owner": "M506-98qg7g/S04",
       "adr_refs": [
         "ADR-040",
         "ADR-051",
@@ -490,6 +490,11 @@
           "path": "crates/da-adapters/src/parse_cursor.rs",
           "note": "Cursor/reorder surface that must stay bounded.",
           "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/tests/batch_budget_contract.rs",
+          "note": "Deterministic budget matrix plus separate retained-payload byte accounting.",
+          "state": "present"
         }
       ],
       "verification_evidence": [
@@ -500,6 +505,18 @@
           "status": "pending"
         },
         {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test batch_budget_contract",
+          "expected": "Four deterministic checks pass, including bounded slots and complete payload conservation.",
+          "status": "pass"
+        },
+        {
+          "mode": "runtime",
+          "ref": "batch_budget_contract::measured_payload_bytes_are_separate_from_bounded_document_slots",
+          "expected": "Document slots/reorder are bounded; complete serialized outcomes vary with payload size and are not truncated.",
+          "status": "pass"
+        },
+        {
           "mode": "runtime",
           "ref": "concurrent batch budget probe with a slow ordinal-0 document",
           "expected": "Bounded resources, no deadlock, timeout reported as timeout not Java death.",
@@ -507,9 +524,9 @@
         }
       ],
       "tested_source": {
-        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
-        "verified": false,
-        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+        "revision": "working-tree:da-parse-batch-budget-contract",
+        "verified": true,
+        "note": "T04 verifies process-local slots and payload accounting only. RSS, Java CPU/liveness, staging and scratch remain outside this evidence."
       },
       "index_freshness": {
         "state": "stale",
@@ -530,6 +547,12 @@
           "id": "H05-N1",
           "scenario": "Treat an HTTP timeout as proof the Java process was killed.",
           "expected": "Outcome distinguishes transport timeout from process termination; resources are reclaimed deterministically."
+        },
+        {
+          "id": "H05-N2",
+          "scenario": "Treat document-count limits as proof of a byte/RSS ceiling.",
+          "expected": "Retained serialized payload bytes are measured separately; byte/RSS and Java CPU ceilings remain no-claim.",
+          "ref": "crates/da-parse/tests/batch_budget_contract.rs::measured_payload_bytes_are_separate_from_bounded_document_slots"
         }
       ],
       "test_matrix": [
