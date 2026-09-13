@@ -1,44 +1,42 @@
-//! Offline stage-tape recorder for the Java GROBID cascade (M506/S01/T03).
+//! Offline stage-tape recorder and verifier for the Java GROBID cascade
+//! (M506/S01/T03-T04).
 //!
-//! What this records and why: the migration to a native Rust parser needs a
-//! frozen record of what the Java cascade actually computed per model, so a
-//! later slice can tell a layout/feature divergence apart from a model-weight
-//! divergence. GROBID's `debugMode` is the only source for that, and it is a
-//! *replacement* answer: with `debugMode=1` the service returns `text/plain`
-//! instead of TEI. TEI and dump are therefore two separate requests, and this
-//! recorder captures only the dump.
+//! Two modes, one artifact:
 //!
-//! Raw TEI capture is deliberately NOT duplicated here: it already exists in
-//! the compatibility tooling (`parse_compat_baseline` and the batch paths).
-//! Adding a second TEI capture would create two sources of the same truth.
+//! - **capture** (default) — record the model debug dump for a pinned PDF and
+//!   write a typed tape plus the raw dump.
+//! - **`--verify`** — re-measure the source PDF, the stored dump and the live
+//!   release, then report every way the tape can no longer be trusted:
+//!   source substitution, dump substitution or absence, release drift, a
+//!   recorded failure, or content that carried no model section at all.
 //!
-//! This is offline evidence, not a production route: it never writes a graph,
-//! never imports and never promotes. `debug_capture` is intentionally outside
-//! `ParserPort` for the same reason.
+//! Why verification is part of the tool rather than a reader's job: a tape is
+//! only evidence while it is bound to the exact input, bytes and release it was
+//! recorded against. Those bindings decay silently — a PDF gets replaced, a
+//! dump gets edited, the service gets upgraded — and an unverified tape would
+//! keep looking valid.
 //!
-//! Capture states are explicit, because "no section in the dump" must never be
-//! read as "the model did not run":
-//!   captured          — the dump came back with content
-//!   uncaptured_empty  — a successful response carrying no bytes
-//!   filtered          — `--models` was applied, so the dump is a subset
-//!   failed            — the request failed; the typed code is recorded
-//! A stored tape always carries the probed release, so a tape can never be
-//! mistaken for another release's evidence.
+//! Raw TEI is deliberately NOT captured here: the compatibility tooling already
+//! owns that, and a second source of the same truth would drift.
+//!
+//! This is offline evidence, not a production route: no graph write, no import,
+//! no promotion. `debug_capture` is intentionally outside `ParserPort`.
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use da_parse::{ParseBackendRequest, ParseEndpoint, model_invocation_counts, parse_debug_sections};
-use serde::Serialize;
-use std::path::PathBuf;
+use da_parse::{
+    CaptureState, ParseBackendRequest, ParseEndpoint, StageTape, TapeObservation, verify_tape,
+};
+use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
 struct Args {
-    /// Pinned PDF to record against.
+    /// Pinned PDF to record against (capture mode).
     #[arg(long)]
-    pdf: PathBuf,
-    /// Output directory for the tape.
+    pdf: Option<PathBuf>,
+    /// Output directory for the tape (capture mode).
     #[arg(long)]
-    out: PathBuf,
+    out: Option<PathBuf>,
     /// Endpoint whose model dump is recorded.
     #[arg(long, default_value = "fulltext")]
     endpoint: String,
@@ -46,38 +44,9 @@ struct Args {
     /// filtered subset rather than a full dump, which is recorded explicitly.
     #[arg(long)]
     models: Option<String>,
-}
-
-#[derive(Serialize)]
-struct ModelCoverage {
-    model: String,
-    invocations: usize,
-}
-
-#[derive(Serialize)]
-struct Tape {
-    schema_version: &'static str,
-    endpoint: String,
-    paper_id: String,
-    source_pdf: String,
-    source_sha256: String,
-    backend_version: String,
-    models_filter: Option<String>,
-    capture_state: &'static str,
-    dump_bytes: usize,
-    dump_sha256: Option<String>,
-    /// Total model sections found: invocations, not distinct models.
-    sections: usize,
-    /// Distinct models exercised, in first-appearance order.
-    distinct_models: usize,
-    /// Per-model invocation counts: the coverage view a later slice compares
-    /// against, so "the date model ran 46 times" cannot be confused with
-    /// "the dump contained this many models".
-    models_observed: Vec<ModelCoverage>,
-    failure_code: Option<String>,
-    failure_phase: Option<String>,
-    /// Contract notes a reader must have before trusting the tape.
-    notes: Vec<&'static str>,
+    /// Verify an existing tape instead of capturing a new one.
+    #[arg(long)]
+    verify: Option<PathBuf>,
 }
 
 fn sha256_hex(bytes: &[u8]) -> String {
@@ -106,115 +75,156 @@ fn model_filter(raw: Option<&str>) -> Option<Vec<String>> {
     })
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    let args = Args::parse();
-    let _guard = da_cli::logging::init_pipeline_logging("grobid_stage_tape");
+/// Probe the live release, failing closed: a tape must never be bound to an
+/// unprobed or blank version.
+async fn probed_release() -> Result<String> {
+    let parser = da_cli::parse_profile::corpus_grobid_parser();
+    let probe = parser
+        .probe_version()
+        .await
+        .map_err(|failure| anyhow::anyhow!("GROBID /api/version probe failed: {failure}"))?;
+    let version = probe.version.trim().to_string();
+    anyhow::ensure!(
+        !version.is_empty(),
+        "GROBID /api/version returned a blank version; refusing to bind a tape to it"
+    );
+    Ok(version)
+}
 
-    let endpoint = endpoint_from_arg(&args.endpoint)?;
-    let pdf_bytes = std::fs::read(&args.pdf)
-        .with_context(|| format!("read pinned pdf {}", args.pdf.display()))?;
-    let source_sha256 = sha256_hex(&pdf_bytes);
-    let paper_id = args
+/// Re-measure the facts a tape claims, independently of the tape.
+///
+/// A missing dump file is reported as `None` rather than as an error: the
+/// verifier distinguishes "artifact absent" from "artifact differs", and a
+/// caller cannot tell those apart if absence aborts the run.
+fn observe(tape: &StageTape, tape_dir: &Path) -> Result<TapeObservation> {
+    let source = std::fs::read(&tape.source_pdf).map_err(|error| {
+        anyhow::anyhow!(
+            "recorded source is unreadable ({}): {error}",
+            tape.source_pdf
+        )
+    })?;
+    let dump_path = tape_dir.join(format!("{}.debug.txt", tape.endpoint));
+    let dump_sha256 = std::fs::read(&dump_path)
+        .ok()
+        .map(|bytes| sha256_hex(&bytes));
+    Ok(TapeObservation {
+        source_sha256: sha256_hex(&source),
+        dump_sha256,
+        probed_backend_version: String::new(),
+    })
+}
+
+fn dump_path_for(out: &Path, endpoint: &str) -> PathBuf {
+    out.join(format!("{endpoint}.debug.txt"))
+}
+
+async fn run_verify(tape_path: &Path) -> Result<()> {
+    let raw =
+        std::fs::read(tape_path).with_context(|| format!("read tape {}", tape_path.display()))?;
+    let tape: StageTape = serde_json::from_slice(&raw)
+        .with_context(|| format!("parse tape {}", tape_path.display()))?;
+    let tape_dir = tape_path.parent().unwrap_or_else(|| Path::new("."));
+
+    let mut observation = observe(&tape, tape_dir)?;
+    observation.probed_backend_version = probed_release().await?;
+
+    let findings = verify_tape(&tape, &observation);
+    println!(
+        "stage tape verify: schema={} endpoint={} state={} sections={} distinct_models={} findings={}",
+        tape.schema_version,
+        tape.endpoint,
+        tape.capture_state.as_str(),
+        tape.sections,
+        tape.distinct_models,
+        findings.len()
+    );
+    for finding in &findings {
+        println!("  [{}] {finding:?}", finding.code());
+    }
+
+    // A tape that no longer holds is a real failure: exiting zero would let a
+    // stale artifact pass for evidence.
+    if !findings.is_empty() {
+        anyhow::bail!(
+            "tape {} is not verifiable: {} finding(s)",
+            tape_path.display(),
+            findings.len()
+        );
+    }
+    Ok(())
+}
+
+async fn run_capture(args: &Args) -> Result<()> {
+    let pdf = args
         .pdf
+        .as_ref()
+        .context("--pdf is required in capture mode")?;
+    let out = args
+        .out
+        .as_ref()
+        .context("--out is required in capture mode")?;
+    let endpoint = endpoint_from_arg(&args.endpoint)?;
+
+    let pdf_bytes =
+        std::fs::read(pdf).with_context(|| format!("read pinned pdf {}", pdf.display()))?;
+    let source_sha256 = sha256_hex(&pdf_bytes);
+    let paper_id = pdf
         .file_stem()
         .and_then(|stem| stem.to_str())
         .context("pdf file name is not valid utf-8")?
         .to_string();
 
-    let parser = da_cli::parse_profile::corpus_grobid_parser();
-
-    // Fail closed: a tape must carry the release it was recorded against, or it
-    // is unusable as migration evidence. Blank or failed probes are refused
-    // rather than stamped with a historical identity.
-    let probe = parser
-        .probe_version()
-        .await
-        .map_err(|failure| anyhow::anyhow!("GROBID /api/version probe failed: {failure}"))?;
-    let backend_version = probe.version.trim().to_string();
-    anyhow::ensure!(
-        !backend_version.is_empty(),
-        "GROBID /api/version returned a blank version; refusing to record an unlabelled tape"
-    );
-
+    let backend_version = probed_release().await?;
     let filter = model_filter(args.models.as_deref());
-    let request = ParseBackendRequest::new(paper_id.clone(), pdf_bytes.clone());
+    let request = ParseBackendRequest::new(paper_id.clone(), pdf_bytes);
 
-    std::fs::create_dir_all(&args.out)
-        .with_context(|| format!("create tape dir {}", args.out.display()))?;
+    std::fs::create_dir_all(out).with_context(|| format!("create tape dir {}", out.display()))?;
 
-    let (capture_state, dump, failure_code, failure_phase) = match parser
+    let parser = da_cli::parse_profile::corpus_grobid_parser();
+    let (dump, failure) = match parser
         .debug_capture(endpoint, &request, filter.as_deref())
         .await
     {
-        Ok(text) => {
-            let bytes = text.into_bytes();
-            let state = if bytes.is_empty() {
-                "uncaptured_empty"
-            } else if filter.is_some() {
-                "filtered"
-            } else {
-                "captured"
-            };
-            (state, bytes, None, None)
-        }
-        Err(failure) => {
-            let code = failure.code().to_string();
-            let phase = failure.phase().to_string();
-            ("failed", Vec::new(), Some(code), Some(phase))
-        }
+        Ok(text) => (text.into_bytes(), None),
+        Err(error) => (
+            Vec::new(),
+            Some((error.code().to_string(), error.phase().to_string())),
+        ),
     };
 
-    let dump_sha256 = (!dump.is_empty()).then(|| sha256_hex(&dump));
-    // Coverage is derived from the dump itself rather than from the request: a
-    // model can be invoked many times inside one request, and a filtered run
-    // proves only that the filter was applied, never that a model did not run.
-    let dump_text = String::from_utf8_lossy(&dump);
-    let sections = parse_debug_sections(&dump_text).len();
-    let models_observed = model_invocation_counts(&dump_text)
-        .into_iter()
-        .map(|(model, invocations)| ModelCoverage { model, invocations })
-        .collect::<Vec<_>>();
-    let distinct_models = models_observed.len();
-    if !dump.is_empty() {
-        std::fs::write(
-            args.out.join(format!("{}.debug.txt", endpoint.as_str())),
-            &dump,
-        )
-        .context("write debug dump")?;
-    }
-
-    let tape = Tape {
-        schema_version: "grobid-stage-tape.v1",
-        endpoint: endpoint.as_str().to_string(),
-        paper_id,
-        source_pdf: args.pdf.display().to_string(),
-        source_sha256,
-        backend_version,
-        models_filter: args.models.clone(),
-        capture_state,
-        dump_bytes: dump.len(),
-        dump_sha256,
-        sections,
-        distinct_models,
-        models_observed,
-        failure_code,
-        failure_phase,
-        notes: vec![
-            "debugMode replaces the TEI answer; TEI is captured by the compatibility tooling, not here",
-            "a missing section in the dump is NOT evidence that the model did not run (best-effort signal)",
-            "`models` filters the response only; it does not reduce Java computation",
-            "citations are processed in one batch, so dump section count != reference count",
-            "dump format is release-dependent; this tape is bound to backend_version above",
+    let tape = StageTape::from_capture(
+        endpoint.as_str(),
+        &paper_id,
+        &pdf.display().to_string(),
+        &source_sha256,
+        &backend_version,
+        args.models.as_deref(),
+        &dump,
+        failure
+            .as_ref()
+            .map(|(code, phase)| (code.as_str(), phase.as_str())),
+        vec![
+            "debugMode replaces the TEI answer; TEI is captured by the compatibility tooling, not here"
+                .to_string(),
+            "a missing section in the dump is NOT evidence that the model did not run (best-effort signal)"
+                .to_string(),
+            "`models` filters the response only; it does not reduce Java computation".to_string(),
+            "citations are processed in one batch, so dump section count != reference count"
+                .to_string(),
+            "dump format is release-dependent; this tape is bound to backend_version".to_string(),
         ],
-    };
-    let tape_path = args.out.join("tape.json");
+    );
+
+    if !dump.is_empty() {
+        std::fs::write(dump_path_for(out, endpoint.as_str()), &dump).context("write debug dump")?;
+    }
+    let tape_path = out.join("tape.json");
     std::fs::write(&tape_path, serde_json::to_vec_pretty(&tape)?).context("write tape")?;
 
     println!(
         "stage tape: endpoint={} state={} dump_bytes={} sections={} distinct_models={} backend_version={} tape={}",
         tape.endpoint,
-        tape.capture_state,
+        tape.capture_state.as_str(),
         tape.dump_bytes,
         tape.sections,
         tape.distinct_models,
@@ -222,9 +232,7 @@ async fn main() -> Result<()> {
         tape_path.display()
     );
 
-    // A failed capture is a real outcome worth a non-zero exit: a green run that
-    // silently recorded nothing would be worse than a visible failure.
-    if tape.capture_state == "failed" {
+    if tape.capture_state == CaptureState::Failed {
         anyhow::bail!(
             "debug capture failed: code={} phase={}",
             tape.failure_code.as_deref().unwrap_or("unknown"),
@@ -232,4 +240,15 @@ async fn main() -> Result<()> {
         );
     }
     Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let args = Args::parse();
+    let _guard = da_cli::logging::init_pipeline_logging("grobid_stage_tape");
+
+    match args.verify.as_deref() {
+        Some(tape_path) => run_verify(tape_path).await,
+        None => run_capture(&args).await,
+    }
 }

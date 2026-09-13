@@ -54,6 +54,7 @@ mod p5_shadow_join;
 mod parser;
 mod profile;
 mod projector;
+mod stage_tape;
 mod transport;
 
 pub use backend::{
@@ -219,6 +220,10 @@ pub use p5_shadow_join::{
 };
 pub use parser::{ScholarlyParser, lift_and_project_envelope};
 pub use profile::GrobidProfile;
+pub use stage_tape::{
+    CaptureState, ModelCoverage, STAGE_TAPE_SCHEMA_VERSION, StageTape, TapeFinding,
+    TapeObservation, verify_tape,
+};
 pub use transport::{
     CitationsConsolidation, Consolidation, CoordinateFamily, CoordinateSet,
     FULLTEXT_REQUEST_SCHEMA_VERSION, FailureCode, FailurePhase, FulltextDialectV1,
