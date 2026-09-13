@@ -31,6 +31,34 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
+/// Third-party diagnostics suppressed by default.
+///
+/// `lopdf` emits one `WARN` per undecodable glyph / font-encoding difference in
+/// real-world PDFs (observed: ~2.5k lines/day across 19 distinct messages),
+/// which drowns our own signal in `logs/da.log.*` and defeats the documented
+/// "query the log by level" workflow. The directive names an explicit
+/// third-party target, so no `da-*`/`kg-*` target is affected, and `error` (not
+/// `off`) keeps genuine PDF parse failures visible. Override with
+/// `LOG_SUPPRESS` (comma-separated `target=level` directives; empty string
+/// disables suppression).
+const DEFAULT_LOG_SUPPRESS: &str = "lopdf::object=error";
+
+/// Append suppression directives to the base filter.
+///
+/// Kept as a pure function so the composition rule is unit-testable without
+/// initialising a subscriber.
+fn compose_filter(base: &str, suppress: &str) -> String {
+    let base = base.trim();
+    let suppress = suppress.trim();
+    if suppress.is_empty() {
+        base.to_string()
+    } else if base.is_empty() {
+        suppress.to_string()
+    } else {
+        format!("{base},{suppress}")
+    }
+}
+
 /// Initialize logging. Returns WorkerGuard that **must be kept alive**
 /// in the caller's scope (typically `main`) for the duration of the program.
 ///
@@ -44,13 +72,23 @@ use tracing_subscriber::util::SubscriberInitExt;
 /// |-----|---------|---------|
 /// | `LOG_DIR` | `logs/` | Directory for rolling log files |
 /// | `LOG_LEVEL` | `info` | Filter level (RUST_LOG overrides if set) |
+/// | `LOG_SUPPRESS` | `lopdf::object=error` | Extra `target=level` directives appended after the base filter |
 pub fn init_logging() -> Option<WorkerGuard> {
     let log_dir = std::env::var("LOG_DIR").unwrap_or_else(|_| "logs".to_string());
 
-    // Build filter: RUST_LOG > LOG_LEVEL > default info
-    let default_filter = std::env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
-    let filter =
-        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(&default_filter));
+    // Build filter: RUST_LOG > LOG_LEVEL > default info, then append the
+    // suppression directives so third-party noise cannot drown our own signal.
+    let base_filter = std::env::var("RUST_LOG")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| std::env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string()));
+    let suppress =
+        std::env::var("LOG_SUPPRESS").unwrap_or_else(|_| DEFAULT_LOG_SUPPRESS.to_string());
+    let composed = compose_filter(&base_filter, &suppress);
+    let filter = EnvFilter::try_new(&composed).unwrap_or_else(|e| {
+        eprintln!("⚠  Invalid log filter `{composed}`: {e}; falling back to `info`");
+        EnvFilter::new("info")
+    });
 
     // Create log directory
     let log_path = PathBuf::from(&log_dir);
@@ -131,6 +169,43 @@ pub fn init_pipeline_logging(composition_root: &'static str) -> Option<WorkerGua
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
+    use tracing_subscriber::EnvFilter;
+
+    use super::{DEFAULT_LOG_SUPPRESS, compose_filter};
+
+    #[test]
+    fn suppression_directives_append_after_the_base_filter() {
+        assert_eq!(
+            compose_filter("info", DEFAULT_LOG_SUPPRESS),
+            "info,lopdf::object=error"
+        );
+        assert_eq!(compose_filter("  debug  ", " a=warn "), "debug,a=warn");
+    }
+
+    #[test]
+    fn empty_suppression_is_a_no_op_and_never_injects_a_dangling_comma() {
+        assert_eq!(compose_filter("info", ""), "info");
+        assert_eq!(compose_filter("info", "   "), "info");
+        assert_eq!(compose_filter("", "a=warn"), "a=warn");
+        assert_eq!(compose_filter("", ""), "");
+    }
+
+    #[test]
+    fn default_suppression_is_valid_and_targets_only_a_third_party_crate() {
+        let composed = compose_filter("info", DEFAULT_LOG_SUPPRESS);
+        assert!(
+            EnvFilter::try_new(&composed).is_ok(),
+            "default filter must parse: {composed}"
+        );
+        let target = DEFAULT_LOG_SUPPRESS
+            .split('=')
+            .next()
+            .expect("target directive");
+        assert!(
+            !target.starts_with("da_") && !target.starts_with("da-") && !target.starts_with("kg_"),
+            "suppression must never silence our own crates: {target}"
+        );
+    }
 
     #[test]
     fn active_pipeline_examples_initialize_structured_file_logging() {

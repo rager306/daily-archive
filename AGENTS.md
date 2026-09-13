@@ -698,7 +698,17 @@ Dual-layer tracing: stderr (compact) + rolling JSON file under one `RUST_LOG`/`L
 # .env
 LOG_DIR=logs          # directory for rolling files (default: logs/)
 LOG_LEVEL=info        # filter level (RUST_LOG overrides)
+LOG_SUPPRESS=lopdf::object=error   # extra target=level directives (default shown)
 ```
+
+`LOG_SUPPRESS` is appended after the base filter and exists because a
+third-party PDF parser (`lopdf`) emits one `WARN` per undecodable glyph or
+font-encoding difference in real-world PDFs — observed ~2.5k lines/day across 19
+distinct messages, which drowned our own signal and defeated the
+query-the-log-by-level workflow below. It names an explicit third-party target
+so no `da-*`/`kg-*` target is ever silenced, and uses `error` rather than `off`
+so genuine PDF parse failures stay visible. Set it to an empty value to disable
+suppression entirely.
 
 ## Log files
 
