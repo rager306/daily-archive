@@ -503,6 +503,17 @@ cargo test  -p da-cli --features pdf-layout --tests     # 447 tests (vs 418 defa
 # `governor architecture` runs both as its last steps
 # (da-cli feature-gated example runners / contracts).
 
+# Offline stage-tape recorder for the Java GROBID cascade (M506/S01).
+# Captures the model debug dump (GROBID `debugMode`) and derives per-model
+# coverage: sections are invocations, not distinct models. Offline evidence
+# only — it never writes a graph and is not part of `ParserPort`.
+# Raw TEI is captured by the compatibility tooling, not here (one source of truth).
+cargo run -p da-cli --example grobid_stage_tape -- \
+  --pdf data/sources/arxiv/<cat>/<id>/source/<id>.pdf \
+  --out /tmp/tape --endpoint fulltext --models segmentation
+# `--models` filters the RESPONSE only; it does not reduce Java computation,
+# and a filtered tape is marked `filtered` rather than `captured`.
+
 # Sweep cache materialization (M440; offline, no services needed)
 # 1) Coverage audit (read-only): bindability per paper via ADR-065 fallback
 cargo run -p da-cli --example catalog_materialize_runner -- --audit-only
