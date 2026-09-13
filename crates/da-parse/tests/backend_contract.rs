@@ -23,7 +23,7 @@ use da_parse::{
     CACHED_TEI_BACKEND_ID, CachedTeiBackend, Consolidation, CoordinateFamily, CoordinateSet,
     FailureCode, FailurePhase, FulltextDialectV1, GROBID_HTTP_BACKEND_ID, GrobidHttpBackend,
     GrobidParser, GrobidProfile, LimitKind, PageWindow, ParseBackend, ParseBackendRequest,
-    ProbeFailure, RetryAfter, TeiEnvelope,
+    ParseEndpoint, ProbeFailure, RetryAfter, TeiEnvelope,
 };
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -846,4 +846,76 @@ async fn http_backend_version_probe_rejects_empty_and_html() {
         backend.probe_version().await.expect_err("xml"),
         ProbeFailure::InvalidResponse
     );
+}
+
+/// Wire-level debug contract (M506/S01/T04).
+///
+/// The in-module test proves `debugMode` is emitted from exactly one place in
+/// the source; this proves it actually reaches the wire on the debug route and
+/// only there. A source-level check cannot catch a form built elsewhere, and a
+/// debug field leaking into a production parse would silently change what the
+/// service computes — so the assertion is made against the recorded request
+/// body, not against the builder.
+#[tokio::test]
+async fn debug_capture_carries_debug_mode_only_on_the_debug_route() {
+    let dump = b"=== model: segmentation ===\n1\tA\t<header>\n".to_vec();
+    let (addr, log) = spawn_grobid_stub(ResponsePlan::Plain(dump.clone())).await;
+    let facade = GrobidParser::new(Some(&format!("http://{addr}")));
+
+    // Unfiltered debug request.
+    let text = facade
+        .debug_capture(ParseEndpoint::Fulltext, &request_fixture(), None)
+        .await
+        .expect("debug capture succeeds against the stub");
+    assert_eq!(text.as_bytes(), dump.as_slice());
+
+    // Filtered debug request.
+    let models = vec![" segmentation ".to_string(), "date".to_string()];
+    let _ = facade
+        .debug_capture(ParseEndpoint::Fulltext, &request_fixture(), Some(&models))
+        .await
+        .expect("filtered debug capture succeeds");
+
+    let recorded = log.lock().expect("request log lock").clone();
+    assert_eq!(recorded.len(), 2, "one request per debug capture");
+
+    let unfiltered = String::from_utf8_lossy(&recorded[0].body).to_string();
+    assert!(
+        unfiltered.contains("name=\"debugMode\""),
+        "debug request must carry debugMode on the wire"
+    );
+    assert!(
+        !unfiltered.contains("name=\"models\""),
+        "an unfiltered debug request must not send a models field"
+    );
+    assert_eq!(recorded[0].path, "/api/processFulltextDocument");
+
+    let filtered = String::from_utf8_lossy(&recorded[1].body).to_string();
+    assert!(filtered.contains("name=\"debugMode\""));
+    assert!(
+        filtered.contains("name=\"models\""),
+        "a filtered debug request must carry the models field"
+    );
+    // The filter is trimmed and comma-joined, so the service sees a clean
+    // allowlist rather than padded names that would match nothing.
+    assert!(
+        filtered.contains("segmentation,date"),
+        "models filter must be trimmed and comma-joined on the wire"
+    );
+}
+
+/// A rejected debug filter must surface as a typed failure, never as an empty
+/// dump: an empty tape that looks successful is worse than a visible error.
+#[tokio::test]
+async fn debug_capture_rejects_an_unknown_model_as_a_typed_invalid_request() {
+    let (addr, _) = spawn_grobid_stub(ResponsePlan::Status(400, "Bad Request")).await;
+    let facade = GrobidParser::new(Some(&format!("http://{addr}")));
+
+    let models = vec!["definitely-not-a-model".to_string()];
+    let failure = facade
+        .debug_capture(ParseEndpoint::Fulltext, &request_fixture(), Some(&models))
+        .await
+        .expect_err("unknown model must fail");
+    assert_eq!(failure.code(), FailureCode::InvalidRequest);
+    assert_eq!(failure.phase(), FailurePhase::AwaitResponse);
 }
