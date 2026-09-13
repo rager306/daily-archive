@@ -345,11 +345,11 @@
       "stage_id": "H04",
       "title": "Composition admission",
       "scope": "Admit native composition only with title/affiliation preservation, unknown-subtree preserve-or-Unsupported, digest substitution rejection, citation-to-bibl identity, and candidate-only status.",
-      "status": "pending",
+      "status": "in_progress",
       "depends_on": [
         "H02"
       ],
-      "owner": "unassigned",
+      "owner": "M506-98qg7g/S03",
       "adr_refs": [
         "ADR-053",
         "ADR-055",
@@ -374,16 +374,16 @@
       ],
       "verification_evidence": [
         {
-          "mode": "governor_rule",
-          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
-          "expected": "H04 stays unresolved with no PASS claim.",
-          "status": "pending"
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test native_fulltext_composition_contract evidence_digest_is_currently_unbound",
+          "expected": "Proves the defect exists: a well-formed but foreign artifact digest is admitted as evidence for a fragment it does not describe (evidence_digest != sha256 of the spliced fragment).",
+          "status": "pass"
         },
         {
           "mode": "command",
-          "ref": "cargo test -p da-parse --lib native_composition admission",
-          "expected": "Preserved/unsupported subtrees, digest substitution rejected, candidate-only.",
-          "status": "pending"
+          "ref": "cargo test -p da-parse --tests",
+          "expected": "The rest of the composition and conservation contracts stay green while the defect is reproduced: 777/0.",
+          "status": "pass"
         }
       ],
       "tested_source": {
