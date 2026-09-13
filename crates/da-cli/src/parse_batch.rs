@@ -772,14 +772,11 @@ pub async fn run_with_env(
 
     // 6. Resume cursor (accelerator lookup → canonical report fallback).
     #[cfg(feature = "redb")]
-    let accelerator_lookup = match accelerator.as_ref() {
-        Some(accel) => Some(
-            accel
-                .load_cursor(&fingerprint)
-                .map_err(|error| error.to_string()),
-        ),
-        None => None,
-    };
+    let accelerator_lookup = accelerator.as_ref().map(|accel| {
+        accel
+            .load_cursor(&fingerprint)
+            .map_err(|error| error.to_string())
+    });
     #[cfg(not(feature = "redb"))]
     let accelerator_lookup: Option<Result<Option<u32>, String>> = None;
     let resume_cursor = if args.resume {
@@ -822,6 +819,16 @@ pub async fn run_with_env(
     let executor = ParseBatchExecutor::new(backend, two_stage);
 
     // 10. Durable checkpoint: accelerator mirror (feature-gated) or memory.
+    //
+    // Why a durable cursor can sit next to an in-memory sink: the sink collects
+    // outcomes for the terminal report, while the content those outcomes
+    // describe is published into the durable `FileParseArtifactCache` by the
+    // two-stage cache. The cursor therefore tracks *published content*, not the
+    // collector. `BatchCheckpoint::is_durable()` makes that obligation
+    // explicit, and the executor freezes the durable cursor before any
+    // successfully-computed-but-unpublished document, so resume can never skip
+    // work whose result exists nowhere. See the specification on
+    // `da_parse::batch::acknowledge` before changing this wiring.
     #[cfg(feature = "redb")]
     let checkpoint: Arc<dyn da_parse::BatchCheckpoint> = match accelerator.as_ref() {
         Some(accel) => Arc::new(da_adapters::parse_cursor::RedbCursorCheckpoint::new(

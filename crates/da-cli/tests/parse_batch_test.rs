@@ -1746,3 +1746,109 @@ async fn forced_interruption_resumes_from_the_durable_redb_cursor() {
         );
     }
 }
+
+/// End-to-end crash scenario for unpublished content (M506/S02/T04).
+///
+/// The sibling test above pins the legitimate case: an interrupted
+/// write-through run leaves a durable cursor that resume may trust, because
+/// the payloads are already durable in the artifact cache. This test covers
+/// the complementary case the slice demo names — an interruption where the
+/// run published nothing at all (read-only mode), so no document's result
+/// exists in the cache and no terminal report was written either.
+///
+/// The invariant: resume must never report those documents as already done.
+/// Skipping them would lose the work silently, which is exactly the failure
+/// the durable-cursor rule exists to prevent. Either safe outcome is accepted
+/// here — failing closed for lack of evidence, or redoing the documents — and
+/// only silent skipping fails the test.
+#[cfg(feature = "redb")]
+#[tokio::test]
+async fn interrupted_unpublished_run_never_lets_resume_skip_the_work() {
+    let h = harness_with_plans(vec![
+        (MARKER_ALPHA, Plan::Tei),
+        (MARKER_BETA, Plan::SlowTei(3000)),
+        (MARKER_GAMMA, Plan::Tei),
+        (MARKER_DELTA, Plan::Tei),
+    ])
+    .await;
+    let accelerator_path = h._temp.path().join("accel-unpublished").join("accel.redb");
+    // read-only: content is computed and cached nowhere.
+    let mut env = env_map(&h, Some("read-only"));
+    env.insert(
+        "DA_PARSE_REDB_INDEX_ENABLED".to_string(),
+        "true".to_string(),
+    );
+    env.insert(
+        "DA_PARSE_REDB_INDEX_PATH".to_string(),
+        accelerator_path.display().to_string(),
+    );
+
+    // Run 1: interrupted once the slow document is actually in flight.
+    //
+    // The trigger cannot be "alpha's projection exists": read-only publishes
+    // nothing, so that condition never becomes true and the run would simply
+    // finish. Waiting on the backend call for the slow document pins a moment
+    // where the run is genuinely mid-flight.
+    let mut run_fut = Box::pin(run_with(&h, env.clone(), false));
+    let watcher = async {
+        loop {
+            if attempts_for(&h, MARKER_BETA) >= 1 {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(25)).await;
+        }
+        // One beat for the published prefix to settle before cancelling.
+        tokio::time::sleep(Duration::from_millis(300)).await;
+    };
+    tokio::select! {
+        result = &mut run_fut => panic!("run finished before the forced interruption: {result:?}"),
+        () = watcher => {}
+    }
+    drop(run_fut);
+
+    // The premise: read-only published nothing, so no content is recoverable.
+    let (_, alpha_projected) = stage_keys_for("doc-alpha", MARKER_ALPHA);
+    assert!(
+        read_backing_projected(&h, &alpha_projected).await.is_none(),
+        "read-only must not publish any content"
+    );
+    assert!(
+        !h.report.exists(),
+        "an interrupted run writes no terminal report"
+    );
+
+    // Release any detached workers' accelerator handles, as at process exit.
+    for _ in 0..150 {
+        match da_adapters::parse_cursor::ParseCursorAccelerator::open(&accelerator_path) {
+            Ok(probe) => {
+                drop(probe);
+                break;
+            }
+            Err(_) => tokio::time::sleep(Duration::from_millis(100)).await,
+        }
+    }
+
+    // Run 2: resume. Either it fails closed (no evidence) or it redoes work;
+    // it must never claim the documents were already done.
+    let outcome = run_with_env(&args_for(&h, true), &|key: &str| env.get(key).cloned()).await;
+    match outcome {
+        Err(error) => {
+            let text = error.to_string();
+            assert!(
+                text.contains("resume"),
+                "a refusal must be a typed resume-evidence failure, got: {text}"
+            );
+        }
+        Ok(()) => {
+            let resumed = read_report(&h);
+            assert_eq!(
+                resumed.summary.skipped_on_resume, 0,
+                "nothing was published, so resume must not skip any document"
+            );
+            assert!(
+                !resumed.documents.is_empty(),
+                "resume must redo the work it cannot recover"
+            );
+        }
+    }
+}

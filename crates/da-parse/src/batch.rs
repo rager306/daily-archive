@@ -1314,11 +1314,47 @@ struct RunShared {
     counters: RunCounters,
 }
 
-/// Durable-prefix advancement: ack the outcome, extend the contiguous
-/// terminal prefix, save the checkpoint UNDER the advancement lock so
-/// saved cursor positions are strictly monotonic. A failed save freezes
-/// the durable cursor at the last durably saved position — later outcomes
-/// stay recorded but are never claimed as resumable.
+/// Durable-prefix advancement.
+///
+/// # Specification (proven by tests — read before changing)
+///
+/// 1. **Advance under the lock.** The outcome is acked, the contiguous terminal
+///    prefix is extended, and the checkpoint is saved while the advancement
+///    lock is held, so saved cursor positions are strictly monotonic.
+///
+/// 2. **A failed save freezes the cursor.** Later outcomes stay recorded but
+///    are never claimed as resumable
+///    (`sink_failure_freezes_cursor_and_resume_redoes_only_unwritten_ordinals`).
+///
+/// 3. **`publication.next_ordinal` advancing on a sink error is NOT a defect.**
+///    Resume is driven by the durable cursor, never by that counter: a sink
+///    failure at ordinal N leaves the cursor at N and the resume pass redoes
+///    exactly N. The counter only decides which outcome is published next
+///    within this run.
+///
+/// 4. **Interruption + resume from a durable cursor is a legitimate capability.**
+///    It relies on published content already being durable in the artifact
+///    cache; the terminal report is deliberately NOT written by an interrupted
+///    run. A change that defers the cursor until the report exists (tried:
+///    `DeferredRedbCheckpoint`) breaks this and fails
+///    `forced_interruption_resumes_from_the_durable_redb_cursor`.
+///
+/// 5. **Durability binds only a store that claims it.** `is_durable()` gates
+///    the obligation, so an in-memory checkpoint keeps bookkeeping semantics.
+///
+/// 6. **Only SUCCESSFUL, unpublished content freezes the prefix.** A document
+///    that failed produced no content by definition and would fail identically
+///    again, so it keeps the established "processed" meaning of the cursor
+///    (`busy_503_is_typed_exactly_once_and_the_run_continues`). A document that
+///    SUCCEEDED while its content was never published — cache off, or a
+///    read-only miss (`ComputedUncached` / `ComputedUnpublished`) — has results
+///    that exist nowhere, so the cursor must stop before it
+///    (`durable_cursor_never_advances_past_unpublished_content`).
+///
+/// 7. **Recoverability is judged on the raw stage**, because that stage is what
+///    required the Java call; a projection is rebuilt from stored raw TEI
+///    without the backend
+///    (`raw_hit_reprojects_after_projector_schema_rotation_without_backend`).
 async fn acknowledge(
     shared: &RunShared,
     checkpoint: &dyn BatchCheckpoint,
