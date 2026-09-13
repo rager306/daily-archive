@@ -1243,6 +1243,11 @@ struct DocumentExecution {
 struct QueuedItem {
     item: ParseBatchItem,
     enqueued_at: Instant,
+    /// Publication-window permit held from feeder admission through the
+    /// durable sink acknowledgment. This is deliberately distinct from the
+    /// execution permit: a worker may finish computation while waiting for
+    /// an earlier ordinal without releasing the publication window.
+    publication_permit: tokio::sync::OwnedSemaphorePermit,
 }
 
 #[derive(Debug)]
@@ -1881,17 +1886,20 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
             // The in-flight permit covers the whole durable write path
             // (execution + sink record + acknowledgment), so bounded
             // execution and durable prefix advancement stay in step.
-            let Ok(permit) = self.semaphore.clone().acquire_owned().await else {
+            let Ok(execution_permit) = self.semaphore.clone().acquire_owned().await else {
                 break;
             };
             self.shared.counters.note_in_flight(1);
-            self.execute_one(queued).await;
+            self.execute_one(queued, execution_permit).await;
             self.shared.counters.note_in_flight(-1);
-            drop(permit);
         }
     }
 
-    async fn execute_one(&self, queued: QueuedItem) {
+    async fn execute_one(
+        &self,
+        queued: QueuedItem,
+        execution_permit: tokio::sync::OwnedSemaphorePermit,
+    ) {
         let execution = execute_document(
             self.backend.as_ref(),
             self.cache.as_ref(),
@@ -1903,6 +1911,11 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
         .await;
         let outcome = execution.outcome;
         let stats = execution.stats;
+        // Execution capacity is independent from the ordinal publication
+        // window. Once computation is terminal, release it before waiting for
+        // a publication gap; the queued item's permit remains held until the
+        // sink and checkpoint path has finished.
+        drop(execution_permit);
         let succeeded = outcome.is_success();
         tracing::debug!(
             ordinal = outcome.ordinal(),
@@ -1980,6 +1993,12 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
         } else {
             counters.failed.fetch_add(1, Ordering::SeqCst);
         }
+        // Release the ordinal publication window explicitly: the permit is
+        // held from feeder admission up to (and including) this item's durable
+        // sink record and checkpoint acknowledgment. Making the release a read
+        // of the field keeps that lifetime enforced and greppable instead of
+        // relying on an implicit end-of-scope drop.
+        drop(queued.publication_permit);
     }
 }
 
@@ -2002,6 +2021,9 @@ pub struct ParseBatchExecutor<B: ParseBackend, C: ParseArtifactCache> {
     backend: Arc<B>,
     cache: Arc<C>,
     projector_schema_fingerprint: String,
+    /// Maximum number of admitted-but-not-yet-published ordinal results.
+    /// This is executor tuning, not batch input identity or wire schema.
+    publication_window: Option<NonZeroUsize>,
 }
 
 impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecutor<B, C> {
@@ -2011,7 +2033,22 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
             backend: Arc::new(backend),
             cache: Arc::new(cache),
             projector_schema_fingerprint: PROJECT_ARTICLE_SCHEMA_FINGERPRINT.to_string(),
+            publication_window: None,
         }
+    }
+
+    /// Set the ordinal publication window. The permit is held from feeder
+    /// admission through sink acknowledgment and is excluded from identity.
+    pub fn with_publication_window(mut self, window: NonZeroUsize) -> Self {
+        self.publication_window = Some(window);
+        self
+    }
+
+    /// Explicit ordinal publication-window override, if configured. When it
+    /// is absent, `run` derives the finite default from the batch's
+    /// `max_in_flight` limit.
+    pub const fn publication_window(&self) -> Option<NonZeroUsize> {
+        self.publication_window
     }
 
     /// Override the projector schema fingerprint (rotation seam: a rotated
@@ -2079,6 +2116,12 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
         let (tx, rx) = mpsc::channel::<QueuedItem>(queue_capacity);
         let rx = Arc::new(Mutex::new(rx));
         let semaphore = Arc::new(Semaphore::new(max_in_flight));
+        // Keep at most this many admitted results alive between feeder and
+        // durable publication. The default is deliberately finite and
+        // derived from the existing execution bound without changing the
+        // ParseBatchLimits v1 wire contract.
+        let publication_window = self.publication_window.unwrap_or(limits.max_in_flight());
+        let publication_semaphore = Arc::new(Semaphore::new(publication_window.get()));
 
         let mut workers = Vec::new();
         for _ in 0..limits.workers().get() {
@@ -2103,11 +2146,18 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
         // queue. Items before the cursor are already terminal from a prior
         // run — skipped, never re-executed.
         for item in batch.into_items().into_iter().skip(resumed_from as usize) {
+            // Reserve before enqueue so a slow ordinal zero bounds both the
+            // queue and the completed-but-unpublished outcome set. The
+            // permit travels with the item until its sink acknowledgment.
+            let Ok(publication_permit) = publication_semaphore.clone().acquire_owned().await else {
+                break;
+            };
             shared.counters.note_queue_depth(1);
             if tx
                 .send(QueuedItem {
                     item,
                     enqueued_at: Instant::now(),
+                    publication_permit,
                 })
                 .await
                 .is_err()
