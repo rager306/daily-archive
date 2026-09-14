@@ -74,6 +74,137 @@ pub struct CrfPosition {
     pub bobs: Vec<usize>,
 }
 
+/// Result of linear-chain Viterbi decoding.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CrfDecodeResult {
+    /// Label ids in input-position order.
+    pub label_ids: Vec<usize>,
+    /// Label names in input-position order.
+    pub labels: Vec<String>,
+    /// Best-path alpha score at each input position.
+    pub scores: Vec<f64>,
+}
+
+/// Decode ordered observations with Wapiti's `tag_expsc`/`tag_viterbi`
+/// semantics. Missing sparse weights are zero. Strict `>` comparisons are
+/// intentional: they retain the lowest predecessor and final label id on ties.
+pub fn viterbi_decode(
+    model: &CrfModel,
+    positions: &[CrfPosition],
+) -> Result<CrfDecodeResult, CrfModelError> {
+    let label_count = model.labels.len();
+    if label_count == 0
+        || model.u_offsets.len() != model.observations.len()
+        || model.b_offsets.len() != model.observations.len()
+    {
+        return Err(CrfModelError::CountMismatch);
+    }
+    if positions.is_empty() {
+        return Ok(CrfDecodeResult {
+            label_ids: Vec::new(),
+            labels: Vec::new(),
+            scores: Vec::new(),
+        });
+    }
+
+    let mut alpha = vec![vec![0.0; label_count]; positions.len()];
+    let mut backpointers = vec![vec![0usize; label_count]; positions.len()];
+    for (position, observations) in positions.iter().enumerate() {
+        for y in 0..label_count {
+            let mut best = if position == 0 {
+                0.0
+            } else {
+                f64::NEG_INFINITY
+            };
+            let mut best_predecessor = 0;
+            let previous_scores: &[f64] = if position == 0 {
+                &[0.0]
+            } else {
+                &alpha[position - 1]
+            };
+            for (yp, &previous_score) in previous_scores.iter().enumerate() {
+                let mut score = previous_score;
+                for &observation in &observations.uobs {
+                    let offset = model
+                        .u_offsets
+                        .get(observation)
+                        .and_then(|offset| *offset)
+                        .ok_or(CrfModelError::CountMismatch)?;
+                    let feature = offset.checked_add(y).ok_or(CrfModelError::Overflow)?;
+                    score += sparse_weight(model, feature)?;
+                }
+                if position > 0 {
+                    for &observation in &observations.bobs {
+                        let offset = model
+                            .b_offsets
+                            .get(observation)
+                            .and_then(|offset| *offset)
+                            .ok_or(CrfModelError::CountMismatch)?;
+                        let transition = offset
+                            .checked_add(
+                                yp.checked_mul(label_count).ok_or(CrfModelError::Overflow)?,
+                            )
+                            .and_then(|value| value.checked_add(y))
+                            .ok_or(CrfModelError::Overflow)?;
+                        score += sparse_weight(model, transition)?;
+                    }
+                }
+                if yp == 0 || score > best {
+                    best = score;
+                    best_predecessor = yp;
+                }
+            }
+            alpha[position][y] = best;
+            backpointers[position][y] = best_predecessor;
+        }
+    }
+
+    let last = alpha.len() - 1;
+    let mut final_label = 0;
+    for y in 1..label_count {
+        if alpha[last][y] > alpha[last][final_label] {
+            final_label = y;
+        }
+    }
+    let mut label_ids = vec![0usize; positions.len()];
+    label_ids[last] = final_label;
+    for position in (1..positions.len()).rev() {
+        label_ids[position - 1] = backpointers[position][label_ids[position]];
+    }
+    let labels = label_ids
+        .iter()
+        .map(|&label| model.labels[label].clone())
+        .collect();
+    let scores = label_ids
+        .iter()
+        .enumerate()
+        .map(|(position, &label)| alpha[position][label])
+        .collect();
+    Ok(CrfDecodeResult {
+        label_ids,
+        labels,
+        scores,
+    })
+}
+
+/// Alias emphasizing the decoder's role in the model API.
+pub fn decode_viterbi(
+    model: &CrfModel,
+    positions: &[CrfPosition],
+) -> Result<CrfDecodeResult, CrfModelError> {
+    viterbi_decode(model, positions)
+}
+
+fn sparse_weight(model: &CrfModel, index: usize) -> Result<f64, CrfModelError> {
+    if index >= model.nftr {
+        return Err(CrfModelError::IndexOutOfRange {
+            index,
+            nftr: model.nftr,
+        });
+    }
+    Ok(model.weights.get(&index).copied().unwrap_or(0.0))
+}
+
 /// Expand one Wapiti `%x[offset,column]` template for a position.
 ///
 /// Out-of-range positions use Wapiti's boundary markers (`_x-#` and `_x+#`)
@@ -519,6 +650,7 @@ impl<'a> Cursor<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     fn model(weights: &str) -> Vec<u8> {
         format!(
             "#mdl#2#{}\n#rdr#1/0\n7:u00:foo,\n#qrk#2\n1:A,\n1:B,\n#qrk#1\n5:u:foo,\n{}",
@@ -647,5 +779,97 @@ mod tests {
                 actual: 1,
             })
         ));
+    }
+
+    fn decode_model() -> CrfModel {
+        CrfModel {
+            model_type: 2,
+            labels: vec!["A".into(), "B".into()],
+            observations: vec!["u:X".into(), "u:Y".into(), "b:any".into()],
+            patterns: Vec::new(),
+            u_offsets: vec![Some(0), Some(2), None],
+            b_offsets: vec![None, None, Some(4)],
+            weights: BTreeMap::from([
+                (0, 1.0), // position 0, label A
+                (3, 2.0), // position 1, label B
+                (4, 3.0), // A -> A
+                (5, 3.0), // A -> B
+                (6, -1.0),
+                (7, 3.0), // B -> B
+            ]),
+            nftr: 8,
+        }
+    }
+
+    #[test]
+    fn decodes_hand_computed_path_and_per_position_scores() {
+        let positions = vec![
+            CrfPosition {
+                uobs: vec![0],
+                bobs: Vec::new(),
+            },
+            CrfPosition {
+                uobs: vec![1],
+                bobs: vec![2],
+            },
+        ];
+        let result = viterbi_decode(&decode_model(), &positions).unwrap();
+        assert_eq!(result.label_ids, vec![0, 1]);
+        assert_eq!(result.labels, ["A", "B"]);
+        assert_eq!(result.scores, [1.0, 6.0]);
+    }
+
+    #[test]
+    fn ties_keep_lowest_predecessor_and_final_label() {
+        let model = CrfModel {
+            weights: BTreeMap::from([(3, 1.0)]),
+            ..decode_model()
+        };
+        let positions = vec![
+            CrfPosition {
+                uobs: Vec::new(),
+                bobs: Vec::new(),
+            },
+            CrfPosition {
+                uobs: vec![1],
+                bobs: vec![2],
+            },
+        ];
+        let result = viterbi_decode(&model, &positions).unwrap();
+        // Both predecessors score equally for B; strict `>` retains A.
+        // A final-label tie likewise retains label id 0.
+        assert_eq!(result.label_ids, vec![0, 1]);
+        assert_eq!(result.scores, [0.0, 1.0]);
+        let all_zero = CrfModel {
+            weights: BTreeMap::new(),
+            ..decode_model()
+        };
+        let tie = viterbi_decode(&all_zero, &positions).unwrap();
+        assert_eq!(tie.label_ids, vec![0, 0]);
+    }
+
+    #[test]
+    fn empty_sequence_has_no_path_or_scores() {
+        let result = viterbi_decode(&decode_model(), &[]).unwrap();
+        assert!(result.label_ids.is_empty());
+        assert!(result.labels.is_empty());
+        assert!(result.scores.is_empty());
+    }
+
+    proptest::proptest! {
+        #[test]
+        fn decoding_is_deterministic_and_length_preserving(len in 0usize..12) {
+            let positions = (0..len).map(|_| CrfPosition {
+                uobs: vec![0, 1],
+                bobs: vec![2],
+            }).collect::<Vec<_>>();
+            let model = decode_model();
+            let first = viterbi_decode(&model, &positions).unwrap();
+            let second = viterbi_decode(&model, &positions).unwrap();
+            prop_assert_eq!(&first, &second);
+            prop_assert_eq!(first.label_ids.len(), len);
+            prop_assert_eq!(first.labels.len(), len);
+            prop_assert_eq!(first.scores.len(), len);
+        }
     }
 }
