@@ -63,6 +63,7 @@ pub mod relation;
 pub mod revision_classification;
 pub mod revision_readiness;
 pub mod revision_schema;
+pub mod scalar_crf;
 pub mod scheduler;
 pub mod schema;
 pub mod schema_invariants;
