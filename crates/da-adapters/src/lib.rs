@@ -48,6 +48,7 @@ pub mod prompt_task_registry;
 pub mod revision_readiness_policy;
 pub mod rule_extractor;
 pub mod samyama_graph;
+pub mod scalar_crf_loader;
 pub mod section_summary_policy;
 pub mod tex_archive;
 pub mod wasm_policy;
@@ -87,6 +88,7 @@ pub use layout_visual::{
     VisualObservation, VisualPrimitive, VisualPrimitiveKind, VisualPrimitiveState, VisualProvider,
 };
 pub use lexicon_loader::{FilesystemLexiconLoader, MAX_LEXICON_BYTES};
+pub use scalar_crf_loader::FilesystemCrfModelLoader;
 
 pub use openalex_adapter::OpenAlexHttpAdapter;
 pub use parse_experience_rvf::RvfFileStore;

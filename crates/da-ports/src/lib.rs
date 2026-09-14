@@ -30,6 +30,7 @@ pub mod parser;
 pub mod path_config;
 pub mod paths;
 pub mod region_text;
+pub mod scalar_crf;
 pub mod schema_objects;
 pub use region_text::{RegionTextOutcome, RegionTextPort};
 pub mod pipeline_cache;
@@ -90,6 +91,7 @@ pub use parse_batch::{
     ParseBatchSinkError,
 };
 pub use parse_job::JobLedger;
+pub use scalar_crf::{CrfModelLoadError, CrfModelLoaderPort, validate_loaded_crf_model};
 
 pub use parser::{
     CalloutUnresolvedReason, CharSpan, CitationAnchor, CitationEntry, DeclaredArxivIdentity,
