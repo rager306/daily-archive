@@ -56,17 +56,20 @@ registry:
     - E2E journey
   owner_field: owner
   owner_unassigned_value: unassigned
-  # Owners are milestone slices that actually own horizon stages. BOTH baseline
-  # milestones are now CLOSED: M505 closed earlier, and M506 closed 2026-09-14
-  # (S03–S05 complete, S06–S13 descoped by D355 into a future wave). The M506
-  # entries below are kept only because stages still reference them (H05 owner is
-  # M506-98qg7g/S04); removing an entry that a stage still names would flag that
-  # stage as an unknown owner and redden the review. Consequences to handle in the
-  # next wave: H05 is ORPHANED (its owner slice S04 is terminal, so nobody will
-  # close it), and H07–H13 are `unassigned` while their planned owners S06–S13 are
-  # cancelled — their binding is recorded only in 506-ROADMAP.md's boundary map,
-  # which is review prose, not execution (see status_semantics). Extend this list
-  # with the successor milestone's slices BEFORE they claim H05/H07–H13, and keep
-  # `unassigned` for stages nobody has picked up yet. Extend instead of writing a
-  # free-form owner, so a typo or a stale slice can never pass validation silently.
-  owner_allow: [unassigned, M505-o169s4, M506-98qg7g/S01, M506-98qg7g/S02, M506-98qg7g/S03, M506-98qg7g/S04, M506-98qg7g/S05]
+  # Owners are milestone slices that actually own horizon stages. Baseline milestones
+  # are CLOSED (M505 earlier; M506 on 2026-09-14 with S03–S05 complete and S06–S13
+  # descoped by D355), and the descoped scope is now carried by the successor wave
+  # **M507-4fk6m6** (planned 2026-09-14: S01–S04 detailed, S05–S08 sketches).
+  # Current binding: H07→M507/S01, H08→M507/S02, H09→M507/S03, H10→M507/S04,
+  # H11→M507/S05, H12→M507/S06, H13→M507/S08 (H13 = "Learning ablations and
+  # operational performance" is jointly served by S07 learning ablations and S08
+  # operational performance; S08 is the closing owner because a single owner string
+  # is carried here, and the pairing is recorded in M507's boundary map).
+  # H05 ("Global budgets and bounded reorder") is `unassigned`: it is M506/S04's own
+  # unfinished ceiling work — the milestone closed honestly with H05 unresolved/no-claim
+  # and no live slice owns it. M506 entries are kept only because they remain valid
+  # historical owners; removal would flag stages that still name them.
+  # Extend instead of writing a free-form owner, so a typo or a stale slice can never
+  # pass validation silently. The next wave must extend this list with its own slices
+  # BEFORE it claims any of these stages.
+  owner_allow: [unassigned, M505-o169s4, M506-98qg7g/S01, M506-98qg7g/S02, M506-98qg7g/S03, M506-98qg7g/S04, M506-98qg7g/S05, M507-4fk6m6/S01, M507-4fk6m6/S02, M507-4fk6m6/S03, M507-4fk6m6/S04, M507-4fk6m6/S05, M507-4fk6m6/S06, M507-4fk6m6/S07, M507-4fk6m6/S08]
