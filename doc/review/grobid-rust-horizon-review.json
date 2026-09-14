@@ -714,6 +714,36 @@
           "path": "crates/da-parse/src/layout_lattice.rs",
           "note": "Layout lattice used for provider comparison.",
           "state": "partial"
+        },
+        {
+          "path": "crates/da-domain/src/lexicon.rs",
+          "state": "present",
+          "note": "Typed lexicon/template model with ordering, uniqueness and bounded-count invariants and typed LexiconError; no I/O and no tracing."
+        },
+        {
+          "path": "crates/da-ports/src/lexicon.rs",
+          "state": "present",
+          "note": "LexiconLoaderPort seam: the domain depends on the port, the filesystem access stays in the adapter."
+        },
+        {
+          "path": "crates/da-adapters/src/lexicon_loader.rs",
+          "state": "present",
+          "note": "FilesystemLexiconLoader with typed Unavailable/Malformed/Invalid/ResourceTooLarge and a MAX_LEXICON_BYTES ceiling checked via metadata before reading."
+        },
+        {
+          "path": "crates/da-domain/src/feature_abi.rs",
+          "state": "present",
+          "note": "Deterministic per-channel feature ABI: canonical token order, checked dimension arithmetic, typed DimensionMismatch, property-tested determinism."
+        },
+        {
+          "path": "doc/parse/feature-provider-parity.md",
+          "state": "present",
+          "note": "Documents the executed ABI, canonical ordering, sanitized diagnostics and the explicit limitation that synthetic fixtures do not prove real provider or Java equivalence."
+        },
+        {
+          "path": "crates/da-adapters/tests/feature_provider_parity.rs",
+          "state": "present",
+          "note": "Provider parity harness over two independent fixtures with explicit mismatch and fail-closed cases; offline candidate evidence only."
         }
       ],
       "verification_evidence": [
@@ -728,6 +758,18 @@
           "ref": "cargo test -p da-parse --lib feature_abi",
           "expected": "Exact model-specific column order/scales; unsupported features explicit.",
           "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-domain --lib feature_abi",
+          "status": "pending",
+          "expected": "Canonical column order/scales, typing of unsupported features, dimension mismatch refusal."
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-adapters --test feature_provider_parity",
+          "status": "pending",
+          "expected": "Two provider fixtures yield the same vector on the same input; differences and missing/malformed inputs fail closed with sanitized diagnostics."
         }
       ],
       "tested_source": {
