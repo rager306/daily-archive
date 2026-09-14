@@ -56,9 +56,17 @@ registry:
     - E2E journey
   owner_field: owner
   owner_unassigned_value: unassigned
-  # Owners are milestone slices that actually own horizon stages. M505 closed
-  # (baseline), so the live owner is now the migration milestone M506; keep
-  # `unassigned` for stages nobody has picked up yet. Extend this list when a
-  # stage changes hands instead of writing a free-form owner, so a typo or a
-  # stale slice can never pass validation silently.
+  # Owners are milestone slices that actually own horizon stages. BOTH baseline
+  # milestones are now CLOSED: M505 closed earlier, and M506 closed 2026-09-14
+  # (S03–S05 complete, S06–S13 descoped by D355 into a future wave). The M506
+  # entries below are kept only because stages still reference them (H05 owner is
+  # M506-98qg7g/S04); removing an entry that a stage still names would flag that
+  # stage as an unknown owner and redden the review. Consequences to handle in the
+  # next wave: H05 is ORPHANED (its owner slice S04 is terminal, so nobody will
+  # close it), and H07–H13 are `unassigned` while their planned owners S06–S13 are
+  # cancelled — their binding is recorded only in 506-ROADMAP.md's boundary map,
+  # which is review prose, not execution (see status_semantics). Extend this list
+  # with the successor milestone's slices BEFORE they claim H05/H07–H13, and keep
+  # `unassigned` for stages nobody has picked up yet. Extend instead of writing a
+  # free-form owner, so a typo or a stale slice can never pass validation silently.
   owner_allow: [unassigned, M505-o169s4, M506-98qg7g/S01, M506-98qg7g/S02, M506-98qg7g/S03, M506-98qg7g/S04, M506-98qg7g/S05]
