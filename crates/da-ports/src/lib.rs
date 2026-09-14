@@ -18,6 +18,7 @@ pub mod extractor;
 pub mod figure_detection;
 pub mod fsm_policy;
 pub mod graph_store;
+pub mod lexicon;
 pub mod llm_client;
 pub mod multimodal_llm;
 pub mod negative_memory;
@@ -83,6 +84,7 @@ pub use parse_learning::{
     RvfRecord, RvfStoreError, Sha256Digest, SplitIdentity, reject_raw_content,
 };
 
+pub use lexicon::{LexiconLoadError, LexiconLoaderPort, resource_path, validate_loaded_lexicon};
 pub use parse_batch::{
     BatchCheckpoint, ManagedParseBatchExecutor, ParseBatchCursor, ParseBatchRunSummary,
     ParseBatchSinkError,

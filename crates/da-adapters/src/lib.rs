@@ -23,6 +23,7 @@ pub mod http_fetch;
 pub mod layout_donors;
 #[cfg(feature = "pdf-layout")]
 pub mod layout_visual;
+pub mod lexicon_loader;
 pub mod memory_pipeline_cache;
 pub mod negative_memory;
 pub use figure_quote_policy::load_figure_quote_policy;
@@ -85,6 +86,7 @@ pub use layout_visual::{
     MAX_VISUAL_PRIMITIVES, VISUAL_OBSERVATION_SCHEMA_VERSION, VisualAbsenceReason, VisualError,
     VisualObservation, VisualPrimitive, VisualPrimitiveKind, VisualPrimitiveState, VisualProvider,
 };
+pub use lexicon_loader::FilesystemLexiconLoader;
 
 pub use openalex_adapter::OpenAlexHttpAdapter;
 pub use parse_experience_rvf::RvfFileStore;

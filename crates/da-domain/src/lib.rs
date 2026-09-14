@@ -43,6 +43,7 @@ pub mod healing;
 pub mod html_headings;
 pub mod hypergraph;
 pub mod influence_flower;
+pub mod lexicon;
 pub mod load;
 pub mod materialization_profile;
 pub mod navigation;
@@ -166,6 +167,10 @@ pub use import_eligibility::ImportEligibility;
 pub mod pdf_classification;
 pub use influence_flower::{
     CitationInfluenceEvent, InfluenceFlowerPolicy, accumulate_author_influence, influence_weight,
+};
+pub use lexicon::{
+    FeatureTemplate, GROBID_LEXICON_SCHEMA_VERSION, GROBID_RESOURCE_VERSION, LexiconBundle,
+    LexiconChannel, LexiconError,
 };
 pub use load::{
     AcquisitionPolicy, ArticleLocator, AssetDisposition, LOAD_REPORT_SCHEMA_VERSION,
