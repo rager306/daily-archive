@@ -10,3 +10,4 @@
 pub mod feature_provider_parity;
 pub mod lexicon_contract;
 pub mod parse_job_contract;
+pub mod scalar_crf_contract;
