@@ -54,6 +54,188 @@ pub enum CrfModelError {
     },
     #[error("malformed weight")]
     MalformedWeight,
+    #[error("malformed %x template")]
+    MalformedTemplate,
+    #[error(
+        "input column arity mismatch at position {position}: column {column} requires {required} fields, got {actual}"
+    )]
+    ColumnArityMismatch {
+        position: usize,
+        column: usize,
+        required: usize,
+        actual: usize,
+    },
+}
+
+/// Observations matched at one input position, in model-template order.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CrfPosition {
+    pub uobs: Vec<usize>,
+    pub bobs: Vec<usize>,
+}
+
+/// Expand one Wapiti `%x[offset,column]` template for a position.
+///
+/// Out-of-range positions use Wapiti's boundary markers (`_x-#` and `_x+#`)
+/// rather than borrowing a neighbouring token. Literal text, including the
+/// feature kind prefix, is preserved verbatim.
+pub fn expand_pattern(
+    pattern: &str,
+    columns: &[&str],
+    position: usize,
+    sequence_len: usize,
+) -> Result<String, CrfModelError> {
+    let mut output = String::with_capacity(pattern.len());
+    let mut cursor = 0;
+    while let Some(relative) = pattern[cursor..].find("%x[") {
+        let start = cursor + relative;
+        output.push_str(&pattern[cursor..start]);
+        let end = pattern[start + 3..]
+            .find(']')
+            .map(|offset| start + 3 + offset)
+            .ok_or(CrfModelError::MalformedTemplate)?;
+        let spec = &pattern[start + 3..end];
+        let (offset, column) = spec
+            .split_once(',')
+            .and_then(|(left, right)| {
+                if right.contains(',') {
+                    None
+                } else {
+                    Some((
+                        left.trim().parse::<isize>().ok()?,
+                        right.trim().parse::<usize>().ok()?,
+                    ))
+                }
+            })
+            .ok_or(CrfModelError::MalformedTemplate)?;
+        let target = (position as isize)
+            .checked_add(offset)
+            .ok_or(CrfModelError::Overflow)?;
+        if column >= columns.len() && target >= 0 && target < sequence_len as isize {
+            return Err(CrfModelError::ColumnArityMismatch {
+                position,
+                column,
+                required: column + 1,
+                actual: columns.len(),
+            });
+        }
+        if target < 0 {
+            output.push_str(&format!("_x-{}", target.unsigned_abs()));
+        } else if target >= sequence_len as isize {
+            output.push_str(&format!("_x+{}", target - sequence_len as isize + 1));
+        } else {
+            if target != position as isize {
+                // This single-row helper cannot resolve a neighbouring row;
+                // callers with a complete sequence should use the sequence
+                // variant below.
+                return Err(CrfModelError::MalformedTemplate);
+            }
+            if column >= columns.len() {
+                return Err(CrfModelError::ColumnArityMismatch {
+                    position,
+                    column,
+                    required: column + 1,
+                    actual: columns.len(),
+                });
+            }
+            output.push_str(columns[column]);
+        }
+        cursor = end + 1;
+    }
+    output.push_str(&pattern[cursor..]);
+    Ok(output)
+}
+
+/// Expand a template against all rows. This is the sequence-aware primitive
+/// used by [`map_input`]; it also handles in-range neighbouring columns.
+pub fn expand_pattern_sequence(
+    pattern: &str,
+    rows: &[Vec<&str>],
+    position: usize,
+) -> Result<String, CrfModelError> {
+    let mut output = String::with_capacity(pattern.len());
+    let mut cursor = 0;
+    while let Some(relative) = pattern[cursor..].find("%x[") {
+        let start = cursor + relative;
+        output.push_str(&pattern[cursor..start]);
+        let end = pattern[start + 3..]
+            .find(']')
+            .map(|offset| start + 3 + offset)
+            .ok_or(CrfModelError::MalformedTemplate)?;
+        let spec = &pattern[start + 3..end];
+        let (offset, column) = spec
+            .split_once(',')
+            .and_then(|(left, right)| {
+                if right.contains(',') {
+                    None
+                } else {
+                    Some((
+                        left.trim().parse::<isize>().ok()?,
+                        right.trim().parse::<usize>().ok()?,
+                    ))
+                }
+            })
+            .ok_or(CrfModelError::MalformedTemplate)?;
+        let target = (position as isize)
+            .checked_add(offset)
+            .ok_or(CrfModelError::Overflow)?;
+        if target < 0 {
+            output.push_str(&format!("_x-{}", target.unsigned_abs()));
+        } else if target >= rows.len() as isize {
+            output.push_str(&format!("_x+{}", target - rows.len() as isize + 1));
+        } else {
+            let row = &rows[target as usize];
+            if column >= row.len() {
+                return Err(CrfModelError::ColumnArityMismatch {
+                    position,
+                    column,
+                    required: column + 1,
+                    actual: row.len(),
+                });
+            }
+            output.push_str(row[column]);
+        }
+        cursor = end + 1;
+    }
+    output.push_str(&pattern[cursor..]);
+    Ok(output)
+}
+
+/// Convert newline-delimited Wapiti input into ordered feature observations.
+pub fn map_input(model: &CrfModel, input: &str) -> Result<Vec<CrfPosition>, CrfModelError> {
+    let rows: Vec<Vec<&str>> = input
+        .lines()
+        .map(str::split_whitespace)
+        .map(|row| row.collect())
+        .collect();
+    let lookup: std::collections::BTreeMap<&str, usize> = model
+        .observations
+        .iter()
+        .enumerate()
+        .map(|(index, observation)| (observation.as_str(), index))
+        .collect();
+    rows.iter()
+        .enumerate()
+        .map(|(position, _)| {
+            let mut mapped = CrfPosition {
+                uobs: Vec::new(),
+                bobs: Vec::new(),
+            };
+            for pattern in &model.patterns {
+                let expanded = expand_pattern_sequence(&pattern.source, &rows, position)?;
+                let Some(&observation) = lookup.get(expanded.as_str()) else {
+                    continue;
+                };
+                if model.u_offsets[observation].is_some() {
+                    mapped.uobs.push(observation);
+                }
+                if model.b_offsets[observation].is_some() {
+                    mapped.bobs.push(observation);
+                }
+            }
+            Ok(mapped)
+        })
+        .collect()
 }
 
 impl CrfModel {
@@ -393,6 +575,76 @@ mod tests {
             Err(CrfModelError::LimitsExceeded {
                 resource: "weights",
                 ..
+            })
+        ));
+    }
+
+    fn mapping_model() -> CrfModel {
+        CrfModel {
+            model_type: 2,
+            labels: vec!["A".into(), "B".into()],
+            observations: vec!["u:X".into(), "b:X".into(), "u:unknown".into()],
+            patterns: vec![
+                CrfPattern {
+                    source: "u:%x[0,0]".into(),
+                    kind: 'u',
+                },
+                CrfPattern {
+                    source: "b:%x[-1,0]".into(),
+                    kind: 'b',
+                },
+                CrfPattern {
+                    source: "u:%x[1,0]".into(),
+                    kind: 'u',
+                },
+            ],
+            u_offsets: vec![Some(0), None, Some(2)],
+            b_offsets: vec![None, Some(4), None],
+            weights: BTreeMap::new(),
+            nftr: 8,
+        }
+    }
+
+    #[test]
+    fn expands_in_range_and_boundary_placeholders() {
+        let rows = vec![vec!["X"], vec!["Y"]];
+        assert_eq!(
+            expand_pattern_sequence("u:%x[-1,0]/%x[0,0]/%x[1,0]", &rows, 0).unwrap(),
+            "u:_x-1/X/Y"
+        );
+        assert_eq!(
+            expand_pattern_sequence("u:%x[-1,0]/%x[0,0]/%x[1,0]", &rows, 1).unwrap(),
+            "u:X/Y/_x+1"
+        );
+        assert_eq!(expand_pattern("u:%x[0,0]", &["X"], 0, 1).unwrap(), "u:X");
+    }
+
+    #[test]
+    fn maps_ordered_known_observations_and_skips_unknowns() {
+        let mapped = map_input(&mapping_model(), "X\nY").unwrap();
+        assert_eq!(mapped.len(), 2);
+        assert_eq!(mapped[0].uobs, vec![0]);
+        assert!(mapped[0].bobs.is_empty());
+        assert!(mapped[1].uobs.is_empty());
+        assert_eq!(mapped[1].bobs, vec![1]);
+    }
+
+    #[test]
+    fn rejects_missing_input_column_with_typed_error() {
+        let model = CrfModel {
+            patterns: vec![CrfPattern {
+                source: "u:%x[0,1]".into(),
+                kind: 'u',
+            }],
+            ..mapping_model()
+        };
+        assert!(matches!(
+            map_input(&model, "only-one-column"),
+            Err(CrfModelError::ColumnArityMismatch {
+                position: 0,
+                column: 1,
+                required: 2,
+                actual: 1,
             })
         ));
     }
