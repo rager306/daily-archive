@@ -8,6 +8,12 @@ use thiserror::Error;
 pub const GROBID_LEXICON_SCHEMA_VERSION: &str = "grobid-lexicon.v1";
 pub const GROBID_RESOURCE_VERSION: &str = "0.9.0-crf";
 
+/// Resource bounds for untrusted lexicon data after deserialization.
+pub const MAX_LEXICON_CHANNELS: usize = 256;
+pub const MAX_LEXICON_ENTRIES_PER_CHANNEL: usize = 100_000;
+pub const MAX_FEATURE_TEMPLATES: usize = 256;
+pub const MAX_TEMPLATE_INPUTS: usize = 64;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct LexiconBundle {
@@ -42,6 +48,22 @@ pub enum LexiconError {
     EmptyChannels,
     #[error("lexicon must declare at least one feature template")]
     EmptyFeatureTemplates,
+    #[error("lexicon declares too many channels: {actual} (maximum {maximum})")]
+    TooManyChannels { actual: usize, maximum: usize },
+    #[error("lexicon channel {channel} declares too many entries: {actual} (maximum {maximum})")]
+    TooManyEntries {
+        channel: String,
+        actual: usize,
+        maximum: usize,
+    },
+    #[error("lexicon declares too many feature templates: {actual} (maximum {maximum})")]
+    TooManyFeatureTemplates { actual: usize, maximum: usize },
+    #[error("feature template {template} declares too many inputs: {actual} (maximum {maximum})")]
+    TooManyTemplateInputs {
+        template: String,
+        actual: usize,
+        maximum: usize,
+    },
     #[error("{kind} keys must be strictly ordered and unique")]
     UnorderedKeys { kind: &'static str },
     #[error("{kind} key is blank")]
@@ -71,8 +93,20 @@ impl LexiconBundle {
         if self.channels.is_empty() {
             return Err(LexiconError::EmptyChannels);
         }
+        if self.channels.len() > MAX_LEXICON_CHANNELS {
+            return Err(LexiconError::TooManyChannels {
+                actual: self.channels.len(),
+                maximum: MAX_LEXICON_CHANNELS,
+            });
+        }
         if self.feature_templates.is_empty() {
             return Err(LexiconError::EmptyFeatureTemplates);
+        }
+        if self.feature_templates.len() > MAX_FEATURE_TEMPLATES {
+            return Err(LexiconError::TooManyFeatureTemplates {
+                actual: self.feature_templates.len(),
+                maximum: MAX_FEATURE_TEMPLATES,
+            });
         }
         validate_ordered_keys(
             self.channels.iter().map(|channel| channel.key.as_str()),
@@ -87,6 +121,13 @@ impl LexiconBundle {
             if channel.entries.is_empty() {
                 return Err(LexiconError::EmptyEntries {
                     channel: channel.key.clone(),
+                });
+            }
+            if channel.entries.len() > MAX_LEXICON_ENTRIES_PER_CHANNEL {
+                return Err(LexiconError::TooManyEntries {
+                    channel: channel.key.clone(),
+                    actual: channel.entries.len(),
+                    maximum: MAX_LEXICON_ENTRIES_PER_CHANNEL,
                 });
             }
             if channel.entries.iter().any(|entry| entry.trim().is_empty())
@@ -107,6 +148,13 @@ impl LexiconBundle {
             if template.channel_keys.is_empty() || template.feature_inputs.is_empty() {
                 return Err(LexiconError::EmptyTemplateInputs {
                     template: template.key.clone(),
+                });
+            }
+            if template.feature_inputs.len() > MAX_TEMPLATE_INPUTS {
+                return Err(LexiconError::TooManyTemplateInputs {
+                    template: template.key.clone(),
+                    actual: template.feature_inputs.len(),
+                    maximum: MAX_TEMPLATE_INPUTS,
                 });
             }
             if template
@@ -226,6 +274,39 @@ mod tests {
         assert!(matches!(
             bundle.validate(),
             Err(LexiconError::UnknownChannel { .. })
+        ));
+    }
+
+    #[test]
+    fn rejects_excessive_resource_cardinality_with_typed_errors() {
+        let mut bundle = valid_bundle();
+        bundle.channels = (0..=MAX_LEXICON_CHANNELS)
+            .map(|index| LexiconChannel {
+                key: format!("channel-{index:03}"),
+                entries: vec!["entry".into()],
+            })
+            .collect();
+        assert!(matches!(
+            bundle.validate(),
+            Err(LexiconError::TooManyChannels { .. })
+        ));
+
+        let mut bundle = valid_bundle();
+        bundle.channels[0].entries = (0..=MAX_LEXICON_ENTRIES_PER_CHANNEL)
+            .map(|index| format!("entry-{index:06}"))
+            .collect();
+        assert!(matches!(
+            bundle.validate(),
+            Err(LexiconError::TooManyEntries { .. })
+        ));
+
+        let mut bundle = valid_bundle();
+        bundle.feature_templates[0].feature_inputs = (0..=MAX_TEMPLATE_INPUTS)
+            .map(|index| format!("input-{index}"))
+            .collect();
+        assert!(matches!(
+            bundle.validate(),
+            Err(LexiconError::TooManyTemplateInputs { .. })
         ));
     }
 }

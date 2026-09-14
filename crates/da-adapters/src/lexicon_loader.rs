@@ -5,6 +5,9 @@ use da_domain::LexiconBundle;
 use da_ports::{LexiconLoadError, LexiconLoaderPort};
 use std::path::{Path, PathBuf};
 
+/// Maximum serialized lexicon size accepted before allocating its contents.
+pub const MAX_LEXICON_BYTES: u64 = 16 * 1024 * 1024;
+
 #[derive(Debug, Clone)]
 pub struct FilesystemLexiconLoader {
     path: PathBuf,
@@ -22,6 +25,17 @@ impl FilesystemLexiconLoader {
 
 impl LexiconLoaderPort for FilesystemLexiconLoader {
     fn load(&self) -> Result<LexiconBundle, LexiconLoadError> {
+        let size = std::fs::metadata(&self.path)
+            .map_err(|error| {
+                LexiconLoadError::Unavailable(format!("stat lexicon resource: {error}"))
+            })?
+            .len();
+        if size > MAX_LEXICON_BYTES {
+            return Err(LexiconLoadError::ResourceTooLarge {
+                actual: size,
+                maximum: MAX_LEXICON_BYTES,
+            });
+        }
         let raw = std::fs::read_to_string(&self.path).map_err(|error| {
             LexiconLoadError::Unavailable(format!("read lexicon resource: {error}"))
         })?;
@@ -79,5 +93,22 @@ mod tests {
     fn missing_resource_is_typed_and_fail_closed() {
         let result = FilesystemLexiconLoader::new("/missing/grobid-lexicon.yaml").load();
         assert!(matches!(result, Err(LexiconLoadError::Unavailable(_))));
+    }
+
+    #[test]
+    fn rejects_resource_before_reading_when_byte_limit_is_exceeded() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("oversized.yaml");
+        let oversized = vec![b'x'; (MAX_LEXICON_BYTES + 1) as usize];
+        std::fs::write(&path, oversized).unwrap();
+
+        let result = FilesystemLexiconLoader::new(path).load();
+        assert!(matches!(
+            result,
+            Err(LexiconLoadError::ResourceTooLarge {
+                actual,
+                maximum
+            }) if actual == MAX_LEXICON_BYTES + 1 && maximum == MAX_LEXICON_BYTES
+        ));
     }
 }

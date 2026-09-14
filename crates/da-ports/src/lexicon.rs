@@ -11,6 +11,10 @@ pub enum LexiconLoadError {
     Unavailable(String),
     #[error("lexicon resource is malformed: {0}")]
     Malformed(String),
+    #[error(
+        "lexicon resource exceeds the configured byte limit: {actual} bytes (maximum {maximum})"
+    )]
+    ResourceTooLarge { actual: u64, maximum: u64 },
     #[error("lexicon resource violates its domain contract: {0}")]
     Invalid(String),
 }

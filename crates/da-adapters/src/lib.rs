@@ -86,7 +86,7 @@ pub use layout_visual::{
     MAX_VISUAL_PRIMITIVES, VISUAL_OBSERVATION_SCHEMA_VERSION, VisualAbsenceReason, VisualError,
     VisualObservation, VisualPrimitive, VisualPrimitiveKind, VisualPrimitiveState, VisualProvider,
 };
-pub use lexicon_loader::FilesystemLexiconLoader;
+pub use lexicon_loader::{FilesystemLexiconLoader, MAX_LEXICON_BYTES};
 
 pub use openalex_adapter::OpenAlexHttpAdapter;
 pub use parse_experience_rvf::RvfFileStore;

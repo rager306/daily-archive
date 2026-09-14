@@ -170,7 +170,8 @@ pub use influence_flower::{
 };
 pub use lexicon::{
     FeatureTemplate, GROBID_LEXICON_SCHEMA_VERSION, GROBID_RESOURCE_VERSION, LexiconBundle,
-    LexiconChannel, LexiconError,
+    LexiconChannel, LexiconError, MAX_FEATURE_TEMPLATES, MAX_LEXICON_CHANNELS,
+    MAX_LEXICON_ENTRIES_PER_CHANNEL, MAX_TEMPLATE_INPUTS,
 };
 pub use load::{
     AcquisitionPolicy, ArticleLocator, AssetDisposition, LOAD_REPORT_SCHEMA_VERSION,

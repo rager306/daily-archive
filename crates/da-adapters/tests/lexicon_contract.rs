@@ -1,7 +1,8 @@
 mod common;
 
 use common::lexicon_contract::{FakeLexiconLoader, assert_loader_contract, valid_bundle};
-use da_adapters::FilesystemLexiconLoader;
+use da_adapters::{FilesystemLexiconLoader, MAX_LEXICON_BYTES};
+use da_domain::{LexiconError, MAX_LEXICON_CHANNELS};
 use da_ports::{LexiconLoadError, LexiconLoaderPort};
 
 fn write_valid_yaml(dir: &std::path::Path) -> std::path::PathBuf {
@@ -45,6 +46,43 @@ fn contract_rejects_missing_malformed_and_incompatible_resources() {
     .unwrap();
     let incompatible = FilesystemLexiconLoader::new(incompatible_path).load();
     assert!(matches!(incompatible, Err(LexiconLoadError::Invalid(_))));
+}
+
+#[test]
+fn bounded_resources_fail_closed_with_typed_errors() {
+    let dir = tempfile::tempdir().unwrap();
+    let oversized_path = dir.path().join("oversized.yaml");
+    std::fs::write(
+        &oversized_path,
+        vec![b'x'; (MAX_LEXICON_BYTES + 1) as usize],
+    )
+    .unwrap();
+    assert!(matches!(
+        FilesystemLexiconLoader::new(oversized_path).load(),
+        Err(LexiconLoadError::ResourceTooLarge { .. })
+    ));
+
+    let channels_path = dir.path().join("too-many-channels.yaml");
+    let mut yaml =
+        String::from("schema_version: grobid-lexicon.v1\nresource_version: 0.9.0-crf\nchannels:\n");
+    for index in 0..=MAX_LEXICON_CHANNELS {
+        yaml.push_str(&format!(
+            "  - key: channel-{index:03}\n    entries: [entry]\n"
+        ));
+    }
+    yaml.push_str(
+        "feature_templates:\n  - key: layout-basic\n    channel_keys: [channel-000]\n    feature_inputs: [token.text]\n",
+    );
+    std::fs::write(&channels_path, yaml).unwrap();
+    let result = FilesystemLexiconLoader::new(channels_path).load();
+    assert!(matches!(
+        result,
+        Err(LexiconLoadError::Invalid(message))
+            if message.contains(&LexiconError::TooManyChannels {
+                actual: MAX_LEXICON_CHANNELS + 1,
+                maximum: MAX_LEXICON_CHANNELS,
+            }.to_string())
+    ));
 }
 
 #[test]
