@@ -357,7 +357,11 @@ da-parse = { workspace = true }
         for v in r.violations
     ]
     assert len(parse_violations) >= 1, "Expected da_application_must_not_depend_on_da_parse"
-    assert parse_violations[0].severity == "medium"
+    # ADR-034 onion invariants are BLOCKING (severity "high"):
+    # governor.domain.checks.CheckResult.is_blocking is `severity == "high"`, so a
+    # `medium` here would make the invariant unable to fail the gate (the T03
+    # regression passed a green `governor architecture` exactly that way).
+    assert parse_violations[0].severity == "high"
 
 
 def test_da_parse_must_not_depend_on_samyama_or_kg():
@@ -388,7 +392,68 @@ samyama = { workspace = true }
         for v in r.violations
     ]
     assert len(parse_violations) >= 1, "Expected da_parse_must_not_depend_on_samyama_or_kg"
-    assert parse_violations[0].severity == "medium"
+    # ADR-034 onion invariants are BLOCKING (severity "high"); see adr_rules.yaml.
+    assert parse_violations[0].severity == "high"
+
+
+def test_da_domain_must_not_depend_on_infra():
+    """Prod infra (tokio) on da-domain is a hexagonal violation; blocking severity."""
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+
+    _write(
+        root / "crates" / "da-domain" / "Cargo.toml",
+        """[package]
+name = "da-domain"
+
+[dependencies]
+tokio = { workspace = true }
+""",
+    )
+
+    scanner = FilesystemCodeScanner(root)
+    rule_repo = YAMLRuleRepository(checks_dir)
+    audit = AuditService(scanner=scanner, rule_repo=rule_repo)
+    report = audit.run_audit()
+
+    infra_violations = [
+        v
+        for r in report.results
+        if r.rule.id == "da_domain_must_not_depend_on_infra"
+        for v in r.violations
+    ]
+    assert len(infra_violations) >= 1, "Expected da_domain_must_not_depend_on_infra"
+    assert infra_violations[0].severity == "high"
+
+
+def test_da_application_must_not_depend_on_da_adapters_prod():
+    """Prod da-adapters on da-application is a hexagonal violation; blocking severity."""
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+
+    _write(
+        root / "crates" / "da-application" / "Cargo.toml",
+        """[package]
+name = "da-application"
+
+[dependencies]
+da-adapters = { workspace = true }
+""",
+    )
+
+    scanner = FilesystemCodeScanner(root)
+    rule_repo = YAMLRuleRepository(checks_dir)
+    audit = AuditService(scanner=scanner, rule_repo=rule_repo)
+    report = audit.run_audit()
+
+    adapter_violations = [
+        v
+        for r in report.results
+        if r.rule.id == "da_application_must_not_depend_on_da_adapters"
+        for v in r.violations
+    ]
+    assert len(adapter_violations) >= 1, "Expected da_application_must_not_depend_on_da_adapters"
+    assert adapter_violations[0].severity == "high"
 
 
 def test_da_parse_da_ports_not_flagged_as_graph_dep():

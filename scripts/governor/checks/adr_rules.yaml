@@ -115,16 +115,26 @@ rules:
     path_prefix_include: crates/kg-
 
   # --- Hexagonal overlay (ADR-034) on Rust workspace ---
+  #
+  # BLOCKING CONTRACT: these four rules encode the onion/hexagonal dependency
+  # direction (domain core <- ports <- application <- cli; parse is a leaf behind
+  # da-ports; adapters are infrastructure). They are `high` = blocking by design:
+  # `governor.domain.checks.CheckResult.is_blocking` is `severity == "high"`, and
+  # `artifacts.DriftFlag` documents `# high = blocking, medium = drift_risk`. A
+  # `medium` severity here means the invariant can NEVER fail the gate — which is
+  # exactly how the T03 regression (`da-application` -> `da-parse`, M506/S05) passed
+  # a green `governor architecture` and was only caught by
+  # `crates/da-parse/tests/architecture_contract.rs`. Do not downgrade these.
   - id: da_domain_must_not_depend_on_infra
     anchor: "ADR-034 (Hexagonal/Onion overlay), ADR-040"
-    severity: medium
+    severity: high
     scan: crates/da-domain/Cargo.toml
     pattern: '^(?:reqwest|tokio|samyama|hyper|axum|actix)\s*='
     rationale: "da-domain (domain Core) must not depend on infrastructure crates."
 
   - id: da_application_must_not_depend_on_da_adapters
     anchor: "ADR-034 (Hexagonal/Onion overlay)"
-    severity: medium
+    severity: high
     scan: crates/da-application/Cargo.toml
     pattern: '^da-adapters\s*='
     rationale: "da-application must not depend on da-adapters in prod deps."
@@ -132,7 +142,7 @@ rules:
 
   - id: da_application_must_not_depend_on_da_parse
     anchor: "ADR-034 (Hexagonal/Onion overlay)"
-    severity: medium
+    severity: high
     scan: crates/da-application/Cargo.toml
     pattern: '^da-parse\s*='
     rationale: "da-application must not depend on da-parse in prod deps. Parse is constructed at the composition root."
@@ -140,7 +150,7 @@ rules:
 
   - id: da_parse_must_not_depend_on_samyama_or_kg
     anchor: "ADR-034 / ADR-050 (da-parse direct [dependencies], not cargo tree)"
-    severity: medium
+    severity: high
     scan: crates/da-parse/Cargo.toml
     pattern: '^(?:samyama|kg-ontology|kg-storage|kg-embeddings|kg-algorithms|kg-pipeline)\s*='
     rationale: "da-parse production dependencies must not include Samyama or kg-* crates. Inspect this crate's Cargo.toml, not cargo tree. da-ports is allowed."
