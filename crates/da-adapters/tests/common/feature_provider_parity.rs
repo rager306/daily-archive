@@ -33,7 +33,8 @@ pub enum ProviderParityError {
 
 pub fn fixture_path(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../data/parse/fixtures")
+        .join("tests")
+        .join("fixtures")
         .join(name)
 }
 
