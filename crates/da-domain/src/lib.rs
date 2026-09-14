@@ -31,6 +31,7 @@ pub mod eval;
 pub mod evidence;
 pub mod evidence_bundle;
 pub mod extractive_summary;
+pub mod feature_abi;
 pub mod figure;
 pub mod figure_analysis;
 pub mod figure_candidate;
@@ -123,6 +124,7 @@ pub use evidence::{
     EpistemicStatus, EvidenceAssertion, EvidenceId, EvidenceVerdict, EvidenceVerification,
     SourceSpan, SpanType,
 };
+pub use feature_abi::{FeatureAbi, FeatureAbiError, FeatureChannel, FeatureToken, FeatureVector};
 pub use figure::{
     BoundingBox72Dpi, DetectedVisualArtifact, VisualArtifactError, VisualArtifactKind,
 };
