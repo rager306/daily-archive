@@ -1,0 +1,78 @@
+# M507 T01: rights and packaging inventory for the pinned GROBID CRF baseline.
+# This file records evidence and conservative redistribution decisions; it does
+# not package model bytes or change the production Java route.
+schema_version: grobid-model-rights.v1
+source_repo: https://github.com/grobidOrg/grobid
+version: 0.9.0-crf
+license_spdx: Apache-2.0
+license_evidence_path: doc/parse/grobid-model-rights.md
+license_evidence_url: https://raw.githubusercontent.com/grobidOrg/grobid/0.9.0/LICENSE
+reusable: true
+redistributable: false
+redistribution_reason: >-
+  The upstream repository license covers the GROBID work, but this review did
+  not establish independent provenance and redistribution terms for every
+  bundled lexicon or CRF model artifact. Keep model bytes in the audited
+  upstream/container distribution until component-level evidence is recorded.
+production_use:
+  route: external_java_http_service
+  authority: java-grobid-http@0.9.0-crf
+  graph_write: forbidden
+  import_eligible: false
+  auto_promote: forbidden
+packaging:
+  upstream_release_tag: "0.9.0"
+  crf_container_recipe: Dockerfile.crf
+  runtime_resource_root: grobid-home/
+  resource_description: models, lexicons, and native libraries are runtime resources
+  source_evidence:
+    - https://github.com/grobidOrg/grobid/tree/0.9.0
+    - https://grobid.readthedocs.io/en/latest/Configuration/
+assets:
+  - id: lexical_resources
+    kind: lexicon
+    upstream_location: grobid-home/lexicon/
+    needed_by_wave: [M507-S01]
+    reuse: external_service_only
+    redistributable: false
+    rights_status: blocked
+    evidence: >-
+      The configuration documentation identifies lexicons under grobid-home,
+      but no separately bound license/provenance file for the packaged entries
+      was found in the reviewed tag.
+  - id: crf_feature_templates
+    kind: feature_template
+    upstream_location: grobid-home/models/*/features*
+    needed_by_wave: [M507-S01]
+    reuse: external_service_only
+    redistributable: false
+    rights_status: blocked
+    evidence: >-
+      Feature templates are part of the model resource package; their exact
+      per-file inventory and provenance must be extracted from an audited
+      0.9.0-crf distribution before copying them into this repository.
+  - id: crf_model_weights
+    kind: model_weights
+    upstream_location: grobid-home/models/
+    needed_by_wave: later
+    reuse: external_service_only
+    redistributable: false
+    rights_status: blocked
+    evidence: >-
+      Not required for this inventory-only task. No model bytes are copied;
+      weights remain behind the Java service boundary pending separate review.
+  - id: pdfalto_runtime
+    kind: native_pdf_layout_subprocess
+    upstream_location: grobid-home/pdfalto
+    needed_by_wave: later
+    reuse: external_service_only
+    redistributable: false
+    rights_status: separately_blocked
+    evidence: >-
+      pdfalto is a distinct component and is not covered by this GROBID model
+      rights decision; see data/parse/license_inventory.yaml.
+controls:
+  no_model_bytes_committed: true
+  no_sidecar_authority: true
+  no_new_jsonl_sqlite_redb_authority: true
+  missing_or_ambiguous_rights: fail_closed

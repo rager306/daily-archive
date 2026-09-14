@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-14 — M507/S01/T01: права модельных данных GROBID зафиксированы
+
+Для pinned `java-grobid-http@0.9.0-crf` подтверждена Apache-2.0 лицензия upstream
+GROBID (`doc/parse/grobid-model-rights.md` и `data/parse/grobid_model_rights.yaml`).
+Права на отдельные bundled lexicons, feature templates и CRF weights не имеют
+достаточного component-level provenance в проверенном evidence, поэтому их
+redistribution остаётся blocked; model bytes не добавлялись. Production Java
+HTTP route, `import_eligible=false`, graph freeze и запрет новых authority
+хранилищ сохранены.
+
 ## 2026-09-13 (8) — S03: digest квитанции привязан к вставленному фрагменту
 
 Правило D352 теперь явно действует на native composition: digest в манифесте
