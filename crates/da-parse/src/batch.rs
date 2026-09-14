@@ -40,7 +40,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 use std::num::NonZeroUsize;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::time::Instant;
 
 use async_trait::async_trait;
@@ -49,7 +49,7 @@ use serde::de::{self, Deserializer};
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tokio::sync::{Mutex, Semaphore, mpsc};
+use tokio::sync::{Mutex, Notify, Semaphore, mpsc};
 use tokio::task::JoinHandle;
 
 use crate::backend::{ParseBackend, ParseBackendRequest};
@@ -891,6 +891,65 @@ impl ParseDocumentOutcome {
 /// Stable schema version of the run summary vocabulary.
 pub const PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION: u32 = 2;
 
+/// Cooperative cancellation handle for the opt-in managed batch surface.
+///
+/// Cancellation stops new admission and aborts owned Rust worker futures. It
+/// deliberately does not claim that an external Java process was stopped;
+/// callers must use the ledger/heartbeat authority for that conclusion.
+#[derive(Debug, Clone, Default)]
+pub struct ParseBatchCancellation {
+    inner: Arc<ParseBatchCancellationInner>,
+}
+
+#[derive(Debug, Default)]
+struct ParseBatchCancellationInner {
+    cancelled: AtomicBool,
+    wake: Notify,
+}
+
+impl ParseBatchCancellation {
+    /// Create a new non-cancelled control handle.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Request cancellation. This operation is idempotent and wakes all
+    /// admission, permit and worker waiters.
+    pub fn cancel(&self) {
+        if !self.inner.cancelled.swap(true, Ordering::SeqCst) {
+            self.inner.wake.notify_waiters();
+        }
+    }
+
+    /// Whether cancellation has been requested.
+    pub fn is_cancelled(&self) -> bool {
+        self.inner.cancelled.load(Ordering::SeqCst)
+    }
+
+    async fn cancelled(&self) {
+        loop {
+            // Register before checking the flag: otherwise cancel can land
+            // between the check and `notified()`, leaving a waiter asleep.
+            let notified = self.inner.wake.notified();
+            if self.is_cancelled() {
+                return;
+            }
+            notified.await;
+            if self.is_cancelled() {
+                return;
+            }
+        }
+    }
+
+    async fn wait_or_cancel<T>(&self, future: impl std::future::Future<Output = T>) -> Option<T> {
+        tokio::select! {
+            biased;
+            _ = self.cancelled() => None,
+            value = future => Some(value),
+        }
+    }
+}
+
 /// Failure of the durable result-sink or checkpoint seam. The message is
 /// caller-owned text — the executor never attaches payload, path or
 /// location material to it.
@@ -1035,9 +1094,15 @@ pub struct ParseBatchRunSummary {
     budget_scope: &'static str,
     sink_errors: u64,
     checkpoint_errors: u64,
+    cancelled: bool,
 }
 
 impl ParseBatchRunSummary {
+    /// Whether cooperative managed cancellation stopped this run.
+    pub const fn cancelled(&self) -> bool {
+        self.cancelled
+    }
+
     /// Stable schema version.
     pub const fn schema_version(&self) -> u32 {
         self.schema_version
@@ -1269,6 +1334,7 @@ impl<'de> Deserialize<'de> for ParseBatchRunSummary {
             budget_scope: Box::leak(repr.budget_scope.into_boxed_str()),
             sink_errors: repr.sink_errors,
             checkpoint_errors: repr.checkpoint_errors,
+            cancelled: false,
         })
     }
 }
@@ -1930,6 +1996,7 @@ struct WorkerContext<B: ParseBackend, C: ParseArtifactCache> {
     shared_execution: Arc<Semaphore>,
     sink: Arc<dyn ParseBatchResultSink>,
     checkpoint: Arc<dyn BatchCheckpoint>,
+    cancellation: Option<ParseBatchCancellation>,
 }
 
 impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
@@ -1937,9 +2004,12 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
         loop {
             let queued = {
                 let mut rx = self.rx.lock().await;
-                rx.recv().await
+                match &self.cancellation {
+                    Some(cancellation) => cancellation.wait_or_cancel(rx.recv()).await,
+                    None => Some(rx.recv().await),
+                }
             };
-            let Some(queued) = queued else {
+            let Some(Some(queued)) = queued else {
                 break;
             };
             self.shared.counters.note_queue_depth(-1);
@@ -1952,7 +2022,14 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
                     .budget_waits
                     .fetch_add(1, Ordering::SeqCst);
             }
-            let Ok(execution_permit) = self.semaphore.clone().acquire_owned().await else {
+            let execution_permit = match &self.cancellation {
+                Some(cancellation) => cancellation
+                    .wait_or_cancel(self.semaphore.clone().acquire_owned())
+                    .await
+                    .and_then(Result::ok),
+                None => self.semaphore.clone().acquire_owned().await.ok(),
+            };
+            let Some(execution_permit) = execution_permit else {
                 break;
             };
             // All executors sharing a budget take the shared execution permit
@@ -1965,10 +2042,26 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
                     .budget_waits
                     .fetch_add(1, Ordering::SeqCst);
             }
-            let Ok(shared_execution_permit) = self.shared_execution.clone().acquire_owned().await
-            else {
+            let shared_execution_permit = match &self.cancellation {
+                Some(cancellation) => cancellation
+                    .wait_or_cancel(self.shared_execution.clone().acquire_owned())
+                    .await
+                    .and_then(Result::ok),
+                None => self.shared_execution.clone().acquire_owned().await.ok(),
+            };
+            let Some(shared_execution_permit) = shared_execution_permit else {
                 break;
             };
+            if self
+                .cancellation
+                .as_ref()
+                .is_some_and(ParseBatchCancellation::is_cancelled)
+            {
+                drop(queued);
+                drop(execution_permit);
+                drop(shared_execution_permit);
+                break;
+            }
             self.shared.counters.note_in_flight(1);
             self.execute_one(queued, execution_permit, shared_execution_permit)
                 .await;
@@ -2217,14 +2310,38 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
         &self.projector_schema_fingerprint
     }
 
-    /// Run the admitted batch to completion, streaming terminal outcomes
-    /// through `sink` and advancing `checkpoint` through the durably
-    /// acknowledged contiguous terminal prefix.
+    /// Run the admitted batch with legacy detach-on-drop semantics.
     pub async fn run(
         &self,
         batch: ParseBatch,
         sink: Arc<dyn ParseBatchResultSink>,
         checkpoint: Arc<dyn BatchCheckpoint>,
+    ) -> ParseBatchRunSummary {
+        self.run_managed_inner(batch, sink, checkpoint, None).await
+    }
+
+    /// Run an admitted batch under an opt-in cooperative cancellation handle.
+    ///
+    /// Cancellation stops admission, aborts owned Rust worker futures at their
+    /// next await point, and leaves the durable cursor at the last ACK. It
+    /// does not claim that an external Java/GROBID process has stopped.
+    pub async fn run_managed(
+        &self,
+        batch: ParseBatch,
+        sink: Arc<dyn ParseBatchResultSink>,
+        checkpoint: Arc<dyn BatchCheckpoint>,
+        cancellation: ParseBatchCancellation,
+    ) -> ParseBatchRunSummary {
+        self.run_managed_inner(batch, sink, checkpoint, Some(cancellation))
+            .await
+    }
+
+    async fn run_managed_inner(
+        &self,
+        batch: ParseBatch,
+        sink: Arc<dyn ParseBatchResultSink>,
+        checkpoint: Arc<dyn BatchCheckpoint>,
+        cancellation: Option<ParseBatchCancellation>,
     ) -> ParseBatchRunSummary {
         let started = Instant::now();
         let limits = *batch.limits();
@@ -2297,6 +2414,7 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
                     shared_execution: shared_budget.execution.clone(),
                     sink: sink.clone(),
                     checkpoint: checkpoint.clone(),
+                    cancellation: cancellation.clone(),
                 }
                 .work(),
             ));
@@ -2306,39 +2424,77 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
         // queue. Items before the cursor are already terminal from a prior
         // run — skipped, never re-executed.
         for item in batch.into_items().into_iter().skip(resumed_from as usize) {
+            if cancellation
+                .as_ref()
+                .is_some_and(ParseBatchCancellation::is_cancelled)
+            {
+                break;
+            }
             // Reserve before enqueue so a slow ordinal zero bounds both the
             // queue and the completed-but-unpublished outcome set. The
             // permit travels with the item until its sink acknowledgment.
             if local_publication_semaphore.available_permits() == 0 {
                 shared.counters.budget_waits.fetch_add(1, Ordering::SeqCst);
             }
-            let Ok(publication_permit) = local_publication_semaphore.clone().acquire_owned().await
-            else {
+            let publication_permit = match &cancellation {
+                Some(cancellation) => cancellation
+                    .wait_or_cancel(local_publication_semaphore.clone().acquire_owned())
+                    .await
+                    .and_then(Result::ok),
+                None => local_publication_semaphore
+                    .clone()
+                    .acquire_owned()
+                    .await
+                    .ok(),
+            };
+            let Some(publication_permit) = publication_permit else {
                 break;
             };
             if shared_budget.publication.available_permits() == 0 {
                 shared.counters.budget_waits.fetch_add(1, Ordering::SeqCst);
             }
-            let Ok(shared_publication_permit) =
-                shared_budget.publication.clone().acquire_owned().await
-            else {
+            let shared_publication_permit = match &cancellation {
+                Some(cancellation) => cancellation
+                    .wait_or_cancel(shared_budget.publication.clone().acquire_owned())
+                    .await
+                    .and_then(Result::ok),
+                None => shared_budget.publication.clone().acquire_owned().await.ok(),
+            };
+            let Some(shared_publication_permit) = shared_publication_permit else {
                 break;
             };
             shared.counters.note_queue_depth(1);
-            if tx
-                .send(QueuedItem {
-                    item,
-                    enqueued_at: Instant::now(),
-                    publication_permit,
-                    shared_publication_permit,
-                })
-                .await
-                .is_err()
-            {
+            let queued = QueuedItem {
+                item,
+                enqueued_at: Instant::now(),
+                publication_permit,
+                shared_publication_permit,
+            };
+            let sent = match &cancellation {
+                Some(cancellation) => cancellation
+                    .wait_or_cancel(tx.send(queued))
+                    .await
+                    .is_some_and(|result| result.is_ok()),
+                None => tx.send(queued).await.is_ok(),
+            };
+            if !sent {
                 break;
             }
         }
         drop(tx);
+        // Managed cancellation owns these Rust workers. Abort them explicitly
+        // after admission stops so a cancellation race cannot leave a join
+        // waiting on a backend or publication future. The legacy `run` path
+        // keeps its detach-on-drop behavior because it passes no handle.
+        if cancellation
+            .as_ref()
+            .is_some_and(ParseBatchCancellation::is_cancelled)
+        {
+            tracing::info!("parse batch managed cancellation aborting owned workers");
+            for worker in &workers {
+                worker.abort();
+            }
+        }
         // Await workers during a normal run. If this future is dropped (for
         // example, a process-death simulation after durable work was started),
         // JoinHandle drop detaches the workers instead of aborting them. They
@@ -2389,6 +2545,9 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
             budget_scope: "process-local",
             sink_errors: shared.counters.sink_errors.load(Ordering::SeqCst),
             checkpoint_errors: shared.counters.checkpoint_errors.load(Ordering::SeqCst),
+            cancelled: cancellation
+                .as_ref()
+                .is_some_and(ParseBatchCancellation::is_cancelled),
         };
         tracing::info!(
             mode = %summary.mode.as_str(),

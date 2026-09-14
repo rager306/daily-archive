@@ -12,9 +12,9 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use async_trait::async_trait;
 use da_parse::{
     CacheMode, ParseArtifactCache, ParseBackend, ParseBackendFailure, ParseBackendRequest,
-    ParseBatch, ParseBatchBudget, ParseBatchExecutor, ParseBatchMemoryCheckpoint,
-    ParseBatchResultSink, ParseBatchSinkError, ParseCacheFailure, RawStageRead, TeiEnvelope,
-    TeiIdentity,
+    ParseBatch, ParseBatchBudget, ParseBatchCancellation, ParseBatchExecutor,
+    ParseBatchMemoryCheckpoint, ParseBatchResultSink, ParseBatchSinkError, ParseCacheFailure,
+    RawStageRead, TeiEnvelope, TeiIdentity,
 };
 use tokio::sync::{Mutex, Notify};
 
@@ -396,4 +396,28 @@ async fn shared_execution_budget_caps_concurrent_backend_work() {
         4
     );
     assert_eq!(backend.peak(), 1, "shared execution cap must remain one");
+}
+
+#[tokio::test(start_paused = true)]
+async fn managed_cancel_before_claim_stops_admission_without_publication() {
+    let backend = BlockingBackend::default();
+    let executor = ParseBatchExecutor::new(backend.clone(), MissCache);
+    let cancellation = ParseBatchCancellation::new();
+    cancellation.cancel();
+    let sink = Arc::new(OrderedSink::default());
+    let checkpoint = Arc::new(ParseBatchMemoryCheckpoint::new());
+
+    let summary = executor
+        .run_managed(admitted_batch(), sink.clone(), checkpoint, cancellation)
+        .await;
+
+    assert!(summary.cancelled());
+    assert_eq!(summary.cursor().next_ordinal(), 0);
+    assert_eq!(summary.completed(), 0);
+    assert!(sink.ordinals().await.is_empty());
+    assert_eq!(
+        backend.call_count(),
+        0,
+        "cancel-before-claim must not call backend"
+    );
 }

@@ -64,10 +64,10 @@ pub use backend::{
 pub use batch::{
     BatchCheckpoint, BatchCursor, PARSE_BATCH_CURSOR_SCHEMA_VERSION,
     PARSE_BATCH_RUN_SUMMARY_SCHEMA_VERSION, PARSE_BATCH_SCHEMA_VERSION, ParseBatch,
-    ParseBatchAdmissionError, ParseBatchBudget, ParseBatchCollector, ParseBatchCursorError,
-    ParseBatchExecutor, ParseBatchItem, ParseBatchLimits, ParseBatchMemoryCheckpoint,
-    ParseBatchResultSink, ParseBatchRunSummary, ParseBatchSinkError, ParseDocumentFailure,
-    ParseDocumentOutcome, ParseDocumentSuccess, ordered_input_fingerprint,
+    ParseBatchAdmissionError, ParseBatchBudget, ParseBatchCancellation, ParseBatchCollector,
+    ParseBatchCursorError, ParseBatchExecutor, ParseBatchItem, ParseBatchLimits,
+    ParseBatchMemoryCheckpoint, ParseBatchResultSink, ParseBatchRunSummary, ParseBatchSinkError,
+    ParseDocumentFailure, ParseDocumentOutcome, ParseDocumentSuccess, ordered_input_fingerprint,
     ordered_input_fingerprint_with_backend_version,
 };
 pub use cache::{
