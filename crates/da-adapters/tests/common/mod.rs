@@ -7,5 +7,6 @@
 // to production code.
 #![allow(dead_code)]
 
+pub mod feature_provider_parity;
 pub mod lexicon_contract;
 pub mod parse_job_contract;
