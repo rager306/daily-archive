@@ -35,6 +35,13 @@ heartbeats rather than guessing.
 The shared contract fixture exercises duplicate submit, key/spec conflict,
 competing claims, stale heartbeat, cancel-before-terminal-write, terminal replay,
 and invalid input. The fixture is a state fake only; it is not persistence proof.
+The real adapter proof is `crates/da-adapters/tests/parse_job_ledger_test.rs`:
+`reclaim_fences_stale_worker_and_terminal_state_survives_reopen` performs two
+fenced claims without sleeping, rejects the old worker's checkpoint, rejects a
+backwards cursor, commits terminal success, verifies terminal cancel replay, and
+reopens the RocksDB-backed ledger to compare the recovered record and events.
+This is a deterministic durable-CAS/restart proof; it does not claim to emulate
+OS SIGKILL or an actual expired wall-clock lease.
 
 ## Feasibility boundary for the durable adapter
 
@@ -81,6 +88,22 @@ The opt-in `da parse-job` surface is deliberately separate from unmanaged
 
 The ledger path is operational only and is never the scientific graph,
 `import_eligible`, a queue file, JSONL, SQLite, or a redb authority.
+
+## Runtime evidence and H06 boundary
+
+H06 is source-bound to the durable Samyama adapter, not the older
+`pipeline_ledger` planning surface. The current verification command is:
+
+```text
+cargo test -p da-adapters --test parse_job_ledger_test
+```
+
+The test covers durable ACK/reopen, idempotency and immutable-spec conflict,
+competing claims, stale fences, monotonic cursor protection, cancel-before-
+completion, bounded sanitized diagnostics, terminal replay, and event recovery.
+The test does not claim application-level subprocess kill/reopen or a real
+signal-driven CLI run; those remain separate evidence obligations for the
+application/CLI surfaces. No scientific graph write or import route is involved.
 
 ## Observability and failure visibility
 

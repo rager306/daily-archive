@@ -582,12 +582,12 @@
       "stage_id": "H06",
       "title": "Local job ledger with atomic CAS",
       "scope": "Submit to restart to claim to commit job lifecycle with stale-worker/cancel race safety and atomic CAS; reuse scheduler TaskLease/RetryPolicy; decide Samyama scope before storing ledger state.",
-      "status": "pending",
+      "status": "complete",
       "depends_on": [
         "H03",
         "H05"
       ],
-      "owner": "unassigned",
+      "owner": "M506-98qg7g/S05",
       "adr_refs": [
         "ADR-040",
         "ADR-051",
@@ -595,34 +595,34 @@
       ],
       "implementation_evidence": [
         {
-          "path": "crates/da-adapters/src/pipeline_ledger.rs",
-          "note": "Existing ledger surface that must expose atomic CAS.",
-          "state": "partial"
+          "path": "crates/da-adapters/src/parse_job_ledger.rs",
+          "note": "Samyama PersistenceManager adapter with versioned durable transitions and checkpoint ACK.",
+          "state": "present"
         },
         {
-          "path": ".gsd/phases/505-o169s4-baseline-grobid/505-RESEARCH.md",
-          "note": "Target job lifecycle model and storage-authority constraint.",
+          "path": "doc/parse-job-ledger.md",
+          "note": "Current lifecycle contract, authority boundary, restart proof, and explicit evidence limits.",
           "state": "present"
         }
       ],
       "verification_evidence": [
         {
-          "mode": "governor_rule",
-          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
-          "expected": "H06 stays unresolved with no PASS claim.",
-          "status": "pending"
+          "mode": "command",
+          "ref": "cargo test -p da-adapters --test parse_job_ledger_test",
+          "expected": "Durable ACK/reopen, reclaim epoch fencing, stale late-worker rejection, monotonic cursor, cancel race, terminal replay, and sanitized failure proof.",
+          "status": "verified"
         },
         {
-          "mode": "command",
-          "ref": "cargo test -p da-adapters --lib pipeline_ledger cas",
-          "expected": "Atomic CAS; stale fence rejects; recovery equivalence.",
-          "status": "pending"
+          "mode": "governor_rule",
+          "ref": "PYTHONPATH=scripts python3 -m governor architecture",
+          "expected": "Registry integrity and architecture invariants pass with H06 source-bound evidence.",
+          "status": "verified"
         }
       ],
       "tested_source": {
-        "revision": "git:3b327d7ce0d3879e9483f8788fcf32bec55f7a10",
-        "verified": false,
-        "note": "No runtime verification was executed for this planning registry; verified=false until a stage produces current closure evidence."
+        "revision": "workspace:2026-09-14-S05-T05",
+        "verified": true,
+        "note": "Current workspace evidence is the real Samyama adapter contract test. It proves deterministic reclaim/stale-fence and restart recovery without sleep or retry; it does not claim OS SIGKILL or signal-driven CLI execution."
       },
       "index_freshness": {
         "state": "stale",
@@ -636,7 +636,7 @@
           "project": "daily-archive",
           "branch": "feat/da-parse"
         },
-        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); CBM project daily-archive is on the same branch without a recorded commit pin. The uncommitted M505 identity changes in the working tree are NOT represented, so index line numbers are not admissible as evidence until re-index; this review cites committed anchors only."
+        "limitation": "GitNexus daily-archive was indexed 2026-09-12T11:52:51Z at commit 3b327d7 (branch feat/da-parse); the active M506 workspace changes are not represented. Symbol impact lookup returned UNKNOWN for the new SamyamaJobLedger and ParseJobRunner symbols, so this review uses direct source and runtime test evidence rather than indexed line numbers."
       },
       "negative_tests": [
         {
@@ -670,8 +670,8 @@
           "reason": "Epoch/lease monotonicity properties."
         }
       ],
-      "implementation_pass": false,
-      "verification_pass": false
+      "implementation_pass": true,
+      "verification_pass": true
     },
     {
       "stage_id": "H07",

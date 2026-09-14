@@ -61,6 +61,63 @@ async fn idempotency_conflict_and_stale_fence_are_durable() {
 }
 
 #[tokio::test]
+async fn reclaim_fences_stale_worker_and_terminal_state_survives_reopen() {
+    let dir = TempDir::new().unwrap();
+    let ledger = SamyamaJobLedger::open(dir.path()).unwrap();
+    let first = ledger.submit(spec("structural")).await.unwrap();
+    let claimed = ledger.claim(&first.job_id, "worker-a").await.unwrap();
+    let old_fence = claimed.attempt.clone().unwrap();
+    let reclaimed = ledger.claim(&first.job_id, "worker-a").await.unwrap();
+    let new_fence = reclaimed.attempt.clone().unwrap();
+
+    assert_eq!(reclaimed.status, JobStatus::Running);
+    assert!(new_fence.epoch > old_fence.epoch);
+    assert!(new_fence.revision > old_fence.revision);
+    assert!(matches!(
+        ledger.checkpoint(&first.job_id, &old_fence, 1).await,
+        Err(JobLedgerError::StaleFence { .. })
+    ));
+
+    let checkpointed = ledger
+        .checkpoint(&first.job_id, &new_fence, 2)
+        .await
+        .unwrap();
+    assert_eq!(checkpointed.cursor, 2);
+    assert!(matches!(
+        ledger.checkpoint(&first.job_id, &new_fence, 1).await,
+        Err(JobLedgerError::StaleFence { .. })
+    ));
+
+    let terminal = ledger
+        .complete(
+            &first.job_id,
+            &checkpointed.attempt.clone().unwrap(),
+            ContentDigest::of_text("result-digest"),
+        )
+        .await
+        .unwrap();
+    assert_eq!(terminal.status, JobStatus::Succeeded);
+    let replay = ledger
+        .cancel(&first.job_id)
+        .await
+        .expect("terminal cancel replay is idempotent");
+    assert_eq!(replay, terminal);
+    drop(ledger);
+
+    let reopened = SamyamaJobLedger::open(dir.path()).unwrap();
+    let recovered = reopened.get(&first.job_id).await.unwrap();
+    assert_eq!(recovered, terminal);
+    assert!(
+        reopened
+            .events(&first.job_id)
+            .await
+            .unwrap()
+            .iter()
+            .any(|event| event.event == "complete")
+    );
+}
+
+#[tokio::test]
 async fn cancel_wins_and_failure_is_bounded() {
     let dir = TempDir::new().unwrap();
     let ledger = SamyamaJobLedger::open(dir.path()).unwrap();
