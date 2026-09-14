@@ -22,6 +22,7 @@ pub mod logging;
 pub mod materialization_progress;
 pub mod parse_batch;
 pub mod parse_config;
+pub mod parse_job;
 pub mod parse_profile;
 pub mod production;
 pub mod snapshot_identity;

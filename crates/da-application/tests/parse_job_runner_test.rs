@@ -49,6 +49,20 @@ impl JobLedger for FakeLedger {
         Ok(self.record.lock().unwrap().clone())
     }
 
+    async fn spec(&self, _job_id: &str) -> Result<JobSpec, JobLedgerError> {
+        let mut spec = JobSpec {
+            key: ContentDigest::of_text("placeholder"),
+            content: vec!["paper-a".into()],
+            backend: "test".into(),
+            projector: "test-v1".into(),
+            profile: "structural".into(),
+            tuning: vec![],
+            locations: vec![],
+        };
+        spec.key = spec.identity_key().expect("valid fixture");
+        Ok(spec)
+    }
+
     async fn claim(&self, _job_id: &str, _owner: &str) -> Result<JobRecord, JobLedgerError> {
         Err(JobLedgerError::NotFound)
     }

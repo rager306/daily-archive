@@ -14,6 +14,11 @@ pub trait JobLedger: Send + Sync {
 
     async fn get(&self, job_id: &str) -> Result<JobRecord, JobLedgerError>;
 
+    /// Read back the immutable source specification and operational locations.
+    /// Locations are not part of identity, but are required to rehydrate a
+    /// frozen local manifest after a restart.
+    async fn spec(&self, job_id: &str) -> Result<JobSpec, JobLedgerError>;
+
     /// Claim or reclaim an expired attempt. `owner` is an opaque non-secret id.
     async fn claim(&self, job_id: &str, owner: &str) -> Result<JobRecord, JobLedgerError>;
 

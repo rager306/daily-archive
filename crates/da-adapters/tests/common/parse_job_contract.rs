@@ -5,8 +5,8 @@ use da_ports::JobLedger;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-/// Durable per-job state: the record plus its event stream, keyed by job identity.
-type JobState = (JobRecord, Vec<JobEvent>);
+/// Durable per-job state: the record, frozen spec, and event stream, keyed by job identity.
+type JobState = (JobRecord, JobSpec, Vec<JobEvent>);
 type LedgerStore = Arc<Mutex<HashMap<String, JobState>>>;
 
 #[derive(Default, Clone)]
@@ -20,7 +20,7 @@ impl JobLedger for FakeLedger {
     async fn submit(&self, spec: JobSpec) -> Result<JobRecord, JobLedgerError> {
         let identity = spec.identity()?;
         let mut jobs = self.inner.lock().unwrap();
-        if let Some((record, _)) = jobs.get(identity.key.as_str()) {
+        if let Some((record, _, _)) = jobs.get(identity.key.as_str()) {
             if record.identity == identity {
                 return Ok(record.clone());
             }
@@ -38,15 +38,21 @@ impl JobLedger for FakeLedger {
             result_digest: None,
             last_error: None,
         };
-        jobs.insert(identity.key.as_str().to_owned(), (record.clone(), vec![]));
+        jobs.insert(
+            identity.key.as_str().to_owned(),
+            (record.clone(), spec, vec![]),
+        );
         Ok(record)
     }
     async fn get(&self, job_id: &str) -> Result<JobRecord, JobLedgerError> {
         self.find(job_id).map(|x| x.0)
     }
+    async fn spec(&self, job_id: &str) -> Result<JobSpec, JobLedgerError> {
+        self.find(job_id).map(|x| x.1)
+    }
     async fn claim(&self, job_id: &str, owner: &str) -> Result<JobRecord, JobLedgerError> {
         let mut jobs = self.inner.lock().unwrap();
-        let (r, events) = find_mut(&mut jobs, job_id)?;
+        let (r, _, events) = find_mut(&mut jobs, job_id)?;
         if r.status.is_terminal() || r.status == JobStatus::CancelRequested {
             return Err(JobLedgerError::Cancelled);
         }
@@ -128,7 +134,7 @@ impl JobLedger for FakeLedger {
     }
     async fn cancel(&self, job_id: &str) -> Result<JobRecord, JobLedgerError> {
         let mut jobs = self.inner.lock().unwrap();
-        let (r, events) = find_mut(&mut jobs, job_id)?;
+        let (r, _, events) = find_mut(&mut jobs, job_id)?;
         if r.status.is_terminal() {
             return Ok(r.clone());
         }
@@ -143,17 +149,17 @@ impl JobLedger for FakeLedger {
         Ok(r.clone())
     }
     async fn events(&self, job_id: &str) -> Result<Vec<JobEvent>, JobLedgerError> {
-        Ok(self.find(job_id)?.1)
+        Ok(self.find(job_id)?.2)
     }
 }
 
 impl FakeLedger {
-    fn find(&self, id: &str) -> Result<(JobRecord, Vec<JobEvent>), JobLedgerError> {
+    fn find(&self, id: &str) -> Result<(JobRecord, JobSpec, Vec<JobEvent>), JobLedgerError> {
         self.inner
             .lock()
             .unwrap()
             .values()
-            .find(|(r, _)| r.job_id == id)
+            .find(|(r, _, _)| r.job_id == id)
             .cloned()
             .ok_or(JobLedgerError::NotFound)
     }
@@ -162,7 +168,7 @@ impl FakeLedger {
         F: FnOnce(&mut JobRecord) -> Result<(), JobLedgerError>,
     {
         let mut jobs = self.inner.lock().unwrap();
-        let (r, events) = find_mut(&mut jobs, id)?;
+        let (r, _, events) = find_mut(&mut jobs, id)?;
         let current = r
             .attempt
             .as_ref()
@@ -189,12 +195,12 @@ impl FakeLedger {
     }
 }
 fn find_mut<'a>(
-    jobs: &'a mut HashMap<String, (JobRecord, Vec<JobEvent>)>,
+    jobs: &'a mut HashMap<String, (JobRecord, JobSpec, Vec<JobEvent>)>,
     id: &str,
-) -> Result<(&'a mut JobRecord, &'a mut Vec<JobEvent>), JobLedgerError> {
+) -> Result<(&'a mut JobRecord, &'a mut JobSpec, &'a mut Vec<JobEvent>), JobLedgerError> {
     jobs.values_mut()
-        .find(|(r, _)| r.job_id == id)
-        .map(|(r, e)| (r, e))
+        .find(|(r, _, _)| r.job_id == id)
+        .map(|(r, s, e)| (r, s, e))
         .ok_or(JobLedgerError::NotFound)
 }
 

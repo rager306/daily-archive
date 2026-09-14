@@ -18,6 +18,7 @@ const TENANT: &str = "daily_archive_parse_jobs";
 const LABEL: &str = "ParseJobLedger";
 const STATE_KEY: &str = "state";
 const EVENTS_KEY: &str = "events";
+const SPEC_KEY: &str = "spec";
 const LEASE_TERM_MS: i64 = 30_000;
 
 #[derive(Clone)]
@@ -234,6 +235,10 @@ impl JobLedger for SamyamaJobLedger {
                 serde_json::to_string(&[Self::event(&record, "submit")]).map_err(storage_error)?,
             ),
         );
+        node.set_property(
+            SPEC_KEY,
+            PropertyValue::String(serde_json::to_string(&spec).map_err(storage_error)?),
+        );
         inner
             .persistence
             .persist_create_node(TENANT, &node)
@@ -246,6 +251,28 @@ impl JobLedger for SamyamaJobLedger {
     async fn get(&self, job_id: &str) -> Result<JobRecord, JobLedgerError> {
         let inner = self.locked()?;
         Ok(Self::read_record(&inner, job_id)?.1)
+    }
+
+    async fn spec(&self, job_id: &str) -> Result<JobSpec, JobLedgerError> {
+        let inner = self.locked()?;
+        let node_id = inner
+            .jobs
+            .get(job_id)
+            .copied()
+            .ok_or(JobLedgerError::NotFound)?;
+        let node = inner
+            .persistence
+            .storage()
+            .get_node(TENANT, node_id.as_u64())
+            .map_err(storage_error)?
+            .ok_or(JobLedgerError::NotFound)?;
+        match node.properties.get(SPEC_KEY) {
+            Some(PropertyValue::String(value)) => serde_json::from_str(value)
+                .map_err(|error| JobLedgerError::Storage(error.to_string())),
+            _ => Err(JobLedgerError::Storage(
+                "ledger node has no job spec".into(),
+            )),
+        }
     }
 
     async fn claim(&self, job_id: &str, owner: &str) -> Result<JobRecord, JobLedgerError> {

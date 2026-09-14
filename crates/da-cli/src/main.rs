@@ -17,6 +17,7 @@ mod load_journey;
 mod parse_batch;
 #[allow(dead_code)]
 mod parse_config;
+mod parse_job;
 #[allow(dead_code)]
 mod parse_profile;
 // The lib target exposes this module as public API and its tests exercise the
@@ -462,6 +463,10 @@ enum Commands {
     /// per-document outcomes + atomic versioned report, over the
     /// provider-neutral ParseBackend (R116 composition root).
     ParseBatch(parse_batch::ParseBatchArgs),
+
+    /// Opt-in durable local parse-job lifecycle: submit, run, status, cancel.
+    #[command(subcommand)]
+    ParseJob(parse_job::ParseJobCommand),
 }
 
 fn main() {
@@ -905,6 +910,12 @@ fn main() {
         Commands::ParseBatch(args) => {
             if let Err(e) = rt.block_on(async { parse_batch::run(&args).await }) {
                 eprintln!("❌ parse-batch failed: {e}");
+                std::process::exit(2);
+            }
+        }
+        Commands::ParseJob(command) => {
+            if let Err(e) = rt.block_on(async { parse_job::run(command).await }) {
+                eprintln!("❌ parse-job failed: {e}");
                 std::process::exit(2);
             }
         }

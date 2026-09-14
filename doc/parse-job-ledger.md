@@ -58,6 +58,30 @@ caller reloads it; a second opener is mapped to typed `OwnerBusy` when Samyama
 reports a lock failure. This is operational state only: no import, ingestion,
 promotion, JSONL, redb, SQLite, or scientific graph writes are involved.
 
+## CLI lifecycle (T04)
+
+The opt-in `da parse-job` surface is deliberately separate from unmanaged
+`da parse-batch`:
+
+- `da parse-job submit --manifest <json> [--ledger <dir>]` reads the ordered
+  manifest sources, derives a content digest for each logical document, and
+  durably submits one `JobSpec`. Repeating the same immutable identity is
+  idempotent; changing backend, projector, profile, or ordered content yields
+  the ledger's typed conflict. `--tuning` and source locations remain
+  operational and are excluded from the identity.
+- `da parse-job status --job-id <id>` prints only persisted job/attempt,
+  revision/epoch, cursor, result digest, sanitized error, and ordered events.
+- `da parse-job cancel --job-id <id>` commits `CancelRequested` before any
+  local worker wake-up. It is valid for queued and active jobs and is not a
+  false success when another process owns the RocksDB lock (`OwnerBusy`).
+- `da parse-job run --job-id <id> [--owner <opaque-id>]` claims or reclaims an
+  expired attempt and prints the durable fence. It does not claim terminal
+  success or execute an unmanaged batch behind the caller's back; the
+  supervised application runner remains the authority for managed execution.
+
+The ledger path is operational only and is never the scientific graph,
+`import_eligible`, a queue file, JSONL, SQLite, or a redb authority.
+
 ## Observability and failure visibility
 
 The port exposes typed `OwnerBusy`, `StaleFence`, `Cancelled`, `Terminal`,
