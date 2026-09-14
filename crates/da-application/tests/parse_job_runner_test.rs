@@ -2,9 +2,34 @@ use async_trait::async_trait;
 use da_application::{ParseJobRunner, ParseJobRunnerError};
 use da_domain::ContentDigest;
 use da_domain::parse_job::{AttemptFence, JobEvent, JobLedgerError, JobRecord, JobSpec, JobStatus};
-use da_parse::ParseBatchCancellation;
-use da_ports::JobLedger;
+use da_ports::{
+    BatchCheckpoint, JobLedger, ManagedParseBatchExecutor, ParseBatchCursor, ParseBatchRunSummary,
+    ParseBatchSinkError,
+};
 use std::sync::{Arc, Mutex};
+
+#[derive(Default)]
+struct FakeExecutor {
+    cancelled: std::sync::atomic::AtomicBool,
+}
+
+#[async_trait]
+impl ManagedParseBatchExecutor for FakeExecutor {
+    async fn run_managed(
+        &self,
+        _checkpoint: Arc<dyn BatchCheckpoint>,
+    ) -> Result<ParseBatchRunSummary, ParseBatchSinkError> {
+        Ok(ParseBatchRunSummary {
+            cursor: ParseBatchCursor::new(0),
+            cancelled: self.cancelled.load(std::sync::atomic::Ordering::SeqCst),
+        })
+    }
+
+    fn cancel(&self) {
+        self.cancelled
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+    }
+}
 
 #[derive(Clone)]
 struct FakeLedger {
@@ -120,10 +145,10 @@ impl JobLedger for FakeLedger {
 async fn cancel_commits_ledger_before_waking_managed_workers() {
     let ledger = Arc::new(FakeLedger::new());
     let runner = ParseJobRunner::new(ledger.clone());
-    let cancellation = ParseBatchCancellation::new();
+    let executor = FakeExecutor::default();
 
     let record = runner
-        .cancel("job-test", &cancellation)
+        .cancel("job-test", &executor)
         .await
         .expect("durable cancellation");
 
@@ -132,10 +157,10 @@ async fn cancel_commits_ledger_before_waking_managed_workers() {
         ledger.get("job-test").await.unwrap().status,
         JobStatus::CancelRequested
     );
-    assert!(cancellation.is_cancelled());
+    assert!(executor.cancelled.load(std::sync::atomic::Ordering::SeqCst));
 
     let replay = runner
-        .cancel("job-test", &cancellation)
+        .cancel("job-test", &executor)
         .await
         .expect("terminal/replay cancellation remains observable");
     assert_eq!(replay.status, JobStatus::CancelRequested);

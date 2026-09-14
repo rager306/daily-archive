@@ -610,19 +610,31 @@
           "mode": "command",
           "ref": "cargo test -p da-adapters --test parse_job_ledger_test",
           "expected": "Durable ACK/reopen, reclaim epoch fencing, stale late-worker rejection, monotonic cursor, cancel race, terminal replay, and sanitized failure proof.",
-          "status": "verified"
+          "status": "pass"
         },
         {
           "mode": "governor_rule",
           "ref": "PYTHONPATH=scripts python3 -m governor architecture",
           "expected": "Registry integrity and architecture invariants pass with H06 source-bound evidence.",
-          "status": "verified"
+          "status": "pass"
         }
       ],
       "tested_source": {
         "revision": "workspace:2026-09-14-S05-T05",
         "verified": true,
         "note": "Current workspace evidence is the real Samyama adapter contract test. It proves deterministic reclaim/stale-fence and restart recovery without sleep or retry; it does not claim OS SIGKILL or signal-driven CLI execution."
+      },
+      "completion_evidence": {
+        "mode": "runtime",
+        "ref": "cargo test -p da-adapters --test parse_job_ledger_test",
+        "result": "pass",
+        "artifacts": [
+          "crates/da-adapters/src/parse_job_ledger.rs",
+          "crates/da-adapters/tests/parse_job_ledger_test.rs",
+          "doc/parse-job-ledger.md"
+        ],
+        "observed_at": "2026-09-14",
+        "source_revision": "workspace:2026-09-14-S05-T05"
       },
       "index_freshness": {
         "state": "stale",

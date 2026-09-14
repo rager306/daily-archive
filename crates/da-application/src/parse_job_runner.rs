@@ -1,17 +1,14 @@
 //! Supervised local parse-job execution over the durable [`JobLedger`] port.
 //!
-//! The runner is deliberately an application concern: `da-parse` remains
-//! usable without a ledger, while managed execution binds admission,
-//! heartbeat, cursor publication and terminal completion to one attempt fence.
+//! The runner depends only on application ports. Concrete parsing is supplied
+//! by the composition root through [`ManagedParseBatchExecutor`].
 
 use da_domain::ContentDigest;
 use da_domain::parse_job::{AttemptFence, JobLedgerError, JobRecord, JobStatus};
-use da_parse::{
-    BatchCheckpoint, BatchCursor, ParseArtifactCache, ParseBackend, ParseBatch,
-    ParseBatchCancellation, ParseBatchExecutor, ParseBatchResultSink, ParseBatchRunSummary,
+use da_ports::{
+    BatchCheckpoint, JobLedger, ManagedParseBatchExecutor, ParseBatchCursor, ParseBatchRunSummary,
     ParseBatchSinkError,
 };
-use da_ports::JobLedger;
 use std::sync::Arc;
 use std::time::Duration;
 use thiserror::Error;
@@ -46,11 +43,11 @@ struct FencedCheckpoint {
 
 #[async_trait::async_trait]
 impl BatchCheckpoint for FencedCheckpoint {
-    async fn save(&self, cursor: &BatchCursor) -> Result<(), ParseBatchSinkError> {
+    async fn save(&self, cursor: &ParseBatchCursor) -> Result<(), ParseBatchSinkError> {
         let mut fence = self.fence.lock().await;
         let record = self
             .ledger
-            .checkpoint(&self.job_id, &fence, u64::from(cursor.next_ordinal()))
+            .checkpoint(&self.job_id, &fence, cursor.next_ordinal)
             .await
             .map_err(|error| ParseBatchSinkError(error.to_string()))?;
         let Some(next) = record.attempt else {
@@ -62,12 +59,6 @@ impl BatchCheckpoint for FencedCheckpoint {
 }
 
 /// Durable supervisor for one local parse job.
-///
-/// `run` claims exactly one attempt, executes through the opt-in managed parse
-/// API, periodically heartbeats the same fence, and only then performs one
-/// fenced terminal transition. `cancel` commits the durable cancellation first
-/// and only afterwards wakes/aborts local Rust workers. Thus a late worker can
-/// at most produce reusable cache bytes; it cannot publish a cursor or result.
 #[derive(Clone)]
 pub struct ParseJobRunner {
     ledger: Arc<dyn JobLedger>,
@@ -90,29 +81,22 @@ impl ParseJobRunner {
     pub async fn cancel(
         &self,
         job_id: &str,
-        cancellation: &ParseBatchCancellation,
+        executor: &dyn ManagedParseBatchExecutor,
     ) -> Result<JobRecord, ParseJobRunnerError> {
         // Durable transition is intentionally first: local cancellation is
         // only a wake-up optimization and is never the source of authority.
         let record = self.ledger.cancel(job_id).await?;
-        cancellation.cancel();
+        executor.cancel();
         tracing::info!(job_id = %job_id, status = ?record.status, "parse job cancellation committed");
         Ok(record)
     }
 
-    pub async fn run<B, C>(
+    pub async fn run(
         &self,
         job_id: &str,
         owner: &str,
-        executor: &ParseBatchExecutor<B, C>,
-        batch: ParseBatch,
-        sink: Arc<dyn ParseBatchResultSink>,
-        cancellation: ParseBatchCancellation,
-    ) -> Result<ParseJobRunReport, ParseJobRunnerError>
-    where
-        B: ParseBackend + 'static,
-        C: ParseArtifactCache + 'static,
-    {
+        executor: Arc<dyn ManagedParseBatchExecutor>,
+    ) -> Result<ParseJobRunReport, ParseJobRunnerError> {
         let claimed = self.ledger.claim(job_id, owner).await?;
         let initial_fence = claimed
             .attempt
@@ -127,40 +111,33 @@ impl ParseJobRunner {
         let heartbeat_ledger = self.ledger.clone();
         let heartbeat_job = job_id.to_string();
         let heartbeat_fence = fence.clone();
-        let heartbeat_cancel = cancellation.clone();
+        let heartbeat_executor = executor.clone();
         let interval = self.heartbeat_interval;
         let heartbeat = tokio::spawn(async move {
             let mut ticker = tokio::time::interval(interval);
             ticker.tick().await;
             loop {
                 ticker.tick().await;
-                if heartbeat_cancel.is_cancelled() {
-                    return;
-                }
                 let mut current = heartbeat_fence.lock().await;
                 match heartbeat_ledger.heartbeat(&heartbeat_job, &current).await {
                     Ok(record) => {
                         if let Some(next) = record.attempt {
                             *current = next;
                         } else {
-                            heartbeat_cancel.cancel();
+                            heartbeat_executor.cancel();
                             return;
                         }
                     }
                     Err(error) => {
-                        // Lost fence/expired authority is fail-closed. The
-                        // executor is woken; no terminal write is attempted.
                         tracing::warn!(job_id = %heartbeat_job, error = %error, "parse job heartbeat lost authority");
-                        heartbeat_cancel.cancel();
+                        heartbeat_executor.cancel();
                         return;
                     }
                 }
             }
         });
 
-        let summary = executor
-            .run_managed(batch, sink, checkpoint, cancellation.clone())
-            .await;
+        let summary = executor.run_managed(checkpoint).await?;
         heartbeat.abort();
 
         if summary.cancelled() {
@@ -182,7 +159,7 @@ impl ParseJobRunner {
                 .as_bytes(),
         );
         let record = self.ledger.complete(job_id, &final_fence, digest).await?;
-        tracing::info!(job_id = %job_id, cursor = summary.cursor().next_ordinal(), "parse job terminal success committed");
+        tracing::info!(job_id = %job_id, cursor = summary.cursor().next_ordinal, "parse job terminal success committed");
         Ok(ParseJobRunReport { record, summary })
     }
 }

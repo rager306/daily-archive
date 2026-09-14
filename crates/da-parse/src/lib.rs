@@ -37,6 +37,7 @@ mod ir;
 mod layout;
 mod layout_lattice;
 mod lift;
+mod managed_batch;
 mod native_affiliation;
 mod native_body;
 mod native_callout_matching;
@@ -108,6 +109,7 @@ pub use layout_lattice::{
     LayoutLatticeError, MAX_LATTICE_BLOCKS, MAX_LATTICE_LINES, MAX_LATTICE_PAGES, ReadingOrder,
 };
 pub use lift::TeiLifter;
+pub use managed_batch::ManagedParseBatch;
 pub use native_affiliation::{
     AffiliationComponentKind, AffiliationSpan, NATIVE_AFFILIATION_INPUT_BYTE_CAP,
     NATIVE_AFFILIATION_LINK_SCHEMA_VERSION, NATIVE_AFFILIATION_OUTCOME_SCHEMA_VERSION,

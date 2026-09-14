@@ -22,6 +22,7 @@ pub mod llm_client;
 pub mod multimodal_llm;
 pub mod negative_memory;
 pub mod openalex;
+pub mod parse_batch;
 pub mod parse_job;
 pub mod parse_learning;
 pub mod parser;
@@ -82,6 +83,10 @@ pub use parse_learning::{
     RvfRecord, RvfStoreError, Sha256Digest, SplitIdentity, reject_raw_content,
 };
 
+pub use parse_batch::{
+    BatchCheckpoint, ManagedParseBatchExecutor, ParseBatchCursor, ParseBatchRunSummary,
+    ParseBatchSinkError,
+};
 pub use parse_job::JobLedger;
 
 pub use parser::{

@@ -11,9 +11,9 @@ use da_domain::{
     parse_job::{JobRecord, JobSpec},
 };
 use da_parse::{
-    GrobidHttpBackend, GrobidProfile, ParseBackendRequest, ParseBatch, ParseBatchBudget,
-    ParseBatchCancellation, ParseBatchCollector, ParseBatchExecutor, ParseBatchItem,
-    ordered_input_fingerprint,
+    GrobidHttpBackend, GrobidProfile, ManagedParseBatch, ParseBackendRequest, ParseBatch,
+    ParseBatchBudget, ParseBatchCancellation, ParseBatchCollector, ParseBatchExecutor,
+    ParseBatchItem, ordered_input_fingerprint,
 };
 use da_ports::JobLedger;
 use std::path::PathBuf;
@@ -205,28 +205,22 @@ async fn run_managed(args: ParseJobRunArgs) -> Result<(), String> {
         )));
     let sink = Arc::new(ParseBatchCollector::new());
     let cancellation = ParseBatchCancellation::new();
+    let managed = Arc::new(ManagedParseBatch::new(executor, batch, sink, cancellation));
     let runner = ParseJobRunner::new(ledger.clone());
-    let run = runner.run(
-        &args.id.job_id,
-        &owner,
-        &executor,
-        batch,
-        sink,
-        cancellation.clone(),
-    );
+    let run = runner.run(&args.id.job_id, &owner, managed.clone());
     tokio::pin!(run);
     let report = tokio::select! {
         result = &mut run => result.map_err(|error| error.to_string())?,
         signal = tokio::signal::ctrl_c() => {
             signal.map_err(|error| format!("SIGINT handler failed: {error}"))?;
-            runner.cancel(&args.id.job_id, &cancellation).await.map_err(|error| error.to_string())?;
+            runner.cancel(&args.id.job_id, managed.as_ref()).await.map_err(|error| error.to_string())?;
             return Err("parse job cancelled by SIGINT".into());
         }
     };
     print_record("completed", &report.record);
     println!(
         "parse-job: cursor={} result_digest={}",
-        report.summary.cursor().next_ordinal(),
+        report.summary.cursor().next_ordinal,
         report
             .record
             .result_digest
