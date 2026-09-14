@@ -456,6 +456,42 @@ da-adapters = { workspace = true }
     assert adapter_violations[0].severity == "high"
 
 
+def test_onion_inversion_blocks_trajectory_verdict():
+    """A high-severity reverse-ADR violation must BLOCK the trajectory verdict.
+
+    Regression guard for M506/S05: T03 added `da-application -> da-parse` and it
+    passed a green `governor architecture` because the rule was severity=medium
+    (non-blocking). Raising the ADR-034 rules to `high` only helps if the audit's
+    `has_blocking` actually flips the trajectory verdict, so assert that end to end.
+    """
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+
+    _write(
+        root / "crates" / "da-application" / "Cargo.toml",
+        """[package]
+name = "da-application"
+
+[dependencies]
+da-parse = { workspace = true }
+""",
+    )
+
+    scanner = FilesystemCodeScanner(root)
+    rule_repo = YAMLRuleRepository(checks_dir)
+    report = AuditService(scanner=scanner, rule_repo=rule_repo).run_audit()
+
+    assert report.has_blocking, (
+        "onion inversion (da-application -> da-parse) must be blocking; "
+        "a non-blocking severity would let a real inversion ship"
+    )
+
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = root
+    verdict = service._derive_verdict(report, [], "preflight")
+    assert verdict == TrajectoryVerdict.BLOCKED
+
+
 def test_da_parse_da_ports_not_flagged_as_graph_dep():
     """da-ports on da-parse is allowed; only Samyama/kg-* are banned."""
     root = _make_root()
