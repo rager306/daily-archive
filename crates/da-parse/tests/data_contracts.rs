@@ -8357,3 +8357,121 @@ fn native_body_accounting_contract() {
         );
     }
 }
+
+/// D358: GROBID model assets are not redistributable. Model bytes must never be
+/// bundled into this repository; the native parser reads them at runtime from a
+/// configured local resource root instead.
+///
+/// The only model-format files allowed in-tree are hand-authored synthetic
+/// fixtures under the adapter test fixtures directory: they exist so CI can
+/// decode a frozen model without touching GROBID bytes, and they are provably
+/// not GROBID-derived.
+const SYNTHETIC_MODEL_FIXTURE_DIR: &str = "crates/da-adapters/tests/fixtures";
+
+/// Extensions of the Wapiti CRF model format GROBID ships. `*.wapiti` is the
+/// authoritative GROBID model filename (`models/<family>/model.wapiti`).
+const WAPITI_MODEL_EXTENSION: &str = "wapiti";
+
+/// Generic model/weight container extensions. They are tolerated elsewhere in
+/// the repository (the frozen python-era archive carries `payload.bin` cache
+/// blobs), but the live `data/` asset tree is YAML/JSON only, so any of these
+/// appearing there signals bundled model or weight bytes.
+const DATA_TREE_FORBIDDEN_EXTENSIONS: [&str; 4] = ["bin", "model", "crf", "tpl"];
+
+/// Returns one error per path that violates the D358 bundling ban.
+fn model_byte_bundle_errs(repo_relative_paths: &[String]) -> Vec<String> {
+    let mut errs = Vec::new();
+    for path in repo_relative_paths {
+        let extension = Path::new(path)
+            .extension()
+            .and_then(|value| value.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        let synthetic_fixture = path.starts_with(SYNTHETIC_MODEL_FIXTURE_DIR);
+        if extension == WAPITI_MODEL_EXTENSION && !synthetic_fixture {
+            errs.push(format!(
+                "bundled GROBID model bytes are not redistributable (D358): {path}"
+            ));
+            continue;
+        }
+        if DATA_TREE_FORBIDDEN_EXTENSIONS.contains(&extension.as_str()) && path.starts_with("data/")
+        {
+            errs.push(format!(
+                "model or weight bytes may not live in the data tree (D358): {path}"
+            ));
+        }
+    }
+    errs
+}
+
+/// Recursively collects repo-relative file paths below `dir`, skipping build and
+/// VCS directories. Kept dependency-free on purpose: this test must run wherever
+/// `cargo test` runs.
+fn collect_files(root: &Path, relative: &str, out: &mut Vec<String>) {
+    let dir = root.join(relative);
+    let Ok(entries) = std::fs::read_dir(&dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name == "target" || name == ".git" || name == "__pycache__" {
+            continue;
+        }
+        let child = format!("{relative}/{name}");
+        if entry.path().is_dir() {
+            collect_files(root, &child, out);
+        } else {
+            out.push(child);
+        }
+    }
+}
+
+#[test]
+fn d358_model_bytes_are_never_bundled_into_the_live_tree() {
+    let root = repo_root();
+    let mut files = Vec::new();
+    for live in ["data", "crates", "doc", "scripts"] {
+        collect_files(&root, live, &mut files);
+    }
+    assert!(
+        files.len() > 100,
+        "live tree walk must actually see files, saw {}",
+        files.len()
+    );
+
+    let errs = model_byte_bundle_errs(&files);
+    assert!(
+        errs.is_empty(),
+        "D358 bundling ban violated:\n{}",
+        errs.join("\n")
+    );
+}
+
+#[test]
+fn d358_bundling_ban_predicate_discriminates_synthetic_fixtures() {
+    let allowed = vec![
+        "crates/da-adapters/tests/fixtures/synthetic_model.wapiti".to_string(),
+        "crates/da-adapters/tests/fixtures/provider_pdfalto_page.json".to_string(),
+        "crates/da-domain/src/scalar_crf.rs".to_string(),
+        "data/parse/grobid_model_rights.yaml".to_string(),
+        "archive/artifacts-legacy/catalog_sweep/pipeline_cache/parse/payload.bin".to_string(),
+    ];
+    assert!(
+        model_byte_bundle_errs(&allowed).is_empty(),
+        "synthetic fixtures and archived cache blobs must not be flagged"
+    );
+
+    let rejected = vec![
+        "data/parse/models/header/model.wapiti".to_string(),
+        "crates/da-adapters/src/grobid_home/lexicon/lexicon.wapiti".to_string(),
+        "doc/models/model.wapiti".to_string(),
+        "data/parse/weights.crf".to_string(),
+        "data/parse/model.bin".to_string(),
+    ];
+    let errs = model_byte_bundle_errs(&rejected);
+    assert_eq!(
+        errs.len(),
+        rejected.len(),
+        "every bundled-model path must be rejected, got {errs:?}"
+    );
+}
