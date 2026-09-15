@@ -78,13 +78,30 @@ const SEGMENTATION: FamilyCatalog = FamilyCatalog {
 
 const HEADER: FamilyCatalog = FamilyCatalog {
     candidate_id: "da-parse.native_header_reference_composition@1.0.0:header",
-    allowed_files: &["crates/da-parse/src/native_composition.rs"],
+    allowed_files: &[
+        "crates/da-parse/src/native_composition.rs",
+        "crates/da-parse/src/native_header_features.rs",
+        "crates/da-parse/src/native_header_sequence.rs",
+        "crates/da-parse/src/native_header_fields.rs",
+        "data/parse/comparison_contract.yaml",
+        "data/parse/native_fulltext_composition.yaml",
+    ],
     oracle_location: "data/parse/comparison_contract.yaml:native_header_reference_composition_shadow",
-    java_source_refs: &["processHeaderDocument"],
+    java_source_refs: &[
+        "processHeaderDocument",
+        "FeaturesVectorHeader.printVector",
+        "HeaderParser.getSectionHeaderFeatured",
+    ],
     candidate_symbols: &[
         "compose_header",
         "run_header_sequence",
         "HeaderCompositionOutcome",
+        "render_header_features",
+        "render_header_feature_text",
+        "decode_header_sequence",
+        "project_native_header_fields",
+        "compose_header_with_fields",
+        "run_header_sequence_with_fields",
     ],
     forbidden_oracle_imports: &[
         "TeiLifter",
@@ -99,9 +116,17 @@ const HEADER: FamilyCatalog = FamilyCatalog {
         "silent_skip_missing_tei_fixture",
         "header_bibliography_scope_collapse",
     ],
-    property_cases: &["header_identity_preserved"],
+    property_cases: &[
+        "header_identity_preserved",
+        "header_row_arity_is_29",
+        "header_label_runs_use_base_name_equality",
+    ],
     metamorphic_cases: &["header_reordering", "identity_mutation"],
-    verification_commands: &["cargo test -p da-parse --test composition_data_contract"],
+    verification_commands: &[
+        "cargo test -p da-parse --test native_composition_contract",
+        "cargo test -p da-parse --lib native_header_sequence",
+        "cargo test -p da-parse --test native_header_same_n",
+    ],
 };
 
 const BIBLIOGRAPHY: FamilyCatalog = FamilyCatalog {

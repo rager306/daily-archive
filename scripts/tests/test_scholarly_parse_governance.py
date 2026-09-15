@@ -27,6 +27,7 @@ from governor.adapters.checks.scholarly_parse_plane import (
     _body_accounting_quarantine_tokens_present,
     _feature_tagger_training_quarantine_spec,
     _feature_tagger_training_quarantine_tokens_present,
+    _header_sequence_quarantine_spec,
     _scan_bare_from_env_parse,
     _visual_heads_quarantine_spec,
 )
@@ -1322,7 +1323,15 @@ def test_checker_keeps_existing_empty_surface_ledger_surface(tmp_path: Path):
 
 # ───── S06/T01: header atoms stay shadow, out of parse-pdf source_cli and ParserPort ─────
 
-HEADER_QUARANTINE_TOKENS = ["compose_header", "run_header_sequence", "NativeDateParser"]
+HEADER_QUARANTINE_TOKENS = [
+    "compose_header",
+    "run_header_sequence",
+    "NativeDateParser",
+    "decode_header_sequence",
+    "render_header_features",
+    "render_header_feature_text",
+    "project_native_header_fields",
+]
 HEADER_QUARANTINE_BOUNDARIES = [
     "crates/da-cli/src/source_cli.rs",
     "crates/da-ports/src/parser.rs",
@@ -1331,6 +1340,10 @@ HEADER_QUARANTINE_PAYLOADS = {
     "compose_header": "let _h = compose_header(input);\n",
     "run_header_sequence": "let _h = run_header_sequence(input);\n",
     "NativeDateParser": "let _p = NativeDateParser::new();\n",
+    "decode_header_sequence": "let _d = decode_header_sequence(rows);\n",
+    "render_header_features": "let _r = render_header_features(tokens);\n",
+    "render_header_feature_text": "let _t = render_header_feature_text(tokens);\n",
+    "project_native_header_fields": "let _f = project_native_header_fields(rows, spans);\n",
 }
 
 def _header_quarantine_flags(flags):
@@ -1376,6 +1389,30 @@ def test_checker_header_quarantine_ignores_decompose_and_prose_comments(tmp_path
 
 def test_checker_clean_boundaries_have_no_header_quarantine_flags():
     assert _header_quarantine_flags(_check_scholarly_parse_plane(ROOT)) == []
+
+
+def test_header_sequence_quarantine_is_data_driven_and_comment_safe():
+    defaults = _load(ROOT / "data/parse/grobid_compatibility.yaml")["defaults"]
+    tokens, boundaries = _header_sequence_quarantine_spec(defaults)
+    assert tokens == [
+        "compose_header",
+        "run_header_sequence",
+        "NativeDateParser",
+        "decode_header_sequence",
+        "render_header_features",
+        "render_header_feature_text",
+        "project_native_header_fields",
+    ]
+    assert boundaries == [
+        "crates/da-cli/src/source_cli.rs",
+        "crates/da-ports/src/parser.rs",
+    ]
+    # Missing or malformed DATA never invents a forbidden set or boundaries:
+    # the existing SHA/evidence_missing signals own the missing-ledger surface.
+    assert _header_sequence_quarantine_spec(None) == ([], [])
+    assert _header_sequence_quarantine_spec({}) == ([], [])
+    assert _header_sequence_quarantine_spec({"header_sequence_quarantine": {}}) == ([], [])
+    assert _header_sequence_quarantine_spec({"header_sequence_quarantine": {"tokens": [1]}}) == ([] , [])
 
 def test_checker_header_quarantine_skips_missing_boundaries(tmp_path: Path):
     _copy_checker_surface(tmp_path)

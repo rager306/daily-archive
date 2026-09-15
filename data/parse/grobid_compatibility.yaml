@@ -167,6 +167,58 @@ defaults:
     dispositions: [port_structural_subset, replace_runtime_abstraction, defer_insufficient_evidence]
     training_and_model_runtime: forbidden
     same_n_required: true
+  # S03/T07: the full native header lane (29-column feature ABI -> sequence
+  # decode -> field projection) stays a shadow candidate. This section — not
+  # capabilities[].state — is the sole source of the forbidden token set and
+  # the production boundaries, so a mutation of state cannot remove a token or
+  # boundary from the checked set. Snake_case tokens are matched as call-sites
+  # (whitespace allowed before `(`); CamelCase tokens are matched as type names
+  # (word boundary). Full-line and trailing `//` comments are stripped; prose
+  # and prefix-substrings never count.
+  header_sequence_quarantine:
+    tokens:
+    - compose_header
+    - run_header_sequence
+    - NativeDateParser
+    - decode_header_sequence
+    - render_header_features
+    - render_header_feature_text
+    - project_native_header_fields
+    boundaries:
+    - crates/da-cli/src/source_cli.rs
+    - crates/da-ports/src/parser.rs
+    production_authority: java_http
+    observe_mode: shadow_receipt
+    production_route: forbidden
+    graph_write: forbidden
+    import_eligible: false
+    auto_promote: forbidden
+    deployed: false
+    decision_point: 6
+    independently_selectable: [header, references]
+    # Additive registration of the new native surfaces. The 29-column ABI is
+    # proven against the model's own column references; the seam re-export lives
+    # in da-ports because da-parse may not name da-domain directly.
+    native_surfaces:
+    - path: crates/da-parse/src/native_header_features.rs
+      schema_version: da-parse.native-header-features/v1
+      abi_columns: 29
+    - path: crates/da-parse/src/native_header_sequence.rs
+      schema_version: da-parse.native-header-sequence/v1
+      declared_labels: 44
+      max_rows: 32768
+    - path: crates/da-parse/src/native_header_fields.rs
+      schema_version: da-parse.native-header-fields/v1
+    seam_reexport: crates/da-ports/src/scalar_crf.rs
+    independent_oracle: crates/da-parse/tests/native_header_same_n.rs
+    real_model_harness: crates/da-adapters/tests/native_header_real_model.rs
+    proof_level: contract
+    offline_limits:
+    - no_preserved_alto_for_the_three_fixtures_so_pdf_to_header_e2e_is_unproven
+    - same_n_frame_is_tei_to_atoms_not_pdf_to_atoms
+    - hub_native_accepted_20_vs_java_header_raw_21_is_a_named_gap_never_pooled
+    - real_model_label_sequences_are_structural_invariants_not_recorded_goldens
+    - lexicon_bundle_is_injected_and_grobid_model_and_lexicon_bytes_are_never_redistributed
   # Closed P0-P9 cascade skeleton (ADR-076). production_authority is never native.
   # fsm_consult must be parse_pdf_consults or none. later names stay later.
   # P5 production_stamp records only Java ParsedArticle body observations.
@@ -1341,7 +1393,19 @@ capabilities:
     implementation:
       crate: da-parse
       surface: crates/da-parse/src/native_composition.rs
-      notes: Native compose_header is W2 shadow. Java processHeaderDocument remains production_route. TeiLifter still lifts Java header; this surface is not ingest.
+      # S03/T07 additive registration of the native header lane: the 29-column
+      # feature ABI, the sequence decoder and the field projection. The compose
+      # surface stays native_composition.rs; these modules are the header atoms
+      # the header_sequence_quarantine keeps out of production boundaries.
+      native_shadow_surfaces:
+      - crates/da-parse/src/native_header_features.rs
+      - crates/da-parse/src/native_header_sequence.rs
+      - crates/da-parse/src/native_header_fields.rs
+      schema_versions:
+        features: da-parse.native-header-features/v1
+        sequence: da-parse.native-header-sequence/v1
+        fields: da-parse.native-header-fields/v1
+      notes: Native compose_header is W2 shadow. Java processHeaderDocument remains production_route. TeiLifter still lifts Java header; this surface is not ingest. S03 adds a native 29-column header feature ABI, a Wapiti sequence decoder (writeField base-name grouping) and a title/email/ids projection, all shadow-only and offline-proven at contract level.
     baseline: java-grobid-http@0.9.0-crf
     candidate: da-parse.native_header_reference_composition@1.0.0:header
     evidence_ref: crates/da-parse/src/native_composition.rs

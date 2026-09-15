@@ -522,11 +522,36 @@ def _find_java_absent_capability(caps: list[dict[str, Any]], by_id: dict[str, di
     return None
 
 
-_HEADER_QUARANTINE_TOKENS = ("compose_header", "run_header_sequence", "NativeDateParser")
-_HEADER_QUARANTINE_BOUNDARIES = (
-    "crates/da-cli/src/source_cli.rs",
-    "crates/da-ports/src/parser.rs",
-)
+def _header_sequence_quarantine_spec(defaults: Any) -> tuple[list[str], list[str]]:
+    """Derive the native header quarantine (tokens, boundaries) from ledger DATA.
+
+    Returns only non-empty strings from ``header_sequence_quarantine.tokens``
+    and ``header_sequence_quarantine.boundaries``. Missing or malformed DATA
+    yields ``([], [])`` with no hardcoded fallback: the forbidden set and the
+    boundary set must never be invented by the checker. The existing
+    SHA/evidence_missing/load signals own the missing-ledger surface; this
+    helper stays silent there.
+    """
+    if not isinstance(defaults, dict):
+        return [], []
+    raw = defaults.get("header_sequence_quarantine")
+    if not isinstance(raw, dict):
+        return [], []
+    tokens: list[str] = []
+    for item in raw.get("tokens") if isinstance(raw.get("tokens"), list) else []:
+        if not isinstance(item, str):
+            continue
+        token = item.strip()
+        if token:
+            tokens.append(token)
+    boundaries: list[str] = []
+    for item in raw.get("boundaries") if isinstance(raw.get("boundaries"), list) else []:
+        if not isinstance(item, str):
+            continue
+        boundary = item.strip()
+        if boundary:
+            boundaries.append(boundary)
+    return tokens, boundaries
 
 
 def _strip_header_quarantine_comments(text: str) -> str:
@@ -541,21 +566,28 @@ def _strip_header_quarantine_comments(text: str) -> str:
     return "\n".join(kept)
 
 
-def _header_quarantine_tokens_present(code: str) -> list[str]:
+def _header_quarantine_tokens_present(code: str, tokens: list[str]) -> list[str]:
     hits: list[str] = []
-    for token in _HEADER_QUARANTINE_TOKENS:
-        if token == "NativeDateParser":
+    for token in tokens:
+        if "_" in token:
+            # snake_case: exact code-position call-site, whitespace allowed before `(`.
+            if re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}\s*\(", code):
+                hits.append(token)
+        else:
+            # CamelCase type name: word boundary, no call paren required.
             if re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}(?![A-Za-z0-9_])", code):
                 hits.append(token)
-        elif re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}\s*\(", code):
-            hits.append(token)
     return hits
 
 
 def _check_header_quarantine(root: Path, registry: dict[str, Any], registry_path: Path, flag: Any) -> None:
     if not isinstance(registry, dict) or not registry or not registry_path.is_file():
         return
-    for relative in _HEADER_QUARANTINE_BOUNDARIES:
+    defaults = registry.get("defaults") if isinstance(registry, dict) else None
+    tokens, boundaries = _header_sequence_quarantine_spec(defaults)
+    if not tokens or not boundaries:
+        return
+    for relative in boundaries:
         path = root / relative
         if not path.is_file():
             continue
@@ -565,7 +597,7 @@ def _check_header_quarantine(root: Path, registry: dict[str, Any], registry_path
             flag("policy_stamp", "integration", f"{relative}#header_quarantine", "readable boundary", str(error))
             continue
         code = _strip_header_quarantine_comments(text)
-        for token in _header_quarantine_tokens_present(code):
+        for token in _header_quarantine_tokens_present(code, tokens):
             flag(
                 "policy_stamp",
                 "integration",

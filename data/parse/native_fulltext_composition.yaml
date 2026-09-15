@@ -38,6 +38,16 @@ source_evidence:
     header_raw_total: 36
     header_accepted_total: 35
     header_rejected_or_incomplete: 1
+    # S03/T07: native header field denominators (T05 test-local constants).
+    # These extend the header lane's field coverage; they are not a pool with
+    # the accepted author denominator and never replace it.
+    header_title_stmt_total: 3
+    header_title_elements_total: 6
+    header_emails_total: 3
+    header_idno_elements_total: 6
+    header_pubnum_elements_total: 3
+    header_checksum_idno_elements_total: 3
+    header_date_elements_total: 6
     citation_names_total: 2198
     affiliation_recognition_total: 13
     affiliation_linking_total: 13
@@ -60,7 +70,30 @@ source_evidence:
   s16_shared_intersection: {documents: 3, lanes: 3, visual_receipts: 27, source: immutable_s16_manifest}
   s17_lineage: {source: immutable_s17_candidate_lineage, output_affecting: false, live_ruvllm_receipt: not_observed}
 component_receipts:
-  header: {producer: S12, disposition: passed, evidence_state: passing, schema_version: native-composition.outcome/v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
+  header:
+    producer: S12
+    disposition: passed
+    evidence_state: passing
+    schema_version: native-composition.outcome/v1
+    source_hash: required_sha256
+    artifact_sha256: optional_sha256_when_present
+    fallback_target: java-grobid-http@0.9.0-crf
+    # S03/T07: the native header lane beneath this receipt (29-column feature
+    # ABI -> sequence decode -> title/email/ids projection). Shadow-only;
+    # proof level is contract and the offline limits are named, not hidden.
+    native_header_sequence:
+      features_schema_version: da-parse.native-header-features/v1
+      sequence_schema_version: da-parse.native-header-sequence/v1
+      fields_schema_version: da-parse.native-header-fields/v1
+      abi_columns: 29
+      declared_labels: 44
+      proof_level: contract
+      hub_gap: {java_header_raw: 21, native_accepted_header: 20, pooling: forbidden}
+      offline_limits:
+      - no_preserved_alto_for_the_three_fixtures_so_pdf_to_header_e2e_is_unproven
+      - same_n_frame_is_tei_to_atoms_not_pdf_to_atoms
+      - real_model_label_sequences_are_structural_invariants_not_recorded_goldens
+      - lexicon_bundle_is_injected_and_grobid_model_and_lexicon_bytes_are_never_redistributed
   references: {producer: S12, disposition: passed, evidence_state: passing, schema_version: native-composition.outcome/v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
   document_segmentation: {producer: S15, disposition: fallback, evidence_state: invalid_evidence, schema_version: native-segmentation.v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
   figure: {producer: S16, disposition: fallback, evidence_state: unsupported, schema_version: native-visual-heads.v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}

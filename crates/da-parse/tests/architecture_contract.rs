@@ -2747,12 +2747,16 @@ fn native_visual_quarantine_scanner_fails_visible_on_synthetic_violations() {
 
 // ───── S06/T02: header atoms stay shadow — never in parse-pdf source_cli or ParserPort ─────
 //
-// Mirrors the Governor header quarantine (T01) as an independent compile/test
-// contract: the exact tokens `compose_header`, `run_header_sequence` and
-// `NativeDateParser` must not appear in code positions of the two production
-// boundaries. `//` comments (full-line and trailing) are stripped before the
-// scan; `decompose` never matches because the call-site `(` is required for
-// the snake_case atoms while NativeDateParser needs word boundaries.
+// Mirrors the Governor header quarantine (S03/T07 made it DATA-bound from
+// `data/parse/grobid_compatibility.yaml#defaults.header_sequence_quarantine`)
+// as an independent compile/test contract: the exact tokens `compose_header`,
+// `run_header_sequence`, `NativeDateParser`, `decode_header_sequence`,
+// `render_header_features`, `render_header_feature_text` and
+// `project_native_header_fields` must not appear in code positions of the two
+// production boundaries. `//` comments (full-line and trailing) are stripped
+// before the scan; `decompose` never matches because the call-site `(` is
+// required for the snake_case atoms while NativeDateParser needs word
+// boundaries.
 
 /// Production boundaries that must stay free of header atoms.
 const HEADER_QUARANTINE_BOUNDARIES: [&str; 2] = [
@@ -2772,7 +2776,14 @@ fn header_quarantine_hits(text: &str) -> Vec<String> {
             Some(cut) => &raw[..cut],
             None => raw,
         };
-        for token in ["compose_header", "run_header_sequence"] {
+        for token in [
+            "compose_header",
+            "run_header_sequence",
+            "decode_header_sequence",
+            "render_header_features",
+            "render_header_feature_text",
+            "project_native_header_fields",
+        ] {
             let bytes = code.as_bytes();
             let needle = token.as_bytes();
             let mut i = 0;
@@ -2837,14 +2848,24 @@ fn header_quarantine_hits(text: &str) -> Vec<String> {
 
 #[test]
 fn header_quarantine_scanner_fails_visible_on_synthetic_atoms() {
-    let synthetic = "fn run() {\n    compose_header(input);\n    run_header_sequence(seq);\n    let _ = NativeDateParser;\n}\n";
+    let synthetic = "fn run() {\n    compose_header(input);\n    run_header_sequence(seq);\n    decode_header_sequence(rows);\n    render_header_features(tokens);\n    render_header_feature_text(tokens);\n    project_native_header_fields(rows, spans);\n    let _ = NativeDateParser;\n}\n";
     let hits = header_quarantine_hits(synthetic);
-    assert_eq!(hits.len(), 3, "each header atom must flag: {hits:?}");
+    assert_eq!(hits.len(), 7, "each header atom must flag: {hits:?}");
     assert!(hits.iter().any(|h| h.contains("compose_header")));
     assert!(hits.iter().any(|h| h.contains("run_header_sequence")));
+    assert!(hits.iter().any(|h| h.contains("decode_header_sequence")));
+    assert!(hits.iter().any(|h| h.contains("render_header_features")));
+    assert!(
+        hits.iter()
+            .any(|h| h.contains("render_header_feature_text"))
+    );
+    assert!(
+        hits.iter()
+            .any(|h| h.contains("project_native_header_fields"))
+    );
     assert!(hits.iter().any(|h| h.contains("NativeDateParser")));
     // Comments are prose, not splice; `decompose` is a different word.
-    let prose = "// compose_header run_header_sequence NativeDateParser are prose\nlet x = decompose(y); // compose_header(input);\n";
+    let prose = "// compose_header run_header_sequence NativeDateParser decode_header_sequence are prose\nlet x = decompose(y); // compose_header(input);\n";
     assert!(
         header_quarantine_hits(prose).is_empty(),
         "prose comments and `decompose` must not flag"
