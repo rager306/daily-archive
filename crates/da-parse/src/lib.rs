@@ -49,6 +49,7 @@ mod native_feature_tagger;
 mod native_fulltext_blocks;
 mod native_fulltext_composition;
 mod native_header_features;
+mod native_header_fields;
 mod native_header_sequence;
 mod native_personal_name;
 mod native_segmentation;
@@ -154,8 +155,8 @@ pub use native_composition::{
     NATIVE_COMPOSITION_MAX_AUTHORS, NATIVE_COMPOSITION_MAX_FIELDS,
     NATIVE_COMPOSITION_MAX_REFERENCES, NATIVE_COMPOSITION_SCHEMA_VERSION, ReferenceCandidate,
     ReferenceCompositionCandidate, ReferenceCompositionInput, ReferenceCompositionOutcome,
-    ReferenceSequenceInput, compose_header, compose_references, run_header_sequence,
-    run_reference_sequence,
+    ReferenceSequenceInput, compose_header, compose_header_with_fields, compose_references,
+    run_header_sequence, run_header_sequence_with_fields, run_reference_sequence,
 };
 pub use native_consolidation_specialized::{
     DigestOnlyEnrichmentReceipt, MAX_SPECIALIZED_DIGESTS,
@@ -193,6 +194,11 @@ pub use native_header_features::{
     BlockStatus, HeaderAlignment, HeaderFeatureRow, HeaderFeatureToken, HeaderFontStatistics,
     LineStatus, NATIVE_HEADER_FEATURE_COLUMNS, NATIVE_HEADER_FEATURE_SCHEMA_VERSION,
     NativeHeaderFeatureError, render_header_feature_text, render_header_features,
+};
+pub use native_header_fields::{
+    MAX_NATIVE_HEADER_FIELD_CHARS, MAX_NATIVE_HEADER_FIELD_VALUES,
+    MAX_NATIVE_HEADER_PROJECTION_ROWS, NATIVE_HEADER_FIELDS_SCHEMA_VERSION, NativeHeaderFields,
+    NativeHeaderFieldsError, project_native_header_fields,
 };
 pub use native_header_sequence::{
     HeaderFieldSpan, MAX_NATIVE_HEADER_SEQUENCE_ROWS, NATIVE_HEADER_LABELS,

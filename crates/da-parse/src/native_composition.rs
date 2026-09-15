@@ -53,6 +53,11 @@ pub struct HeaderCompositionInput {
 pub struct HeaderCandidate {
     pub date: RecognizedDate,
     pub authors: Vec<HeaderAuthor>,
+    /// Projected native CRF fields; legacy composition keeps this empty.
+    /// `serde(default)` keeps candidates serialized before this field existed
+    /// readable instead of failing on a missing key.
+    #[serde(default)]
+    pub fields: crate::NativeHeaderFields,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HeaderAuthor {
@@ -258,6 +263,44 @@ pub fn run_header_sequence(input: HeaderSequenceInput<'_>) -> HeaderCompositionO
     })
 }
 
+/// Compose the legacy header and attach already-projected native CRF fields.
+///
+/// This additive entry point preserves `compose_header` and
+/// `run_header_sequence` for existing callers while allowing the native header
+/// decoder to carry title, email, and `<pubnum>`-mapped ids into composition.
+pub fn compose_header_with_fields(
+    input: HeaderCompositionInput,
+    fields: crate::NativeHeaderFields,
+) -> HeaderCompositionOutcome {
+    match compose_header(input) {
+        HeaderCompositionOutcome::Accepted { mut composition } => {
+            composition.candidate.fields = fields;
+            HeaderCompositionOutcome::Accepted { composition }
+        }
+        rejected => rejected,
+    }
+}
+
+/// Sequence entry point that attaches already-projected native CRF fields.
+///
+/// `run_header_sequence` keeps its exact signature and behaviour for existing
+/// callers; this variant adds the same fields attach as
+/// [`compose_header_with_fields`] on the date → names → affiliations path. A
+/// rejected sequence stays rejected and carries no fields at all — attaching
+/// them to a rejection would be invention.
+pub fn run_header_sequence_with_fields(
+    input: HeaderSequenceInput<'_>,
+    fields: crate::NativeHeaderFields,
+) -> HeaderCompositionOutcome {
+    match run_header_sequence(input) {
+        HeaderCompositionOutcome::Accepted { mut composition } => {
+            composition.candidate.fields = fields;
+            HeaderCompositionOutcome::Accepted { composition }
+        }
+        rejected => rejected,
+    }
+}
+
 pub fn compose_header(input: HeaderCompositionInput) -> HeaderCompositionOutcome {
     if input.authors.len() > NATIVE_COMPOSITION_MAX_AUTHORS
         || input.affiliation_components.len() > NATIVE_COMPOSITION_MAX_AFFILIATIONS
@@ -394,7 +437,11 @@ pub fn compose_header(input: HeaderCompositionInput) -> HeaderCompositionOutcome
     }
     HeaderCompositionOutcome::Accepted {
         composition: HeaderCompositionCandidate {
-            candidate: HeaderCandidate { date, authors },
+            candidate: HeaderCandidate {
+                date,
+                authors,
+                fields: crate::NativeHeaderFields::default(),
+            },
             receipts: vec![
                 receipt(CompositionComponent::Date, ComponentDisposition::Accepted),
                 receipt(CompositionComponent::Names, ComponentDisposition::Accepted),

@@ -1,11 +1,12 @@
 use da_parse::{
     AffiliationSpan, CompositionComponent, CompositionError, CompositionSpan, HeaderAuthorInput,
-    HeaderCompositionInput, HeaderSequenceInput, NativeAffiliationAuthorEvidence,
-    NativeAffiliationLinkOutcome, NativeAffiliationParser, NativeCitationAnchorOutcome,
-    NativeCitationAnchorScanner, NativeCitationParser, NativeDateOutcome, NativeDateParser,
-    NativePersonalNameParser, NativeReference, NativeReferenceListOutcome,
-    ReferenceCompositionInput, ReferenceSequenceInput, compose_header, compose_references,
-    run_header_sequence, run_reference_sequence,
+    HeaderCompositionInput, HeaderFeatureRow, HeaderFieldSpan, HeaderSequenceInput,
+    NativeAffiliationAuthorEvidence, NativeAffiliationLinkOutcome, NativeAffiliationParser,
+    NativeCitationAnchorOutcome, NativeCitationAnchorScanner, NativeCitationParser,
+    NativeDateOutcome, NativeDateParser, NativeHeaderFields, NativePersonalNameParser,
+    NativeReference, NativeReferenceListOutcome, ReferenceCompositionInput, ReferenceSequenceInput,
+    compose_header, compose_header_with_fields, compose_references, project_native_header_fields,
+    run_header_sequence, run_header_sequence_with_fields, run_reference_sequence,
 };
 
 fn header() -> HeaderCompositionInput {
@@ -313,4 +314,139 @@ fn serde_replay_is_deterministic_and_does_not_redact_typed_receipts() {
     assert!(wire.contains("accepted"));
     assert!(wire.contains("\"given_name\":\"J\""));
     assert!(wire.contains("\"surname\":\"Smith\""));
+}
+
+// ───── S03/T04: decoded header fields ride the composition without invention ─────
+
+/// Independent fixture: rows and spans are hand-written here, never produced
+/// by the header renderer or decoder under test.
+fn projected_fields() -> NativeHeaderFields {
+    let rows = vec![
+        HeaderFeatureRow {
+            columns: vec!["Attention".into()],
+        },
+        HeaderFeatureRow {
+            columns: vec!["Is".into()],
+        },
+        HeaderFeatureRow {
+            columns: vec!["ashish@example.test".into()],
+        },
+        HeaderFeatureRow {
+            columns: vec!["arXiv:1706.03762".into()],
+        },
+    ];
+    let spans = [
+        HeaderFieldSpan {
+            label: "<title>".into(),
+            start: 0,
+            end: 2,
+        },
+        HeaderFieldSpan {
+            label: "<email>".into(),
+            start: 2,
+            end: 3,
+        },
+        HeaderFieldSpan {
+            label: "<pubnum>".into(),
+            start: 3,
+            end: 4,
+        },
+    ];
+    project_native_header_fields(&rows, &spans).unwrap()
+}
+
+#[test]
+fn legacy_header_composition_keeps_fields_empty() {
+    let da_parse::HeaderCompositionOutcome::Accepted { composition } = compose_header(header())
+    else {
+        panic!("expected accepted")
+    };
+    assert_eq!(composition.candidate.fields, NativeHeaderFields::default());
+    assert!(composition.candidate.fields.title.is_empty());
+}
+
+#[test]
+fn projected_fields_attach_to_accepted_header_on_both_entry_points() {
+    let fields = projected_fields();
+    assert_eq!(fields.title, vec!["Attention Is"]);
+    assert_eq!(fields.email, vec!["ashish@example.test"]);
+    assert_eq!(fields.ids, vec!["arXiv:1706.03762"]);
+
+    let da_parse::HeaderCompositionOutcome::Accepted { composition } =
+        compose_header_with_fields(header(), fields.clone())
+    else {
+        panic!("expected accepted")
+    };
+    assert_eq!(composition.candidate.fields, fields);
+    assert_eq!(composition.receipts.len(), 3);
+
+    let da_parse::HeaderCompositionOutcome::Accepted { composition } =
+        run_header_sequence_with_fields(
+            HeaderSequenceInput {
+                date_text: "2024-02-29",
+                name_texts: vec!["J. Smith"],
+                affiliation_texts: vec!["University of Example"],
+            },
+            fields.clone(),
+        )
+    else {
+        panic!("expected accepted sequence")
+    };
+    assert_eq!(composition.candidate.fields, fields);
+    assert_eq!(
+        composition
+            .receipts
+            .iter()
+            .map(|r| r.component)
+            .collect::<Vec<_>>(),
+        vec![
+            CompositionComponent::Date,
+            CompositionComponent::Names,
+            CompositionComponent::Affiliations,
+        ]
+    );
+    let wire = serde_json::to_string(&composition.candidate.fields).unwrap();
+    assert!(wire.contains("Attention Is"));
+    assert!(wire.contains("arXiv:1706.03762"));
+}
+
+#[test]
+fn rejected_header_never_carries_projected_fields() {
+    let fields = projected_fields();
+
+    let mut broken = header();
+    broken.authors[0].name = da_parse::NativePersonalNameOutcome::Empty;
+    let rejected = compose_header_with_fields(broken, fields.clone());
+    assert!(matches!(
+        rejected,
+        da_parse::HeaderCompositionOutcome::Rejected {
+            error: CompositionError::EmptyComponent {
+                component: CompositionComponent::Names
+            }
+        }
+    ));
+
+    let rejected = run_header_sequence_with_fields(
+        HeaderSequenceInput {
+            date_text: "   ",
+            name_texts: vec!["J. Smith"],
+            affiliation_texts: vec![],
+        },
+        fields,
+    );
+    assert!(matches!(
+        rejected,
+        da_parse::HeaderCompositionOutcome::Rejected {
+            error: CompositionError::EmptyComponent {
+                component: CompositionComponent::Date
+            }
+        }
+    ));
+    let wire = serde_json::to_string(&rejected).unwrap();
+    for leaked in ["Attention Is", "ashish@example.test", "arXiv:1706.03762"] {
+        assert!(
+            !wire.contains(leaked),
+            "a rejected header must not carry the projected field {leaked:?}"
+        );
+    }
 }
