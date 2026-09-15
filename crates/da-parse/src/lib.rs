@@ -41,6 +41,7 @@ mod managed_batch;
 mod native_affiliation;
 mod native_bibliography_features;
 mod native_bibliography_gazetteer;
+mod native_bibliography_sequence;
 mod native_body;
 mod native_callout_matching;
 mod native_citation;
@@ -141,6 +142,14 @@ pub use native_bibliography_gazetteer::{
     GAZETTEER_MAX_PHRASE_TOKENS, GAZETTEER_MAX_SPANS, GAZETTEER_MAX_TEXT_BYTES,
     GAZETTEER_MAX_TOKENS, GazetteerSpan, NATIVE_BIBLIOGRAPHY_GAZETTEER_SCHEMA_VERSION,
     gazetteer_spans, is_isbn_shape, is_issn_shape, span_covers,
+};
+pub use native_bibliography_sequence::{
+    BibliographyLabelSequence, BibliographySequenceFamily, CITATION_ROLE_BASE_LABELS,
+    CitationClusterSequence, CitationRole, CitationRoleSpan, MAX_NATIVE_BIBLIOGRAPHY_SEQUENCE_ROWS,
+    NATIVE_BIBLIOGRAPHY_SEQUENCE_SCHEMA_VERSION, NATIVE_CITATION_SEQUENCE_FAMILY,
+    NATIVE_REFERENCE_SEGMENTER_SEQUENCE_FAMILY, NativeBibliographySequenceError,
+    ReferenceSegmentKind, ReferenceSegmentSequence, ReferenceSegmentSpan,
+    decode_bibliography_labels, decode_citation_sequence, decode_reference_sequence,
 };
 pub use native_body::{
     AccountedKind, AccountedUnit, AccountingBucket, BucketCount, JavaFallbackEvidence,

@@ -8363,10 +8363,18 @@ fn native_body_accounting_contract() {
 /// configured local resource root instead.
 ///
 /// The only model-format files allowed in-tree are hand-authored synthetic
-/// fixtures under the adapter test fixtures directory: they exist so CI can
-/// decode a frozen model without touching GROBID bytes, and they are provably
-/// not GROBID-derived.
-const SYNTHETIC_MODEL_FIXTURE_DIR: &str = "crates/da-adapters/tests/fixtures";
+/// fixtures under a test fixture directory of the parse plane: they exist so CI
+/// can decode a frozen model without touching GROBID bytes, and they are
+/// provably not GROBID-derived.
+///
+/// S04/T04 added the `da-parse` fixture directory: the bibliography sequence
+/// contract decodes `*_synthetic.wapiti` files that live beside the rows they
+/// are decoded with. The exemption stays a closed list of fixture directories —
+/// a `.wapiti` anywhere else in the live tree is still refused.
+const SYNTHETIC_MODEL_FIXTURE_DIRS: [&str; 2] = [
+    "crates/da-adapters/tests/fixtures",
+    "crates/da-parse/tests/fixtures",
+];
 
 /// Extensions of the Wapiti CRF model format GROBID ships. `*.wapiti` is the
 /// authoritative GROBID model filename (`models/<family>/model.wapiti`).
@@ -8387,7 +8395,9 @@ fn model_byte_bundle_errs(repo_relative_paths: &[String]) -> Vec<String> {
             .and_then(|value| value.to_str())
             .unwrap_or("")
             .to_ascii_lowercase();
-        let synthetic_fixture = path.starts_with(SYNTHETIC_MODEL_FIXTURE_DIR);
+        let synthetic_fixture = SYNTHETIC_MODEL_FIXTURE_DIRS
+            .iter()
+            .any(|directory| path.starts_with(directory));
         if extension == WAPITI_MODEL_EXTENSION && !synthetic_fixture {
             errs.push(format!(
                 "bundled GROBID model bytes are not redistributable (D358): {path}"
@@ -8452,6 +8462,8 @@ fn d358_bundling_ban_predicate_discriminates_synthetic_fixtures() {
     let allowed = vec![
         "crates/da-adapters/tests/fixtures/synthetic_model.wapiti".to_string(),
         "crates/da-adapters/tests/fixtures/provider_pdfalto_page.json".to_string(),
+        "crates/da-parse/tests/fixtures/native_bibliography_reference_synthetic.wapiti".to_string(),
+        "crates/da-parse/tests/fixtures/native_bibliography_citation_synthetic.wapiti".to_string(),
         "crates/da-domain/src/scalar_crf.rs".to_string(),
         "data/parse/grobid_model_rights.yaml".to_string(),
         "archive/artifacts-legacy/catalog_sweep/pipeline_cache/parse/payload.bin".to_string(),
@@ -8464,6 +8476,8 @@ fn d358_bundling_ban_predicate_discriminates_synthetic_fixtures() {
     let rejected = vec![
         "data/parse/models/header/model.wapiti".to_string(),
         "crates/da-adapters/src/grobid_home/lexicon/lexicon.wapiti".to_string(),
+        "crates/da-parse/src/model.wapiti".to_string(),
+        "crates/da-cli/tests/fixtures/model.wapiti".to_string(),
         "doc/models/model.wapiti".to_string(),
         "data/parse/weights.crf".to_string(),
         "data/parse/model.bin".to_string(),
