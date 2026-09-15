@@ -39,6 +39,7 @@ mod layout_lattice;
 mod lift;
 mod managed_batch;
 mod native_affiliation;
+mod native_bibliography_features;
 mod native_bibliography_gazetteer;
 mod native_body;
 mod native_callout_matching;
@@ -123,6 +124,16 @@ pub use native_affiliation::{
     NativeAffiliationLinkOutcome, NativeAffiliationLinker, NativeAffiliationMalformed,
     NativeAffiliationNesting, NativeAffiliationOccurrence, NativeAffiliationOutcome,
     NativeAffiliationParser, NativeAffiliationUnsupported, RecognizedAffiliationComponent,
+};
+pub use native_bibliography_features::{
+    CitationFeatureRow, NATIVE_BIBLIOGRAPHY_FEATURES_SCHEMA_VERSION,
+    NATIVE_CITATION_FEATURE_COLUMNS, NATIVE_CITATION_LABEL_COUNT, NATIVE_CITATION_LABELS,
+    NATIVE_CITATION_MODEL_MAX_COLUMN_INDEX, NATIVE_CITATION_ROLE_COUNT,
+    NATIVE_REFERENCE_SEGMENTER_FEATURE_COLUMNS, NATIVE_REFERENCE_SEGMENTER_LABEL_COUNT,
+    NATIVE_REFERENCE_SEGMENTER_LABELS, NATIVE_REFERENCE_SEGMENTER_MODEL_MAX_COLUMN_INDEX,
+    NATIVE_TRAINING_LABEL_PLACEHOLDER, NativeBibliographyFeatureError,
+    ReferenceSegmenterFeatureRow, citation_row, reference_segmenter_row,
+    render_citation_feature_text, render_reference_segmenter_feature_text,
 };
 pub use native_bibliography_gazetteer::{
     BibliographyGazetteerError, BibliographyGazetteerIndex, BibliographyGazetteerLane,
