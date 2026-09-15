@@ -41,6 +41,7 @@ mod managed_batch;
 mod native_affiliation;
 mod native_bibliography_features;
 mod native_bibliography_gazetteer;
+mod native_bibliography_nested;
 mod native_bibliography_sequence;
 mod native_body;
 mod native_callout_matching;
@@ -143,13 +144,29 @@ pub use native_bibliography_gazetteer::{
     GAZETTEER_MAX_TOKENS, GazetteerSpan, NATIVE_BIBLIOGRAPHY_GAZETTEER_SCHEMA_VERSION,
     gazetteer_spans, is_isbn_shape, is_issn_shape, span_covers,
 };
+pub use native_bibliography_nested::{
+    DATE_PART_BASE_LABELS, DateFeatureRow, DatePartRole, NAME_PART_BASE_LABELS,
+    NATIVE_BIBLIOGRAPHY_NESTED_SCHEMA_VERSION, NATIVE_CITATION_IDENTIFIER_COLUMN,
+    NATIVE_DATE_FEATURE_COLUMNS, NATIVE_DATE_LABEL_COUNT, NATIVE_DATE_LABELS,
+    NATIVE_DATE_MODEL_MAX_COLUMN_INDEX, NATIVE_DATE_REFERENCED_COLUMNS,
+    NATIVE_DATE_SEQUENCE_FAMILY, NATIVE_NAME_CITATION_FEATURE_COLUMNS,
+    NATIVE_NAME_CITATION_LABEL_COUNT, NATIVE_NAME_CITATION_LABELS,
+    NATIVE_NAME_CITATION_MODEL_MAX_COLUMN_INDEX, NATIVE_NAME_CITATION_REFERENCED_COLUMNS,
+    NATIVE_NAME_CITATION_SEQUENCE_FAMILY, NATIVE_NESTED_UNREFERENCED_LABEL_PLACEHOLDER,
+    NameCitationFeatureRow, NamePartRole, NativeBibliographyNestedError, NativeDatePart,
+    NativeDateValue, NativeIdentifierEvidence, NativeNameCitation, NativeNamePart,
+    NativePersonTitleCoverage, cluster_identifier, date_row, decode_date_cluster,
+    decode_name_citation_cluster, name_citation_row, render_date_feature_text,
+    render_name_citation_feature_text,
+};
 pub use native_bibliography_sequence::{
-    BibliographyLabelSequence, BibliographySequenceFamily, CITATION_ROLE_BASE_LABELS,
-    CitationClusterSequence, CitationRole, CitationRoleSpan, MAX_NATIVE_BIBLIOGRAPHY_SEQUENCE_ROWS,
-    NATIVE_BIBLIOGRAPHY_SEQUENCE_SCHEMA_VERSION, NATIVE_CITATION_SEQUENCE_FAMILY,
-    NATIVE_REFERENCE_SEGMENTER_SEQUENCE_FAMILY, NativeBibliographySequenceError,
-    ReferenceSegmentKind, ReferenceSegmentSequence, ReferenceSegmentSpan,
-    decode_bibliography_labels, decode_citation_sequence, decode_reference_sequence,
+    BibliographyLabelRun, BibliographyLabelSequence, BibliographySequenceFamily,
+    CITATION_ROLE_BASE_LABELS, CitationClusterSequence, CitationRole, CitationRoleSpan,
+    MAX_NATIVE_BIBLIOGRAPHY_SEQUENCE_ROWS, NATIVE_BIBLIOGRAPHY_SEQUENCE_SCHEMA_VERSION,
+    NATIVE_CITATION_SEQUENCE_FAMILY, NATIVE_REFERENCE_SEGMENTER_SEQUENCE_FAMILY,
+    NativeBibliographySequenceError, ReferenceSegmentKind, ReferenceSegmentSequence,
+    ReferenceSegmentSpan, bibliography_label_runs, decode_bibliography_labels,
+    decode_citation_sequence, decode_reference_sequence,
 };
 pub use native_body::{
     AccountedKind, AccountedUnit, AccountingBucket, BucketCount, JavaFallbackEvidence,

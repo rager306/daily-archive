@@ -274,6 +274,58 @@ pub struct BibliographyLabelSequence {
     pub token_bytes: Vec<(usize, usize)>,
 }
 
+/// One maximal run of equal base names over a decoded sequence.
+///
+/// This is the single grouping primitive every native bibliography family shares
+/// (reference segmenter, citation, and the nested `name/citation` / `date`
+/// families added by S04/T05): a run continues while
+/// `base(current) == base(previous)`, where `base` strips the `I-` spelling
+/// prefix, and nothing else opens or closes one. Byte ranges index the
+/// reconstructed text of the sequence the run came from
+/// ([`BibliographyLabelSequence::text`]).
+///
+/// A family wrapper maps this into its own span type so the rule cannot drift
+/// between families; the bibliography families never re-implement it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BibliographyLabelRun {
+    /// Base label of the run (`<reference>`, `<author>`, `<forename>`), never the
+    /// `I-` spelling.
+    pub label: String,
+    /// Half-open row range in the original reading order.
+    pub start: usize,
+    pub end: usize,
+    /// Half-open byte range inside the sequence's reconstructed text.
+    pub byte_start: usize,
+    pub byte_end: usize,
+    /// Member token texts joined by a single space.
+    pub text: String,
+}
+
+/// Group a decoded sequence into maximal runs of equal base names.
+///
+/// Total for any sequence [`decode_bibliography_labels`] produced: the label and
+/// byte vectors are built together, so a disagreement can only come from a
+/// hand-constructed [`BibliographyLabelSequence`] and is refused rather than
+/// yielding a wrong byte range.
+pub fn bibliography_label_runs(
+    decoded: &BibliographyLabelSequence,
+) -> Result<Vec<BibliographyLabelRun>, NativeBibliographySequenceError> {
+    let mut runs = Vec::new();
+    for (base, start, end) in base_label_runs(&decoded.labels) {
+        let (byte_start, byte_end) = run_bytes(decoded, start, end)?;
+        runs.push(BibliographyLabelRun {
+            label: base,
+            start,
+            end,
+            byte_start,
+            byte_end,
+            text: join_tokens(&decoded.tokens, start, end),
+        });
+    }
+    Ok(runs)
+}
+
 /// One grouped run of the reference segmenter, in reading order.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -514,24 +566,23 @@ pub fn decode_reference_sequence(
         model,
     )?;
     let mut segments = Vec::new();
-    for (base, start, end) in base_label_runs(&decoded.labels) {
-        let Some(kind) = ReferenceSegmentKind::from_base_label(&base) else {
+    for run in bibliography_label_runs(&decoded)? {
+        let Some(kind) = ReferenceSegmentKind::from_base_label(&run.label) else {
             // Unreachable while the family's admissible set is exactly the three
             // base labels; total anyway, so no input can panic the runner.
             return Err(NativeBibliographySequenceError::UnknownLabel {
-                label: base,
-                row: start,
+                label: run.label,
+                row: run.start,
             });
         };
-        let (byte_start, byte_end) = run_bytes(&decoded, start, end)?;
         segments.push(ReferenceSegmentSpan {
             kind,
-            label: base,
-            start,
-            end,
-            byte_start,
-            byte_end,
-            text: join_tokens(&decoded.tokens, start, end),
+            label: run.label,
+            start: run.start,
+            end: run.end,
+            byte_start: run.byte_start,
+            byte_end: run.byte_end,
+            text: run.text,
         });
     }
     Ok(ReferenceSegmentSequence {
@@ -549,22 +600,21 @@ pub fn decode_citation_sequence(
     let row_texts: Vec<String> = rows.iter().map(CitationFeatureRow::as_text).collect();
     let decoded = decode_bibliography_labels(&row_texts, &NATIVE_CITATION_SEQUENCE_FAMILY, model)?;
     let mut roles = Vec::new();
-    for (base, start, end) in base_label_runs(&decoded.labels) {
-        let Some(role) = CitationRole::from_base_label(&base) else {
+    for run in bibliography_label_runs(&decoded)? {
+        let Some(role) = CitationRole::from_base_label(&run.label) else {
             return Err(NativeBibliographySequenceError::UnknownLabel {
-                label: base,
-                row: start,
+                label: run.label,
+                row: run.start,
             });
         };
-        let (byte_start, byte_end) = run_bytes(&decoded, start, end)?;
         roles.push(CitationRoleSpan {
             role,
-            label: base,
-            start,
-            end,
-            byte_start,
-            byte_end,
-            text: join_tokens(&decoded.tokens, start, end),
+            label: run.label,
+            start: run.start,
+            end: run.end,
+            byte_start: run.byte_start,
+            byte_end: run.byte_end,
+            text: run.text,
         });
     }
     Ok(CitationClusterSequence {
