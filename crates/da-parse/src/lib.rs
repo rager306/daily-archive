@@ -44,6 +44,7 @@ mod native_bibliography_gazetteer;
 mod native_bibliography_nested;
 mod native_bibliography_sequence;
 mod native_body;
+mod native_callout_classification;
 mod native_callout_matching;
 mod native_citation;
 mod native_composition;
@@ -174,6 +175,20 @@ pub use native_body::{
     NativeBodyAccountant, NativeBodyAccounting, NativeBodyError, NativeBodyLimits,
     NativeBodySequenceCounts, NativeBodySequenceIdentity, NativeBodySequenceInput,
     NativeBodySequenceReceipt, NativeBodySequenceStep, run_native_body_sequence, source_digest,
+};
+pub use native_callout_classification::{
+    CALLOUT_DENOMINATOR_DIGEST_DOMAIN, CALLOUT_OBSERVATION_DIGEST_DOMAIN, CalloutDenominator,
+    CalloutInventory, CalloutLabelKeyConflict, CalloutLabelOrdinalEntry, CalloutLabelOrdinalMap,
+    CalloutLabelResolution, CalloutLinkageVerdict, CalloutMarkerClassification, CalloutMarkerInput,
+    CalloutMarkerObservation, CalloutMarkerType, CalloutStyleCount, CalloutStyleMajority,
+    CalloutToken, MAX_NATIVE_CALLOUT_MARKER_TOKENS, MAX_NATIVE_CALLOUT_MARKERS,
+    MAX_NATIVE_CALLOUT_REFERENCE_LINES, MEM992_FROZEN_TARGETED_CALLOUTS,
+    MEM992_FROZEN_TARGETLESS_CALLOUTS, MEM992_FROZEN_TOTAL_CALLOUTS,
+    NATIVE_CALLOUT_CLASSIFICATION_SCHEMA_VERSION, NATIVE_CALLOUT_INVENTORY_LANE,
+    NATIVE_CALLOUT_TARGETED_DENOMINATOR, NATIVE_CALLOUT_TARGETLESS_DENOMINATOR,
+    NativeCalloutClassificationError, NativeCalloutResolution, build_callout_inventory,
+    build_callout_label_ordinal_map, callout_linkage_verdict, classify_callout_marker,
+    majority_callout_style, marker_adjacency, normalize_callout_label,
 };
 pub use native_callout_matching::{
     AdjacencyDisposition, CalloutMatch, CalloutPosition, CalloutTargetClass,
