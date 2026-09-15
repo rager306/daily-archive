@@ -45,6 +45,7 @@ mod native_citation;
 mod native_composition;
 mod native_consolidation_specialized;
 mod native_date;
+mod native_feature_facts;
 mod native_feature_tagger;
 mod native_fulltext_blocks;
 mod native_fulltext_composition;
@@ -168,6 +169,18 @@ pub use native_date::{
     DatePrecision, NATIVE_DATE_INPUT_BYTE_CAP, NATIVE_DATE_OUTCOME_SCHEMA_VERSION,
     NATIVE_DATE_PARSER_ID, NATIVE_DATE_PARSER_VERSION, NativeDateAmbiguous, NativeDateMalformed,
     NativeDateOutcome, NativeDateParser, NativeDateUnsupported, RecognizedDate,
+};
+pub use native_feature_facts::{
+    BIBLIOGRAPHY_COMMON_NAME_CHANNEL, BIBLIOGRAPHY_FIRST_NAME_CHANNEL,
+    BIBLIOGRAPHY_FULL_PUNCTUATIONS, BIBLIOGRAPHY_LAST_NAME_CHANNEL,
+    BIBLIOGRAPHY_MAX_PUNCTUATION_PROFILE, BIBLIOGRAPHY_MONTHS, BibliographyAlignment,
+    BibliographyNameFlags, BibliographyTokenFacts, BibliographyTokenInput,
+    CITATION_RELATIVE_POSITION_BINS, Capitalisation, DigitStatus, FactsBlockStatus,
+    FactsLineStatus, NATIVE_FEATURE_FACTS_SCHEMA_VERSION, PunctType,
+    REFERENCE_SEGMENTER_LINE_SCALE, capitalisation, capitalisation_as_printed, contains_http_shape,
+    digit_status, is_all_capital, is_month_name, is_punctuation_run, is_single_char, is_year_shape,
+    linear_scaling, name_flags, punct_type, punctuation_profile, punctuation_profile_field,
+    relative_position_citation, relative_position_reference_segmenter, token_prefix, token_suffix,
 };
 pub use native_feature_tagger::{
     FeatureDisposition, FeatureUpstreamStatus, NATIVE_FEATURE_COLUMNS,
