@@ -39,6 +39,7 @@ mod layout_lattice;
 mod lift;
 mod managed_batch;
 mod native_affiliation;
+mod native_bibliography_gazetteer;
 mod native_body;
 mod native_callout_matching;
 mod native_citation;
@@ -122,6 +123,13 @@ pub use native_affiliation::{
     NativeAffiliationLinkOutcome, NativeAffiliationLinker, NativeAffiliationMalformed,
     NativeAffiliationNesting, NativeAffiliationOccurrence, NativeAffiliationOutcome,
     NativeAffiliationParser, NativeAffiliationUnsupported, RecognizedAffiliationComponent,
+};
+pub use native_bibliography_gazetteer::{
+    BibliographyGazetteerError, BibliographyGazetteerIndex, BibliographyGazetteerLane,
+    BibliographyGazetteerSpans, GAZETTEER_DELIMITERS_HEAD, GAZETTEER_MAX_ENTRIES_PER_LANE,
+    GAZETTEER_MAX_PHRASE_TOKENS, GAZETTEER_MAX_SPANS, GAZETTEER_MAX_TEXT_BYTES,
+    GAZETTEER_MAX_TOKENS, GazetteerSpan, NATIVE_BIBLIOGRAPHY_GAZETTEER_SCHEMA_VERSION,
+    gazetteer_spans, is_isbn_shape, is_issn_shape, span_covers,
 };
 pub use native_body::{
     AccountedKind, AccountedUnit, AccountingBucket, BucketCount, JavaFallbackEvidence,
