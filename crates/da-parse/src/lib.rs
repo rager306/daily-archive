@@ -48,6 +48,7 @@ mod native_date;
 mod native_feature_tagger;
 mod native_fulltext_blocks;
 mod native_fulltext_composition;
+mod native_header_features;
 mod native_personal_name;
 mod native_segmentation;
 mod native_visual;
@@ -186,6 +187,11 @@ pub use native_fulltext_composition::{
     NativeFulltextCompositionError, NativeFulltextCompositionInput,
     NativeFulltextCompositionOutcome, NativeFulltextManifest, S17LineageReceipt,
     compose_native_fulltext, tei_element_bytes,
+};
+pub use native_header_features::{
+    BlockStatus, HeaderAlignment, HeaderFeatureRow, HeaderFeatureToken, HeaderFontStatistics,
+    LineStatus, NATIVE_HEADER_FEATURE_COLUMNS, NATIVE_HEADER_FEATURE_SCHEMA_VERSION,
+    NativeHeaderFeatureError, render_header_feature_text, render_header_features,
 };
 pub use native_personal_name::{
     NATIVE_PERSONAL_NAME_INPUT_BYTE_CAP, NATIVE_PERSONAL_NAME_OUTCOME_SCHEMA_VERSION,
