@@ -1,7 +1,10 @@
 //! Port for loading the audited GROBID lexicon/feature contract.
 //! Implementations own I/O; callers receive only validated domain data.
 
-use da_domain::LexiconBundle;
+pub use da_domain::{
+    FeatureAbi, FeatureAbiError, FeatureTemplate, FeatureToken, FeatureVector, LexiconBundle,
+    LexiconChannel,
+};
 use std::path::Path;
 use thiserror::Error;
 

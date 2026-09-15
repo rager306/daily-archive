@@ -85,13 +85,20 @@ pub use parse_learning::{
     RvfRecord, RvfStoreError, Sha256Digest, SplitIdentity, reject_raw_content,
 };
 
-pub use lexicon::{LexiconLoadError, LexiconLoaderPort, resource_path, validate_loaded_lexicon};
+pub use lexicon::{
+    FeatureAbi, FeatureAbiError, FeatureTemplate, FeatureToken, FeatureVector, LexiconBundle,
+    LexiconChannel, LexiconLoadError, LexiconLoaderPort, resource_path, validate_loaded_lexicon,
+};
 pub use parse_batch::{
     BatchCheckpoint, ManagedParseBatchExecutor, ParseBatchCursor, ParseBatchRunSummary,
     ParseBatchSinkError,
 };
 pub use parse_job::JobLedger;
-pub use scalar_crf::{CrfModelLoadError, CrfModelLoaderPort, validate_loaded_crf_model};
+pub use scalar_crf::{
+    CrfDecodeResult, CrfModel, CrfModelError, CrfModelLoadError, CrfModelLoaderPort, CrfPosition,
+    MAX_CRF_LABELS, MAX_CRF_MODEL_BYTES, MAX_CRF_OBSERVATIONS, MAX_CRF_PATTERNS, MAX_CRF_WEIGHTS,
+    expand_pattern, expand_pattern_sequence, map_input, validate_loaded_crf_model, viterbi_decode,
+};
 
 pub use parser::{
     CalloutUnresolvedReason, CharSpan, CitationAnchor, CitationEntry, DeclaredArxivIdentity,
