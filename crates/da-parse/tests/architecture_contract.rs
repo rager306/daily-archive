@@ -3136,6 +3136,253 @@ fn parser_port_carries_no_native_bibliography_methods_or_types() {
     );
 }
 
+// ───── M507 S05/T06: native body/fulltext atoms stay shadow — never in a production boundary ─────
+//
+// Mirrors the Governor fulltext quarantine (S05/T06 DATA key
+// `defaults.fulltext_sequence_quarantine`) as an independent compile/test
+// contract: the exact tokens below must not appear in code positions of the
+// four production boundaries. `//` comments (full-line and trailing) are
+// stripped before the scan, snake_case atoms require a call-site `(` (after
+// optional whitespace) with a word boundary before the token, and each
+// CamelCase atom is matched on word boundaries on both sides. The matcher is
+// the token-generic `bibliography_atom_hit` — one matching rule, no copy.
+//
+// Naming adjacency is deliberate (D362): this array belongs to the S05 body
+// reading-order lane and is never merged with
+// `S05_BODY_QUARANTINE_ATOMS` / `S05_BODY_ACCOUNTING_DATA_TOKENS` (the M496 P5
+// accountant lane) or with the Governor `fulltext_blocks_quarantine` key (P2
+// region accounting). Those stay untouched here.
+
+/// Production boundaries that must stay free of body/fulltext atoms.
+const FULLTEXT_SEQUENCE_QUARANTINE_BOUNDARIES: [&str; 4] = [
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+    "crates/da-parse/src/parser.rs",
+    "crates/da-parse/src/projector.rs",
+];
+
+/// Native body/fulltext symbols that must never appear in a production
+/// boundary. This list is mirrored 1:1 by the Governor DATA key; the test
+/// below fails if either side drifts.
+const FULLTEXT_SEQUENCE_QUARANTINE_TOKENS: [&str; 36] = [
+    // The 27-column ABI in the exact `FeaturesVectorFulltext.printVector` order.
+    "render_fulltext_features",
+    "render_fulltext_feature_text",
+    "check_fulltext_feature_columns",
+    "relative_position_fulltext_document",
+    "relative_position_fulltext_page",
+    // D359 base-name run decode over the shared grouping primitive.
+    "decode_fulltext_sequence",
+    "check_fulltext_label_block",
+    "fulltext_label_is_admissible",
+    // Cross-page reading order and the continued-run page span.
+    "glue_fulltext_reading_order",
+    "cross_page_runs",
+    // Typed non-CRF sentence/language steps and the body version registry.
+    "native_body_version_surface",
+    // PascalCase row/run/step types of the same lane.
+    "FulltextAlignment",
+    "FulltextCalloutType",
+    "FulltextFeatureRow",
+    "FulltextFeatureToken",
+    "FulltextFontSize",
+    "FulltextFontStatus",
+    "NativeFulltextFeatureError",
+    "FulltextLabelRun",
+    "NativeFulltextDecodeCandidate",
+    "NativeFulltextDecodeOutcome",
+    "NativeFulltextSequenceError",
+    "ColumnShift",
+    "CrossPageRun",
+    "NativeFulltextPageToken",
+    "NativeFulltextReadingOrder",
+    "NativeFulltextReadingOrderError",
+    "NativeFulltextTokenText",
+    "PageReadingSpan",
+    "NativeBodyStep",
+    "NativeBodyStepOutcome",
+    "NativeBodyStepReceipt",
+    "NativeBodySurfaceKind",
+    "NativeBodyVersionSurface",
+    "NativeLanguageStep",
+    "NativeSentenceStep",
+];
+
+fn fulltext_sequence_quarantine_data(registry: &serde_yaml::Value, key: &str) -> Vec<String> {
+    registry["defaults"]["fulltext_sequence_quarantine"][key]
+        .as_sequence()
+        .expect("fulltext quarantine DATA list")
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .expect("fulltext quarantine DATA string")
+                .to_owned()
+        })
+        .collect()
+}
+
+/// Comment-stripped body/fulltext-atom scan over code text.
+fn fulltext_quarantine_hits(text: &str) -> Vec<String> {
+    let mut hits = Vec::new();
+    for (line_no, raw) in strip_line_comments(text).lines().enumerate() {
+        let code = match raw.find("//") {
+            Some(cut) => &raw[..cut],
+            None => raw,
+        };
+        for token in FULLTEXT_SEQUENCE_QUARANTINE_TOKENS {
+            if bibliography_atom_hit(code, token) {
+                hits.push(format!(
+                    "[fulltext-sequence-quarantine] line {}: atom `{token}`: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    hits
+}
+
+#[test]
+fn fulltext_sequence_quarantine_is_data_bound_and_lock_closed() {
+    let registry: serde_yaml::Value =
+        serde_yaml::from_str(&read_text("data/parse/grobid_compatibility.yaml"))
+            .expect("compatibility registry");
+    let quarantine = &registry["defaults"]["fulltext_sequence_quarantine"];
+    assert_ne!(
+        quarantine,
+        &serde_yaml::Value::Null,
+        "S05: defaults.fulltext_sequence_quarantine vanished — loss, not silence"
+    );
+    assert_eq!(
+        fulltext_sequence_quarantine_data(&registry, "tokens"),
+        FULLTEXT_SEQUENCE_QUARANTINE_TOKENS
+            .iter()
+            .map(|token| (*token).to_owned())
+            .collect::<Vec<_>>(),
+        "S05: Rust and DATA fulltext token sets drifted (D362 single source)"
+    );
+    assert_eq!(
+        fulltext_sequence_quarantine_data(&registry, "boundaries"),
+        FULLTEXT_SEQUENCE_QUARANTINE_BOUNDARIES
+            .iter()
+            .map(|boundary| (*boundary).to_owned())
+            .collect::<Vec<_>>(),
+        "S05: Rust and DATA fulltext boundary sets drifted"
+    );
+    // The lane's locks are DATA, and each one must fail closed on drift.
+    for (key, expected) in [
+        ("production_authority", "java_http"),
+        ("observe_mode", "shadow_receipt"),
+        ("production_route", "forbidden"),
+        ("graph_write", "forbidden"),
+        ("auto_promote", "forbidden"),
+        ("proof_level", "contract"),
+    ] {
+        assert_eq!(
+            quarantine[key].as_str(),
+            Some(expected),
+            "S05: fulltext quarantine `{key}` must stay `{expected}`"
+        );
+    }
+    assert_eq!(quarantine["deployed"].as_bool(), Some(false));
+    assert_eq!(quarantine["import_eligible"].as_bool(), Some(false));
+    assert_eq!(quarantine["decision_point"].as_i64(), Some(6));
+    let selectable: Vec<String> = quarantine["independently_selectable"]
+        .as_sequence()
+        .expect("independently_selectable")
+        .iter()
+        .map(|value| value.as_str().expect("selectable lane").to_owned())
+        .collect();
+    assert_eq!(
+        selectable,
+        vec!["header".to_owned(), "references".to_owned()]
+    );
+    // Negative controls: a dropped token, an added boundary or an eroded lock
+    // must not satisfy the closed DATA set.
+    let mut drifted = registry.clone();
+    drifted["defaults"]["fulltext_sequence_quarantine"]["tokens"] = serde_yaml::Value::Sequence(
+        FULLTEXT_SEQUENCE_QUARANTINE_TOKENS[..FULLTEXT_SEQUENCE_QUARANTINE_TOKENS.len() - 1]
+            .iter()
+            .map(|token| serde_yaml::Value::String((*token).to_owned()))
+            .collect(),
+    );
+    assert_ne!(
+        fulltext_sequence_quarantine_data(&drifted, "tokens"),
+        fulltext_sequence_quarantine_data(&registry, "tokens"),
+        "S05: a dropped token must not satisfy the closed DATA set"
+    );
+    let mut promoted = registry.clone();
+    promoted["defaults"]["fulltext_sequence_quarantine"]["deployed"] =
+        serde_yaml::Value::Bool(true);
+    assert_ne!(
+        promoted["defaults"]["fulltext_sequence_quarantine"]["deployed"].as_bool(),
+        Some(false),
+        "S05: deployed=true must be observable as drift"
+    );
+}
+
+#[test]
+fn fulltext_quarantine_scanner_fails_visible_on_synthetic_atoms() {
+    let synthetic = "fn run() {\n    render_fulltext_features(tokens);\n    decode_fulltext_sequence(rows, model);\n    glue_fulltext_reading_order(pages);\n    let _r: FulltextFeatureRow = row;\n    let _c: CrossPageRun = run;\n}\n";
+    let hits = fulltext_quarantine_hits(synthetic);
+    assert_eq!(hits.len(), 5, "each fulltext atom must flag: {hits:?}");
+    for atom in [
+        "render_fulltext_features",
+        "decode_fulltext_sequence",
+        "glue_fulltext_reading_order",
+        "FulltextFeatureRow",
+        "CrossPageRun",
+    ] {
+        assert!(
+            hits.iter().any(|hit| hit.contains(atom)),
+            "scanner lost coverage for `{atom}`"
+        );
+    }
+    // Whitespace before `(` is still a call site and must flag.
+    let spaced = "fn run() {\n    decode_fulltext_sequence (rows, model);\n    cross_page_runs\t(runs);\n}\n";
+    assert_eq!(
+        fulltext_quarantine_hits(spaced).len(),
+        2,
+        "whitespace call-sites must flag"
+    );
+    // Comments are prose, bare mentions are not call sites, and a prefixed
+    // identifier or a longer CamelCase type name is a different symbol.
+    let prose = "// render_fulltext_features FulltextFeatureRow CrossPageRun are prose\nlet x = render_fulltext_features_legacy(y);\nlet y = decode_fulltext_sequence;\nlet z: FulltextFeatureRowBuilder = row;\nfoo(); // decode_fulltext_sequence(rows, model);\n";
+    assert!(
+        fulltext_quarantine_hits(prose).is_empty(),
+        "prose comments, prefixed identifiers and bare mentions must not flag"
+    );
+}
+
+#[test]
+fn production_boundaries_stay_free_of_fulltext_sequence_atoms() {
+    for rel in FULLTEXT_SEQUENCE_QUARANTINE_BOUNDARIES {
+        let text = read_text(rel);
+        assert!(
+            text.len() > 1_000,
+            "positive control failed: {rel} looks truncated"
+        );
+        let hits = fulltext_quarantine_hits(&text);
+        assert!(
+            hits.is_empty(),
+            "body/fulltext atoms leaked into a production boundary (shadow means never served):\n{}",
+            hits.join("\n")
+        );
+    }
+    // The production authority stays Java and the lane stays off the FSM.
+    let http = read_text("crates/da-parse/src/http.rs");
+    assert!(
+        http.contains("GrobidParser"),
+        "Java parser authority disappeared"
+    );
+    let port = read_text("crates/da-ports/src/parser.rs");
+    assert!(
+        port.contains("pub trait ParserPort") && port.contains("async fn parse_pdf"),
+        "positive control failed: ParserPort surface vanished"
+    );
+}
+
 // ───── S08/T02: visual heads stay shadow — never in parse-pdf source_cli or ParserPort ─────
 //
 // Mirrors the Governor visual-heads quarantine (S08/T01, DATA-gated — the

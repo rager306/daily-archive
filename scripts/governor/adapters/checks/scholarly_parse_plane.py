@@ -743,6 +743,107 @@ def _check_bibliography_sequence_quarantine(
             )
 
 
+def _fulltext_sequence_quarantine_spec(defaults: Any) -> tuple[list[str], list[str]]:
+    """Derive the native body/fulltext quarantine from ledger DATA.
+
+    Returns only non-empty strings from ``fulltext_sequence_quarantine.tokens``
+    and ``fulltext_sequence_quarantine.boundaries``. Missing or malformed DATA
+    yields ``([], [])`` with no hardcoded fallback: the forbidden set and the
+    boundary set must never be invented by the checker. The existing
+    SHA/evidence_missing/load signals own the missing-ledger surface; this
+    helper stays silent there.
+
+    This key is a THIRD lane next to the untouched
+    ``fulltext_blocks_quarantine`` (P2 region accounting) and
+    ``body_accounting_quarantine`` (M496 P5 accountant) keys (D362): the S05
+    body reading-order lane has its own token set and its own four production
+    boundaries, and the three sets are never merged. The ParserPort
+    type/method prohibition stays on the Rust side
+    (``crates/da-parse/tests/architecture_contract.rs``).
+    """
+    if not isinstance(defaults, dict):
+        return [], []
+    raw = defaults.get("fulltext_sequence_quarantine")
+    if not isinstance(raw, dict):
+        return [], []
+    tokens: list[str] = []
+    for item in raw.get("tokens") if isinstance(raw.get("tokens"), list) else []:
+        if not isinstance(item, str):
+            continue
+        token = item.strip()
+        if token:
+            tokens.append(token)
+    boundaries: list[str] = []
+    for item in raw.get("boundaries") if isinstance(raw.get("boundaries"), list) else []:
+        if not isinstance(item, str):
+            continue
+        boundary = item.strip()
+        if boundary:
+            boundaries.append(boundary)
+    return tokens, boundaries
+
+
+def _strip_fulltext_sequence_quarantine_comments(text: str) -> str:
+    kept: list[str] = []
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("//"):
+            kept.append("")
+            continue
+        cut = line.find("//")
+        kept.append(line if cut < 0 else line[:cut])
+    return "\n".join(kept)
+
+
+def _fulltext_sequence_quarantine_tokens_present(code: str, tokens: list[str]) -> list[str]:
+    hits: list[str] = []
+    for token in tokens:
+        if "_" in token:
+            # snake_case: exact code-position call-site, whitespace allowed before `(`.
+            if re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}\s*\(", code):
+                hits.append(token)
+        else:
+            # CamelCase type name: word boundary, no call paren required.
+            if re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}(?![A-Za-z0-9_])", code):
+                hits.append(token)
+    return hits
+
+
+def _check_fulltext_sequence_quarantine(
+    root: Path, registry: dict[str, Any], registry_path: Path, flag: Any
+) -> None:
+    if not isinstance(registry, dict) or not registry or not registry_path.is_file():
+        return
+    defaults = registry.get("defaults") if isinstance(registry, dict) else None
+    tokens, boundaries = _fulltext_sequence_quarantine_spec(defaults)
+    if not tokens or not boundaries:
+        return
+    for relative in boundaries:
+        path = root / relative
+        if not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as error:
+            flag(
+                "policy_stamp",
+                "integration",
+                f"{relative}#fulltext_sequence_quarantine",
+                "readable boundary",
+                str(error),
+            )
+            continue
+        code = _strip_fulltext_sequence_quarantine_comments(text)
+        for token in _fulltext_sequence_quarantine_tokens_present(code, tokens):
+            flag(
+                "policy_stamp",
+                "integration",
+                f"{relative}#fulltext_sequence_quarantine.{token}",
+                "native body/fulltext atoms stay shadow-only (no parse-pdf source_cli, ParserPort, parser.rs or projector.rs splice)",
+                f"native body/fulltext atom {token} in {relative}",
+            )
+
+
 def _visual_heads_quarantine_spec(defaults: Any) -> tuple[list[str], list[str]]:
     """Derive the visual-head quarantine (tokens, boundaries) from ledger DATA.
 
@@ -1045,6 +1146,7 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     _check_header_quarantine(root, registry, registry_path, flag)
     _check_bibliography_quarantine(root, registry, registry_path, flag)
     _check_bibliography_sequence_quarantine(root, registry, registry_path, flag)
+    _check_fulltext_sequence_quarantine(root, registry, registry_path, flag)
     _check_visual_heads_quarantine(root, registry, registry_path, flag)
     _check_rest_batch_asset_quarantine(root, contract, flag)
     header_ids = (

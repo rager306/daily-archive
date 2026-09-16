@@ -331,6 +331,114 @@ defaults:
     - callout_inventory_resolution_is_ordinal_marker_to_body_label_not_java_coordinates
     - real_model_label_sequences_are_structural_invariants_not_recorded_goldens
     - lexicon_bundle_is_injected_and_grobid_model_and_lexicon_bytes_are_never_redistributed
+  # S05/T06: the full native body/fulltext lane (27-column fulltext feature
+  # ABI -> D359 base-name run decode -> cross-page reading order with continued
+  # runs -> typed non-CRF sentence/language steps) stays a shadow candidate.
+  # Like the header and bibliography lanes this section — not
+  # capabilities[].state — is the sole source of the forbidden token set and
+  # the production boundaries, so a mutation of state cannot remove a token or
+  # boundary from the checked set.
+  #
+  # Naming adjacency is deliberate and the three keys are never merged (D362):
+  # `defaults.fulltext_blocks_quarantine` (P2 region accounting),
+  # `defaults.body_accounting_quarantine` (M496 P5 accountant) and this
+  # `fulltext_sequence_quarantine` (M507 S05 body reading order) are three
+  # different lanes; the first two stay untouched here.
+  # Snake_case tokens are matched as call-sites (whitespace allowed before
+  # `(`); CamelCase tokens are matched as type names (word boundary). Full-line
+  # and trailing `//` comments are stripped; prose and prefix-substrings never
+  # count.
+  fulltext_sequence_quarantine:
+    tokens:
+    # The 27-column ABI in the exact `FeaturesVectorFulltext.printVector` order.
+    - render_fulltext_features
+    - render_fulltext_feature_text
+    - check_fulltext_feature_columns
+    - relative_position_fulltext_document
+    - relative_position_fulltext_page
+    # D359 base-name run decode over the shared grouping primitive.
+    - decode_fulltext_sequence
+    - check_fulltext_label_block
+    - fulltext_label_is_admissible
+    # Cross-page reading order and the continued-run page span.
+    - glue_fulltext_reading_order
+    - cross_page_runs
+    # Typed non-CRF sentence/language steps and the body version registry.
+    - native_body_version_surface
+    # PascalCase row/run/step types of the same lane.
+    - FulltextAlignment
+    - FulltextCalloutType
+    - FulltextFeatureRow
+    - FulltextFeatureToken
+    - FulltextFontSize
+    - FulltextFontStatus
+    - NativeFulltextFeatureError
+    - FulltextLabelRun
+    - NativeFulltextDecodeCandidate
+    - NativeFulltextDecodeOutcome
+    - NativeFulltextSequenceError
+    - ColumnShift
+    - CrossPageRun
+    - NativeFulltextPageToken
+    - NativeFulltextReadingOrder
+    - NativeFulltextReadingOrderError
+    - NativeFulltextTokenText
+    - PageReadingSpan
+    - NativeBodyStep
+    - NativeBodyStepOutcome
+    - NativeBodyStepReceipt
+    - NativeBodySurfaceKind
+    - NativeBodyVersionSurface
+    - NativeLanguageStep
+    - NativeSentenceStep
+    boundaries:
+    - crates/da-cli/src/source_cli.rs
+    - crates/da-ports/src/parser.rs
+    - crates/da-parse/src/parser.rs
+    - crates/da-parse/src/projector.rs
+    production_authority: java_http
+    observe_mode: shadow_receipt
+    production_route: forbidden
+    graph_write: forbidden
+    import_eligible: false
+    auto_promote: forbidden
+    deployed: false
+    decision_point: 6
+    independently_selectable: [header, references]
+    # Additive registration of the new native surfaces. `abi_columns: 27` is
+    # the fulltext model's own feature width, not a copy of the citation or
+    # header widths (S04/D361: separate scales). The seam re-export lives in
+    # da-ports because da-parse may not name da-domain directly.
+    native_surfaces:
+    - path: crates/da-parse/src/native_fulltext_features.rs
+      schema_version: da-parse.native-fulltext-features/v1
+      abi_columns: 27
+      relative_position_bins: 12
+      max_rows: 32768
+    - path: crates/da-parse/src/native_fulltext_sequence.rs
+      schema_version: da-parse.native-fulltext-sequence/v1
+      base_labels: 12
+      label_spellings: 24
+      max_rows: 32768
+    - path: crates/da-parse/src/native_fulltext_reading_order.rs
+      schema_version: da-parse.native-fulltext-reading-order/v1
+      max_pages: 4096
+      max_tokens: 32768
+    - path: crates/da-parse/src/native_fulltext_sentence.rs
+      schema_version: da-parse.native-fulltext-sentence/v1
+      crf_family: false
+    seam_reexport: crates/da-ports/src/scalar_crf.rs
+    independent_oracle: crates/da-parse/tests/native_fulltext_same_n.rs
+    real_model_harness: crates/da-adapters/tests/native_fulltext_real_model.rs
+    proof_level: contract
+    offline_limits:
+    - no_preserved_alto_or_page_geometry_so_pdf_to_body_rows_is_unproven
+    - same_n_frame_is_tei_to_body_atoms_not_pdf_to_atoms
+    - sentence_and_language_are_named_gaps_not_reproduced_detectors
+    - abstract_is_a_header_label_and_pdf_version_vs_tei_body_is_envelope_not_a_crf_family
+    - fulltext_post_process_is_not_reproduced
+    - real_model_label_sequences_are_structural_invariants_not_recorded_goldens
+    - lexicon_bundle_is_injected_and_grobid_model_and_lexicon_bytes_are_never_redistributed
   # Closed P0-P9 cascade skeleton (ADR-076). production_authority is never native.
   # fsm_consult must be parse_pdf_consults or none. later names stay later.
   # P5 production_stamp records only Java ParsedArticle body observations.

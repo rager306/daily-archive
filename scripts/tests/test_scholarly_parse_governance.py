@@ -27,6 +27,8 @@ from governor.adapters.checks.scholarly_parse_plane import (
     _body_accounting_quarantine_tokens_present,
     _feature_tagger_training_quarantine_spec,
     _feature_tagger_training_quarantine_tokens_present,
+    _fulltext_sequence_quarantine_spec,
+    _fulltext_sequence_quarantine_tokens_present,
     _bibliography_sequence_quarantine_spec,
     _bibliography_sequence_quarantine_tokens_present,
     _header_sequence_quarantine_spec,
@@ -1713,6 +1715,193 @@ def test_checker_bibliography_sequence_quarantine_stays_silent_without_ledger(tm
     target.write_text("let _x = citation_row(input);\n", encoding="utf-8")
     flags = _check_scholarly_parse_plane(tmp_path)
     assert _bibliography_sequence_quarantine_flags(flags) == [], flags
+    assert any(
+        item.flag
+        in {
+            "scholarly_parse_plane_evidence_missing",
+            "scholarly_parse_plane_backend_identity",
+        }
+        for item in flags
+    ), flags
+
+# ───── S05/T06: the native body/fulltext lane stays shadow, out of four production boundaries ─────
+
+FULLTEXT_SEQUENCE_QUARANTINE_TOKENS = [
+    "render_fulltext_features",
+    "render_fulltext_feature_text",
+    "check_fulltext_feature_columns",
+    "relative_position_fulltext_document",
+    "relative_position_fulltext_page",
+    "decode_fulltext_sequence",
+    "check_fulltext_label_block",
+    "fulltext_label_is_admissible",
+    "glue_fulltext_reading_order",
+    "cross_page_runs",
+    "native_body_version_surface",
+    "FulltextAlignment",
+    "FulltextCalloutType",
+    "FulltextFeatureRow",
+    "FulltextFeatureToken",
+    "FulltextFontSize",
+    "FulltextFontStatus",
+    "NativeFulltextFeatureError",
+    "FulltextLabelRun",
+    "NativeFulltextDecodeCandidate",
+    "NativeFulltextDecodeOutcome",
+    "NativeFulltextSequenceError",
+    "ColumnShift",
+    "CrossPageRun",
+    "NativeFulltextPageToken",
+    "NativeFulltextReadingOrder",
+    "NativeFulltextReadingOrderError",
+    "NativeFulltextTokenText",
+    "PageReadingSpan",
+    "NativeBodyStep",
+    "NativeBodyStepOutcome",
+    "NativeBodyStepReceipt",
+    "NativeBodySurfaceKind",
+    "NativeBodyVersionSurface",
+    "NativeLanguageStep",
+    "NativeSentenceStep",
+]
+EXPECTED_FULLTEXT_SEQUENCE_BOUNDARIES = [
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+    "crates/da-parse/src/parser.rs",
+    "crates/da-parse/src/projector.rs",
+]
+
+def _fulltext_sequence_quarantine_flags(flags):
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    return [item for item in matching if "#fulltext_sequence_quarantine." in item.evidence]
+
+def test_fulltext_sequence_quarantine_is_data_bound_and_closed():
+    registry = _load(ROOT / "data/parse/grobid_compatibility.yaml")
+    defaults = registry["defaults"]
+    tokens, boundaries = _fulltext_sequence_quarantine_spec(defaults)
+    assert tokens == FULLTEXT_SEQUENCE_QUARANTINE_TOKENS
+    assert boundaries == EXPECTED_FULLTEXT_SEQUENCE_BOUNDARIES
+    spec = defaults["fulltext_sequence_quarantine"]
+    assert spec["production_authority"] == "java_http"
+    assert spec["observe_mode"] == "shadow_receipt"
+    assert spec["production_route"] == "forbidden"
+    assert spec["graph_write"] == "forbidden"
+    assert spec["import_eligible"] is False
+    assert spec["auto_promote"] == "forbidden"
+    assert spec["deployed"] is False
+    assert spec["decision_point"] == 6
+    assert spec["independently_selectable"] == ["header", "references"]
+    assert spec["proof_level"] == "contract"
+    assert spec["seam_reexport"] == "crates/da-ports/src/scalar_crf.rs"
+    assert spec["independent_oracle"] == "crates/da-parse/tests/native_fulltext_same_n.rs"
+    assert spec["real_model_harness"] == "crates/da-adapters/tests/native_fulltext_real_model.rs"
+    assert spec["offline_limits"]
+    # The 27-column ABI is this lane's own width, not a copy of 29 or 30.
+    surfaces = {surface["path"]: surface for surface in spec["native_surfaces"]}
+    assert set(surfaces) == {
+        "crates/da-parse/src/native_fulltext_features.rs",
+        "crates/da-parse/src/native_fulltext_sequence.rs",
+        "crates/da-parse/src/native_fulltext_reading_order.rs",
+        "crates/da-parse/src/native_fulltext_sentence.rs",
+    }
+    assert surfaces["crates/da-parse/src/native_fulltext_features.rs"]["abi_columns"] == 27
+    assert surfaces["crates/da-parse/src/native_fulltext_sequence.rs"]["base_labels"] == 12
+    assert surfaces["crates/da-parse/src/native_fulltext_sequence.rs"]["label_spellings"] == 24
+    assert surfaces["crates/da-parse/src/native_fulltext_sentence.rs"]["crf_family"] is False
+    # Both polarities of the per-token predicate.
+    assert _fulltext_sequence_quarantine_tokens_present(
+        "let _r = decode_fulltext_sequence(rows); let _x: FulltextFeatureRow = row;", tokens
+    ) == ["decode_fulltext_sequence", "FulltextFeatureRow"]
+    assert _fulltext_sequence_quarantine_tokens_present(
+        "let _r = decode_fulltext_sequence_legacy(rows); let _x = FulltextFeatureRowBuilder;", tokens
+    ) == []
+    assert _fulltext_sequence_quarantine_tokens_present(
+        "fn f() { glue_fulltext_reading_order (pages); }", tokens
+    ) == ["glue_fulltext_reading_order"]
+
+def test_fulltext_sequence_quarantine_is_distinct_from_the_other_fulltext_keys():
+    # D362: `fulltext_blocks_quarantine` (P2 region accounting),
+    # `body_accounting_quarantine` (M496 P5 accountant) and this S05 body
+    # reading-order lane are three lanes; none may be merged into another.
+    defaults = _load(ROOT / "data/parse/grobid_compatibility.yaml")["defaults"]
+    sequence_tokens = set(_fulltext_sequence_quarantine_spec(defaults)[0])
+    blocks_tokens = set(defaults["fulltext_blocks_quarantine"]["tokens"])
+    accountant_tokens = set(defaults["body_accounting_quarantine"]["tokens"])
+    assert sequence_tokens.isdisjoint(blocks_tokens)
+    assert sequence_tokens.isdisjoint(accountant_tokens)
+    assert blocks_tokens.isdisjoint(accountant_tokens)
+    assert len(sequence_tokens) == 36
+    assert len(blocks_tokens) == 3
+    assert len(accountant_tokens) == 4
+    # The older two keys keep their own (narrower) boundary sets untouched.
+    assert defaults["body_accounting_quarantine"]["boundaries"] == [
+        "crates/da-cli/src/source_cli.rs",
+        "crates/da-ports/src/parser.rs",
+    ]
+
+def test_fulltext_sequence_quarantine_spec_is_silent_without_data():
+    # Missing or malformed DATA never invents a forbidden set or boundaries.
+    assert _fulltext_sequence_quarantine_spec(None) == ([], [])
+    assert _fulltext_sequence_quarantine_spec({}) == ([], [])
+    assert _fulltext_sequence_quarantine_spec({"fulltext_sequence_quarantine": {}}) == ([], [])
+    assert _fulltext_sequence_quarantine_spec(
+        {"fulltext_sequence_quarantine": {"tokens": [1]}}
+    ) == ([], [])
+    assert _fulltext_sequence_quarantine_spec(
+        {"fulltext_sequence_quarantine": {"tokens": ["decode_fulltext_sequence", "  "]}}
+    ) == (["decode_fulltext_sequence"], [])
+
+@pytest.mark.parametrize("token", FULLTEXT_SEQUENCE_QUARANTINE_TOKENS)
+def test_checker_flags_fulltext_sequence_atom_in_every_boundary(tmp_path: Path, token: str):
+    _copy_checker_surface(tmp_path)
+    payload = (
+        f"let _x = {token}(input);\n"
+        if "_" in token
+        else f"let _x: {token} = build();\n"
+    )
+    for relative in EXPECTED_FULLTEXT_SEQUENCE_BOUNDARIES:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(payload, encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _fulltext_sequence_quarantine_flags(flags)
+    assert len(matching) == len(EXPECTED_FULLTEXT_SEQUENCE_BOUNDARIES), flags
+    assert all(f"#fulltext_sequence_quarantine.{token}" in item.evidence for item in matching), flags
+    # Adjacent lanes stay independent: this lane never flags the other two keys.
+    assert _bibliography_sequence_quarantine_flags(flags) == [], flags
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "// decode_fulltext_sequence is shadow-only prose\n",
+        "/// doc FulltextFeatureRow prose\n",
+        "let x = 1; // render_fulltext_features prose\n",
+        "let _r = decode_fulltext_sequence_legacy(input);\n",
+        "let _x = FulltextFeatureRowBuilder;\n",
+        "render_fulltext_features is prose without a call\n",
+        "// NativeFulltextReadingOrderError prose\n",
+    ],
+)
+def test_checker_fulltext_sequence_quarantine_ignores_prose_and_prefixed(tmp_path: Path, payload: str):
+    _copy_checker_surface(tmp_path)
+    for relative in EXPECTED_FULLTEXT_SEQUENCE_BOUNDARIES:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(payload, encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _fulltext_sequence_quarantine_flags(flags) == [], flags
+
+def test_checker_clean_root_has_no_fulltext_sequence_quarantine_flags():
+    assert _fulltext_sequence_quarantine_flags(_check_scholarly_parse_plane(ROOT)) == []
+
+def test_checker_fulltext_sequence_quarantine_stays_silent_without_ledger(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    (tmp_path / "data/parse/grobid_compatibility.yaml").unlink()
+    target = tmp_path / EXPECTED_FULLTEXT_SEQUENCE_BOUNDARIES[0]
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("let _x = decode_fulltext_sequence(input);\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _fulltext_sequence_quarantine_flags(flags) == [], flags
     assert any(
         item.flag
         in {

@@ -13,7 +13,12 @@ rollback_target: java-grobid-http@0.9.0-crf
 component_ids: [header, references, document_segmentation, figure, table, formula, learning_policy]
 dispositions: [passed, fallback, rejected, unsupported, not_observed, invalid_evidence, stale]
 strata:
-  lanes: [header, references, document_segmentation]
+  # S05/T06: `body` is registered as an observation stratum, never as a
+  # component and never as an independently selectable lane (R125): the
+  # fulltext body reading order is observed and fallback routing stays Java.
+  # A superset here is sanctioned; `admission.independently_selectable` stays
+  # exactly `[header, references]`.
+  lanes: [header, references, document_segmentation, body]
   domains: [computer_science, physics, mathematics]
   genres: [research_article, survey, proceedings]
   closed: true
@@ -63,6 +68,23 @@ source_evidence:
     bibl_lines_total: 3135
     bibl_tokens_total: 15415
     bibl_author_elements_total: 2185
+    # S05/T06: native body reading-order lane denominators (T05 lexical
+    # receipts, native_fulltext_same_n.rs). The 2375/75369 pair is what binds
+    # the native "one ABI row per body token" claim to an independent number;
+    # the family split is the DATA-ledger partition (body_blocks /
+    # body_markers / visual_content) and sums exactly to the totals. 376 is
+    # THIS lane's body-scoped `<ref type="bibr">` marker denominator; 380 is
+    # the bibliography oracle's whole-document anchor population, restated so
+    # the two can never be quietly pooled. A maximal base-name run is a finer
+    # population than a family run (1313 vs 641) and neither replaces tokens.
+    body_blocks_total: 2375
+    body_tokens_total: 75369
+    body_runs_total: 1313
+    body_family_blocks_total: {body_blocks: 1678, body_markers: 475, visual_content: 222}
+    body_family_tokens_total: {body_blocks: 67025, body_markers: 1525, visual_content: 6819}
+    body_bibr_markers_total: 376
+    body_anchors_restated_total: 380
+    body_receipt_digest: 285a5ddd0c49a51616de2f40a48b6c9d18ce0a71e8685a73d3c15ace11069ec9
     anchors_total: 380
     anchors_targeted: 217
     anchors_targetless: 163
@@ -145,7 +167,47 @@ component_receipts:
       - callout_inventory_resolution_is_ordinal_marker_to_body_label_not_java_coordinates
       - real_model_label_sequences_are_structural_invariants_not_recorded_goldens
       - lexicon_bundle_is_injected_and_grobid_model_and_lexicon_bytes_are_never_redistributed
-  document_segmentation: {producer: S15, disposition: fallback, evidence_state: invalid_evidence, schema_version: native-segmentation.v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
+  document_segmentation:
+    producer: S15
+    disposition: fallback
+    evidence_state: invalid_evidence
+    schema_version: native-segmentation.v1
+    source_hash: required_sha256
+    artifact_sha256: optional_sha256_when_present
+    fallback_target: java-grobid-http@0.9.0-crf
+    # S05/T06: the native body reading-order lane is registered here as an
+    # OBSERVATION stratum beneath the existing segmentation component. This is
+    # not a new component_id, and it admits nothing: producer, disposition and
+    # evidence_state above are untouched, `body` stays out of
+    # `admission.independently_selectable`, and `decision_point` stays 6.
+    # Shadow-only; proof level is contract and the offline limits are named,
+    # not hidden.
+    native_fulltext_body_sequence:
+      lane: body
+      production_identity: processFulltextDocument
+      features_schema_version: da-parse.native-fulltext-features/v1
+      sequence_schema_version: da-parse.native-fulltext-sequence/v1
+      reading_order_schema_version: da-parse.native-fulltext-reading-order/v1
+      sentence_schema_version: da-parse.native-fulltext-sentence/v1
+      abi_columns: 27
+      base_labels: 12
+      label_spellings: 24
+      max_rows: 32768
+      max_pages: 4096
+      max_tokens: 32768
+      grouping_rule: base_name_equality
+      named_gap: {sentence_detection: not_implemented, language_identification: not_implemented, abstract: header_label_s03, pdf_version_vs_tei_body: envelope}
+      denominators: {blocks: 2375, tokens: 75369, runs: 1313, body_bibr_markers: 376, bibliography_anchor_total: 380, pooling: forbidden}
+      receipt_digest: 285a5ddd0c49a51616de2f40a48b6c9d18ce0a71e8685a73d3c15ace11069ec9
+      proof_level: contract
+      offline_limits:
+      - no_preserved_alto_or_page_geometry_so_pdf_to_body_rows_is_unproven
+      - same_n_frame_is_tei_to_body_atoms_not_pdf_to_atoms
+      - sentence_and_language_are_named_gaps_not_reproduced_detectors
+      - abstract_is_a_header_label_and_pdf_version_vs_tei_body_is_envelope_not_a_crf_family
+      - fulltext_post_process_is_not_reproduced
+      - real_model_label_sequences_are_structural_invariants_not_recorded_goldens
+      - lexicon_bundle_is_injected_and_grobid_model_and_lexicon_bytes_are_never_redistributed
   figure: {producer: S16, disposition: fallback, evidence_state: unsupported, schema_version: native-visual-heads.v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
   table: {producer: S16, disposition: fallback, evidence_state: not_observed, schema_version: native-visual-heads.v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
   formula: {producer: S16, disposition: fallback, evidence_state: unsupported, schema_version: native-visual-heads.v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
