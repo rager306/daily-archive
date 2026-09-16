@@ -57,6 +57,7 @@ mod native_fulltext_blocks;
 mod native_fulltext_composition;
 mod native_fulltext_features;
 mod native_fulltext_reading_order;
+mod native_fulltext_sentence;
 mod native_fulltext_sequence;
 mod native_header_features;
 mod native_header_fields;
@@ -288,6 +289,13 @@ pub use native_fulltext_reading_order::{
     NATIVE_FULLTEXT_READING_ORDER_SCHEMA_VERSION, NativeFulltextPageToken,
     NativeFulltextReadingOrder, NativeFulltextReadingOrderError, NativeFulltextTokenText,
     PageReadingSpan, cross_page_runs, glue_fulltext_reading_order,
+};
+pub use native_fulltext_sentence::{
+    NATIVE_BODY_ADJACENT_SURFACES, NATIVE_FULLTEXT_SENTENCE_SCHEMA_VERSION,
+    NATIVE_LANGUAGE_GAP_REASON, NATIVE_LANGUAGE_RESOURCE_NAME, NATIVE_SENTENCE_GAP_REASON,
+    NATIVE_SENTENCE_RESOURCE_NAME, NativeBodyStep, NativeBodyStepOutcome, NativeBodyStepReceipt,
+    NativeBodySurfaceKind, NativeBodyVersionSurface, NativeLanguageStep, NativeSentenceStep,
+    native_body_version_surface,
 };
 pub use native_fulltext_sequence::{
     FulltextLabelRun, MAX_NATIVE_FULLTEXT_SEQUENCE_ROWS, NATIVE_FULLTEXT_BASE_LABELS,
