@@ -62,6 +62,7 @@ mod native_fulltext_reading_order;
 mod native_fulltext_sentence;
 mod native_fulltext_sequence;
 mod native_funding_features;
+mod native_funding_sequence;
 mod native_header_features;
 mod native_header_fields;
 mod native_header_sequence;
@@ -330,6 +331,14 @@ pub use native_funding_features::{
     NativeFundingGazetteerCoverage, NativeFundingGazetteerLane, NativeFundingGazetteerSpan,
     check_funding_feature_columns, render_funding_feature_text, render_funding_features,
     span_covers as funding_span_covers, validate_funding_gazetteer_coverage,
+};
+pub use native_funding_sequence::{
+    MAX_NATIVE_FUNDING_ROWS, NATIVE_FUNDING_BASE_LABELS, NATIVE_FUNDING_LABELS,
+    NATIVE_FUNDING_SEQUENCE_SCHEMA_VERSION, NATIVE_FUNDING_UNMODELED_JAVA_LABELS,
+    NativeFundingAbsence, NativeFundingDecodeOutcome, NativeFundingEntry, NativeFundingRole,
+    NativeFundingSequenceError, check_funding_column_window, check_funding_label_block,
+    decode_funding_sequence, funding_entries_from_decoded, funding_label_is_admissible,
+    funding_role_of_label,
 };
 pub use native_header_features::{
     BlockStatus, HeaderAlignment, HeaderFeatureRow, HeaderFeatureToken, HeaderFontStatistics,
