@@ -65,6 +65,7 @@ mod native_header_fields;
 mod native_header_sequence;
 mod native_personal_name;
 mod native_segmentation;
+mod native_table_sequence;
 mod native_visual;
 mod native_visual_family_cluster;
 mod p5_shadow_join;
@@ -345,6 +346,15 @@ pub use native_segmentation::{
     NATIVE_SEGMENTATION_SCHEMA_VERSION, NativeSegmenter, SectionReceipt, SegmentationConfig,
     SegmentationError, SegmentationLimits, SegmentationOutcome, TokenAssignment, segment_document,
     segment_document_full,
+};
+pub use native_table_sequence::{
+    MAX_NATIVE_TABLE_ROWS, NATIVE_TABLE_BASE_LABELS, NATIVE_TABLE_EMITTED_COLUMNS,
+    NATIVE_TABLE_LABELS, NATIVE_TABLE_MODEL_MAX_COLUMN_INDEX, NATIVE_TABLE_SEQUENCE_SCHEMA_VERSION,
+    NativeTableAbsence, NativeTableCell, NativeTableCells, NativeTableDecodeOutcome,
+    NativeTableRevertReason, NativeTableSequenceError, NativeTableSpan, check_table_column_window,
+    check_table_label_block, cluster_opens_new_table, decode_table_sequence,
+    table_cells_from_inventory, table_label_is_admissible, table_revert_reason,
+    table_spans_from_decoded,
 };
 pub use native_visual::{
     FigureHeadReceipt, FormulaHeadReceipt, MAX_DIGEST_BYTES, MAX_PRIMITIVES, MAX_RECEIPTS,
