@@ -36,6 +36,27 @@ pub(crate) fn choose_parsed_action(grammar_profile: &str, toc_exists: bool) -> &
     }
 }
 
+/// Resolve the parsed-stage dispatch exactly as production does.
+///
+/// This is the single composition point of the three production steps:
+/// consult `grammar_route` (fail-closed — a consult error yields NO
+/// policy-derived action), observe the TOC cache, then map the consulted
+/// profile onto a CLI action. `run_pipeline_for` delegates here, so a test
+/// exercising this selector exercises the real dispatch decision rather
+/// than a literal. Returns the decision so callers can stamp the
+/// `policy_hash` that produced the action.
+pub fn resolve_parsed_dispatch(
+    paper_id: &str,
+) -> Option<(
+    da_application::parse_grammar::ParseGrammarDecision,
+    &'static str,
+)> {
+    let g = consult_parse_grammar_cli(paper_id, None, None, None).ok()?;
+    let toc_exists = toc_observations_path(paper_id).exists();
+    let chosen = choose_parsed_action(&g.grammar_profile, toc_exists);
+    Some((g, chosen))
+}
+
 pub(crate) fn stamp_parse_grammar(
     m: &mut serde_yaml::Mapping,
     profile: &str,
@@ -2859,15 +2880,15 @@ fn run_pipeline_for(paper_id: &str) -> anyhow::Result<PipelineOutcome> {
         };
 
         let _ = action_first;
-        // parsed-stage: consult grammar_route (fail-open) and pick CLI.
+        // parsed-stage: consult grammar_route (fail-closed) and pick CLI.
         // page_outline + TOC cache → parse-pdf-toc; else parse-pdf (XY-Cut has no CLI).
+        // Delegates to `resolve_parsed_dispatch` so the tested selector IS the
+        // production dispatch decision (R119: consult then choose the action).
         let mut parsed_actions: Vec<String> =
             action_list_owned.iter().map(|s| (*s).to_string()).collect();
         if *stage == "parsed"
-            && let Ok(g) = consult_parse_grammar_cli(paper_id, None, None, None)
+            && let Some((g, chosen)) = resolve_parsed_dispatch(paper_id)
         {
-            let toc_exists = toc_observations_path(paper_id).exists();
-            let chosen = choose_parsed_action(&g.grammar_profile, toc_exists);
             println!(
                 "   grammar_route: {} → {} (grammar_profile={} hash={})",
                 g.route.as_str(),
@@ -4113,5 +4134,297 @@ mod tests {
         assert_eq!(choose_parsed_action("page_outline", false), "parse-pdf");
         assert_eq!(choose_parsed_action("arxiv_pdf_dot", true), "parse-pdf");
         assert_eq!(choose_parsed_action("arxiv_pdf_dot", false), "parse-pdf");
+    }
+
+    /// Restores a previously-set env var on drop (edition 2024 marks
+    /// `std::env::set_var` unsafe). Callers hold `CWD_LOCK`; the policy
+    /// keys below are disjoint from the `DA_SERVE_GRAPH_*` / `DA_LOAD_*`
+    /// keys other modules' `EnvGuard`s touch.
+    struct EnvGuard {
+        key: &'static str,
+        previous: Option<String>,
+    }
+
+    impl EnvGuard {
+        fn set(key: &'static str, value: &str) -> Self {
+            let previous = std::env::var(key).ok();
+            // SAFETY: single-threaded test scope; CWD_LOCK serializes every
+            // env-mutating test in this module (mirrors serve_graph.rs).
+            unsafe { std::env::set_var(key, value) };
+            Self { key, previous }
+        }
+    }
+
+    impl Drop for EnvGuard {
+        fn drop(&mut self) {
+            // SAFETY: see EnvGuard::set; restoration happens under CWD_LOCK.
+            match &self.previous {
+                Some(value) => unsafe { std::env::set_var(self.key, value) },
+                None => unsafe { std::env::remove_var(self.key) },
+            }
+        }
+    }
+
+    /// Absolute path to a committed, git-tracked policy fixture.
+    fn policy_fixture_path(name: &str) -> std::path::PathBuf {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/policies/fixtures")
+            .join(name);
+        path.canonicalize().unwrap_or(path)
+    }
+
+    /// Write a temp registry derived from the committed DATA registry with
+    /// `grammar_route.wat` pointed at `wat_path` (absolute: the process CWD is
+    /// the temp dir, so relative DATA paths would not resolve).
+    ///
+    /// `data/policies/registry.yaml` is sha256-bound in
+    /// `scholarly_parse_plane.yaml#bindings.source_data` and is never rewritten
+    /// by tests.
+    fn write_temp_registry(dir: &Path, wat_path: &Path) -> std::path::PathBuf {
+        let committed = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/policies/registry.yaml");
+        let yaml = std::fs::read_to_string(&committed).expect("committed registry must exist");
+        let line = "wat: data/policies/fixtures/grammar_route.wat";
+        assert!(
+            yaml.contains(line),
+            "committed registry layout changed; DATA binding cannot be derived"
+        );
+        let patched = yaml.replace(line, &format!("wat: {}", wat_path.display()));
+        let out = dir.join("registry.temp.yaml");
+        std::fs::write(&out, patched).unwrap();
+        out
+    }
+
+    /// Materialize the parsed-stage TOC observation cache in the temp CWD so
+    /// `toc_exists` is true and the page_outline variant can reach
+    /// `parse-pdf-toc`.
+    fn write_toc_cache(tmp: &Path, paper_id: &str) {
+        let dir = tmp.join("artifacts/pipeline_cache/pdf_toc_observations");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join(format!("{paper_id}.json")),
+            r#"{"total_pages": 18, "toc": [{"title": "1 Introduction"}]}"#,
+        )
+        .unwrap();
+    }
+
+    /// Binding-goal of S07: changing the policy artifact changes the ACTUALLY
+    /// chosen parsed-stage action, through the production consult path — not
+    /// through a literal handed to `choose_parsed_action`.
+    #[test]
+    fn policy_variant_changes_parsed_dispatch() {
+        let _guard = CWD_LOCK.lock().unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        let paper = "2601.00001";
+        write_toc_cache(tmp.path(), paper);
+        let _restore = CwdGuard::new(&tmp);
+        let _pages = EnvGuard::set("DA_PARSE_PAGES", "18");
+        let _bookmarks = EnvGuard::set("DA_PARSE_BOOKMARKS", "0");
+        let _quality = EnvGuard::set("DA_PARSE_TEXT_QUALITY", "0.85");
+
+        let cases: [(&str, &str, &str, &str); 3] = [
+            ("grammar_route.wat", "xy_cut", "arxiv_pdf_dot", "parse-pdf"),
+            (
+                "grammar_route_always_page_outline.wat",
+                "page_outline",
+                "page_outline",
+                "parse-pdf-toc",
+            ),
+            (
+                "grammar_route_always_grobid.wat",
+                "grobid_structural",
+                "arxiv_pdf_dot",
+                "parse-pdf",
+            ),
+        ];
+
+        let mut hashes: Vec<String> = Vec::new();
+        for (fixture, route, profile, action) in cases {
+            let wat = policy_fixture_path(fixture);
+            let registry = write_temp_registry(tmp.path(), &wat);
+            let _registry_env = EnvGuard::set("DA_POLICY_REGISTRY", registry.to_str().unwrap());
+            let (g, chosen) =
+                resolve_parsed_dispatch(paper).expect("consult + TOC cache must dispatch");
+            assert_eq!(g.route.as_str(), route, "route for {fixture}");
+            assert_eq!(g.grammar_profile, profile, "profile for {fixture}");
+            assert_eq!(chosen, action, "dispatched action for {fixture}");
+            assert!(
+                matches!(g.source, da_domain::fsm_policy::PolicySource::Wasm { .. }),
+                "{fixture} must be stamped wasm, not native fallback"
+            );
+            hashes.push(g.policy_hash);
+        }
+
+        assert_ne!(hashes[0], hashes[1], "policy variant must change the hash");
+        assert_ne!(hashes[1], hashes[2], "policy variant must change the hash");
+        assert_ne!(hashes[0], hashes[2], "policy variant must change the hash");
+    }
+
+    /// The stamp is a CONTENT binding of the artifact that actually ran.
+    ///
+    /// `WasmPolicyHost` hashes the compiled module (`wat::parse_bytes` output),
+    /// so the executed bytes are the compiled module — not the raw `.wat` text.
+    /// The negative control pins which byte string is bound.
+    #[test]
+    fn policy_hash_binds_executed_bytes() {
+        use sha2::Digest;
+        let _guard = CWD_LOCK.lock().unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        let paper = "2601.00002";
+        write_toc_cache(tmp.path(), paper);
+        let _restore = CwdGuard::new(&tmp);
+        let _pages = EnvGuard::set("DA_PARSE_PAGES", "18");
+        let _quality = EnvGuard::set("DA_PARSE_TEXT_QUALITY", "0.85");
+
+        let wat = policy_fixture_path("grammar_route.wat");
+        let registry = write_temp_registry(tmp.path(), &wat);
+        let _registry_env = EnvGuard::set("DA_POLICY_REGISTRY", registry.to_str().unwrap());
+
+        let (g, _) = resolve_parsed_dispatch(paper).expect("consult must dispatch");
+        let raw = std::fs::read(&wat).unwrap();
+        let compiled = wat::parse_bytes(&raw).unwrap();
+        let mut executed = sha2::Sha256::new();
+        executed.update(&compiled);
+        assert_eq!(
+            g.policy_hash,
+            hex::encode(executed.finalize()),
+            "policy_hash must be the content hash of the executed module"
+        );
+
+        let mut text = sha2::Sha256::new();
+        text.update(&raw);
+        assert_ne!(
+            g.policy_hash,
+            hex::encode(text.finalize()),
+            "the bound byte string is the compiled module, not the .wat text"
+        );
+    }
+
+    /// Missing or malformed policy registry: the consult fails, so no
+    /// policy-derived action is invented — the pipeline keeps its
+    /// DATA-declared action list (pre-existing dispatch-layer fall-open).
+    #[test]
+    fn missing_or_malformed_policy_registry_yields_no_policy_dispatch() {
+        let _guard = CWD_LOCK.lock().unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        let paper = "2601.00005";
+        write_toc_cache(tmp.path(), paper);
+        let _restore = CwdGuard::new(&tmp);
+        let _pages = EnvGuard::set("DA_PARSE_PAGES", "18");
+        let _quality = EnvGuard::set("DA_PARSE_TEXT_QUALITY", "0.85");
+
+        let absent = tmp.path().join("no-such-registry.yaml");
+        let _absent_env = EnvGuard::set("DA_POLICY_REGISTRY", absent.to_str().unwrap());
+        assert!(consult_parse_grammar_cli(paper, None, None, None).is_err());
+        assert!(resolve_parsed_dispatch(paper).is_none());
+
+        let malformed = tmp.path().join("malformed-registry.yaml");
+        std::fs::write(&malformed, "decision_points: [not-a-map\n").unwrap();
+        let _malformed_env = EnvGuard::set("DA_POLICY_REGISTRY", malformed.to_str().unwrap());
+        assert!(consult_parse_grammar_cli(paper, None, None, None).is_err());
+        assert!(resolve_parsed_dispatch(paper).is_none());
+    }
+
+    /// An unknown route code is a hard error, never a silent XyCut/default
+    /// dispatch: the selector yields no policy-derived action at all.
+    #[test]
+    fn unknown_route_code_fails_closed() {
+        use da_ports::fsm_policy::FsmPolicyPort;
+        let _guard = CWD_LOCK.lock().unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        let paper = "2601.00003";
+        write_toc_cache(tmp.path(), paper);
+        let _restore = CwdGuard::new(&tmp);
+        let _pages = EnvGuard::set("DA_PARSE_PAGES", "18");
+        let _quality = EnvGuard::set("DA_PARSE_TEXT_QUALITY", "0.85");
+
+        // Inline fixture: 3 is not a GrammarRoute code.
+        let bad = tmp.path().join("grammar_route_code3.wat");
+        std::fs::write(
+            &bad,
+            "(module (func (export \"route\") (param i32 i32 i32) (result i32) (i32.const 3)))\n",
+        )
+        .unwrap();
+        let registry = write_temp_registry(tmp.path(), &bad);
+        let _registry_env = EnvGuard::set("DA_POLICY_REGISTRY", registry.to_str().unwrap());
+
+        let yaml = std::fs::read_to_string(&registry).unwrap();
+        let features = features_from_env_and_cache(paper, None, None, None);
+        let host = da_adapters::wasm_policy::SharedWasmPolicyHost::from_path(
+            &bad,
+            da_domain::fsm_policy::DecisionPoint::GrammarRoute,
+        )
+        .expect("module compiles");
+        let err = da_application::parse_grammar::resolve_parse_grammar(
+            &yaml,
+            Some(&host as &dyn FsmPolicyPort),
+            &features,
+        )
+        .expect_err("invalid code must not fall open");
+        assert!(
+            matches!(err, da_ports::fsm_policy::FsmPolicyError::InvalidCode(3)),
+            "expected InvalidCode(3), got {err:?}"
+        );
+
+        assert!(
+            consult_parse_grammar_cli(paper, None, None, None).is_err(),
+            "production consult must propagate the invalid code"
+        );
+        assert!(
+            resolve_parsed_dispatch(paper).is_none(),
+            "no policy-derived action may be dispatched from an invalid policy"
+        );
+    }
+
+    /// The manifest stamp carries the provenance of the variant that actually
+    /// decided the dispatch, so a replay can name the exact policy bytes.
+    #[test]
+    fn stamp_from_grammar_records_variant_provenance() {
+        let _guard = CWD_LOCK.lock().unwrap();
+        let tmp = tempfile::tempdir().unwrap();
+        let paper = "2601.00004";
+        write_toc_cache(tmp.path(), paper);
+        let _restore = CwdGuard::new(&tmp);
+        let _pages = EnvGuard::set("DA_PARSE_PAGES", "18");
+        let _quality = EnvGuard::set("DA_PARSE_TEXT_QUALITY", "0.85");
+
+        let mut stamps: Vec<serde_yaml::Mapping> = Vec::new();
+        for fixture in ["grammar_route.wat", "grammar_route_always_page_outline.wat"] {
+            let wat = policy_fixture_path(fixture);
+            let registry = write_temp_registry(tmp.path(), &wat);
+            let _registry_env = EnvGuard::set("DA_POLICY_REGISTRY", registry.to_str().unwrap());
+            let (g, _) = resolve_parsed_dispatch(paper).expect("consult must dispatch");
+            let mut stamp = serde_yaml::Mapping::new();
+            stamp_from_grammar(&mut stamp, &g);
+            assert_eq!(
+                stamp.get("policy_source").and_then(|v| v.as_str()),
+                Some("wasm"),
+                "{fixture} must stamp the wasm source"
+            );
+            stamps.push(stamp);
+        }
+
+        let hash = |m: &serde_yaml::Mapping| {
+            m.get("policy_hash")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string()
+        };
+        let route = |m: &serde_yaml::Mapping| {
+            m.get("grammar_route")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string()
+        };
+        assert_ne!(
+            hash(&stamps[0]),
+            hash(&stamps[1]),
+            "variant provenance must differ by policy_hash"
+        );
+        assert_ne!(
+            route(&stamps[0]),
+            route(&stamps[1]),
+            "variant provenance must record the deciding route"
+        );
     }
 }
