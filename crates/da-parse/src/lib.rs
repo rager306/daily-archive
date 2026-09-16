@@ -61,6 +61,7 @@ mod native_fulltext_features;
 mod native_fulltext_reading_order;
 mod native_fulltext_sentence;
 mod native_fulltext_sequence;
+mod native_funding_features;
 mod native_header_features;
 mod native_header_fields;
 mod native_header_sequence;
@@ -319,6 +320,16 @@ pub use native_fulltext_sequence::{
     NATIVE_FULLTEXT_LABELS, NATIVE_FULLTEXT_SEQUENCE_SCHEMA_VERSION, NativeFulltextDecodeCandidate,
     NativeFulltextDecodeOutcome, NativeFulltextSequenceError, check_fulltext_label_block,
     decode_fulltext_sequence, fulltext_label_is_admissible,
+};
+pub use native_funding_features::{
+    FundingCapitalisation, FundingDigit, FundingFeatureRow, FundingFeatureToken, FundingLineStatus,
+    FundingPunctType, MAX_NATIVE_FUNDING_FEATURE_ROWS, MAX_NATIVE_FUNDING_GAZETTEER_SPANS,
+    NATIVE_FUNDING_FEATURE_COLUMNS, NATIVE_FUNDING_FEATURES_SCHEMA_VERSION,
+    NATIVE_FUNDING_LABEL_COLUMN_DUMMY, NATIVE_FUNDING_LABEL_COLUMN_INDEX,
+    NATIVE_FUNDING_MODEL_MAX_COLUMN_INDEX, NATIVE_FUNDING_ROW_COLUMNS, NativeFundingFeatureError,
+    NativeFundingGazetteerCoverage, NativeFundingGazetteerLane, NativeFundingGazetteerSpan,
+    check_funding_feature_columns, render_funding_feature_text, render_funding_features,
+    span_covers as funding_span_covers, validate_funding_gazetteer_coverage,
 };
 pub use native_header_features::{
     BlockStatus, HeaderAlignment, HeaderFeatureRow, HeaderFeatureToken, HeaderFontStatistics,
