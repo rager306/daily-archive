@@ -28,6 +28,7 @@
 mod backend;
 mod batch;
 mod cache;
+mod callout_markers;
 mod conservation;
 mod cross_stage_semantic_invariants;
 mod debug_tape;
@@ -89,6 +90,13 @@ pub use cache::{
     RawStageRead, RawTeiEnvelopePayload, TwoStageParseCache, project_article_stage_key,
     project_article_stage_key_with_backend_version, raw_tei_stage_key,
     raw_tei_stage_key_with_backend_version,
+};
+pub use callout_markers::{
+    CALLOUT_MARKER_SCHEMA_VERSION, CalloutBodyInventory, CalloutBodyTarget, CalloutLabelBasis,
+    CalloutLabelKind, CalloutLink, CalloutLinkReport, CalloutLinkTarget, CalloutLinkUnresolved,
+    CalloutMarkerClass, CalloutMarkerError, CalloutMarkerOccurrence, MAX_CALLOUT_MARKERS,
+    MAX_CALLOUT_RANGE_SPAN, MAX_CALLOUT_TEXT_BYTES, classify_and_link_callout_markers,
+    classify_callout_markers, link_callout_markers,
 };
 pub use conservation::{
     ByteRange, ConservationDelta, ConservationEngine, ConservationEntry, ConservationFamily,
