@@ -1779,7 +1779,7 @@ fn validate_registry_config_keys(registry: &serde_yaml::Value) -> Vec<String> {
 /// The observation ledger tree stays exactly the sanctioned data/parse file
 /// set — no parallel ledger tree may appear (R113/R117).
 fn data_parse_tree_errs(entries: Vec<(String, bool)>) -> Vec<String> {
-    const SANCTIONED: [&str; 23] = [
+    const SANCTIONED: [&str; 24] = [
         "SCHEMA.yaml",
         "acceptance_manifest.yaml",
         "api_compatibility_ledger.yaml",
@@ -1798,6 +1798,7 @@ fn data_parse_tree_errs(entries: Vec<(String, bool)>) -> Vec<String> {
         "license_inventory.yaml",
         "native_body_accounting.yaml",
         "native_fulltext_composition.yaml",
+        "native_visual_families.yaml",
         "native_visual_heads.yaml",
         "p5_cross_stage.yaml",
         "p5_shadow_join.yaml",

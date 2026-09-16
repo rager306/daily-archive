@@ -65,6 +65,7 @@ mod native_header_sequence;
 mod native_personal_name;
 mod native_segmentation;
 mod native_visual;
+mod native_visual_family_cluster;
 mod p5_shadow_join;
 mod parser;
 mod profile;
@@ -346,6 +347,11 @@ pub use native_visual::{
     NativeVisualSequenceIdentity, NativeVisualSequenceReceipt, NativeVisualSequenceStep,
     TableHeadReceipt, detect_figure_heads, detect_formula_heads, detect_table_heads,
     run_visual_heads_sequence,
+};
+pub use native_visual_family_cluster::{
+    FamilyLabelCluster, MAX_NATIVE_VISUAL_FAMILY_ROWS, NATIVE_VISUAL_FAMILY_NAME_PREFIX,
+    NativeCaptionLinkAbsence, NativeCaptionLinks, NativeCaptionMarker,
+    NativeVisualFamilyClusterError, caption_links_from_markers, cluster_family_label_runs,
 };
 pub use p5_shadow_join::{
     JavaP2Observation, JavaP5Observation, NativeBodyShadowSummary, P5_SHADOW_JOIN_SCHEMA_VERSION,

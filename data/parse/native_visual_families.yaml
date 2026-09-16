@@ -1,0 +1,183 @@
+# M507 S06/T01: the four native GROBID visual/funding families.
+#
+# This file is DATA for the shadow observation bands only. The frozen GROBID
+# 0.9.0 CRF model bytes are NOT redistributable and are never bundled (D358):
+# only their declared header facts (checkpoint, `#rdr#` referenced-column
+# window, label block) are transcribed here. The production authority stays
+# `java-grobid-http@0.9.0-crf`; nothing in this file is a route, a priority or a
+# promotion (D127).
+#
+# `family.label.declared_labels` is transcribed **verbatim in model order**,
+# because label ids index the Wapiti weight blocks; the label-block checker
+# compares the declared set (order-independent), the decoder uses the loaded
+# model's own order.
+schema_version: native-visual-families.v1
+contract_id: native-visual-families-shadow
+adr_ref: ADR-075
+decisions: [D127, D358, D359, D362, D363]
+rights_ref: data/parse/grobid_model_rights.yaml
+bundled_model_bytes: false
+model_root_env: DA_GROBID_MODEL_ROOT
+observation_mode: shadow
+promotion_state: candidate
+production_route: forbidden
+graph_write: forbidden
+import_eligible: false
+auto_promote: forbidden
+deployed: false
+decision_point: 6
+independently_selectable: [header, references]
+
+# figure/table/funding group their labels with GROBID's
+# `TaggingTokenClusteror.isBeginning(label)` rule (`I-` opens a cluster), which
+# is NOT the D359 `base_label_runs` rule the header/bibliography/fulltext bands
+# use. `I-<figure>` followed by `<figure>` is two clusters here, while
+# `<figure>` followed by `<figure>` is one.
+grouping:
+  rule: tagging_token_clusteror_is_beginning
+  name_prefix: "I-"
+  diverges_from: base_label_runs
+
+# Shared by figure and table (`postProcessFigureCaptions` /
+# `postProcessTableCaptions`). The inventory is caller-supplied, and the
+# marker-to-reference resolution is owned by the already-shipped S04
+# `native_callout_matching` surface — this band never resolves a marker.
+caption_link_lane:
+  marker_dialect: citation_marker
+  inventory_source: caller
+  resolve_owner: native_callout_matching
+  empty_inventory: not_observed
+
+families:
+  # `models/figure/model.wapiti`: the secondary model that labels the content
+  # block of a fulltext `<figure>` cluster. Its rows are the fulltext 27-column
+  # ABI, but the model references only columns 0..=25 (`template_excludes: [26]`).
+  figure:
+    kind: crf_sequence
+    model_id: figure
+    model_file: figure/model.wapiti
+    declared_checkpoint: "#mdl#2#521"
+    declared_rdr: "#rdr#85/25/0"
+    referenced_columns: 26
+    emitted_columns: 27
+    template_excludes: [26]
+    declared_label_count: 7
+    declared_labels:
+    - "I-<figure_head>"
+    - "I-<label>"
+    - "I-<figDesc>"
+    - "<figDesc>"
+    - "I-<content>"
+    - "<content>"
+    - "<figure_head>"
+    base_labels: ["<figure_head>", "<label>", "<figDesc>", "<content>"]
+    # Declared by the Java label enum but absent from the frozen model block, so
+    # no decode path may produce it and no branch may map it.
+    java_declared_not_in_model: ["<other>"]
+
+  # `models/table/model.wapiti`: same fulltext ABI as figure, plus the `<note>`
+  # and `I-<other>` labels. `TableParser.validateTable` (label must parse as an
+  # integer, head must start with `tab`) and the Row/Cell merge geometry are a
+  # named `offline_limit` of this wave and are not modelled here.
+  table:
+    kind: crf_sequence
+    model_id: table
+    model_file: table/model.wapiti
+    declared_checkpoint: "#mdl#2#1391"
+    declared_rdr: "#rdr#85/25/0"
+    referenced_columns: 26
+    emitted_columns: 27
+    template_excludes: [26]
+    declared_label_count: 10
+    declared_labels:
+    - "I-<other>"
+    - "I-<figure_head>"
+    - "I-<label>"
+    - "I-<figDesc>"
+    - "<figDesc>"
+    - "I-<content>"
+    - "<content>"
+    - "I-<note>"
+    - "<note>"
+    - "<figure_head>"
+    base_labels:
+    - "<other>"
+    - "<figure_head>"
+    - "<label>"
+    - "<figDesc>"
+    - "<content>"
+    - "<note>"
+    java_declared_not_in_model: []
+
+  # GROBID 0.9.0 ships no `formula` model: `models/` has no `formula` directory
+  # and `GrobidModels.FORMULA` does not exist. Equations are fulltext labels, and
+  # `FullTextParser.processEquations` joins consecutive EQUATION/EQUATION_LABEL
+  # clusters, closing an equation on any other base label. This family is
+  # therefore a locator+join over an already-decoded fulltext sequence, never a
+  # second decoder.
+  formula:
+    kind: locator_join
+    model_id: null
+    locator: fulltext
+    locator_labels: ["<equation>", "<equation_label>", "<equation_marker>"]
+    join_labels: ["<equation>", "<equation_label>"]
+
+  # `models/funding-acknowledgement/model.wapiti`: the only family with its own
+  # feature builder (`FeaturesVectorFunding`, `#rdr#100/16/0`): 17 printed
+  # features plus a label slot carrying the literal `0` at inference time. The
+  # two gazetteer lanes are fed from lexicons that D358 forbids bundling, so
+  # coverage is caller-supplied typed inclusive spans (D363).
+  funding:
+    kind: crf_sequence
+    model_id: funding-acknowledgement
+    model_file: funding-acknowledgement/model.wapiti
+    declared_checkpoint: "#mdl#2#15784"
+    declared_rdr: "#rdr#100/16/0"
+    referenced_columns: 17
+    emitted_columns: 17
+    label_column_index: 17
+    label_column_value: "0"
+    declared_label_count: 20
+    declared_labels:
+    - "I-<other>"
+    - "<other>"
+    - "I-<funderName>"
+    - "<funderName>"
+    - "I-<grantNumber>"
+    - "<grantNumber>"
+    - "I-<person>"
+    - "<person>"
+    - "I-<programName>"
+    - "<programName>"
+    - "I-<grantName>"
+    - "<grantName>"
+    - "I-<projectName>"
+    - "<projectName>"
+    - "I-<affiliation>"
+    - "<affiliation>"
+    - "I-<institution>"
+    - "<institution>"
+    - "I-<infrastructure>"
+    - "<infrastructure>"
+    base_labels:
+    - "<other>"
+    - "<funderName>"
+    - "<grantNumber>"
+    - "<person>"
+    - "<programName>"
+    - "<grantName>"
+    - "<projectName>"
+    - "<affiliation>"
+    - "<institution>"
+    - "<infrastructure>"
+    # Declared by `FundingAcknowledgementParser`'s Java label enum but absent
+    # from the frozen model block: no model branch can emit them.
+    java_declared_not_in_model:
+    - "<funderAbbrv>"
+    - "<programAbbrv>"
+    - "<projectAbbrv>"
+    - "<url>"
+    gazetteer_lanes: [knownFunder, knownInfrastructure]
+    gazetteer_sources:
+    - lexicon/organisations/funders.txt
+    - lexicon/organisations/research_infrastructures.txt
