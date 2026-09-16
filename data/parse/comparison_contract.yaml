@@ -853,3 +853,114 @@ observability:
   first_emitter: crates/da-cli/examples/parse_compat_baseline.rs
   never_log_raw_document_content: true
   aggregate_counts_only: true
+
+# ───── S08/T01: native CRF core profile and closed SIMD/PGO disposition ─────
+#
+# Sibling block only: no existing block above is mutated by this record.
+# S03 recorded an UNMEASURED hot spot — `da_domain::scalar_crf::map_input`
+# rebuilds a `BTreeMap` over the whole observation table and a `Vec<Vec<&str>>`
+# of every input row on each call — while declared `da-domain` optimization as
+# "not without separate proof". This block is that proof surface: it names the
+# phases the profile must measure, the DATA threshold that decides whether a
+# dense numeric kernel was found, and the closed disposition vocabulary.
+# Nothing here adopts an optimization: `selection` stays forbidden in every
+# sub-block, the PGO disposition stays `not_adopted`, and H05 (RSS/CPU/byte
+# ceilings) is explicitly NOT closed by this slice.
+native_core_qualification:
+  schema_version: native-core-qualification.v1
+  adr_ref: ADR-075
+  requirement_ids: [R109, R085, R117]
+  manifest_binding: data/parse/comparison_contract.yaml
+
+  # Measurement plan. Timing is observational evidence: it is recorded in the
+  # in-process receipt, marked observational, and excluded from the emitted
+  # artifact bytes and from every acceptance denominator.
+  profile:
+    warmup_iterations: 2
+    repetitions: 5
+    percentiles:
+      p50_ms: 50
+      p95_ms: 95
+      p99_ms: 99
+    throughput_units_per_second: decoded_positions_per_second
+    allocator:
+      allocations: measured_delta_between_injected_snapshots
+      allocated_bytes: measured_delta_between_injected_snapshots
+    private_scratch:
+      capacity_bytes: scratch_arena_capacity
+      high_water_bytes: scratch_arena_high_water
+    scalar_oracle: required
+    selection_forbidden: true
+
+  # `dense_numeric_kernel_found` is true only when an eligible phase is BOTH
+  # numeric over declared-contiguous storage AND at or above `threshold` of the
+  # measured native-core phase share. Phase vocabulary is closed: a phase name
+  # outside `phase_kinds` is rejected by the reader, never ignored.
+  dense_numeric_kernel_rule:
+    rule_id: dense-contiguous-numeric-phase
+    share_metric: phase_share_of_native_core
+    threshold: 0.25
+    requires_contiguous_numeric_arrays: true
+    eligible_phases: [viterbi_decode]
+    outcome_when_unmet: not_applicable
+    phase_kinds:
+      render_feature_strings:
+        work_kind: text
+        storage: arena_bytes
+        contiguous_numeric_arrays: false
+      observation_index_build:
+        work_kind: text
+        storage: btree_index
+        contiguous_numeric_arrays: false
+      map_input_lookup:
+        work_kind: text
+        storage: row_strings
+        contiguous_numeric_arrays: false
+      # The decoder's score/backpointer matrices are `Vec<Vec<f64>>` and
+      # `Vec<Vec<usize>>`: every row is a contiguous numeric slice scanned in
+      # order, while sparse weight reads still go through `BTreeMap`. The phase
+      # is contiguous numeric storage with sparse-map reads, so the measured
+      # share — never a SIMD-friendliness claim — is what the gate consumes.
+      viterbi_decode:
+        work_kind: numeric
+        storage: contiguous_numeric_rows
+        contiguous_numeric_arrays: true
+        sparse_weight_reads: true
+
+  # `measured_retained` is unreachable without all three DATA thresholds and a
+  # scalar-equivalence proof for an actually measured candidate. This slice
+  # measures no candidate, so the gate can only yield `not_applicable` or
+  # `measured_rejected`.
+  optimization:
+    states: [not_applicable, measured_rejected, measured_retained]
+    retained_requires_data_thresholds: true
+    retained_thresholds:
+      minimum_dense_phase_share: 0.25
+      minimum_repeated_cpu_improvement_ratio: 0.10
+      maximum_full_pipeline_p95_regression_ratio: 0.0
+      requires_scalar_equivalence: true
+    selection: forbidden
+    safe_rust_only: true
+
+  pgo:
+    disposition_vocabulary: [not_adopted, adopted]
+    adoption_requires: [profile, scalar_equivalence, full_pipeline_p95_non_regression, data_thresholds]
+    disposition: not_adopted
+    selection: forbidden
+
+  redaction:
+    forbidden: [raw_pdf, raw_text, raw_tei, token_text, model_bytes, lexicon_bytes, physical_path, hostname, executable]
+
+  promotion:
+    state: candidate
+    selected: forbidden
+    promoted: forbidden
+    auto_promote: forbidden
+    rollback_target: java-grobid-http@0.9.0-crf
+
+  h05_closure: not_claimed
+  h05_reason: >-
+    RSS ceilings, per-stage Java CPU wall-clock, and byte ceilings are NOT
+    closed or claimed by S08. Those stay typed not_observed; this block only
+    profiles the native scalar CRF core and records a closed SIMD/PGO
+    disposition.

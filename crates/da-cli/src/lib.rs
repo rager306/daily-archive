@@ -14,12 +14,18 @@ pub mod gold_graph;
 pub mod graph_query;
 pub mod graph_tasks;
 pub mod health_report;
-#[cfg(feature = "pdf-layout")]
+// S08/T01: layout_runtime holds the qualified CPU characterization primitive
+// (`characterize_cpu_kernel`, `gate_simd_candidate`) that the native core
+// profile consumes. It is pure std/serde/sha2, so it stays available in the
+// default feature set: the profile module, its example, and its contract test
+// must compile without `pdf-layout`.
 pub mod layout_runtime;
 pub mod load;
 pub mod load_journey;
 pub mod logging;
 pub mod materialization_progress;
+/// S08/T01 native CRF core profile and closed SIMD/PGO disposition.
+pub mod native_core_profile;
 pub mod parse_batch;
 pub mod parse_config;
 pub mod parse_job;

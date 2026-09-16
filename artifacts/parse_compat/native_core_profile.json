@@ -1,0 +1,270 @@
+{
+  "schema_version": "native-core-profile.v1",
+  "adr_ref": "ADR-075",
+  "qualification_schema_version": "native-core-qualification.v1",
+  "manifest_binding": "data/parse/comparison_contract.yaml",
+  "requirement_ids": [
+    "R109",
+    "R085",
+    "R117"
+  ],
+  "profile": {
+    "warmup_iterations": 2,
+    "repetitions": 5,
+    "percentile_ranks": {
+      "p50_ms": 50,
+      "p95_ms": 95,
+      "p99_ms": 99
+    },
+    "throughput_units": "decoded_positions_per_second",
+    "allocator_units": {
+      "allocations": "measured_delta_between_injected_snapshots",
+      "allocated_bytes": "measured_delta_between_injected_snapshots"
+    },
+    "private_scratch_units": {
+      "capacity_bytes": "scratch_arena_capacity",
+      "high_water_bytes": "scratch_arena_high_water"
+    },
+    "scalar_oracle": "required",
+    "selection_forbidden": true,
+    "timing_disposition": "observational_excluded_from_artifact"
+  },
+  "rule": {
+    "rule_id": "dense-contiguous-numeric-phase",
+    "share_metric": "phase_share_of_native_core",
+    "threshold": 0.25,
+    "requires_contiguous_numeric_arrays": true,
+    "eligible_phases": [
+      "viterbi_decode"
+    ],
+    "outcome_when_unmet": "not_applicable"
+  },
+  "phases": [
+    {
+      "phase": "render_feature_strings",
+      "work_kind": "text",
+      "storage": "arena_bytes",
+      "contiguous_numeric_arrays": false,
+      "sparse_weight_reads": false
+    },
+    {
+      "phase": "observation_index_build",
+      "work_kind": "text",
+      "storage": "btree_index",
+      "contiguous_numeric_arrays": false,
+      "sparse_weight_reads": false
+    },
+    {
+      "phase": "map_input_lookup",
+      "work_kind": "text",
+      "storage": "row_strings",
+      "contiguous_numeric_arrays": false,
+      "sparse_weight_reads": false
+    },
+    {
+      "phase": "viterbi_decode",
+      "work_kind": "numeric",
+      "storage": "contiguous_numeric_rows",
+      "contiguous_numeric_arrays": true,
+      "sparse_weight_reads": true
+    }
+  ],
+  "families": [
+    {
+      "family": "fulltext",
+      "model_sha256": "sha256:d155ac1c1065210250624b76fd4ea637012326c51740203dfb82229e19dd213d",
+      "model_size_bytes": 616,
+      "rows": 1024,
+      "positions": 1024,
+      "matched_observations": 1024,
+      "scalar_oracle_digest": "sha256:4aaec9bfd0a799840d6f7f9caa03ef21970dcc741142e312f7021c97a2739928",
+      "semantic_digest": "sha256:4aaec9bfd0a799840d6f7f9caa03ef21970dcc741142e312f7021c97a2739928",
+      "cpu_only": true,
+      "subprocess_io_included": false,
+      "private_scratch_capacity_bytes": 5851,
+      "private_scratch_high_water_bytes": 5851,
+      "dense_numeric_kernel_found": true,
+      "dense_phase": "viterbi_decode",
+      "dense_rule_reason_key": "eligible_phase_at_or_above_threshold",
+      "optimization_state": "measured_rejected",
+      "optimization_reason": "candidate failed semantic, repeatability, or full-pipeline regression gate; rule=dense-contiguous-numeric-phase; threshold=0.250; dense_phase=viterbi_decode; candidate=none_implemented; pgo=not_adopted",
+      "selection_forbidden": true
+    },
+    {
+      "family": "figure",
+      "model_sha256": "sha256:9ce129692e003fdc0edb9653d4b1781f7e3b217440ff8f5d574aa93f7ec67095",
+      "model_size_bytes": 436,
+      "rows": 1024,
+      "positions": 1024,
+      "matched_observations": 1024,
+      "scalar_oracle_digest": "sha256:c6f746504604bbf04e81580f4fe6c684c881f5c8c89be9551827ea189d607748",
+      "semantic_digest": "sha256:c6f746504604bbf04e81580f4fe6c684c881f5c8c89be9551827ea189d607748",
+      "cpu_only": true,
+      "subprocess_io_included": false,
+      "private_scratch_capacity_bytes": 57622,
+      "private_scratch_high_water_bytes": 57622,
+      "dense_numeric_kernel_found": true,
+      "dense_phase": "viterbi_decode",
+      "dense_rule_reason_key": "eligible_phase_at_or_above_threshold",
+      "optimization_state": "measured_rejected",
+      "optimization_reason": "candidate failed semantic, repeatability, or full-pipeline regression gate; rule=dense-contiguous-numeric-phase; threshold=0.250; dense_phase=viterbi_decode; candidate=none_implemented; pgo=not_adopted",
+      "selection_forbidden": true
+    },
+    {
+      "family": "table",
+      "model_sha256": "sha256:4406b3fc2ecacc3192808872abee0c511add91eff097c9b80414c699f431f686",
+      "model_size_bytes": 551,
+      "rows": 1024,
+      "positions": 1024,
+      "matched_observations": 1024,
+      "scalar_oracle_digest": "sha256:840ebe6db3c95f5861debefe5c9f3cde52dc1d73a4df916dd1f3107433f51160",
+      "semantic_digest": "sha256:840ebe6db3c95f5861debefe5c9f3cde52dc1d73a4df916dd1f3107433f51160",
+      "cpu_only": true,
+      "subprocess_io_included": false,
+      "private_scratch_capacity_bytes": 56394,
+      "private_scratch_high_water_bytes": 56394,
+      "dense_numeric_kernel_found": true,
+      "dense_phase": "viterbi_decode",
+      "dense_rule_reason_key": "eligible_phase_at_or_above_threshold",
+      "optimization_state": "measured_rejected",
+      "optimization_reason": "candidate failed semantic, repeatability, or full-pipeline regression gate; rule=dense-contiguous-numeric-phase; threshold=0.250; dense_phase=viterbi_decode; candidate=none_implemented; pgo=not_adopted",
+      "selection_forbidden": true
+    },
+    {
+      "family": "funding",
+      "model_sha256": "sha256:94f5a0e9232b09667c671ac2a4fe9b751c412b44763071e69119a40986bddbdf",
+      "model_size_bytes": 760,
+      "rows": 1024,
+      "positions": 1024,
+      "matched_observations": 1024,
+      "scalar_oracle_digest": "sha256:5cfc72f814c585a11c4ac44b69bba8613911f1caeffd2ea6f656d354defa0ada",
+      "semantic_digest": "sha256:5cfc72f814c585a11c4ac44b69bba8613911f1caeffd2ea6f656d354defa0ada",
+      "cpu_only": true,
+      "subprocess_io_included": false,
+      "private_scratch_capacity_bytes": 39208,
+      "private_scratch_high_water_bytes": 39208,
+      "dense_numeric_kernel_found": true,
+      "dense_phase": "viterbi_decode",
+      "dense_rule_reason_key": "eligible_phase_at_or_above_threshold",
+      "optimization_state": "measured_rejected",
+      "optimization_reason": "candidate failed semantic, repeatability, or full-pipeline regression gate; rule=dense-contiguous-numeric-phase; threshold=0.250; dense_phase=viterbi_decode; candidate=none_implemented; pgo=not_adopted",
+      "selection_forbidden": true
+    },
+    {
+      "family": "bibliography_reference",
+      "model_sha256": "sha256:f166f2e466db0782b60816d29f71a60ecf896bcb49654d97f52bcf3bda4614c5",
+      "model_size_bytes": 280,
+      "rows": 1024,
+      "positions": 1024,
+      "matched_observations": 1024,
+      "scalar_oracle_digest": "sha256:52bee75d9e50913723ae0f1049bb20cbc74c054c3f4828c6baaae9d9cfe07b80",
+      "semantic_digest": "sha256:52bee75d9e50913723ae0f1049bb20cbc74c054c3f4828c6baaae9d9cfe07b80",
+      "cpu_only": true,
+      "subprocess_io_included": false,
+      "private_scratch_capacity_bytes": 5265,
+      "private_scratch_high_water_bytes": 5265,
+      "dense_numeric_kernel_found": true,
+      "dense_phase": "viterbi_decode",
+      "dense_rule_reason_key": "eligible_phase_at_or_above_threshold",
+      "optimization_state": "measured_rejected",
+      "optimization_reason": "candidate failed semantic, repeatability, or full-pipeline regression gate; rule=dense-contiguous-numeric-phase; threshold=0.250; dense_phase=viterbi_decode; candidate=none_implemented; pgo=not_adopted",
+      "selection_forbidden": true
+    },
+    {
+      "family": "bibliography_citation",
+      "model_sha256": "sha256:20d78a1a51092b1542cb842398aa698cc5153ec033680f875feb44a07404eff0",
+      "model_size_bytes": 759,
+      "rows": 1024,
+      "positions": 1024,
+      "matched_observations": 1024,
+      "scalar_oracle_digest": "sha256:d9e89639ff93c91fb36ece948e15111192a835a42079321a3b09ca7468681e91",
+      "semantic_digest": "sha256:d9e89639ff93c91fb36ece948e15111192a835a42079321a3b09ca7468681e91",
+      "cpu_only": true,
+      "subprocess_io_included": false,
+      "private_scratch_capacity_bytes": 5888,
+      "private_scratch_high_water_bytes": 5888,
+      "dense_numeric_kernel_found": true,
+      "dense_phase": "viterbi_decode",
+      "dense_rule_reason_key": "eligible_phase_at_or_above_threshold",
+      "optimization_state": "measured_rejected",
+      "optimization_reason": "candidate failed semantic, repeatability, or full-pipeline regression gate; rule=dense-contiguous-numeric-phase; threshold=0.250; dense_phase=viterbi_decode; candidate=none_implemented; pgo=not_adopted",
+      "selection_forbidden": true
+    },
+    {
+      "family": "bibliography_name",
+      "model_sha256": "sha256:3dbbba2fa2e03fe9f30b0e0a354050380ed09577500f730d61976f4dc69c6d56",
+      "model_size_bytes": 272,
+      "rows": 1024,
+      "positions": 1024,
+      "matched_observations": 1024,
+      "scalar_oracle_digest": "sha256:d9550f0b424ea887fb6509bd6d7d50236e391fcd629087bc2fe2152c79712f5c",
+      "semantic_digest": "sha256:d9550f0b424ea887fb6509bd6d7d50236e391fcd629087bc2fe2152c79712f5c",
+      "cpu_only": true,
+      "subprocess_io_included": false,
+      "private_scratch_capacity_bytes": 6144,
+      "private_scratch_high_water_bytes": 6144,
+      "dense_numeric_kernel_found": true,
+      "dense_phase": "viterbi_decode",
+      "dense_rule_reason_key": "eligible_phase_at_or_above_threshold",
+      "optimization_state": "measured_rejected",
+      "optimization_reason": "candidate failed semantic, repeatability, or full-pipeline regression gate; rule=dense-contiguous-numeric-phase; threshold=0.250; dense_phase=viterbi_decode; candidate=none_implemented; pgo=not_adopted",
+      "selection_forbidden": true
+    },
+    {
+      "family": "bibliography_date",
+      "model_sha256": "sha256:a6a741e96183fd3064af4e0d6bfb96d83bd3c0cd56b8fc4664941fea5219531f",
+      "model_size_bytes": 187,
+      "rows": 1024,
+      "positions": 1024,
+      "matched_observations": 1024,
+      "scalar_oracle_digest": "sha256:43a33149760c0c1d38b82793e81e2deee76ecffc12c29e771116fbfe54855fd2",
+      "semantic_digest": "sha256:43a33149760c0c1d38b82793e81e2deee76ecffc12c29e771116fbfe54855fd2",
+      "cpu_only": true,
+      "subprocess_io_included": false,
+      "private_scratch_capacity_bytes": 4438,
+      "private_scratch_high_water_bytes": 4438,
+      "dense_numeric_kernel_found": true,
+      "dense_phase": "viterbi_decode",
+      "dense_rule_reason_key": "eligible_phase_at_or_above_threshold",
+      "optimization_state": "measured_rejected",
+      "optimization_reason": "candidate failed semantic, repeatability, or full-pipeline regression gate; rule=dense-contiguous-numeric-phase; threshold=0.250; dense_phase=viterbi_decode; candidate=none_implemented; pgo=not_adopted",
+      "selection_forbidden": true
+    }
+  ],
+  "disposition": {
+    "dense_numeric_kernel_found": true,
+    "dense_phase": "viterbi_decode",
+    "dense_rule_reason_key": "eligible_phase_at_or_above_threshold",
+    "optimization_state": "measured_rejected",
+    "optimization_reason": "candidate failed semantic, repeatability, or full-pipeline regression gate; rule=dense-contiguous-numeric-phase; threshold=0.250; dense_phase=viterbi_decode; candidate=none_implemented; pgo=not_adopted",
+    "selection_forbidden": true,
+    "pgo_disposition": "not_adopted"
+  },
+  "allocator": {
+    "state": "stable",
+    "allocations": 499397,
+    "allocated_bytes": 62881075
+  },
+  "promotion": {
+    "state": "candidate",
+    "selected": "forbidden",
+    "promoted": "forbidden",
+    "auto_promote": "forbidden",
+    "rollback_target": "java-grobid-http@0.9.0-crf"
+  },
+  "redaction": {
+    "forbidden": [
+      "raw_pdf",
+      "raw_text",
+      "raw_tei",
+      "token_text",
+      "model_bytes",
+      "lexicon_bytes",
+      "physical_path",
+      "hostname",
+      "executable"
+    ],
+    "timing_disposition": "observational_excluded_from_artifact"
+  },
+  "h05_closure": "not_claimed"
+}
