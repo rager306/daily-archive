@@ -220,3 +220,210 @@ redaction:
   allowed: [component_id, producer, disposition, lane, domain, genre, source_hash, artifact_sha256, evidence_digest, byte_count, truncated, fallback_target]
   forbidden: [raw_tei, tei_xml, pdf_bytes, body_text, text, captions, references, physical_path, hostname, executable, secret]
 used_by: [S18-T01, S18-T02, S18-T03, S18-T04, S18-T05]
+
+# S08/T04 additive route-recovery ledger (D377: one sibling block inside an
+# already sanctioned DATA file, never a new `data/parse/*.yaml`).
+#
+# This block JOINS two existing DATA authority tables — the closed P0..P9
+# cascade skeleton (`data/parse/grobid_compatibility.yaml#defaults.cascade_stages`)
+# and the component admission matrix above (`admission.current_matrix`, with
+# `component_receipts`) — into per-stage recovery verdicts, and quantifies them
+# with the measured Java-work receipt (`artifacts/parse_compat/native_java_work.json`).
+#
+# It is a DERIVED qualification table, never a route: no row dispatches
+# anything, `production_route` stays `forbidden` everywhere, and
+# `grobid_compatibility.yaml` remains the rollback/baseline authority. This
+# block owns the recovery qualification and nothing else.
+#
+# `java_models_observed` names are TAKEN FROM the S08/T03 verified receipt and
+# are never guessed here: the loader refuses a name the receipt did not observe,
+# refuses a model the receipt observed but no stage attributes, and refuses a
+# model attributed by two stages.
+route_recovery:
+  schema_version: native-route-recovery.v1
+  adr_ref: ADR-075
+  requirement_ids: [R109, R085, R123, R117]
+  # The two DATA tables this ledger joins. Everything else it reads is evidence
+  # and is listed separately below, never as a second authority.
+  source_tables:
+  - data/parse/grobid_compatibility.yaml#defaults.cascade_stages
+  - data/parse/native_fulltext_composition.yaml#admission.current_matrix
+  source_evidence:
+  - data/parse/native_fulltext_composition.yaml#component_receipts
+  - data/parse/native_fulltext_composition.yaml#admission.native_substitution_requires
+  - data/parse/native_fulltext_composition.yaml#admission.independently_selectable
+  - data/parse/native_fulltext_composition.yaml#source_evidence.s12_named_denominators
+  - data/parse/native_fulltext_composition.yaml#redaction.forbidden
+  - data/parse/layout_bakeoff.yaml#corpus
+  - artifacts/parse_compat/native_java_work.json
+  - artifacts/parse_compat/native_core_profile.json
+  - artifacts/parse_compat/native_core_smp.json
+  qualification_vocabulary:
+    # Closed lists, reused rather than reinvented: `component_states` must equal
+    # this file's top-level `dispositions` exactly, and `stage_verdicts` must
+    # equal the emitter's closed Rust vocabulary exactly. The loader refuses any
+    # drift between either pair.
+    component_states: [passed, fallback, rejected, unsupported, not_observed, invalid_evidence, stale]
+    stage_verdicts: [recoverable, not_qualified, fallback, not_observed]
+    condition_states: [met, unmet, not_applicable]
+    surface_states: [present, absent, none_declared]
+  # DATA-owned mapping from an owned component's admission disposition to the
+  # verdict it forces. `admitted` is not a stage verdict: it only means the
+  # component does not block recovery on its own. The key set must equal
+  # `dispositions` exactly, so a new component state cannot appear here unnamed.
+  component_state_verdicts:
+    passed: admitted
+    fallback: fallback
+    rejected: not_qualified
+    unsupported: not_qualified
+    not_observed: not_qualified
+    invalid_evidence: not_qualified
+    stale: not_qualified
+  # First match wins and every guard before the last is a refusal, so a stage
+  # reaches `recoverable` only by passing all of them. Declared here so the rule
+  # is DATA-owned; the emitter asserts this exact order against its closed enum.
+  verdict_rule:
+    order: [native_surface_absent, no_admitted_component, component_not_admitted, admission_conditions_unmet, core_qualification_missing, java_work_not_observed, no_attributed_java_work, all_conditions_met]
+    reasons:
+      native_surface_absent: no native surface is declared for the stage, or the declared path is absent from the tree
+      no_admitted_component: the stage owns no component in admission.current_matrix, so nothing may be recovered
+      component_not_admitted: at least one owned component is not `passed`
+      admission_conditions_unmet: at least one of the four substitution conditions is unmet
+      core_qualification_missing: the native-core qualification receipts are absent or unusable
+      java_work_not_observed: the Java-work receipt carries no measurement, so no reduction may be published
+      no_attributed_java_work: no measured Java model invocation is attributed to the stage
+      all_conditions_met: every recovery guard passed
+  # Applies to EVERY stage row. Each row restates it so a weakened row is visible
+  # in the diff, and the loader refuses any row that drifts from this copy.
+  recovery_rule_invariants:
+    requires_all_of: [exact_source_identity, exact_schema_version, optional_sha256_when_present, passing_receipt]
+    requires_core_qualification: true
+    requires_measured_java_work: true
+    pooling: forbidden
+  # How `recovery_rule_invariants.requires_all_of` is evaluated per component.
+  # These are the four conditions named by `admission.native_substitution_requires`.
+  admission_conditions:
+    exact_source_identity: the component receipt source_hash must be required_sha256
+    exact_schema_version: the component receipt schema_version must be an exact non-empty token
+    optional_sha256_when_present: the component receipt artifact_sha256 must be optional_sha256_when_present
+    passing_receipt: the component must be `passed` with evidence_state `passing`, and a terminal receipt never counts as a pass
+  measured_java_work:
+    unit: java_model_invocations
+    source: verified_stage_tape
+    receipt: artifacts/parse_compat/native_java_work.json
+    java_cpu_wall_clock: not_observed
+    rss_ceiling: not_observed
+    claim: offline_attribution_only_never_a_deployed_reduction
+  denominators:
+    corpus_id: s13-same-input-pdf-corpus
+    corpus_manifest: data/parse/layout_bakeoff.yaml#corpus
+    corpus_documents: 3
+    corpus_documents_pinned_by_sha256: true
+    unit: java_model_invocations
+    pooled: forbidden
+    # Restated from source_evidence.s12_named_denominators. The loader refuses a
+    # value that differs there, refuses an extra key, and — because the two named
+    # populations are separate keys — makes collapsing them into one impossible.
+    named_gaps:
+      citation_names: 2198
+      references: 207
+      pooling: forbidden
+  attribution_rule:
+    each_observed_model_attributed_exactly_once: true
+    unattributed_models: forbidden
+    double_attributed_models: forbidden
+    names_are_taken_from_the_verified_receipt: true
+  stages:
+  - stage: P0
+    java_stage: admit_identity_profile
+    production_authority: java_http
+    native_surface: none
+    components: []
+    java_models_observed: []
+    recovery_rule: {requires_all_of: [exact_source_identity, exact_schema_version, optional_sha256_when_present, passing_receipt], requires_core_qualification: true, requires_measured_java_work: true, pooling: forbidden}
+  - stage: P1
+    java_stage: pdfalto_layout_lattice
+    production_authority: java_http
+    native_surface: crates/da-parse/src/layout.rs
+    components: []
+    java_models_observed: []
+    recovery_rule: {requires_all_of: [exact_source_identity, exact_schema_version, optional_sha256_when_present, passing_receipt], requires_core_qualification: true, requires_measured_java_work: true, pooling: forbidden}
+  - stage: P2
+    java_stage: document_segmentation
+    production_authority: java_http
+    native_surface: crates/da-parse/src/native_segmentation.rs
+    components: [document_segmentation]
+    java_models_observed: [segmentation]
+    recovery_rule: {requires_all_of: [exact_source_identity, exact_schema_version, optional_sha256_when_present, passing_receipt], requires_core_qualification: true, requires_measured_java_work: true, pooling: forbidden}
+  - stage: P3
+    java_stage: header_heads_and_compose
+    production_authority: java_http
+    native_surface: crates/da-parse/src/native_composition.rs
+    components: [header]
+    java_models_observed: [affiliation-address, date, header, name-header]
+    recovery_rule: {requires_all_of: [exact_source_identity, exact_schema_version, optional_sha256_when_present, passing_receipt], requires_core_qualification: true, requires_measured_java_work: true, pooling: forbidden}
+  - stage: P4
+    java_stage: bibliography_segment_and_compose
+    production_authority: java_http
+    native_surface: crates/da-parse/src/native_composition.rs
+    components: [references]
+    java_models_observed: [citation, name-citation, reference-segmenter]
+    recovery_rule: {requires_all_of: [exact_source_identity, exact_schema_version, optional_sha256_when_present, passing_receipt], requires_core_qualification: true, requires_measured_java_work: true, pooling: forbidden}
+  - stage: P5
+    java_stage: fulltext_body_sections
+    production_authority: java_http
+    native_surface: crates/da-parse/src/native_body.rs
+    components: []
+    java_models_observed: [fulltext]
+    recovery_rule: {requires_all_of: [exact_source_identity, exact_schema_version, optional_sha256_when_present, passing_receipt], requires_core_qualification: true, requires_measured_java_work: true, pooling: forbidden}
+  - stage: P6
+    java_stage: figure_table_formula
+    production_authority: java_http
+    native_surface: crates/da-parse/src/native_visual.rs
+    components: [figure, table, formula]
+    java_models_observed: [figure, table]
+    recovery_rule: {requires_all_of: [exact_source_identity, exact_schema_version, optional_sha256_when_present, passing_receipt], requires_core_qualification: true, requires_measured_java_work: true, pooling: forbidden}
+  - stage: P7
+    java_stage: tei_coordinates_callouts
+    production_authority: java_http
+    native_surface: none
+    components: []
+    java_models_observed: []
+    recovery_rule: {requires_all_of: [exact_source_identity, exact_schema_version, optional_sha256_when_present, passing_receipt], requires_core_qualification: true, requires_measured_java_work: true, pooling: forbidden}
+  - stage: P8
+    java_stage: bibliographic_consolidation
+    production_authority: java_profile
+    native_surface: crates/da-parse/src/profile.rs
+    components: []
+    java_models_observed: []
+    recovery_rule: {requires_all_of: [exact_source_identity, exact_schema_version, optional_sha256_when_present, passing_receipt], requires_core_qualification: true, requires_measured_java_work: true, pooling: forbidden}
+  - stage: P9
+    java_stage: tei_lift_conservation
+    production_authority: tei_lift
+    native_surface: crates/da-parse/src/lift.rs
+    components: []
+    java_models_observed: []
+    recovery_rule: {requires_all_of: [exact_source_identity, exact_schema_version, optional_sha256_when_present, passing_receipt], requires_core_qualification: true, requires_measured_java_work: true, pooling: forbidden}
+  # Every lock restated here must equal the copy it mirrors: the file-level
+  # locks above, the admission matrix above, and the T03 Java-work receipt.
+  locks:
+    production_route: forbidden
+    deployed: false
+    import_eligible: false
+    auto_promote: forbidden
+    graph_mutation: forbidden
+    selection: forbidden
+    decision_point: 6
+    independently_selectable: [header, references]
+  # Equal to this file's `redaction.forbidden`; the loader refuses any drift.
+  redaction:
+    forbidden: [raw_tei, tei_xml, pdf_bytes, body_text, text, captions, references, physical_path, hostname, executable, secret]
+  named_limitations:
+  - the date model is consumed by both the header and the reference lanes and is attributed exactly once, to P3, so the per-stage sums conserve the measured total instead of double-counting it
+  - the fulltext model is attributed to P5, whose body lane is an observation stratum and never an independently selectable component, so P5 stays not_qualified
+  - recovery verdicts qualify offline receipts only and never dispatch a route
+  - a stage whose native surface exists but whose component is not `passed` keeps Java as the authority; a fallback is never reclassified as recoverable
+  - java_cpu_wall_clock and rss_ceiling stay typed not_observed and h05 is not closed by this ledger
+  h05_closure: not_claimed
+  h05_reason: per-stage Java CPU wall-clock and RSS ceilings stay typed not_observed; only Java model invocations are measured and no byte, CPU or memory ceiling is claimed
+  used_by: [S08-T04, S08-T05]

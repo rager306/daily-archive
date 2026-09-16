@@ -36,6 +36,12 @@ pub mod native_core_smp;
 // the module, its example and its contract test compile in the default feature
 // set (no `pdf-layout`).
 pub mod native_java_work;
+// S08/T04: route-recovery ledger. Joins the closed P0..P9 cascade skeleton, the
+// component admission matrix and the S08/T03 measured Java-work receipt into
+// per-stage recovery verdicts. Pure serde/serde_yaml/sha2, so the module, its
+// example and its contract test compile in the default feature set (no
+// `pdf-layout`), and nothing here is a production route.
+pub mod native_route_recovery;
 pub mod parse_batch;
 pub mod parse_config;
 pub mod parse_job;

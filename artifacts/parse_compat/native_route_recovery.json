@@ -1,0 +1,686 @@
+{
+  "schema_version": "native-route-recovery.v1",
+  "adr_ref": "ADR-075",
+  "requirement_ids": [
+    "R109",
+    "R085",
+    "R123",
+    "R117"
+  ],
+  "source_bindings": [
+    {
+      "path": "artifacts/parse_compat/native_core_profile.json",
+      "sha256": "3543b10aad8b8583c35bc6f0efc87d462ca271b890681fc209fbb9bae13f17a8"
+    },
+    {
+      "path": "artifacts/parse_compat/native_core_smp.json",
+      "sha256": "e2246ac337d8f7df3cfb432cb4d91ddda92d938aaad76ea155bcb6c3b2277a3d"
+    },
+    {
+      "path": "artifacts/parse_compat/native_java_work.json",
+      "sha256": "87e69860b04ca0b9a2ca4df2c7c411007a09b16db376a9700844110ba74bf00c"
+    },
+    {
+      "path": "data/parse/grobid_compatibility.yaml",
+      "sha256": "9648c3818b089195fc77733498bef6c835ba8118bd20dae81d4ddee12fce382e"
+    },
+    {
+      "path": "data/parse/layout_bakeoff.yaml",
+      "sha256": "d8e6a23da96152aca47b687da421b24522419dc14a66e24ac0acc5d83add73a0"
+    },
+    {
+      "path": "data/parse/native_fulltext_composition.yaml",
+      "sha256": "ab7da1855a9f519fbb66a1ed4d7ba3052b1564e6cf3b8ba6b9070371372363d3"
+    }
+  ],
+  "corpus": {
+    "corpus_id": "s13-same-input-pdf-corpus",
+    "corpus_n": 3,
+    "manifest_path": "data/parse/layout_bakeoff.yaml",
+    "manifest_sha256": "d8e6a23da96152aca47b687da421b24522419dc14a66e24ac0acc5d83add73a0",
+    "documents": [
+      {
+        "document_id": "hub-2507.19457",
+        "source_sha256": "ab3a5139bac83f192ad67529368d77b84b0d807e95a8e4fd0daa8d45fd046bec"
+      },
+      {
+        "document_id": "reca-2605.26525v1",
+        "source_sha256": "a5672497671518d3b3d79698becfd5a4bbdc512bb02a002a473db501c3b097c8"
+      },
+      {
+        "document_id": "rlm-2512.24601",
+        "source_sha256": "8567362c22768d9b50d4a4a8d63bb28dda2c2b2051be30d67f70f645170429ca"
+      }
+    ]
+  },
+  "java_work": {
+    "state": "measured",
+    "unit": "java_model_invocations",
+    "corpus_documents": 3,
+    "documents_measured": 3,
+    "coverage": {
+      "state": "full"
+    },
+    "tape_verification": "3/3",
+    "total_invocations": 570,
+    "models": [
+      {
+        "model": "affiliation-address",
+        "invocations": 1
+      },
+      {
+        "model": "citation",
+        "invocations": 3
+      },
+      {
+        "model": "date",
+        "invocations": 170
+      },
+      {
+        "model": "figure",
+        "invocations": 93
+      },
+      {
+        "model": "fulltext",
+        "invocations": 5
+      },
+      {
+        "model": "header",
+        "invocations": 3
+      },
+      {
+        "model": "name-citation",
+        "invocations": 212
+      },
+      {
+        "model": "name-header",
+        "invocations": 7
+      },
+      {
+        "model": "reference-segmenter",
+        "invocations": 3
+      },
+      {
+        "model": "segmentation",
+        "invocations": 3
+      },
+      {
+        "model": "table",
+        "invocations": 70
+      }
+    ]
+  },
+  "core_qualification": {
+    "profile_receipt_present": true,
+    "profile_optimization_state": "measured_rejected",
+    "profile_dense_phase": "viterbi_decode",
+    "profile_pgo_disposition": "not_adopted",
+    "smp_receipt_present": true,
+    "smp_matrix_entries": 12,
+    "smp_scalar_oracle_bound": true,
+    "missing_receipts": []
+  },
+  "verdict_rule": {
+    "order": [
+      "native_surface_absent",
+      "no_admitted_component",
+      "component_not_admitted",
+      "admission_conditions_unmet",
+      "core_qualification_missing",
+      "java_work_not_observed",
+      "no_attributed_java_work",
+      "all_conditions_met"
+    ],
+    "component_state_verdicts": {
+      "fallback": "fallback",
+      "invalid_evidence": "not_qualified",
+      "not_observed": "not_qualified",
+      "passed": "admitted",
+      "rejected": "not_qualified",
+      "stale": "not_qualified",
+      "unsupported": "not_qualified"
+    },
+    "admission_conditions": [
+      "exact_schema_version",
+      "exact_source_identity",
+      "optional_sha256_when_present",
+      "passing_receipt"
+    ],
+    "recovery_rule_invariants": {
+      "requires_all_of": [
+        "exact_source_identity",
+        "exact_schema_version",
+        "optional_sha256_when_present",
+        "passing_receipt"
+      ],
+      "requires_core_qualification": true,
+      "requires_measured_java_work": true,
+      "pooling": "forbidden"
+    },
+    "attribution_rule": {
+      "double_attributed_models": "forbidden",
+      "each_observed_model_attributed_exactly_once": "true",
+      "names_are_taken_from_the_verified_receipt": "true",
+      "unattributed_models": "forbidden"
+    }
+  },
+  "stages": [
+    {
+      "stage": "P0",
+      "java_stage": "admit_identity_profile",
+      "production_authority": "java_http",
+      "native_surface": "none",
+      "native_surface_state": "none_declared",
+      "components": [],
+      "conditions": {
+        "exact_source_identity": "not_applicable",
+        "exact_schema_version": "not_applicable",
+        "optional_sha256_when_present": "not_applicable",
+        "passing_receipt": "not_applicable"
+      },
+      "recovery_rule": {
+        "requires_all_of": [
+          "exact_source_identity",
+          "exact_schema_version",
+          "optional_sha256_when_present",
+          "passing_receipt"
+        ],
+        "requires_core_qualification": true,
+        "requires_measured_java_work": true,
+        "pooling": "forbidden"
+      },
+      "java_models_observed": [],
+      "attributed_java_work": {
+        "state": "not_observed",
+        "reason": "no_attributed_model"
+      },
+      "verdict": "not_qualified",
+      "verdict_reason": "native_surface_absent"
+    },
+    {
+      "stage": "P1",
+      "java_stage": "pdfalto_layout_lattice",
+      "production_authority": "java_http",
+      "native_surface": "crates/da-parse/src/layout.rs",
+      "native_surface_state": "present",
+      "components": [],
+      "conditions": {
+        "exact_source_identity": "not_applicable",
+        "exact_schema_version": "not_applicable",
+        "optional_sha256_when_present": "not_applicable",
+        "passing_receipt": "not_applicable"
+      },
+      "recovery_rule": {
+        "requires_all_of": [
+          "exact_source_identity",
+          "exact_schema_version",
+          "optional_sha256_when_present",
+          "passing_receipt"
+        ],
+        "requires_core_qualification": true,
+        "requires_measured_java_work": true,
+        "pooling": "forbidden"
+      },
+      "java_models_observed": [],
+      "attributed_java_work": {
+        "state": "not_observed",
+        "reason": "no_attributed_model"
+      },
+      "verdict": "not_qualified",
+      "verdict_reason": "no_admitted_component"
+    },
+    {
+      "stage": "P2",
+      "java_stage": "document_segmentation",
+      "production_authority": "java_http",
+      "native_surface": "crates/da-parse/src/native_segmentation.rs",
+      "native_surface_state": "present",
+      "components": [
+        {
+          "component_id": "document_segmentation",
+          "matrix_disposition": "fallback",
+          "receipt_disposition": "fallback",
+          "receipt_evidence_state": "invalid_evidence",
+          "receipt_schema_version": "native-segmentation.v1"
+        }
+      ],
+      "conditions": {
+        "exact_source_identity": "met",
+        "exact_schema_version": "met",
+        "optional_sha256_when_present": "met",
+        "passing_receipt": "unmet"
+      },
+      "recovery_rule": {
+        "requires_all_of": [
+          "exact_source_identity",
+          "exact_schema_version",
+          "optional_sha256_when_present",
+          "passing_receipt"
+        ],
+        "requires_core_qualification": true,
+        "requires_measured_java_work": true,
+        "pooling": "forbidden"
+      },
+      "java_models_observed": [
+        {
+          "model": "segmentation",
+          "invocations": {
+            "state": "observed",
+            "value": 3
+          }
+        }
+      ],
+      "attributed_java_work": {
+        "state": "observed",
+        "value": 3
+      },
+      "verdict": "fallback",
+      "verdict_reason": "component_not_admitted"
+    },
+    {
+      "stage": "P3",
+      "java_stage": "header_heads_and_compose",
+      "production_authority": "java_http",
+      "native_surface": "crates/da-parse/src/native_composition.rs",
+      "native_surface_state": "present",
+      "components": [
+        {
+          "component_id": "header",
+          "matrix_disposition": "passed",
+          "receipt_disposition": "passed",
+          "receipt_evidence_state": "passing",
+          "receipt_schema_version": "native-composition.outcome/v1"
+        }
+      ],
+      "conditions": {
+        "exact_source_identity": "met",
+        "exact_schema_version": "met",
+        "optional_sha256_when_present": "met",
+        "passing_receipt": "met"
+      },
+      "recovery_rule": {
+        "requires_all_of": [
+          "exact_source_identity",
+          "exact_schema_version",
+          "optional_sha256_when_present",
+          "passing_receipt"
+        ],
+        "requires_core_qualification": true,
+        "requires_measured_java_work": true,
+        "pooling": "forbidden"
+      },
+      "java_models_observed": [
+        {
+          "model": "affiliation-address",
+          "invocations": {
+            "state": "observed",
+            "value": 1
+          }
+        },
+        {
+          "model": "date",
+          "invocations": {
+            "state": "observed",
+            "value": 170
+          }
+        },
+        {
+          "model": "header",
+          "invocations": {
+            "state": "observed",
+            "value": 3
+          }
+        },
+        {
+          "model": "name-header",
+          "invocations": {
+            "state": "observed",
+            "value": 7
+          }
+        }
+      ],
+      "attributed_java_work": {
+        "state": "observed",
+        "value": 181
+      },
+      "verdict": "recoverable",
+      "verdict_reason": "all_conditions_met"
+    },
+    {
+      "stage": "P4",
+      "java_stage": "bibliography_segment_and_compose",
+      "production_authority": "java_http",
+      "native_surface": "crates/da-parse/src/native_composition.rs",
+      "native_surface_state": "present",
+      "components": [
+        {
+          "component_id": "references",
+          "matrix_disposition": "passed",
+          "receipt_disposition": "passed",
+          "receipt_evidence_state": "passing",
+          "receipt_schema_version": "native-composition.outcome/v1"
+        }
+      ],
+      "conditions": {
+        "exact_source_identity": "met",
+        "exact_schema_version": "met",
+        "optional_sha256_when_present": "met",
+        "passing_receipt": "met"
+      },
+      "recovery_rule": {
+        "requires_all_of": [
+          "exact_source_identity",
+          "exact_schema_version",
+          "optional_sha256_when_present",
+          "passing_receipt"
+        ],
+        "requires_core_qualification": true,
+        "requires_measured_java_work": true,
+        "pooling": "forbidden"
+      },
+      "java_models_observed": [
+        {
+          "model": "citation",
+          "invocations": {
+            "state": "observed",
+            "value": 3
+          }
+        },
+        {
+          "model": "name-citation",
+          "invocations": {
+            "state": "observed",
+            "value": 212
+          }
+        },
+        {
+          "model": "reference-segmenter",
+          "invocations": {
+            "state": "observed",
+            "value": 3
+          }
+        }
+      ],
+      "attributed_java_work": {
+        "state": "observed",
+        "value": 218
+      },
+      "verdict": "recoverable",
+      "verdict_reason": "all_conditions_met"
+    },
+    {
+      "stage": "P5",
+      "java_stage": "fulltext_body_sections",
+      "production_authority": "java_http",
+      "native_surface": "crates/da-parse/src/native_body.rs",
+      "native_surface_state": "present",
+      "components": [],
+      "conditions": {
+        "exact_source_identity": "not_applicable",
+        "exact_schema_version": "not_applicable",
+        "optional_sha256_when_present": "not_applicable",
+        "passing_receipt": "not_applicable"
+      },
+      "recovery_rule": {
+        "requires_all_of": [
+          "exact_source_identity",
+          "exact_schema_version",
+          "optional_sha256_when_present",
+          "passing_receipt"
+        ],
+        "requires_core_qualification": true,
+        "requires_measured_java_work": true,
+        "pooling": "forbidden"
+      },
+      "java_models_observed": [
+        {
+          "model": "fulltext",
+          "invocations": {
+            "state": "observed",
+            "value": 5
+          }
+        }
+      ],
+      "attributed_java_work": {
+        "state": "observed",
+        "value": 5
+      },
+      "verdict": "not_qualified",
+      "verdict_reason": "no_admitted_component"
+    },
+    {
+      "stage": "P6",
+      "java_stage": "figure_table_formula",
+      "production_authority": "java_http",
+      "native_surface": "crates/da-parse/src/native_visual.rs",
+      "native_surface_state": "present",
+      "components": [
+        {
+          "component_id": "figure",
+          "matrix_disposition": "fallback",
+          "receipt_disposition": "fallback",
+          "receipt_evidence_state": "unsupported",
+          "receipt_schema_version": "native-visual-heads.v1"
+        },
+        {
+          "component_id": "table",
+          "matrix_disposition": "fallback",
+          "receipt_disposition": "fallback",
+          "receipt_evidence_state": "not_observed",
+          "receipt_schema_version": "native-visual-heads.v1"
+        },
+        {
+          "component_id": "formula",
+          "matrix_disposition": "fallback",
+          "receipt_disposition": "fallback",
+          "receipt_evidence_state": "unsupported",
+          "receipt_schema_version": "native-visual-heads.v1"
+        }
+      ],
+      "conditions": {
+        "exact_source_identity": "met",
+        "exact_schema_version": "met",
+        "optional_sha256_when_present": "met",
+        "passing_receipt": "unmet"
+      },
+      "recovery_rule": {
+        "requires_all_of": [
+          "exact_source_identity",
+          "exact_schema_version",
+          "optional_sha256_when_present",
+          "passing_receipt"
+        ],
+        "requires_core_qualification": true,
+        "requires_measured_java_work": true,
+        "pooling": "forbidden"
+      },
+      "java_models_observed": [
+        {
+          "model": "figure",
+          "invocations": {
+            "state": "observed",
+            "value": 93
+          }
+        },
+        {
+          "model": "table",
+          "invocations": {
+            "state": "observed",
+            "value": 70
+          }
+        }
+      ],
+      "attributed_java_work": {
+        "state": "observed",
+        "value": 163
+      },
+      "verdict": "fallback",
+      "verdict_reason": "component_not_admitted"
+    },
+    {
+      "stage": "P7",
+      "java_stage": "tei_coordinates_callouts",
+      "production_authority": "java_http",
+      "native_surface": "none",
+      "native_surface_state": "none_declared",
+      "components": [],
+      "conditions": {
+        "exact_source_identity": "not_applicable",
+        "exact_schema_version": "not_applicable",
+        "optional_sha256_when_present": "not_applicable",
+        "passing_receipt": "not_applicable"
+      },
+      "recovery_rule": {
+        "requires_all_of": [
+          "exact_source_identity",
+          "exact_schema_version",
+          "optional_sha256_when_present",
+          "passing_receipt"
+        ],
+        "requires_core_qualification": true,
+        "requires_measured_java_work": true,
+        "pooling": "forbidden"
+      },
+      "java_models_observed": [],
+      "attributed_java_work": {
+        "state": "not_observed",
+        "reason": "no_attributed_model"
+      },
+      "verdict": "not_qualified",
+      "verdict_reason": "native_surface_absent"
+    },
+    {
+      "stage": "P8",
+      "java_stage": "bibliographic_consolidation",
+      "production_authority": "java_profile",
+      "native_surface": "crates/da-parse/src/profile.rs",
+      "native_surface_state": "present",
+      "components": [],
+      "conditions": {
+        "exact_source_identity": "not_applicable",
+        "exact_schema_version": "not_applicable",
+        "optional_sha256_when_present": "not_applicable",
+        "passing_receipt": "not_applicable"
+      },
+      "recovery_rule": {
+        "requires_all_of": [
+          "exact_source_identity",
+          "exact_schema_version",
+          "optional_sha256_when_present",
+          "passing_receipt"
+        ],
+        "requires_core_qualification": true,
+        "requires_measured_java_work": true,
+        "pooling": "forbidden"
+      },
+      "java_models_observed": [],
+      "attributed_java_work": {
+        "state": "not_observed",
+        "reason": "no_attributed_model"
+      },
+      "verdict": "not_qualified",
+      "verdict_reason": "no_admitted_component"
+    },
+    {
+      "stage": "P9",
+      "java_stage": "tei_lift_conservation",
+      "production_authority": "tei_lift",
+      "native_surface": "crates/da-parse/src/lift.rs",
+      "native_surface_state": "present",
+      "components": [],
+      "conditions": {
+        "exact_source_identity": "not_applicable",
+        "exact_schema_version": "not_applicable",
+        "optional_sha256_when_present": "not_applicable",
+        "passing_receipt": "not_applicable"
+      },
+      "recovery_rule": {
+        "requires_all_of": [
+          "exact_source_identity",
+          "exact_schema_version",
+          "optional_sha256_when_present",
+          "passing_receipt"
+        ],
+        "requires_core_qualification": true,
+        "requires_measured_java_work": true,
+        "pooling": "forbidden"
+      },
+      "java_models_observed": [],
+      "attributed_java_work": {
+        "state": "not_observed",
+        "reason": "no_attributed_model"
+      },
+      "verdict": "not_qualified",
+      "verdict_reason": "no_admitted_component"
+    }
+  ],
+  "recoverable_java_work": {
+    "state": "observed",
+    "unit": "java_model_invocations",
+    "claim": "offline_attribution_only_never_a_deployed_reduction",
+    "value": 399,
+    "by_stage": {
+      "P3": 181,
+      "P4": 218
+    },
+    "corpus_id": "s13-same-input-pdf-corpus",
+    "receipt_sha256": "87e69860b04ca0b9a2ca4df2c7c411007a09b16db376a9700844110ba74bf00c"
+  },
+  "denominators": {
+    "corpus_id": "s13-same-input-pdf-corpus",
+    "corpus_documents": 3,
+    "corpus_documents_pinned_by_sha256": true,
+    "unit": "java_model_invocations",
+    "pooled": "forbidden",
+    "named_gaps": {
+      "citation_names": 2198,
+      "references": 207,
+      "pooling": "forbidden"
+    }
+  },
+  "locks": {
+    "production_route": "forbidden",
+    "deployed": false,
+    "import_eligible": false,
+    "auto_promote": "forbidden",
+    "graph_mutation": "forbidden",
+    "selection": "forbidden",
+    "decision_point": 6,
+    "independently_selectable": [
+      "header",
+      "references"
+    ]
+  },
+  "named_limitations": [
+    "the date model is consumed by both the header and the reference lanes and is attributed exactly once, to P3, so the per-stage sums conserve the measured total instead of double-counting it",
+    "the fulltext model is attributed to P5, whose body lane is an observation stratum and never an independently selectable component, so P5 stays not_qualified",
+    "recovery verdicts qualify offline receipts only and never dispatch a route",
+    "a stage whose native surface exists but whose component is not `passed` keeps Java as the authority; a fallback is never reclassified as recoverable",
+    "java_cpu_wall_clock and rss_ceiling stay typed not_observed and h05 is not closed by this ledger"
+  ],
+  "observations": {
+    "java_cpu_wall_clock": {
+      "state": "not_observed"
+    },
+    "rss_ceiling": {
+      "state": "not_observed"
+    }
+  },
+  "h05_closure": "not_claimed",
+  "h05_reason": "per-stage Java CPU wall-clock and RSS ceilings stay typed not_observed; only Java model invocations are measured and no byte, CPU or memory ceiling is claimed",
+  "redaction": {
+    "forbidden": [
+      "raw_tei",
+      "tei_xml",
+      "pdf_bytes",
+      "body_text",
+      "text",
+      "captions",
+      "references",
+      "physical_path",
+      "hostname",
+      "executable",
+      "secret"
+    ]
+  }
+}
