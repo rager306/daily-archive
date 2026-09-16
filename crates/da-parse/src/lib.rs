@@ -55,6 +55,7 @@ mod native_feature_facts;
 mod native_feature_tagger;
 mod native_fulltext_blocks;
 mod native_fulltext_composition;
+mod native_fulltext_features;
 mod native_header_features;
 mod native_header_fields;
 mod native_header_sequence;
@@ -270,6 +271,15 @@ pub use native_fulltext_composition::{
     NativeFulltextCompositionError, NativeFulltextCompositionInput,
     NativeFulltextCompositionOutcome, NativeFulltextManifest, S17LineageReceipt,
     compose_native_fulltext, tei_element_bytes,
+};
+pub use native_fulltext_features::{
+    FulltextAlignment, FulltextCalloutType, FulltextFeatureRow, FulltextFeatureToken,
+    FulltextFontSize, FulltextFontStatus, MAX_NATIVE_FULLTEXT_FEATURE_ROWS,
+    NATIVE_FULLTEXT_FEATURE_COLUMNS, NATIVE_FULLTEXT_FEATURE_SCHEMA_VERSION,
+    NATIVE_FULLTEXT_MODEL_MAX_COLUMN_INDEX, NATIVE_FULLTEXT_RELATIVE_POSITION_BINS,
+    NativeFulltextFeatureError, check_fulltext_feature_columns,
+    relative_position_fulltext_document, relative_position_fulltext_page,
+    render_fulltext_feature_text, render_fulltext_features,
 };
 pub use native_header_features::{
     BlockStatus, HeaderAlignment, HeaderFeatureRow, HeaderFeatureToken, HeaderFontStatistics,
