@@ -1,7 +1,7 @@
 {
   "schema_version": "m286.hexagonal.governor.v1",
   "phase": "preflight",
-  "verdict": "drift_risk",
+  "verdict": "blocked",
   "dimensions": {
     "schema_readiness": {
       "description": "Typed knowledge schema (node labels, property types, edge contracts)",
@@ -201,6 +201,11 @@
   },
   "drift_flags": [
     {
+      "flag": "reverse_adr_audit_violations",
+      "severity": "high",
+      "evidence": "1 violation(s) found"
+    },
+    {
       "flag": "gsd_planning_projection_degraded",
       "severity": "medium",
       "evidence": "active milestone M507-4fk6m6 slice S08 has no PLAN tasks — run gsd_plan_slice before execute"
@@ -208,7 +213,7 @@
     {
       "flag": "resource_target_bloat",
       "severity": "high",
-      "evidence": "target/ is 83.2GB (51GB free on disk) — run 'cargo clean' immediately Recommendation: Remove incremental cache: rm -rf target/debug/incremental (19.1GB); Remove example artifacts: rm -rf target/debug/examples (40.3GB); Dependencies cache large (22.3GB) — cargo clean -p <crate> to prune specific deps; Debug profile 83.2GB — run 'cargo clean' before workspace builds"
+      "evidence": "target/ is 87.3GB (47GB free on disk) — run 'cargo clean' immediately Recommendation: Remove incremental cache: rm -rf target/debug/incremental (22.7GB); Remove example artifacts: rm -rf target/debug/examples (40.3GB); Dependencies cache large (22.8GB) — cargo clean -p <crate> to prune specific deps; Debug profile 87.3GB — run 'cargo clean' before workspace builds"
     },
     {
       "flag": "data_integrity_hardcoded_url",
@@ -217,11 +222,22 @@
     }
   ],
   "reverse_adr_audit_details": {
-    "status": "clear",
-    "violations": [],
-    "violations_count": 0
+    "status": "violations",
+    "violations": [
+      {
+        "rule_id": "no_import_eligible_true_in_crates",
+        "file": "/root/daily-archive/crates/da-application/src/parse_policy_ablation.rs",
+        "line": 448,
+        "anchor": "D127 + ADR-005 (import_eligible=false until explicit user yes)",
+        "severity": "high",
+        "rationale": "import_eligible must remain false in Rust production sources until independent review and explicit user yes (D127). Fail-closed unit tests that temporarily assign true to prove rejection are excluded via path_contains_exclude.",
+        "matched_text": "import_eligible.import_eligible = true;"
+      }
+    ],
+    "violations_count": 1
   },
   "next_actions": [
+    "Fix blocking reverse-ADR violations before proceeding.",
     "target/ bloated: prune debug incremental/examples before workspace cargo."
   ],
   "milestone_context": {

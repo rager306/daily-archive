@@ -30,6 +30,7 @@ class CheckRule:
     path_prefix_exclude: Optional[str] = None
     path_contains_exclude: Optional[list[str]] = None
     section_filter: Optional[str] = None
+    exclude_cfg_test_regions: Optional[bool] = None
     suffix_allowlist: Optional[list[str]] = None
 
 

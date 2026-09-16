@@ -78,6 +78,7 @@ pub mod navigation_stage;
 pub mod parse_grammar;
 pub mod parse_job_runner;
 pub mod parse_learning_evaluation;
+pub mod parse_policy_ablation;
 pub mod parse_policy_training;
 pub use parse_job_runner::{ParseJobRunReport, ParseJobRunner, ParseJobRunnerError};
 pub mod pdf_toc_stage;
@@ -88,6 +89,11 @@ pub use parse_learning_evaluation::{
     CriticObservation, CriticStatus, EvaluationError, FrozenEvalCase, ProducerProvenance,
     PromotionQualification, PromotionQualityPolicy, aggregate_same_n_ablation,
     aggregate_same_n_ablation_with_provenance, qualify_candidate_quality,
+};
+pub use parse_policy_ablation::{
+    POLICY_ABLATION_AUTO_PROMOTE, POLICY_ABLATION_PROMOTION_STATE, POLICY_ABLATION_SCHEMA_VERSION,
+    POLICY_DISPATCH_METRIC_ONE, POLICY_DISPATCH_METRIC_TWO, PolicyAblationReport,
+    PolicyVariantManifest, aggregate_policy_variant_ablation,
 };
 pub use parse_policy_training::{
     PersistedCandidate, TrainingConfig, TrainingError, TrainingOutcome, train_microlora_candidate,

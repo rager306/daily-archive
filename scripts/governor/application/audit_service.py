@@ -61,6 +61,7 @@ class AuditService:
                 path_prefix_exclude=rule_data.get("path_prefix_exclude"),
                 path_contains_exclude=rule_data.get("path_contains_exclude"),
                 section_filter=rule_data.get("section_filter"),
+                exclude_cfg_test_regions=rule_data.get("exclude_cfg_test_regions"),
                 suffix_allowlist=rule_data.get("suffix_allowlist"),
             )
             violations = list(self._run_rule(rule))
@@ -83,6 +84,7 @@ class AuditService:
             path_prefix_exclude=rule.path_prefix_exclude,
             path_contains_exclude=rule.path_contains_exclude,
             section_filter=rule.section_filter,
+            exclude_cfg_test_regions=bool(rule.exclude_cfg_test_regions),
             suffix_allowlist=set(rule.suffix_allowlist) if rule.suffix_allowlist else None,
         ):
             yield ArtifactViolation(

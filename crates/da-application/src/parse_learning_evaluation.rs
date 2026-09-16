@@ -179,35 +179,31 @@ pub fn qualify_candidate_quality(
     candidate
         .validate()
         .map_err(|_| EvaluationError::CandidateLockViolation)?;
-    let train = candidate.train_quality as f64;
-    let validation = candidate.validation_quality as f64;
-    if !train.is_finite()
-        || !validation.is_finite()
-        || !policy.minimum_validation_quality.is_finite()
-        || !policy.maximum_validation_gap.is_finite()
-    {
-        return Err(EvaluationError::NonFiniteCandidateQuality);
-    }
-    let gap = train - validation;
-    Ok(
-        if validation >= policy.minimum_validation_quality && gap <= policy.maximum_validation_gap {
-            PromotionQualification::Qualified
-        } else {
-            PromotionQualification::Rejected
-        },
+    qualify_quality(
+        candidate.train_quality as f64,
+        candidate.validation_quality as f64,
+        policy,
     )
 }
 
-fn digest<T: Serialize + ?Sized>(value: &T) -> Sha256Digest {
+/// Byte-stable digest of any serializable evaluation value.
+///
+/// Shared by every evaluator in this crate so a report digest has exactly one
+/// definition (`serde_json` bytes -> SHA-256 hex).
+pub(crate) fn digest_value<T: Serialize + ?Sized>(value: &T) -> Sha256Digest {
     let bytes = serde_json::to_vec(value).expect("typed evaluation values serialize");
     Sha256Digest::new(hex::encode(Sha256::digest(bytes))).expect("sha256 is valid")
 }
 
 fn ordered_digest(cases: &[FrozenEvalCase]) -> Sha256Digest {
-    digest(cases)
+    digest_value(cases)
 }
 
-fn aggregate(rows: &[CriticObservation]) -> (f64, f64, u64) {
+/// Mean of both metrics over one row set plus the failure count.
+///
+/// Every supplied row stays in the denominator, including typed failures, which
+/// contribute `0.0`.
+pub(crate) fn aggregate_rows(rows: &[CriticObservation]) -> (f64, f64, u64) {
     let n = rows.len() as f64;
     let failures = rows.iter().filter(|r| r.status != CriticStatus::Ok).count() as u64;
     let one = rows
@@ -253,7 +249,7 @@ pub fn aggregate_same_n_ablation(
         .map(|case| case.corpus.clone())
         .ok_or(EvaluationError::EmptyEvaluation)?;
     let producer = |label: &str| ProducerProvenance {
-        code_digest: digest(&label),
+        code_digest: digest_value(&label),
         input_digest: corpus.clone(),
         method: "legacy-label-bridge".into(),
         authority: "legacy-adapter".into(),
@@ -271,6 +267,112 @@ pub fn aggregate_same_n_ablation(
                 .map_or("", |row| row.producer.as_str()),
         ),
         &producer(trainer_producer),
+    )
+}
+
+/// Reject an empty, duplicated or out-of-order frozen case set.
+pub(crate) fn validate_ordered_cases(cases: &[FrozenEvalCase]) -> Result<(), EvaluationError> {
+    if cases.is_empty() || cases.iter().any(|case| case.case_id.is_empty()) {
+        return Err(EvaluationError::EmptyEvaluation);
+    }
+    let mut ids = BTreeSet::new();
+    for (index, case) in cases.iter().enumerate() {
+        if case.order != index as u32 || !ids.insert(case.case_id.clone()) {
+            return Err(EvaluationError::InvalidOrder);
+        }
+    }
+    Ok(())
+}
+
+/// Every producer must supply exactly one row per frozen case.
+pub(crate) fn validate_denominators(
+    expected: usize,
+    baseline: usize,
+    candidate: usize,
+) -> Result<(), EvaluationError> {
+    if baseline != expected || candidate != expected {
+        return Err(EvaluationError::DenominatorMismatch);
+    }
+    Ok(())
+}
+
+/// Producer provenance must be complete and bound to the frozen corpus.
+pub(crate) fn validate_producer_lineage(
+    producers: &[&ProducerProvenance],
+    corpus: &Sha256Digest,
+) -> Result<(), EvaluationError> {
+    if producers.iter().any(|producer| {
+        producer.method.trim().is_empty()
+            || producer.authority.trim().is_empty()
+            || producer.input_digest != *corpus
+    }) {
+        return Err(EvaluationError::CorpusMismatch);
+    }
+    Ok(())
+}
+
+/// Producers are independent only when their machine identities are pairwise
+/// distinct. Display labels never establish independence.
+pub(crate) fn validate_producer_independence(
+    producers: &[&ProducerProvenance],
+) -> Result<(), EvaluationError> {
+    for (index, producer) in producers.iter().enumerate() {
+        if producers[index + 1..]
+            .iter()
+            .any(|other| other.code_digest == producer.code_digest)
+        {
+            return Err(EvaluationError::ProducerNotIndependent);
+        }
+    }
+    Ok(())
+}
+
+/// Validate every supplied row and its alignment with the frozen case set.
+pub(crate) fn validate_rows(
+    cases: &[FrozenEvalCase],
+    baseline: &[CriticObservation],
+    candidate_rows: &[CriticObservation],
+) -> Result<(), EvaluationError> {
+    for (case, (base, cand)) in cases.iter().zip(baseline.iter().zip(candidate_rows)) {
+        base.validate()?;
+        cand.validate()?;
+        if base.case_id != case.case_id
+            || cand.case_id != case.case_id
+            || base.order != case.order
+            || cand.order != case.order
+            || base.corpus != case.corpus
+            || cand.corpus != case.corpus
+        {
+            return Err(EvaluationError::CorpusMismatch);
+        }
+    }
+    Ok(())
+}
+
+/// Numeric promotion qualification over already-measured train/validation
+/// quality. Callers own manifest validation; this helper owns the threshold
+/// rule only, so every evaluator shares one qualification dialect.
+pub(crate) fn qualify_quality(
+    train_quality: f64,
+    validation_quality: f64,
+    policy: PromotionQualityPolicy,
+) -> Result<PromotionQualification, EvaluationError> {
+    if !train_quality.is_finite()
+        || !validation_quality.is_finite()
+        || !policy.minimum_validation_quality.is_finite()
+        || !policy.maximum_validation_gap.is_finite()
+    {
+        return Err(EvaluationError::NonFiniteCandidateQuality);
+    }
+    let gap = train_quality - validation_quality;
+    Ok(
+        if validation_quality >= policy.minimum_validation_quality
+            && gap <= policy.maximum_validation_gap
+        {
+            PromotionQualification::Qualified
+        } else {
+            PromotionQualification::Rejected
+        },
     )
 }
 
@@ -295,49 +397,16 @@ pub fn aggregate_same_n_ablation_with_provenance(
     if !conservation_ok {
         return Err(EvaluationError::ConservationVeto);
     }
-    if cases.is_empty() || cases.iter().any(|c| c.case_id.is_empty()) {
-        return Err(EvaluationError::EmptyEvaluation);
-    }
-    let mut ids = BTreeSet::new();
-    for (index, case) in cases.iter().enumerate() {
-        if case.order != index as u32 || !ids.insert(case.case_id.clone()) {
-            return Err(EvaluationError::InvalidOrder);
-        }
-    }
-    if baseline.len() != cases.len() || candidate_rows.len() != cases.len() {
-        return Err(EvaluationError::DenominatorMismatch);
-    }
-    if [baseline_producer, candidate_producer, trainer]
-        .iter()
-        .any(|producer| {
-            producer.method.trim().is_empty()
-                || producer.authority.trim().is_empty()
-                || producer.input_digest != cases[0].corpus
-        })
-    {
-        return Err(EvaluationError::CorpusMismatch);
-    }
-    if baseline_producer.code_digest == trainer.code_digest
-        || candidate_producer.code_digest == trainer.code_digest
-        || baseline_producer.code_digest == candidate_producer.code_digest
-    {
-        return Err(EvaluationError::ProducerNotIndependent);
-    }
-    for (case, (base, cand)) in cases.iter().zip(baseline.iter().zip(candidate_rows)) {
-        base.validate()?;
-        cand.validate()?;
-        if base.case_id != case.case_id
-            || cand.case_id != case.case_id
-            || base.order != case.order
-            || cand.order != case.order
-            || base.corpus != case.corpus
-            || cand.corpus != case.corpus
-        {
-            return Err(EvaluationError::CorpusMismatch);
-        }
-    }
-    let (b1, b2, bf) = aggregate(baseline);
-    let (c1, c2, cf) = aggregate(candidate_rows);
+    validate_ordered_cases(cases)?;
+    validate_denominators(cases.len(), baseline.len(), candidate_rows.len())?;
+    validate_producer_lineage(
+        &[baseline_producer, candidate_producer, trainer],
+        &cases[0].corpus,
+    )?;
+    validate_producer_independence(&[baseline_producer, candidate_producer, trainer])?;
+    validate_rows(cases, baseline, candidate_rows)?;
+    let (b1, b2, bf) = aggregate_rows(baseline);
+    let (c1, c2, cf) = aggregate_rows(candidate_rows);
     let report_base = AblationReport {
         schema_version: ABLATION_SCHEMA_VERSION.into(),
         candidate_id: candidate.receipt.candidate_id.clone(),
@@ -372,7 +441,7 @@ pub fn aggregate_same_n_ablation_with_provenance(
         report_digest: Sha256Digest::new("0".repeat(64)).expect("zero digest"),
     };
     let mut report = report_base;
-    report.report_digest = digest(&report);
+    report.report_digest = digest_value(&report);
     Ok(report)
 }
 

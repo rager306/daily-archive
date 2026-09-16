@@ -4193,3 +4193,52 @@ def test_schema_hierarchy_flags_file_not_in_schema(tmp_path):
     (root / "data" / "stray.exe").write_text("x")
     flags = _checker(root)
     assert any(f.flag == "file_not_in_schema" and "stray.exe" in f.evidence for f in flags)
+
+
+def test_exclude_cfg_test_regions_keeps_production_matches():
+    """D127 guard: #[cfg(test)] fail-closed tests are excluded, production is not.
+
+    The rule's rationale promises that fail-closed unit tests assigning a locked
+    value to prove rejection are not treated as production violations. This test
+    pins BOTH directions: the exclusion applies only inside `#[cfg(test)]` items,
+    so a production assignment is still reported.
+    """
+    root = _make_root()
+    src = root / "crates" / "da-application" / "src" / "policy.rs"
+    _write(
+        src,
+        "\n".join(
+            [
+                "pub fn shipped() -> bool {",
+                "    let leaked = manifest();",
+                "    leaked.import_eligible = true;",
+                "    leaked.import_eligible",
+                "}",
+                "",
+                "#[cfg(test)]",
+                "mod tests {",
+                "    #[test]",
+                "    fn rejects_unlocked_variant() {",
+                "        let mut leaked = variant();",
+                "        leaked.import_eligible = true;",
+                "        assert!(evaluate(&leaked).is_err());",
+                "    }",
+                "}",
+            ]
+        ),
+    )
+    scanner = FilesystemCodeScanner(root)
+    pattern = r"import_eligible\s*[:=]\s*true"
+
+    plain = list(scanner.scan_pattern("crates", pattern, suffix_allowlist={".rs"}))
+    guarded = list(
+        scanner.scan_pattern(
+            "crates",
+            pattern,
+            suffix_allowlist={".rs"},
+            exclude_cfg_test_regions=True,
+        )
+    )
+
+    assert {line for _, line, _ in plain} == {3, 12}, "baseline must see both matches"
+    assert {line for _, line, _ in guarded} == {3}, "only the cfg(test) match is excluded"

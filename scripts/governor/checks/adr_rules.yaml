@@ -62,10 +62,12 @@ rules:
     severity: high
     scan: crates/
     pattern: 'import_eligible\s*[:=]\s*true|"import_eligible"\s*:\s*true'
-    rationale: "import_eligible must remain false in Rust production sources until independent review and explicit user yes (D127). Fail-closed unit tests that temporarily assign true to prove rejection are excluded via path_contains_exclude."
+    rationale: "import_eligible must remain false in Rust production sources until independent review and explicit user yes (D127). Fail-closed unit tests that temporarily assign true to prove rejection are excluded: by path for test trees, and by `#[cfg(test)]` region for inline test modules in src/."
     suffix_allowlist:
       - .rs
-    # Exclude test trees only — production src/ and examples/ still scanned.
+    # Exclude test trees AND inline #[cfg(test)] items — production src/ and
+    # examples/ code outside those items is still scanned.
+    exclude_cfg_test_regions: true
     path_contains_exclude:
       - /tests/
       - /test/
