@@ -1,0 +1,164 @@
+# S06/T07 independent same-n oracle for the four native visual/funding families.
+#
+# This file carries *inputs and reviewed label sequences only*. It carries no
+# expectation: the expectation is assembled from these facts by the independent
+# builder inside `crates/da-parse/tests/native_visual_family_same_n.rs`, whose
+# understanding is anchored by the per-document `expectation_sha256` recorded
+# here. That is the point of the oracle: the SUT never produces the values it is
+# compared against.
+#
+# Provenance (all facts reviewed, none derived from the SUT):
+#   * per-family label dictionaries — `data/parse/native_visual_families.yaml`,
+#     themselves transcribed from the frozen GROBID 0.9.0 model headers and
+#     re-read from the vendored Java source;
+#   * reviewed typed-absence rows — `crates/da-parse/tests/fixtures/native_visual_oracle.yaml`
+#     (`review_status: independently_reviewed`), which pin the same families as
+#     typed absence for the real corpus;
+#   * token facts — synthetic, hand-authored words. They are *not* corpus text,
+#     and the file is digest-only: no raw text, PDF, TEI, image or asset material
+#     and no physical path appears anywhere below.
+#
+# `tokens[i]` is the printed token of row `i` (column 0 of a 27-column fulltext
+# row, or the `FundingFeatureToken.text` of an 18-column funding row) and
+# `labels[i]` is the reviewed decoded label of that row. Token texts are unique
+# within one family across all of its documents: the synthetic models key their
+# observations on the token text (see the fixture-file header comment in
+# `native_figure_synthetic.wapiti`), so a repeat with a different label could not
+# be decoded deterministically. `native_visual_family_same_n.rs` asserts that
+# uniqueness rather than assuming it.
+schema_version: native-visual-family-oracle.v1
+review_status: independently_reviewed
+representation: digest_only
+expected_rows_not_from_sut_helpers: true
+forbidden_fields: [raw_text, raw_pdf, pdf_bytes, tei_xml, image, page_image, assets, physical_path, hostname, executable]
+provenance:
+  reviewed_rows: crates/da-parse/tests/fixtures/native_visual_oracle.yaml
+  label_dictionaries: data/parse/native_visual_families.yaml
+families:
+
+  figure:
+    model_fixture: native_figure_synthetic.wapiti
+    documents:
+      # Two adjacent `I-<label>` clusters, two `<figDesc>` clusters and two
+      # `<content>` clusters: the role assembler must join the parts of one role
+      # with a single space, and the `I-` prefix must open a second cluster inside
+      # an already-open role (`<label>, <label>` would have merged).
+      - id: figure-roles-and-caption
+        outcome: decoded
+        tokens: [Fig., "1", Pipeline, overview, of, band, traces]
+        labels: [I-<label>, I-<label>, I-<figure_head>, I-<figDesc>, <figDesc>, I-<content>, <content>]
+        caption_markers:
+          - {digest: "1111111111111111111111111111111111111111111111111111111111111111", cluster_index: 2}
+        expectation_sha256: sha256:d5d34300369e5a0f0dfda101ecc28e159e5ec51dcf2e580ae1abaffbb407e8ab
+      # No inventory at all: the caption lane must report `not_observed`, never an
+      # empty marker list that reads as "zero captions" (H12-N1).
+      - id: figure-caption-absent
+        outcome: decoded
+        tokens: [Overview, Arc, segments, traced]
+        labels: [I-<figure_head>, I-<content>, <content>, <content>]
+        caption_markers: []
+        expectation_sha256: sha256:1a65bd132eb31cd51d9a0c807f770618147fdba031ba4f8b1fa09896d08472c6
+      # The H12-N1 witness: an empty decode is the typed absence, never a figure
+      # with zero parts.
+      - id: figure-absence
+        outcome: not_observed
+        tokens: [Absent]
+        labels: []
+        expectation_sha256: sha256:698b1c9146d5825e11f49445166744c090de236c2d238a79c2e18359fc72b506
+
+  table:
+    model_fixture: native_table_synthetic.wapiti
+    documents:
+      # Head before label: Java's assembled header is `Table 2 `, which starts
+      # with `tab` ignoring case, so `validateTable` does not revert. The caller's
+      # cell inventory is attributed to this, the first table.
+      - id: table-single-valid
+        outcome: decoded
+        tokens: [Table, "2", Benchmark, results, "42"]
+        labels: [I-<figure_head>, I-<label>, I-<content>, <content>, <content>]
+        caption_markers:
+          - {digest: "4444444444444444444444444444444444444444444444444444444444444444", cluster_index: 0}
+        cells:
+          - {row: 0, column: 0, digest: "2222222222222222222222222222222222222222222222222222222222222222"}
+          - {row: 0, column: 1, digest: "3333333333333333333333333333333333333333333333333333333333333333"}
+        expectation_sha256: sha256:b309865cc45368e179d3e1ff8cf91d05a53c83b7c7ae7d2fc96a7db3c4991f40
+      # A repeated `<figure_head>` after a `<content>` with a non-empty header
+      # splits the sequence into two tables; the single caller inventory is
+      # attributed to the first one and the second reports the typed ambiguity.
+      - id: table-two-tables
+        outcome: decoded
+        tokens: [Tab, "3", rows, Grid, "4", cells, and]
+        labels: [I-<figure_head>, I-<label>, <content>, I-<figure_head>, I-<label>, I-<content>, <content>]
+        cells:
+          - {row: 0, column: 0, digest: "5555555555555555555555555555555555555555555555555555555555555555"}
+        expectation_sha256: sha256:7d15a3c8c22632ca279c90d86e890942c0f21aaef2678a7d7bb794d95ea154bf
+      # A label cluster before the head makes Java's assembled header ` 1 Wide`,
+      # which does not start with `tab`: `validateTable` reverts this table.
+      - id: table-reverted
+        outcome: decoded
+        tokens: ["1", Wide, spreadsheet]
+        labels: [I-<label>, <figure_head>, <content>]
+        expectation_sha256: sha256:e9bc95b232bd1a413a22d7639242c0dd3c5122a158cb9f22ac63baa343a09fd4
+      - id: table-absence
+        outcome: not_observed
+        tokens: [Void]
+        labels: []
+        expectation_sha256: sha256:a914757522bf6bc32a5f4e431e009e53afe68d968b7dccad7bab3884bff3ac3c
+
+  formula:
+    # GROBID 0.9.0 ships no `formula` model: the family is a locator join over an
+    # already-decoded fulltext label sequence, so it declares no model fixture.
+    model_fixture: null
+    documents:
+      # `<equation>, I-<equation>` is two equations (the `I-` prefix opens a new
+      # cluster), the `<equation_label>` attaches to the open one, and the
+      # trailing marker only counts.
+      - id: formula-two-equations
+        outcome: decoded
+        tokens: ["1", "2", "(3)", text, "4", "[5]"]
+        labels: [<equation>, I-<equation>, <equation_label>, <paragraph>, <equation>, <equation_marker>]
+        expectation_sha256: sha256:698322b151cc068c0c89d958f7591331500d0a0708c80e89339182efaa8d927b
+      # A label emitted before any content cluster opens a label-only span rather
+      # than being dropped.
+      - id: formula-label-only
+        outcome: decoded
+        tokens: ["6", prose]
+        labels: [<equation_label>, <paragraph>]
+        expectation_sha256: sha256:66fe0c3bed9dc5420abce7f8e40fcf36f4ed1f7299bfbb6e3378247e139dc735
+      # Markers alone name references, not equations: the typed absence, never an
+      # equation list of length zero.
+      - id: formula-markers-only
+        outcome: not_observed
+        tokens: ["[7]", prose]
+        labels: [<equation_marker>, <paragraph>]
+        expectation_sha256: sha256:bb733a79de70e851a186643707e0673491fc8cbd57d29c680b26265a782d5f0b
+
+  funding:
+    model_fixture: native_funding_synthetic.wapiti
+    documents:
+      # Every role in one record: `<other>` is counted rather than dropped, and
+      # `<infrastructure>` lands in both `institutions` and `infrastructures`.
+      - id: funding-single-record
+        outcome: decoded
+        tokens: [Acknowledged, by, Grant, Office, Alice, Vaswani, Lab, Compute, Center]
+        labels: [<other>, <other>, <funderName>, <funderName>, I-<person>, <person>, <affiliation>, I-<infrastructure>, <infrastructure>]
+        expectation_sha256: sha256:3bc0ca5f162683308e5026e1442e67b394d5094daff85eb0a660297185950901
+      # Java's split rule: a repeated scalar role closes the record only when the
+      # open record is a valid funding record, so this is two entries.
+      - id: funding-two-records
+        outcome: decoded
+        tokens: [Alpha, "11", Beta, Gamma]
+        labels: [<funderName>, <grantNumber>, <funderName>, <grantName>]
+        expectation_sha256: sha256:91697eaedfe8270040d0754304faf9cb11b07b721287ea8e8679dc723f66bf2c
+      # A record whose only label is `<other>` carried an observation: it is
+      # decoded with zero entries and `other_count` 1, never reported as absent.
+      - id: funding-other-only
+        outcome: decoded
+        tokens: [Noted]
+        labels: [<other>]
+        expectation_sha256: sha256:e300a2bdc99b735858f23ea943c6052a984f281807e0dd70e9b05f1db3468d0f
+      - id: funding-absence
+        outcome: not_observed
+        tokens: [Nil]
+        labels: []
+        expectation_sha256: sha256:86f598449e909cd3fe4466148138da57a6d55d168903da0619a04edcd412f53d
