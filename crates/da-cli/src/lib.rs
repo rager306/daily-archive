@@ -24,6 +24,8 @@ pub mod parse_batch;
 pub mod parse_config;
 pub mod parse_job;
 pub mod parse_profile;
+/// SUT-free reference producer for the closed parse-policy ablation (S07/T04).
+pub mod policy_ablation_reference;
 pub mod production;
 pub mod snapshot_identity;
 pub mod snapshot_lineage;
