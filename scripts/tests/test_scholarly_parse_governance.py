@@ -29,6 +29,10 @@ from governor.adapters.checks.scholarly_parse_plane import (
     _feature_tagger_training_quarantine_tokens_present,
     _fulltext_sequence_quarantine_spec,
     _fulltext_sequence_quarantine_tokens_present,
+    _visual_family_sequence_quarantine_spec,
+    _visual_family_sequence_quarantine_tokens_present,
+    _funding_sequence_quarantine_spec,
+    _funding_sequence_quarantine_tokens_present,
     _bibliography_sequence_quarantine_spec,
     _bibliography_sequence_quarantine_tokens_present,
     _header_sequence_quarantine_spec,
@@ -1902,6 +1906,289 @@ def test_checker_fulltext_sequence_quarantine_stays_silent_without_ledger(tmp_pa
     target.write_text("let _x = decode_fulltext_sequence(input);\n", encoding="utf-8")
     flags = _check_scholarly_parse_plane(tmp_path)
     assert _fulltext_sequence_quarantine_flags(flags) == [], flags
+    assert any(
+        item.flag
+        in {
+            "scholarly_parse_plane_evidence_missing",
+            "scholarly_parse_plane_backend_identity",
+        }
+        for item in flags
+    ), flags
+
+# ───── S06/T08: visual-family and funding lanes stay shadow, out of four production boundaries ─────
+
+# The Rust mirror lives in `crates/da-parse/tests/architecture_contract.rs`
+# (`VISUAL_FAMILY_SEQUENCE_QUARANTINE_TOKENS` / `FUNDING_SEQUENCE_QUARANTINE_TOKENS`),
+# so a dropped DATA key breaks BOTH sides and can never be quietly accepted.
+VISUAL_FAMILY_SEQUENCE_QUARANTINE_TOKENS = [
+    "cluster_family_label_runs",
+    "caption_links_from_markers",
+    "decode_figure_sequence",
+    "check_figure_label_block",
+    "check_figure_column_window",
+    "figure_spans_from_decoded",
+    "figure_label_is_admissible",
+    "decode_table_sequence",
+    "check_table_label_block",
+    "check_table_column_window",
+    "table_spans_from_decoded",
+    "table_cells_from_inventory",
+    "table_revert_reason",
+    "cluster_opens_new_table",
+    "table_label_is_admissible",
+    "join_native_equations",
+    "join_native_equation_labels",
+    "is_formula_join_label",
+    "FamilyLabelCluster",
+    "NativeVisualFamilyClusterError",
+    "NativeCaptionMarker",
+    "NativeCaptionLinks",
+    "NativeCaptionLinkAbsence",
+    "FigureSpan",
+    "NativeFigureAbsence",
+    "NativeFigureDecodeOutcome",
+    "NativeFigureSequenceError",
+    "NativeTableSpan",
+    "NativeTableCell",
+    "NativeTableCells",
+    "NativeTableAbsence",
+    "NativeTableRevertReason",
+    "NativeTableDecodeOutcome",
+    "NativeTableSequenceError",
+    "NativeEquationSpan",
+    "NativeFormulaAbsence",
+    "NativeFormulaJoinError",
+    "NativeFormulaJoinOutcome",
+]
+FUNDING_SEQUENCE_QUARANTINE_TOKENS = [
+    "render_funding_features",
+    "render_funding_feature_text",
+    "check_funding_feature_columns",
+    "validate_funding_gazetteer_coverage",
+    "decode_funding_sequence",
+    "check_funding_label_block",
+    "check_funding_column_window",
+    "funding_entries_from_decoded",
+    "funding_label_is_admissible",
+    "funding_role_of_label",
+    "FundingFeatureRow",
+    "FundingFeatureToken",
+    "FundingLineStatus",
+    "FundingCapitalisation",
+    "FundingDigit",
+    "FundingPunctType",
+    "NativeFundingFeatureError",
+    "NativeFundingGazetteerCoverage",
+    "NativeFundingGazetteerLane",
+    "NativeFundingGazetteerSpan",
+    "NativeFundingEntry",
+    "NativeFundingRole",
+    "NativeFundingAbsence",
+    "NativeFundingDecodeOutcome",
+    "NativeFundingSequenceError",
+]
+FAMILY_SEQUENCE_QUARANTINE_BOUNDARIES = [
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+    "crates/da-parse/src/parser.rs",
+    "crates/da-parse/src/projector.rs",
+]
+FAMILY_SEQUENCE_QUARANTINE_KEYS = {
+    "visual_family_sequence_quarantine": (
+        _visual_family_sequence_quarantine_spec,
+        _visual_family_sequence_quarantine_tokens_present,
+        VISUAL_FAMILY_SEQUENCE_QUARANTINE_TOKENS,
+    ),
+    "funding_sequence_quarantine": (
+        _funding_sequence_quarantine_spec,
+        _funding_sequence_quarantine_tokens_present,
+        FUNDING_SEQUENCE_QUARANTINE_TOKENS,
+    ),
+}
+FAMILY_SEQUENCE_QUARANTINE_TOKEN_CASES = [
+    (key, token)
+    for key, (_spec, _present, tokens) in sorted(FAMILY_SEQUENCE_QUARANTINE_KEYS.items())
+    for token in tokens
+]
+
+
+def _family_sequence_quarantine_flags(flags, key: str):
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    return [item for item in matching if f"#{key}." in item.evidence]
+
+
+def _other_family_key(key: str) -> str:
+    return next(candidate for candidate in FAMILY_SEQUENCE_QUARANTINE_KEYS if candidate != key)
+
+
+@pytest.mark.parametrize("key", sorted(FAMILY_SEQUENCE_QUARANTINE_KEYS))
+def test_family_sequence_quarantine_is_data_bound_and_closed(key: str):
+    spec, _present, expected = FAMILY_SEQUENCE_QUARANTINE_KEYS[key]
+    defaults = _load(ROOT / "data/parse/grobid_compatibility.yaml")["defaults"]
+    tokens, boundaries = spec(defaults)
+    assert tokens == expected
+    assert boundaries == FAMILY_SEQUENCE_QUARANTINE_BOUNDARIES
+    assert len(set(tokens)) == len(tokens)
+    spec_payload = defaults[key]
+    assert spec_payload["production_authority"] == "java_http"
+    assert spec_payload["observe_mode"] == "shadow_receipt"
+    assert spec_payload["production_route"] == "forbidden"
+    assert spec_payload["graph_write"] == "forbidden"
+    assert spec_payload["import_eligible"] is False
+    assert spec_payload["auto_promote"] == "forbidden"
+    assert spec_payload["deployed"] is False
+    assert spec_payload["decision_point"] == 6
+    assert spec_payload["independently_selectable"] == ["header", "references"]
+    assert spec_payload["proof_level"] == "contract"
+    assert spec_payload["data_binding"] == "data/parse/native_visual_families.yaml"
+    assert spec_payload["schema_version"] == "native-visual-families.v1"
+    assert spec_payload["bundled_model_bytes"] is False
+    assert spec_payload["model_root_env"] == "DA_GROBID_MODEL_ROOT"
+    assert spec_payload["independent_oracle"] == "crates/da-parse/tests/native_visual_family_same_n.rs"
+    assert spec_payload["real_model_harness"] == "crates/da-adapters/tests/native_visual_family_real_model.rs"
+    assert spec_payload["offline_limits"]
+
+
+def test_visual_family_sequence_quarantine_pins_the_fulltext_abi():
+    # figure/table re-use the S05 fulltext ABI unchanged: 27 emitted columns and
+    # only 0..=25 referenced by the frozen models' own templates.
+    spec_payload = _load(ROOT / "data/parse/grobid_compatibility.yaml")["defaults"][
+        "visual_family_sequence_quarantine"
+    ]
+    assert spec_payload["emitted_columns"] == 27
+    assert spec_payload["referenced_columns"] == 26
+    assert spec_payload["grouping_rule"] == "tagging_token_clusteror_is_beginning"
+    assert spec_payload["caption_link_resolve_owner"] == "native_callout_matching"
+    assert spec_payload["caption_link_empty_inventory"] == "not_observed"
+
+
+def test_funding_sequence_quarantine_pins_its_own_abi():
+    spec_payload = _load(ROOT / "data/parse/grobid_compatibility.yaml")["defaults"][
+        "funding_sequence_quarantine"
+    ]
+    assert spec_payload["emitted_columns"] == 17
+    assert spec_payload["referenced_columns"] == 17
+    assert spec_payload["label_column_index"] == 17
+    assert spec_payload["label_column_value"] == "0"
+    assert spec_payload["base_labels"] == 10
+    assert spec_payload["label_spellings"] == 20
+    assert spec_payload["gazetteer_lanes"] == ["knownFunder", "knownInfrastructure"]
+    assert spec_payload["gazetteer_coverage_source"] == "caller_supplied_typed_spans"
+
+
+def test_family_sequence_quarantines_are_distinct_from_every_sibling_key():
+    # D362: name adjacency is not inheritance. The two S06 keys, the S08
+    # visual-head key, the P2 region key and the two accountant keys are six
+    # lanes; none may be merged into another.
+    defaults = _load(ROOT / "data/parse/grobid_compatibility.yaml")["defaults"]
+    visual = set(_visual_family_sequence_quarantine_spec(defaults)[0])
+    funding = set(_funding_sequence_quarantine_spec(defaults)[0])
+    assert len(visual) == 38
+    assert len(funding) == 25
+    assert visual.isdisjoint(funding)
+    for sibling in (
+        "visual_heads_quarantine",
+        "fulltext_blocks_quarantine",
+        "body_accounting_quarantine",
+        "fulltext_sequence_quarantine",
+        "callout_matching_quarantine",
+    ):
+        sibling_tokens = set(defaults[sibling]["tokens"])
+        assert sibling_tokens
+        assert visual.isdisjoint(sibling_tokens), sibling
+        assert funding.isdisjoint(sibling_tokens), sibling
+
+
+@pytest.mark.parametrize("key", sorted(FAMILY_SEQUENCE_QUARANTINE_KEYS))
+def test_family_sequence_quarantine_spec_is_silent_without_data(key: str):
+    # Missing or malformed DATA never invents a forbidden set or boundaries.
+    spec, _present, expected = FAMILY_SEQUENCE_QUARANTINE_KEYS[key]
+    assert spec(None) == ([], [])
+    assert spec({}) == ([], [])
+    assert spec({key: {}}) == ([], [])
+    assert spec({key: {"tokens": [1]}}) == ([], [])
+    assert spec({key: {"tokens": [expected[0], "  "]}}) == ([expected[0]], [])
+
+
+@pytest.mark.parametrize("key", sorted(FAMILY_SEQUENCE_QUARANTINE_KEYS))
+def test_family_sequence_quarantine_removed_key_is_not_silently_ignored(key: str):
+    # The checker is fail-closed on the ledger: without DATA it stays silent.
+    # That is exactly why the DATA<->Rust<->pytest equality assertions exist —
+    # a removed key is caught there, never quietly accepted as "no atoms".
+    spec, _present, expected = FAMILY_SEQUENCE_QUARANTINE_KEYS[key]
+    defaults = _load(ROOT / "data/parse/grobid_compatibility.yaml")["defaults"]
+    without_key = {name: value for name, value in defaults.items() if name != key}
+    assert spec(without_key) == ([], [])
+    assert spec(without_key)[0] != expected
+
+
+@pytest.mark.parametrize("key,token", FAMILY_SEQUENCE_QUARANTINE_TOKEN_CASES)
+def test_checker_flags_family_sequence_atom_in_every_boundary(tmp_path: Path, key: str, token: str):
+    _copy_checker_surface(tmp_path)
+    payload = (
+        f"let _x = {token}(input);\n"
+        if "_" in token
+        else f"let _x: {token} = build();\n"
+    )
+    for relative in FAMILY_SEQUENCE_QUARANTINE_BOUNDARIES:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(payload, encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _family_sequence_quarantine_flags(flags, key)
+    assert len(matching) == len(FAMILY_SEQUENCE_QUARANTINE_BOUNDARIES), flags
+    assert all(f"#{key}.{token}" in item.evidence for item in matching), flags
+    # Adjacent lanes stay independent: the other S06 key and the sibling
+    # quarantines never flag this atom.
+    assert _family_sequence_quarantine_flags(flags, _other_family_key(key)) == [], flags
+    assert _fulltext_sequence_quarantine_flags(flags) == [], flags
+    assert _visual_heads_quarantine_flags(flags) == [], flags
+    assert _bibliography_sequence_quarantine_flags(flags) == [], flags
+
+
+@pytest.mark.parametrize("key", sorted(FAMILY_SEQUENCE_QUARANTINE_KEYS))
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "// decode_figure_sequence is shadow-only prose\n",
+        "/// doc NativeCaptionLinks prose\n",
+        "let x = 1; // render_funding_features prose\n",
+        "let _r = decode_figure_sequence_legacy(input);\n",
+        "let _f = decode_funding_sequence_legacy(input);\n",
+        "let _x = NativeCaptionLinksBuilder;\n",
+        "let _x = FundingFeatureRowExtra;\n",
+        "decode_table_sequence is prose without a call\n",
+        "// NativeFundingGazetteerCoverage prose\n",
+    ],
+)
+def test_checker_family_sequence_quarantine_ignores_prose_and_prefixed(
+    tmp_path: Path, key: str, payload: str
+):
+    _copy_checker_surface(tmp_path)
+    for relative in FAMILY_SEQUENCE_QUARANTINE_BOUNDARIES:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(payload, encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _family_sequence_quarantine_flags(flags, key) == [], flags
+
+
+@pytest.mark.parametrize("key", sorted(FAMILY_SEQUENCE_QUARANTINE_KEYS))
+def test_checker_clean_root_has_no_family_sequence_quarantine_flags(key: str):
+    assert _family_sequence_quarantine_flags(_check_scholarly_parse_plane(ROOT), key) == []
+
+
+@pytest.mark.parametrize("key", sorted(FAMILY_SEQUENCE_QUARANTINE_KEYS))
+def test_checker_family_sequence_quarantine_stays_silent_without_ledger(
+    tmp_path: Path, key: str
+):
+    _copy_checker_surface(tmp_path)
+    (tmp_path / "data/parse/grobid_compatibility.yaml").unlink()
+    target = tmp_path / FAMILY_SEQUENCE_QUARANTINE_BOUNDARIES[0]
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(f"let _x = {FAMILY_SEQUENCE_QUARANTINE_KEYS[key][2][0]}(input);\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _family_sequence_quarantine_flags(flags, key) == [], flags
     assert any(
         item.flag
         in {

@@ -3383,6 +3383,491 @@ fn production_boundaries_stay_free_of_fulltext_sequence_atoms() {
     );
 }
 
+// ───── S06/T08: the native visual-family and funding lanes stay shadow ─────
+//
+// Mirrors the two Governor S06 quarantine keys
+// (`defaults.visual_family_sequence_quarantine` for figure/table/formula and
+// `defaults.funding_sequence_quarantine` for funding) as an independent
+// compile/test contract: the exact token sets below must not appear in code
+// positions of the four production boundaries. `//` comments (full-line and
+// trailing) are stripped before the scan, snake_case atoms require a call-site
+// `(` (after optional whitespace) with a word boundary before the token, and
+// each CamelCase atom is matched on word boundaries on both sides. The matcher
+// is the shared `bibliography_atom_hit` — one matching rule, no copy.
+//
+// Naming adjacency is deliberate (D362): neither key is merged with
+// `visual_heads_quarantine` (S08 geometric heads, which carries no lock fields
+// and only the weak `NativeVisual` CamelCase token), the S05
+// `fulltext_sequence_quarantine`, `fulltext_blocks_quarantine` (P2 region
+// accounting) or `body_accounting_quarantine` (M496 P5 accountant). The sets
+// are checked disjoint, and each key owns its own four boundaries.
+
+/// Production boundaries that must stay free of S06 family atoms.
+const FAMILY_SEQUENCE_QUARANTINE_BOUNDARIES: [&str; 4] = [
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+    "crates/da-parse/src/parser.rs",
+    "crates/da-parse/src/projector.rs",
+];
+
+/// Native figure/table/formula symbols (S06 key
+/// `visual_family_sequence_quarantine`). Mirrored 1:1 by the Governor DATA
+/// key; the test below fails if either side drifts.
+const VISUAL_FAMILY_SEQUENCE_QUARANTINE_TOKENS: [&str; 38] = [
+    // Shared family clusteror and the common caption-link band.
+    "cluster_family_label_runs",
+    "caption_links_from_markers",
+    // The `figure` second-pass runner over the S05 fulltext ABI.
+    "decode_figure_sequence",
+    "check_figure_label_block",
+    "check_figure_column_window",
+    "figure_spans_from_decoded",
+    "figure_label_is_admissible",
+    // The `table` second-pass runner: same ABI plus the Java split/revert rules.
+    "decode_table_sequence",
+    "check_table_label_block",
+    "check_table_column_window",
+    "table_spans_from_decoded",
+    "table_cells_from_inventory",
+    "table_revert_reason",
+    "cluster_opens_new_table",
+    "table_label_is_admissible",
+    // The `formula` locator join over an already-decoded fulltext sequence.
+    "join_native_equations",
+    "join_native_equation_labels",
+    "is_formula_join_label",
+    // PascalCase row/span/outcome/error types of the same lane.
+    "FamilyLabelCluster",
+    "NativeVisualFamilyClusterError",
+    "NativeCaptionMarker",
+    "NativeCaptionLinks",
+    "NativeCaptionLinkAbsence",
+    "FigureSpan",
+    "NativeFigureAbsence",
+    "NativeFigureDecodeOutcome",
+    "NativeFigureSequenceError",
+    "NativeTableSpan",
+    "NativeTableCell",
+    "NativeTableCells",
+    "NativeTableAbsence",
+    "NativeTableRevertReason",
+    "NativeTableDecodeOutcome",
+    "NativeTableSequenceError",
+    "NativeEquationSpan",
+    "NativeFormulaAbsence",
+    "NativeFormulaJoinError",
+    "NativeFormulaJoinOutcome",
+];
+
+/// Native funding symbols (S06 key `funding_sequence_quarantine`), mirrored
+/// 1:1 by the Governor DATA key.
+const FUNDING_SEQUENCE_QUARANTINE_TOKENS: [&str; 25] = [
+    // The 17-column ABI in the exact `FeaturesVectorFunding.printVector` order.
+    "render_funding_features",
+    "render_funding_feature_text",
+    "check_funding_feature_columns",
+    "validate_funding_gazetteer_coverage",
+    // The funding decode and its entity lift.
+    "decode_funding_sequence",
+    "check_funding_label_block",
+    "check_funding_column_window",
+    "funding_entries_from_decoded",
+    "funding_label_is_admissible",
+    "funding_role_of_label",
+    // PascalCase row/coverage/entry/outcome/error types of the same lane.
+    "FundingFeatureRow",
+    "FundingFeatureToken",
+    "FundingLineStatus",
+    "FundingCapitalisation",
+    "FundingDigit",
+    "FundingPunctType",
+    "NativeFundingFeatureError",
+    "NativeFundingGazetteerCoverage",
+    "NativeFundingGazetteerLane",
+    "NativeFundingGazetteerSpan",
+    "NativeFundingEntry",
+    "NativeFundingRole",
+    "NativeFundingAbsence",
+    "NativeFundingDecodeOutcome",
+    "NativeFundingSequenceError",
+];
+
+/// Read one list from an S06 ledger quarantine key.
+///
+/// Missing, null or malformed DATA yields an empty list with no invented
+/// fallback — the same fail-closed-but-silent contract as the Governor
+/// `_family_sequence_quarantine_spec`. Loss is therefore visible where it
+/// belongs: the 1:1 equality assertions below compare this list against the
+/// Rust constant, so a removed key, a dropped token or a malformed entry all
+/// surface as drift instead of a panic inside the reader.
+fn family_sequence_quarantine_data(
+    registry: &serde_yaml::Value,
+    key: &str,
+    field: &str,
+) -> Vec<String> {
+    registry["defaults"][key][field]
+        .as_sequence()
+        .map(|values| {
+            values
+                .iter()
+                .filter_map(|value| value.as_str().map(|text| text.to_owned()))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Comment-stripped family-atom scan over code text.
+fn family_sequence_quarantine_hits(text: &str, tokens: &[&str]) -> Vec<String> {
+    let mut hits = Vec::new();
+    for (line_no, raw) in strip_line_comments(text).lines().enumerate() {
+        let code = match raw.find("//") {
+            Some(cut) => &raw[..cut],
+            None => raw,
+        };
+        for token in tokens {
+            if bibliography_atom_hit(code, token) {
+                hits.push(format!(
+                    "[family-sequence-quarantine] line {}: atom `{token}`: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
+            }
+        }
+    }
+    hits
+}
+
+/// The locks every S06 family key must carry, checked by value so an eroded
+/// lock is observable drift rather than silence.
+fn assert_family_sequence_quarantine_locks(registry: &serde_yaml::Value, key: &str, lane: &str) {
+    let quarantine = &registry["defaults"][key];
+    assert_ne!(
+        quarantine,
+        &serde_yaml::Value::Null,
+        "{lane}: defaults.{key} vanished — loss, not silence"
+    );
+    for (field, expected) in [
+        ("production_authority", "java_http"),
+        ("observe_mode", "shadow_receipt"),
+        ("production_route", "forbidden"),
+        ("graph_write", "forbidden"),
+        ("auto_promote", "forbidden"),
+        ("proof_level", "contract"),
+        ("data_binding", "data/parse/native_visual_families.yaml"),
+        ("schema_version", "native-visual-families.v1"),
+        ("model_root_env", "DA_GROBID_MODEL_ROOT"),
+        (
+            "independent_oracle",
+            "crates/da-parse/tests/native_visual_family_same_n.rs",
+        ),
+        (
+            "real_model_harness",
+            "crates/da-adapters/tests/native_visual_family_real_model.rs",
+        ),
+    ] {
+        assert_eq!(
+            quarantine[field].as_str(),
+            Some(expected),
+            "{lane}: `{field}` must stay `{expected}`"
+        );
+    }
+    for field in ["deployed", "bundled_model_bytes"] {
+        assert_eq!(
+            quarantine[field].as_bool(),
+            Some(false),
+            "{lane}: `{field}` must stay false"
+        );
+    }
+    assert_eq!(
+        quarantine["import_eligible"].as_bool(),
+        Some(false),
+        "{lane}: D127 lock eroded"
+    );
+    assert_eq!(
+        quarantine["decision_point"].as_i64(),
+        Some(6),
+        "{lane}: the lane may not add or move a DecisionPoint"
+    );
+    let selectable: Vec<String> = quarantine["independently_selectable"]
+        .as_sequence()
+        .expect("independently_selectable")
+        .iter()
+        .map(|value| value.as_str().expect("selectable lane").to_owned())
+        .collect();
+    assert_eq!(
+        selectable,
+        vec!["header".to_owned(), "references".to_owned()]
+    );
+    assert!(
+        quarantine["offline_limits"]
+            .as_sequence()
+            .is_some_and(|limits| !limits.is_empty()),
+        "{lane}: offline limits must be named, not hidden"
+    );
+    assert_eq!(
+        family_sequence_quarantine_data(registry, key, "boundaries"),
+        FAMILY_SEQUENCE_QUARANTINE_BOUNDARIES
+            .iter()
+            .map(|boundary| (*boundary).to_owned())
+            .collect::<Vec<_>>(),
+        "{lane}: the four production boundaries drifted"
+    );
+}
+
+#[test]
+fn visual_family_sequence_quarantine_is_data_bound_and_lock_closed() {
+    let registry: serde_yaml::Value =
+        serde_yaml::from_str(&read_text("data/parse/grobid_compatibility.yaml"))
+            .expect("compatibility registry");
+    assert_eq!(
+        family_sequence_quarantine_data(&registry, "visual_family_sequence_quarantine", "tokens"),
+        VISUAL_FAMILY_SEQUENCE_QUARANTINE_TOKENS
+            .iter()
+            .map(|token| (*token).to_owned())
+            .collect::<Vec<_>>(),
+        "S06: Rust and DATA visual-family token sets drifted (D362 single source)"
+    );
+    assert_family_sequence_quarantine_locks(
+        &registry,
+        "visual_family_sequence_quarantine",
+        "S06 visual-family",
+    );
+    // The figure/table second pass reads the S05 fulltext ABI unchanged: 27
+    // emitted columns and only 0..=25 referenced by the frozen templates.
+    let quarantine = &registry["defaults"]["visual_family_sequence_quarantine"];
+    assert_eq!(quarantine["emitted_columns"].as_u64(), Some(27));
+    assert_eq!(quarantine["referenced_columns"].as_u64(), Some(26));
+    assert_eq!(
+        quarantine["grouping_rule"].as_str(),
+        Some("tagging_token_clusteror_is_beginning"),
+        "S06: the family lane must group by the clusteror rule, not by D359 base runs"
+    );
+    // The caption-link band never resolves marker -> reference itself (S04 owns it).
+    assert_eq!(
+        quarantine["caption_link_resolve_owner"].as_str(),
+        Some("native_callout_matching")
+    );
+    assert_eq!(
+        quarantine["caption_link_empty_inventory"].as_str(),
+        Some("not_observed")
+    );
+    // Negative controls: a dropped token or an eroded lock must not satisfy the
+    // closed DATA set.
+    let mut drifted = registry.clone();
+    drifted["defaults"]["visual_family_sequence_quarantine"]["tokens"] =
+        serde_yaml::Value::Sequence(
+            VISUAL_FAMILY_SEQUENCE_QUARANTINE_TOKENS
+                [..VISUAL_FAMILY_SEQUENCE_QUARANTINE_TOKENS.len() - 1]
+                .iter()
+                .map(|token| serde_yaml::Value::String((*token).to_owned()))
+                .collect(),
+        );
+    assert_ne!(
+        family_sequence_quarantine_data(&drifted, "visual_family_sequence_quarantine", "tokens"),
+        family_sequence_quarantine_data(&registry, "visual_family_sequence_quarantine", "tokens"),
+        "S06: a dropped token must not satisfy the closed DATA set"
+    );
+    let mut promoted = registry.clone();
+    promoted["defaults"]["visual_family_sequence_quarantine"]["deployed"] =
+        serde_yaml::Value::Bool(true);
+    assert_ne!(
+        promoted["defaults"]["visual_family_sequence_quarantine"]["deployed"].as_bool(),
+        Some(false),
+        "S06: deployed=true must be observable as drift"
+    );
+}
+
+#[test]
+fn funding_sequence_quarantine_is_data_bound_and_lock_closed() {
+    let registry: serde_yaml::Value =
+        serde_yaml::from_str(&read_text("data/parse/grobid_compatibility.yaml"))
+            .expect("compatibility registry");
+    assert_eq!(
+        family_sequence_quarantine_data(&registry, "funding_sequence_quarantine", "tokens"),
+        FUNDING_SEQUENCE_QUARANTINE_TOKENS
+            .iter()
+            .map(|token| (*token).to_owned())
+            .collect::<Vec<_>>(),
+        "S06: Rust and DATA funding token sets drifted (D362 single source)"
+    );
+    assert_family_sequence_quarantine_locks(
+        &registry,
+        "funding_sequence_quarantine",
+        "S06 funding",
+    );
+    // 17 emitted feature columns plus the literal `0` dummy label slot at 17.
+    let quarantine = &registry["defaults"]["funding_sequence_quarantine"];
+    assert_eq!(quarantine["emitted_columns"].as_u64(), Some(17));
+    assert_eq!(quarantine["referenced_columns"].as_u64(), Some(17));
+    assert_eq!(quarantine["label_column_index"].as_u64(), Some(17));
+    assert_eq!(
+        quarantine["label_column_value"].as_str(),
+        Some("0"),
+        "S06: the funding label slot is the literal `0`, never a training label"
+    );
+    assert_eq!(quarantine["base_labels"].as_u64(), Some(10));
+    assert_eq!(quarantine["label_spellings"].as_u64(), Some(20));
+    let lanes: Vec<String> = quarantine["gazetteer_lanes"]
+        .as_sequence()
+        .expect("gazetteer_lanes")
+        .iter()
+        .map(|value| value.as_str().expect("lane").to_owned())
+        .collect();
+    assert_eq!(
+        lanes,
+        vec!["knownFunder".to_owned(), "knownInfrastructure".to_owned()]
+    );
+    // Coverage is caller-supplied typed spans (D363), never a bundled lexicon.
+    assert_eq!(
+        quarantine["gazetteer_coverage_source"].as_str(),
+        Some("caller_supplied_typed_spans")
+    );
+    // Negative control: a removed key must not degrade into silence — the
+    // reader returns an empty set and the 1:1 equality assertions above are
+    // what reject it.
+    let mut removed = registry.clone();
+    removed["defaults"]["funding_sequence_quarantine"] = serde_yaml::Value::Null;
+    assert!(
+        family_sequence_quarantine_data(&removed, "funding_sequence_quarantine", "tokens")
+            .is_empty(),
+        "S06 negative control: a removed DATA key must read as an empty set, not as silence"
+    );
+    assert_ne!(
+        family_sequence_quarantine_data(&removed, "funding_sequence_quarantine", "tokens"),
+        FUNDING_SEQUENCE_QUARANTINE_TOKENS
+            .iter()
+            .map(|token| (*token).to_owned())
+            .collect::<Vec<_>>(),
+        "S06 negative control: an empty set must not satisfy the closed token list"
+    );
+}
+
+#[test]
+fn family_sequence_quarantine_scanner_fails_visible_on_synthetic_atoms() {
+    let synthetic = "fn run() {\n    cluster_family_label_runs(labels);\n    decode_figure_sequence(rows, model);\n    decode_table_sequence(rows, model);\n    join_native_equations(&decoded);\n    render_funding_features(&tokens, &coverage);\n    decode_funding_sequence(&rows, &model);\n    let _c: NativeCaptionLinks = links;\n    let _e: NativeFundingEntry = entry;\n}\n";
+    let hits = family_sequence_quarantine_hits(
+        synthetic,
+        &[
+            VISUAL_FAMILY_SEQUENCE_QUARANTINE_TOKENS.as_slice(),
+            FUNDING_SEQUENCE_QUARANTINE_TOKENS.as_slice(),
+        ]
+        .concat(),
+    );
+    assert_eq!(hits.len(), 8, "each family atom must flag: {hits:?}");
+    for atom in [
+        "cluster_family_label_runs",
+        "decode_figure_sequence",
+        "decode_table_sequence",
+        "join_native_equations",
+        "render_funding_features",
+        "decode_funding_sequence",
+        "NativeCaptionLinks",
+        "NativeFundingEntry",
+    ] {
+        assert!(
+            hits.iter().any(|hit| hit.contains(atom)),
+            "scanner lost coverage for `{atom}`"
+        );
+    }
+    // Whitespace before `(` is still a call site and must flag.
+    let spaced = "fn run() {\n    decode_table_sequence (rows, model);\n    check_funding_label_block\t(model);\n}\n";
+    assert_eq!(
+        family_sequence_quarantine_hits(spaced, &VISUAL_FAMILY_SEQUENCE_QUARANTINE_TOKENS).len(),
+        1,
+        "visual lane must flag its own whitespace call-site"
+    );
+    assert_eq!(
+        family_sequence_quarantine_hits(spaced, &FUNDING_SEQUENCE_QUARANTINE_TOKENS).len(),
+        1,
+        "funding lane must flag its own whitespace call-site"
+    );
+    // Comments are prose, bare mentions are not call sites, and a prefixed
+    // identifier or a longer CamelCase type name is a different symbol.
+    let prose = "// decode_figure_sequence NativeCaptionLinks render_funding_features are prose\nlet x = decode_figure_sequence_legacy(y);\nlet y = decode_funding_sequence;\nlet z: NativeCaptionLinksBuilder = links;\nlet w: FundingFeatureRowExtra = row;\nfoo(); // render_funding_features(tokens, coverage);\n";
+    assert!(
+        family_sequence_quarantine_hits(prose, &VISUAL_FAMILY_SEQUENCE_QUARANTINE_TOKENS)
+            .is_empty(),
+        "prose comments, prefixed identifiers and bare mentions must not flag (visual)"
+    );
+    assert!(
+        family_sequence_quarantine_hits(prose, &FUNDING_SEQUENCE_QUARANTINE_TOKENS).is_empty(),
+        "prose comments, prefixed identifiers and bare mentions must not flag (funding)"
+    );
+}
+
+#[test]
+fn production_boundaries_stay_free_of_family_sequence_atoms() {
+    for rel in FAMILY_SEQUENCE_QUARANTINE_BOUNDARIES {
+        let text = read_text(rel);
+        assert!(
+            text.len() > 1_000,
+            "positive control failed: {rel} looks truncated"
+        );
+        let visual =
+            family_sequence_quarantine_hits(&text, &VISUAL_FAMILY_SEQUENCE_QUARANTINE_TOKENS);
+        let funding = family_sequence_quarantine_hits(&text, &FUNDING_SEQUENCE_QUARANTINE_TOKENS);
+        assert!(
+            visual.is_empty() && funding.is_empty(),
+            "S06 family atoms leaked into a production boundary (shadow means never served):\n{}\n{}",
+            visual.join("\n"),
+            funding.join("\n")
+        );
+    }
+}
+
+#[test]
+fn family_sequence_quarantines_are_distinct_and_stay_off_the_fsm() {
+    let registry: serde_yaml::Value =
+        serde_yaml::from_str(&read_text("data/parse/grobid_compatibility.yaml"))
+            .expect("compatibility registry");
+    let visual: std::collections::BTreeSet<String> =
+        family_sequence_quarantine_data(&registry, "visual_family_sequence_quarantine", "tokens")
+            .into_iter()
+            .collect();
+    let funding: std::collections::BTreeSet<String> =
+        family_sequence_quarantine_data(&registry, "funding_sequence_quarantine", "tokens")
+            .into_iter()
+            .collect();
+    assert_eq!(visual.len(), VISUAL_FAMILY_SEQUENCE_QUARANTINE_TOKENS.len());
+    assert_eq!(funding.len(), FUNDING_SEQUENCE_QUARANTINE_TOKENS.len());
+    assert!(
+        visual.is_disjoint(&funding),
+        "the two S06 keys must never share a token"
+    );
+    // D362: the new keys are disjoint from every sibling lane, including the
+    // older `visual_heads_quarantine`, because name adjacency is not inheritance.
+    for sibling in [
+        "visual_heads_quarantine",
+        "fulltext_blocks_quarantine",
+        "body_accounting_quarantine",
+        "fulltext_sequence_quarantine",
+        "callout_matching_quarantine",
+    ] {
+        let sibling_tokens: std::collections::BTreeSet<String> =
+            family_sequence_quarantine_data(&registry, sibling, "tokens")
+                .into_iter()
+                .collect();
+        assert!(
+            !sibling_tokens.is_empty(),
+            "{sibling} vanished — the disjointness check would be vacuous"
+        );
+        assert!(
+            visual.is_disjoint(&sibling_tokens),
+            "visual-family tokens must not overlap {sibling}"
+        );
+        assert!(
+            funding.is_disjoint(&sibling_tokens),
+            "funding tokens must not overlap {sibling}"
+        );
+    }
+    // No new DecisionPoint: the policy FSM stays the closed six-point set.
+    let fsm = s10_code_without_comments(&read_text("crates/da-domain/src/fsm_policy.rs"));
+    assert!(
+        s10_decision_point_violations(&fsm).is_empty(),
+        "S06 quarantines must preserve the closed six-DecisionPoint policy"
+    );
+}
+
 // ───── S08/T02: visual heads stay shadow — never in parse-pdf source_cli or ParserPort ─────
 //
 // Mirrors the Governor visual-heads quarantine (S08/T01, DATA-gated — the

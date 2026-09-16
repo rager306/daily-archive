@@ -439,6 +439,176 @@ defaults:
     - fulltext_post_process_is_not_reproduced
     - real_model_label_sequences_are_structural_invariants_not_recorded_goldens
     - lexicon_bundle_is_injected_and_grobid_model_and_lexicon_bytes_are_never_redistributed
+  # S06/T08: the native visual-family lane (figure/table second-pass decode over
+  # the S05 27-column fulltext ABI, plus the formula locator join) stays a
+  # shadow candidate. This section — not capabilities[].state — is the sole
+  # source of the forbidden token set and the production boundaries.
+  #
+  # This key is a FIFTH lane next to `visual_heads_quarantine` (S08 geometric
+  # heads), `fulltext_blocks_quarantine` (P2 region accounting),
+  # `body_accounting_quarantine` (M496 P5 accountant) and
+  # `fulltext_sequence_quarantine` (S05 body reading order) — it is never merged
+  # with any of them (D362). Naming adjacency is not inheritance: the earlier
+  # visual-head key carries no lock fields and only the weak `NativeVisual`
+  # CamelCase token, so it cannot carry this lane's atoms.
+  #
+  # Snake_case tokens are matched as call-sites (whitespace allowed before `(`);
+  # CamelCase tokens are matched as type names (word boundary). Full-line and
+  # trailing `//` comments are stripped; prose and prefix-substrings never count.
+  visual_family_sequence_quarantine:
+    tokens:
+    # Shared family clusteror and the common caption-link band.
+    - cluster_family_label_runs
+    - caption_links_from_markers
+    # The `figure` second-pass runner over the S05 fulltext ABI.
+    - decode_figure_sequence
+    - check_figure_label_block
+    - check_figure_column_window
+    - figure_spans_from_decoded
+    - figure_label_is_admissible
+    # The `table` second-pass runner: same ABI plus the Java split/revert rules.
+    - decode_table_sequence
+    - check_table_label_block
+    - check_table_column_window
+    - table_spans_from_decoded
+    - table_cells_from_inventory
+    - table_revert_reason
+    - cluster_opens_new_table
+    - table_label_is_admissible
+    # The `formula` locator join over an already-decoded fulltext sequence.
+    - join_native_equations
+    - join_native_equation_labels
+    - is_formula_join_label
+    # PascalCase row/span/outcome/error types of the same lane.
+    - FamilyLabelCluster
+    - NativeVisualFamilyClusterError
+    - NativeCaptionMarker
+    - NativeCaptionLinks
+    - NativeCaptionLinkAbsence
+    - FigureSpan
+    - NativeFigureAbsence
+    - NativeFigureDecodeOutcome
+    - NativeFigureSequenceError
+    - NativeTableSpan
+    - NativeTableCell
+    - NativeTableCells
+    - NativeTableAbsence
+    - NativeTableRevertReason
+    - NativeTableDecodeOutcome
+    - NativeTableSequenceError
+    - NativeEquationSpan
+    - NativeFormulaAbsence
+    - NativeFormulaJoinError
+    - NativeFormulaJoinOutcome
+    boundaries:
+    - crates/da-cli/src/source_cli.rs
+    - crates/da-ports/src/parser.rs
+    - crates/da-parse/src/parser.rs
+    - crates/da-parse/src/projector.rs
+    production_authority: java_http
+    observe_mode: shadow_receipt
+    production_route: forbidden
+    graph_write: forbidden
+    import_eligible: false
+    auto_promote: forbidden
+    deployed: false
+    decision_point: 6
+    independently_selectable: [header, references]
+    # The families themselves are DATA in the S06 dictionary; this key only
+    # carries the locks and the ABI facts a boundary scan can be held to.
+    data_binding: data/parse/native_visual_families.yaml
+    schema_version: native-visual-families.v1
+    grouping_rule: tagging_token_clusteror_is_beginning
+    caption_link_resolve_owner: native_callout_matching
+    caption_link_empty_inventory: not_observed
+    # The figure/table second pass reads the S05 fulltext ABI unchanged: 27
+    # emitted columns, and only columns 0..=25 are referenced by the frozen
+    # models' own `%x[...]` templates (col 26, superscript, is never referenced).
+    emitted_columns: 27
+    referenced_columns: 26
+    model_root_env: DA_GROBID_MODEL_ROOT
+    bundled_model_bytes: false
+    independent_oracle: crates/da-parse/tests/native_visual_family_same_n.rs
+    real_model_harness: crates/da-adapters/tests/native_visual_family_real_model.rs
+    proof_level: contract
+    offline_limits:
+    - row_and_cell_merge_geometry_is_not_reproduced_so_table_cells_need_a_caller_inventory
+    - caption_marker_to_reference_resolution_is_owned_by_s04_native_callout_matching
+    - fulltext_post_process_fix_invalid_table_or_figure_is_not_reproduced
+    - real_model_label_sequences_are_structural_invariants_not_recorded_goldens
+    - lexicon_bundle_is_injected_and_grobid_model_and_lexicon_bytes_are_never_redistributed
+  # S06/T08: the native funding lane (17-column `FeaturesVectorFunding` ABI with
+  # the literal `0` dummy label column, 10-label decode and entity lift) stays a
+  # shadow candidate. It owns this key and its own ABI; it is never merged with
+  # the visual-family key above or with any earlier quarantine.
+  funding_sequence_quarantine:
+    tokens:
+    # The 17-column ABI in the exact `FeaturesVectorFunding.printVector` order.
+    - render_funding_features
+    - render_funding_feature_text
+    - check_funding_feature_columns
+    - validate_funding_gazetteer_coverage
+    # The funding decode and its entity lift.
+    - decode_funding_sequence
+    - check_funding_label_block
+    - check_funding_column_window
+    - funding_entries_from_decoded
+    - funding_label_is_admissible
+    - funding_role_of_label
+    # PascalCase row/coverage/entry/outcome/error types of the same lane.
+    - FundingFeatureRow
+    - FundingFeatureToken
+    - FundingLineStatus
+    - FundingCapitalisation
+    - FundingDigit
+    - FundingPunctType
+    - NativeFundingFeatureError
+    - NativeFundingGazetteerCoverage
+    - NativeFundingGazetteerLane
+    - NativeFundingGazetteerSpan
+    - NativeFundingEntry
+    - NativeFundingRole
+    - NativeFundingAbsence
+    - NativeFundingDecodeOutcome
+    - NativeFundingSequenceError
+    boundaries:
+    - crates/da-cli/src/source_cli.rs
+    - crates/da-ports/src/parser.rs
+    - crates/da-parse/src/parser.rs
+    - crates/da-parse/src/projector.rs
+    production_authority: java_http
+    observe_mode: shadow_receipt
+    production_route: forbidden
+    graph_write: forbidden
+    import_eligible: false
+    auto_promote: forbidden
+    deployed: false
+    decision_point: 6
+    independently_selectable: [header, references]
+    data_binding: data/parse/native_visual_families.yaml
+    schema_version: native-visual-families.v1
+    # 17 emitted feature columns (indices 0..=16) plus the label slot at index
+    # 17, where inference prints the literal `0` (the renderer never sees a
+    # training label, so the training shape is unreachable by construction).
+    emitted_columns: 17
+    referenced_columns: 17
+    label_column_index: 17
+    label_column_value: "0"
+    base_labels: 10
+    label_spellings: 20
+    gazetteer_lanes: [knownFunder, knownInfrastructure]
+    gazetteer_coverage_source: caller_supplied_typed_spans
+    model_root_env: DA_GROBID_MODEL_ROOT
+    bundled_model_bytes: false
+    independent_oracle: crates/da-parse/tests/native_visual_family_same_n.rs
+    real_model_harness: crates/da-adapters/tests/native_visual_family_real_model.rs
+    proof_level: contract
+    offline_limits:
+    - infer_acronyms_is_not_reproduced
+    - gazetteer_lexicons_are_caller_supplied_and_never_bundled
+    - unmodeled_java_labels_fail_closed_rather_than_mapping
+    - real_model_label_sequences_are_structural_invariants_not_recorded_goldens
+    - lexicon_bundle_is_injected_and_grobid_model_and_lexicon_bytes_are_never_redistributed
   # Closed P0-P9 cascade skeleton (ADR-076). production_authority is never native.
   # fsm_consult must be parse_pdf_consults or none. later names stay later.
   # P5 production_stamp records only Java ParsedArticle body observations.

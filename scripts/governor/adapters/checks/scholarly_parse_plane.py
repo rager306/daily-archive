@@ -844,6 +844,173 @@ def _check_fulltext_sequence_quarantine(
             )
 
 
+def _family_sequence_quarantine_spec(defaults: Any, key: str) -> tuple[list[str], list[str]]:
+    """Derive a native visual-family quarantine (tokens, boundaries) from DATA.
+
+    Returns only non-empty strings from ``<key>.tokens`` and
+    ``<key>.boundaries``. Missing or malformed DATA yields ``([], [])`` with no
+    hardcoded fallback: the forbidden set and the boundary set must never be
+    invented by the checker. The existing SHA/evidence_missing/load signals own
+    the missing-ledger surface; this helper stays silent there.
+
+    Both S06 keys (``visual_family_sequence_quarantine`` for the figure/table/
+    formula bands and ``funding_sequence_quarantine`` for the funding band) are
+    their OWN lanes (D362) next to ``visual_heads_quarantine`` (S08 geometric
+    heads), ``fulltext_blocks_quarantine`` (P2 region accounting),
+    ``body_accounting_quarantine`` (M496 P5 accountant) and
+    ``fulltext_sequence_quarantine`` (S05 body reading order). Name adjacency is
+    not inheritance: each key owns its token set and its own production
+    boundaries, and the sets are never merged. The ParserPort type/method
+    prohibition stays on the Rust side
+    (``crates/da-parse/tests/architecture_contract.rs``).
+    """
+    if not isinstance(defaults, dict):
+        return [], []
+    raw = defaults.get(key)
+    if not isinstance(raw, dict):
+        return [], []
+    tokens: list[str] = []
+    for item in raw.get("tokens") if isinstance(raw.get("tokens"), list) else []:
+        if not isinstance(item, str):
+            continue
+        token = item.strip()
+        if token:
+            tokens.append(token)
+    boundaries: list[str] = []
+    for item in raw.get("boundaries") if isinstance(raw.get("boundaries"), list) else []:
+        if not isinstance(item, str):
+            continue
+        boundary = item.strip()
+        if boundary:
+            boundaries.append(boundary)
+    return tokens, boundaries
+
+
+def _visual_family_sequence_quarantine_spec(defaults: Any) -> tuple[list[str], list[str]]:
+    """S06 native figure/table/formula lane (own key, own boundaries)."""
+    return _family_sequence_quarantine_spec(defaults, "visual_family_sequence_quarantine")
+
+
+def _funding_sequence_quarantine_spec(defaults: Any) -> tuple[list[str], list[str]]:
+    """S06 native funding lane (own key, own boundaries)."""
+    return _family_sequence_quarantine_spec(defaults, "funding_sequence_quarantine")
+
+
+def _strip_family_sequence_quarantine_comments(text: str) -> str:
+    kept: list[str] = []
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("//"):
+            kept.append("")
+            continue
+        cut = line.find("//")
+        kept.append(line if cut < 0 else line[:cut])
+    return "\n".join(kept)
+
+
+def _family_sequence_quarantine_tokens_present(code: str, tokens: list[str]) -> list[str]:
+    """One matcher for every lane; the per-lane token list is the only variable.
+
+    snake_case tokens are call-sites (whitespace allowed before `(`); CamelCase
+    tokens are type names (word boundary). Same rule as the S05 lane.
+    """
+    hits: list[str] = []
+    for token in tokens:
+        if "_" in token:
+            if re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}\s*\(", code):
+                hits.append(token)
+        else:
+            if re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}(?![A-Za-z0-9_])", code):
+                hits.append(token)
+    return hits
+
+
+def _visual_family_sequence_quarantine_tokens_present(
+    code: str, tokens: list[str]
+) -> list[str]:
+    return _family_sequence_quarantine_tokens_present(code, tokens)
+
+
+def _funding_sequence_quarantine_tokens_present(code: str, tokens: list[str]) -> list[str]:
+    return _family_sequence_quarantine_tokens_present(code, tokens)
+
+
+def _check_family_sequence_quarantine(
+    root: Path,
+    registry: dict[str, Any],
+    registry_path: Path,
+    flag: Any,
+    *,
+    key: str,
+    spec: Any,
+    reason: str,
+) -> None:
+    if not isinstance(registry, dict) or not registry or not registry_path.is_file():
+        return
+    defaults = registry.get("defaults") if isinstance(registry, dict) else None
+    tokens, boundaries = spec(defaults)
+    if not tokens or not boundaries:
+        return
+    for relative in boundaries:
+        path = root / relative
+        if not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as error:
+            flag(
+                "policy_stamp",
+                "integration",
+                f"{relative}#{key}",
+                "readable boundary",
+                str(error),
+            )
+            continue
+        code = _strip_family_sequence_quarantine_comments(text)
+        for token in _family_sequence_quarantine_tokens_present(code, tokens):
+            flag(
+                "policy_stamp",
+                "integration",
+                f"{relative}#{key}.{token}",
+                reason,
+                f"native family atom {token} in {relative}",
+            )
+
+
+def _check_visual_family_sequence_quarantine(
+    root: Path, registry: dict[str, Any], registry_path: Path, flag: Any
+) -> None:
+    _check_family_sequence_quarantine(
+        root,
+        registry,
+        registry_path,
+        flag,
+        key="visual_family_sequence_quarantine",
+        spec=_visual_family_sequence_quarantine_spec,
+        reason=(
+            "native figure/table/formula atoms stay shadow-only (no parse-pdf "
+            "source_cli, ParserPort, parser.rs or projector.rs splice)"
+        ),
+    )
+
+
+def _check_funding_sequence_quarantine(
+    root: Path, registry: dict[str, Any], registry_path: Path, flag: Any
+) -> None:
+    _check_family_sequence_quarantine(
+        root,
+        registry,
+        registry_path,
+        flag,
+        key="funding_sequence_quarantine",
+        spec=_funding_sequence_quarantine_spec,
+        reason=(
+            "native funding atoms stay shadow-only (no parse-pdf source_cli, "
+            "ParserPort, parser.rs or projector.rs splice)"
+        ),
+    )
+
+
 def _visual_heads_quarantine_spec(defaults: Any) -> tuple[list[str], list[str]]:
     """Derive the visual-head quarantine (tokens, boundaries) from ledger DATA.
 
@@ -1147,6 +1314,8 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     _check_bibliography_quarantine(root, registry, registry_path, flag)
     _check_bibliography_sequence_quarantine(root, registry, registry_path, flag)
     _check_fulltext_sequence_quarantine(root, registry, registry_path, flag)
+    _check_visual_family_sequence_quarantine(root, registry, registry_path, flag)
+    _check_funding_sequence_quarantine(root, registry, registry_path, flag)
     _check_visual_heads_quarantine(root, registry, registry_path, flag)
     _check_rest_batch_asset_quarantine(root, contract, flag)
     header_ids = (
