@@ -626,15 +626,20 @@ pub fn decode_citation_sequence(
 
 /// Strip the `I-` spelling prefix. The result is the *base name* GROBID's
 /// continuation test compares (see the module docs).
-fn base_label(label: &str) -> &str {
+///
+/// `pub(crate)` because the fulltext body family (S05/T02) groups its own
+/// decoded labels with this same base-name rule: one rule, one implementation.
+pub(crate) fn base_label(label: &str) -> &str {
     label.strip_prefix("I-").unwrap_or(label)
 }
 
 /// Maximal runs of equal base names, as `(base, start, end)` in reading order.
 ///
-/// This is the single implementation of the grouping rule; both families map
-/// its output into their own span type, so the rule cannot drift between them.
-fn base_label_runs(labels: &[String]) -> Vec<(String, usize, usize)> {
+/// This is the single implementation of the grouping rule; both bibliography
+/// families — and the fulltext body family, which shares it through
+/// `pub(crate)` visibility rather than restating it — map its output into their
+/// own span type, so the rule cannot drift between them.
+pub(crate) fn base_label_runs(labels: &[String]) -> Vec<(String, usize, usize)> {
     let mut runs: Vec<(String, usize, usize)> = Vec::new();
     for (row, label) in labels.iter().enumerate() {
         let base = base_label(label);

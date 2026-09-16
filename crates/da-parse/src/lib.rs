@@ -56,6 +56,7 @@ mod native_feature_tagger;
 mod native_fulltext_blocks;
 mod native_fulltext_composition;
 mod native_fulltext_features;
+mod native_fulltext_sequence;
 mod native_header_features;
 mod native_header_fields;
 mod native_header_sequence;
@@ -280,6 +281,12 @@ pub use native_fulltext_features::{
     NativeFulltextFeatureError, check_fulltext_feature_columns,
     relative_position_fulltext_document, relative_position_fulltext_page,
     render_fulltext_feature_text, render_fulltext_features,
+};
+pub use native_fulltext_sequence::{
+    FulltextLabelRun, MAX_NATIVE_FULLTEXT_SEQUENCE_ROWS, NATIVE_FULLTEXT_BASE_LABELS,
+    NATIVE_FULLTEXT_LABELS, NATIVE_FULLTEXT_SEQUENCE_SCHEMA_VERSION, NativeFulltextDecodeCandidate,
+    NativeFulltextDecodeOutcome, NativeFulltextSequenceError, check_fulltext_label_block,
+    decode_fulltext_sequence, fulltext_label_is_admissible,
 };
 pub use native_header_features::{
     BlockStatus, HeaderAlignment, HeaderFeatureRow, HeaderFeatureToken, HeaderFontStatistics,
