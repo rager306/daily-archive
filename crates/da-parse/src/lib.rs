@@ -54,6 +54,7 @@ mod native_date;
 mod native_feature_facts;
 mod native_feature_tagger;
 mod native_figure_sequence;
+mod native_formula_join;
 mod native_fulltext_blocks;
 mod native_fulltext_composition;
 mod native_fulltext_features;
@@ -268,6 +269,12 @@ pub use native_figure_sequence::{
     NATIVE_FIGURE_SEQUENCE_SCHEMA_VERSION, NativeFigureAbsence, NativeFigureDecodeOutcome,
     NativeFigureSequenceError, check_figure_column_window, check_figure_label_block,
     decode_figure_sequence, figure_label_is_admissible, figure_spans_from_decoded,
+};
+pub use native_formula_join::{
+    MAX_NATIVE_FORMULA_EQUATIONS, MAX_NATIVE_FORMULA_ROWS, NATIVE_FORMULA_JOIN_LABELS,
+    NATIVE_FORMULA_JOIN_SCHEMA_VERSION, NATIVE_FORMULA_LOCATOR_LABELS, NATIVE_FORMULA_MARKER_LABEL,
+    NativeEquationSpan, NativeFormulaAbsence, NativeFormulaJoinError, NativeFormulaJoinOutcome,
+    is_formula_join_label, join_native_equation_labels, join_native_equations,
 };
 pub use native_fulltext_blocks::{
     AnnexParentRun, FullRegionAccountingUnit, FullRegionUnitKind, FulltextLeafAssignment,
