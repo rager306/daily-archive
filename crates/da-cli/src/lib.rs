@@ -31,6 +31,11 @@ pub mod native_core_profile;
 // so the module, its example and its contract test compile in the default
 // feature set (no `pdf-layout`).
 pub mod native_core_smp;
+// S08/T03: measured Java work (per-model CRF invocations) projected from a
+// verified GROBID stage tape. Pure serde/sha2 over `da_parse::StageTape`, so
+// the module, its example and its contract test compile in the default feature
+// set (no `pdf-layout`).
+pub mod native_java_work;
 pub mod parse_batch;
 pub mod parse_config;
 pub mod parse_job;
