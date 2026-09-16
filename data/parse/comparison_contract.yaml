@@ -390,6 +390,20 @@ native_header_reference_composition_shadow:
       address_observed_n: 0
     references:
       total: 207
+      # S04/T08: independent same-n receipts for the native bibliography lane.
+      # 3135/15415 come from the T07 lexical scan of the SHA-pinned TEI body
+      # (native_bibliography_same_n.rs); the native row builders are bound to
+      # the token denominator, not to their own output. These extend the
+      # reference lane's coverage and never pool with the header denominators.
+      bibl_struct_total: 80
+      bibl_struct_hub: 80
+      bibl_struct_rlm: 49
+      bibl_struct_reca: 78
+      bibl_lines_total: 3135
+      bibl_tokens_total: 15415
+      bibl_author_elements_total: 2185
+      citation_row_columns: 30
+      reference_segmenter_row_columns: 28
     anchors:
       total: 380
       targeted: 217
@@ -436,6 +450,60 @@ native_header_reference_composition_shadow:
       targetless_anchors: 163
       fragmented_adjacency: 168
       candidate_state: candidate
+      # S04/T08: the native bibliography lane is registered here as shadow-only.
+      # The surfaces and symbols are the bibliography/callout atoms the governor
+      # bibliography_sequence_quarantine keeps out of source_cli.rs, ParserPort,
+      # da-parse parser.rs and da-parse projector.rs; the offline limits are the
+      # honest proof-level statement (D360/D361/D362).
+      native_surfaces:
+      - crates/da-parse/src/native_feature_facts.rs
+      - crates/da-parse/src/native_bibliography_gazetteer.rs
+      - crates/da-parse/src/native_bibliography_features.rs
+      - crates/da-parse/src/native_bibliography_sequence.rs
+      - crates/da-parse/src/native_bibliography_nested.rs
+      - crates/da-parse/src/callout_markers.rs
+      native_symbols:
+      - citation_row
+      - reference_segmenter_row
+      - render_citation_feature_text
+      - render_reference_segmenter_feature_text
+      - decode_bibliography_labels
+      - decode_reference_sequence
+      - decode_citation_sequence
+      - bibliography_label_runs
+      - name_citation_row
+      - date_row
+      - decode_name_citation_cluster
+      - decode_date_cluster
+      - gazetteer_spans
+      - classify_callout_markers
+      - link_callout_markers
+      native_abi:
+        citation_columns: 30
+        reference_segmenter_columns: 28
+        name_citation_columns: 18
+        date_columns: 17
+        citation_labels: 38
+        reference_segmenter_labels: 6
+        name_citation_labels: 9
+        date_labels: 7
+        citation_roles: 19
+      named_gap:
+        citation_names: 2198
+        references: 207
+        bibl_author_elements: 2185
+        pooling_citation_names_with_references: forbidden
+        pooling_with_header_denominators: forbidden
+      proof_level: contract
+      offline_limits:
+      - no_preserved_alto_for_the_three_fixtures_so_pdf_to_bibliography_rows_is_unproven
+      - same_n_frame_is_tei_to_atoms_not_pdf_to_atoms
+      - bibl_lines_3135_and_bibl_tokens_15415_are_lexical_receipts_not_recorded_java_goldens
+      - citation_names_2198_is_a_named_gap_never_pooled_with_references_207
+      - identifier_and_url_gazetteer_lanes_are_shape_rules_not_source_bound_patterns
+      - callout_inventory_resolution_is_ordinal_marker_to_body_label_not_java_coordinates
+      - real_model_label_sequences_are_structural_invariants_not_recorded_goldens
+      - lexicon_bundle_is_injected_and_grobid_model_and_lexicon_bytes_are_never_redistributed
       hard_regressions: [lost_references_or_links, changed_reading_order, nondeterministic_output, panic, silent_skip_missing_tei_fixture]
   forbidden: [auto_promotion, runtime_routing, raw_text, raw_tei, raw_names, raw_references, pooled_denominators, invented_stage, invented_bindings]
   hard_regressions: [invented_revision, lost_references_or_links, changed_reading_order, nondeterministic_output, panic, silent_skip_missing_tei_fixture]

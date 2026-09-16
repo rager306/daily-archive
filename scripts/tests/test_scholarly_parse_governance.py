@@ -27,6 +27,8 @@ from governor.adapters.checks.scholarly_parse_plane import (
     _body_accounting_quarantine_tokens_present,
     _feature_tagger_training_quarantine_spec,
     _feature_tagger_training_quarantine_tokens_present,
+    _bibliography_sequence_quarantine_spec,
+    _bibliography_sequence_quarantine_tokens_present,
     _header_sequence_quarantine_spec,
     _scan_bare_from_env_parse,
     _visual_heads_quarantine_spec,
@@ -1550,6 +1552,175 @@ def test_checker_bibliography_and_java_absent_namespaces_stay_isolated(tmp_path:
     flags = _check_scholarly_parse_plane(tmp_path)
     assert _bibliography_quarantine_flags(flags), flags
     assert _java_absent_flags(flags) == [], flags
+
+# ───── S04/T08: native bibliography/callout lane stays shadow, out of four boundaries ─────
+#
+# Additive to the S07/T01 bibliography quarantine (MEM1115 / D362): the older
+# tuple keeps ONLY snake_case call-site atoms while the new DATA key carries the
+# S04 lane's own atoms, including its PascalCase row/span/role types. The
+# ParserPort type/method prohibition still lives on the Rust side in
+# crates/da-parse/tests/architecture_contract.rs.
+
+EXPECTED_BIBLIOGRAPHY_SEQUENCE_TOKENS = [
+    "citation_row",
+    "reference_segmenter_row",
+    "name_citation_row",
+    "date_row",
+    "render_citation_feature_text",
+    "render_reference_segmenter_feature_text",
+    "render_name_citation_feature_text",
+    "render_date_feature_text",
+    "decode_bibliography_labels",
+    "decode_reference_sequence",
+    "decode_citation_sequence",
+    "decode_name_citation_cluster",
+    "decode_date_cluster",
+    "bibliography_label_runs",
+    "gazetteer_spans",
+    "classify_callout_markers",
+    "link_callout_markers",
+    "CitationFeatureRow",
+    "ReferenceSegmenterFeatureRow",
+    "BibliographySequenceFamily",
+    "BibliographyLabelRun",
+    "ReferenceSegmentSpan",
+    "CitationRoleSpan",
+    "NameCitationFeatureRow",
+    "DateFeatureRow",
+    "NativeNameCitation",
+    "NativeDateValue",
+    "NativePersonTitleCoverage",
+    "CalloutMarkerClass",
+    "CalloutBodyInventory",
+    "CalloutLinkReport",
+    "BibliographyGazetteerIndex",
+]
+EXPECTED_BIBLIOGRAPHY_SEQUENCE_BOUNDARIES = [
+    "crates/da-cli/src/source_cli.rs",
+    "crates/da-ports/src/parser.rs",
+    "crates/da-parse/src/parser.rs",
+    "crates/da-parse/src/projector.rs",
+]
+
+def _bibliography_sequence_quarantine_flags(flags):
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_policy_stamp"]
+    return [item for item in matching if "#bibliography_sequence_quarantine." in item.evidence]
+
+def test_bibliography_sequence_quarantine_is_data_bound_and_closed():
+    registry = _load(ROOT / "data/parse/grobid_compatibility.yaml")
+    defaults = registry["defaults"]
+    tokens, boundaries = _bibliography_sequence_quarantine_spec(defaults)
+    assert tokens == EXPECTED_BIBLIOGRAPHY_SEQUENCE_TOKENS
+    assert boundaries == EXPECTED_BIBLIOGRAPHY_SEQUENCE_BOUNDARIES
+    spec = defaults["bibliography_sequence_quarantine"]
+    assert spec["production_authority"] == "java_http"
+    assert spec["observe_mode"] == "shadow_receipt"
+    assert spec["production_route"] == "forbidden"
+    assert spec["graph_write"] == "forbidden"
+    assert spec["import_eligible"] is False
+    assert spec["auto_promote"] == "forbidden"
+    assert spec["deployed"] is False
+    assert spec["decision_point"] == 6
+    assert spec["independently_selectable"] == ["header", "references"]
+    assert spec["proof_level"] == "contract"
+    assert spec["seam_reexport"] == "crates/da-ports/src/scalar_crf.rs"
+    assert spec["independent_oracle"] == "crates/da-parse/tests/native_bibliography_same_n.rs"
+    assert spec["real_model_harness"] == "crates/da-adapters/tests/native_bibliography_real_model.rs"
+    assert spec["offline_limits"]
+    # Closed lanes: no promoted lane, no pool, no invented graph surface.
+    assert {lane["path"] for lane in spec["native_surfaces"]} == {
+        "crates/da-parse/src/native_feature_facts.rs",
+        "crates/da-parse/src/native_bibliography_gazetteer.rs",
+        "crates/da-parse/src/native_bibliography_features.rs",
+        "crates/da-parse/src/native_bibliography_sequence.rs",
+        "crates/da-parse/src/native_bibliography_nested.rs",
+        "crates/da-parse/src/callout_markers.rs",
+    }
+    # The S07 tuple is untouched by S04/T08: snake_case call-site atoms only.
+    assert BIBLIOGRAPHY_QUARANTINE_TOKENS == ["compose_references", "run_reference_sequence"]
+    assert all("_" in token for token in BIBLIOGRAPHY_QUARANTINE_TOKENS)
+    # Both polarities of the per-token predicate.
+    assert _bibliography_sequence_quarantine_tokens_present(
+        "let _r = citation_row(tokens); let _x: CitationFeatureRow = row;", tokens
+    ) == ["citation_row", "CitationFeatureRow"]
+    assert _bibliography_sequence_quarantine_tokens_present(
+        "let _r = decompose_citation_row(tokens); let _x = CitationFeatureRowExtra;", tokens
+    ) == []
+    assert _bibliography_sequence_quarantine_tokens_present(
+        "fn f() { citation_row (tokens); }", tokens
+    ) == ["citation_row"]
+
+def test_bibliography_sequence_quarantine_spec_is_silent_without_data():
+    # Missing or malformed DATA never invents a forbidden set or boundaries.
+    assert _bibliography_sequence_quarantine_spec(None) == ([], [])
+    assert _bibliography_sequence_quarantine_spec({}) == ([], [])
+    assert _bibliography_sequence_quarantine_spec({"bibliography_sequence_quarantine": {}}) == ([], [])
+    assert _bibliography_sequence_quarantine_spec(
+        {"bibliography_sequence_quarantine": {"tokens": [1]}}
+    ) == ([], [])
+    assert _bibliography_sequence_quarantine_spec(
+        {"bibliography_sequence_quarantine": {"tokens": ["citation_row", "  "]}}
+    ) == (["citation_row"], [])
+
+@pytest.mark.parametrize("token", EXPECTED_BIBLIOGRAPHY_SEQUENCE_TOKENS)
+def test_checker_flags_bibliography_sequence_atom_in_every_boundary(tmp_path: Path, token: str):
+    _copy_checker_surface(tmp_path)
+    payload = (
+        f"let _x = {token}(input);\n"
+        if "_" in token
+        else f"let _x: {token} = build();\n"
+    )
+    for relative in EXPECTED_BIBLIOGRAPHY_SEQUENCE_BOUNDARIES:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(payload, encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _bibliography_sequence_quarantine_flags(flags)
+    assert len(matching) == len(EXPECTED_BIBLIOGRAPHY_SEQUENCE_BOUNDARIES), flags
+    assert all(f"#bibliography_sequence_quarantine.{token}" in item.evidence for item in matching), flags
+    # The S07 namespace stays independent: this lane never flags it.
+    assert _bibliography_quarantine_flags(flags) == [], flags
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "// citation_row is shadow-only prose\n",
+        "// decode_reference_sequence is shadow-only prose\n",
+        "/// doc CitationFeatureRow prose\n",
+        "let x = 1; // bibliography_label_runs prose\n",
+        "let _r = decompose_citation_row(input);\n",
+        "let _x = CitationFeatureRowExtra;\n",
+        "citation_row is prose without a call\n",
+    ],
+)
+def test_checker_bibliography_sequence_quarantine_ignores_prose_and_prefixed(tmp_path: Path, payload: str):
+    _copy_checker_surface(tmp_path)
+    for relative in EXPECTED_BIBLIOGRAPHY_SEQUENCE_BOUNDARIES:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(payload, encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _bibliography_sequence_quarantine_flags(flags) == [], flags
+
+def test_checker_clean_root_has_no_bibliography_sequence_quarantine_flags():
+    assert _bibliography_sequence_quarantine_flags(_check_scholarly_parse_plane(ROOT)) == []
+
+def test_checker_bibliography_sequence_quarantine_stays_silent_without_ledger(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    (tmp_path / "data/parse/grobid_compatibility.yaml").unlink()
+    target = tmp_path / EXPECTED_BIBLIOGRAPHY_SEQUENCE_BOUNDARIES[0]
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("let _x = citation_row(input);\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    assert _bibliography_sequence_quarantine_flags(flags) == [], flags
+    assert any(
+        item.flag
+        in {
+            "scholarly_parse_plane_evidence_missing",
+            "scholarly_parse_plane_backend_identity",
+        }
+        for item in flags
+    ), flags
 
 # ───── S08/T01: visual heads stay shadow, out of parse-pdf source_cli and ParserPort ─────
 

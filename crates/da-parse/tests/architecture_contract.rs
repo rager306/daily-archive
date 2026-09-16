@@ -2903,24 +2903,33 @@ fn parse_pdf_p3_wires_java_lifted_header_authors_not_native_splice() {
     assert!(header_quarantine_hits(&src).is_empty());
 }
 
-// ───── S07/T02: bibliography atoms stay shadow — never in parse-pdf source_cli or ParserPort ─────
+// ───── S07/T02 + S04/T08: bibliography atoms stay shadow — never in a production boundary ─────
 //
-// Mirrors the Governor bibliography quarantine (S07/T01) as an independent
-// compile/test contract: the exact tokens `compose_references` and
-// `run_reference_sequence` must not appear in code positions of the two
-// production boundaries. `//` comments (full-line and trailing) are stripped
-// before the scan; `decompose_references` never matches because a word
-// boundary is required before the token and a call-site `(` (with optional
-// whitespace) is required after it.
+// Mirrors the Governor bibliography quarantine (S07/T01) and the additive
+// S04/T08 DATA-driven quarantine (`defaults.bibliography_sequence_quarantine`)
+// as an independent compile/test contract: the exact tokens below must not
+// appear in code positions of the production boundaries. `//` comments
+// (full-line and trailing) are stripped before the scan; `decompose_references`
+// never matches because a word boundary is required before every token, a
+// call-site `(` (with optional whitespace) is required after each snake_case
+// atom, and each CamelCase atom is matched on word boundaries on both sides.
+//
+// MEM1115/D362 keep the two layers split: this Rust list is the layer that owns
+// the PascalCase type names; the Governor DATA key carries the S04 lane's own
+// atoms and the older Governor tuple keeps only `compose_references(` /
+// `run_reference_sequence(`.
 
 /// Production boundaries that must stay free of bibliography atoms.
-const BIBLIOGRAPHY_QUARANTINE_BOUNDARIES: [&str; 2] = [
+const BIBLIOGRAPHY_QUARANTINE_BOUNDARIES: [&str; 4] = [
     "crates/da-cli/src/source_cli.rs",
     "crates/da-ports/src/parser.rs",
+    "crates/da-parse/src/parser.rs",
+    "crates/da-parse/src/projector.rs",
 ];
 
-/// Native bibliography method/type names that must never appear in ParserPort.
-const BIBLIOGRAPHY_NATIVE_PORT_TOKENS: [&str; 8] = [
+/// Native bibliography method/type names that must never appear in a
+/// production boundary (ParserPort or the parse-pdf splice surfaces).
+const BIBLIOGRAPHY_NATIVE_PORT_TOKENS: [&str; 40] = [
     "compose_references",
     "run_reference_sequence",
     "NativeCitationAnchorScanner",
@@ -2929,12 +2938,85 @@ const BIBLIOGRAPHY_NATIVE_PORT_TOKENS: [&str; 8] = [
     "ReferenceCompositionOutcome",
     "ReferenceSequenceInput",
     "ReferenceCandidate",
+    // S04/T08: the native bibliography + callout lane's own public surfaces.
+    "citation_row",
+    "reference_segmenter_row",
+    "name_citation_row",
+    "date_row",
+    "render_citation_feature_text",
+    "render_reference_segmenter_feature_text",
+    "render_name_citation_feature_text",
+    "render_date_feature_text",
+    "decode_bibliography_labels",
+    "decode_reference_sequence",
+    "decode_citation_sequence",
+    "decode_name_citation_cluster",
+    "decode_date_cluster",
+    "bibliography_label_runs",
+    "gazetteer_spans",
+    "classify_callout_markers",
+    "link_callout_markers",
+    "CitationFeatureRow",
+    "ReferenceSegmenterFeatureRow",
+    "BibliographySequenceFamily",
+    "BibliographyLabelRun",
+    "ReferenceSegmentSpan",
+    "CitationRoleSpan",
+    "NameCitationFeatureRow",
+    "DateFeatureRow",
+    "NativeNameCitation",
+    "NativeDateValue",
+    "NativePersonTitleCoverage",
+    "CalloutMarkerClass",
+    "CalloutBodyInventory",
+    "CalloutLinkReport",
+    "BibliographyGazetteerIndex",
 ];
 
 /// Comment-stripped bibliography-atom scan over code text. One hit per token
 /// per line; mirrors the Governor `_bibliography_quarantine_tokens_present`
 /// semantics: each snake_case atom requires a word boundary before it and a
 /// call-site `(` (after optional whitespace) after it.
+/// One bibliography-atom hit inside a single comment-stripped line.
+///
+/// snake_case atoms are call-sites: word boundary before, optional whitespace
+/// then `(` after. CamelCase atoms are type names: word boundary on both
+/// sides. Both are the exact semantics the Governor predicate uses.
+fn bibliography_atom_hit(code: &str, token: &str) -> bool {
+    let bytes = code.as_bytes();
+    let needle = token.as_bytes();
+    let snake_case = token.contains('_');
+    let mut i = 0;
+    while i + needle.len() <= bytes.len() {
+        if &bytes[i..i + needle.len()] == needle {
+            let before_ok =
+                i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_');
+            if before_ok {
+                if snake_case {
+                    let mut j = i + needle.len();
+                    while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+                        j += 1;
+                    }
+                    if j < bytes.len() && bytes[j] == b'(' {
+                        return true;
+                    }
+                } else {
+                    let j = i + needle.len();
+                    let after_ok =
+                        j >= bytes.len() || !(bytes[j].is_ascii_alphanumeric() || bytes[j] == b'_');
+                    if after_ok {
+                        return true;
+                    }
+                }
+            }
+            i += needle.len();
+        } else {
+            i += 1;
+        }
+    }
+    false
+}
+
 fn bibliography_quarantine_hits(text: &str) -> Vec<String> {
     let mut hits = Vec::new();
     for (line_no, raw) in strip_line_comments(text).lines().enumerate() {
@@ -2944,31 +3026,8 @@ fn bibliography_quarantine_hits(text: &str) -> Vec<String> {
             Some(cut) => &raw[..cut],
             None => raw,
         };
-        for token in ["compose_references", "run_reference_sequence"] {
-            let bytes = code.as_bytes();
-            let needle = token.as_bytes();
-            let mut i = 0;
-            let mut found = false;
-            while i + needle.len() <= bytes.len() {
-                if &bytes[i..i + needle.len()] == needle {
-                    let before_ok =
-                        i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_');
-                    if before_ok {
-                        let mut j = i + needle.len();
-                        while j < bytes.len() && bytes[j].is_ascii_whitespace() {
-                            j += 1;
-                        }
-                        if j < bytes.len() && bytes[j] == b'(' {
-                            found = true;
-                            break;
-                        }
-                    }
-                    i += needle.len();
-                } else {
-                    i += 1;
-                }
-            }
-            if found {
+        for token in BIBLIOGRAPHY_NATIVE_PORT_TOKENS {
+            if bibliography_atom_hit(code, token) {
                 hits.push(format!(
                     "[bibliography-quarantine] line {}: atom `{token}`: {}",
                     line_no + 1,
@@ -2982,20 +3041,27 @@ fn bibliography_quarantine_hits(text: &str) -> Vec<String> {
 
 #[test]
 fn bibliography_quarantine_scanner_fails_visible_on_synthetic_atoms() {
-    let synthetic =
-        "fn run() {\n    compose_references(input);\n    run_reference_sequence(seq);\n}\n";
+    let synthetic = "fn run() {\n    compose_references(input);\n    run_reference_sequence(seq);\n    let _r = citation_row(tokens);\n    let _d = decode_reference_sequence(rows);\n    let _t = render_citation_feature_text(tokens);\n    let _c: CitationFeatureRow = row;\n    let _g = gazetteer_spans(tokens);\n}\n";
     let hits = bibliography_quarantine_hits(synthetic);
-    assert_eq!(hits.len(), 2, "each bibliography atom must flag: {hits:?}");
+    assert_eq!(hits.len(), 7, "each bibliography atom must flag: {hits:?}");
     assert!(hits.iter().any(|h| h.contains("compose_references")));
     assert!(hits.iter().any(|h| h.contains("run_reference_sequence")));
+    assert!(hits.iter().any(|h| h.contains("citation_row")));
+    assert!(hits.iter().any(|h| h.contains("decode_reference_sequence")));
+    assert!(
+        hits.iter()
+            .any(|h| h.contains("render_citation_feature_text"))
+    );
+    assert!(hits.iter().any(|h| h.contains("CitationFeatureRow")));
+    assert!(hits.iter().any(|h| h.contains("gazetteer_spans")));
     // Whitespace before `(` is still a call site and must flag.
-    let spaced =
-        "fn run() {\n    compose_references (input);\n    run_reference_sequence  (seq);\n}\n";
+    let spaced = "fn run() {\n    compose_references (input);\n    run_reference_sequence  (seq);\n    citation_row\t(tokens);\n}\n";
     let hits = bibliography_quarantine_hits(spaced);
-    assert_eq!(hits.len(), 2, "whitespace call-sites must flag: {hits:?}");
+    assert_eq!(hits.len(), 3, "whitespace call-sites must flag: {hits:?}");
     // Comments are prose, not splice; `decompose_references` is a different word;
-    // prose mentions without a call-site `(` are not splices.
-    let prose = "// compose_references run_reference_sequence are prose\nlet x = decompose_references(y);\nlet y = compose_references;\nfoo(); // compose_references(input);\n";
+    // prose mentions without a call-site `(` are not splices; a prefixed
+    // CamelCase type name is a different type.
+    let prose = "// compose_references run_reference_sequence citation_row CitationFeatureRow are prose\nlet x = decompose_references(y);\nlet y = compose_references;\nlet z: CitationFeatureRowExtra = row;\nfoo(); // compose_references(input);\n";
     assert!(
         bibliography_quarantine_hits(prose).is_empty(),
         "prose comments, prefixed identifiers and bare mentions must not flag"
@@ -3003,7 +3069,7 @@ fn bibliography_quarantine_scanner_fails_visible_on_synthetic_atoms() {
 }
 
 #[test]
-fn parse_pdf_source_cli_and_parser_port_stay_free_of_bibliography_atoms() {
+fn production_boundaries_stay_free_of_bibliography_atoms() {
     let mut leaked = Vec::new();
     for rel in BIBLIOGRAPHY_QUARANTINE_BOUNDARIES {
         let text = read_text(rel);

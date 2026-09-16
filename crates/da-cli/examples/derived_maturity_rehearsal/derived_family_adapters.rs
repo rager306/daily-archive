@@ -134,14 +134,46 @@ const BIBLIOGRAPHY: FamilyCatalog = FamilyCatalog {
     allowed_files: &[
         "crates/da-parse/src/native_composition.rs",
         "crates/da-parse/src/native_citation.rs",
+        // S04/T08: the native bibliography + callout lane.
+        "crates/da-parse/src/native_feature_facts.rs",
+        "crates/da-parse/src/native_bibliography_gazetteer.rs",
+        "crates/da-parse/src/native_bibliography_features.rs",
+        "crates/da-parse/src/native_bibliography_sequence.rs",
+        "crates/da-parse/src/native_bibliography_nested.rs",
+        "crates/da-parse/src/callout_markers.rs",
+        "data/parse/comparison_contract.yaml",
+        "data/parse/native_fulltext_composition.yaml",
+        "data/parse/grobid_compatibility.yaml",
     ],
     oracle_location: "data/parse/comparison_contract.yaml:native_citation_shadow",
-    java_source_refs: &["processReferencesDocument"],
+    java_source_refs: &[
+        "processReferencesDocument",
+        "CitationParser.processingLayoutTokenMultiple",
+        "FeaturesVectorCitation.printVector",
+        "ReferenceSegmenter.printVector",
+        "ReferenceSegmenterParser.LINESCALE",
+        "CalloutAnalyzer",
+    ],
     candidate_symbols: &[
         "compose_references",
         "run_reference_sequence",
         "NativeReferenceSegmenter",
         "NativeCitationParser",
+        // S04/T08 public surfaces of the same lane.
+        "citation_row",
+        "reference_segmenter_row",
+        "render_citation_feature_text",
+        "render_reference_segmenter_feature_text",
+        "decode_reference_sequence",
+        "decode_citation_sequence",
+        "bibliography_label_runs",
+        "name_citation_row",
+        "date_row",
+        "decode_name_citation_cluster",
+        "decode_date_cluster",
+        "gazetteer_spans",
+        "classify_callout_markers",
+        "link_callout_markers",
     ],
     forbidden_oracle_imports: &[
         "TeiLifter",
@@ -153,15 +185,30 @@ const BIBLIOGRAPHY: FamilyCatalog = FamilyCatalog {
         "bibliography.biblstruct",
         "bibliography.citation_names",
         "bibliography.citation_anchors",
+        // S04/T08: the independent token/line receipts that bind the native
+        // "one ABI row per token" claim, plus the biblStruct author population.
+        "bibliography.bibl_lines",
+        "bibliography.bibl_tokens",
+        "bibliography.bibl_authors",
     ],
     negatives: &[
         "lost_references_or_links",
         "changed_reading_order",
         "pooled_header_bibliography_dates",
+        "pooled_citation_names_with_references",
+        "bibliography_row_arity_drift",
     ],
-    property_cases: &["reference_links_conserved"],
+    property_cases: &[
+        "reference_links_conserved",
+        "bibliography_row_arity_is_30_and_28",
+        "bibliography_label_runs_use_base_name_equality",
+    ],
     metamorphic_cases: &["reference_reordering", "identity_mutation"],
-    verification_commands: &["cargo test -p da-parse --test citation_data_contract"],
+    verification_commands: &[
+        "cargo test -p da-parse --test native_bibliography_contract",
+        "cargo test -p da-parse --test native_bibliography_same_n",
+        "cargo test -p da-parse --test callout_markers",
+    ],
 };
 
 const BODY: FamilyCatalog = FamilyCatalog {

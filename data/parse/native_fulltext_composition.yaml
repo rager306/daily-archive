@@ -52,6 +52,17 @@ source_evidence:
     affiliation_recognition_total: 13
     affiliation_linking_total: 13
     references_total: 207
+    # S04/T08: native bibliography lane denominators (T07 lexical receipts,
+    # native_bibliography_same_n.rs). The 3135/15415 pair is what binds the
+    # native "one ABI row per token" claim to an independent number; the three
+    # biblStruct receipts are the per-fixture split of the 207 total. They are
+    # NOT pooled with header or accepted-author denominators.
+    bibl_struct_hub_total: 80
+    bibl_struct_rlm_total: 49
+    bibl_struct_reca_total: 78
+    bibl_lines_total: 3135
+    bibl_tokens_total: 15415
+    bibl_author_elements_total: 2185
     anchors_total: 380
     anchors_targeted: 217
     anchors_targetless: 163
@@ -94,7 +105,46 @@ component_receipts:
       - same_n_frame_is_tei_to_atoms_not_pdf_to_atoms
       - real_model_label_sequences_are_structural_invariants_not_recorded_goldens
       - lexicon_bundle_is_injected_and_grobid_model_and_lexicon_bytes_are_never_redistributed
-  references: {producer: S12, disposition: passed, evidence_state: passing, schema_version: native-composition.outcome/v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
+  references:
+    producer: S12
+    disposition: passed
+    evidence_state: passing
+    schema_version: native-composition.outcome/v1
+    source_hash: required_sha256
+    artifact_sha256: optional_sha256_when_present
+    fallback_target: java-grobid-http@0.9.0-crf
+    # S04/T08: the native bibliography lane beneath this receipt (gazetteer ->
+    # 30/28-column feature ABI -> base-name run decode -> 19 citation role
+    # clusters -> 18/17 nested name/date families -> callout grammar).
+    # Shadow-only; proof level is contract and the offline limits are named,
+    # not hidden (D360/D361/D362).
+    native_bibliography_sequence:
+      feature_facts_schema_version: da-parse.native-feature-facts/v1
+      gazetteer_schema_version: da-parse.native-bibliography-gazetteer/v1
+      features_schema_version: da-parse.native-bibliography-features/v1
+      sequence_schema_version: da-parse.native-bibliography-sequence/v1
+      nested_schema_version: da-parse.native-bibliography-nested/v1
+      callout_schema_version: da-parse.callout-markers/v1
+      citation_columns: 30
+      reference_segmenter_columns: 28
+      name_citation_columns: 18
+      date_columns: 17
+      citation_labels: 38
+      reference_segmenter_labels: 6
+      name_citation_labels: 9
+      date_labels: 7
+      citation_roles: 19
+      proof_level: contract
+      named_gap: {citation_names: 2198, references: 207, bibl_author_elements: 2185, pooling: forbidden}
+      offline_limits:
+      - no_preserved_alto_for_the_three_fixtures_so_pdf_to_bibliography_rows_is_unproven
+      - same_n_frame_is_tei_to_atoms_not_pdf_to_atoms
+      - bibl_lines_3135_and_bibl_tokens_15415_are_lexical_receipts_not_recorded_java_goldens
+      - citation_names_2198_is_a_named_gap_never_pooled_with_references_207
+      - identifier_and_url_gazetteer_lanes_are_shape_rules_not_source_bound_patterns
+      - callout_inventory_resolution_is_ordinal_marker_to_body_label_not_java_coordinates
+      - real_model_label_sequences_are_structural_invariants_not_recorded_goldens
+      - lexicon_bundle_is_injected_and_grobid_model_and_lexicon_bytes_are_never_redistributed
   document_segmentation: {producer: S15, disposition: fallback, evidence_state: invalid_evidence, schema_version: native-segmentation.v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
   figure: {producer: S16, disposition: fallback, evidence_state: unsupported, schema_version: native-visual-heads.v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}
   table: {producer: S16, disposition: fallback, evidence_state: not_observed, schema_version: native-visual-heads.v1, source_hash: required_sha256, artifact_sha256: optional_sha256_when_present, fallback_target: java-grobid-http@0.9.0-crf}

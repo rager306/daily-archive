@@ -219,6 +219,118 @@ defaults:
     - hub_native_accepted_20_vs_java_header_raw_21_is_a_named_gap_never_pooled
     - real_model_label_sequences_are_structural_invariants_not_recorded_goldens
     - lexicon_bundle_is_injected_and_grobid_model_and_lexicon_bytes_are_never_redistributed
+  # S04/T08: the full native bibliography + callout lane (30-column citation
+  # ABI, 28-column reference-segmenter ABI, 18/17 nested name/date rows, the
+  # 38/6/9/7 label tables, base-name run grouping and the in-text callout
+  # grammar) stays a shadow candidate. Like the header lane this section — not
+  # capabilities[].state — is the sole source of the forbidden token set and
+  # the production boundaries, so a mutation of state cannot remove a token or
+  # boundary from the checked set.
+  #
+  # The existing bibliography split is untouched (MEM1115, D362):
+  # `_BIBLIOGRAPHY_QUARANTINE_TOKENS` keeps ONLY the snake_case call-site atoms
+  # `compose_references(` / `run_reference_sequence(`, and the ParserPort
+  # type/method prohibition stays on the Rust side in
+  # `crates/da-parse/tests/architecture_contract.rs`. This NEW key is additive
+  # and carries the new lane's own atoms.
+  # Snake_case tokens are matched as call-sites (whitespace allowed before
+  # `(`); CamelCase tokens are matched as type names (word boundary). Full-line
+  # and trailing `//` comments are stripped; prose and prefix-substrings never
+  # count.
+  bibliography_sequence_quarantine:
+    tokens:
+    # Row builders (the citation/reference-segmenter/nested ABI surfaces).
+    - citation_row
+    - reference_segmenter_row
+    - name_citation_row
+    - date_row
+    # Printed-value renderers (the exact Java `printVector` text).
+    - render_citation_feature_text
+    - render_reference_segmenter_feature_text
+    - render_name_citation_feature_text
+    - render_date_feature_text
+    # Decoders and the shared base-name run grouping.
+    - decode_bibliography_labels
+    - decode_reference_sequence
+    - decode_citation_sequence
+    - decode_name_citation_cluster
+    - decode_date_cluster
+    - bibliography_label_runs
+    # Gazetteer consumption rule (positional spans, not single-token membership).
+    - gazetteer_spans
+    # In-text callout grammar and inventory linking.
+    - classify_callout_markers
+    - link_callout_markers
+    # PascalCase row/span/role types of the same lane.
+    - CitationFeatureRow
+    - ReferenceSegmenterFeatureRow
+    - BibliographySequenceFamily
+    - BibliographyLabelRun
+    - ReferenceSegmentSpan
+    - CitationRoleSpan
+    - NameCitationFeatureRow
+    - DateFeatureRow
+    - NativeNameCitation
+    - NativeDateValue
+    - NativePersonTitleCoverage
+    - CalloutMarkerClass
+    - CalloutBodyInventory
+    - CalloutLinkReport
+    - BibliographyGazetteerIndex
+    boundaries:
+    - crates/da-cli/src/source_cli.rs
+    - crates/da-ports/src/parser.rs
+    - crates/da-parse/src/parser.rs
+    - crates/da-parse/src/projector.rs
+    production_authority: java_http
+    observe_mode: shadow_receipt
+    production_route: forbidden
+    graph_write: forbidden
+    import_eligible: false
+    auto_promote: forbidden
+    deployed: false
+    decision_point: 6
+    independently_selectable: [header, references]
+    # Additive registration of the new native surfaces. The column counts are
+    # the frozen models' own referenced-column counts (`#rdr#`), not a copy of
+    # `printVector`'s wider field list. The seam re-export lives in da-ports
+    # because da-parse may not name da-domain directly.
+    native_surfaces:
+    - path: crates/da-parse/src/native_feature_facts.rs
+      schema_version: da-parse.native-feature-facts/v1
+    - path: crates/da-parse/src/native_bibliography_gazetteer.rs
+      schema_version: da-parse.native-bibliography-gazetteer/v1
+    - path: crates/da-parse/src/native_bibliography_features.rs
+      schema_version: da-parse.native-bibliography-features/v1
+      abi_columns: 30
+      reference_segmenter_columns: 28
+      citation_labels: 38
+      reference_segmenter_labels: 6
+    - path: crates/da-parse/src/native_bibliography_sequence.rs
+      schema_version: da-parse.native-bibliography-sequence/v1
+      declared_labels: 38
+      max_rows: 32768
+    - path: crates/da-parse/src/native_bibliography_nested.rs
+      schema_version: da-parse.native-bibliography-nested/v1
+      abi_columns: 18
+      date_columns: 17
+      citation_labels: 9
+      date_labels: 7
+    - path: crates/da-parse/src/callout_markers.rs
+      schema_version: da-parse.callout-markers/v1
+    seam_reexport: crates/da-ports/src/scalar_crf.rs
+    independent_oracle: crates/da-parse/tests/native_bibliography_same_n.rs
+    real_model_harness: crates/da-adapters/tests/native_bibliography_real_model.rs
+    proof_level: contract
+    offline_limits:
+    - no_preserved_alto_for_the_three_fixtures_so_pdf_to_bibliography_rows_is_unproven
+    - same_n_frame_is_tei_to_atoms_not_pdf_to_atoms
+    - bibl_lines_3135_and_bibl_tokens_15415_are_lexical_receipts_not_recorded_java_goldens
+    - citation_names_2198_is_a_named_gap_never_pooled_with_references_207
+    - identifier_and_url_gazetteer_lanes_are_shape_rules_not_source_bound_patterns
+    - callout_inventory_resolution_is_ordinal_marker_to_body_label_not_java_coordinates
+    - real_model_label_sequences_are_structural_invariants_not_recorded_goldens
+    - lexicon_bundle_is_injected_and_grobid_model_and_lexicon_bytes_are_never_redistributed
   # Closed P0-P9 cascade skeleton (ADR-076). production_authority is never native.
   # fsm_consult must be parse_pdf_consults or none. later names stay later.
   # P5 production_stamp records only Java ParsedArticle body observations.
@@ -1431,7 +1543,27 @@ capabilities:
     implementation:
       crate: da-parse
       surface: crates/da-parse/src/native_composition.rs
-      notes: run_reference_sequence is W3 shadow (segment then fields then compose). Java processReferences remains production_route. TeiLifter still characterises Java listBibl.
+      # S04/T08 additive registration of the native bibliography lane: the
+      # gazetteer, the 30/28-column feature ABI, the sequence runner, the
+      # 18/17 nested families and the in-text callout grammar. The compose
+      # surface stays native_composition.rs; these modules are the bibliography
+      # atoms the bibliography_sequence_quarantine keeps out of production
+      # boundaries.
+      native_shadow_surfaces:
+      - crates/da-parse/src/native_feature_facts.rs
+      - crates/da-parse/src/native_bibliography_gazetteer.rs
+      - crates/da-parse/src/native_bibliography_features.rs
+      - crates/da-parse/src/native_bibliography_sequence.rs
+      - crates/da-parse/src/native_bibliography_nested.rs
+      - crates/da-parse/src/callout_markers.rs
+      schema_versions:
+        feature_facts: da-parse.native-feature-facts/v1
+        gazetteer: da-parse.native-bibliography-gazetteer/v1
+        features: da-parse.native-bibliography-features/v1
+        sequence: da-parse.native-bibliography-sequence/v1
+        nested: da-parse.native-bibliography-nested/v1
+        callout_markers: da-parse.callout-markers/v1
+      notes: run_reference_sequence is W3 shadow (segment then fields then compose). Java processReferences remains production_route. TeiLifter still characterises Java listBibl. S04 adds a native 30-column citation ABI, a 28-column reference-segmenter ABI, 18/17 referenced-column name/date families, a Wapiti decoder grouped by base-name equality and an in-text callout marker grammar with inventory-only resolution, all shadow-only and offline-proven at contract level.
     baseline: java-grobid-http@0.9.0-crf
     candidate: da-parse.native_header_reference_composition@1.0.0:references
     evidence_ref: crates/da-parse/src/native_composition.rs
