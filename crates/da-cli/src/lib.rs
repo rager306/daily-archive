@@ -26,6 +26,11 @@ pub mod logging;
 pub mod materialization_progress;
 /// S08/T01 native CRF core profile and closed SIMD/PGO disposition.
 pub mod native_core_profile;
+// S08/T02: bounded SMP qualification of the same native CRF core over the
+// worker matrix `1..=physical_core_cap`. Pure std/serde/sha2 + layout_runtime,
+// so the module, its example and its contract test compile in the default
+// feature set (no `pdf-layout`).
+pub mod native_core_smp;
 pub mod parse_batch;
 pub mod parse_config;
 pub mod parse_job;
