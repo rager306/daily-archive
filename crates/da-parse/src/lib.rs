@@ -53,6 +53,7 @@ mod native_consolidation_specialized;
 mod native_date;
 mod native_feature_facts;
 mod native_feature_tagger;
+mod native_figure_sequence;
 mod native_fulltext_blocks;
 mod native_fulltext_composition;
 mod native_fulltext_features;
@@ -259,6 +260,13 @@ pub use native_feature_tagger::{
     FeatureDisposition, FeatureUpstreamStatus, NATIVE_FEATURE_COLUMNS,
     NATIVE_FEATURE_SCHEMA_VERSION, NativeFeatureError, NativeFeatureInput, NativeFeatureOutput,
     NativeFeatureTagger, StructuralFeatureRow,
+};
+pub use native_figure_sequence::{
+    FigureSpan, MAX_NATIVE_FIGURE_ROWS, NATIVE_FIGURE_BASE_LABELS, NATIVE_FIGURE_EMITTED_COLUMNS,
+    NATIVE_FIGURE_LABELS, NATIVE_FIGURE_MODEL_MAX_COLUMN_INDEX,
+    NATIVE_FIGURE_SEQUENCE_SCHEMA_VERSION, NativeFigureAbsence, NativeFigureDecodeOutcome,
+    NativeFigureSequenceError, check_figure_column_window, check_figure_label_block,
+    decode_figure_sequence, figure_label_is_admissible, figure_spans_from_decoded,
 };
 pub use native_fulltext_blocks::{
     AnnexParentRun, FullRegionAccountingUnit, FullRegionUnitKind, FulltextLeafAssignment,
