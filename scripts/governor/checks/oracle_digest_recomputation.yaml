@@ -1,0 +1,305 @@
+# Oracle digest recomputation contract — GAR-011 closure at the control plane.
+#
+# DATA for the Governor `oracle_digest_recomputation` check. GAR-011 recorded
+# that the segmentation oracle digests were only ever checked for *shape* (64
+# chars, lower-hex, not all zeros) and never for *provenance*: 45 boundary
+# digests carried repeated-nibble placeholders (5555.., 6666..), 9 furniture
+# rows claimed `reviewed_digest_bound` without carrying the digest, and the
+# source artifact pinned a self-referential `manifest_sha256` that was never a
+# hash of any artifact revision. Because nothing recomputed a digest from the
+# canonical bytes, substituting the bytes while leaving the digest string
+# unchanged passed silently. This contract makes the claim executable:
+#
+#   - every digest-like field of the three audited surfaces carries exactly one
+#     class from the closed vocabulary `classes`:
+#       * `recomputed` — the value is the sha256 of published canonical bytes,
+#         named by `ref` (+ `alignment`, + `canonicalization`);
+#       * `opaque` — no canonical bytes are published, so no digest is claimed.
+#         The field names its reason from the closed `opaque_reasons`
+#         vocabulary and is forbidden as a provenance input for any recomputed
+#         record (`opaque_marker_as_provenance`).
+#   - `audited_surfaces` bounds the discovery walk: only the declared
+#     `audit_pointers` are traversed, so a formula string such as
+#     `canonicalization.digest` ("sha256 over exact canonical bytes") is not
+#     mistaken for a digest field. The bound is a scope, never an
+#     exclusion list.
+#   - `digest_field_patterns` is the key dialect of the closed vocabulary.
+#     Supported mini-syntax (no regex engine, DATA stays literal):
+#     `suffix$`, `^prefix`, `^exact$`, or a bare literal.
+#   - `digest_value_normalization` names how a declared value is compared with
+#     the recomputed hex digest: `strip_optional_sha256_prefix` accepts both
+#     the bare hex form (fixture/manifest) and the `sha256:<hex>` form
+#     (artifact) without weakening the comparison.
+#   - `alignments` names how a wildcard in `ref` is bound to a wildcard in the
+#     field pointer. `index` is positional correspondence. `region_key` is
+#     mandatory for boundaries because `canonical_boundary` carries only the
+#     five present regions while `region_runs` carries nine, four of them typed
+#     absence — positional matching would silently mis-bind them.
+#   - `adjudications` records the two dangling pins: an unreferenceable
+#     `manifest_sha256` was removed (its reinstatement must fail until it is
+#     explicitly classified), and `oracle.source_artifact_sha256` was repinned
+#     to the recomputed sha256 of the artifact bytes.
+#   - `bindings.source_data` pins the canonical artifact by SHA-256; the digest
+#     and the pin are both recomputed on every run, and the cross-file binding
+#     to `data/parse/document_segmentation.yaml#/oracle/source_artifact_sha256`
+#     must close.
+#
+# Division of labour (ADR-051 / D273 / MEM885): the SHA-256 mathematics lives in
+# the independent Rust reader
+# `crates/da-parse/tests/oracle_digest_recomputation.rs`, which shares no code
+# with da-parse and re-reads every audited file from disk. The Python oracle
+# (`_oracle_digest_recomputation_violations`) only classifies shape and
+# vocabulary. Neither reuses the code under test.
+#
+# Labels: `violations` is the closed vocabulary the Python oracle may emit
+# (ten per-record labels plus four contract-level fail-closed guards that are
+# deliberately NOT in `fixtures.negative.expect.require_violations`, because
+# they fire on the contract itself rather than on a reachable per-record
+# state). `reader_violations` is the closed vocabulary of the independent Rust
+# reader. The reader refuses to emit anything outside the union.
+#
+# This is DATA — tightening an expectation is an edit here (plus the committed
+# fixture JSON), not a Python or Rust change.
+
+schema_version: oracle-digest-recomputation.v1
+policy_id: oracle_digest_recomputation
+dimension: scholarly_parse_plane
+severity: high
+anchor: "GAR-011, R131, ADR-051, ADR-076, D273"
+
+classes: [recomputed, opaque]
+canonicalizations: [text_utf8_lf_no_trailing_newline_sha256, exact_file_bytes_sha256]
+opaque_reasons: [external_donor_bytes_absent, review_journal_marker_not_content_digest, self_referential_manifest_digest_not_a_content_hash]
+alignments: [index, region_key]
+digest_field_patterns:
+  - '_digest$'
+  - '_sha256$'
+  # A canonical bytes object names its sibling digest with the BARE key
+  # `sha256`; without this pattern the four `.../sha256` records below would be
+  # unresolvable (declared_field_not_found). The pattern is still bounded by the
+  # audit pointers, so the formula string `canonicalization.digest` remains out
+  # of scope.
+  - '^sha256$'
+  - '_fingerprint$'
+  - '^digest$'
+digest_value_normalization: strip_optional_sha256_prefix
+
+# The three audited surfaces of the segmentation oracle. `audit_pointers` is
+# the closed traversal scope; `*` is allowed inside a pointer.
+audited_surfaces:
+  - key: fixture
+    path: crates/da-parse/tests/fixtures/segmentation_oracle.yaml
+    format: yaml
+    audit_pointers: ['/receipts']
+    role: reviewed_oracle_fixture_consumed_by_da_parse_tests
+  - key: source
+    path: artifacts/parse_compat/document_segmentation_oracle_source.json
+    format: json
+    audit_pointers: ['/receipts']
+    role: canonical_byte_artifact_underlying_the_fixture_digests
+  - key: manifest
+    path: data/parse/document_segmentation.yaml
+    format: yaml
+    audit_pointers: ['/oracle', '/source_corpus/documents']
+    role: declaration_that_binds_the_artifact_and_the_fixture
+
+# Exactly one record per digest-like field of the audited surfaces. Every
+# discovered field must be claimed exactly once and every record must resolve
+# (unclassified_digest_field / declared_field_not_found / duplicate_field_binding).
+digest_fields:
+  - field_id: fixture.receipt.page_receipt_range.receipt_digest
+    surface: fixture
+    pointer: /receipts/*/page_receipt_ranges/*/receipt_digest
+    class: recomputed
+    ref: source:/receipts/*/canonical_page_range/bytes
+    alignment: index
+    canonicalization: text_utf8_lf_no_trailing_newline_sha256
+  - field_id: fixture.receipt.annotation_digest
+    surface: fixture
+    pointer: /receipts/*/annotation_digest
+    class: recomputed
+    ref: source:/receipts/*/canonical_annotation/bytes
+    alignment: index
+    canonicalization: text_utf8_lf_no_trailing_newline_sha256
+  - field_id: fixture.receipt.region_run.boundary_digest
+    surface: fixture
+    pointer: /receipts/*/region_runs/*/boundary_digest
+    class: recomputed
+    ref: source:/receipts/*/canonical_boundary/*/bytes
+    alignment: region_key
+    canonicalization: text_utf8_lf_no_trailing_newline_sha256
+  - field_id: fixture.receipt.furniture_sequence.digest
+    surface: fixture
+    pointer: /receipts/*/furniture_sequence/*/digest
+    class: recomputed
+    ref: source:/receipts/*/canonical_furniture/*/bytes
+    alignment: index
+    canonicalization: text_utf8_lf_no_trailing_newline_sha256
+  - field_id: fixture.receipt.source_sha256
+    surface: fixture
+    pointer: /receipts/*/source_sha256
+    class: opaque
+    opaque_reason: external_donor_bytes_absent
+  - field_id: fixture.receipt.lattice_fingerprint
+    surface: fixture
+    pointer: /receipts/*/lattice_fingerprint
+    class: opaque
+    opaque_reason: review_journal_marker_not_content_digest
+  - field_id: fixture.receipt.config_fingerprint
+    surface: fixture
+    pointer: /receipts/*/config_fingerprint
+    class: opaque
+    opaque_reason: review_journal_marker_not_content_digest
+  - field_id: source.receipt.page_range_digest
+    surface: source
+    pointer: /receipts/*/page_range_digest
+    class: recomputed
+    ref: self:/receipts/*/canonical_page_range/bytes
+    alignment: index
+    canonicalization: text_utf8_lf_no_trailing_newline_sha256
+  - field_id: source.receipt.annotation_digest
+    surface: source
+    pointer: /receipts/*/annotation_digest
+    class: recomputed
+    ref: self:/receipts/*/canonical_annotation/bytes
+    alignment: index
+    canonicalization: text_utf8_lf_no_trailing_newline_sha256
+  - field_id: source.receipt.source_sha256
+    surface: source
+    pointer: /receipts/*/source_sha256
+    class: opaque
+    opaque_reason: external_donor_bytes_absent
+  - field_id: source.receipt.canonical_page_range.sha256
+    surface: source
+    pointer: /receipts/*/canonical_page_range/sha256
+    class: recomputed
+    ref: self:/receipts/*/canonical_page_range/bytes
+    alignment: index
+    canonicalization: text_utf8_lf_no_trailing_newline_sha256
+  - field_id: source.receipt.canonical_annotation.sha256
+    surface: source
+    pointer: /receipts/*/canonical_annotation/sha256
+    class: recomputed
+    ref: self:/receipts/*/canonical_annotation/bytes
+    alignment: index
+    canonicalization: text_utf8_lf_no_trailing_newline_sha256
+  - field_id: source.receipt.canonical_boundary.sha256
+    surface: source
+    pointer: /receipts/*/canonical_boundary/*/sha256
+    class: recomputed
+    ref: self:/receipts/*/canonical_boundary/*/bytes
+    alignment: region_key
+    canonicalization: text_utf8_lf_no_trailing_newline_sha256
+  - field_id: source.receipt.canonical_furniture.sha256
+    surface: source
+    pointer: /receipts/*/canonical_furniture/*/sha256
+    class: recomputed
+    ref: self:/receipts/*/canonical_furniture/*/bytes
+    alignment: index
+    canonicalization: text_utf8_lf_no_trailing_newline_sha256
+  # Whole-file ref: the empty pointer after `source:` names the artifact file
+  # itself. `alignment: index` is vacuous for a wildcard-free ref and is kept so
+  # every recomputed record carries the full triple. This is the repinned half
+  # of adjudication (b) below.
+  - field_id: manifest.oracle.source_artifact_sha256
+    surface: manifest
+    pointer: /oracle/source_artifact_sha256
+    class: recomputed
+    ref: 'source:'
+    alignment: index
+    canonicalization: exact_file_bytes_sha256
+  - field_id: manifest.source_corpus.document.source_sha256
+    surface: manifest
+    pointer: /source_corpus/documents/*/source_sha256
+    class: opaque
+    opaque_reason: external_donor_bytes_absent
+
+adjudications:
+  - field_id: source.manifest_sha256
+    surface: source
+    pointer: /manifest_sha256
+    action: removed_unreferenced_dangling_pin
+    historical_value: 472051c7e2018f391ce523ef0ae05057b132b5a45d868cf41ecf78ee8720093e
+    reason: >-
+      never the hash of any artifact revision and read by no consumer;
+      reinstatement must fail until it is explicitly classified.
+  - field_id: manifest.oracle.source_artifact_sha256
+    surface: manifest
+    pointer: /oracle/source_artifact_sha256
+    action: repinned_to_recomputed_bytes
+    historical_value: 472051c7e2018f391ce523ef0ae05057b132b5a45d868cf41ecf78ee8720093e
+    reason: >-
+      replaced by the recomputed sha256 of the artifact bytes; the cross-file
+      binding and this pin must close on every run.
+
+bindings:
+  source_data:
+    - path: artifacts/parse_compat/document_segmentation_oracle_source.json
+      sha256: dbe11c995050374a2bab4a5022f8472af38ed5937ca8441d4942104ba9a4a745
+
+# Closed vocabulary of labels the Python oracle may emit. The four guards after
+# the ten per-record labels are contract-level: they fire on the contract itself
+# (a closed list is missing/empty, or a bytes/sha256 pair is not both-or-neither,
+# or a record is bound twice), so they are intentionally absent from
+# `fixtures.negative.expect.require_violations`.
+violations:
+  - missing_field_identity
+  - digest_without_class
+  - class_outside_vocabulary
+  - recomputed_without_canonical_ref
+  - recomputed_without_canonicalization
+  - canonicalization_outside_contract
+  - opaque_without_reason
+  - opaque_reason_outside_vocabulary
+  - opaque_marker_as_provenance
+  - alignment_outside_vocabulary
+  - missing_closed_vocabulary
+  - bytes_without_sha256_pair
+  - sha256_without_bytes_pair
+  - duplicate_field_binding
+
+# Closed vocabulary of the independent Rust reader. The reader fails if it is
+# asked to emit anything outside `violations` union `reader_violations`.
+reader_violations:
+  - unclassified_digest_field
+  - declared_field_not_found
+  - digest_mismatch
+  - placeholder_digest_value
+  - non_canonical_bytes
+  - furniture_claim_without_bound_digest
+  - adjudicated_field_reintroduced
+  - cross_file_binding_mismatch
+
+fixtures:
+  positive:
+    id: digest_fields_complete
+    path: governor/fixtures/oracle_digest_recomputation/digest_fields_complete.positive.json
+    expect: clean
+  negative:
+    id: digest_fields_broken
+    path: governor/fixtures/oracle_digest_recomputation/digest_fields_broken.negative.json
+    expect:
+      require_violations:
+        - missing_field_identity
+        - digest_without_class
+        - class_outside_vocabulary
+        - recomputed_without_canonical_ref
+        - recomputed_without_canonicalization
+        - canonicalization_outside_contract
+        - opaque_without_reason
+        - opaque_reason_outside_vocabulary
+        - opaque_marker_as_provenance
+        - alignment_outside_vocabulary
+
+# Enforcement points that must keep existing: the independent Rust reader, the
+# canonical artifact, and the audited fixture itself.
+source_markers:
+  rust_contract:
+    path: crates/da-parse/tests/oracle_digest_recomputation.rs
+    required_patterns: [oracle_digest_recomputation, digest_fields, canonical_boundary, unclassified_digest_field, adjudications]
+  canonical_artifact:
+    path: artifacts/parse_compat/document_segmentation_oracle_source.json
+    required_patterns: [canonical_boundary, canonical_furniture]
+  audited_fixture:
+    path: crates/da-parse/tests/fixtures/segmentation_oracle.yaml
+    required_patterns: [boundary_digest, reviewed_digest_bound]
