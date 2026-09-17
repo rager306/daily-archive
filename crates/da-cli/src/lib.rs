@@ -54,6 +54,17 @@ pub mod snapshot_lineage;
 pub mod source_acquire;
 pub mod source_cli;
 pub mod summarize_revisions;
+// S02/T01: donor visual sidecar → native visual observation converter. Every
+// type it consumes (`da_adapters::VisualObservation`,
+// `da_adapters::LayoutShadowObservation`) exists only with `pdf-layout`, and
+// `default = []`, so this module must stay out of the default feature set. It
+// is deliberately gated (unlike `layout_runtime`, which M507/S08 ungated): the
+// gate keeps pdf-inspector out of the default `cargo check -p da-cli`, while
+// the existing governor step `"da-cli feature-gated example contracts"`
+// (`cargo test -p da-cli --features pdf-layout --tests`) still executes the
+// converted unit tests through the `unittests src/lib.rs` target.
+#[cfg(feature = "pdf-layout")]
+pub mod visual_adapter;
 
 /// ADR-051 §4.4 — JSON roundtrip helper for Serialize+Deserialize types.
 #[cfg(test)]

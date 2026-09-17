@@ -1,8 +1,21 @@
 #![cfg(feature = "pdf-layout")]
 
 use serde_json::Value;
-use std::{fs, path::PathBuf, process::Command};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
 use tempfile::tempdir;
+
+/// True when `path` is a readable file carrying at least one executable bit.
+fn is_executable(path: &Path) -> bool {
+    fs::metadata(path)
+        .map(|metadata| {
+            std::os::unix::fs::PermissionsExt::mode(&metadata.permissions()) & 0o111 != 0
+        })
+        .unwrap_or(false)
+}
 
 fn runner() -> PathBuf {
     if let Some(path) = std::env::var_os("NATIVE_VISUAL_HEADS_SHADOW_BIN") {
@@ -12,6 +25,19 @@ fn runner() -> PathBuf {
         .join("../../target/debug")
         .canonicalize()
         .expect("debug target directory");
+    // Prefer the exact artifact path written by the governor gate step
+    // `cargo build -p da-cli --features pdf-layout --examples`. Running
+    // `cargo test --example native_visual_heads_shadow` instead leaves a
+    // *libtest harness* at `native_visual_heads_shadow-<hash>`; that harness
+    // does not accept the example's own `--manifest` flag and dies with
+    // "Unrecognized option: 'manifest'". Selecting it made this gate depend on
+    // command ordering, so the exact path wins whenever it is available.
+    let exact = debug.join("examples").join("native_visual_heads_shadow");
+    if is_executable(&exact) {
+        return exact;
+    }
+    // Last resort: a hash-suffixed artifact from an earlier
+    // `cargo build --example native_visual_heads_shadow`.
     debug
         .join("examples")
         .read_dir()
@@ -26,10 +52,7 @@ fn runner() -> PathBuf {
                     .is_some_and(|name| {
                         name.starts_with("native_visual_heads_shadow-") && !name.ends_with(".d")
                     })
-                && std::os::unix::fs::PermissionsExt::mode(
-                    &fs::metadata(path).expect("example metadata").permissions(),
-                ) & 0o111
-                    != 0
+                && is_executable(path)
         })
         .max_by_key(|path| {
             fs::metadata(path)
