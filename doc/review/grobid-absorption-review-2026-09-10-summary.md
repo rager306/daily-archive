@@ -3,7 +3,7 @@
 Source window: GSD work of 2026-09-08 … 2026-09-10 (M497–M501 closure wave).
 Baseline source revision for record evidence: `git:6f328bdfb9b136deecd0ded7917c086e8ad5899b`.
 Registry: `doc/review/grobid-absorption-review-2026-09-10.jsonl` (GAR-001…GAR-016).
-Status: 15 unresolved / 1 enclosed (GAR-002, superseded administrative correction).
+Status: 11 unresolved / 5 enclosed (4 findings resolved by M508-g9b5gi/S05: GAR-001, GAR-003, GAR-004, GAR-011; GAR-002 superseded administrative correction from 2026-09-10).
 Owner program: `M502-2w7y8k` (GROBID absorption correctness horizon, slices S01…S09).
 Locks preserved: `import_eligible=false`, no graph writes, no auto-promote,
 no production splice, no PIR-015 splice, no redistribution.
@@ -91,3 +91,39 @@ is rewritten into a new source of power.
   existing artifact paths, observation date and source revision.
 - Historical PIR-001…PIR-022 records remain untouched; this GAR register is
   the active corrective register behind the canonical M502 program.
+
+## Closure (M508-g9b5gi/S05)
+
+Four P0 findings were closed by wave `M508-g9b5gi/S05` on 2026-09-17 by
+acknowledging controls that slices S01..S04 had already delivered. The closure
+is machine-checkable rather than textual: each record now carries
+`completion_evidence` with `mode`, `ref`, `result: pass`, a non-empty list of
+existing committed `artifacts`, `observed_at` and `source_revision`, and the
+registry schema forbids additional keys (`additionalProperties: false`). When
+this register was created on 2026-09-10 the number of unresolved records was
+fifteen and one record was superseded; those four closures plus that earlier
+supersession leave the current state at 11 unresolved / 5 enclosed.
+
+| Finding | Status | Governor rule | Executable check |
+|---|---|---|---|
+| GAR-001 | resolved | `boundary_positional_metrics` | `cargo test -p da-cli --features pdf-layout --example document_segmentation_shadow boundary_position_negative` |
+| GAR-003 | resolved | `visual_adapter_preserves_donor_content` | `cargo test -p da-cli --features pdf-layout --test visual_adapter_contract` |
+| GAR-004 | resolved | `component_license_provenance` | `cargo test -p da-parse --test component_license_provenance_data_contract` |
+| GAR-011 | resolved | `oracle_digest_recomputation` | `cargo test -p da-parse --test oracle_digest_recomputation` |
+
+Caveats that closure does not erase:
+
+- **GAR-003** — the donor sidecar (`VisualObservation`) supplies primitives and
+  provenance; the seven receipt families (captions, callouts, cells, labels)
+  are not supplied by it and remain an explicit residual (D394). The wording
+  must say "donor sidecar" so the closure is not read as R094.
+- **GAR-004** and **GAR-011** — `governor.coverage` stays `partial` on purpose:
+  `partial` describes the coverage of the governor rule, not the completeness of
+  the closure. The closed verified-license dictionary and the
+  verified-versus-blocked surface check live only in the Rust reader (MEM1505);
+  the sha256 mathematics is recomputed by the independent Rust contract
+  (D406/MEM1527); and the GAR-011 audit is bounded to the segmentation surface
+  (D404).
+- No lock was weakened: `deployed=false`, `import_eligible=false`, `auto_promote`
+  remains forbidden, there is no production splice, and no S01..S04 control was
+  modified.
