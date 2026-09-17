@@ -1,0 +1,94 @@
+# Boundary positional metrics contract — GAR-001 closure at the control plane.
+#
+# DATA for the Governor `boundary_positional_metrics` check. GAR-001
+# (M508-g9b5gi) recorded that segmentation boundary metrics measured count
+# equality, not positions: a prediction with the same number of boundaries as
+# the reviewed annotation could score perfectly even when every boundary was
+# in the wrong place. The Rust runner
+# (`crates/da-cli/examples/document_segmentation_shadow.rs`) already computes
+# positional metrics from canonical coordinates (M502-2w7y8k/S02+S03), but the
+# control plane never verified them. This contract binds the shipped runner to
+# an independent Python oracle that recomputes positional accuracy from raw
+# `[page, block, line, token]` coordinates.
+#
+# Semantics:
+#   - coordinate_binding mirrors `data/parse/document_segmentation.yaml`
+#     (`evaluation.coordinate_binding`): canonical one_based
+#     page/block/line/token units with zero tolerance. The bound manifest is
+#     NOT edited here — its SHA-256 is pinned in `bindings.source_data` (and
+#     already bound by the scholarly parse plane contract).
+#   - positive (positional_clean): every committed record must be clean —
+#     declared count, pairing and positional metrics must agree with the
+#     independently recomputed values (a truthful count-only mismatch is not
+#     a violation; an empty/empty record stays clean).
+#   - negative (positional_broken): every record must trigger its labelled
+#     violation, and every violation in `require_violations` must appear in
+#     the fixture — a future edit that removes a negative case is flagged.
+#     The key case is the permutation: equal boundary counts, declared
+#     precision 1.0, but no positionally matching pair at the pinned
+#     tolerance — `permuted_boundary_false_match`.
+#   - this contract deliberately declares no `graph_task_suite`: the
+#     segmentation shadow has no durable snapshot-level task suite, so the
+#     check passes `graph_task_suite_required=False` explicitly instead of
+#     silently skipping suite enforcement for existing contracts.
+#
+# The committed fixtures are validated by `scripts/tests/test_governor.py`
+# (T02). This is DATA — tightening an expectation is an edit here (plus
+# updating the committed fixture JSON), not a Python change.
+
+schema_version: boundary-positional-metrics.v1
+policy_id: boundary_positional_metrics
+dimension: scholarly_parse_plane
+severity: high
+anchor: "GAR-001, R131, ADR-076, ADR-051"
+
+# Canonical coordinate binding — must match
+# `data/parse/document_segmentation.yaml:evaluation.coordinate_binding`.
+coordinate_binding:
+  unit: page_block_line_token
+  page_origin: one_based
+  tolerance: 0
+
+metrics:
+  count_only: [count_agreement, count_difference]
+  positional: [boundary_precision, boundary_recall, boundary_f1, boundary_displacement, boundary_displacement_max]
+  pairing: [matched, false_positives, false_negatives]
+
+# Closed vocabulary of violation labels the oracle can emit.
+violations:
+  - missing_coordinate_binding
+  - count_metric_mismatch
+  - permuted_boundary_false_match
+  - count_metric_claims_position
+  - displacement_from_counts
+  - unmatched_not_false_positive
+  - tolerance_violation
+
+bindings:
+  source_data:
+    - path: data/parse/document_segmentation.yaml
+      sha256: c2bc051eb09af6495baf7280d77d2da25cb10cacb986264bdb222f060a4d4b45
+
+fixtures:
+  positive:
+    id: positional_clean
+    path: governor/fixtures/boundary_positional_metrics/positional_clean.positive.json
+    expect: clean
+  negative:
+    id: positional_broken
+    path: governor/fixtures/boundary_positional_metrics/positional_broken.negative.json
+    expect:
+      require_violations:
+        - missing_coordinate_binding
+        - count_metric_mismatch
+        - permuted_boundary_false_match
+        - count_metric_claims_position
+        - displacement_from_counts
+        - unmatched_not_false_positive
+        - tolerance_violation
+
+# Enforcement points that must keep existing in the shipped Rust runner.
+source_markers:
+  runner:
+    path: crates/da-cli/examples/document_segmentation_shadow.rs
+    required_patterns: [match_boundaries, count_agreement, count_difference, coordinate_binding, reviewed_boundary]

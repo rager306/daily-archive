@@ -647,22 +647,253 @@ def _equation_candidate_violations(record: dict, contract: dict) -> set[str]:
     return violations
 
 
+# GAR-001: canonical boundary coordinate metrics. The oracle recomputes
+# positional accuracy independently of the Rust runner (`match_boundaries` in
+# `crates/da-cli/examples/document_segmentation_shadow.rs`) so a metric that
+# only measures count equality cannot silently pass the control plane.
+_BOUNDARY_POSITIONAL_METRICS = (
+    "boundary_precision",
+    "boundary_recall",
+    "boundary_f1",
+    "boundary_displacement",
+    "boundary_displacement_max",
+)
+_BOUNDARY_METRIC_TOLERANCE = 1e-6
+
+
+def _boundary_coordinate(value) -> tuple[int, int, int, int] | None:
+    """Parse one canonical `[page, block, line, token]` coordinate.
+
+    Returns None when the value is not exactly four integers (one_based);
+    booleans are rejected because `bool` is an `int` subclass in Python.
+    """
+    if not isinstance(value, (list, tuple)) or len(value) != 4:
+        return None
+    parts: list[int] = []
+    for item in value:
+        if isinstance(item, bool) or not isinstance(item, int):
+            return None
+        parts.append(int(item))
+    return (parts[0], parts[1], parts[2], parts[3])
+
+
+def _boundary_pair(value) -> tuple | None:
+    """Parse one `{start: [..], end: [..]}` boundary pair."""
+    if not isinstance(value, dict):
+        return None
+    start = _boundary_coordinate(value.get("start"))
+    end = _boundary_coordinate(value.get("end"))
+    if start is None or end is None:
+        return None
+    return (start, end)
+
+
+def _boundary_pairs(value) -> list | None:
+    """Parse a boundary list; None means the list is absent or malformed."""
+    if not isinstance(value, list):
+        return None
+    pairs = []
+    for item in value:
+        pair = _boundary_pair(item)
+        if pair is None:
+            return None
+        pairs.append(pair)
+    return pairs
+
+
+def _boundary_pair_distance(left, right) -> int:
+    """L1 distance over both endpoints of two canonical boundaries."""
+    start_distance = sum(abs(a - b) for a, b in zip(left[0], right[0]))
+    end_distance = sum(abs(a - b) for a, b in zip(left[1], right[1]))
+    return start_distance + end_distance
+
+
+def _boundary_positional_violations(record: dict, contract: dict) -> set[str]:
+    """Return violation codes for one boundary-metric fixture record (GAR-001).
+
+    Independent Python oracle: it recomputes positional boundary accuracy
+    from the raw canonical `[page, block, line, token]` coordinates and
+    compares the declared metrics against the recomputation (ADR-051 — the
+    oracle must not reuse the Rust runner's code). Matching is greedy in
+    predicted order: for each predicted boundary the unmatched reviewed
+    boundary with the smallest `distance <= tolerance` wins, ties going to
+    the earliest reviewed boundary, where the distance is the L1 distance of
+    the starts plus the L1 distance of the ends.
+
+    Violation labels (a label with no reprimand is a claim over count
+    metrics that the coordinates contradict):
+      - missing_coordinate_binding: a positional metric is declared but the
+        predicted/reviewed boundary lists are absent or not four-integer
+        coordinates (this is the only label returned in that case);
+      - count_metric_mismatch: declared count agreement/difference does not
+        equal the recomputed boundary counts;
+      - permuted_boundary_false_match: equal boundary counts, declared
+        precision (or recall) 1.0, but no positionally matching pair;
+      - count_metric_claims_position: a declared positional metric differs
+        from the recomputed value by more than 1e-6;
+      - displacement_from_counts: zero declared displacement while nothing
+        matched and both sides are non-empty;
+      - unmatched_not_false_positive: declared false positives/negatives do
+        not equal unmatched predicted/reviewed counts;
+      - tolerance_violation: declared matched exceeds the number of pairs
+        within the pinned tolerance.
+    `null`/absent declared values mean "not claimed" and emit no label.
+    """
+    declared = record.get("reported") or {}
+    if not isinstance(declared, dict):
+        declared = {}
+    positional_metrics = list(
+        (contract.get("metrics") or {}).get("positional")
+        or _BOUNDARY_POSITIONAL_METRICS
+    )
+    positional_claimed = [m for m in positional_metrics if declared.get(m) is not None]
+
+    predicted = _boundary_pairs(record.get("predicted_boundaries"))
+    reviewed = _boundary_pairs(record.get("reviewed_boundaries"))
+    if predicted is None or reviewed is None:
+        # A positional claim without canonical coordinates is the binding
+        # failure itself; without a positional claim the record is silent.
+        return {"missing_coordinate_binding"} if positional_claimed else set()
+
+    tolerance_value = (contract.get("coordinate_binding") or {}).get("tolerance", 0)
+    tolerance = (
+        tolerance_value
+        if isinstance(tolerance_value, (int, float)) and not isinstance(tolerance_value, bool)
+        else 0
+    )
+
+    used = [False] * len(reviewed)
+    matched = 0
+    displacements: list[int] = []
+    for predicted_pair in predicted:
+        best_index = None
+        best_distance = None
+        for index, reviewed_pair in enumerate(reviewed):
+            if used[index]:
+                continue
+            distance = _boundary_pair_distance(predicted_pair, reviewed_pair)
+            if distance <= tolerance and (best_distance is None or distance < best_distance):
+                best_distance = distance
+                best_index = index
+        if best_index is not None:
+            used[best_index] = True
+            matched += 1
+            displacements.append(int(best_distance))
+
+    within_tolerance_pairs = sum(
+        1
+        for predicted_pair in predicted
+        for reviewed_pair in reviewed
+        if _boundary_pair_distance(predicted_pair, reviewed_pair) <= tolerance
+    )
+
+    recomputed_precision = matched / len(predicted) if predicted else None
+    recomputed_recall = matched / len(reviewed) if reviewed else None
+    if recomputed_precision is None or recomputed_recall is None:
+        recomputed_f1 = None
+    elif recomputed_precision + recomputed_recall > 0:
+        recomputed_f1 = (
+            2 * recomputed_precision * recomputed_recall
+            / (recomputed_precision + recomputed_recall)
+        )
+    else:
+        recomputed_f1 = 0.0
+    if displacements:
+        recomputed_displacement = sum(displacements) / len(displacements)
+        recomputed_displacement_max = float(max(displacements))
+    else:
+        recomputed_displacement = None
+        recomputed_displacement_max = None
+
+    violations: set[str] = set()
+
+    declared_count_agreement = declared.get("count_agreement")
+    if declared_count_agreement is not None and declared_count_agreement != int(
+        len(predicted) == len(reviewed)
+    ):
+        violations.add("count_metric_mismatch")
+    declared_count_difference = declared.get("count_difference")
+    if declared_count_difference is not None and declared_count_difference != abs(
+        len(predicted) - len(reviewed)
+    ):
+        violations.add("count_metric_mismatch")
+
+    declared_precision = declared.get("boundary_precision")
+    declared_recall = declared.get("boundary_recall")
+    if (
+        len(predicted) == len(reviewed)
+        and matched == 0
+        and (declared_precision == 1.0 or declared_recall == 1.0)
+    ):
+        violations.add("permuted_boundary_false_match")
+
+    for name, recomputed in (
+        ("boundary_precision", recomputed_precision),
+        ("boundary_recall", recomputed_recall),
+        ("boundary_f1", recomputed_f1),
+        ("boundary_displacement", recomputed_displacement),
+        ("boundary_displacement_max", recomputed_displacement_max),
+    ):
+        claimed = declared.get(name)
+        if claimed is None or recomputed is None:
+            continue
+        try:
+            numeric = float(claimed)
+        except (TypeError, ValueError):
+            violations.add("count_metric_claims_position")
+            continue
+        if abs(numeric - recomputed) > _BOUNDARY_METRIC_TOLERANCE:
+            violations.add("count_metric_claims_position")
+
+    if matched == 0 and predicted and reviewed:
+        for name in ("boundary_displacement", "boundary_displacement_max"):
+            if declared.get(name) == 0.0:
+                violations.add("displacement_from_counts")
+
+    declared_false_positives = declared.get("false_positives")
+    if (
+        declared_false_positives is not None
+        and declared_false_positives != len(predicted) - matched
+    ):
+        violations.add("unmatched_not_false_positive")
+    declared_false_negatives = declared.get("false_negatives")
+    if (
+        declared_false_negatives is not None
+        and declared_false_negatives != len(reviewed) - matched
+    ):
+        violations.add("unmatched_not_false_positive")
+
+    declared_matched = declared.get("matched")
+    if declared_matched is not None and declared_matched > within_tolerance_pairs:
+        violations.add("tolerance_violation")
+
+    return violations
+
+
 def _candidate_contract_flags(
     contract: dict,
     root: Path,
     dimension: str,
     prefix: str,
     violations_fn,
+    *,
+    graph_task_suite_required: bool = True,
 ) -> list[DriftFlag]:
     """Validate positive/negative fixtures + markers for one candidate contract.
 
-    Shared by the visual-lineage (PIR-018), table-provenance (PIR-019) and
-    equation-coverage (PIR-020) checks: the positive fixture must be clean
-    (no violations), every negative record must trigger its labelled
-    violation (and every required violation must appear somewhere — a future
-    edit that removes a negative case is flagged), and the Rust source
-    markers plus the snapshot graph task suite must keep the named
-    enforcement points.
+    Shared by the visual-lineage (PIR-018), table-provenance (PIR-019),
+    equation-coverage (PIR-020) and boundary-positional-metrics (GAR-001)
+    checks: the positive fixture must be clean (no violations), every
+    negative record must trigger its labelled violation (and every required
+    violation must appear somewhere — a future edit that removes a negative
+    case is flagged), and the Rust source markers plus the snapshot graph
+    task suite must keep the named enforcement points.
+
+    `graph_task_suite_required` defaults to True so a contract without a
+    `graph_task_suite` key keeps flagging `*_suite_missing` (fail-closed for
+    the existing multimodal contracts). A contract that has no durable
+    snapshot-level task suite passes False explicitly, which skips only the
+    missing-key case and still validates the suite when the key is present.
     """
     flags: list[DriftFlag] = []
     severity = str(contract.get("severity", "high"))
@@ -754,16 +985,20 @@ def _candidate_contract_flags(
                   f"{marker_key} source missing enforcement markers: {missing}")
 
     # Graph task suite: the snapshot-level suite must keep its task markers.
-    suite = contract.get("graph_task_suite") or {}
-    suite_path = root / str(suite.get("path", ""))
-    if not suite_path.is_file():
-        _flag(f"{prefix}_suite_missing", f"graph task suite missing: {suite_path}")
-    else:
-        text = suite_path.read_text(errors="replace")
-        missing = [p for p in suite.get("required_patterns", []) if p not in text]
-        if missing:
-            _flag(f"{prefix}_suite_broken",
-                  f"graph task suite missing markers: {missing}")
+    # A contract that explicitly opts out (`graph_task_suite_required=False`)
+    # and declares no suite is skipped; every other combination keeps the
+    # original fail-closed behaviour.
+    if "graph_task_suite" in contract or graph_task_suite_required:
+        suite = contract.get("graph_task_suite") or {}
+        suite_path = root / str(suite.get("path", ""))
+        if not suite_path.is_file():
+            _flag(f"{prefix}_suite_missing", f"graph task suite missing: {suite_path}")
+        else:
+            text = suite_path.read_text(errors="replace")
+            missing = [p for p in suite.get("required_patterns", []) if p not in text]
+            if missing:
+                _flag(f"{prefix}_suite_broken",
+                      f"graph task suite missing markers: {missing}")
     return flags
 
 
@@ -1000,6 +1235,11 @@ class TrajectoryService:
         # validates only declared DATA/artifact identities and typed fixture
         # fields; it runs in both active and closeout reports.
         drift_flags.extend(self._check_scholarly_parse_plane())
+
+        # GAR-001: boundary positional metrics control-plane rule (M508-g9b5gi
+        # S01). Independent oracle over canonical coordinates so a count-only
+        # agreement cannot hide permuted boundaries.
+        drift_flags.extend(self._check_boundary_positional_metrics())
 
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
@@ -1970,6 +2210,71 @@ class TrajectoryService:
             "visual_candidates_require_graph_lineage",
             _visual_candidate_violations,
         )
+
+    def _check_boundary_positional_metrics(self) -> list[DriftFlag]:
+        """Evaluate the data-driven boundary positional metrics contract (GAR-001).
+
+        Reads `scripts/governor/checks/boundary_positional_metrics.yaml`
+        (DATA) and validates the committed segmentation boundary fixtures
+        against the shipped Rust runner
+        (`crates/da-cli/examples/document_segmentation_shadow.rs`): every
+        positive record must be clean — declared count, pairing and
+        positional metrics agree with the independent Python oracle that
+        recomputes accuracy from the raw canonical
+        `[page, block, line, token]` coordinates; every negative record must
+        trigger its labelled violation and every required violation must
+        appear (so a removed permutation case is flagged); the Rust
+        enforcement markers must stay present. Unlike the three multimodal
+        contracts this rule has no durable snapshot graph task suite, so the
+        shared helper is called with `graph_task_suite_required=False`
+        explicitly. The bound source manifest is verified here because
+        `_candidate_contract_flags` does not inspect `bindings`.
+        """
+        path = self.root / "scripts/governor/checks/boundary_positional_metrics.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="boundary_positional_metrics_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="scholarly_parse_plane",
+            )]
+        flags: list[DriftFlag] = []
+        for binding in (contract.get("bindings") or {}).get("source_data", []):
+            bound_path = self.root / str(binding.get("path", ""))
+            if not bound_path.is_file():
+                flags.append(DriftFlag(
+                    flag="boundary_positional_metrics_binding_missing",
+                    severity="high",
+                    evidence=f"source binding missing: {bound_path}",
+                    dimension="scholarly_parse_plane",
+                ))
+                continue
+            expected = binding.get("sha256")
+            observed = hashlib.sha256(bound_path.read_bytes()).hexdigest()
+            # A non-string or non-hex digest is unverifiable and must fail
+            # closed: a 64-zero YAML scalar parses as int 0, which a truthy
+            # guard would silently skip.
+            if not _is_sha256_hex(expected) or str(expected).lower() != observed:
+                flags.append(DriftFlag(
+                    flag="boundary_positional_metrics_binding_mismatch",
+                    severity="high",
+                    evidence=(
+                        f"{binding.get('path')}: expected {expected!r}, "
+                        f"observed {observed}"
+                    ),
+                    dimension="scholarly_parse_plane",
+                ))
+        flags.extend(_candidate_contract_flags(
+            contract, self.root, "scholarly_parse_plane",
+            "boundary_positional_metrics",
+            _boundary_positional_violations,
+            graph_task_suite_required=False,
+        ))
+        return flags
 
     def _check_table_payload_requires_cell_provenance(self) -> list[DriftFlag]:
         """Evaluate the data-driven table cell provenance contract (PIR-019).
