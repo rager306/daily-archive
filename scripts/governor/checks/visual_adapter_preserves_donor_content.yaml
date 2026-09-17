@@ -1,0 +1,116 @@
+# Donor-visual-adapter content preservation contract — GAR-003 closure at the
+# control plane.
+#
+# DATA for the Governor `visual_adapter_preserves_donor_content` check.
+# GAR-003 (M508-g9b5gi) recorded that the donor visual sidecar converter already
+# existed (`crates/da-cli/src/visual_adapter.rs`, commit 209fe0bcc) but its
+# drop path was unobservable: the code lived inside an example target whose
+# unit tests were executed by no gate. The durable runtime artifact
+# (`artifacts/parse_compat/visual_positive_fixture_run.json`, produced by the
+# `pdf-layout`-gated example `visual_positive_fixture_run`) now makes the
+# preservation claim executable; this contract binds it to an independent
+# Python oracle.
+#
+# Semantics:
+#   - `bindings.fixture_sources` pins the four committed synthetic donor XML
+#     fixtures by SHA-256. The digests are recomputed at verification time (no
+#     caching between runs), so a converter or fixture edit without artifact
+#     regeneration surfaces as `..._artifact_stale`, never as a silent pass.
+#   - `artifact` pins the artifact schema version and the converter source
+#     whose SHA-256 must match `converter_source_sha256` inside the artifact.
+#   - positive (`adapter_preserves`): the four committed artifact records must
+#     be clean under the oracle — every donor primitive reaches the native
+#     result with complete provenance, malformed donor errors never map to
+#     `not_observed`, and the two non-deliverable receipt families stay
+#     explicitly declared.
+#   - negative (`artifact_broken`): every record must trigger its labelled
+#     violation and every label in `require_violations` must appear in the
+#     fixture, so a future edit that removes a negative case is flagged. The
+#     key case is `donor_primitives_discarded`: the pre-fix behaviour
+#     (`primitives: Vec::new()`) with `donor.primitive_count: 1`.
+#   - this contract deliberately declares no `graph_task_suite`: the visual
+#     adapter has no durable snapshot-level task suite, so the check passes
+#     `graph_task_suite_required=False` explicitly instead of silently
+#     skipping suite enforcement for the existing multimodal contracts.
+#
+# The committed fixtures are exercised by the governor rule on every run and
+# by `scripts/tests/test_governor.py` self-tests. This is DATA — tightening an
+# expectation is an edit here (plus the committed fixture JSON), not a Python
+# change.
+
+schema_version: visual-adapter-preserves-donor-content.v1
+policy_id: visual_adapter_preserves_donor_content
+dimension: scholarly_parse_plane
+severity: high
+anchor: "GAR-003, R122, R123, R131, ADR-076, ADR-051"
+
+fixture_families: [figure, table, formula, ambiguous_callout]
+families_requiring_observed_head: [figure, table, formula]
+non_deliverable_families:
+  - figure_captions
+  - figure_callouts
+  - table_captions
+  - table_callouts
+  - table_cells
+  - formula_labels
+  - formula_callouts
+
+# Closed vocabulary of violation labels the oracle can emit.
+violations:
+  - donor_primitives_discarded
+  - malformed_mapped_to_not_observed
+  - empty_observation_without_lane_absence
+  - primitive_provenance_lost
+  - terminal_only_parity_without_positive_evidence
+  - fixture_family_missing
+  - non_deliverable_families_undeclared
+  - missing_record_shape
+
+artifact:
+  path: artifacts/parse_compat/visual_positive_fixture_run.json
+  schema_version: visual-positive-fixture-run.v1
+  converter_source: crates/da-cli/src/visual_adapter.rs
+
+bindings:
+  fixture_sources:
+    - path: crates/da-cli/tests/fixtures/visual_positive_fixture_run/figure_geometry.xml
+      sha256: 263e76df45068bbcd82e10e041736ef47305710b15a45aeda81e6cf8c139df11
+    - path: crates/da-cli/tests/fixtures/visual_positive_fixture_run/table.xml
+      sha256: 8515c6abc3ca93933cec31f93a7b92386c809133d6055f805887cbee40ef4d7c
+    - path: crates/da-cli/tests/fixtures/visual_positive_fixture_run/formula.xml
+      sha256: 6566b15a3e1bdea7d543aa1cb87c052f022b4837c4aae7e55dba48b7772c1b16
+    - path: crates/da-cli/tests/fixtures/visual_positive_fixture_run/ambiguous_callout.xml
+      sha256: 1965848a4ac9074584aad6c4f50a1ce1df1c8a7be6fa0b8c98073fb672acd0a3
+
+fixtures:
+  positive:
+    id: adapter_preserves
+    path: governor/fixtures/visual_adapter_contract/artifact_preserves.positive.json
+    expect: clean
+  negative:
+    id: artifact_broken
+    path: governor/fixtures/visual_adapter_contract/artifact_broken.negative.json
+    expect:
+      require_violations:
+        - donor_primitives_discarded
+        - malformed_mapped_to_not_observed
+        - empty_observation_without_lane_absence
+        - primitive_provenance_lost
+        - terminal_only_parity_without_positive_evidence
+        - fixture_family_missing
+        - non_deliverable_families_undeclared
+
+# Enforcement points that must keep existing in the shipped surfaces.
+source_markers:
+  adapter:
+    path: crates/da-cli/src/visual_adapter.rs
+    required_patterns: [native_visual_payload, donor_error_absence, empty_observation, NON_DELIVERABLE_VISUAL_FAMILIES, MalformedBbox]
+  lib_gate:
+    path: crates/da-cli/src/lib.rs
+    required_patterns: ['pub mod visual_adapter', 'pdf-layout']
+  example_delegation:
+    path: crates/da-cli/examples/native_visual_heads_shadow.rs
+    required_patterns: [visual_adapter::native_visual_payload, visual_adapter::donor_error_absence]
+  gated_contract:
+    path: crates/da-cli/tests/visual_adapter_contract.rs
+    required_patterns: [visual_adapter_preserves_donor_primitives_end_to_end, visual_adapter_drop_path_is_detected, visual_adapter_malformed_maps_to_malformed_bbox_not_not_observed]

@@ -870,6 +870,171 @@ def _boundary_positional_violations(record: dict, contract: dict) -> set[str]:
     return violations
 
 
+def _non_empty_string(value) -> bool:
+    """True when value is a string with non-whitespace content."""
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _visual_adapter_violations(record: dict, contract: dict) -> set[str]:
+    """Return violation codes for one donor-visual-adapter fixture record (GAR-003).
+
+    Independent Python oracle over the durable artifact record shape produced
+    by `crates/da-cli/examples/visual_positive_fixture_run.rs`:
+
+        {fixture_id, family, fixture_source_sha256,
+         donor: {primitive_count, error},
+         native: {primitive_count, lane_absence, head_outcome, head_reason,
+                  primitives[], declared_non_deliverable_families}}
+
+    It never calls or copies the Rust converter (ADR-051 — the oracle must not
+    share code with the subject under test); it only checks that the declared
+    donor content is still present, provenance-complete and honestly labelled
+    in the native result.
+
+    Labels:
+      - donor_primitives_discarded: the donor produced primitives without an
+        error but the native result holds none (or holds fewer than it
+        declares) — the pre-fix `primitives: Vec::new()` drop path;
+      - malformed_mapped_to_not_observed: a Malformed/InvalidLayout donor
+        error is reported as `not_observed` absence instead of a typed
+        malformed absence;
+      - empty_observation_without_lane_absence: both sides are empty with no
+        lane-absence reason, i.e. emptiness is not explained;
+      - primitive_provenance_lost: a surviving primitive lost provider id or
+        version, document id, source digest, content digest, bbox, a positive
+        page ordinal or a valid source ordinal, or the ordinal set no longer
+        matches the donor primitive count;
+      - terminal_only_parity_without_positive_evidence: a family that must
+        reach an observed head keeps donor primitives but reports a terminal
+        head;
+      - fixture_family_missing: the record's family is outside the contract's
+        declared fixture families;
+      - non_deliverable_families_undeclared: the declared non-deliverable
+        receipt families do not exactly match the contract vocabulary (a
+        silently empty declaration is flagged).
+    A record that is not a `{donor, native}` dict returns the single label
+    `missing_record_shape`.
+    """
+    if not isinstance(record, dict):
+        return {"missing_record_shape"}
+    donor = record.get("donor")
+    native = record.get("native")
+    if not isinstance(donor, dict) or not isinstance(native, dict):
+        return {"missing_record_shape"}
+
+    violations: set[str] = set()
+
+    family = record.get("family")
+    if family not in list(contract.get("fixture_families") or []):
+        violations.add("fixture_family_missing")
+
+    def _count(node: dict) -> int:
+        value = node.get("primitive_count")
+        return value if isinstance(value, int) and not isinstance(value, bool) else 0
+
+    donor_count = _count(donor)
+    native_count = _count(native)
+    donor_error = donor.get("error")
+    lane_absence = native.get("lane_absence")
+    primitives = native.get("primitives")
+    primitives = primitives if isinstance(primitives, list) else None
+
+    if donor_error is None and donor_count > 0:
+        if native_count == 0:
+            violations.add("donor_primitives_discarded")
+        elif native_count == donor_count and (
+            primitives is None or len(primitives) != donor_count
+        ):
+            violations.add("donor_primitives_discarded")
+
+    if donor_error in ("Malformed", "InvalidLayout") and lane_absence == "not_observed":
+        violations.add("malformed_mapped_to_not_observed")
+
+    if (
+        donor_count == 0
+        and donor_error is None
+        and native_count == 0
+        and lane_absence is None
+    ):
+        violations.add("empty_observation_without_lane_absence")
+
+    if primitives is None:
+        if native_count > 0:
+            violations.add("primitive_provenance_lost")
+    else:
+        ordinals: list = []
+        for primitive in primitives:
+            if not isinstance(primitive, dict):
+                violations.add("primitive_provenance_lost")
+                continue
+            provider = primitive.get("provider")
+            if (
+                not isinstance(provider, dict)
+                or not _non_empty_string(provider.get("id"))
+                or not _non_empty_string(provider.get("version"))
+            ):
+                violations.add("primitive_provenance_lost")
+            if any(
+                not _non_empty_string(primitive.get(field))
+                for field in ("document_id", "source_sha256", "content_digest")
+            ):
+                violations.add("primitive_provenance_lost")
+            bbox = primitive.get("bbox")
+            if (
+                not isinstance(bbox, list)
+                or len(bbox) != 4
+                or not all(
+                    isinstance(value, (int, float)) and not isinstance(value, bool)
+                    for value in bbox
+                )
+            ):
+                violations.add("primitive_provenance_lost")
+            page_ordinal = primitive.get("page_ordinal")
+            if (
+                not isinstance(page_ordinal, int)
+                or isinstance(page_ordinal, bool)
+                or page_ordinal < 1
+            ):
+                violations.add("primitive_provenance_lost")
+            source_ordinal = primitive.get("source_ordinal")
+            if (
+                not isinstance(source_ordinal, int)
+                or isinstance(source_ordinal, bool)
+                or source_ordinal < 0
+            ):
+                violations.add("primitive_provenance_lost")
+            else:
+                ordinals.append(source_ordinal)
+        if (
+            donor_count > 0
+            and len(primitives) == donor_count
+            and len(ordinals) == len(primitives)
+            and sorted(ordinals) != list(range(donor_count))
+        ):
+            violations.add("primitive_provenance_lost")
+
+    if (
+        family in list(contract.get("families_requiring_observed_head") or [])
+        and donor_count > 0
+        and donor_error is None
+        and native_count > 0
+        and native.get("head_outcome") == "terminal"
+    ):
+        violations.add("terminal_only_parity_without_positive_evidence")
+
+    declared = native.get("declared_non_deliverable_families")
+    expected_families = sorted(
+        str(item) for item in (contract.get("non_deliverable_families") or [])
+    )
+    observed_families = (
+        sorted(str(item) for item in declared) if isinstance(declared, list) else None
+    )
+    if observed_families is None or observed_families != expected_families:
+        violations.add("non_deliverable_families_undeclared")
+
+    return violations
+
+
 def _candidate_contract_flags(
     contract: dict,
     root: Path,
@@ -1240,6 +1405,12 @@ class TrajectoryService:
         # S01). Independent oracle over canonical coordinates so a count-only
         # agreement cannot hide permuted boundaries.
         drift_flags.extend(self._check_boundary_positional_metrics())
+
+        # GAR-003: donor visual adapter content preservation control-plane rule
+        # (M508-g9b5gi S02). Binds the durable positive-fixture artifact to an
+        # independent oracle so a `primitives: Vec::new()` drop path cannot
+        # pass unnoticed.
+        drift_flags.extend(self._check_visual_adapter_preserves_donor_content())
 
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
@@ -2272,6 +2443,174 @@ class TrajectoryService:
             contract, self.root, "scholarly_parse_plane",
             "boundary_positional_metrics",
             _boundary_positional_violations,
+            graph_task_suite_required=False,
+        ))
+        return flags
+
+    def _check_visual_adapter_preserves_donor_content(self) -> list[DriftFlag]:
+        """Evaluate the data-driven donor visual adapter preservation contract (GAR-003).
+
+        Reads `scripts/governor/checks/visual_adapter_preserves_donor_content.yaml`
+        (DATA) and validates the durable runtime artifact
+        `artifacts/parse_compat/visual_positive_fixture_run.json` against it:
+        every positive artifact record must be clean under the independent
+        Python oracle `_visual_adapter_violations` — donor primitives survive
+        into the native result with complete provenance, malformed donor
+        errors never collapse into `not_observed` absence, the families that
+        must reach an observed head do so, and the non-deliverable receipt
+        families stay explicitly declared. Every negative record must trigger
+        its labelled violation and every required violation must appear, so a
+        future edit that removes the pre-fix drop-path case is flagged. The
+        bound fixture sources and the converter source are verified here
+        because `_candidate_contract_flags` does not inspect `bindings` or the
+        artifact: `..._artifact_stale` catches a converter or fixture edit
+        that was not followed by artifact regeneration, and
+        `..._source_binding_mismatch` fails closed on a non-hex digest (a
+        64-zero YAML scalar parses as int 0, which a truthy guard would skip).
+        The adapter has no durable snapshot graph task suite, so the shared
+        helper is called with `graph_task_suite_required=False` explicitly.
+        """
+        path = self.root / "scripts/governor/checks/visual_adapter_preserves_donor_content.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="visual_adapter_preserves_donor_content_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="scholarly_parse_plane",
+            )]
+        prefix = "visual_adapter_preserves_donor_content"
+        dimension = str(contract.get("dimension") or "scholarly_parse_plane")
+        severity = str(contract.get("severity", "high"))
+        flags: list[DriftFlag] = []
+
+        def _flag(name: str, evidence: str) -> None:
+            flags.append(DriftFlag(
+                flag=name, severity=severity, evidence=evidence, dimension=dimension,
+            ))
+
+        # 1. Bound fixture sources: existence plus exact SHA-256.
+        bound: dict[str, Path] = {}
+        for binding in (contract.get("bindings") or {}).get("fixture_sources", []):
+            bound_path = self.root / str(binding.get("path", ""))
+            bound[bound_path.stem] = bound_path
+            if not bound_path.is_file():
+                _flag(f"{prefix}_source_binding_missing",
+                      f"fixture source binding missing: {bound_path}")
+                continue
+            expected = binding.get("sha256")
+            observed = hashlib.sha256(bound_path.read_bytes()).hexdigest()
+            if not _is_sha256_hex(expected) or str(expected).lower() != observed:
+                _flag(f"{prefix}_source_binding_mismatch",
+                      f"{binding.get('path')}: expected {expected!r}, observed {observed}")
+
+        # 2. Artifact identity: schema version and a non-empty record list.
+        artifact_config = contract.get("artifact") or {}
+        artifact_path = self.root / str(artifact_config.get("path", ""))
+        artifact = None
+        if not artifact_path.is_file():
+            _flag(f"{prefix}_artifact_missing", f"artifact missing: {artifact_path}")
+        else:
+            try:
+                artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as error:
+                artifact = None
+                _flag(f"{prefix}_artifact_invalid", f"artifact unreadable: {error}")
+            if artifact is not None and not isinstance(artifact, dict):
+                artifact = None
+                _flag(f"{prefix}_artifact_invalid", "artifact must be a JSON object")
+            if isinstance(artifact, dict):
+                if artifact.get("schema_version") != artifact_config.get("schema_version"):
+                    artifact = None
+                    _flag(f"{prefix}_artifact_invalid",
+                          "artifact schema_version "
+                          f"{artifact.get('schema_version')!r} != "
+                          f"{artifact_config.get('schema_version')!r}")
+                elif (
+                    not isinstance(artifact.get("records"), list)
+                    or not artifact["records"]
+                ):
+                    artifact = None
+                    _flag(f"{prefix}_artifact_invalid",
+                          "artifact records must be a non-empty JSON array")
+
+        # 3. Coverage, head outcomes, converter and per-record fixture
+        #    staleness. Every digest is recomputed at verification time (no
+        #    caching between runs), so a stale artifact cannot pass silently.
+        if isinstance(artifact, dict):
+            records = artifact["records"]
+            fixture_families = list(contract.get("fixture_families") or [])
+            families_requiring_head = list(
+                contract.get("families_requiring_observed_head") or []
+            )
+            observed_families: set = set()
+            for record in records:
+                if not isinstance(record, dict):
+                    continue
+                family = record.get("family")
+                observed_families.add(family)
+                native = record.get("native")
+                if (
+                    family in families_requiring_head
+                    and (
+                        not isinstance(native, dict)
+                        or native.get("head_outcome") != "observed"
+                    )
+                ):
+                    declared_head = (
+                        native.get("head_outcome") if isinstance(native, dict) else native
+                    )
+                    _flag(f"{prefix}_artifact_incomplete",
+                          f"family {family!r} must reach an observed head, "
+                          f"got {declared_head!r}")
+            missing_families = [
+                family for family in fixture_families
+                if family not in observed_families
+            ]
+            if missing_families:
+                _flag(f"{prefix}_artifact_incomplete",
+                      f"artifact does not cover fixture families: {missing_families}")
+
+            converter_path = self.root / str(artifact_config.get("converter_source", ""))
+            if not converter_path.is_file():
+                _flag(f"{prefix}_artifact_stale",
+                      f"converter source missing: {converter_path}")
+            else:
+                observed_converter = hashlib.sha256(converter_path.read_bytes()).hexdigest()
+                declared_converter = artifact.get("converter_source_sha256")
+                if (
+                    not _is_sha256_hex(declared_converter)
+                    or str(declared_converter).lower() != observed_converter
+                ):
+                    _flag(f"{prefix}_artifact_stale",
+                          "artifact converter_source_sha256 "
+                          f"{declared_converter!r} != converter {observed_converter}")
+
+            for record in records:
+                if not isinstance(record, dict):
+                    continue
+                fixture_id = record.get("fixture_id")
+                bound_path = bound.get(str(fixture_id))
+                if bound_path is None or not bound_path.is_file():
+                    _flag(f"{prefix}_artifact_stale",
+                          f"record fixture_id {fixture_id!r} has no bound fixture source")
+                    continue
+                observed_fixture = hashlib.sha256(bound_path.read_bytes()).hexdigest()
+                declared_fixture = record.get("fixture_source_sha256")
+                if (
+                    not _is_sha256_hex(declared_fixture)
+                    or str(declared_fixture).lower() != observed_fixture
+                ):
+                    _flag(f"{prefix}_artifact_stale",
+                          f"record {fixture_id!r} fixture_source_sha256 "
+                          f"{declared_fixture!r} != {observed_fixture}")
+
+        flags.extend(_candidate_contract_flags(
+            contract, self.root, dimension, prefix,
+            _visual_adapter_violations,
             graph_task_suite_required=False,
         ))
         return flags
