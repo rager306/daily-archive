@@ -30,6 +30,7 @@ from governor.application.trajectory_service import (
     TrajectoryService,
     _boundary_positional_violations,
     _candidate_contract_flags,
+    _license_provenance_violations,
     _visual_adapter_violations,
 )
 from governor.domain import CheckSeverity, CheckStatus
@@ -3216,6 +3217,419 @@ def test_visual_adapter_preserves_donor_content_absent_snapshot_suite_is_not_fla
     )
 
 
+# ---------------------------------------------------------------------------
+# Component licence provenance contract (M508 S03 T04, GAR-004)
+# ---------------------------------------------------------------------------
+# Self-tests for the committed `component_license_provenance` contract (T03).
+# The scratch root receives the REAL canonical ledger, the three read-only
+# licence surfaces, the independent Rust contract, the contract DATA and the
+# two fixtures — never a synthetic stand-in — so the fixture logic AND the
+# strict oracle are exercised over the shipped artifact. Every mutation happens
+# on that copy: no committed file is touched. Two tests bypass the Governor
+# wiring on purpose (direct oracle call + the explicit
+# `graph_task_suite_required=False` opt-out), so the rule cannot go green by
+# accident, and one test falsifies the rule by mutating the REAL
+# `data/parse/license_inventory.yaml` copy rather than a synthetic record.
+
+_COMPONENT_LICENSE_PREFIX = "component_license_provenance"
+_COMPONENT_LICENSE_CONTRACT = (
+    "scripts/governor/checks/component_license_provenance.yaml"
+)
+_COMPONENT_LICENSE_INVENTORY = "data/parse/license_inventory.yaml"
+_COMPONENT_LICENSE_POSITIVE = (
+    "governor/fixtures/component_license_provenance/inventory_complete.positive.json"
+)
+_COMPONENT_LICENSE_NEGATIVE = (
+    "governor/fixtures/component_license_provenance/inventory_broken.negative.json"
+)
+
+
+def _copy_component_license_contract(root: Path) -> None:
+    """Copy the licence-provenance contract and every path it actually reads.
+
+    Beyond the contract DATA and fixtures this copies the REAL canonical
+    `data/parse/license_inventory.yaml`, the three read-only surfaces and the
+    independent Rust contract. The oracle resolves `license_evidence` and the
+    artifact obligations against the repository root, so every repo-relative
+    reference of the ledger and of the positive fixture is materialised in the
+    scratch root as well — otherwise a semantically identical copy would report
+    `license_evidence_path_missing` / `unresolved_artifact_obligation` for
+    reasons that have nothing to do with the rule. `_write` creates parents; a
+    reference that is a directory (e.g. `data/gold_standard`) is created as a
+    directory, which is all `Path.exists()` requires.
+    """
+    repo = _scripts_dir.parent
+    rels = [
+        _COMPONENT_LICENSE_CONTRACT,
+        _COMPONENT_LICENSE_POSITIVE,
+        _COMPONENT_LICENSE_NEGATIVE,
+        _COMPONENT_LICENSE_INVENTORY,
+        "data/parse/grobid_compatibility.yaml",
+        "data/parse/feature_tagger_training_parity.yaml",
+        "data/parse/grobid_model_rights.yaml",
+        "crates/da-parse/tests/component_license_provenance_data_contract.rs",
+    ]
+    inventory = yaml.safe_load(
+        (repo / _COMPONENT_LICENSE_INVENTORY).read_text(encoding="utf-8")
+    )
+    positive = json.loads(
+        (repo / _COMPONENT_LICENSE_POSITIVE).read_text(encoding="utf-8")
+    )
+    references: list[str] = []
+    for record in list(inventory.get("components") or []) + list(positive):
+        if not isinstance(record, dict):
+            continue
+        for field in (
+            "license_evidence",
+            "attribution_notice_artifact",
+            "source_offer_artifact",
+        ):
+            value = record.get(field)
+            if (
+                isinstance(value, str)
+                and value
+                and not value.startswith(("http://", "https://"))
+                and not Path(value).is_absolute()
+            ):
+                references.append(value)
+    for rel in dict.fromkeys(rels):
+        _write(root / rel, (repo / rel).read_text(encoding="utf-8"))
+    for rel in sorted(set(references)):
+        source = repo / rel
+        if source.is_dir():
+            (root / rel).mkdir(parents=True, exist_ok=True)
+        elif source.is_file():
+            _write(root / rel, source.read_text(encoding="utf-8"))
+
+
+def _component_license_service() -> TrajectoryService:
+    """Scratch TrajectoryService with the committed licence contract copied in."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_component_license_contract(service.root)
+    return service
+
+
+def _license_flags_named(flags, name: str):
+    return [f for f in flags if f.flag == f"{_COMPONENT_LICENSE_PREFIX}_{name}"]
+
+
+def test_component_license_provenance_pass_on_clean_fixtures():
+    """The committed ledger, surfaces, fixtures and markers satisfy the contract."""
+    service = _component_license_service()
+    assert service._check_component_license_provenance() == []
+
+
+def test_component_license_provenance_missing_fixture_is_flagged():
+    service = _component_license_service()
+    (service.root / _COMPONENT_LICENSE_POSITIVE).unlink()
+    flags = service._check_component_license_provenance()
+    missing = _license_flags_named(flags, "fixture_missing")
+    assert len(missing) == 1
+    assert "positive" in missing[0].evidence
+    assert missing[0].severity == "high"
+    assert missing[0].dimension == "scholarly_parse_plane"
+
+    service = _component_license_service()
+    (service.root / _COMPONENT_LICENSE_NEGATIVE).unlink()
+    flags = service._check_component_license_provenance()
+    missing = _license_flags_named(flags, "fixture_missing")
+    assert len(missing) == 1
+    assert "negative" in missing[0].evidence
+
+
+def test_component_license_provenance_positive_fixture_must_be_clean():
+    service = _component_license_service()
+    path = service.root / _COMPONENT_LICENSE_POSITIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    records[0]["license_status"] = "UNVERIFIED"
+    _write(path, json.dumps(records))
+    flags = service._check_component_license_provenance()
+    broken = _license_flags_named(flags, "broken")
+    assert len(broken) == 1
+    assert "unverified_status_token" in broken[0].evidence
+
+
+def test_component_license_provenance_negative_fixture_must_trigger_labelled_violations():
+    service = _component_license_service()
+    path = service.root / _COMPONENT_LICENSE_NEGATIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    # Turn the untyped token into a well-formed blocked position so the label
+    # can no longer fire: the mismatch must be reported.
+    for record in records:
+        if record.get("violation") == "unverified_status_token":
+            record["record"]["license_status"] = "blocked"
+            record["record"]["blocked_reason"] = "fixture_reason"
+    _write(path, json.dumps(records))
+    flags = service._check_component_license_provenance()
+    broken = _license_flags_named(flags, "broken")
+    assert any("unverified_status_token" in f.evidence for f in broken)
+
+
+def test_component_license_provenance_negative_fixture_must_cover_required_violations():
+    service = _component_license_service()
+    path = service.root / _COMPONENT_LICENSE_NEGATIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    records = [
+        r for r in records
+        if r.get("violation") != "blocked_position_claims_redistribution"
+    ]
+    _write(path, json.dumps(records))
+    flags = service._check_component_license_provenance()
+    broken = _license_flags_named(flags, "broken")
+    assert any(
+        "missing required violation coverage" in f.evidence
+        and "blocked_position_claims_redistribution" in f.evidence
+        for f in broken
+    )
+
+
+def test_component_license_provenance_invalid_yaml_is_flagged():
+    service = _component_license_service()
+    _write(service.root / _COMPONENT_LICENSE_CONTRACT, "{bad yaml: [")
+    flags = service._check_component_license_provenance()
+    assert flags[0].flag == f"{_COMPONENT_LICENSE_PREFIX}_invalid"
+
+
+def test_component_license_provenance_binding_mismatch_is_flagged():
+    service = _component_license_service()
+    path = service.root / _COMPONENT_LICENSE_CONTRACT
+    text = path.read_text(encoding="utf-8")
+    digest = (yaml.safe_load(text) or {})["bindings"]["source_data"][0]["sha256"]
+    assert str(digest) in text
+    # A 64-zero scalar parses as int 0, which the binding guard must reject as
+    # unverifiable rather than skip.
+    _write(path, text.replace(str(digest), "0" * 64))
+    flags = service._check_component_license_provenance()
+    mismatch = _license_flags_named(flags, "binding_mismatch")
+    assert len(mismatch) == 1
+
+
+def test_component_license_provenance_binding_missing_is_flagged():
+    service = _component_license_service()
+    (service.root / _COMPONENT_LICENSE_INVENTORY).unlink()
+    flags = service._check_component_license_provenance()
+    missing = _license_flags_named(flags, "binding_missing")
+    assert len(missing) == 1
+
+
+def test_component_license_provenance_inventory_missing_is_flagged():
+    service = _component_license_service()
+    # Drop the SHA binding first so the absence is reported as the missing
+    # canonical artifact rather than as an unverifiable binding.
+    path = service.root / _COMPONENT_LICENSE_CONTRACT
+    contract = yaml.safe_load(path.read_text(encoding="utf-8"))
+    contract.pop("bindings", None)
+    _write(path, yaml.safe_dump(contract, sort_keys=False))
+    (service.root / _COMPONENT_LICENSE_INVENTORY).unlink()
+    flags = service._check_component_license_provenance()
+    missing = _license_flags_named(flags, "inventory_missing")
+    assert len(missing) == 1
+
+
+def test_component_license_provenance_surface_missing_is_flagged():
+    service = _component_license_service()
+    (service.root / "data/parse/grobid_model_rights.yaml").unlink()
+    flags = service._check_component_license_provenance()
+    missing = _license_flags_named(flags, "surface_missing")
+    assert len(missing) == 1
+    assert "grobid_model_rights" in missing[0].evidence
+
+
+def test_component_license_provenance_surface_invalid_is_flagged():
+    service = _component_license_service()
+    # Break the pointer target: the document stays valid YAML but the declared
+    # asset list disappears.
+    _write(service.root / "data/parse/grobid_model_rights.yaml", "assets: []\n")
+    flags = service._check_component_license_provenance()
+    invalid = _license_flags_named(flags, "surface_invalid")
+    assert any("grobid_model_rights" in f.evidence for f in invalid)
+
+
+def test_component_license_provenance_source_marker_missing_is_flagged():
+    service = _component_license_service()
+    _write(
+        service.root
+        / "crates/da-parse/tests/component_license_provenance_data_contract.rs",
+        "fn main() {}\n",
+    )
+    flags = service._check_component_license_provenance()
+    marker = _license_flags_named(flags, "source_marker_missing")
+    assert len(marker) == 1
+    assert "rust_contract" in marker[0].evidence
+
+
+def test_component_license_provenance_fixture_inventory_drift_is_flagged():
+    service = _component_license_service()
+    path = service.root / _COMPONENT_LICENSE_POSITIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    removed = records.pop()["component_id"]
+    _write(path, json.dumps(records))
+    flags = service._check_component_license_provenance()
+    drift = _license_flags_named(flags, "fixture_inventory_drift")
+    assert len(drift) == 1
+    assert removed in drift[0].evidence
+
+
+def test_component_license_provenance_absent_snapshot_suite_is_not_flagged():
+    """The rule has no durable snapshot task suite; the opt-out must be explicit."""
+    service = _component_license_service()
+    contract = yaml.safe_load(
+        (service.root / _COMPONENT_LICENSE_CONTRACT).read_text(encoding="utf-8")
+    )
+    assert "graph_task_suite" not in contract
+    # The opt-out governs only the missing-suite case. The fixture validation
+    # inside the shared helper needs the rule's private `_root` / `_surface_ids`
+    # oracle keys, so this test asserts the suite flag itself rather than an
+    # empty list (which would also assert unrelated fixture diagnostics).
+    opted_out = _candidate_contract_flags(
+        contract, service.root, "scholarly_parse_plane",
+        _COMPONENT_LICENSE_PREFIX, _license_provenance_violations,
+        graph_task_suite_required=False,
+    )
+    assert not [
+        f for f in opted_out
+        if f.flag == f"{_COMPONENT_LICENSE_PREFIX}_suite_missing"
+    ], opted_out
+    default = _candidate_contract_flags(
+        contract, service.root, "scholarly_parse_plane",
+        _COMPONENT_LICENSE_PREFIX, _license_provenance_violations,
+    )
+    assert any(
+        f.flag == f"{_COMPONENT_LICENSE_PREFIX}_suite_missing" for f in default
+    )
+
+
+def test_component_license_provenance_real_inventory_mutations_are_flagged():
+    """Falsification on the REAL ledger, not only on the synthetic fixtures.
+
+    The GAR-004 acceptance criterion is about `data/parse/license_inventory.yaml`
+    itself, so an unmodified copy is the control (zero flags) and each mutation
+    must produce its exact flag. Mutations are applied to the copy only.
+    """
+
+    def _flags_for(mutate) -> list:
+        service = _component_license_service()
+        path = service.root / _COMPONENT_LICENSE_INVENTORY
+        document = yaml.safe_load(path.read_text(encoding="utf-8"))
+        mutate(document)
+        _write(path, yaml.safe_dump(document, sort_keys=False))
+        return service._check_component_license_provenance()
+
+    def _verified(document) -> dict:
+        return next(
+            c for c in document["components"] if c["license_status"] == "verified"
+        )
+
+    def _blocked(document) -> dict:
+        return next(
+            c for c in document["components"] if c["license_status"] == "blocked"
+        )
+
+    # Control: the unmodified copy of the real ledger is clean.
+    assert _component_license_service()._check_component_license_provenance() == []
+
+    def _untyped_status(document):
+        _verified(document)["license_status"] = "UNVERIFIED"
+
+    assert _license_flags_named(
+        _flags_for(_untyped_status), "unverified_status_token"
+    )
+
+    def _drop_blocked_reason(document):
+        _blocked(document).pop("blocked_reason", None)
+
+    assert _license_flags_named(
+        _flags_for(_drop_blocked_reason), "missing_blocked_reason"
+    )
+
+    def _blocked_claims_redistribution(document):
+        _blocked(document)["redistribution"] = "allowed_with_notice"
+
+    assert _license_flags_named(
+        _flags_for(_blocked_claims_redistribution),
+        "blocked_position_claims_redistribution",
+    )
+
+    def _unresolvable_evidence(document):
+        _verified(document)["license_evidence"] = "/nonexistent/LICENSE"
+
+    assert _license_flags_named(
+        _flags_for(_unresolvable_evidence), "license_evidence_path_missing"
+    )
+
+    def _drop_surface_claim(document):
+        holder = next(
+            c for c in document["components"] if c.get("surface_claims")
+        )
+        holder["surface_claims"].pop()
+
+    assert _license_flags_named(
+        _flags_for(_drop_surface_claim), "cross_surface_component_unclaimed"
+    )
+
+    def _duplicate_surface_claim(document):
+        holder = next(
+            c for c in document["components"] if c.get("surface_claims")
+        )
+        claim = holder["surface_claims"][0]
+        other = next(c for c in document["components"] if c is not holder)
+        other.setdefault("surface_claims", []).append(dict(claim))
+
+    assert _license_flags_named(
+        _flags_for(_duplicate_surface_claim), "cross_surface_claim_duplicated"
+    )
+
+    def _relax_import_lock(document):
+        _verified(document)["import_eligible"] = True
+
+    assert _license_flags_named(
+        _flags_for(_relax_import_lock), "redistribution_lock_relaxed"
+    )
+
+
+def test_component_license_provenance_oracle_rejects_untyped_status_without_governor():
+    """The discrimination lives in the independent oracle, not in the wiring."""
+    service = _component_license_service()
+    contract = {
+        "license_status_vocabulary": ["verified", "blocked"],
+        "boundary_vocabulary": ["http"],
+        "redistribution_status_vocabulary": ["blocked", "not_distributed"],
+        "artifact_obligation_vocabulary": ["not_applicable"],
+        "blocked_status_vocabulary": ["blocked"],
+        "_root": str(service.root),
+        "_surface_ids": {},
+    }
+    clean = {
+        "component_id": "oracle-fixture",
+        "license_status": "verified",
+        "license_evidence": "http://example.invalid/LICENSE",
+        "boundary": "http",
+        "redistribution": "not_distributed",
+        "attribution_notice_artifact": "not_applicable",
+        "source_offer_artifact": "not_applicable",
+        "surface_claims": [],
+    }
+    assert _license_provenance_violations(clean, contract) == set()
+
+    untyped = json.loads(json.dumps(clean))
+    untyped["license_status"] = "UNVERIFIED"
+    assert "unverified_status_token" in \
+        _license_provenance_violations(untyped, contract)
+
+    no_reason = json.loads(json.dumps(clean))
+    no_reason["license_status"] = "blocked"
+    no_reason["redistribution"] = "blocked"
+    assert "missing_blocked_reason" in \
+        _license_provenance_violations(no_reason, contract)
+
+    # Fail-closed: an empty closed vocabulary means "cannot decide", not "accept".
+    no_vocabulary = dict(contract)
+    no_vocabulary["license_status_vocabulary"] = []
+    assert "missing_closed_vocabulary" in \
+        _license_provenance_violations(clean, no_vocabulary)
+
+
 def test_table_payload_requires_cell_provenance_pass_on_clean_fixtures():
     """Committed positive + negative fixtures and source markers satisfy the contract."""
     service = TrajectoryService.__new__(TrajectoryService)
@@ -3875,6 +4289,22 @@ def _run_all_tests() -> int:
         test_visual_adapter_preserves_donor_content_invalid_yaml_is_flagged,
         test_visual_adapter_preserves_donor_content_oracle_rejects_discarded_primitives_without_governor,
         test_visual_adapter_preserves_donor_content_absent_snapshot_suite_is_not_flagged,
+        test_component_license_provenance_pass_on_clean_fixtures,
+        test_component_license_provenance_missing_fixture_is_flagged,
+        test_component_license_provenance_positive_fixture_must_be_clean,
+        test_component_license_provenance_negative_fixture_must_trigger_labelled_violations,
+        test_component_license_provenance_negative_fixture_must_cover_required_violations,
+        test_component_license_provenance_invalid_yaml_is_flagged,
+        test_component_license_provenance_binding_mismatch_is_flagged,
+        test_component_license_provenance_binding_missing_is_flagged,
+        test_component_license_provenance_inventory_missing_is_flagged,
+        test_component_license_provenance_surface_missing_is_flagged,
+        test_component_license_provenance_surface_invalid_is_flagged,
+        test_component_license_provenance_source_marker_missing_is_flagged,
+        test_component_license_provenance_fixture_inventory_drift_is_flagged,
+        test_component_license_provenance_absent_snapshot_suite_is_not_flagged,
+        test_component_license_provenance_real_inventory_mutations_are_flagged,
+        test_component_license_provenance_oracle_rejects_untyped_status_without_governor,
         test_table_payload_requires_cell_provenance_pass_on_clean_fixtures,
         test_table_payload_requires_cell_provenance_missing_fixture_is_flagged,
         test_table_payload_requires_cell_provenance_positive_fixture_must_be_clean,
