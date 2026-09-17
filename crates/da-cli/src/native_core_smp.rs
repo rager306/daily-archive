@@ -27,11 +27,30 @@
 //! the serial `workers = 1` run, otherwise the call fails with a typed
 //! [`NativeCoreSmpError::SemanticDivergence`].
 //!
-//! Observational (never an acceptance denominator): wall-clock latency
-//! percentiles, throughput, run wall time and the runtime queue high-water
-//! gauges. They are declared field-by-field in
-//! [`NativeCoreSmpObservationalBlock`] and in the emitted artifact, and they
-//! only ever *classify* a worker count into the closed breakpoint vocabulary.
+//! ## Two surfaces: deterministic artifact vs observation snapshot
+//!
+//! The emitted receipt is the *deterministic* surface: the job set, per-job
+//! semantic digests, the admitted/terminal conservation, ordinals, per-worker
+//! terminal counts, private scratch *capacity* and the closed breakpoint
+//! vocabulary. It is byte-reproducible, and two independent runs over unchanged
+//! inputs must produce identical bytes — the emitter refuses to write otherwise.
+//! The strongest invariant is enforced here, not asserted by a caller: the
+//! semantic digest of every worker count must equal the digest of the serial
+//! `workers = 1` run, otherwise the call fails with a typed
+//! [`NativeCoreSmpError::SemanticDivergence`].
+//!
+//! Every observational value lives on a *separate*, explicitly declared run
+//! snapshot ([`NATIVE_CORE_SMP_OBSERVATIONS_ARTIFACT_REL`]): wall-clock latency
+//! percentiles, throughput, run wall time, the runtime queue high-water gauges,
+//! the private-scratch high-water marks, process peak RSS and the breakpoint
+//! verdicts derived from throughput. The snapshot declares `reproducible: false`
+//! and `not_a_receipt: true`, binds itself back to the deterministic artifact by
+//! `sha256`, and never enters an acceptance denominator.
+//!
+//! [`NativeCoreSmpObservationalBlock`] declares the observational field families
+//! field-by-field on the deterministic artifact, while
+//! [`DeterministicMatrixEntry`] is structurally incapable of carrying a value
+//! for any of them.
 //!
 //! [`SmpObservation`] is the typed absence: a metric that was not measured is
 //! `NotObserved { reason }`, never a fabricated zero. Process peak RSS is
@@ -58,7 +77,11 @@ use std::fmt;
 use std::sync::Arc;
 use std::time::Instant;
 
-pub const NATIVE_CORE_SMP_SCHEMA_VERSION: &str = "native-core-smp.v1";
+pub const NATIVE_CORE_SMP_SCHEMA_VERSION: &str = "native-core-smp.v2";
+/// Schema of the *observation* surface: the run snapshot beside the
+/// deterministic acceptance artifact. It is deliberately a different version
+/// line, because it is a different object: declared non-reproducible.
+pub const NATIVE_CORE_SMP_OBSERVATIONS_SCHEMA_VERSION: &str = "native-core-smp-observations.v1";
 pub const CPU_SMP_CANDIDATE_SCHEMA_VERSION: &str = "cpu-smp-candidate.v1";
 pub const CPU_SMP_CANDIDATE_KEY: &str = "cpu_smp_candidate";
 pub const NATIVE_CORE_SMP_ADR_REF: &str = "ADR-075";
@@ -68,6 +91,52 @@ pub const NATIVE_CORE_SMP_MANIFEST_BINDING: &str = "data/parse/comparison_contra
 /// and conflating the two would silently rewrite existing DATA.
 pub const CPU_SMP_CANDIDATE_MANIFEST_BINDING: &str = "data/parse/layout_bakeoff.yaml";
 pub const NATIVE_CORE_SMP_ARTIFACT_REL: &str = "artifacts/parse_compat/native_core_smp.json";
+/// The observation surface, written beside the deterministic artifact. It is
+/// never pinned by a ledger and never enters an acceptance denominator: it
+/// carries the wall-clock and runtime gauges that causally cannot reproduce.
+pub const NATIVE_CORE_SMP_OBSERVATIONS_ARTIFACT_REL: &str =
+    "artifacts/parse_compat/native_core_smp_observations.json";
+
+/// Why the observation surface is declared non-reproducible, in the artifact
+/// itself. A typed reason, not a shrug: these are wall-clock and process-runtime
+/// gauges, which vary between two identical runs.
+pub const NATIVE_CORE_SMP_NON_REPRODUCIBLE_REASON: &str = "wall_clock_and_process_runtime_gauges: latency percentiles, run wall time, throughput, \
+queue high-water marks, private scratch high-water marks and process peak RSS are measured from \
+the running process and vary between two independent runs on unchanged inputs";
+
+/// Closed, declared scope of the deterministic artifact surface: the only
+/// top-level groups a byte-reproducible acceptance surface may carry.
+///
+/// A field family outside this list belongs on
+/// [`NATIVE_CORE_SMP_OBSERVATIONS_ARTIFACT_REL`]. The scope is echoed inside the
+/// artifact as `deterministic_projection.scope`, so a reader audits the
+/// declaration without opening the Rust source, and
+/// [`SMP_TIMING_FIELDS`]/[`SMP_RUNTIME_OBSERVED_FIELDS`] name the leaf families
+/// that must never reappear here.
+pub const NATIVE_CORE_SMP_DETERMINISTIC_PROJECTION_SCOPE: [&str; 22] = [
+    "schema_version",
+    "adr_ref",
+    "candidate_schema_version",
+    "manifest_binding",
+    "candidate_manifest_binding",
+    "requirement_ids",
+    "topology",
+    "workload",
+    "families",
+    "matrix",
+    "memory_pressure_ceiling_bytes",
+    "cpu_only",
+    "subprocess_io_included",
+    "selection_forbidden",
+    "metrics",
+    "denominators",
+    "timing_observational",
+    "deterministic_projection",
+    "optimization",
+    "promotion",
+    "redaction",
+    "h05_closure",
+];
 pub const NATIVE_CORE_SMP_TIMING_DISPOSITION: &str =
     "observational_excluded_from_acceptance_denominators";
 pub const NATIVE_CORE_SMP_ROLLBACK_TARGET: &str = "java-grobid-http@0.9.0-crf";
@@ -193,6 +262,16 @@ pub enum NativeCoreSmpError {
     VocabularyViolation { path: String, value: String },
     /// The emitted artifact could not be serialized.
     Artifact { reason: String },
+    /// Two independent emissions of the deterministic artifact disagreed on
+    /// their bytes. Nothing may be written: an unstable acceptance surface is
+    /// not evidence.
+    DeterministicDivergence {
+        first_digest: String,
+        second_digest: String,
+    },
+    /// The observation surface was handed a binding it cannot claim (no
+    /// `sha256:` prefix, or the wrong digest length).
+    ObservationBinding { reason: String },
 }
 
 impl fmt::Display for NativeCoreSmpError {
@@ -285,6 +364,17 @@ attributed to a worker"
                 write!(f, "`{value}` at {path} is outside its closed vocabulary")
             }
             Self::Artifact { reason } => write!(f, "artifact serialization failed: {reason}"),
+            Self::DeterministicDivergence {
+                first_digest,
+                second_digest,
+            } => write!(
+                f,
+                "two independent SMP matrix runs diverged on the deterministic artifact bytes \
+({first_digest} vs {second_digest}); refusing to write an unstable acceptance surface"
+            ),
+            Self::ObservationBinding { reason } => {
+                write!(f, "observation surface binding is unusable: {reason}")
+            }
         }
     }
 }
@@ -1871,6 +1961,57 @@ pub struct NativeCoreSmpReceipt {
     pub subprocess_io_included: bool,
     pub selection_forbidden: bool,
     pub observations: NativeCoreSmpObservationalBlock,
+    /// `sha256:`-prefixed digest of [`Self::deterministic_projection`]. Persisted
+    /// so the deterministic artifact declares its own reproducible projection
+    /// instead of computing it once and dropping it into stdout.
+    pub deterministic_projection_digest: String,
+}
+
+/// Validate the `sha256:<64 hex>` binding handed to the observation surface.
+///
+/// A binding hash is the only thing that links the run snapshot to the
+/// deterministic artifact, so a malformed one is refused as a typed error
+/// rather than written into the snapshot.
+fn validate_observation_source_sha256(source_sha256: &str) -> Result<&str, NativeCoreSmpError> {
+    let digest = source_sha256.trim();
+    let hex = digest.strip_prefix("sha256:").unwrap_or("");
+    if hex.len() != 64 || !hex.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err(NativeCoreSmpError::ObservationBinding {
+            reason: format!(
+                "expected `sha256:` followed by 64 hex characters, got {} character(s) after \
+the prefix",
+                hex.len()
+            ),
+        });
+    }
+    Ok(digest)
+}
+
+/// Whether `existing` is a *current* observation run snapshot: well formed
+/// under the current observations schema, still declaring itself
+/// non-reproducible and not-a-receipt, and bound to exactly
+/// `deterministic_sha256`.
+///
+/// The observation surface is non-reproducible *by declaration* — re-running
+/// the same matrix necessarily yields different wall-clock bytes — so a
+/// snapshot that already binds the deterministic bytes on disk is a valid
+/// record of exactly this acceptance object. Rewriting it would churn a
+/// non-reproducible tracked file for no added evidence. Absence, corruption,
+/// schema drift, a dropped declaration, a different deterministic path or a
+/// stale binding are all *not* current: they must be refreshed, never trusted.
+///
+/// The observed values themselves are deliberately not inspected: they are not
+/// reproducible, so equality of measurements is not a meaningful test.
+pub fn observations_snapshot_is_current(existing: &[u8], deterministic_sha256: &str) -> bool {
+    let Ok(snapshot) = serde_json::from_slice::<NativeCoreSmpObservations>(existing) else {
+        return false;
+    };
+    snapshot.schema_version == NATIVE_CORE_SMP_OBSERVATIONS_SCHEMA_VERSION
+        && snapshot.adr_ref == NATIVE_CORE_SMP_ADR_REF
+        && !snapshot.reproducible
+        && snapshot.not_a_receipt
+        && snapshot.source_artifact.path == NATIVE_CORE_SMP_ARTIFACT_REL
+        && snapshot.source_artifact.sha256 == deterministic_sha256.trim()
 }
 
 impl NativeCoreSmpReceipt {
@@ -1885,10 +2026,14 @@ impl NativeCoreSmpReceipt {
 
     /// Deterministic projection: everything an independent run must reproduce.
     ///
-    /// Timing, throughput, the runtime gauges *and the breakpoint verdicts*
-    /// are deliberately absent: the verdicts are classifications of the
+    /// Timing, throughput, the runtime gauges (queue and private-scratch
+    /// high-water marks, process peak RSS) *and the breakpoint verdicts* are
+    /// deliberately absent: the verdicts are classifications of the
     /// observational throughput, so including them would make a replay claim
-    /// that this slice cannot honestly make.
+    /// that this slice cannot honestly make. `scratch_capacity_bytes` stays
+    /// (it is derived from the frozen model and the workload, not measured),
+    /// and `queue_wait_ms` carries a typed `not_observed` declaration rather
+    /// than a number.
     pub fn deterministic_projection(&self) -> Result<String, NativeCoreSmpError> {
         let projection = NativeCoreSmpDeterministicProjection {
             schema_version: NATIVE_CORE_SMP_SCHEMA_VERSION.to_string(),
@@ -1923,10 +2068,6 @@ impl NativeCoreSmpReceipt {
                     rows_decoded: entry.rows_decoded,
                     decoded_positions: entry.decoded_positions,
                     scratch_capacity_bytes: entry.scratch_capacity_bytes,
-                    scratch_high_water_bytes: entry.scratch_high_water_bytes,
-                    per_worker_scratch_high_water_bytes: entry
-                        .per_worker_scratch_high_water_bytes
-                        .clone(),
                 })
                 .collect(),
         };
@@ -1946,8 +2087,16 @@ impl NativeCoreSmpReceipt {
             topology: self.topology.clone(),
             workload: self.workload.clone(),
             families: self.families.clone(),
-            matrix: self.matrix.clone(),
-            peak_rss_bytes: self.peak_rss_bytes.clone(),
+            matrix: SmpDeterministicMatrix {
+                scalar_oracle_digest: self.matrix.scalar_oracle_digest.clone(),
+                breakpoint_vocabulary: self.matrix.breakpoint_vocabulary.clone(),
+                entries: self
+                    .matrix
+                    .entries
+                    .iter()
+                    .map(DeterministicMatrixEntry::from)
+                    .collect(),
+            },
             memory_pressure_ceiling_bytes: self.memory_pressure_ceiling_bytes.clone(),
             cpu_only: self.cpu_only,
             subprocess_io_included: self.subprocess_io_included,
@@ -1979,6 +2128,16 @@ impl NativeCoreSmpReceipt {
                 timing_fields: self.observations.timing_fields.clone(),
                 runtime_observed_fields: self.observations.runtime_observed_fields.clone(),
                 excluded_from: self.observations.excluded_from.clone(),
+                observations_artifact: NATIVE_CORE_SMP_OBSERVATIONS_ARTIFACT_REL.to_string(),
+                observations_schema_version: NATIVE_CORE_SMP_OBSERVATIONS_SCHEMA_VERSION
+                    .to_string(),
+            },
+            deterministic_projection: DeterministicProjectionDeclaration {
+                digest: self.deterministic_projection_digest.clone(),
+                scope: NATIVE_CORE_SMP_DETERMINISTIC_PROJECTION_SCOPE
+                    .iter()
+                    .map(|group| (*group).to_string())
+                    .collect(),
             },
             optimization: self.data.optimization.clone(),
             promotion: self.data.promotion.clone(),
@@ -1987,18 +2146,86 @@ impl NativeCoreSmpReceipt {
         }
     }
 
-    /// Emitted artifact bytes: pretty JSON plus a trailing newline.
+    /// Emitted *deterministic* artifact bytes: pretty JSON plus a trailing newline.
     ///
-    /// Unlike the T01 profile artifact this projection deliberately carries the
-    /// observational block — the breakpoint verdicts *are* the object under
-    /// qualification — so it is a run snapshot, and it is declared as one
-    /// field by field instead of pretending to be a byte-reproducible digest.
+    /// This surface is byte-reproducible by construction: every observational
+    /// field a run produces (latency, run wall time, throughput, queue and
+    /// private-scratch high-water marks, process peak RSS and the breakpoint
+    /// verdicts derived from throughput) lives on
+    /// [`Self::observations_json_bytes`] instead. The acceptance artifact is a
+    /// receipt; the observation file is a declared run snapshot.
     pub fn artifact_json_bytes(&self) -> Result<Vec<u8>, NativeCoreSmpError> {
         let mut bytes = serde_json::to_vec_pretty(&self.artifact()).map_err(|error| {
             NativeCoreSmpError::Artifact {
                 reason: error.to_string(),
             }
         })?;
+        bytes.push(b'\n');
+        Ok(bytes)
+    }
+
+    /// The observation surface: the wall-clock and process-runtime gauges the
+    /// deterministic artifact deliberately does not carry.
+    ///
+    /// `source_sha256` is the digest of the *deterministic* artifact bytes this
+    /// snapshot was taken beside. It is passed in rather than derived here, so
+    /// the binding is a measurement of the file that was actually written and
+    /// not a second computation that could silently drift.
+    pub fn observations_artifact(
+        &self,
+        source_sha256: &str,
+    ) -> Result<NativeCoreSmpObservations, NativeCoreSmpError> {
+        let digest = validate_observation_source_sha256(source_sha256)?;
+        Ok(NativeCoreSmpObservations {
+            schema_version: NATIVE_CORE_SMP_OBSERVATIONS_SCHEMA_VERSION.to_string(),
+            adr_ref: NATIVE_CORE_SMP_ADR_REF.to_string(),
+            source_artifact: SmpObservationSourceBinding {
+                path: NATIVE_CORE_SMP_ARTIFACT_REL.to_string(),
+                sha256: digest.to_string(),
+            },
+            reproducible: false,
+            non_reproducible_reason: NATIVE_CORE_SMP_NON_REPRODUCIBLE_REASON.to_string(),
+            not_a_receipt: true,
+            excluded_from: self.observations.excluded_from.clone(),
+            matrix: ObservationMatrix {
+                entries: self
+                    .matrix
+                    .entries
+                    .iter()
+                    .map(|entry| ObservationMatrixEntry {
+                        workers: entry.workers,
+                        latency_ms: entry.latency_ms.clone(),
+                        run_wall_ms: entry.run_wall_ms,
+                        throughput_units_per_second: entry.throughput_units_per_second,
+                        queue: SmpQueueHighWater {
+                            input_high_water: entry.queue.input_high_water,
+                            result_high_water: entry.queue.result_high_water,
+                            in_flight_high_water: entry.queue.in_flight_high_water,
+                        },
+                        scratch_high_water_bytes: entry.scratch_high_water_bytes,
+                        per_worker_scratch_high_water_bytes: entry
+                            .per_worker_scratch_high_water_bytes
+                            .clone(),
+                    })
+                    .collect(),
+                breakpoints: self.matrix.breakpoints.clone(),
+            },
+            peak_rss_bytes: self.peak_rss_bytes.clone(),
+        })
+    }
+
+    /// Observation-surface bytes: pretty JSON plus a trailing newline.
+    ///
+    /// Redacted by the same policy as the deterministic artifact: no model
+    /// bytes, no token text, no physical path, no hostname.
+    pub fn observations_json_bytes(
+        &self,
+        source_sha256: &str,
+    ) -> Result<Vec<u8>, NativeCoreSmpError> {
+        let mut bytes = serde_json::to_vec_pretty(&self.observations_artifact(source_sha256)?)
+            .map_err(|error| NativeCoreSmpError::Artifact {
+                reason: error.to_string(),
+            })?;
         bytes.push(b'\n');
         Ok(bytes)
     }
@@ -2031,6 +2258,10 @@ pub struct SmpTimingDeclaration {
     pub timing_fields: Vec<String>,
     pub runtime_observed_fields: Vec<String>,
     pub excluded_from: Vec<String>,
+    /// Repo-relative path of the observation surface that carries the values
+    /// named above. Declared here so the boundary is auditable from one file.
+    pub observations_artifact: String,
+    pub observations_schema_version: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2046,8 +2277,8 @@ pub struct NativeCoreSmpArtifact {
     pub topology: SmpTopologyObservation,
     pub workload: NativeCoreSmpWorkloadBinding,
     pub families: Vec<NativeCoreSmpFamilyBinding>,
-    pub matrix: SmpMatrix,
-    pub peak_rss_bytes: SmpObservation<u64>,
+    /// The deterministic matrix: no observational field is reachable from here.
+    pub matrix: SmpDeterministicMatrix,
     pub memory_pressure_ceiling_bytes: SmpObservation<u64>,
     pub cpu_only: bool,
     pub subprocess_io_included: bool,
@@ -2055,6 +2286,8 @@ pub struct NativeCoreSmpArtifact {
     pub metrics: SmpArtifactMetrics,
     pub denominators: SmpArtifactDenominators,
     pub timing_observational: SmpTimingDeclaration,
+    /// Self-declared reproducible projection of this receipt.
+    pub deterministic_projection: DeterministicProjectionDeclaration,
     pub optimization: CpuSmpOptimizationPolicy,
     pub promotion: CpuSmpPromotionPolicy,
     pub redaction: CpuSmpRedactionPolicy,
@@ -2084,8 +2317,6 @@ struct DeterministicEntry {
     rows_decoded: u64,
     decoded_positions: u64,
     scratch_capacity_bytes: usize,
-    scratch_high_water_bytes: usize,
-    per_worker_scratch_high_water_bytes: Vec<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -2096,6 +2327,164 @@ struct NativeCoreSmpDeterministicProjection {
     families: Vec<DeterministicFamily>,
     scalar_oracle_digest: String,
     entries: Vec<DeterministicEntry>,
+}
+
+// ─────────── deterministic artifact surface (byte-reproducible) ───────────
+
+/// Queue *capacities* only: they are bounded by the validated runtime
+/// configuration, so they reproduce. The high-water marks are observations and
+/// live on [`NATIVE_CORE_SMP_OBSERVATIONS_ARTIFACT_REL`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SmpQueueCapacities {
+    pub input_capacity: usize,
+    pub result_capacity: usize,
+    pub max_in_flight: usize,
+}
+
+/// One worker-count entry of the deterministic artifact surface.
+///
+/// This type is physically incapable of carrying an observational field: it has
+/// no latency, no wall time, no throughput, no queue or scratch high-water mark
+/// and no process peak RSS. The exclusion is structural rather than a guard that
+/// could be forgotten — a field the artifact declares observational has nowhere
+/// to live here.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DeterministicMatrixEntry {
+    pub workers: usize,
+    pub repetitions: usize,
+    pub jobs: usize,
+    pub admitted: usize,
+    pub terminals: usize,
+    pub ordinals: Vec<usize>,
+    pub completed: usize,
+    pub failed: usize,
+    pub coordinator_failed: usize,
+    pub per_worker_terminal_counts: Vec<PerWorkerTerminalCounts>,
+    pub semantic_digest: String,
+    pub scalar_oracle_digest: String,
+    pub semantic_equal_to_scalar: bool,
+    pub rows_decoded: u64,
+    pub decoded_positions: u64,
+    pub queue: SmpQueueCapacities,
+    /// Typed absence, not a measurement: DATA requires the metric, the shared
+    /// bounded runtime does not instrument per-unit queue residence, and a
+    /// fabricated number would be worse than a declared gap. Declaring the
+    /// absence is itself deterministic, so it stays on this surface.
+    pub queue_wait_ms: SmpObservation<u64>,
+    pub scratch_capacity_bytes: usize,
+    pub cpu_only: bool,
+    pub subprocess_io_included: bool,
+    pub coordinator_failure: Option<SmpCoordinatorFailureRecord>,
+}
+
+impl From<&WorkerMatrixEntry> for DeterministicMatrixEntry {
+    fn from(entry: &WorkerMatrixEntry) -> Self {
+        Self {
+            workers: entry.workers,
+            repetitions: entry.repetitions,
+            jobs: entry.jobs,
+            admitted: entry.admitted,
+            terminals: entry.terminals,
+            ordinals: entry.ordinals.clone(),
+            completed: entry.completed,
+            failed: entry.failed,
+            coordinator_failed: entry.coordinator_failed,
+            per_worker_terminal_counts: entry.per_worker_terminal_counts.clone(),
+            semantic_digest: entry.semantic_digest.clone(),
+            scalar_oracle_digest: entry.scalar_oracle_digest.clone(),
+            semantic_equal_to_scalar: entry.semantic_equal_to_scalar,
+            rows_decoded: entry.rows_decoded,
+            decoded_positions: entry.decoded_positions,
+            queue: SmpQueueCapacities {
+                input_capacity: entry.queue.input_capacity,
+                result_capacity: entry.queue.result_capacity,
+                max_in_flight: entry.queue.max_in_flight,
+            },
+            queue_wait_ms: entry.queue_wait_ms.clone(),
+            scratch_capacity_bytes: entry.scratch_capacity_bytes,
+            cpu_only: entry.cpu_only,
+            subprocess_io_included: entry.subprocess_io_included,
+            coordinator_failure: entry.coordinator_failure.clone(),
+        }
+    }
+}
+
+/// Deterministic counterpart of [`SmpMatrix`]: the same oracle, conservation
+/// and vocabulary fields, with the observational classification removed. The
+/// breakpoint verdicts are absent because they are *derived from* observational
+/// throughput; they live on the observation surface.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SmpDeterministicMatrix {
+    pub scalar_oracle_digest: String,
+    pub breakpoint_vocabulary: Vec<String>,
+    pub entries: Vec<DeterministicMatrixEntry>,
+}
+
+/// Self-declared deterministic projection: the digest of the reproducible
+/// projection plus the closed scope it was computed over.
+///
+/// The digest is computed over [`NativeCoreSmpReceipt::deterministic_projection`]
+/// — never over the bytes of the artifact that carries it, so there is no
+/// self-reference.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DeterministicProjectionDeclaration {
+    pub digest: String,
+    pub scope: Vec<String>,
+}
+
+// ─────────── observation surface (declared run snapshot) ───────────
+
+/// Binding from an observation surface back to the deterministic artifact it
+/// was snapshotted beside. Recorded by digest, not by trust.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SmpObservationSourceBinding {
+    pub path: String,
+    pub sha256: String,
+}
+
+/// The measured queue high-water marks. They depend on scheduling, so they are
+/// observational and never enter an acceptance denominator.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SmpQueueHighWater {
+    pub input_high_water: usize,
+    pub result_high_water: usize,
+    pub in_flight_high_water: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ObservationMatrixEntry {
+    pub workers: usize,
+    pub latency_ms: SmpKernelPercentiles,
+    pub run_wall_ms: u128,
+    pub throughput_units_per_second: u64,
+    pub queue: SmpQueueHighWater,
+    pub scratch_high_water_bytes: usize,
+    pub per_worker_scratch_high_water_bytes: Vec<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ObservationMatrix {
+    pub entries: Vec<ObservationMatrixEntry>,
+    pub breakpoints: Vec<BreakpointVerdictRecord>,
+}
+
+/// The run snapshot written beside the deterministic artifact.
+///
+/// It is deliberately *not* an acceptance receipt: `reproducible` is false,
+/// `not_a_receipt` is true, and the excluded-from list is echoed so a reader
+/// does not have to infer the boundary. The breakpoint verdicts are the object
+/// under qualification, so they live here rather than being dropped.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NativeCoreSmpObservations {
+    pub schema_version: String,
+    pub adr_ref: String,
+    pub source_artifact: SmpObservationSourceBinding,
+    pub reproducible: bool,
+    pub non_reproducible_reason: String,
+    pub not_a_receipt: bool,
+    pub excluded_from: Vec<String>,
+    pub matrix: ObservationMatrix,
+    pub peak_rss_bytes: SmpObservation<u64>,
 }
 
 // ─────────────────────────── qualification ───────────────────────────
@@ -2164,7 +2553,9 @@ pub fn qualify_native_core_smp(
 
     let matrix = combine_smp_matrix(data, entries, &peak_rss_bytes)?;
 
-    Ok(NativeCoreSmpReceipt {
+    // The projection digest is computed over the *projection*, never over the
+    // bytes of the artifact that carries it, so there is no self-reference.
+    let mut receipt = NativeCoreSmpReceipt {
         data: data.clone(),
         topology: SmpTopologyObservation {
             source: data.topology.source.clone(),
@@ -2215,7 +2606,13 @@ benchmark denominator is separate from the fixed acceptance denominator"
             benchmark_denominator: data.denominators.benchmark.clone(),
             benchmark_repetitions_per_worker_count: config.repetitions,
         },
-    })
+        deterministic_projection_digest: String::new(),
+    };
+    receipt.deterministic_projection_digest = format!(
+        "sha256:{:x}",
+        Sha256::digest(receipt.deterministic_projection()?.as_bytes())
+    );
+    Ok(receipt)
 }
 
 /// Convenience: a redacted, ordered set of every worker count in the matrix.
@@ -2309,6 +2706,137 @@ mod tests {
         let json = serde_json::to_value(&observed).expect("serialize");
         assert_eq!(json["state"], "observed");
         assert_eq!(json["value"], 7);
+    }
+
+    #[test]
+    fn observation_binding_digest_is_validated_not_trusted() {
+        let good = format!("sha256:{:064x}", 0xabc_u64);
+        assert_eq!(
+            validate_observation_source_sha256(&good).expect("a well-formed digest"),
+            good,
+            "a well-formed binding is accepted verbatim"
+        );
+        assert!(
+            validate_observation_source_sha256(&format!("  {good}  ")).is_ok(),
+            "surrounding whitespace is trimmed, not treated as a different digest"
+        );
+        let malformed = [
+            String::new(),
+            "sha256:".to_string(),
+            "sha256:deadbeef".to_string(),
+            good.replacen("sha256:", "", 1),
+            format!("sha256:{}z", "0".repeat(63)),
+            format!("{good}00"),
+            format!("md5:{} ", "0".repeat(64)),
+        ];
+        for bad in malformed {
+            assert!(
+                matches!(
+                    validate_observation_source_sha256(&bad),
+                    Err(NativeCoreSmpError::ObservationBinding { .. })
+                ),
+                "`{bad}` must be refused, not trusted"
+            );
+        }
+    }
+
+    /// A minimal well-formed observation snapshot bound to `source_sha256`.
+    fn observation_snapshot(source_sha256: &str) -> Vec<u8> {
+        let mut bytes = serde_json::to_vec_pretty(&serde_json::json!({
+            "schema_version": NATIVE_CORE_SMP_OBSERVATIONS_SCHEMA_VERSION,
+            "adr_ref": NATIVE_CORE_SMP_ADR_REF,
+            "source_artifact": {
+                "path": NATIVE_CORE_SMP_ARTIFACT_REL,
+                "sha256": source_sha256,
+            },
+            "reproducible": false,
+            "non_reproducible_reason": NATIVE_CORE_SMP_NON_REPRODUCIBLE_REASON,
+            "not_a_receipt": true,
+            "excluded_from": SMP_TIMING_FIELDS.to_vec(),
+            "matrix": { "entries": [], "breakpoints": [] },
+            "peak_rss_bytes": { "state": "not_observed", "reason": "fixture" },
+        }))
+        .expect("snapshot fixture serializes");
+        bytes.push(b'\n');
+        bytes
+    }
+
+    /// The idempotence guard must accept only a snapshot that still declares
+    /// the boundary and binds these exact deterministic bytes. Everything else
+    /// means "refresh", so a silently weakened or stale snapshot can never be
+    /// mistaken for a current record — and a current one is never rewritten.
+    #[test]
+    fn observation_snapshot_currentness_is_declared_not_assumed() {
+        let good_sha = format!("sha256:{}", "ab".repeat(32));
+        assert!(
+            observations_snapshot_is_current(&observation_snapshot(&good_sha), &good_sha),
+            "a declared snapshot bound to these bytes is current"
+        );
+
+        assert!(
+            !observations_snapshot_is_current(b"", &good_sha),
+            "an absent snapshot is not current"
+        );
+        assert!(
+            !observations_snapshot_is_current(b"{ not json", &good_sha),
+            "a malformed snapshot is not current"
+        );
+
+        fn mutated(source_sha256: &str, patch: &str) -> Vec<u8> {
+            let mut value: serde_json::Value =
+                serde_json::from_slice(&observation_snapshot(source_sha256))
+                    .expect("fixture parses");
+            let (pointer, replacement) = patch.split_once('=').expect("pointer=value patch");
+            *value.pointer_mut(pointer).expect("patch target exists") =
+                serde_json::from_str(replacement).expect("patch replacement is JSON");
+            serde_json::to_vec_pretty(&value).expect("patched fixture serializes")
+        }
+
+        let refused = [
+            (
+                "schema drift",
+                mutated(
+                    &good_sha,
+                    "/schema_version=\"native-core-smp-observations.v0\"",
+                ),
+            ),
+            (
+                "claim of reproducibility",
+                mutated(&good_sha, "/reproducible=true"),
+            ),
+            (
+                "dropped not-a-receipt declaration",
+                mutated(&good_sha, "/not_a_receipt=false"),
+            ),
+            (
+                "stale binding",
+                mutated(
+                    &good_sha,
+                    &format!("/source_artifact/sha256=\"sha256:{}\"", "cd".repeat(32)),
+                ),
+            ),
+            (
+                "binding without the sha256: prefix",
+                mutated(
+                    &good_sha,
+                    &format!("/source_artifact/sha256=\"{}\"", "ab".repeat(32)),
+                ),
+            ),
+            (
+                "binding to a different deterministic path",
+                mutated(&good_sha, "/source_artifact/path=\"/tmp/other.json\""),
+            ),
+            (
+                "different ADR membership",
+                mutated(&good_sha, "/adr_ref=\"ADR-000\""),
+            ),
+        ];
+        for (what, bytes) in refused {
+            assert!(
+                !observations_snapshot_is_current(&bytes, &good_sha),
+                "{what} must be refreshed, not trusted"
+            );
+        }
     }
 
     #[test]

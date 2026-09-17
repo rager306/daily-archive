@@ -1,15 +1,29 @@
-//! S08/T02 bounded SMP qualification emitter (offline, observational).
+//! S08/T02 bounded SMP qualification emitter (offline, two surfaces).
 //!
 //! Sweeps the worker matrix `1..=physical_core_cap` over the real native CRF
 //! core (`da_ports::map_input` + `da_ports::viterbi_decode`) on the frozen
-//! synthetic Wapiti models, and writes a redacted artifact to
-//! `artifacts/parse_compat/native_core_smp.json`.
+//! synthetic Wapiti models, and writes two artefacts:
 //!
-//! Nothing is selected, spliced or promoted: the artifact records a closed set
-//! of breakpoint verdicts, and the *deterministic* projection of two
-//! independent matrix runs must be byte-identical or the emitter refuses to
-//! write. Wall-clock and runtime gauges stay declared observational
-//! field-by-field, outside every acceptance denominator.
+//! - the *deterministic* acceptance artifact to
+//!   `artifacts/parse_compat/native_core_smp.json` — byte-reproducible, and the
+//!   emitter refuses to write when two independent matrix runs disagree on its
+//!   bytes (typed [`NativeCoreSmpError::DeterministicDivergence`]);
+//! - the *observation* run snapshot to
+//!   `artifacts/parse_compat/native_core_smp_observations.json` — declared
+//!   `reproducible: false`, `not_a_receipt: true`, bound back to the
+//!   deterministic bytes by `sha256`. Because that surface is non-reproducible
+//!   by declaration, a snapshot that already binds these deterministic bytes is
+//!   left untouched instead of being churned with fresh wall-clock numbers:
+//!   re-invoking this binary on unchanged inputs is a no-op on disk, which is
+//!   what lets it be used as a verification step without mutating its own
+//!   verification target. `--observations-artifact` forces a fresh snapshot
+//!   (the explicit refresh path), and a missing/corrupt/schema-drifted/stale
+//!   snapshot is always refreshed.
+//!
+//! Nothing is selected, spliced or promoted: the deterministic artifact records
+//! a closed set of breakpoint verdicts and the conservation of every worker
+//! count; the wall-clock and runtime gauges classify a worker count and never
+//! enter an acceptance denominator.
 //!
 //! This binary owns its process-level peak RSS reader. The module itself
 //! installs no allocator and reads no `/proc`: peak RSS is injected.
@@ -17,8 +31,10 @@
 use clap::Parser;
 use da_cli::layout_runtime::detect_system_topology;
 use da_cli::native_core_smp::{
-    NATIVE_CORE_SMP_ARTIFACT_REL, NativeCoreSmpConfig, NativeCoreSmpFamily,
-    load_cpu_smp_candidate_from_manifest, qualify_native_core_smp,
+    NATIVE_CORE_SMP_ARTIFACT_REL, NATIVE_CORE_SMP_OBSERVATIONS_ARTIFACT_REL, NativeCoreSmpConfig,
+    NativeCoreSmpError, NativeCoreSmpFamily, NativeCoreSmpReceipt,
+    load_cpu_smp_candidate_from_manifest, observations_snapshot_is_current,
+    qualify_native_core_smp,
 };
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
@@ -30,9 +46,14 @@ const DEFAULT_REPETITIONS: usize = 3;
 
 #[derive(Parser, Debug)]
 struct Args {
-    /// Artifact path (defaults to the committed artifact location).
+    /// Deterministic artifact path (defaults to the committed artifact location).
     #[arg(long)]
     artifact: Option<PathBuf>,
+    /// Observation snapshot path. Omitted → the committed snapshot location is
+    /// validated and only refreshed when it is not a current record of the
+    /// deterministic bytes; provided → that path is always written fresh.
+    #[arg(long)]
+    observations_artifact: Option<PathBuf>,
     /// Documents per frozen family; each document is one job.
     #[arg(long)]
     documents: Option<usize>,
@@ -115,10 +136,14 @@ fn main() {
 }
 
 fn run(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
-    let artifact_path = args
+    let deterministic_path = args
         .artifact
         .clone()
         .unwrap_or_else(|| PathBuf::from(NATIVE_CORE_SMP_ARTIFACT_REL));
+    let forced_observations_path = args.observations_artifact.clone();
+    let observations_path = forced_observations_path
+        .clone()
+        .unwrap_or_else(|| PathBuf::from(NATIVE_CORE_SMP_OBSERVATIONS_ARTIFACT_REL));
     let config = NativeCoreSmpConfig::new(
         args.documents.unwrap_or(DEFAULT_DOCUMENTS_PER_FAMILY),
         args.rows_per_document.unwrap_or(DEFAULT_ROWS_PER_DOCUMENT),
@@ -135,38 +160,75 @@ fn run(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         })
         .collect::<Result<Vec<_>, _>>()?;
 
-    // Two independent matrix runs: the deterministic projection (job set,
-    // per-job semantic digests, conservation, per-worker counts) must be
-    // byte-identical, otherwise nothing is written.
+    // Two independent matrix runs: the *deterministic artifact bytes* — not
+    // merely the projection digest — must be identical, otherwise nothing is
+    // written. The observational values are free to differ; they go to a
+    // surface that declares itself non-reproducible.
     let mut first_rss = peak_rss_bytes;
     let first = qualify_native_core_smp(&data, &families, &topology, &config, &mut first_rss)?;
     let mut second_rss = peak_rss_bytes;
     let second = qualify_native_core_smp(&data, &families, &topology, &config, &mut second_rss)?;
-    let first_projection = first.deterministic_projection()?;
-    let second_projection = second.deterministic_projection()?;
-    if first_projection != second_projection {
-        return Err(format!(
-            "two independent SMP matrix runs diverged on the deterministic projection ({} vs \
-{}); refusing to write an unstable artifact",
-            projection_digest(&first_projection),
-            projection_digest(&second_projection)
-        )
+
+    let bytes = first.artifact_json_bytes()?;
+    let competing = second.artifact_json_bytes()?;
+    if bytes != competing {
+        return Err(NativeCoreSmpError::DeterministicDivergence {
+            first_digest: sha256_prefixed(&bytes),
+            second_digest: sha256_prefixed(&competing),
+        }
         .into());
     }
 
-    let bytes = first.artifact_json_bytes()?;
-    write_artifact(&artifact_path, &bytes)?;
+    // Write the deterministic surface first, then bind the observation snapshot
+    // to the bytes that were actually written — never to a recomputation that
+    // could silently drift from the file on disk.
+    write_artifact(&deterministic_path, &bytes)?;
+    let deterministic_sha256 = sha256_prefixed(&bytes);
+    let observations = first.observations_json_bytes(&deterministic_sha256)?;
+    let observations_written = if forced_observations_path.is_some() {
+        write_artifact(&observations_path, &observations)?;
+        true
+    } else {
+        write_observations_if_stale(&observations_path, &observations, &deterministic_sha256)?
+    };
+
     report(
         &first,
-        &projection_digest(&first_projection),
-        &bytes,
-        &artifact_path,
+        &deterministic_path,
+        &deterministic_sha256,
+        bytes.len(),
+        &observations_path,
+        observations.len(),
+        observations_written,
     );
     Ok(())
 }
 
-fn projection_digest(projection: &str) -> String {
-    format!("sha256:{:x}", Sha256::digest(projection.as_bytes()))
+/// Writes the observation run snapshot unless the file on disk is already a
+/// current record of the deterministic bytes just written.
+///
+/// The observation surface is declared non-reproducible: a rewrite yields
+/// different bytes for the same acceptance object, so skipping a current
+/// snapshot keeps the emitter idempotent and keeps a verification run from
+/// mutating its own verification target. A missing, unreadable, corrupt,
+/// schema-drifted or stale-bound snapshot is still refreshed — never trusted.
+/// Returns `true` when the file was written.
+fn write_observations_if_stale(
+    path: &Path,
+    fresh: &[u8],
+    deterministic_sha256: &str,
+) -> Result<bool, Box<dyn std::error::Error>> {
+    if let Ok(existing) = std::fs::read(path) {
+        if observations_snapshot_is_current(&existing, deterministic_sha256) {
+            return Ok(false);
+        }
+    }
+    write_artifact(path, fresh)?;
+    Ok(true)
+}
+
+fn sha256_prefixed(bytes: &[u8]) -> String {
+    format!("sha256:{:x}", Sha256::digest(bytes))
 }
 
 fn write_artifact(path: &Path, bytes: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
@@ -180,13 +242,17 @@ fn write_artifact(path: &Path, bytes: &[u8]) -> Result<(), Box<dyn std::error::E
     Ok(())
 }
 
-/// Redacted human summary: worker counts, conservation, closed verdicts and the
-/// observational throughput. No model token, no physical path, no hostname.
+/// Redacted human summary: worker counts, conservation, closed verdicts, the
+/// observational throughput and both surface paths by digest. No model token,
+/// no physical path, no hostname.
 fn report(
-    receipt: &da_cli::native_core_smp::NativeCoreSmpReceipt,
-    projection_digest: &str,
-    bytes: &[u8],
-    artifact_path: &Path,
+    receipt: &NativeCoreSmpReceipt,
+    deterministic_path: &Path,
+    deterministic_sha256: &str,
+    deterministic_bytes: usize,
+    observations_path: &Path,
+    observation_bytes: usize,
+    observations_written: bool,
 ) {
     println!(
         "native core smp: families={} jobs={} workers=1..={} repetitions={}",
@@ -230,11 +296,26 @@ throughput={}/s p95={}ms scratch_high_water={}B",
         receipt.memory_pressure_ceiling_bytes,
         receipt.observations.disposition
     );
-    println!("  deterministic_projection={projection_digest}");
     println!(
-        "  artifact path={} bytes={} sha256:{:x}",
-        artifact_path.display(),
-        bytes.len(),
-        Sha256::digest(bytes)
+        "  deterministic_projection={}",
+        receipt.deterministic_projection_digest
+    );
+    println!(
+        "  deterministic artifact path={} bytes={} {}",
+        deterministic_path.display(),
+        deterministic_bytes,
+        deterministic_sha256
+    );
+    println!(
+        "  observations artifact path={} bytes={} disposition={} reproducible=false \
+not_a_receipt=true source_sha256={}",
+        observations_path.display(),
+        observation_bytes,
+        if observations_written {
+            "refreshed"
+        } else {
+            "current-unchanged"
+        },
+        deterministic_sha256
     );
 }

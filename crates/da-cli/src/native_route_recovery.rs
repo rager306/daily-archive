@@ -74,7 +74,7 @@ pub const CORE_PROFILE_RECEIPT_REL: &str = "artifacts/parse_compat/native_core_p
 pub const CORE_SMP_RECEIPT_REL: &str = "artifacts/parse_compat/native_core_smp.json";
 pub const JAVA_WORK_RECEIPT_SCHEMA_VERSION: &str = "native-java-work.v1";
 pub const CORE_PROFILE_SCHEMA_VERSION: &str = "native-core-profile.v1";
-pub const CORE_SMP_SCHEMA_VERSION: &str = "native-core-smp.v1";
+pub const CORE_SMP_SCHEMA_VERSION: &str = "native-core-smp.v2";
 pub const ROUTE_RECOVERY_H05_CLOSURE: &str = "not_claimed";
 pub const ROUTE_RECOVERY_H05_REASON: &str = "per-stage Java CPU wall-clock and RSS ceilings stay typed not_observed; only Java model invocations are measured and no byte, CPU or memory ceiling is claimed";
 /// The T03 artifact emits a repo-relative path for the pinned manifest; the
