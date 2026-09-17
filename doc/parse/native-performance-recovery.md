@@ -658,6 +658,88 @@ PY
 
 ---
 
+## (g) Integration-граница
+
+Класс Integration этой волны **owned и ограничен**, а не отсутствует по умолчанию: он объявлен как
+явно env-gated граница, единственным офлайн-доказательством которой служит типизированная
+MISSING-полярность харнессов реальных моделей. Решение записано как **D385**
+(`integration-verification`): «Integration verification class for the GROBID-to-Rust wave is an
+explicitly owned, env-gated boundary with typed MISSING as the only offline evidence».
+
+### G1. Что именно проверяемо офлайн
+
+Офлайн-доказательство состоит ровно в одном: при непровизионированном ресурсе каждый харнесс
+печатает `MISSING` и **никогда** не заявляет PASS — MISSING-плечо возвращается до любого
+assert'а, поэтому отсутствующий сервис или отсутствующие модельные байты не могут быть записаны
+как зелёный integration-результат. Модельные байты не коммитятся и не обнаруживаются неявно
+(D358: ресурсы GROBID не подлежат редистрибуции); харнесс читает caller-owned путь из окружения
+и сообщает явную отсутствующесть.
+
+| Харнесс | Гейт-переменная |
+|---|---|
+| `crates/da-adapters/tests/native_header_real_model.rs` | `DA_GROBID_CRF_MODEL_PATH` |
+| `crates/da-adapters/tests/scalar_crf_real_model.rs` | `DA_GROBID_CRF_MODEL_PATH` |
+| `crates/da-adapters/tests/native_bibliography_real_model.rs` | `DA_GROBID_MODEL_ROOT` |
+| `crates/da-adapters/tests/native_fulltext_real_model.rs` | `DA_GROBID_MODEL_ROOT` |
+| `crates/da-adapters/tests/native_visual_family_real_model.rs` | `DA_GROBID_MODEL_ROOT` |
+| `crates/da-cli/tests/native_java_work_real_grobid.rs` | `DA_GROBID_URL` (alias `GROBID_URL`) |
+
+Наблюдаемая MISSING-полярность — дословные строки прогона без env; каждый харнесс завершился
+exit 0, ни один assert в MISSING-плече не исполнялся:
+
+```text
+# native_header_real_model / scalar_crf_real_model (DA_GROBID_CRF_MODEL_PATH)
+MISSING: DA_GROBID_CRF_MODEL_PATH is not configured; no real GROBID header model claim was made
+MISSING: DA_GROBID_CRF_MODEL_PATH is not configured; no real GROBID model claim was made
+
+# native_bibliography_real_model / native_fulltext_real_model (DA_GROBID_MODEL_ROOT)
+MISSING: DA_GROBID_MODEL_ROOT is not configured; no real GROBID bibliography model claim was made
+MISSING: DA_GROBID_MODEL_ROOT is not configured; no real GROBID fulltext model claim was made
+
+# native_visual_family_real_model (DA_GROBID_MODEL_ROOT)
+MISSING: DA_GROBID_MODEL_ROOT is not configured; no real GROBID visual/funding model claim was made
+
+# native_java_work_real_grobid (DA_GROBID_URL / GROBID_URL)
+MISSING: set DA_GROBID_URL or GROBID_URL to enable the live capture; no assertion runs and no PASS is claimed
+```
+
+Полярность перепроверяема одной командой на харнесс (все шесть — из корня репозитория):
+
+```bash
+cargo test -p da-adapters --test native_header_real_model -- --nocapture
+cargo test -p da-adapters --test scalar_crf_real_model -- --nocapture
+cargo test -p da-adapters --test native_bibliography_real_model -- --nocapture
+cargo test -p da-adapters --test native_fulltext_real_model -- --nocapture
+cargo test -p da-adapters --test native_visual_family_real_model -- --nocapture
+cargo test -p da-cli --test native_java_work_real_grobid -- --nocapture
+```
+
+### G2. Что отложено и не заявлено
+
+Живой прогон — реальные модельные байты GROBID и JVM same-n сравнение — требует
+провизионированного модельного корня **вне репозитория** и поднятого сервиса. До этого:
+
+- ни один артефакт среза не несёт claim'а integration-покрытия: `not_observed`, `MISSING` и
+  отсутствие ресурса — три разных типизированных состояния, и ни одно не читается как PASS;
+- `import_eligible` остаётся `false` (D127), `production_route` — `forbidden`, `deployed` —
+  `false`; локи §(f) этой секцией не ослабляются;
+- same-n рамки, синтетические или TEI→atoms, не считаются integration-доказательством: они
+  проверяют согласованность кода, а не поведение реальной модели.
+
+### G3. Почему это честная граница, а не пробел
+
+- MISSING-полярность машинно-проверяема: она — исполняемая негативная проверка (G1), а не
+  обещание в тексте. Её наличие доказывает отсутствие ложного claim'а именно потому, что
+  PASS-ветка недостижима без провизионированного ресурса.
+- Граница типизирована: D385 фиксирует и саму границу, и условие, при котором живой прогон
+  станет допустимым доказательством (провизионированный не-repo модельный корень), поэтому
+  состояние «integration не измерен» читается как объявленное, а не как необнаруженный пробел.
+- Никаких исходников, артефактов и DATA-файлов эта секция не меняет: она описывает
+  существующую границу и наблюдаемую полярность, фиксируя non-claim там, где раньше было
+  молчание.
+
+---
+
 ## Проверки этого документа
 
 ```bash
