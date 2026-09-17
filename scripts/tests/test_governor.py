@@ -5,6 +5,7 @@ Or:       python3 tests/test_governor.py
 """
 
 import gzip
+import hashlib
 import json
 import os
 import re
@@ -4948,6 +4949,7 @@ def _run_all_tests() -> int:
         test_grobid_horizon_review_cli_rejects_missing_review_cleanly,
         test_grobid_horizon_review_real_registry_is_valid,
         test_grobid_absorption_review_real_registry_closes_four_p0_findings,
+        test_grobid_absorption_review_real_registry_closure_is_falsifiable,
     ]
     passed = 0
     failed = 0
@@ -5747,6 +5749,137 @@ def test_grobid_absorption_review_real_registry_closes_four_p0_findings():
             finding_id,
             by_id[finding_id]["status"],
         )
+
+
+def test_grobid_absorption_review_real_registry_closure_is_falsifiable():
+    """Closure must be refuted by the adapter, not merely asserted by prose.
+
+    T01 proves the four GAR P0 findings carry machine-checkable closure proof in
+    the tracked registry, but a signature over an already-green state would look
+    identical. This control is built to fail: it mutates a *copy* of the
+    registry inside a symlink farm and then asserts the adapter - not the test -
+    rejects the change. The farm is not decoration (MEM1504): every evidence and
+    artifact path the oracle resolves must exist in the copy, so the real tree
+    is linked rather than an empty skeleton, otherwise the control would measure
+    the copier instead of the rule. The tracked JSONL is never written: its
+    sha256 is compared byte-for-byte before and after.
+
+    Three mutations, each on its own copy:
+      A1 proof stripped (status stays resolved, completion_evidence removed)
+         -> grobid_review_registry_broken "closure proof", severity high;
+      A2 record reopened (status back to open, proof removed)
+         -> counts move to unresolved=12 enclosed=4, so the copy is really the
+            thing being read and closure is not frozen text;
+      B  completion artifact points at a path that does not exist
+         -> grobid_review_registry_broken "completion artifact missing".
+    The unmodified copy is the positive control: zero *_broken/_invalid/_missing
+    flags with unresolved=11 enclosed=5, so the farm itself is not the flag
+    source.
+    """
+    from governor.adapters.checks.grobid_review_registry import check_grobid_review_registry
+
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    findings_rel = "doc/review/grobid-absorption-review-2026-09-10.jsonl"
+    schema_rel = "doc/review/grobid-absorption-review-2026-09-10.schema.json"
+    tracked_path = repo_root / findings_rel
+    tracked_before = hashlib.sha256(tracked_path.read_bytes()).hexdigest()
+
+    def _gar_copy_root(mutate) -> tuple[tempfile.TemporaryDirectory, Path]:
+        """Temp root: doc/review is a mutable copy, every other resolved path links the real tree."""
+        tmp = tempfile.TemporaryDirectory(prefix="gar-closure-falsify-")
+        root = Path(tmp.name)
+        (root / "doc").mkdir(parents=True)
+        for child in sorted((repo_root / "doc").iterdir()):
+            if child.name == "review":
+                continue
+            (root / "doc" / child.name).symlink_to(
+                child, target_is_directory=child.is_dir()
+            )
+        (root / "doc" / "review").mkdir()
+        shutil.copy2(tracked_path, root / findings_rel)
+        shutil.copy2(repo_root / schema_rel, root / schema_rel)
+        for name in ("crates", "scripts", "data", "governor", "artifacts"):
+            (root / name).symlink_to(repo_root / name, target_is_directory=True)
+        records = [
+            json.loads(line)
+            for line in (root / findings_rel).read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        by_id = {str(record["finding_id"]): record for record in records}
+        mutate(by_id)
+        (root / findings_rel).write_text(
+            "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in records),
+            encoding="utf-8",
+        )
+        return tmp, root
+
+    def _registry_flags(root: Path) -> tuple[list, object]:
+        flags = check_grobid_review_registry(root)
+        blockers = [f for f in flags if f.flag.endswith(("_broken", "_invalid", "_missing"))]
+        status = next(f for f in flags if f.flag == "grobid_review_registry_status")
+        return blockers, status
+
+    def _strip_completion(by_id):
+        by_id["GAR-001"].pop("completion_evidence", None)
+
+    def _reopen_closed(by_id):
+        by_id["GAR-001"].pop("completion_evidence", None)
+        by_id["GAR-001"]["status"] = "open"
+
+    def _break_artifact(by_id):
+        by_id["GAR-011"]["completion_evidence"]["artifacts"] = [
+            "artifacts/parse_compat/__s05_missing_artifact__.json"
+        ]
+
+    # Positive control: an unmodified copy is clean, so the farm is not the flag source.
+    tmp, root = _gar_copy_root(lambda by_id: None)
+    try:
+        blockers, status = _registry_flags(root)
+        assert blockers == [], blockers
+        assert "records=16" in status.evidence and "unresolved=11" in status.evidence
+        assert "enclosed=5" in status.evidence, status.evidence
+        assert "unassigned_unresolved=0" in status.evidence, status.evidence
+    finally:
+        tmp.cleanup()
+
+    # A1: a closed record that loses its proof is rejected - closure cannot be claimed by text.
+    tmp, root = _gar_copy_root(_strip_completion)
+    try:
+        blockers, status = _registry_flags(root)
+        closure = [f for f in blockers if "closure proof" in f.evidence]
+        assert len(closure) == 1, blockers
+        assert "GAR-001" in closure[0].evidence, closure[0].evidence
+        assert closure[0].severity == "high", closure[0].severity
+        assert "unresolved=11" in status.evidence, status.evidence
+        assert "enclosed=5" in status.evidence, status.evidence
+    finally:
+        tmp.cleanup()
+
+    # A2: reopening moves the observable counts, proving the copy is what the oracle reads.
+    tmp, root = _gar_copy_root(_reopen_closed)
+    try:
+        blockers, status = _registry_flags(root)
+        assert blockers == [], blockers
+        assert "unresolved=12" in status.evidence, status.evidence
+        assert "enclosed=4" in status.evidence, status.evidence
+    finally:
+        tmp.cleanup()
+
+    # B: a completion artifact that does not exist fails closed.
+    tmp, root = _gar_copy_root(_break_artifact)
+    try:
+        blockers, status = _registry_flags(root)
+        missing = [f for f in blockers if "completion artifact missing" in f.evidence]
+        assert len(missing) == 1, blockers
+        assert "GAR-011" in missing[0].evidence, missing[0].evidence
+        assert missing[0].severity == "high", missing[0].severity
+        assert "unresolved=11" in status.evidence, status.evidence
+        assert "enclosed=5" in status.evidence, status.evidence
+    finally:
+        tmp.cleanup()
+
+    # The tracked registry is evidence, not a scratch pad: it must be byte-identical.
+    assert hashlib.sha256(tracked_path.read_bytes()).hexdigest() == tracked_before
 
 
 if __name__ == "__main__":
