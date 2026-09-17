@@ -31,6 +31,7 @@ from governor.application.trajectory_service import (
     _boundary_positional_violations,
     _candidate_contract_flags,
     _license_provenance_violations,
+    _oracle_digest_violations,
     _visual_adapter_violations,
 )
 from governor.domain import CheckSeverity, CheckStatus
@@ -3630,6 +3631,556 @@ def test_component_license_provenance_oracle_rejects_untyped_status_without_gove
         _license_provenance_violations(clean, no_vocabulary)
 
 
+# Self-tests for the committed `oracle_digest_recomputation` contract (T03/T04).
+# The scratch root receives the REAL contract DATA, the three audited
+# surfaces, the two fixtures and the independent Rust contract — never a
+# synthetic stand-in — so the fixture logic AND the strict oracle are exercised
+# over the shipped artifact. Every mutation happens on that copy: no committed
+# file is touched. The scratch copy derives every path it materialises from the
+# contract itself, so a future contract edit cannot silently turn the control
+# into a measurement of copy completeness (MEM1504). The oracle labels are also
+# exercised with a plain dict and no service at all, and one test mutes the rule
+# body to prove the mutations are the discriminating signal.
+
+_ORACLE_DIGEST_PREFIX = "oracle_digest_recomputation"
+_ORACLE_DIGEST_CONTRACT = "scripts/governor/checks/oracle_digest_recomputation.yaml"
+_ORACLE_DIGEST_FIXTURE = "crates/da-parse/tests/fixtures/segmentation_oracle.yaml"
+_ORACLE_DIGEST_ARTIFACT = (
+    "artifacts/parse_compat/document_segmentation_oracle_source.json"
+)
+_ORACLE_DIGEST_MANIFEST = "data/parse/document_segmentation.yaml"
+_ORACLE_DIGEST_RUST = "crates/da-parse/tests/oracle_digest_recomputation.rs"
+_ORACLE_DIGEST_POSITIVE = (
+    "governor/fixtures/oracle_digest_recomputation/digest_fields_complete.positive.json"
+)
+_ORACLE_DIGEST_NEGATIVE = (
+    "governor/fixtures/oracle_digest_recomputation/digest_fields_broken.negative.json"
+)
+
+
+def _copy_oracle_digest_contract(root: Path) -> None:
+    """Copy the contract and every path it reads into the scratch root.
+
+    The read paths are derived from the contract DATA (`audited_surfaces`,
+    `bindings.source_data`, both fixtures, `source_markers`, `graph_task_suite`)
+    instead of being hardcoded, so adding a surface to the contract without
+    copying it fails the test rather than the copy (MEM1504).
+    """
+    repo = _scripts_dir.parent
+    contract = yaml.safe_load(
+        (repo / _ORACLE_DIGEST_CONTRACT).read_text(encoding="utf-8")
+    )
+    rels = [_ORACLE_DIGEST_CONTRACT]
+    for surface in contract.get("audited_surfaces") or []:
+        if isinstance(surface, dict) and surface.get("path"):
+            rels.append(str(surface["path"]))
+    for binding in (contract.get("bindings") or {}).get("source_data") or []:
+        if isinstance(binding, dict) and binding.get("path"):
+            rels.append(str(binding["path"]))
+    for key in ("positive", "negative"):
+        entry = (contract.get("fixtures") or {}).get(key) or {}
+        if isinstance(entry, dict) and entry.get("path"):
+            rels.append(str(entry["path"]))
+    for entry in (contract.get("source_markers") or {}).values():
+        if isinstance(entry, dict) and entry.get("path"):
+            rels.append(str(entry["path"]))
+    suite = contract.get("graph_task_suite") or {}
+    if isinstance(suite, dict) and suite.get("path"):
+        rels.append(str(suite["path"]))
+    for rel in dict.fromkeys(rels):
+        _write(root / rel, (repo / rel).read_text(encoding="utf-8"))
+
+
+def _oracle_digest_service() -> TrajectoryService:
+    """Scratch TrajectoryService with the committed digest contract copied in."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_oracle_digest_contract(service.root)
+    return service
+
+
+def _oracle_digest_flags_named(flags, name: str):
+    return [f for f in flags if f.flag == f"{_ORACLE_DIGEST_PREFIX}_{name}"]
+
+
+def _oracle_digest_contract_document(service: TrajectoryService) -> dict:
+    path = service.root / _ORACLE_DIGEST_CONTRACT
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+def _write_oracle_digest_contract(service: TrajectoryService, contract: dict) -> None:
+    _write(
+        service.root / _ORACLE_DIGEST_CONTRACT,
+        yaml.safe_dump(contract, sort_keys=False),
+    )
+
+
+def _oracle_digest_surface_document(service: TrajectoryService, rel: str):
+    text = (service.root / rel).read_text(encoding="utf-8")
+    return json.loads(text) if rel.endswith(".json") else yaml.safe_load(text)
+
+
+def _write_oracle_digest_surface(service: TrajectoryService, rel: str, document) -> None:
+    if rel.endswith(".json"):
+        _write(service.root / rel, json.dumps(document, indent=2))
+    else:
+        _write(service.root / rel, yaml.safe_dump(document, sort_keys=False))
+
+
+def _with_oracle_digest_control(test):
+    """Run a mutation test only after the unmodified copy measured clean.
+
+    Hazard (d) of the task plan: without an in-test control a mutation test
+    proves "something turned red", not "this mutation turned it red". Every
+    decorated test therefore builds a pristine scratch copy first and asserts
+    zero flags before applying its mutation.
+    """
+
+    def _runner():
+        assert _oracle_digest_service()._check_oracle_digest_recomputation() == []
+        test()
+
+    _runner.__name__ = test.__name__
+    _runner.__doc__ = test.__doc__
+    return _runner
+
+
+def test_oracle_digest_recomputation_pass_on_clean_fixtures():
+    """The committed contract, surfaces, fixtures and markers satisfy the rule."""
+    service = _oracle_digest_service()
+    assert service._check_oracle_digest_recomputation() == []
+    # The shipped repository tree must be clean too: the mutation-only tests
+    # below are only meaningful if the real tree starts clean.
+    real = TrajectoryService.__new__(TrajectoryService)
+    real.root = _scripts_dir.parent
+    assert real._check_oracle_digest_recomputation() == []
+
+
+def test_oracle_digest_recomputation_missing_contract_is_silent():
+    """No DATA contract means no rule: absence is never a violation."""
+    service = _oracle_digest_service()
+    (service.root / _ORACLE_DIGEST_CONTRACT).unlink()
+    assert service._check_oracle_digest_recomputation() == []
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_missing_fixture_is_flagged():
+    service = _oracle_digest_service()
+    (service.root / _ORACLE_DIGEST_POSITIVE).unlink()
+    missing = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "fixture_missing"
+    )
+    assert len(missing) == 1
+    assert "positive" in missing[0].evidence
+    assert missing[0].severity == "high"
+    assert missing[0].dimension == "scholarly_parse_plane"
+
+    service = _oracle_digest_service()
+    (service.root / _ORACLE_DIGEST_NEGATIVE).unlink()
+    missing = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "fixture_missing"
+    )
+    assert len(missing) == 1
+    assert "negative" in missing[0].evidence
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_positive_fixture_must_be_clean():
+    service = _oracle_digest_service()
+    path = service.root / _ORACLE_DIGEST_POSITIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    records[0]["class"] = "derived"
+    _write(path, json.dumps(records))
+    broken = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "broken"
+    )
+    assert len(broken) == 1
+    assert "class_outside_vocabulary" in broken[0].evidence
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_negative_fixture_must_trigger_labelled_violations():
+    service = _oracle_digest_service()
+    path = service.root / _ORACLE_DIGEST_NEGATIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    # A legal alignment can no longer fire its label: the mismatch must be
+    # reported instead of silently passing.
+    for record in records:
+        if record.get("violation") == "alignment_outside_vocabulary":
+            record["record"]["alignment"] = "index"
+    _write(path, json.dumps(records))
+    broken = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "broken"
+    )
+    assert any("alignment_outside_vocabulary" in f.evidence for f in broken)
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_negative_fixture_must_cover_required_violations():
+    service = _oracle_digest_service()
+    path = service.root / _ORACLE_DIGEST_NEGATIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    records = [
+        r for r in records
+        if r.get("violation") != "canonicalization_outside_contract"
+    ]
+    _write(path, json.dumps(records))
+    broken = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "broken"
+    )
+    assert any(
+        "missing required violation coverage" in f.evidence
+        and "canonicalization_outside_contract" in f.evidence
+        for f in broken
+    )
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_invalid_yaml_is_flagged():
+    service = _oracle_digest_service()
+    _write(service.root / _ORACLE_DIGEST_CONTRACT, "{bad yaml: [")
+    flags = service._check_oracle_digest_recomputation()
+    assert flags[0].flag == f"{_ORACLE_DIGEST_PREFIX}_invalid"
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_binding_mismatch_is_flagged():
+    service = _oracle_digest_service()
+    path = service.root / _ORACLE_DIGEST_CONTRACT
+    text = path.read_text(encoding="utf-8")
+    digest = (yaml.safe_load(text) or {})["bindings"]["source_data"][0]["sha256"]
+    assert str(digest) in text
+    # A 64-zero scalar parses as int 0, which the binding guard must reject as
+    # unverifiable rather than skip.
+    _write(path, text.replace(str(digest), "0" * 64))
+    mismatch = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "binding_mismatch"
+    )
+    assert len(mismatch) == 1
+    assert _ORACLE_DIGEST_ARTIFACT in mismatch[0].evidence
+
+    service = _oracle_digest_service()
+    path = service.root / _ORACLE_DIGEST_CONTRACT
+    text = path.read_text(encoding="utf-8")
+    _write(path, text.replace(str(digest), "a" * 64))
+    mismatch = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "binding_mismatch"
+    )
+    assert len(mismatch) == 1
+    assert "observed" in mismatch[0].evidence
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_binding_missing_is_flagged():
+    service = _oracle_digest_service()
+    (service.root / _ORACLE_DIGEST_ARTIFACT).unlink()
+    missing = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "binding_missing"
+    )
+    assert len(missing) == 1
+    assert _ORACLE_DIGEST_ARTIFACT in missing[0].evidence
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_surface_missing_is_flagged():
+    service = _oracle_digest_service()
+    (service.root / _ORACLE_DIGEST_FIXTURE).unlink()
+    missing = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "surface_missing"
+    )
+    assert len(missing) == 1
+    assert "fixture" in missing[0].evidence
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_surface_invalid_is_flagged():
+    service = _oracle_digest_service()
+    # Valid YAML whose declared audit pointer cannot resolve.
+    _write(service.root / _ORACLE_DIGEST_MANIFEST, "unrelated: 1\n")
+    invalid = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "surface_invalid"
+    )
+    assert any(
+        "manifest" in f.evidence and "audit pointer" in f.evidence
+        for f in invalid
+    )
+
+    service = _oracle_digest_service()
+    _write(service.root / _ORACLE_DIGEST_FIXTURE, "{bad yaml: [")
+    invalid = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "surface_invalid"
+    )
+    assert any("fixture" in f.evidence and "unreadable" in f.evidence for f in invalid)
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_unclassified_digest_field_is_flagged():
+    """A digest-like field inside the audit scope that nobody classified fails."""
+    service = _oracle_digest_service()
+    document = _oracle_digest_surface_document(service, _ORACLE_DIGEST_ARTIFACT)
+    document["receipts"][0]["unclassified_extra_digest"] = "a" * 64
+    _write_oracle_digest_surface(service, _ORACLE_DIGEST_ARTIFACT, document)
+    unclassified = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "unclassified_digest_field"
+    )
+    assert len(unclassified) == 1
+    assert "source" in unclassified[0].evidence
+    assert "unclassified_extra_digest" in unclassified[0].evidence
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_declared_field_not_found_is_flagged():
+    """A declaration whose pointer resolves nowhere is a dangling claim."""
+    service = _oracle_digest_service()
+    contract = _oracle_digest_contract_document(service)
+    contract["digest_fields"].append({
+        "field_id": "source.receipt.missing_digest",
+        "surface": "source",
+        "pointer": "/receipts/*/missing_digest",
+        "class": "recomputed",
+        "ref": "self:/receipts/*/canonical_annotation/bytes",
+        "alignment": "index",
+        "canonicalization": "text_utf8_lf_no_trailing_newline_sha256",
+    })
+    _write_oracle_digest_contract(service, contract)
+    not_found = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "declared_field_not_found"
+    )
+    assert len(not_found) == 1
+    assert "source.receipt.missing_digest" in not_found[0].evidence
+    assert "/receipts/*/missing_digest" in not_found[0].evidence
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_adjudicated_field_reintroduced_is_flagged():
+    """The removed dangling pin must stay removed; control copy stays clean."""
+    control = _oracle_digest_service()
+    assert not _oracle_digest_flags_named(
+        control._check_oracle_digest_recomputation(),
+        "adjudicated_field_reintroduced",
+    )
+
+    service = _oracle_digest_service()
+    document = _oracle_digest_surface_document(service, _ORACLE_DIGEST_ARTIFACT)
+    document["manifest_sha256"] = "b" * 64
+    _write_oracle_digest_surface(service, _ORACLE_DIGEST_ARTIFACT, document)
+    flags = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(),
+        "adjudicated_field_reintroduced",
+    )
+    assert len(flags) == 1
+    assert "source.manifest_sha256" in flags[0].evidence
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_opaque_used_as_canonical_source_is_flagged():
+    """A recomputed record cannot launder an opaque marker into provenance."""
+    service = _oracle_digest_service()
+    contract = _oracle_digest_contract_document(service)
+    record = next(
+        item for item in contract["digest_fields"]
+        if item.get("field_id") == "source.receipt.canonical_page_range.sha256"
+    )
+    record["ref"] = "self:/receipts/*/source_sha256"
+    _write_oracle_digest_contract(service, contract)
+    flags = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(),
+        "opaque_used_as_canonical_source",
+    )
+    assert len(flags) == 1
+    assert "source.receipt.canonical_page_range.sha256" in flags[0].evidence
+    assert "source.receipt.source_sha256" in flags[0].evidence
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_bytes_pair_halves_are_flagged():
+    """Published canonical bytes and their digest must be both-or-neither."""
+    service = _oracle_digest_service()
+    document = _oracle_digest_surface_document(service, _ORACLE_DIGEST_ARTIFACT)
+    del document["receipts"][0]["canonical_page_range"]["sha256"]
+    _write_oracle_digest_surface(service, _ORACLE_DIGEST_ARTIFACT, document)
+    flags = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "bytes_without_sha256_pair"
+    )
+    # One flag per declared record that resolves the unpaired bytes object
+    # (the fixture digest, the artifact digest and the sibling sha256 record),
+    # so the discriminating assertion is the named field, not the count.
+    assert flags
+    assert "source.receipt.canonical_page_range.sha256" in " ".join(
+        f.evidence for f in flags
+    )
+
+    service = _oracle_digest_service()
+    document = _oracle_digest_surface_document(service, _ORACLE_DIGEST_ARTIFACT)
+    del document["receipts"][0]["canonical_furniture"][0]["bytes"]
+    _write_oracle_digest_surface(service, _ORACLE_DIGEST_ARTIFACT, document)
+    flags = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "sha256_without_bytes_pair"
+    )
+    assert flags
+    assert "source.receipt.canonical_furniture.sha256" in " ".join(
+        f.evidence for f in flags
+    )
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_duplicate_field_binding_is_flagged():
+    service = _oracle_digest_service()
+    contract = _oracle_digest_contract_document(service)
+    duplicate = next(
+        item for item in contract["digest_fields"]
+        if item.get("field_id") == "source.receipt.annotation_digest"
+    )
+    contract["digest_fields"].append(json.loads(json.dumps(duplicate)))
+    _write_oracle_digest_contract(service, contract)
+    duplicated = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "duplicate_field_binding"
+    )
+    assert len(duplicated) == 1
+    assert "source:/receipts/*/annotation_digest" in duplicated[0].evidence
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_fixture_field_drift_is_flagged():
+    service = _oracle_digest_service()
+    path = service.root / _ORACLE_DIGEST_POSITIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    removed = records.pop()["field_id"]
+    _write(path, json.dumps(records))
+    drift = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "fixture_field_drift"
+    )
+    assert len(drift) == 1
+    assert removed in drift[0].evidence
+
+
+@_with_oracle_digest_control
+def test_oracle_digest_recomputation_source_marker_missing_is_flagged():
+    service = _oracle_digest_service()
+    _write(service.root / _ORACLE_DIGEST_RUST, "fn main() {}\n")
+    marker = _oracle_digest_flags_named(
+        service._check_oracle_digest_recomputation(), "source_marker_missing"
+    )
+    assert len(marker) == 1
+    assert "rust_contract" in marker[0].evidence
+
+
+def test_oracle_digest_recomputation_oracle_labels_are_reachable_without_governor():
+    """The independent oracle classifies form alone, from a plain dict."""
+    contract = yaml.safe_load(
+        (_scripts_dir.parent / _ORACLE_DIGEST_CONTRACT).read_text(encoding="utf-8")
+    )
+    base = {
+        "field_id": "minimal.record",
+        "surface": "fixture",
+        "pointer": "/receipts/*/annotation_digest",
+        "class": "recomputed",
+        "ref": "source:/receipts/*/canonical_annotation/bytes",
+        "alignment": "index",
+        "canonicalization": "text_utf8_lf_no_trailing_newline_sha256",
+    }
+    assert _oracle_digest_violations(base, contract) == set()
+
+    def _without(*keys):
+        record = dict(base)
+        for key in keys:
+            record.pop(key, None)
+        return record
+
+    cases = {
+        "missing_field_identity": _without("field_id"),
+        "digest_without_class": _without("class"),
+        "class_outside_vocabulary": {**base, "class": "derived"},
+        "recomputed_without_canonical_ref": _without("ref"),
+        "recomputed_without_canonicalization": _without("canonicalization"),
+        "canonicalization_outside_contract": {
+            **base, "canonicalization": "normalized_text_sha256",
+        },
+        "opaque_without_reason": {
+            "field_id": base["field_id"],
+            "surface": base["surface"],
+            "pointer": base["pointer"],
+            "class": "opaque",
+        },
+        "opaque_reason_outside_vocabulary": {
+            **base, "class": "opaque", "opaque_reason": "because_reasons",
+        },
+        "opaque_marker_as_provenance": {
+            **base,
+            "class": "opaque",
+            "opaque_reason": "external_donor_bytes_absent",
+        },
+        "alignment_outside_vocabulary": {**base, "alignment": "ordinal"},
+    }
+    for label, record in cases.items():
+        assert label in _oracle_digest_violations(record, contract), label
+    # The ten per-record labels are exactly the negative fixture's coverage:
+    # dropping a case would silently shrink the closed vocabulary.
+    require = contract["fixtures"]["negative"]["expect"]["require_violations"]
+    assert set(cases) == set(require)
+
+    # Fail-closed: an empty closed vocabulary means "cannot decide".
+    no_vocabulary = dict(contract)
+    no_vocabulary["classes"] = []
+    assert "missing_closed_vocabulary" in _oracle_digest_violations(
+        base, no_vocabulary
+    )
+
+
+def test_oracle_digest_recomputation_rule_body_muting_reddens_mutations():
+    """Muting the rule body must redden the mutations, not the clean control."""
+    mutation_tests = (
+        test_oracle_digest_recomputation_missing_fixture_is_flagged,
+        test_oracle_digest_recomputation_positive_fixture_must_be_clean,
+        test_oracle_digest_recomputation_negative_fixture_must_trigger_labelled_violations,
+        test_oracle_digest_recomputation_negative_fixture_must_cover_required_violations,
+        test_oracle_digest_recomputation_invalid_yaml_is_flagged,
+        test_oracle_digest_recomputation_binding_mismatch_is_flagged,
+        test_oracle_digest_recomputation_binding_missing_is_flagged,
+        test_oracle_digest_recomputation_surface_missing_is_flagged,
+        test_oracle_digest_recomputation_surface_invalid_is_flagged,
+        test_oracle_digest_recomputation_unclassified_digest_field_is_flagged,
+        test_oracle_digest_recomputation_declared_field_not_found_is_flagged,
+        test_oracle_digest_recomputation_adjudicated_field_reintroduced_is_flagged,
+        test_oracle_digest_recomputation_opaque_used_as_canonical_source_is_flagged,
+        test_oracle_digest_recomputation_bytes_pair_halves_are_flagged,
+        test_oracle_digest_recomputation_duplicate_field_binding_is_flagged,
+        test_oracle_digest_recomputation_fixture_field_drift_is_flagged,
+        test_oracle_digest_recomputation_source_marker_missing_is_flagged,
+    )
+
+    def _failures(tests) -> list:
+        failed = []
+        for test in tests:
+            try:
+                test()
+            except Exception as error:  # noqa: BLE001 - report, never raise
+                failed.append(f"{test.__name__}: {error}")
+        return failed
+
+    assert _failures(mutation_tests) == []
+
+    original = TrajectoryService._check_oracle_digest_recomputation
+
+    def _muted(self):
+        return []
+
+    TrajectoryService._check_oracle_digest_recomputation = _muted
+    try:
+        reddened = _failures(mutation_tests)
+        assert len(reddened) >= len(mutation_tests) - 1, reddened
+        # The clean control and the absence convention cannot detect the muted
+        # body: that is exactly why the mutations above carry the signal.
+        assert _failures(
+            (test_oracle_digest_recomputation_pass_on_clean_fixtures,)
+        ) == []
+        assert _failures(
+            (test_oracle_digest_recomputation_missing_contract_is_silent,)
+        ) == []
+    finally:
+        TrajectoryService._check_oracle_digest_recomputation = original
+
+
 def test_table_payload_requires_cell_provenance_pass_on_clean_fixtures():
     """Committed positive + negative fixtures and source markers satisfy the contract."""
     service = TrajectoryService.__new__(TrajectoryService)
@@ -4305,6 +4856,27 @@ def _run_all_tests() -> int:
         test_component_license_provenance_absent_snapshot_suite_is_not_flagged,
         test_component_license_provenance_real_inventory_mutations_are_flagged,
         test_component_license_provenance_oracle_rejects_untyped_status_without_governor,
+        test_oracle_digest_recomputation_pass_on_clean_fixtures,
+        test_oracle_digest_recomputation_missing_contract_is_silent,
+        test_oracle_digest_recomputation_missing_fixture_is_flagged,
+        test_oracle_digest_recomputation_positive_fixture_must_be_clean,
+        test_oracle_digest_recomputation_negative_fixture_must_trigger_labelled_violations,
+        test_oracle_digest_recomputation_negative_fixture_must_cover_required_violations,
+        test_oracle_digest_recomputation_invalid_yaml_is_flagged,
+        test_oracle_digest_recomputation_binding_mismatch_is_flagged,
+        test_oracle_digest_recomputation_binding_missing_is_flagged,
+        test_oracle_digest_recomputation_surface_missing_is_flagged,
+        test_oracle_digest_recomputation_surface_invalid_is_flagged,
+        test_oracle_digest_recomputation_unclassified_digest_field_is_flagged,
+        test_oracle_digest_recomputation_declared_field_not_found_is_flagged,
+        test_oracle_digest_recomputation_adjudicated_field_reintroduced_is_flagged,
+        test_oracle_digest_recomputation_opaque_used_as_canonical_source_is_flagged,
+        test_oracle_digest_recomputation_bytes_pair_halves_are_flagged,
+        test_oracle_digest_recomputation_duplicate_field_binding_is_flagged,
+        test_oracle_digest_recomputation_fixture_field_drift_is_flagged,
+        test_oracle_digest_recomputation_source_marker_missing_is_flagged,
+        test_oracle_digest_recomputation_oracle_labels_are_reachable_without_governor,
+        test_oracle_digest_recomputation_rule_body_muting_reddens_mutations,
         test_table_payload_requires_cell_provenance_pass_on_clean_fixtures,
         test_table_payload_requires_cell_provenance_missing_fixture_is_flagged,
         test_table_payload_requires_cell_provenance_positive_fixture_must_be_clean,
