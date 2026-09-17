@@ -1,0 +1,53 @@
+# DATA manifest for the positive donor-visual fixture runner (GAR-003).
+#
+# Consumed by `crates/da-cli/examples/visual_positive_fixture_run.rs`, which
+# drives the real committed path
+# `da_adapters::parse_pdfalto_xml_shadow` -> `da_cli::visual_adapter::native_visual_payload`
+# -> the three native visual head detectors, and fails closed on the first
+# invariant violation instead of writing a partial artifact.
+#
+# Why `families_requiring_observed_head` excludes `ambiguous_callout`:
+# `detect_figure_heads`/`detect_table_heads`/`detect_formula_heads` only admit
+# primitives of their own kinds, so a callout-shaped `Rect` stays a preserved
+# primitive while the declared figure head is honestly terminal. That is the
+# discriminating case: nonempty donor content survives the adapter without
+# being promoted into a head, and without claiming `NotObserved` as absence.
+schema_version: visual-positive-fixture-manifest.v1
+converter_source: crates/da-cli/src/visual_adapter.rs
+fixture_families: [figure, table, formula, ambiguous_callout]
+families_requiring_observed_head: [figure, table, formula]
+non_deliverable_families:
+  - figure_captions
+  - figure_callouts
+  - table_captions
+  - table_callouts
+  - table_cells
+  - formula_labels
+  - formula_callouts
+fixtures:
+  - id: figure_geometry
+    family: figure
+    path: crates/da-cli/tests/fixtures/visual_positive_fixture_run/figure_geometry.xml
+    head: figure
+    expected_head_outcome: observed
+    min_primitive_count: 1
+  - id: table
+    family: table
+    path: crates/da-cli/tests/fixtures/visual_positive_fixture_run/table.xml
+    head: table
+    expected_head_outcome: observed
+    min_primitive_count: 1
+  - id: formula
+    family: formula
+    path: crates/da-cli/tests/fixtures/visual_positive_fixture_run/formula.xml
+    head: formula
+    expected_head_outcome: observed
+    min_primitive_count: 1
+  # `ambiguous_callout` is a callout-shaped `Rect`: the donor primitive must
+  # survive, but the declared figure head must remain terminal/not_observed.
+  - id: ambiguous_callout
+    family: ambiguous_callout
+    path: crates/da-cli/tests/fixtures/visual_positive_fixture_run/ambiguous_callout.xml
+    head: figure
+    expected_head_outcome: terminal
+    min_primitive_count: 1
