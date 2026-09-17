@@ -7,6 +7,7 @@ Or:       python3 tests/test_governor.py
 import gzip
 import json
 import os
+import re
 import subprocess
 import sys
 import shutil
@@ -4946,6 +4947,7 @@ def _run_all_tests() -> int:
         test_grobid_horizon_review_cli_accepts_contract_cleanly,
         test_grobid_horizon_review_cli_rejects_missing_review_cleanly,
         test_grobid_horizon_review_real_registry_is_valid,
+        test_grobid_absorption_review_real_registry_closes_four_p0_findings,
     ]
     passed = 0
     failed = 0
@@ -5662,6 +5664,89 @@ def test_grobid_horizon_review_real_registry_is_valid():
     assert blockers == [], blockers
     status = next(f for f in flags if f.flag == "grobid_horizon_review_status")
     assert "stages=13" in status.evidence
+
+
+def test_grobid_absorption_review_real_registry_closes_four_p0_findings():
+    """The four GAR P0 findings closed by this wave stay closed, with proof.
+
+    Registry integrity alone never enforces closure, so this test discriminates
+    on committed facts: the GAR counts (11 unresolved, 5 enclosed), the exact
+    six completion_evidence keys (additionalProperties: false), artifact
+    existence under the repository root, and the eleven findings that must stay
+    open (GAR-002 is superseded history, not a contribution of this wave).
+    """
+    from governor.adapters.checks.grobid_review_registry import check_grobid_review_registry
+
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    flags = check_grobid_review_registry(repo_root)
+    blockers = [
+        f
+        for f in flags
+        if f.flag.endswith(("_broken", "_invalid", "_missing"))
+    ]
+    assert blockers == [], blockers
+    status = next(f for f in flags if f.flag == "grobid_review_registry_status")
+    assert "records=16" in status.evidence, status.evidence
+    assert "unresolved=11" in status.evidence, status.evidence
+    assert "enclosed=5" in status.evidence, status.evidence
+    assert "unassigned_unresolved=0" in status.evidence, status.evidence
+
+    contract = yaml.safe_load(
+        (repo_root / "scripts/governor/checks/grobid_absorption_review.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    findings_rel = str(contract["registry"]["findings"])
+    records = [
+        json.loads(line)
+        for line in (repo_root / findings_rel).read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    by_id = {str(record["finding_id"]): record for record in records}
+
+    closed_ids = ("GAR-001", "GAR-003", "GAR-004", "GAR-011")
+    for finding_id in closed_ids:
+        record = by_id[finding_id]
+        assert record["status"] == "resolved", (finding_id, record["status"])
+        completion = record["completion_evidence"]
+        assert sorted(completion) == [
+            "artifacts",
+            "mode",
+            "observed_at",
+            "ref",
+            "result",
+            "source_revision",
+        ], (finding_id, sorted(completion))
+        assert completion["mode"] == record["verification"][0]["mode"], finding_id
+        assert completion["result"] == "pass", finding_id
+        assert str(completion["ref"]).strip(), finding_id
+        assert str(completion["source_revision"]).strip(), finding_id
+        assert re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", str(completion["observed_at"])), (
+            finding_id,
+            completion["observed_at"],
+        )
+        artifacts = completion["artifacts"]
+        assert isinstance(artifacts, list) and artifacts, finding_id
+        for artifact in artifacts:
+            artifact = str(artifact)
+            assert not artifact.startswith(("TODO", ".gsd/")), (finding_id, artifact)
+            assert (repo_root / artifact).exists(), (finding_id, artifact)
+        governor = record["governor"]
+        assert governor["coverage"] in {"existing", "partial"}, (
+            finding_id,
+            governor["coverage"],
+        )
+        assert governor["existing_rules"], finding_id
+
+    for number in range(1, 17):
+        finding_id = f"GAR-{number:03d}"
+        if finding_id in closed_ids:
+            continue
+        expected = "superseded" if finding_id == "GAR-002" else "open"
+        assert by_id[finding_id]["status"] == expected, (
+            finding_id,
+            by_id[finding_id]["status"],
+        )
 
 
 if __name__ == "__main__":
