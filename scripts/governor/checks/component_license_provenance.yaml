@@ -1,0 +1,200 @@
+# Component licence provenance contract — GAR-004 closure at the control plane.
+#
+# DATA for the Governor `component_license_provenance` check. GAR-004
+# (M508-g9b5gi) recorded that the rights of layout/model/training assets outside
+# the Apache-2.0 baseline had no machine-readable per-component treatment: the
+# canonical `data/parse/license_inventory.yaml` carried untyped status strings
+# ("assumed compatible"), no consumer read the file, and the remediation step
+# demanded that unverified redistribution items be recorded as typed blocked
+# rather than inferred. This contract makes the claim executable:
+#
+#   - `canonical_inventory` is the single ledger. Every position is either
+#     `verified` with a resolvable licence evidence reference or typed `blocked`
+#     with a mandatory non-empty reason and no redistribution claim. An absent
+#     right can never be inferred from a repository URL or a component name —
+#     it fails closed.
+#   - the three read-only surfaces named by the ledger are declared in
+#     `surfaces` together with a FIELD MAPPING, because they do not share one
+#     status dialect (`license_status` on the two compatibility surfaces,
+#     `rights_status` with its own blocked vocabulary on the model-rights
+#     surface). Every identifier of every surface must be claimed exactly once
+#     through the canonical `surface_claims` cross-reference.
+#   - `bindings.source_data` pins the canonical artifact by SHA-256. The digest
+#     is recomputed on every run, so an edit that does not update the pin
+#     surfaces as `..._binding_mismatch`; a non-hex or non-string digest is
+#     rejected as unverifiable (a 64-zero YAML scalar parses as int 0, which a
+#     truthy guard would silently skip).
+#   - the mirrored closed vocabularies are the boundary set of tokens the
+#     ledger and the surfaces may use. A missing/empty vocabulary is
+#     `missing_closed_vocabulary` (fail-closed), and a surface that introduces
+#     a token outside the canonical vocabulary is `..._vocabulary_drift`.
+#   - `redistribution_locks` names the five locks GAR-004 forbids relaxing
+#     (`gpl_linking`, `new_distribution`, `import_eligible`, `graph_write`,
+#     `auto_promote`). The canonical `redistribution_policy` block is validated
+#     against them on every run.
+#
+# Semantics of the independent Python oracle `_license_provenance_violations`
+# (ADR-051 — it shares no code with the Rust contract in
+# `crates/da-parse/tests/component_license_provenance_data_contract.rs`):
+#   - positive (`inventory_complete`): the fixture is a verbatim copy of the
+#     real `components[]` positions and must be clean.
+#   - negative (`inventory_broken`): one record per entry-level label, and every
+#     label in `require_violations` must appear — removing a negative case is
+#     flagged. `missing_closed_vocabulary` is deliberately NOT in
+#     `require_violations`: it is a contract-level fail-closed guard (it fires
+#     when a validated field has no vocabulary to be validated against), not a
+#     reachable per-record state.
+#   - this contract deliberately declares no `graph_task_suite`: the rights
+#     ledger has no durable snapshot-level task suite, so the check passes
+#     `graph_task_suite_required=False` explicitly instead of silently skipping
+#     suite enforcement for the existing multimodal contracts.
+#
+# This is DATA — tightening an expectation is an edit here (plus the committed
+# fixture JSON), not a Python change.
+
+schema_version: component-license-provenance.v1
+policy_id: component_license_provenance
+dimension: scholarly_parse_plane
+severity: high
+anchor: "GAR-004, R112, R113, R131, ADR-075, ADR-076, ADR-051"
+
+canonical_inventory:
+  path: data/parse/license_inventory.yaml
+  schema_version: parse-component-license-inventory.v1
+
+# Mirrors of the canonical closed vocabularies. They must match the ledger
+# exactly (`..._vocabulary_missing` / `..._vocabulary_drift`), and a read-only
+# surface may only use a subset of them.
+boundary_vocabulary: [subprocess, http, rust-source-port, rust-workspace, data-only, cargo-dependency]
+license_status_vocabulary: [verified, blocked]
+redistribution_status_vocabulary: [allowed_with_notice, source_offer_required, not_distributed, blocked]
+# Surface dialect for a blocked position: `grobid_model_rights.yaml#assets`
+# reports `separately_blocked`, which is blocked in every respect the oracle
+# checks.
+blocked_status_vocabulary: [blocked, separately_blocked]
+# Closed vocabulary of redistribution/attribution obligations. A free-text
+# obligation ("needs legal review") is indistinguishable from a promise, so an
+# artifact field must be either one of these tokens or a path that exists.
+artifact_obligation_vocabulary:
+  - not_applicable
+  - not_required_for_unmodified_service
+  - not_required_for_source_available_dependency
+  - required_in_release_notice
+  - required_before_release
+  - required_before_any_redistribution
+  - required_before_any_corpus_or_weight_release
+  - required_before_source_redistribution
+  - required_before_corpus_release
+  - required_before_weight_release
+  - required_before_engine_distribution
+  - required_before_jar_distribution
+  - source_comment_only_not_a_rights_clearance
+
+# The five locks GAR-004 forbids relaxing. The canonical `redistribution_policy`
+# block is checked against these values on every run.
+redistribution_locks:
+  gpl_linking: forbidden
+  new_distribution: forbidden
+  import_eligible: false
+  graph_write: forbidden
+  auto_promote: forbidden
+
+# Closed vocabulary of violation labels the oracle can emit.
+violations:
+  - missing_closed_vocabulary
+  - missing_component_identity
+  - unverified_status_token
+  - missing_blocked_reason
+  - blocked_reason_on_verified_position
+  - missing_license_evidence
+  - license_evidence_path_missing
+  - boundary_outside_vocabulary
+  - redistribution_outside_vocabulary
+  - blocked_position_claims_redistribution
+  - gpl_linking_permitted
+  - redistribution_lock_relaxed
+  - unresolved_artifact_obligation
+  - surface_claim_target_missing
+
+# Read-only surfaces, each with the field mapping that names its own dialect.
+# `pointer` selects the inventory node inside the document (empty = document
+# root), `entries_key` selects the entry list inside that node.
+surfaces:
+  - key: "data/parse/grobid_compatibility.yaml#license_provenance_inventory"
+    role: donor_layout_and_runtime_component_inventory
+    path: data/parse/grobid_compatibility.yaml
+    pointer: license_provenance_inventory
+    entries_key: components
+    id_field: component_id
+    status_field: license_status
+    status_vocabulary: [verified, blocked]
+    boundary_field: boundary
+    redistribution_field: redistribution
+    blocked_reason_field: blocked_reason
+    evidence_field: license_evidence
+  - key: "data/parse/feature_tagger_training_parity.yaml#license_provenance_inventory"
+    role: feature_tagger_training_input_inventory
+    path: data/parse/feature_tagger_training_parity.yaml
+    pointer: license_provenance_inventory
+    entries_key: components
+    id_field: component_id
+    status_field: license_status
+    status_vocabulary: [verified, blocked]
+    boundary_field: boundary
+    redistribution_field: redistribution
+    blocked_reason_field: blocked_reason
+    evidence_field: license_evidence
+  - key: "data/parse/grobid_model_rights.yaml#assets"
+    role: grobid_model_and_lexicon_asset_inventory
+    path: data/parse/grobid_model_rights.yaml
+    pointer: ""
+    entries_key: assets
+    id_field: id
+    status_field: rights_status
+    status_vocabulary: [blocked, separately_blocked]
+    boundary_field: kind
+    # This surface carries no redistribution status field; its blocked state is
+    # expressed by the boolean `redistributable` flag, which the oracle reads
+    # directly when the status is blocked.
+    redistribution_field: null
+    blocked_reason_field: evidence
+    evidence_field: evidence
+
+bindings:
+  source_data:
+    - path: data/parse/license_inventory.yaml
+      sha256: 4841fcac331d68a541237b8173df70a90814ff0fc6084338a8ee2663994f5201
+
+fixtures:
+  positive:
+    id: inventory_complete
+    path: governor/fixtures/component_license_provenance/inventory_complete.positive.json
+    expect: clean
+  negative:
+    id: inventory_broken
+    path: governor/fixtures/component_license_provenance/inventory_broken.negative.json
+    expect:
+      require_violations:
+        - missing_component_identity
+        - unverified_status_token
+        - missing_blocked_reason
+        - blocked_reason_on_verified_position
+        - missing_license_evidence
+        - license_evidence_path_missing
+        - boundary_outside_vocabulary
+        - redistribution_outside_vocabulary
+        - blocked_position_claims_redistribution
+        - gpl_linking_permitted
+        - redistribution_lock_relaxed
+        - unresolved_artifact_obligation
+        - surface_claim_target_missing
+
+# Enforcement points that must keep existing: the independent Rust reader of the
+# same artifact and the canonical ledger itself.
+source_markers:
+  rust_contract:
+    path: crates/da-parse/tests/component_license_provenance_data_contract.rs
+    required_patterns: [license_provenance_errs, blocked_reason, surface_claims, UNVERIFIED, import_eligible]
+  canonical_inventory:
+    path: data/parse/license_inventory.yaml
+    required_patterns: [license_status_vocabulary, surface_claims, blocked_reason, gpl_violation_status]

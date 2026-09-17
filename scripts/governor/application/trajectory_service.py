@@ -1035,6 +1035,333 @@ def _visual_adapter_violations(record: dict, contract: dict) -> set[str]:
     return violations
 
 
+_LICENSE_EVIDENCE_URL_PREFIXES = ("http://", "https://")
+
+
+def _license_closed_vocabulary(contract: dict, key: str) -> list | None:
+    """Return a non-empty closed vocabulary, or None when it is missing/empty.
+
+    A field validated against a closed vocabulary must fail closed when the
+    vocabulary itself is absent: an empty or missing vocabulary means "cannot
+    decide", which the oracle reports as `missing_closed_vocabulary` instead of
+    silently accepting any token.
+    """
+    value = contract.get(key)
+    if isinstance(value, list) and value:
+        return value
+    return None
+
+
+def _license_path_resolvable(value, root) -> bool:
+    """True when a licence-evidence reference resolves to something real.
+
+    Accepted forms: an `http(s)://` upstream pointer, an existing absolute path
+    (vendor licence texts live outside the repository), or an existing
+    repository-relative path. `root` is injected by the Governor rule; a direct
+    oracle call without a root cannot resolve relative paths and reports the
+    reference as unresolved rather than guessing.
+    """
+    if not _non_empty_string(value):
+        return False
+    if value.startswith(_LICENSE_EVIDENCE_URL_PREFIXES):
+        return True
+    if root is None:
+        return False
+    candidate = Path(value)
+    resolved = candidate if candidate.is_absolute() else Path(root) / candidate
+    return resolved.exists()
+
+
+def _license_obligation_resolved(value, obligations: list | None, root) -> bool:
+    """True when an artifact obligation is a vocabulary token or a real path.
+
+    Free text is deliberately not accepted: an obligation that is neither a
+    closed token nor an existing path is indistinguishable from an unkept
+    promise, which is exactly the fail-open shape GAR-004 closes.
+    """
+    if not _non_empty_string(value):
+        return False
+    if obligations is not None and value in obligations:
+        return True
+    if root is None:
+        return False
+    candidate = Path(value)
+    resolved = candidate if candidate.is_absolute() else Path(root) / candidate
+    return resolved.exists()
+
+
+def _license_provenance_violations(record: dict, contract: dict) -> set[str]:
+    """Return violation codes for one canonical licence-inventory position (GAR-004).
+
+    Independent Python oracle over `data/parse/license_inventory.yaml`
+    `components[]`: it recomputes the rights state from the raw position and
+    the contract's mirrored closed vocabularies (ADR-051 — it shares no code
+    with the Rust contract in
+    `crates/da-parse/tests/component_license_provenance_data_contract.rs`). A
+    position is either confirmed or an explicit refusal; an unproven right is
+    never assumed compatible.
+
+    Labels:
+      - missing_component_identity: no non-empty `component_id`;
+      - unverified_status_token: `license_status` outside the closed
+        vocabulary (`UNVERIFIED`, `unknown`, empty);
+      - missing_blocked_reason: a blocked position without a non-empty reason;
+      - blocked_reason_on_verified_position: a verified position that still
+        carries a refusal reason;
+      - missing_license_evidence / license_evidence_path_missing: absent
+        evidence, or a path that does not resolve;
+      - boundary_outside_vocabulary / redistribution_outside_vocabulary: token
+        outside the closed vocabulary (a missing field is outside it too);
+      - blocked_position_claims_redistribution: blocked while claiming
+        `allowed`/`allowed_with_notice` redistribution;
+      - gpl_linking_permitted: a position that relaxes the GPL lock;
+      - redistribution_lock_relaxed: a position that relaxes
+        `new_distribution`/`import_eligible`/`graph_write`/`auto_promote`;
+      - unresolved_artifact_obligation: an attribution/source-offer obligation
+        that is neither a closed token nor an existing path;
+      - surface_claim_target_missing: a `surface_claims` entry naming an
+        unknown surface or an identifier that surface does not declare;
+      - missing_closed_vocabulary: a validated field has no vocabulary in the
+        contract (fail-closed, contract-level guard).
+    """
+    violations: set[str] = set()
+    if not isinstance(record, dict):
+        return {"missing_component_identity"}
+
+    root = contract.get("_root")
+    surface_ids = contract.get("_surface_ids")
+    surface_ids = surface_ids if isinstance(surface_ids, dict) else {}
+    boundary_vocabulary = _license_closed_vocabulary(contract, "boundary_vocabulary")
+    status_vocabulary = _license_closed_vocabulary(
+        contract, "license_status_vocabulary"
+    )
+    redistribution_vocabulary = _license_closed_vocabulary(
+        contract, "redistribution_status_vocabulary"
+    )
+    obligations = _license_closed_vocabulary(contract, "artifact_obligation_vocabulary")
+    blocked_statuses = _license_closed_vocabulary(
+        contract, "blocked_status_vocabulary"
+    ) or ["blocked"]
+
+    if not _non_empty_string(record.get("component_id")):
+        violations.add("missing_component_identity")
+
+    status = record.get("license_status")
+    if status_vocabulary is None:
+        violations.add("missing_closed_vocabulary")
+    elif not isinstance(status, str) or status not in status_vocabulary:
+        violations.add("unverified_status_token")
+    blocked = isinstance(status, str) and status in blocked_statuses
+
+    blocked_reason = record.get("blocked_reason")
+    if blocked and not _non_empty_string(blocked_reason):
+        violations.add("missing_blocked_reason")
+    elif not blocked and _non_empty_string(blocked_reason):
+        violations.add("blocked_reason_on_verified_position")
+
+    evidence = record.get("license_evidence")
+    if not _non_empty_string(evidence):
+        violations.add("missing_license_evidence")
+    elif not _license_path_resolvable(evidence, root):
+        violations.add("license_evidence_path_missing")
+
+    if boundary_vocabulary is None:
+        violations.add("missing_closed_vocabulary")
+    elif record.get("boundary") not in boundary_vocabulary:
+        violations.add("boundary_outside_vocabulary")
+
+    redistribution = record.get("redistribution")
+    if redistribution_vocabulary is None:
+        violations.add("missing_closed_vocabulary")
+    elif redistribution not in redistribution_vocabulary:
+        violations.add("redistribution_outside_vocabulary")
+    if blocked and redistribution in ("allowed", "allowed_with_notice"):
+        violations.add("blocked_position_claims_redistribution")
+
+    if "gpl_linking" in record and str(record.get("gpl_linking")).lower() != "forbidden":
+        violations.add("gpl_linking_permitted")
+    if record.get("import_eligible") is True:
+        violations.add("redistribution_lock_relaxed")
+    for lock_field in ("new_distribution", "graph_write", "auto_promote"):
+        if lock_field in record and str(record.get(lock_field)).lower() != "forbidden":
+            violations.add("redistribution_lock_relaxed")
+
+    for obligation_field in ("attribution_notice_artifact", "source_offer_artifact"):
+        if not _license_obligation_resolved(
+            record.get(obligation_field), obligations, root
+        ):
+            violations.add("unresolved_artifact_obligation")
+
+    claims = record.get("surface_claims")
+    if claims is None:
+        claims = []
+    if not isinstance(claims, list):
+        violations.add("surface_claim_target_missing")
+    else:
+        for claim in claims:
+            if not isinstance(claim, dict):
+                violations.add("surface_claim_target_missing")
+                continue
+            surface_key = claim.get("surface")
+            claimed_id = claim.get("component_id")
+            known_ids = surface_ids.get(surface_key)
+            if known_ids is None or claimed_id not in known_ids:
+                violations.add("surface_claim_target_missing")
+
+    return violations
+
+
+def _license_surface_entry_violations(entry: dict, surface: dict, contract: dict) -> set[str]:
+    """Structural violations of one read-only licence-surface entry (GAR-004).
+
+    The three surfaces do not share one status dialect, so the entry is read
+    through the surface's declared FIELD MAPPING (`id_field`, `status_field`,
+    `blocked_reason_field`, `evidence_field`, `redistribution_field`) and
+    validated under its own closed vocabulary. The surface node's own
+    `boundary_vocabulary`/`redistribution_status_vocabulary`, when it declares
+    them, are injected by the rule as private `_*` keys; a surface that
+    publishes no vocabulary for a field is not validated on that field (its
+    `kind` is an asset kind, not a runtime boundary).
+
+    Evidence is required non-empty but never resolved to a path: these surfaces
+    use in-file pointers (`source_contract.source_documents`, `corpus_binding`,
+    `engines`) as evidence references.
+    """
+    violations: set[str] = set()
+    if not isinstance(entry, dict):
+        return {"missing_component_identity"}
+
+    status_vocabulary = surface.get("status_vocabulary")
+    if not isinstance(status_vocabulary, list) or not status_vocabulary:
+        violations.add("missing_closed_vocabulary")
+        status_vocabulary = None
+    blocked_statuses = _license_closed_vocabulary(
+        contract, "blocked_status_vocabulary"
+    ) or ["blocked"]
+
+    if not _non_empty_string(entry.get(surface.get("id_field"))):
+        violations.add("missing_component_identity")
+
+    status = entry.get(surface.get("status_field"))
+    if status_vocabulary is not None and status not in status_vocabulary:
+        violations.add("unverified_status_token")
+    blocked = isinstance(status, str) and status in blocked_statuses
+
+    reason_field = surface.get("blocked_reason_field")
+    if blocked and reason_field and not _non_empty_string(entry.get(reason_field)):
+        violations.add("missing_blocked_reason")
+
+    evidence_field = surface.get("evidence_field")
+    if evidence_field and not _non_empty_string(entry.get(evidence_field)):
+        violations.add("missing_license_evidence")
+
+    boundary_vocabulary = surface.get("_boundary_vocabulary")
+    boundary_field = surface.get("boundary_field")
+    if (
+        isinstance(boundary_vocabulary, list)
+        and boundary_vocabulary
+        and boundary_field
+        and entry.get(boundary_field) not in boundary_vocabulary
+    ):
+        violations.add("boundary_outside_vocabulary")
+
+    redistribution_vocabulary = surface.get("_redistribution_vocabulary")
+    redistribution_field = surface.get("redistribution_field")
+    if (
+        isinstance(redistribution_vocabulary, list)
+        and redistribution_vocabulary
+        and redistribution_field
+        and entry.get(redistribution_field) not in redistribution_vocabulary
+    ):
+        violations.add("redistribution_outside_vocabulary")
+
+    if blocked and (
+        entry.get("redistributable") is True
+        or (
+            redistribution_field
+            and entry.get(redistribution_field) in ("allowed", "allowed_with_notice")
+        )
+    ):
+        violations.add("blocked_position_claims_redistribution")
+
+    return violations
+
+
+_LICENSE_VIOLATION_FIELDS = {
+    "missing_component_identity": "component_id",
+    "unverified_status_token": "license_status",
+    "missing_blocked_reason": "blocked_reason",
+    "blocked_reason_on_verified_position": "blocked_reason",
+    "missing_license_evidence": "license_evidence",
+    "license_evidence_path_missing": "license_evidence",
+    "boundary_outside_vocabulary": "boundary",
+    "redistribution_outside_vocabulary": "redistribution",
+    "blocked_position_claims_redistribution": "redistribution",
+    "gpl_linking_permitted": "gpl_linking",
+    "unresolved_artifact_obligation": "attribution_notice_artifact",
+    "surface_claim_target_missing": "surface_claims",
+}
+
+
+def _license_violation_detail(record: dict, violation: str) -> str:
+    """Name the offending field and value for one canonical-position violation.
+
+    Diagnostics over a 22-position ledger are only usable if a flag names both
+    the position and the field that failed, so the label is resolved back to
+    the field it was raised from.
+    """
+    if violation == "redistribution_lock_relaxed":
+        relaxed = []
+        for field in ("new_distribution", "import_eligible", "graph_write", "auto_promote"):
+            value = record.get(field)
+            kept = value is False if field == "import_eligible" else str(value).lower() == "forbidden"
+            if not kept:
+                relaxed.append(f"{field}={value!r}")
+        return ", ".join(relaxed)
+    if violation == "unresolved_artifact_obligation":
+        return (
+            f"attribution_notice_artifact={record.get('attribution_notice_artifact')!r}, "
+            f"source_offer_artifact={record.get('source_offer_artifact')!r}"
+        )
+    field = _LICENSE_VIOLATION_FIELDS.get(violation)
+    if field is None:
+        return ""
+    return f"{field}={record.get(field)!r}"
+
+
+def _license_policy_violations(policy) -> list:
+    """Return `(label, detail)` pairs for the canonical redistribution policy (GAR-004).
+
+    Only the five locks named by GAR-004 are checked here; the wider policy
+    (`unknown_rights`, `blocked_components_must_not_enter_runtime`) is pinned by
+    the independent Rust contract. A missing/absent value fails closed, because
+    an absent lock is not a kept lock.
+    """
+    if not isinstance(policy, dict):
+        return [("redistribution_lock_relaxed", "redistribution_policy block missing")]
+    violations: list = []
+    if str(policy.get("gpl_linking")).lower() != "forbidden":
+        violations.append(
+            ("gpl_linking_permitted", f"gpl_linking={policy.get('gpl_linking')!r}")
+        )
+    if policy.get("import_eligible") is not False:
+        violations.append(
+            (
+                "redistribution_lock_relaxed",
+                f"import_eligible={policy.get('import_eligible')!r}",
+            )
+        )
+    for lock_field in ("new_distribution", "graph_write", "auto_promote"):
+        if str(policy.get(lock_field)).lower() != "forbidden":
+            violations.append(
+                (
+                    "redistribution_lock_relaxed",
+                    f"{lock_field}={policy.get(lock_field)!r}",
+                )
+            )
+    return violations
+
+
 def _candidate_contract_flags(
     contract: dict,
     root: Path,
@@ -1411,6 +1738,13 @@ class TrajectoryService:
         # independent oracle so a `primitives: Vec::new()` drop path cannot
         # pass unnoticed.
         drift_flags.extend(self._check_visual_adapter_preserves_donor_content())
+
+        # GAR-004: component licence provenance control-plane rule (M508-g9b5gi
+        # S03). Every rights position is either verified with resolvable
+        # evidence or typed blocked with a mandatory reason, and the three
+        # read-only licence surfaces stay claimed exactly once — an unproven
+        # right can no longer be assumed compatible.
+        drift_flags.extend(self._check_component_license_provenance())
 
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
@@ -2611,6 +2945,260 @@ class TrajectoryService:
         flags.extend(_candidate_contract_flags(
             contract, self.root, dimension, prefix,
             _visual_adapter_violations,
+            graph_task_suite_required=False,
+        ))
+        return flags
+
+    def _check_component_license_provenance(self) -> list[DriftFlag]:
+        """Evaluate the data-driven component licence provenance contract (GAR-004).
+
+        Reads `scripts/governor/checks/component_license_provenance.yaml` (DATA)
+        and binds the canonical `data/parse/license_inventory.yaml` to the
+        independent oracle `_license_provenance_violations`:
+
+          1. `bindings.source_data` pins the canonical artifact by SHA-256 and is
+             verified here (the shared fixture helper does not inspect
+             `bindings`); a non-hex/absent digest fails closed.
+          2. The canonical ledger must declare all three closed vocabularies and
+             they must match the contract mirrors exactly
+             (`..._vocabulary_missing` / `..._vocabulary_drift`), and the
+             document-level `redistribution_policy` must keep the five GAR-004
+             locks (`..._gpl_linking_permitted` / `..._redistribution_lock_relaxed`).
+          3. Every canonical position is re-checked by the oracle (strict mode:
+             evidence paths resolve, `blocked_reason` exactly on blocked).
+          4. The three read-only surfaces are read through their declared field
+             mappings under their own dialect; a surface token outside the
+             canonical closed vocabulary is reported as drift.
+          5. Relational completeness: every identifier of every surface must be
+             claimed exactly once by the canonical `surface_claims`
+             (`..._cross_surface_component_unclaimed` /
+             `..._cross_surface_claim_duplicated`), and the positive fixture must
+             mirror the canonical identity set (`..._fixture_inventory_drift`).
+
+        The rule has no durable snapshot graph task suite, so the shared helper
+        is called with `graph_task_suite_required=False` explicitly. Nothing is
+        written into any artifact: the oracle receives the repository root and
+        the surface identifier sets through private in-memory `_*` keys on a
+        copy of the contract.
+        """
+        path = self.root / "scripts/governor/checks/component_license_provenance.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="component_license_provenance_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="scholarly_parse_plane",
+            )]
+        prefix = "component_license_provenance"
+        dimension = str(contract.get("dimension") or "scholarly_parse_plane")
+        severity = str(contract.get("severity", "high"))
+        flags: list[DriftFlag] = []
+
+        def _flag(name: str, evidence: str) -> None:
+            flags.append(DriftFlag(
+                flag=name, severity=severity, evidence=evidence, dimension=dimension,
+            ))
+
+        # 1. Bound canonical artifact: existence plus exact SHA-256.
+        for binding in (contract.get("bindings") or {}).get("source_data", []):
+            bound_path = self.root / str(binding.get("path", ""))
+            if not bound_path.is_file():
+                _flag(f"{prefix}_binding_missing",
+                      f"source binding missing: {bound_path}")
+                continue
+            expected = binding.get("sha256")
+            observed = hashlib.sha256(bound_path.read_bytes()).hexdigest()
+            # A non-string or non-hex digest is unverifiable and must fail
+            # closed: a 64-zero YAML scalar parses as int 0, which a truthy
+            # guard would silently skip.
+            if not _is_sha256_hex(expected) or str(expected).lower() != observed:
+                _flag(f"{prefix}_binding_mismatch",
+                      f"{binding.get('path')}: expected {expected!r}, observed {observed}")
+
+        # 2. Canonical inventory identity.
+        canonical = contract.get("canonical_inventory") or {}
+        inventory_path = self.root / str(canonical.get("path", ""))
+        inventory = None
+        if not inventory_path.is_file():
+            _flag(f"{prefix}_inventory_missing",
+                  f"canonical inventory missing: {inventory_path}")
+        else:
+            try:
+                inventory = yaml.safe_load(inventory_path.read_text(encoding="utf-8"))
+            except (OSError, yaml.YAMLError) as error:
+                inventory = None
+                _flag(f"{prefix}_inventory_invalid",
+                      f"canonical inventory unreadable: {error}")
+            if inventory is not None and not isinstance(inventory, dict):
+                inventory = None
+                _flag(f"{prefix}_inventory_invalid",
+                      "canonical inventory must be a YAML mapping")
+
+        for vocabulary_key in (
+            "boundary_vocabulary",
+            "license_status_vocabulary",
+            "redistribution_status_vocabulary",
+        ):
+            declared = inventory.get(vocabulary_key) if isinstance(inventory, dict) else None
+            mirror = contract.get(vocabulary_key)
+            if not isinstance(declared, list) or not declared:
+                _flag(f"{prefix}_vocabulary_missing",
+                      f"canonical inventory does not declare {vocabulary_key}")
+            elif not isinstance(mirror, list) or not mirror or set(declared) != set(mirror):
+                _flag(f"{prefix}_vocabulary_drift",
+                      f"{vocabulary_key}: inventory {declared!r} != contract {mirror!r}")
+
+        # 3. Document-level redistribution locks (GAR-004).
+        if isinstance(inventory, dict):
+            for label, detail in _license_policy_violations(
+                inventory.get("redistribution_policy")
+            ):
+                _flag(f"{prefix}_{label}", f"canonical redistribution_policy: {detail}")
+
+        # 4. Read-only surfaces: field-mapped structural validation.
+        surface_ids: dict = {}
+        for surface in contract.get("surfaces") or []:
+            key = str(surface.get("key", ""))
+            surface_path = self.root / str(surface.get("path", ""))
+            if not surface_path.is_file():
+                _flag(f"{prefix}_surface_missing",
+                      f"read-only surface missing: {surface_path}")
+                continue
+            try:
+                surface_doc = yaml.safe_load(surface_path.read_text(encoding="utf-8"))
+            except (OSError, yaml.YAMLError) as error:
+                surface_doc = None
+                _flag(f"{prefix}_surface_invalid", f"{key}: unreadable: {error}")
+            node = surface_doc
+            pointer = surface.get("pointer")
+            if pointer:
+                node = surface_doc.get(pointer) if isinstance(surface_doc, dict) else None
+            entries = None
+            if isinstance(node, dict):
+                entries = node.get(str(surface.get("entries_key", "")))
+            elif isinstance(node, list):
+                entries = node
+            if not isinstance(entries, list) or not entries:
+                _flag(f"{prefix}_surface_invalid",
+                      f"{key}: entry list not found")
+                continue
+            # Surface-local vocabularies are closed dialects: they may use a
+            # subset of the canonical vocabularies, never a new token.
+            if isinstance(node, dict):
+                for vocabulary_key in (
+                    "boundary_vocabulary",
+                    "license_status_vocabulary",
+                    "redistribution_status_vocabulary",
+                ):
+                    declared = node.get(vocabulary_key)
+                    mirror = contract.get(vocabulary_key)
+                    if isinstance(declared, list) and declared and isinstance(mirror, list):
+                        drifted = [token for token in declared if token not in mirror]
+                        if drifted:
+                            _flag(
+                                f"{prefix}_vocabulary_drift",
+                                f"{key}: {vocabulary_key} introduces tokens outside "
+                                f"the canonical vocabulary: {drifted}",
+                            )
+            mapped = dict(surface)
+            if isinstance(node, dict):
+                mapped["_boundary_vocabulary"] = node.get("boundary_vocabulary")
+                mapped["_redistribution_vocabulary"] = node.get(
+                    "redistribution_status_vocabulary"
+                )
+            ids = set()
+            for entry in entries:
+                entry_id = entry.get(surface.get("id_field")) if isinstance(entry, dict) else None
+                if _non_empty_string(entry_id):
+                    ids.add(str(entry_id))
+                for violation in sorted(
+                    _license_surface_entry_violations(entry, mapped, contract)
+                ):
+                    _flag(f"{prefix}_{violation}", f"{key}#{entry_id}: {violation}")
+            surface_ids[key] = ids
+
+        # 5. Canonical positions: independent entry-level oracle.
+        components = inventory.get("components") if isinstance(inventory, dict) else None
+        if inventory is not None and not isinstance(components, list):
+            _flag(f"{prefix}_inventory_invalid",
+                  "canonical inventory components must be a list")
+            components = []
+        components = components if isinstance(components, list) else []
+        oracle_contract = dict(contract)
+        oracle_contract["_root"] = str(self.root)
+        oracle_contract["_surface_ids"] = surface_ids
+        for record in components:
+            label = record.get("component_id") if isinstance(record, dict) else "?"
+            if not isinstance(record, dict):
+                record = {}
+            for violation in sorted(_license_provenance_violations(record, oracle_contract)):
+                detail = _license_violation_detail(record, violation)
+                _flag(f"{prefix}_{violation}",
+                      f"canonical inventory {label!r}: {violation}"
+                      + (f" ({detail})" if detail else ""))
+
+        # 6. Cross-surface relational completeness: every surface identifier is
+        #    claimed exactly once by the canonical ledger.
+        claim_counts: dict = {}
+        for record in components:
+            if not isinstance(record, dict):
+                continue
+            claims = record.get("surface_claims")
+            if not isinstance(claims, list):
+                continue
+            for claim in claims:
+                if not isinstance(claim, dict):
+                    continue
+                surface_key = claim.get("surface")
+                claimed_id = claim.get("component_id")
+                if surface_key in surface_ids and claimed_id in surface_ids[surface_key]:
+                    pair = (surface_key, str(claimed_id))
+                    claim_counts[pair] = claim_counts.get(pair, 0) + 1
+        for surface_key, ids in surface_ids.items():
+            for component_id in sorted(ids):
+                count = claim_counts.get((surface_key, component_id), 0)
+                if count == 0:
+                    _flag(f"{prefix}_cross_surface_component_unclaimed",
+                          f"{surface_key}#{component_id} is not claimed by the "
+                          "canonical inventory")
+                elif count > 1:
+                    _flag(f"{prefix}_cross_surface_claim_duplicated",
+                          f"{surface_key}#{component_id} is claimed {count} times")
+
+        # 7. The positive fixture must mirror the canonical identity set.
+        positive = (contract.get("fixtures") or {}).get("positive") or {}
+        positive_path = self.root / str(positive.get("path", ""))
+        if positive_path.is_file() and components:
+            try:
+                fixture_records = json.loads(positive_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError):
+                fixture_records = None
+            if isinstance(fixture_records, list):
+                fixture_ids = {
+                    record.get("component_id")
+                    for record in fixture_records
+                    if isinstance(record, dict)
+                }
+                canonical_ids = {
+                    record.get("component_id")
+                    for record in components
+                    if isinstance(record, dict)
+                }
+                if fixture_ids != canonical_ids:
+                    _flag(
+                        f"{prefix}_fixture_inventory_drift",
+                        "positive fixture drifts from the canonical inventory: "
+                        f"missing={sorted(map(str, canonical_ids - fixture_ids))}, "
+                        f"extra={sorted(map(str, fixture_ids - canonical_ids))}",
+                    )
+
+        flags.extend(_candidate_contract_flags(
+            oracle_contract, self.root, dimension, prefix,
+            _license_provenance_violations,
             graph_task_suite_required=False,
         ))
         return flags
