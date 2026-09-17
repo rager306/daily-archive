@@ -2824,7 +2824,7 @@ def test_boundary_positional_metrics_binding_mismatch_is_flagged():
     # as unverifiable rather than skip.
     path = service.root / "scripts/governor/checks/boundary_positional_metrics.yaml"
     _write(path, path.read_text().replace(
-        "c2bc051eb09af6495baf7280d77d2da25cb10cacb986264bdb222f060a4d4b45",
+        "2bc5d8b9fe03e01eae94f7373d4777dec1318f7eacd59feb3c8237b48fd5e0ae",
         "0" * 64,
     ))
     flags = service._check_boundary_positional_metrics()
