@@ -1,6 +1,9 @@
 # Performance recovery нативного ядра S08: границы приёмки и известные пробелы
 
 **Milestone:** M507-4fk6m6 · **Slice:** S08 «Performance recovery и route qualification»
+**Remediation:** S09 «Remediation: S08 determinism и claim fidelity» — двухповерхностная модель SMP,
+leaf-level доказательство исключения наблюдаемых полей, персистированный projection-дайджест,
+перепривязка реестра к детерминированной поверхности
 **Нормативная база:** R109 (bounded CPU SMP, детерминированные выходы по числам воркеров,
 явные load breakpoints), R085 (измеренная оптимизация и снижение Java-работы), R123
 (пофемейная квалификация восстановимости, shadow сохранён), R131 (готовность нативной полосы),
@@ -18,8 +21,10 @@ D127 (import lock).
 локи обязаны остаться закрытыми. Ни одно утверждение ниже не выходит за пределы проверенного в
 S08; там, где доказательства нет, это сказано прямо, а не подразумевается.
 
-Все команды выполняются из корня репозитория. Измерительные артефакты байт-воспроизводимы, а
-любые числа ниже — **наблюдения артефактов**, снятые командами; в коде и DATA они не хардкожены.
+Все команды выполняются из корня репозитория. Артефакты приёмки (профиль, детерминированный SMP,
+Java-работа, реестр маршрутов) байт-воспроизводимы; объявленная observation-поверхность SMP —
+намеренно нет (§(d)). Любые числа ниже — **наблюдения артефактов**, снятые командами; в коде и DATA
+они не хардкожены.
 
 **Ключевое ограничение среза:** S08 ничего не диспатчит и ничего не промоутит. `deployed=false`,
 `import_eligible=false`, `production_route=forbidden`, `auto_promote=forbidden`,
@@ -81,9 +86,21 @@ hot spot (пересборка `BTreeMap` и `Vec<Vec<&str>>` в `map_input` н�
 собственного топологического ридера, глобального пула и неограниченных очередей не заводится.
 
 ```bash
-cargo test -p da-cli --test native_core_smp_contract        # 14 passed; 0 failed
+cargo test -p da-cli --test native_core_smp_contract        # 20 passed; 0 failed
 cargo test -p da-cli --features pdf-layout --test layout_smp_contract   # 6 passed; R109-регрессия
-cargo run -p da-cli --example native_core_smp
+
+# Детерминированная поверхность: два независимых прогона в разные каталоги + cmp с committed.
+# --observations-artifact уводит run-snapshot из закоммиченного пути: сравнивать его нельзя
+# (он объявлен non-reproducible), а трогать committed-файл прогоном-проверкой не нужно.
+cargo run -p da-cli --example native_core_smp \
+  --artifact <dir-a>/native_core_smp.json --observations-artifact <dir-a>/native_core_smp_observations.json
+cargo run -p da-cli --example native_core_smp \
+  --artifact <dir-b>/native_core_smp.json --observations-artifact <dir-b>/native_core_smp_observations.json
+cmp <dir-a>/native_core_smp.json <dir-b>/native_core_smp.json
+cmp <dir-a>/native_core_smp.json artifacts/parse_compat/native_core_smp.json
+# оба cmp = 0 ⇒ детерминированная поверхность байт-воспроизводима и равна committed.
+# sha256 observation-поверхности между прогонами ожидаемо различается — это объявленный
+# run-snapshot, а не артефакт приёмки.
 ```
 
 | Проверка | Что доказывает |
@@ -93,14 +110,27 @@ cargo run -p da-cli --example native_core_smp
 | `admitted == terminals`, ровно один terminal на admitted-юнит, ordinal'ы сохранены | консервация работы |
 | паника одного job'а → типизированный coordinator failure, остальные терминалы целы | изоляция сбоя |
 | эхо конфигурации проваливает ассерт; runtime-метрики наблюдаемы | метрики измеряются, а не декларируются |
-| все breakpoint-вердикты — члены закрытого словаря | вердикт нельзя изобрести |
+| `matrix.breakpoint_vocabulary` — закрытый словарь; вердикты-экземпляры живут только на observation-поверхности | вердикт нельзя изобрести, и наблюдаемая классификация не может попасть в приёмку |
+| детерминированные байты не двигаются при пертурбации **каждого** объявленного наблюдаемого поля, а observation-байты обязаны измениться (25 пертурбаций) | исключение доказано leaf-level, а не подстрокой; вакуумный кейс невозможен |
+| ни один leaf-путь детерминированной поверхности не лежит под объявленным наблюдаемым именем | `DeterministicEntry` не несёт observational-полей; `queue_wait_ms` остаётся типизированным `not_observed` без числа |
 
-Измеренный результат (`artifacts/parse_compat/native_core_smp.json`, 45025 байт,
-sha256 `e2246ac337d8f7df3cfb432cb4d91ddda92d938aaad76ea155bcb6c3b2277a3d`): топология — 12
-разрешённых CPU / 12 физических ядер; матрица `workers = 1..=12`; на **всех** 12 точках
-`semantic_digest == matrix.scalar_oracle_digest` (один digest), `admitted == terminals == 48`,
-`failed == 0`, `coordinator_failed == 0`; 12 breakpoint-вердиктов лежат в закрытом словаре
-(`first_regression` наблюдён на 5/9/12 воркерах, остальные — `not_observed`).
+Измеренный результат. **Детерминированная поверхность** (`artifacts/parse_compat/native_core_smp.json`,
+38262 байта, sha256 `dc323914f2f0af631b9c04b026d388aa9ddff4a48c2f092db622992aa41ca1aa`, схема
+`native-core-smp.v2`): топология — 12 разрешённых CPU / 12 физических ядер; матрица `workers = 1..=12`
+(12 записей); на **всех** 12 точках `semantic_digest == matrix.scalar_oracle_digest`
+(`sha256:1fc2e3a5b56cdc5b4c9732363aecfd347b1456549fe15d66210787194f0ca54d`),
+`admitted == terminals == 48`, `failed == 0`, `coordinator_failed == 0`;
+`deterministic_projection.digest = sha256:4ac2c13dc2a80f005baa2288df33c34bf7fd5bd535d986d911ce47b9b0195a9f`
+персистится на поверхности и пересчитывается из неё тестом.
+
+**Observation-поверхность** (`artifacts/parse_compat/native_core_smp_observations.json`, схема
+`native-core-smp-observations.v1`) — объявленный run-snapshot; её байты и размер намеренно не
+цитируются как приёмочные: они меняются от прогона к прогону. Снапшот несёт `reproducible: false`,
+`not_a_receipt: true`, а `source_artifact.sha256` пинит ровно байты детерминированной поверхности.
+Latency-перцентили, `run_wall_ms`, throughput, queue/scratch high-water marks, process peak RSS и 12
+breakpoint-вердиктов живут **только** здесь, исключены из знаменателей приёмки и из выбора
+production-маршрута. Эта поверхность не пинится по sha256 и между прогонами ожидаемо различается —
+она не является артефактом приёмки.
 
 ### A3. Java-работа измерена как число CRF-model invocation'ов с верифицированной ленты (R085)
 
@@ -135,7 +165,7 @@ sha256 `87e69860b04ca0b9a2ca4df2c7c411007a09b16db376a9700844110ba74bf00c`):
 (T01/T02) и receipt Java-работы (T03) в один ledger с **закрытым fail-closed** вердиктом.
 
 ```bash
-cargo test -p da-cli --test native_route_recovery_contract  # 10 passed; 0 failed
+cargo test -p da-cli --test native_route_recovery_contract  # 14 passed; 0 failed
 cargo test -p da-cli --lib native_route_recovery            # 13 passed; 0 failed
 cargo run -p da-cli --example native_route_recovery         # печатает per-stage вердикты и сумму
 ```
@@ -147,12 +177,15 @@ cargo run -p da-cli --example native_route_recovery         # печатает p
 (e) Java-работа наблюдена. Иначе — `not_qualified` / `fallback` / `not_observed`.
 Порядок guard'ов живёт в DATA (`verdict_rule.order`), код лишь сверяет с ним свой закрытый enum.
 
-Измеренный результат (`artifacts/parse_compat/native_route_recovery.json`, 20320 байт,
-sha256 `a4342f9986f1be3eebbdf2e180f2f193a3d0e25afd747876bc4f31764f6bd6d0`):
+Измеренный результат (`artifacts/parse_compat/native_route_recovery.json`, 20438 байт,
+sha256 `3981e6ef654264d06d2b1fe6e5e83f56d52b28c6636eaabb467ce143c5a56b23`):
 `recoverable_java_work.value = 399` из 570 измеренных invocation'ов, `by_stage = {P3: 181, P4: 218}`;
 P3/P4 — `recoverable` (`all_conditions_met`), P1/P5/P8/P9 — `not_qualified`
 (`no_admitted_component`), P2/P6 — `fallback` (`component_not_admitted`), P0/P7 — `not_qualified`
 (`native_surface_absent`). Остаток 171 invocation'ов (P2=3, P5=5, P6=163) честно остаётся за Java.
+Блок `core_qualification` публикует `smp_deterministic_projection_sha256` — projection-дайджест,
+прочитанный из запиненных байтов SMP-receipt'а, а не пересчитанный: правка объявленного дайджеста
+двигает sha256-пин всего receipt'а, поэтому дайджест tamper-evident.
 
 ---
 
@@ -161,7 +194,7 @@ P3/P4 — `recoverable` (`all_conditions_met`), P1/P5/P8/P9 — `not_qualified`
 | Не доказано | Почему / где граница |
 |---|---|
 | **Нет Java CPU wall-clock по стадиям.** | `observations.java_cpu_wall_clock.state = not_observed` и в Java-артефакте, и в реестре. Измерение CPU живого сервиса требует отдельной политики измерения (вне S08). |
-| **Нет RSS/CPU/byte-потолков.** | H05 остаётся открытым и **без владельца**; `h05_closure = not_claimed` во всех четырёх артефактах. `memory_pressure_ceiling_bytes.state = not_observed` — DATA `cpu_smp_candidate` не объявляет memory ceiling, поэтому `memory_pressure` не наблюдаем. `peak_rss_bytes` — наблюдательный runtime-гейдж, исключённый из знаменателей приёмки; потолком он не является. |
+| **Нет RSS/CPU/byte-потолков.** | H05 остаётся открытым и **без владельца**; `h05_closure = not_claimed` во всех четырёх артефактах приёмки (объявленный observation-снапшот SMP артефактом приёмки не является, §(d)). `memory_pressure_ceiling_bytes.state = not_observed` — DATA `cpu_smp_candidate` не объявляет memory ceiling, поэтому `memory_pressure` не наблюдаем. `peak_rss_bytes` — наблюдательный runtime-гейдж, исключённый из знаменателей приёмки; потолком он не является. |
 | **Нет source-bound parity.** | Ни S08-модули, ни ledger не сравнивают текст источника (PDF/TEI) с нативным выходом; сравниваются счётчики и дайджесты. Содержимое дампа не читается вообще. |
 | Нет runtime-маршрута и нет сплайса. | Native-маршрут не подключён ни к `parse-pdf`, ни к `ParserPort`: четыре модуля отсутствуют в `crates/da-cli/src/source_cli.rs` и на любом пути `ParserPort` (grep = 0). `production_route=forbidden`. |
 | Нет промоушена и нет выбора. | `promotion.state=candidate`, `promoted=forbidden`, `auto_promote=forbidden`, `selection=forbidden`; ledger вердикты «квалифицируют offline-receipt'ы и никогда не диспатчат маршрут». |
@@ -169,7 +202,7 @@ P3/P4 — `recoverable` (`all_conditions_met`), P1/P5/P8/P9 — `not_qualified`
 | `learning_policy` не наблюдается. | В `data/parse/native_fulltext_composition.yaml` она остаётся `not_observed` / `output_affecting: false`; результаты обучения срезом не требуются (S07 не блокирует S08). |
 | Никакого self-oracle. | Scalar-oracle — независимый путь (`da-domain::scalar_crf`), SUT-профиль строится на публичных декодерах семейств; ADR-051 (oracle не строится тем же кодом) соблюдён. |
 
-**Proof level среза:** contract (offline, per-crate, байт-воспроизводимые артефакты) **плюс одна
+**Proof level среза:** contract (offline, per-crate, байт-воспроизводимые артефакты приёмки) **плюс одна
 opt-in integration-конечность** (живой GROBID debug-захват) с MISSING-полярностью: без явно
 заданного `GROBID_URL`/`DA_GROBID_URL` тест печатает MISSING и не выполняет ни одного ассерта.
 Source-bound parity и runtime-маршрут не заявляются.
@@ -263,24 +296,54 @@ cargo run -p da-cli --example native_core_profile            # --rows N меня
 | `h05_closure` / `h05_reason` | `not_claimed` + причина (потолки и Java CPU не закрываются) |
 | `redaction.forbidden` | список запрещённого содержимого (`raw_pdf`, `raw_text`, `raw_tei`, `token_text`, `model_bytes`, `lexicon_bytes`, `physical_path`, `hostname`, `executable`) |
 
-### SMP (`artifacts/parse_compat/native_core_smp.json`)
+### SMP: две поверхности (`native_core_smp.json` + `native_core_smp_observations.json`)
+
+SMP — единственный продюсер с двумя поверхностями. **Детерминированная** поверхность — артефакт
+приёмки, схема `native-core-smp.v2`, байт-воспроизводима. **Observation**-поверхность — объявленный
+run-snapshot, схема `native-core-smp-observations.v1`, `reproducible: false`, `not_a_receipt: true`;
+она пинит детерминированные байты и не является артефактом приёмки.
 
 ```bash
-cargo run -p da-cli --example native_core_smp   # --artifact/--documents/--rows-per-document/--repetitions
+# детерминированная поверхность + observation-снапшот (без --observations-artifact снапшот
+# по умолчанию НЕ перезаписывается, если уже является актуальной записью этих детерминированных
+# байтов; --observations-artifact — явный путь принудительного обновления)
+cargo run -p da-cli --example native_core_smp \
+  --artifact <dir>/native_core_smp.json \
+  --observations-artifact <dir>/native_core_smp_observations.json
+# --documents/--rows-per-document/--repetitions меняют нагрузку (benchmark-ось), не приёмку
 ```
+
+#### Детерминированная поверхность (`artifacts/parse_compat/native_core_smp.json`, `native-core-smp.v2`)
 
 | Поле | Значение |
 |---|---|
+| `schema_version` / `adr_ref` / `candidate_schema_version` / `requirement_ids` | `native-core-smp.v2` / `ADR-075` / версия схемы DATA-кандидата / идентификаторы требований |
+| `manifest_binding` / `candidate_manifest_binding` | DATA-манифест порогов и словарей + его кандидат-версия |
 | `topology` | источник (linux allowed cpu set ∩ sysfs package/core), `allowed_cpus`, `physical_cores`, digest — потолок `physical_core_cap` |
-| `workload` | `documents_per_family`, `rows_per_document`, `jobs`, `repetitions`, `scratch_capacity_bytes` |
-| `matrix.entries[]` | по числу воркеров `1..=cap`: `admitted`, `terminals`, `completed`, `failed`, `coordinator_failed`, `ordinals`, `per_worker_terminal_counts`, `semantic_digest`, `scalar_oracle_digest`, `semantic_equal_to_scalar`, `rows_decoded`, `decoded_positions`, queue-ёмкости и high-water, `queue_wait_ms`, scratch capacity/high-water и per-worker high-water, `latency_ms` (p50/p95/p99), `run_wall_ms`, `throughput_units_per_second`, `cpu_only`, `subprocess_io_included` |
+| `workload` | `documents_per_family`, `rows_per_document`, `jobs`, `repetitions`, `scratch_capacity_bytes` (выводится из модели и нагрузки, не измеряется) |
+| `families[]` | по семье: `family`, `model_sha256`, `rows`, `documents` — sha256 модели остаётся на детерминированной стороне |
+| `matrix.entries[]` | по числу воркеров `1..=cap`: `admitted`, `terminals`, `completed`, `failed`, `coordinator_failed`, `ordinals`, `per_worker_terminal_counts`, `semantic_digest`, `scalar_oracle_digest`, `semantic_equal_to_scalar`, `rows_decoded`, `decoded_positions`, `queue` (только `input_capacity`/`result_capacity`/`max_in_flight` — конфигурация), `queue_wait_ms` (typed `not_observed` без `value`), `scratch_capacity_bytes`, `cpu_only`, `subprocess_io_included`, `coordinator_failure` |
 | `matrix.scalar_oracle_digest` | единственный oracle-digest, с которым обязаны совпасть все worker-count'ы |
-| `matrix.breakpoints[]` / `breakpoint_vocabulary` | по числу воркеров вердикт из закрытого словаря `[not_observed, saturation, first_regression, queue_pressure, memory_pressure, inconclusive]` + причина |
+| `matrix.breakpoint_vocabulary` | закрытый словарь `[not_observed, saturation, first_regression, queue_pressure, memory_pressure, inconclusive]`; сами вердикты наблюдательны |
+| `memory_pressure_ceiling_bytes` | typed `not_observed` (DATA не объявляет потолок) |
 | `metrics.required` | обязательные метрики приёмки (перцентили, throughput, process RSS, allocation/private capacity, queue wait, оба high-water) |
-| `peak_rss_bytes` | наблюдательный гейдж процесса; `memory_pressure_ceiling_bytes.state = not_observed` (DATA не объявляет потолок) |
-| `timing_observational` | какие поля наблюдательные и что они исключены из знаменателей приёмки и из выбора production-маршрута |
 | `denominators` | acceptance-знаменатель (`corpus_n`, `lanes_n`, `pages_per_lane`, `total_lane_pages`, `fixed`) и benchmark-знаменатель (`separate_from_acceptance: true`, `pooled: forbidden`) |
+| `timing_observational` | `disposition`, `timing_fields`, `runtime_observed_fields`, `excluded_from`, `observations_artifact`, `observations_schema_version` — декларация границы (имена, а не значения) |
+| `deterministic_projection.digest` / `.scope` | персистированный `sha256:`-digest проекции и группы, которые она покрывает; дайджест ≠ sha256 байтов артефакта (нет самореференции) |
 | `optimization` / `promotion` / `selection_forbidden` / `h05_closure` / `redaction` | те же закрытые состояния, что и в профиле |
+
+#### Observation-поверхность (`artifacts/parse_compat/native_core_smp_observations.json`, `native-core-smp-observations.v1`)
+
+| Поле | Значение |
+|---|---|
+| `schema_version` / `adr_ref` | `native-core-smp-observations.v1` / `ADR-075` |
+| `source_artifact.path` / `.sha256` | путь детерминированной поверхности и sha256 **её байтов**: снапшот привязан ровно к той записи, рядом с которой снят |
+| `reproducible: false` / `non_reproducible_reason` | wall-clock и process-runtime гейджи по построению различаются между прогонами; заявка на воспроизводимость снята |
+| `not_a_receipt: true` | это run-snapshot, а не артефакт приёмки |
+| `excluded_from` | `acceptance_denominators`, `production_route_selection` |
+| `matrix.entries[]` | `latency_ms` (p50/p95/p99), `run_wall_ms`, `throughput_units_per_second`, `queue.{input,result,in_flight}_high_water`, `scratch_high_water_bytes`, `per_worker_scratch_high_water_bytes` |
+| `matrix.breakpoints[]` | по числу воркеров вердикт из закрытого словаря + причина |
+| `peak_rss_bytes` | наблюдательный process-гейдж (typed `observed`/`not_observed`; `not_observed` без `value`) |
 
 ### Java-работа (`artifacts/parse_compat/native_java_work.json`)
 
@@ -313,15 +376,19 @@ cargo run -p da-cli --example native_route_recovery     # --root . --artifact <r
 | `verdict_rule` | `order` (порядок guard'ов), `component_state_verdicts`, `admission_conditions`, `recovery_rule_invariants`, `attribution_rule` |
 | `java_work` | входной receipt: `state`, `unit`, `corpus_documents`, `documents_measured`, `coverage`, `tape_verification`, `total_invocations`, per-model counts |
 | `recoverable_java_work` | `state`, `unit`, `value`, `by_stage`, `corpus_id`, `receipt_sha256`, `claim: offline_attribution_only_never_a_deployed_reduction` |
-| `core_qualification` | `profile_receipt_present`, `profile_optimization_state`, `profile_dense_phase`, `profile_pgo_disposition`, `smp_receipt_present`, `smp_matrix_entries`, `smp_scalar_oracle_bound`, `missing_receipts` |
+| `core_qualification` | `profile_receipt_present`, `profile_optimization_state`, `profile_dense_phase`, `profile_pgo_disposition`, `smp_receipt_present`, `smp_matrix_entries`, `smp_scalar_oracle_bound`, `smp_deterministic_projection_sha256` (прочитан из запиненных байтов receipt'а), `missing_receipts` |
 | `observations` | `java_cpu_wall_clock` / `rss_ceiling` — `not_observed` |
 | `denominators` | `corpus_id`, `corpus_documents`, `corpus_documents_pinned_by_sha256`, `unit`, `pooled: forbidden`, `named_gaps` |
 | `source_bindings[]` | sha256 всех входов: три артефакта-рецепта и три DATA-таблицы |
 | `named_limitations` | явные ограничения (двойное использование модели `date`, `fulltext` → P5, «вердикты ничего не диспатчат», fallback не переклассифицируется, H05 не закрыт) |
 | `locks` / `h05_closure` / `redaction` | лок-блок (см. §(f)), `not_claimed`, запрещённое содержимое |
 
-Все четыре артефакта воспроизводимы: повторный прогон эмиттера на тех же входах даёт байт-идентичный
-файл, а тесты сверяют закоммиченные байты с повторной эмуляцией.
+Четыре артефакта приёмки (профиль, **детерминированная** поверхность SMP, Java-работа, реестр
+маршрутов) воспроизводимы: повторный прогон эмиттера на тех же входах даёт байт-идентичный файл,
+а тесты сверяют закоммиченные байты с повторной эмуляцией. Пятый файл — observation-снапшот SMP —
+намеренно **не** воспроизводим и не является артефактом приёмки: он объявлен
+`reproducible: false` / `not_a_receipt: true`, пинит детерминированные байты и исключён из
+знаменателей приёмки и из выбора production-маршрута.
 
 ---
 
@@ -377,6 +444,31 @@ cargo run -p da-cli --example native_route_recovery     # --root . --artifact <r
     governor-траектория несёт предсуществующие/средовые флаги (диск, `target/`, hardcoded URL в
     `crates/da-parse/src/native_feature_facts.rs`), ни один не связан с S08.
 
+### Устранённый дефект: ложный claim байт-воспроизводимости SMP (закрыт в S09)
+
+S08 объявлял `native_core_smp.json` воспроизводимым артефактом (`sha256 e2246ac3…`, 45025 байт) и
+утверждал, что повторный прогон эмиттера на тех же входах даёт байт-идентичный файл. Это было ложное
+утверждение, и именно оно породило дефект S08: детерминированная поверхность физически несла
+измерения, которые не могут быть воспроизводимы. Ни один семантический результат S08 при этом не
+пересматривается — консервация, семантические дайджесты и закрытые состояния сохранены; исправлена
+только граница claim'а.
+
+| Почему claim был ложным | Чем закрыт |
+|---|---|
+| артефакт нёс wall-clock/queue/scratch/RSS-поля (`latency_ms`, `run_wall_ms`, `throughput_units_per_second`, high-water marks, `peak_rss_bytes`) прямо на поверхности приёмки | эти поля вынесены на отдельную объявленную observation-поверхность (`native-core-smp-observations.v1`, `reproducible: false`, `not_a_receipt: true`); детерминированная поверхность (`native-core-smp.v2`) несёт только дайджесты, консервацию и типизированные состояния |
+| `DeterministicEntry` нёс два поля, объявленных observational, — имя записи не соответствовало её содержимому | запись сужена до детерминированных полей; `queue_wait_ms` осталась типизированным `not_observed` без `value`, `queue` несёт только `input_capacity`/`result_capacity`/`max_in_flight` |
+| guard был подстрочным (`!text.contains("latency") && !text.contains("throughput")`) и не видел значение на пути, чьё имя не содержит токена | leaf-level перечисление путей с re-rooting'ом в namespace проекции: `deterministic_artifact_has_no_observational_leaf_path`, `perturbing_every_observational_field_leaves_the_deterministic_bytes_unchanged` (25 пертурбаций: детерминированные байты не двигаются, observation-байты обязаны двигаться) |
+| breakpoints расходились по verdict между прогонами, оставаясь на поверхности приёмки | вердикты и причины перенесены на observation-поверхность; на детерминированной осталась только закрытая `matrix.breakpoint_vocabulary` |
+| приёмка и реестр не могли отличить детерминированную поверхность от наблюдаемой | `deterministic_projection.digest` персистится и пересчитывается тестом; реестр публикует `core_qualification.smp_deterministic_projection_sha256`, прочитанный из запиненных байтов; observation-путь отсутствует и в `source_bindings`, и в DATA-списке receipt'ов, причём детерминированный там присутствует (положительная полярность) |
+
+Отвергнутая альтернатива — удалить observation-поверхность целиком. Она отвергнута, потому что
+наблюдения нужны для диагностики, а удаление лишило бы доказательство положительной полярности:
+исключение поля из детерминированной поверхности доказывается парой «байты не двигаются / байты
+обязаны двигаться на observation-стороне», и без второй половины leaf-guard может быть вакуумным
+(такой вакуумный guard и был найден и исправлен мутационным прогоном в S09). Отвергнута и
+«воспроизводимость» наблюдаемой поверхности: wall-clock нельзя сделать воспроизводимым, не выбросив
+само измерение.
+
 ---
 
 ## (f) Локи, права и rollback target
@@ -429,11 +521,14 @@ sha256 уже связан в `source_bindings` реестра. Маркеры-�
 `source_cli.rs`, ни с любого пути `ParserPort`.
 
 Проверка локов (перезапускается оператором; каждый шаг — ассерт, дающий 0 ровно при выполненном
-условии):
+условии). Шаги 1–7 — S08-инварианты, шаги 8–11 — S09-граница двух поверхностей: детерминированная
+поверхность объявляет projection-дайджест и не пересекается по leaf-путям с observational-именами,
+observation-поверхность объявлена run-snapshot'ом, пинит детерминированные байты и отсутствует и в
+DATA-списке receipt'ов, и в `source_bindings` реестра:
 
 ```bash
 python3 - <<'PY'
-import json, subprocess
+import hashlib, json, subprocess
 
 def sh(cmd):
     return subprocess.run(cmd, shell=True, capture_output=True, text=True).stdout
@@ -492,7 +587,72 @@ composer = sh("grep -rn 'NativeFulltextComposition\\|compose_native_fulltext' "
               "grep -v 'da-parse/src/lib.rs' | wc -l")
 assert int(composer.strip()) == 0, composer
 
+# 8. детерминированная поверхность: проекция объявлена, дайджест формы `sha256:<64 hex>`
+#    и совпадает с дайджестом, который реестр прочитал из запиненных байтов этого же receipt'а
+proj = smp["deterministic_projection"]
+digest = proj["digest"]
+assert digest.startswith("sha256:"), digest
+assert len(digest) == 71, len(digest)
+assert all(c in "0123456789abcdef" for c in digest[7:]), digest
+assert digest == rec["core_qualification"]["smp_deterministic_projection_sha256"], digest
+assert isinstance(proj["scope"], list) and proj["scope"], proj["scope"]
+
+# 9. leaf-level: ни один leaf-путь детерминированной поверхности не лежит под observational-именем.
+#    Имена берутся из декларации, а не из подстроки, и сравниваются на границе сегментов.
+obs = json.load(open("artifacts/parse_compat/native_core_smp_observations.json"))
+observational = (list(smp["timing_observational"]["timing_fields"])
+                 + list(smp["timing_observational"]["runtime_observed_fields"])
+                 + ["peak_rss_bytes"])
+
+def leaf_paths(value, path=""):
+    if isinstance(value, dict):
+        out = set()
+        for key, item in value.items():
+            out |= leaf_paths(item, f"{path}.{key}" if path else key)
+        return out
+    if isinstance(value, list):
+        out = set()
+        for item in value:
+            out |= leaf_paths(item, f"{path}[]")
+        return out
+    return {path}
+
+def is_under(path, name):
+    norm = lambda p: p.replace("[]", ".__item")
+    return norm(path) == norm(name) or norm(path).startswith(norm(name) + ".")
+
+artifact_leaves = leaf_paths(smp)
+assert artifact_leaves, "leaf enumeration is empty"
+offenders = sorted(l for l in artifact_leaves for n in observational if is_under(l, n))
+assert not offenders, offenders
+# невакуумность: тот же предикат обязан поймать эти имена на observation-поверхности
+matched = sorted(n for n in observational if any(is_under(l, n) for l in leaf_paths(obs)))
+assert matched, "no observational name resolves anywhere: disjointness would be vacuous"
+
+# 10. observation-поверхность объявлена run-snapshot'ом и пинит ровно детерминированные байты
+with open("artifacts/parse_compat/native_core_smp.json", "rb") as fh:
+    deterministic_sha256 = "sha256:" + hashlib.sha256(fh.read()).hexdigest()
+assert obs["schema_version"] == "native-core-smp-observations.v1"
+assert obs["reproducible"] is False
+assert obs["not_a_receipt"] is True
+assert obs["source_artifact"]["path"] == "artifacts/parse_compat/native_core_smp.json"
+assert obs["source_artifact"]["sha256"] == deterministic_sha256, deterministic_sha256
+assert obs["excluded_from"] == ["acceptance_denominators", "production_route_selection"]
+assert smp["timing_observational"]["observations_artifact"] == \
+    "artifacts/parse_compat/native_core_smp_observations.json"
+assert digest != deterministic_sha256, "projection digest must not be a self-reference"
+
+# 11. observation-поверхность не receipt: её нет ни в DATA-списке receipt'ов, ни в source_bindings
+#     реестра, тогда как детерминированная поверхность там присутствует
+receipts = open("data/parse/native_fulltext_composition.yaml", encoding="utf-8").read()
+assert "artifacts/parse_compat/native_core_smp.json" in receipts
+assert "artifacts/parse_compat/native_core_smp_observations.json" not in receipts
+binding_paths = [b["path"] for b in rec["source_bindings"]]
+assert "artifacts/parse_compat/native_core_smp.json" in binding_paths
+assert "artifacts/parse_compat/native_core_smp_observations.json" not in binding_paths
+
 print("S08 LOCKS OK")
+print("S09 SURFACE LOCKS OK")
 PY
 ```
 
