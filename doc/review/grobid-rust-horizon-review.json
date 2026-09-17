@@ -701,44 +701,39 @@
       ],
       "implementation_evidence": [
         {
-          "path": "crates/da-parse/src/native_feature_tagger.rs",
-          "note": "Current native feature layer with 11 structural columns.",
-          "state": "partial"
-        },
-        {
           "path": "crates/da-parse/src/layout.rs",
-          "note": "Layout extraction feeding the feature ABI.",
+          "note": "Provider-side layout extraction that feeds the feature ABI: da-parse state predating M507/S01 (hence partial); explicitly not an S01 delivery claim.",
           "state": "partial"
         },
         {
           "path": "crates/da-parse/src/layout_lattice.rs",
-          "note": "Layout lattice used for provider comparison.",
+          "note": "Provider-side layout lattice used for the PDF provider comparison in this stage scope: da-parse state predating M507/S01 (hence partial); explicitly not an S01 delivery claim.",
           "state": "partial"
         },
         {
           "path": "crates/da-domain/src/lexicon.rs",
           "state": "present",
-          "note": "Typed lexicon/template model with ordering, uniqueness and bounded-count invariants and typed LexiconError; no I/O and no tracing."
+          "note": "M507/S01 delivery: typed lexicon/template model with ordering, uniqueness and bounded-count invariants and typed LexiconError; no I/O and no tracing."
         },
         {
           "path": "crates/da-ports/src/lexicon.rs",
           "state": "present",
-          "note": "LexiconLoaderPort seam: the domain depends on the port, the filesystem access stays in the adapter."
+          "note": "M507/S01 delivery: LexiconLoaderPort seam; the domain depends on the port, the filesystem access stays in the adapter."
         },
         {
           "path": "crates/da-adapters/src/lexicon_loader.rs",
           "state": "present",
-          "note": "FilesystemLexiconLoader with typed Unavailable/Malformed/Invalid/ResourceTooLarge and a MAX_LEXICON_BYTES ceiling checked via metadata before reading."
+          "note": "M507/S01 delivery: FilesystemLexiconLoader with typed Unavailable/Malformed/Invalid/ResourceTooLarge and a MAX_LEXICON_BYTES ceiling checked via metadata before reading."
         },
         {
           "path": "crates/da-domain/src/feature_abi.rs",
           "state": "present",
-          "note": "Deterministic per-channel feature ABI: canonical token order, checked dimension arithmetic, typed DimensionMismatch, property-tested determinism."
+          "note": "M507/S01 delivery: deterministic per-channel feature ABI with canonical token order, checked dimension arithmetic, typed DimensionMismatch and property-tested determinism."
         },
         {
           "path": "doc/parse/feature-provider-parity.md",
           "state": "present",
-          "note": "Documents the executed ABI, canonical ordering, sanitized diagnostics and the explicit limitation that synthetic fixtures do not prove real provider or Java equivalence."
+          "note": "M507/S01 delivery: documents the executed ABI, canonical ordering, sanitized diagnostics and the explicit limitation that synthetic fixtures do not prove real provider or Java equivalence."
         },
         {
           "path": "crates/da-adapters/tests/feature_provider_parity.rs",
@@ -842,19 +837,24 @@
       ],
       "implementation_evidence": [
         {
-          "path": "crates/da-parse/src/native_feature_tagger.rs",
-          "note": "Feature layer feeding the CRF decoder.",
-          "state": "partial"
+          "path": "crates/da-domain/src/scalar_crf.rs",
+          "state": "present",
+          "note": "M507/S02 delivery: byte-only Wapiti text-model reader (declared netstring lengths, #mdl# model type 2, #rdr# u/b/* patterns, #qrk# label and observation tables, sparse C99 hex-float weights) plus boundary-marker template expansion and linear-chain Viterbi with Wapiti strict-greater tie semantics."
         },
         {
-          "path": "crates/da-parse/src/native_segmentation.rs",
-          "note": "Segmentation labels the decoder must reproduce.",
-          "state": "partial"
+          "path": "crates/da-ports/src/scalar_crf.rs",
+          "state": "present",
+          "note": "M507/S02 delivery: CrfModelLoaderPort seam plus shared validate_loaded_crf_model fail-closed check (model type, label/observation consistency, weight index range and finiteness); filesystem access stays in the adapter."
         },
         {
-          "path": ".gsd/phases/505-o169s4-baseline-grobid/505-RESEARCH.md",
-          "note": "Wapiti-not-ruVLLM route and missing pure-Rust decoder evidence.",
-          "state": "present"
+          "path": "crates/da-adapters/src/scalar_crf_loader.rs",
+          "state": "present",
+          "note": "M507/S02 delivery: FilesystemCrfModelLoader with a metadata-first MAX_CRF_MODEL_BYTES ceiling and sanitized typed Unavailable/Malformed/ResourceTooLarge errors that do not echo the resource path."
+        },
+        {
+          "path": "doc/parse/scalar-crf.md",
+          "state": "present",
+          "note": "M507/S02 delivery: records the decoded model surface, resource ceilings, the hand-authored synthetic oracle, the opt-in DA_GROBID_CRF_MODEL_PATH harness that reports MISSING instead of PASS, and the D358 boundary where Java 0.9.0-crf stays authority."
         }
       ],
       "verification_evidence": [
