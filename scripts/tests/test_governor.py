@@ -26,7 +26,11 @@ from governor.adapters import (
     YAMLRuleRepository,
 )
 from governor.application import AuditService
-from governor.application.trajectory_service import TrajectoryService
+from governor.application.trajectory_service import (
+    TrajectoryService,
+    _boundary_positional_violations,
+    _candidate_contract_flags,
+)
 from governor.domain import CheckSeverity, CheckStatus
 from governor.domain.trajectory import DriftFlag, TrajectoryVerdict
 
@@ -2618,6 +2622,27 @@ def _copy_multimodal_contracts(root: Path) -> None:
         _write(root / rel, (repo / rel).read_text(encoding="utf-8"))
 
 
+def _copy_boundary_positional_contract(root: Path) -> None:
+    """Copy the committed boundary positional metrics contract, fixtures and markers.
+
+    `data/parse/document_segmentation.yaml` is required for the pinned SHA
+    binding and the Rust shadow runner for the source markers; without them
+    the check reports `..._binding_missing` / `..._source_marker_missing`
+    instead of exercising the fixture logic (same pattern as
+    `_copy_multimodal_contracts`).
+    """
+    repo = _scripts_dir.parent
+    rels = [
+        "scripts/governor/checks/boundary_positional_metrics.yaml",
+        "governor/fixtures/boundary_positional_metrics/positional_clean.positive.json",
+        "governor/fixtures/boundary_positional_metrics/positional_broken.negative.json",
+        "data/parse/document_segmentation.yaml",
+        "crates/da-cli/examples/document_segmentation_shadow.rs",
+    ]
+    for rel in rels:
+        _write(root / rel, (repo / rel).read_text(encoding="utf-8"))
+
+
 def test_visual_candidates_require_graph_lineage_pass_on_clean_fixtures():
     """Committed positive + negative fixtures and source markers satisfy the contract."""
     service = TrajectoryService.__new__(TrajectoryService)
@@ -2704,6 +2729,198 @@ def test_visual_candidates_require_graph_lineage_invalid_yaml_is_flagged():
            "{bad yaml: [")
     flags = service._check_visual_candidates_require_graph_lineage()
     assert flags[0].flag == "visual_candidates_require_graph_lineage_invalid"
+
+
+def test_boundary_positional_metrics_pass_on_clean_fixtures():
+    """Committed fixtures, source markers and the pinned SHA satisfy the contract."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_boundary_positional_contract(service.root)
+    assert service._check_boundary_positional_metrics() == []
+
+
+def test_boundary_positional_metrics_missing_fixture_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_boundary_positional_contract(service.root)
+    (service.root / "governor/fixtures/boundary_positional_metrics/positional_broken.negative.json").unlink()
+    flags = service._check_boundary_positional_metrics()
+    assert len(flags) == 1
+    assert flags[0].flag == "boundary_positional_metrics_fixture_missing"
+    assert "negative" in flags[0].evidence
+
+
+def test_boundary_positional_metrics_positive_fixture_must_be_clean():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_boundary_positional_contract(service.root)
+    # Cross-pair the ends: the boundary count is unchanged and the declared
+    # count metrics still agree, but no boundary is positionally correct.
+    path = service.root / "governor/fixtures/boundary_positional_metrics/positional_clean.positive.json"
+    records = json.loads(path.read_text())
+    left, right = records[0]["predicted_boundaries"]
+    left["end"], right["end"] = right["end"], left["end"]
+    _write(path, json.dumps(records))
+    flags = service._check_boundary_positional_metrics()
+    broken = [f for f in flags if f.flag == "boundary_positional_metrics_broken"]
+    assert len(broken) == 1
+    assert "permuted_boundary_false_match" in broken[0].evidence
+
+
+def test_boundary_positional_metrics_negative_fixture_must_trigger_labelled_violations():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_boundary_positional_contract(service.root)
+    # Declare a non-zero displacement on the record labelled
+    # displacement_from_counts: nothing matched, so the label can no longer fire.
+    path = service.root / "governor/fixtures/boundary_positional_metrics/positional_broken.negative.json"
+    records = json.loads(path.read_text())
+    for record in records:
+        if record.get("violation") == "displacement_from_counts":
+            record["record"]["reported"]["boundary_displacement"] = 0.5
+            record["record"]["reported"]["boundary_displacement_max"] = 0.5
+    _write(path, json.dumps(records))
+    flags = service._check_boundary_positional_metrics()
+    broken = [f for f in flags if f.flag == "boundary_positional_metrics_broken"]
+    assert any("displacement_from_counts" in f.evidence for f in broken)
+
+
+def test_boundary_positional_metrics_negative_fixture_must_cover_required_violations():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_boundary_positional_contract(service.root)
+    # Remove the only record producing missing_coordinate_binding entirely —
+    # required violation coverage must fail.
+    path = service.root / "governor/fixtures/boundary_positional_metrics/positional_broken.negative.json"
+    records = json.loads(path.read_text())
+    records = [r for r in records if r.get("violation") != "missing_coordinate_binding"]
+    _write(path, json.dumps(records))
+    flags = service._check_boundary_positional_metrics()
+    broken = [f for f in flags if f.flag == "boundary_positional_metrics_broken"]
+    assert any("missing_coordinate_binding" in f.evidence for f in broken)
+
+
+def test_boundary_positional_metrics_source_marker_missing_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_boundary_positional_contract(service.root)
+    # Drop the positional-metric enforcement points from the Rust runner.
+    _write(service.root / "crates/da-cli/examples/document_segmentation_shadow.rs",
+           "fn main() {}\n")
+    flags = service._check_boundary_positional_metrics()
+    marker = [f for f in flags
+              if f.flag == "boundary_positional_metrics_source_marker_missing"]
+    assert len(marker) == 1
+    assert "runner" in marker[0].evidence
+
+
+def test_boundary_positional_metrics_binding_mismatch_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_boundary_positional_contract(service.root)
+    # A 64-zero scalar parses as int 0, which the binding guard must reject
+    # as unverifiable rather than skip.
+    path = service.root / "scripts/governor/checks/boundary_positional_metrics.yaml"
+    _write(path, path.read_text().replace(
+        "c2bc051eb09af6495baf7280d77d2da25cb10cacb986264bdb222f060a4d4b45",
+        "0" * 64,
+    ))
+    flags = service._check_boundary_positional_metrics()
+    mismatch = [f for f in flags
+                if f.flag == "boundary_positional_metrics_binding_mismatch"]
+    assert len(mismatch) == 1
+
+
+def test_boundary_positional_metrics_binding_missing_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_boundary_positional_contract(service.root)
+    (service.root / "data/parse/document_segmentation.yaml").unlink()
+    flags = service._check_boundary_positional_metrics()
+    missing = [f for f in flags
+               if f.flag == "boundary_positional_metrics_binding_missing"]
+    assert len(missing) == 1
+
+
+def test_boundary_positional_metrics_invalid_yaml_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_boundary_positional_contract(service.root)
+    _write(service.root / "scripts/governor/checks/boundary_positional_metrics.yaml",
+           "{bad yaml: [")
+    flags = service._check_boundary_positional_metrics()
+    assert flags[0].flag == "boundary_positional_metrics_invalid"
+
+
+def test_boundary_positional_metrics_oracle_rejects_permutation_without_governor():
+    """The independent oracle is falsifiable on its own (no governor wiring)."""
+    contract = {
+        "coordinate_binding": {"tolerance": 0},
+        "metrics": {
+            "positional": [
+                "boundary_precision",
+                "boundary_recall",
+                "boundary_f1",
+                "boundary_displacement",
+                "boundary_displacement_max",
+            ],
+        },
+    }
+    reviewed = [
+        {"start": [2, 1, 3, 0], "end": [2, 1, 3, 7]},
+        {"start": [2, 1, 20, 0], "end": [2, 1, 20, 7]},
+    ]
+    reported = {
+        "count_agreement": 1,
+        "count_difference": 0,
+        "matched": 2,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "boundary_precision": 1.0,
+        "boundary_recall": 1.0,
+        "boundary_f1": 1.0,
+        "boundary_displacement": 0.0,
+        "boundary_displacement_max": 0.0,
+    }
+    truthful = {
+        "predicted_boundaries": json.loads(json.dumps(reviewed)),
+        "reviewed_boundaries": reviewed,
+        "reported": reported,
+    }
+    assert _boundary_positional_violations(truthful, contract) == set()
+    permuted = {
+        "predicted_boundaries": [
+            {"start": [2, 1, 3, 0], "end": [2, 1, 20, 7]},
+            {"start": [2, 1, 20, 0], "end": [2, 1, 3, 7]},
+        ],
+        "reviewed_boundaries": reviewed,
+        "reported": reported,
+    }
+    assert "permuted_boundary_false_match" in \
+        _boundary_positional_violations(permuted, contract)
+
+
+def test_boundary_positional_metrics_absent_snapshot_suite_is_not_flagged():
+    """The rule has no durable snapshot task suite; the opt-out must be explicit."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_boundary_positional_contract(service.root)
+    contract = yaml.safe_load(
+        (service.root / "scripts/governor/checks/boundary_positional_metrics.yaml").read_text()
+    )
+    assert "graph_task_suite" not in contract
+    assert _candidate_contract_flags(
+        contract, service.root, "scholarly_parse_plane",
+        "boundary_positional_metrics", _boundary_positional_violations,
+        graph_task_suite_required=False,
+    ) == []
+    default = _candidate_contract_flags(
+        contract, service.root, "scholarly_parse_plane",
+        "boundary_positional_metrics", _boundary_positional_violations,
+    )
+    assert any(
+        f.flag == "boundary_positional_metrics_suite_missing" for f in default
+    )
 
 
 def test_table_payload_requires_cell_provenance_pass_on_clean_fixtures():
@@ -3340,6 +3557,17 @@ def _run_all_tests() -> int:
         test_visual_candidates_require_graph_lineage_negative_fixture_must_cover_required_violations,
         test_visual_candidates_require_graph_lineage_source_marker_missing_is_flagged,
         test_visual_candidates_require_graph_lineage_invalid_yaml_is_flagged,
+        test_boundary_positional_metrics_pass_on_clean_fixtures,
+        test_boundary_positional_metrics_missing_fixture_is_flagged,
+        test_boundary_positional_metrics_positive_fixture_must_be_clean,
+        test_boundary_positional_metrics_negative_fixture_must_trigger_labelled_violations,
+        test_boundary_positional_metrics_negative_fixture_must_cover_required_violations,
+        test_boundary_positional_metrics_source_marker_missing_is_flagged,
+        test_boundary_positional_metrics_binding_mismatch_is_flagged,
+        test_boundary_positional_metrics_binding_missing_is_flagged,
+        test_boundary_positional_metrics_invalid_yaml_is_flagged,
+        test_boundary_positional_metrics_oracle_rejects_permutation_without_governor,
+        test_boundary_positional_metrics_absent_snapshot_suite_is_not_flagged,
         test_table_payload_requires_cell_provenance_pass_on_clean_fixtures,
         test_table_payload_requires_cell_provenance_missing_fixture_is_flagged,
         test_table_payload_requires_cell_provenance_positive_fixture_must_be_clean,
