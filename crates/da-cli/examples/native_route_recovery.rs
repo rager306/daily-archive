@@ -85,13 +85,26 @@ fn report_stdout(ledger: &RouteRecoveryLedger, bytes: &[u8], artifact: &Path) {
         }
     }
     println!(
-        "  core qualification: profile={} ({}/{}) smp={} entries={} scalar_oracle_bound={}",
+        "  core qualification: profile={} ({}/{}) smp={} entries={} scalar_oracle_bound={} \
+         deterministic_projection={}",
         ledger.core_qualification.profile_receipt_present,
         ledger.core_qualification.profile_optimization_state,
         ledger.core_qualification.profile_pgo_disposition,
         ledger.core_qualification.smp_receipt_present,
         ledger.core_qualification.smp_matrix_entries,
         ledger.core_qualification.smp_scalar_oracle_bound,
+        if ledger
+            .core_qualification
+            .smp_deterministic_projection_sha256
+            .is_empty()
+        {
+            "not_observed".to_string()
+        } else {
+            ledger
+                .core_qualification
+                .smp_deterministic_projection_sha256
+                .clone()
+        },
     );
     if !ledger.core_qualification.missing_receipts.is_empty() {
         println!(

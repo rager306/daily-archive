@@ -113,6 +113,10 @@ pub const VERDICT_GUARD_ORDER: [&str; 8] = [
 ];
 /// The ledger's measured unit, restated from `measured_java_work.unit`.
 pub const RECOVERY_JAVA_WORK_UNIT: &str = "java_model_invocations";
+/// `sha256:` (7) + 64 hex characters. The exact shape a pinned
+/// `deterministic_projection.digest` must have: a shorter or unprefixed value
+/// cannot be a digest of anything, so it is a refusal, not a value.
+pub const RECOVERY_PROJECTION_DIGEST_LEN: usize = 71;
 /// The claim a recovered-stage sum may carry. Never "a deployed reduction".
 pub const RECOVERY_CLAIM: &str = "offline_attribution_only_never_a_deployed_reduction";
 /// Longest accepted java stage / component / model token.
@@ -190,6 +194,11 @@ pub enum RouteRecoveryError {
     CorpusBindingMismatch { document: String, reason: String },
     /// A receipt does not carry the identity this ledger requires.
     ReceiptSchemaDrift { path: String, reason: String },
+    /// The pinned native-core receipt declares no usable deterministic
+    /// projection, so nothing links the bytes this ledger pins to a
+    /// reproducible surface. Refused rather than left absent: a ledger that
+    /// pins bytes without the projection they reproduce proves nothing.
+    CoreProjectionUnusable { path: String, reason: String },
     /// The emitted artifact leaked a payload marker.
     RedactionViolation { marker: String },
     /// The artifact could not be serialized.
@@ -283,6 +292,10 @@ impl fmt::Display for RouteRecoveryError {
             Self::ReceiptSchemaDrift { path, reason } => {
                 write!(f, "route recovery: `{path}` is unusable: {reason}")
             }
+            Self::CoreProjectionUnusable { path, reason } => write!(
+                f,
+                "route recovery: `{path}` declares no usable deterministic projection: {reason}"
+            ),
             Self::RedactionViolation { marker } => write!(
                 f,
                 "route recovery: the artifact leaked `{marker}`; payload never leaves the tape"
@@ -556,6 +569,10 @@ pub struct CoreQualification {
     pub smp_receipt_present: bool,
     pub smp_matrix_entries: usize,
     pub smp_scalar_oracle_bound: bool,
+    /// The `sha256:`-prefixed digest of the pinned receipt's own
+    /// `deterministic_projection`, read from the bytes this ledger pins. Empty
+    /// only when the receipt is absent, which `smp_receipt_present` reports.
+    pub smp_deterministic_projection_sha256: String,
     pub missing_receipts: Vec<String>,
 }
 
@@ -2162,10 +2179,10 @@ fn read_core_qualification(
             text_field(&value, &["disposition", "pgo_disposition"])?,
         )
     };
-    let (smp_receipt_present, smp_matrix_entries, smp_scalar_oracle_bound) =
+    let (smp_receipt_present, smp_matrix_entries, smp_scalar_oracle_bound, smp_projection) =
         if smp_json.trim().is_empty() {
             missing.push(CORE_SMP_RECEIPT_REL.to_string());
-            (false, 0usize, false)
+            (false, 0usize, false, String::new())
         } else {
             let value: Value = serde_json::from_str(smp_json).map_err(|error| {
                 RouteRecoveryError::DataUnreadable {
@@ -2186,7 +2203,8 @@ fn read_core_qualification(
                 .unwrap_or(0);
             let oracle =
                 text_field(&value, &["matrix", "scalar_oracle_digest"])?.starts_with("sha256:");
-            (true, entries, oracle)
+            let projection = read_deterministic_projection_digest(&value)?;
+            (true, entries, oracle, projection)
         };
     Ok(CoreQualification {
         profile_receipt_present,
@@ -2196,8 +2214,57 @@ fn read_core_qualification(
         smp_receipt_present,
         smp_matrix_entries,
         smp_scalar_oracle_bound,
+        smp_deterministic_projection_sha256: smp_projection,
         missing_receipts: missing,
     })
+}
+
+/// Read `deterministic_projection.digest` from the pinned native-core receipt.
+///
+/// The digest is what separates the reproducible acceptance surface from the
+/// declared observation surface: the ledger pins the receipt's *bytes*, and the
+/// receipt declares which projection of them is reproducible. A receipt that
+/// does not declare one — absent, unprefixed, or not
+/// [`RECOVERY_PROJECTION_DIGEST_LEN`] characters — is refused with a typed
+/// error. It is never accepted silently, and no digest is ever invented from
+/// the bytes at hand.
+fn read_deterministic_projection_digest(value: &Value) -> Result<String, RouteRecoveryError> {
+    let unusable = |reason: String| RouteRecoveryError::CoreProjectionUnusable {
+        path: CORE_SMP_RECEIPT_REL.to_string(),
+        reason,
+    };
+    let digest = value
+        .get("deterministic_projection")
+        .and_then(|projection| projection.get("digest"))
+        .and_then(Value::as_str)
+        .ok_or_else(|| {
+            unusable(
+                "`deterministic_projection.digest` is absent; a pinned receipt must declare the \
+                 projection its bytes reproduce"
+                    .to_string(),
+            )
+        })?;
+    let Some(hex) = digest.strip_prefix("sha256:") else {
+        return Err(unusable(format!(
+            "`deterministic_projection.digest` is `{digest}` and does not carry the required \
+             `sha256:` prefix"
+        )));
+    };
+    if digest.len() != RECOVERY_PROJECTION_DIGEST_LEN || hex.len() != 64 {
+        return Err(unusable(format!(
+            "`deterministic_projection.digest` is {} character(s); `sha256:` followed by 64 hex \
+             characters ({RECOVERY_PROJECTION_DIGEST_LEN} total) is required",
+            digest.len()
+        )));
+    }
+    if !hex.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err(unusable(
+            "`deterministic_projection.digest` carries characters outside `[0-9a-fA-F]` after the \
+             `sha256:` prefix"
+                .to_string(),
+        ));
+    }
+    Ok(digest.to_string())
 }
 
 // ───────────────────────────── tests ─────────────────────────────

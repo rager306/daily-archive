@@ -19,16 +19,21 @@
 //! 6. every lock survives every run and the emitted artifact declares them;
 //! 7. H05 is not claimed;
 //! 8. two assemblies of the same inputs are byte-identical, and the committed
-//!    artifact is exactly what the committed inputs produce.
+//!    artifact is exactly what the committed inputs produce;
+//! 9. the pinned core receipt must *declare* a well-formed deterministic
+//!    projection — an absent, unprefixed or wrongly-sized digest is refused —
+//!    while the declared run-snapshot surface is never pinned by the ledger.
 
+use da_cli::native_core_smp::NATIVE_CORE_SMP_OBSERVATIONS_ARTIFACT_REL;
 use da_cli::native_route_recovery::{
-    ADMISSION_CONDITION_NAMES, CASCADE_STAGES, ConditionState, JavaClaim, JavaWorkInput,
-    ROUTE_RECOVERY_ARTIFACT_REL, ROUTE_RECOVERY_H05_CLOSURE, RecoverableJavaWork,
-    RouteRecoveryError, RouteRecoveryInputs, RouteRecoveryLedger, STAGE_VERDICT_VOCABULARY,
-    StageVerdict, VERDICT_GUARD_ORDER, VerdictReason, assemble, declared_native_surfaces,
-    load_from_root, observe_surfaces,
+    ADMISSION_CONDITION_NAMES, CASCADE_STAGES, CORE_SMP_RECEIPT_REL, ConditionState, JavaClaim,
+    JavaWorkInput, RECOVERY_PROJECTION_DIGEST_LEN, ROUTE_RECOVERY_ARTIFACT_REL,
+    ROUTE_RECOVERY_H05_CLOSURE, RecoverableJavaWork, RouteRecoveryError, RouteRecoveryInputs,
+    RouteRecoveryLedger, STAGE_VERDICT_VOCABULARY, StageVerdict, VERDICT_GUARD_ORDER,
+    VerdictReason, assemble, declared_native_surfaces, load_from_root, observe_surfaces,
 };
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
@@ -72,6 +77,53 @@ fn ledger_with(
 /// The recovery ledger the committed inputs produce.
 fn ledger() -> RouteRecoveryLedger {
     ledger_with(COMPOSITION, RECEIPT).expect("the committed inputs must assemble")
+}
+
+/// The same assembly, with the pinned native-core receipt replaced.
+fn ledger_with_core_smp(core_smp: &str) -> Result<RouteRecoveryLedger, RouteRecoveryError> {
+    assemble(&RouteRecoveryInputs {
+        composition_yaml: COMPOSITION,
+        compatibility_yaml: COMPATIBILITY,
+        corpus_manifest_yaml: CORPUS,
+        java_work_json: RECEIPT,
+        core_profile_json: CORE_PROFILE,
+        core_smp_json: core_smp,
+        present_surfaces: &surfaces(),
+    })
+}
+
+/// Bare hex, the shape `source_bindings` pins with.
+fn sha256_hex(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
+}
+
+/// The committed core receipt with one field replaced. Structured, so the gate
+/// never depends on the pretty-printer's spacing.
+fn core_smp_with(field: &str, value: Value) -> String {
+    let mut receipt: Value = serde_json::from_str(CORE_SMP).expect("the core receipt is JSON");
+    receipt[field] = value;
+    serde_json::to_string(&receipt).expect("the core receipt re-serializes")
+}
+
+/// The committed core receipt with its declared projection digest replaced, or
+/// with that field removed entirely.
+fn core_smp_with_digest(digest: Option<&str>) -> String {
+    let mut receipt: Value = serde_json::from_str(CORE_SMP).expect("the core receipt is JSON");
+    let projection = receipt["deterministic_projection"]
+        .as_object_mut()
+        .expect("the receipt declares a deterministic projection");
+    match digest {
+        Some(digest) => {
+            projection.insert("digest".to_string(), Value::String(digest.to_string()));
+        }
+        None => {
+            assert!(
+                projection.remove("digest").is_some(),
+                "the digest removal anchor did not land; a mutation that no-ops proves nothing"
+            );
+        }
+    }
+    serde_json::to_string(&receipt).expect("the core receipt re-serializes")
 }
 
 fn mutate(from: &str, to: &str) -> String {
@@ -482,4 +534,196 @@ fn the_artifact_carries_no_payload_and_declares_its_redaction() {
         );
     }
     assert_eq!(bytes, ledger.artifact_json_bytes().expect("artifact bytes"));
+}
+
+/// The ledger pins the deterministic bytes and publishes the projection digest
+/// those bytes declare — read from the artifact, never invented from the pin.
+#[test]
+fn the_ledger_pins_the_deterministic_surface_and_its_declared_projection() {
+    let ledger = ledger();
+    let pinned = ledger
+        .source_bindings
+        .iter()
+        .find(|binding| binding.path == CORE_SMP_RECEIPT_REL)
+        .unwrap_or_else(|| panic!("`{CORE_SMP_RECEIPT_REL}` must be pinned"));
+    assert_eq!(
+        pinned.sha256,
+        sha256_hex(CORE_SMP.as_bytes()),
+        "the pin must digest the committed deterministic bytes, not a recomputed copy"
+    );
+
+    let declared = serde_json::from_str::<Value>(CORE_SMP).expect("core receipt json")
+        ["deterministic_projection"]["digest"]
+        .as_str()
+        .expect("the pinned receipt must declare a deterministic projection")
+        .to_string();
+    assert_eq!(
+        ledger
+            .core_qualification
+            .smp_deterministic_projection_sha256,
+        declared,
+        "the ledger must publish the digest declared by the bytes it pins"
+    );
+    assert_eq!(declared.len(), RECOVERY_PROJECTION_DIGEST_LEN);
+    assert!(declared.starts_with("sha256:"), "{declared}");
+    assert_ne!(
+        pinned.sha256,
+        declared.trim_start_matches("sha256:"),
+        "a pin equal to the projection digest it carries would be self-referential"
+    );
+
+    let json = String::from_utf8(ledger.artifact_json_bytes().expect("artifact")).expect("utf8");
+    assert!(
+        json.contains(&format!(
+            "\"smp_deterministic_projection_sha256\": \"{declared}\""
+        )),
+        "the emitted `core_qualification` block must carry the projection digest"
+    );
+
+    // The pin covers the whole receipt, so the declared projection cannot be
+    // edited without moving it. A different but well-formed digest still
+    // assembles — the ledger *reads* the declaration and never recomputes it —
+    // yet it can no longer claim the committed bytes.
+    let other = format!("sha256:{}", "ab".repeat(32));
+    let tampered = ledger_with_core_smp(&core_smp_with_digest(Some(&other)))
+        .expect("a shape-valid digest must still assemble");
+    assert_eq!(
+        tampered
+            .core_qualification
+            .smp_deterministic_projection_sha256,
+        other
+    );
+    let tampered_pin = tampered
+        .source_bindings
+        .iter()
+        .find(|binding| binding.path == CORE_SMP_RECEIPT_REL)
+        .expect("the deterministic surface stays pinned");
+    assert_ne!(
+        tampered_pin.sha256, pinned.sha256,
+        "any edit to the receipt must move the pinned digest"
+    );
+}
+
+/// Only the deterministic surface is pinned: the declared run snapshot is not
+/// an input, not a binding, and not even named by the emitted artifact.
+#[test]
+fn the_observation_surface_is_never_pinned_by_the_ledger() {
+    let ledger = ledger();
+    let observation = NATIVE_CORE_SMP_OBSERVATIONS_ARTIFACT_REL;
+    assert!(
+        !ledger
+            .source_bindings
+            .iter()
+            .any(|binding| binding.path == observation),
+        "`{observation}` must never be a pinned input"
+    );
+    assert!(
+        !COMPOSITION.contains(observation),
+        "`{observation}` must not be declared as a DATA receipt"
+    );
+    let json = String::from_utf8(ledger.artifact_json_bytes().expect("artifact")).expect("utf8");
+    assert!(
+        !json.contains(observation),
+        "the ledger must not name the observation surface at all"
+    );
+    // Positive polarity, so the exclusion is a boundary and not an accident:
+    // the deterministic surface is the object that *is* pinned.
+    assert!(
+        ledger
+            .source_bindings
+            .iter()
+            .any(|binding| binding.path == CORE_SMP_RECEIPT_REL),
+        "the deterministic surface must be pinned"
+    );
+}
+
+/// A pinned core receipt that declares no usable deterministic projection is a
+/// typed refusal, never a quieter acceptance.
+#[test]
+fn a_core_receipt_without_a_usable_deterministic_projection_is_refused() {
+    // The superseded stamp stays schema drift, not acceptance.
+    let superseded = core_smp_with(
+        "schema_version",
+        Value::String("native-core-smp.v1".to_string()),
+    );
+    let error =
+        ledger_with_core_smp(&superseded).expect_err("a superseded receipt stamp must be refused");
+    assert!(
+        matches!(error, RouteRecoveryError::ReceiptSchemaDrift { .. }),
+        "{error}"
+    );
+
+    for (label, receipt) in [
+        ("absent", core_smp_with_digest(None)),
+        (
+            "unprefixed",
+            core_smp_with_digest(Some(&"4ac2c13d".repeat(8))),
+        ),
+        (
+            "wrong prefix",
+            core_smp_with_digest(Some(&format!("sha512:{}", "ab".repeat(32)))),
+        ),
+        ("truncated", core_smp_with_digest(Some("sha256:4ac2c13d"))),
+        (
+            "non-hex body",
+            core_smp_with_digest(Some(&format!("sha256:{}", "z".repeat(64)))),
+        ),
+    ] {
+        let error = ledger_with_core_smp(&receipt).expect_err(&format!(
+            "a `{label}` projection digest must be refused, never accepted"
+        ));
+        assert!(
+            matches!(error, RouteRecoveryError::CoreProjectionUnusable { .. }),
+            "{label}: {error}"
+        );
+        assert!(
+            format!("{error}").contains(CORE_SMP_RECEIPT_REL),
+            "{label}: the refusal must name the receipt it read: {error}"
+        );
+    }
+
+    // Positive polarity: the committed receipt is accepted as-is.
+    assert!(ledger_with_core_smp(CORE_SMP).is_ok());
+    assert_eq!(
+        ledger()
+            .core_qualification
+            .smp_deterministic_projection_sha256
+            .len(),
+        RECOVERY_PROJECTION_DIGEST_LEN
+    );
+}
+
+/// An absent core receipt stays a typed absence. The projection guard must not
+/// turn "no receipt" into an error, and must not invent a digest to fill in.
+#[test]
+fn an_absent_core_receipt_stays_a_typed_absence() {
+    let ledger = ledger_with_core_smp("").expect("an absent receipt is a typed absence");
+    assert!(!ledger.core_qualification.smp_receipt_present);
+    assert!(
+        ledger
+            .core_qualification
+            .smp_deterministic_projection_sha256
+            .is_empty(),
+        "no receipt means no digest; absence is never a value"
+    );
+    assert!(
+        ledger
+            .core_qualification
+            .missing_receipts
+            .iter()
+            .any(|path| path == CORE_SMP_RECEIPT_REL),
+        "the absence must be reported, not inferred"
+    );
+    assert!(ledger.recoverable_stages().is_empty());
+    assert_eq!(
+        ledger.stage("P3").expect("P3").verdict_reason,
+        VerdictReason::CoreQualificationMissing
+    );
+    assert!(
+        !ledger
+            .source_bindings
+            .iter()
+            .any(|binding| binding.path == CORE_SMP_RECEIPT_REL),
+        "an absent receipt must not be pinned"
+    );
 }
