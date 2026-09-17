@@ -2552,12 +2552,14 @@ fn native_fulltext_composition_is_pure_and_stays_outside_every_runtime_route() {
             // legitimate parse-plane sibling with its own quarantine contract
             // (`s16_fulltext_blocks_quarantine_contract`). This scanner's
             // subject is the composer, so it matches the composer's own
-            // identifiers only.
-            if raw.contains("native_fulltext_composition")
-                || raw.contains("NativeFulltextComposition")
-                || raw.contains("compose_native_fulltext")
-            {
-                leaked.push(format!("{rel}:{}: {}", line_no + 1, raw.trim()));
+            // identifiers only, and the sanctioned DATA-table path is scrubbed
+            // by the helper before matching (see its doc comment).
+            for marker in fulltext_composition_leak_markers(raw) {
+                leaked.push(format!(
+                    "{rel}:{}: marker `{marker}`: {}",
+                    line_no + 1,
+                    raw.trim()
+                ));
             }
         }
     }
@@ -2591,6 +2593,67 @@ fn native_fulltext_composition_is_pure_and_stays_outside_every_runtime_route() {
     );
     assert_eq!(registry["import_eligible"].as_bool(), Some(false));
     assert_eq!(registry["auto_promote"].as_str(), Some("forbidden"));
+}
+
+/// Composer markers that may not appear in any runtime seam, with the
+/// sanctioned DATA-table path scrubbed before matching.
+///
+/// The scanner's subject is the composer, not its configuration file. The
+/// schema-validated table `data/parse/native_fulltext_composition.yaml` is a
+/// DATA artifact whose *file name* embeds the composer's name: a read-only
+/// reference to that path (a qualification ledger's sha256 binding, a fixture
+/// `include_str!`) is a configuration dependency, not composer wiring. Strip
+/// that exact path literal first, and keep failing on every composer
+/// identifier or API name, including a line that carries both the path and an
+/// identifier.
+fn fulltext_composition_leak_markers(line: &str) -> Vec<&'static str> {
+    const COMPOSITION_DATA_PATH: &str = "data/parse/native_fulltext_composition.yaml";
+    const MARKERS: [&str; 3] = [
+        "native_fulltext_composition",
+        "NativeFulltextComposition",
+        "compose_native_fulltext",
+    ];
+    let scrubbed = line.replace(COMPOSITION_DATA_PATH, "");
+    let mut hits = Vec::new();
+    for marker in MARKERS {
+        if scrubbed.contains(marker) {
+            hits.push(marker);
+        }
+    }
+    hits
+}
+
+#[test]
+fn fulltext_composition_scanner_ignores_the_data_path_but_never_the_identifiers() {
+    // Positive control: the sanctioned DATA path stays a configuration read.
+    assert!(fulltext_composition_leak_markers(
+        "pub const COMPOSITION_DATA_REL: &str = \"data/parse/native_fulltext_composition.yaml\";"
+    )
+    .is_empty());
+    assert!(fulltext_composition_leak_markers(
+        "const COMPOSITION: &str = include_str!(\"../../../data/parse/native_fulltext_composition.yaml\");"
+    )
+    .is_empty());
+    assert!(
+        fulltext_composition_leak_markers(
+            "//! 2. `data/parse/native_fulltext_composition.yaml#admission.current_matrix` with"
+        )
+        .is_empty()
+    );
+    // Negative control: every composer identifier still trips, including a
+    // line that quotes the DATA path and the identifier together.
+    for line in [
+        "use da_parse::NativeFulltextComposition;",
+        "mod native_fulltext_composition;",
+        "fn run() { compose_native_fulltext(&input) }",
+        "let cfg = load(\"data/parse/native_fulltext_composition.yaml\"); NativeFulltextComposition::new(cfg);",
+    ] {
+        assert_eq!(
+            fulltext_composition_leak_markers(line).len(),
+            1,
+            "composer identifier must still trip the scanner: {line}"
+        );
+    }
 }
 
 #[test]
