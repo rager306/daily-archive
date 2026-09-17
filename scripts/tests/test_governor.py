@@ -30,6 +30,7 @@ from governor.application.trajectory_service import (
     TrajectoryService,
     _boundary_positional_violations,
     _candidate_contract_flags,
+    _visual_adapter_violations,
 )
 from governor.domain import CheckSeverity, CheckStatus
 from governor.domain.trajectory import DriftFlag, TrajectoryVerdict
@@ -2923,6 +2924,298 @@ def test_boundary_positional_metrics_absent_snapshot_suite_is_not_flagged():
     )
 
 
+# ---------------------------------------------------------------------------
+# Donor visual adapter preservation contract (M508 S02 T05, GAR-003)
+# ---------------------------------------------------------------------------
+# Self-tests for the committed `visual_adapter_preserves_donor_content`
+# contract (T04). The tests copy the REAL contract, fixtures, bound donor
+# fixtures, converter source, lib gate, example delegation and gated Rust
+# contract into a scratch root (never mutating tracked files), then validate
+# that the check passes on the committed tree and fails on every tamper the
+# contract claims to catch: a removed fixture, a pre-fix drop-path record,
+# a neutralised negative label, a lost required label, a stripped source
+# marker, a stale or missing or incomplete artifact, a broken or missing
+# source binding, and invalid YAML. Two of them exercise the independent
+# Python oracle and the explicit `graph_task_suite_required=False` opt-out
+# directly, with no governor wiring, so the rule cannot go green by accident.
+
+_VISUAL_ADAPTER_PREFIX = "visual_adapter_preserves_donor_content"
+_VISUAL_ADAPTER_CONTRACT = (
+    "scripts/governor/checks/visual_adapter_preserves_donor_content.yaml"
+)
+_VISUAL_ADAPTER_POSITIVE = (
+    "governor/fixtures/visual_adapter_contract/artifact_preserves.positive.json"
+)
+_VISUAL_ADAPTER_NEGATIVE = (
+    "governor/fixtures/visual_adapter_contract/artifact_broken.negative.json"
+)
+
+
+def _copy_visual_adapter_contract(root: Path) -> None:
+    """Copy the donor-visual-adapter contract and every path it references.
+
+    The path list is derived from the contract itself (fixtures, artifact,
+    bound fixture sources, source markers) instead of being hard-coded, so a
+    future contract edit that adds a binding or a marker is followed
+    automatically. `_write` creates the missing parent directories — the
+    scratch root has neither `crates/` nor `data/`.
+    """
+    repo = _scripts_dir.parent
+    contract = yaml.safe_load(
+        (repo / _VISUAL_ADAPTER_CONTRACT).read_text(encoding="utf-8")
+    ) or {}
+    rels = [_VISUAL_ADAPTER_CONTRACT]
+    for fixture in (contract.get("fixtures") or {}).values():
+        if isinstance(fixture, dict) and fixture.get("path"):
+            rels.append(str(fixture["path"]))
+    artifact = contract.get("artifact") or {}
+    for key in ("path", "converter_source"):
+        if artifact.get(key):
+            rels.append(str(artifact[key]))
+    for binding in (contract.get("bindings") or {}).get("fixture_sources") or []:
+        if isinstance(binding, dict) and binding.get("path"):
+            rels.append(str(binding["path"]))
+    for entry in (contract.get("source_markers") or {}).values():
+        if isinstance(entry, dict) and entry.get("path"):
+            rels.append(str(entry["path"]))
+    for rel in dict.fromkeys(rels):
+        _write(root / rel, (repo / rel).read_text(encoding="utf-8"))
+
+
+def _visual_adapter_service() -> TrajectoryService:
+    """Scratch TrajectoryService with the committed contract copied in."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_visual_adapter_contract(service.root)
+    return service
+
+
+def test_visual_adapter_preserves_donor_content_pass_on_clean_fixtures():
+    """Committed fixtures, artifact, bindings and markers satisfy the contract."""
+    service = _visual_adapter_service()
+    assert service._check_visual_adapter_preserves_donor_content() == []
+
+
+def test_visual_adapter_preserves_donor_content_missing_fixture_is_flagged():
+    service = _visual_adapter_service()
+    (service.root / _VISUAL_ADAPTER_NEGATIVE).unlink()
+    flags = service._check_visual_adapter_preserves_donor_content()
+    assert len(flags) == 1
+    assert flags[0].flag == f"{_VISUAL_ADAPTER_PREFIX}_fixture_missing"
+    assert "negative" in flags[0].evidence
+    assert flags[0].severity == "high"
+    assert flags[0].dimension == "scholarly_parse_plane"
+
+
+def test_visual_adapter_preserves_donor_content_positive_fixture_must_be_clean():
+    """The pre-fix drop path (`primitives: Vec::new()`) must fail the rule."""
+    service = _visual_adapter_service()
+    path = service.root / _VISUAL_ADAPTER_POSITIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    # Pre-fix shape: the donor produced a primitive without error while the
+    # native result kept none — exactly what the committed fix removed.
+    records[0]["donor"]["primitive_count"] = 1
+    records[0]["donor"]["error"] = None
+    records[0]["native"]["primitive_count"] = 0
+    records[0]["native"]["primitives"] = []
+    _write(path, json.dumps(records))
+    flags = service._check_visual_adapter_preserves_donor_content()
+    broken = [f for f in flags if f.flag == f"{_VISUAL_ADAPTER_PREFIX}_broken"]
+    assert len(broken) == 1
+    assert "donor_primitives_discarded" in broken[0].evidence
+
+
+def test_visual_adapter_preserves_donor_content_negative_fixture_must_trigger_labelled_violations():
+    service = _visual_adapter_service()
+    path = service.root / _VISUAL_ADAPTER_NEGATIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    # Neutralise the malformed label: with no lane absence the record no longer
+    # reads as a mapped-to-not_observed failure.
+    for record in records:
+        if record.get("violation") == "malformed_mapped_to_not_observed":
+            record["record"]["native"]["lane_absence"] = None
+    _write(path, json.dumps(records))
+    flags = service._check_visual_adapter_preserves_donor_content()
+    broken = [f for f in flags if f.flag == f"{_VISUAL_ADAPTER_PREFIX}_broken"]
+    assert any("malformed_mapped_to_not_observed" in f.evidence for f in broken)
+
+
+def test_visual_adapter_preserves_donor_content_negative_fixture_must_cover_required_violations():
+    service = _visual_adapter_service()
+    path = service.root / _VISUAL_ADAPTER_NEGATIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    # Remove the only record producing the label — required coverage must fail.
+    records = [
+        r for r in records
+        if r.get("violation") != "malformed_mapped_to_not_observed"
+    ]
+    _write(path, json.dumps(records))
+    flags = service._check_visual_adapter_preserves_donor_content()
+    broken = [f for f in flags if f.flag == f"{_VISUAL_ADAPTER_PREFIX}_broken"]
+    assert any("malformed_mapped_to_not_observed" in f.evidence for f in broken)
+
+
+def test_visual_adapter_preserves_donor_content_source_marker_missing_is_flagged():
+    service = _visual_adapter_service()
+    # Strip every enforcement marker from the converter surface.
+    _write(service.root / "crates/da-cli/src/visual_adapter.rs", "fn main() {}\n")
+    flags = service._check_visual_adapter_preserves_donor_content()
+    marker = [
+        f for f in flags
+        if f.flag == f"{_VISUAL_ADAPTER_PREFIX}_source_marker_missing"
+    ]
+    assert len(marker) == 1
+    assert "adapter" in marker[0].evidence
+
+
+def test_visual_adapter_preserves_donor_content_artifact_stale_is_flagged():
+    """A converter or artifact edit without regeneration must never pass silently."""
+    # (a) converter edited, artifact untouched.
+    service = _visual_adapter_service()
+    converter = service.root / "crates/da-cli/src/visual_adapter.rs"
+    _write(converter, converter.read_text(encoding="utf-8") + "\n")
+    flags = service._check_visual_adapter_preserves_donor_content()
+    stale = [
+        f for f in flags
+        if f.flag == f"{_VISUAL_ADAPTER_PREFIX}_artifact_stale"
+    ]
+    assert len(stale) == 1
+    assert stale[0].severity == "high"
+    assert stale[0].dimension == "scholarly_parse_plane"
+
+    # (b) artifact declares the wrong converter digest.
+    service = _visual_adapter_service()
+    artifact_path = (
+        service.root / "artifacts/parse_compat/visual_positive_fixture_run.json"
+    )
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    artifact["converter_source_sha256"] = "0" * 64
+    _write(artifact_path, json.dumps(artifact))
+    flags = service._check_visual_adapter_preserves_donor_content()
+    stale = [
+        f for f in flags
+        if f.flag == f"{_VISUAL_ADAPTER_PREFIX}_artifact_stale"
+    ]
+    assert len(stale) == 1
+    assert stale[0].severity == "high"
+    assert stale[0].dimension == "scholarly_parse_plane"
+
+
+def test_visual_adapter_preserves_donor_content_artifact_missing_is_flagged():
+    service = _visual_adapter_service()
+    (
+        service.root / "artifacts/parse_compat/visual_positive_fixture_run.json"
+    ).unlink()
+    flags = service._check_visual_adapter_preserves_donor_content()
+    assert any(
+        f.flag == f"{_VISUAL_ADAPTER_PREFIX}_artifact_missing" for f in flags
+    )
+
+
+def test_visual_adapter_preserves_donor_content_artifact_incomplete_is_flagged():
+    service = _visual_adapter_service()
+    artifact_path = (
+        service.root / "artifacts/parse_compat/visual_positive_fixture_run.json"
+    )
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    artifact["records"] = [
+        r for r in artifact["records"] if r.get("family") != "table"
+    ]
+    _write(artifact_path, json.dumps(artifact))
+    flags = service._check_visual_adapter_preserves_donor_content()
+    incomplete = [
+        f for f in flags
+        if f.flag == f"{_VISUAL_ADAPTER_PREFIX}_artifact_incomplete"
+    ]
+    assert len(incomplete) == 1
+    assert "table" in incomplete[0].evidence
+
+
+def test_visual_adapter_preserves_donor_content_binding_mismatch_is_flagged():
+    service = _visual_adapter_service()
+    # A 64-zero digest parses as a hex string, so the guard must compare it.
+    path = service.root / _VISUAL_ADAPTER_CONTRACT
+    _write(path, path.read_text(encoding="utf-8").replace(
+        "263e76df45068bbcd82e10e041736ef47305710b15a45aeda81e6cf8c139df11",
+        "0" * 64,
+    ))
+    flags = service._check_visual_adapter_preserves_donor_content()
+    mismatch = [
+        f for f in flags
+        if f.flag == f"{_VISUAL_ADAPTER_PREFIX}_source_binding_mismatch"
+    ]
+    assert len(mismatch) == 1
+    assert mismatch[0].severity == "high"
+    assert mismatch[0].dimension == "scholarly_parse_plane"
+
+
+def test_visual_adapter_preserves_donor_content_binding_missing_is_flagged():
+    service = _visual_adapter_service()
+    (
+        service.root
+        / "crates/da-cli/tests/fixtures/visual_positive_fixture_run/figure_geometry.xml"
+    ).unlink()
+    flags = service._check_visual_adapter_preserves_donor_content()
+    missing = [
+        f for f in flags
+        if f.flag == f"{_VISUAL_ADAPTER_PREFIX}_source_binding_missing"
+    ]
+    assert len(missing) == 1
+
+
+def test_visual_adapter_preserves_donor_content_invalid_yaml_is_flagged():
+    service = _visual_adapter_service()
+    _write(service.root / _VISUAL_ADAPTER_CONTRACT, "{bad yaml: [")
+    flags = service._check_visual_adapter_preserves_donor_content()
+    assert flags[0].flag == f"{_VISUAL_ADAPTER_PREFIX}_invalid"
+
+
+def test_visual_adapter_preserves_donor_content_oracle_rejects_discarded_primitives_without_governor():
+    """The independent oracle is falsifiable on its own (no governor wiring)."""
+    service = _visual_adapter_service()
+    contract = yaml.safe_load(
+        (service.root / _VISUAL_ADAPTER_CONTRACT).read_text(encoding="utf-8")
+    )
+    records = json.loads(
+        (service.root / _VISUAL_ADAPTER_POSITIVE).read_text(encoding="utf-8")
+    )
+    clean = records[0]
+    assert _visual_adapter_violations(clean, contract) == set()
+
+    discarded = json.loads(json.dumps(clean))
+    discarded["native"]["primitive_count"] = 0
+    discarded["native"]["primitives"] = []
+    assert "donor_primitives_discarded" in \
+        _visual_adapter_violations(discarded, contract)
+
+    malformed = json.loads(json.dumps(clean))
+    malformed["donor"]["error"] = "Malformed"
+    malformed["native"]["lane_absence"] = "not_observed"
+    assert "malformed_mapped_to_not_observed" in \
+        _visual_adapter_violations(malformed, contract)
+
+
+def test_visual_adapter_preserves_donor_content_absent_snapshot_suite_is_not_flagged():
+    """The rule has no durable snapshot task suite; the opt-out must be explicit."""
+    service = _visual_adapter_service()
+    contract = yaml.safe_load(
+        (service.root / _VISUAL_ADAPTER_CONTRACT).read_text(encoding="utf-8")
+    )
+    assert "graph_task_suite" not in contract
+    assert _candidate_contract_flags(
+        contract, service.root, "scholarly_parse_plane",
+        _VISUAL_ADAPTER_PREFIX, _visual_adapter_violations,
+        graph_task_suite_required=False,
+    ) == []
+    default = _candidate_contract_flags(
+        contract, service.root, "scholarly_parse_plane",
+        _VISUAL_ADAPTER_PREFIX, _visual_adapter_violations,
+    )
+    assert any(
+        f.flag == f"{_VISUAL_ADAPTER_PREFIX}_suite_missing" for f in default
+    )
+
+
 def test_table_payload_requires_cell_provenance_pass_on_clean_fixtures():
     """Committed positive + negative fixtures and source markers satisfy the contract."""
     service = TrajectoryService.__new__(TrajectoryService)
@@ -3568,6 +3861,20 @@ def _run_all_tests() -> int:
         test_boundary_positional_metrics_invalid_yaml_is_flagged,
         test_boundary_positional_metrics_oracle_rejects_permutation_without_governor,
         test_boundary_positional_metrics_absent_snapshot_suite_is_not_flagged,
+        test_visual_adapter_preserves_donor_content_pass_on_clean_fixtures,
+        test_visual_adapter_preserves_donor_content_missing_fixture_is_flagged,
+        test_visual_adapter_preserves_donor_content_positive_fixture_must_be_clean,
+        test_visual_adapter_preserves_donor_content_negative_fixture_must_trigger_labelled_violations,
+        test_visual_adapter_preserves_donor_content_negative_fixture_must_cover_required_violations,
+        test_visual_adapter_preserves_donor_content_source_marker_missing_is_flagged,
+        test_visual_adapter_preserves_donor_content_artifact_stale_is_flagged,
+        test_visual_adapter_preserves_donor_content_artifact_missing_is_flagged,
+        test_visual_adapter_preserves_donor_content_artifact_incomplete_is_flagged,
+        test_visual_adapter_preserves_donor_content_binding_mismatch_is_flagged,
+        test_visual_adapter_preserves_donor_content_binding_missing_is_flagged,
+        test_visual_adapter_preserves_donor_content_invalid_yaml_is_flagged,
+        test_visual_adapter_preserves_donor_content_oracle_rejects_discarded_primitives_without_governor,
+        test_visual_adapter_preserves_donor_content_absent_snapshot_suite_is_not_flagged,
         test_table_payload_requires_cell_provenance_pass_on_clean_fixtures,
         test_table_payload_requires_cell_provenance_missing_fixture_is_flagged,
         test_table_payload_requires_cell_provenance_positive_fixture_must_be_clean,
