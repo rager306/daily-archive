@@ -525,8 +525,12 @@ mod segmentation_boundary_metrics {
         }
     }
 
+    // Negative boundary fixture invoked by the review registry entry GAR-001:
+    //   cargo test -p da-cli --features pdf-layout --example document_segmentation_shadow boundary_position_negative
+    // Two-sided claim: cardinality agreement stays 1, while positional precision
+    // collapses to 0.0 because starts and ends are cross-paired.
     #[test]
-    fn permuted_boundaries_keep_count_agreement_but_fail_positional_precision() {
+    fn boundary_position_negative_permuted_boundaries_fail_positional_precision() {
         let reviewed = [boundary(1), boundary(10)];
         // Same cardinality, but starts and ends are cross-paired. Count agreement
         // remains 1 while no complete positional boundary matches.
