@@ -1362,6 +1362,270 @@ def _license_policy_violations(policy) -> list:
     return violations
 
 
+# --- GAR-011: oracle digest recomputation helpers ---------------------------
+#
+# The segmentation oracle publishes digest-like fields on three surfaces: the
+# reviewed fixture, the canonical byte artifact and the declaration. GAR-011
+# recorded that those digests were only ever checked for SHAPE (64 lower-hex
+# chars), never for provenance, so substituting the canonical bytes while
+# leaving the digest string unchanged passed silently. These helpers carry the
+# Python half of the closure: closed-vocabulary membership, canonical-input
+# presence, ref direction and pointer/traversal resolution. The SHA-256
+# mathematics and the byte-level recomputation live in the independent Rust
+# reader `crates/da-parse/tests/oracle_digest_recomputation.rs` (ADR-051 / D273
+# / MEM885): Python never recomputes a digest and never reads an audited file's
+# semantics here.
+
+
+def _pointer_segments(pointer) -> list:
+    """Split a pointer into non-empty segments (`''` and `'/'` yield `[]`)."""
+    if not isinstance(pointer, str):
+        return []
+    return [segment for segment in pointer.split("/") if segment]
+
+
+def _pointer_text(segments) -> str:
+    """Render pointer segments for diagnostics (`('a', '*')` -> `/a/*`)."""
+    return "/" + "/".join(segments) if segments else "/"
+
+
+def _pointer_segment_matches(pattern: str, candidate: str) -> bool:
+    """True when a pointer segment matches another; `*` is the only wildcard."""
+    return pattern == "*" or candidate == "*" or pattern == candidate
+
+
+def _pointer_patterns_match(pattern_segments, candidate_segments) -> bool:
+    """True when two pointers address the same shape (equal length + segments).
+
+    `*` on either side matches any single segment, which is the relation the
+    contract uses to tie a wildcard `ref` to a wildcard declaration. A missing
+    segment is never a match, so a shorter pointer cannot silently resolve to a
+    broader (or narrower) field.
+    """
+    if len(pattern_segments) != len(candidate_segments):
+        return False
+    return all(
+        _pointer_segment_matches(pattern, candidate)
+        for pattern, candidate in zip(pattern_segments, candidate_segments)
+    )
+
+
+def _resolve_pointer_values(node, segments) -> list:
+    """Resolve a pointer whose `*` matches any single list index or mapping key.
+
+    Returns every resolved value because a pointer is a pattern, not a single
+    path; an empty list means the pointer does not resolve in this tree.
+    """
+    if not segments:
+        return [node]
+    head, rest = segments[0], segments[1:]
+    if head == "*":
+        if isinstance(node, list):
+            children = list(node)
+        elif isinstance(node, dict):
+            children = list(node.values())
+        else:
+            children = []
+    elif isinstance(node, dict):
+        children = [node[head]] if head in node else []
+    elif isinstance(node, list):
+        try:
+            index = int(head)
+        except (TypeError, ValueError):
+            children = []
+        else:
+            children = [node[index]] if 0 <= index < len(node) else []
+    else:
+        children = []
+    resolved: list = []
+    for child in children:
+        resolved.extend(_resolve_pointer_values(child, rest))
+    return resolved
+
+
+def _digest_pattern_matches(pattern, key: str) -> bool:
+    """Mini-syntax of `digest_field_patterns`: anchored regex or exact literal.
+
+    The contract keeps DATA literal: `suffix$`, `^prefix`, `^exact$` are the
+    anchored forms, anything else is an exact key. A bare literal is never a
+    substring match, so `sha256` cannot claim `source_sha256`.
+    """
+    if not isinstance(pattern, str) or not pattern:
+        return False
+    if pattern.startswith("^") or pattern.endswith("$"):
+        try:
+            return re.search(pattern, key) is not None
+        except re.error:
+            return False
+    return pattern == key
+
+
+def _discover_digest_fields(node, segments, patterns, discovered) -> None:
+    """Collect pointer segments of digest-like key/string-value pairs.
+
+    `*` stands for a list index while mapping keys stay literal, so a declared
+    wildcard can match a discovered key but a declared literal can never hide
+    behind a wildcard of the walk. The caller bounds the scope with the
+    contract's `audit_pointers`: a formula string such as
+    `canonicalization.digest` lives outside them and is therefore never
+    mistaken for a digest field.
+    """
+    if isinstance(node, dict):
+        for key, value in node.items():
+            child = list(segments) + [str(key)]
+            if isinstance(value, str) and any(
+                _digest_pattern_matches(pattern, str(key)) for pattern in patterns
+            ):
+                discovered.add(tuple(child))
+            _discover_digest_fields(value, child, patterns, discovered)
+    elif isinstance(node, list):
+        for item in node:
+            _discover_digest_fields(item, list(segments) + ["*"], patterns, discovered)
+
+
+def _digest_declared_records(contract: dict) -> list:
+    """Declared digest-field classification records (possibly empty)."""
+    declared = contract.get("digest_fields")
+    return declared if isinstance(declared, list) else []
+
+
+def _digest_ref_matches(ref, surface, declared: list) -> list:
+    """Declared records a canonical `ref` names (surface + pointer shape).
+
+    A ref is `'<surface>:<pointer>'`; the pseudo-surface `self` binds to the
+    referring record's own surface, so an artifact record can point inside
+    itself without repeating its key. The pointer comparison is
+    shape-compatible (equal length, `*` matches any single segment).
+    """
+    if not isinstance(ref, str) or ":" not in ref:
+        return []
+    ref_surface, _, pointer = ref.partition(":")
+    if ref_surface == "self":
+        ref_surface = str(surface)
+    ref_segments = _pointer_segments(pointer)
+    return [
+        record for record in declared
+        if isinstance(record, dict)
+        and str(record.get("surface")) == ref_surface
+        and _pointer_patterns_match(_pointer_segments(record.get("pointer")), ref_segments)
+    ]
+
+
+def _digest_ref_target_is_opaque(record: dict, contract: dict) -> bool:
+    """True when a recomputed record's canonical `ref` names an opaque marker.
+
+    An opaque field publishes no canonical bytes, so it can never be the
+    provenance source of a recomputed digest: pointing at one would launder an
+    unverifiable marker into a recomputed claim.
+    """
+    return any(
+        matched.get("class") == "opaque"
+        for matched in _digest_ref_matches(
+            record.get("ref"), record.get("surface"), _digest_declared_records(contract)
+        )
+    )
+
+
+def _oracle_digest_violations(record: dict, contract: dict) -> set[str]:
+    """Return violation codes for one declared oracle-digest field (GAR-011).
+
+    Independent Python oracle over the segmentation oracle's digest-like
+    fields. It classifies FORM only — closed-vocabulary membership, presence of
+    the canonical input, the shape of the `ref`, and the provenance direction
+    of the classification. It reads no file and computes no SHA-256: the
+    digest mathematics lives in the independent Rust reader
+    `crates/da-parse/tests/oracle_digest_recomputation.rs` (ADR-051 / D273 /
+    MEM885), so the reader and the oracle share no code.
+
+    Labels:
+      - missing_field_identity: no non-empty `field_id`/`surface`/`pointer`;
+      - digest_without_class: no non-empty class token;
+      - class_outside_vocabulary: class outside the closed `classes` list;
+      - recomputed_without_canonical_ref: a recomputed field with no `ref`;
+      - recomputed_without_canonicalization: a recomputed field with no
+        `canonicalization`;
+      - canonicalization_outside_contract: a canonicalization outside the
+        closed contract list;
+      - opaque_without_reason: an opaque marker with no `opaque_reason`;
+      - opaque_reason_outside_vocabulary: an opaque reason outside the closed
+        vocabulary;
+      - opaque_marker_as_provenance: an opaque marker offered as a provenance
+        source — either the record itself is opaque yet carries a `ref`, or it
+        is recomputed and its `ref` resolves to an opaque declaration;
+      - alignment_outside_vocabulary: an alignment outside the closed list;
+      - missing_closed_vocabulary: a validated field has no non-empty
+        vocabulary in the contract (fail-closed, contract-level guard).
+    """
+    violations: set[str] = set()
+    if not isinstance(record, dict):
+        return {"missing_field_identity"}
+
+    classes = contract.get("classes")
+    classes = classes if isinstance(classes, list) and classes else None
+    canonicalizations = contract.get("canonicalizations")
+    canonicalizations = (
+        canonicalizations
+        if isinstance(canonicalizations, list) and canonicalizations
+        else None
+    )
+    opaque_reasons = contract.get("opaque_reasons")
+    opaque_reasons = (
+        opaque_reasons if isinstance(opaque_reasons, list) and opaque_reasons else None
+    )
+    alignments = contract.get("alignments")
+    alignments = alignments if isinstance(alignments, list) and alignments else None
+
+    identity_fields = ("field_id", "surface", "pointer")
+    if not all(
+        _non_empty_string(record.get(field)) for field in identity_fields
+    ):
+        violations.add("missing_field_identity")
+
+    class_value = record.get("class")
+    if not _non_empty_string(class_value):
+        violations.add("digest_without_class")
+        class_value = None
+    elif classes is None:
+        violations.add("missing_closed_vocabulary")
+    elif class_value not in classes:
+        violations.add("class_outside_vocabulary")
+
+    ref = record.get("ref")
+    if class_value == "recomputed":
+        if not _non_empty_string(ref):
+            violations.add("recomputed_without_canonical_ref")
+        canonicalization = record.get("canonicalization")
+        if not _non_empty_string(canonicalization):
+            violations.add("recomputed_without_canonicalization")
+        elif canonicalizations is None:
+            violations.add("missing_closed_vocabulary")
+        elif canonicalization not in canonicalizations:
+            violations.add("canonicalization_outside_contract")
+        if _non_empty_string(ref) and _digest_ref_target_is_opaque(record, contract):
+            violations.add("opaque_marker_as_provenance")
+    elif class_value == "opaque":
+        if _non_empty_string(ref):
+            # An opaque marker is the absence of a canonical source: carrying a
+            # ref would present it as one.
+            violations.add("opaque_marker_as_provenance")
+        reason = record.get("opaque_reason")
+        if not _non_empty_string(reason):
+            violations.add("opaque_without_reason")
+        elif opaque_reasons is None:
+            violations.add("missing_closed_vocabulary")
+        elif reason not in opaque_reasons:
+            violations.add("opaque_reason_outside_vocabulary")
+
+    alignment = record.get("alignment")
+    if alignment is not None:
+        if alignments is None:
+            violations.add("missing_closed_vocabulary")
+        elif alignment not in alignments:
+            violations.add("alignment_outside_vocabulary")
+
+    return violations
+
+
 def _candidate_contract_flags(
     contract: dict,
     root: Path,
@@ -1745,6 +2009,15 @@ class TrajectoryService:
         # read-only licence surfaces stay claimed exactly once — an unproven
         # right can no longer be assumed compatible.
         drift_flags.extend(self._check_component_license_provenance())
+
+        # GAR-011: oracle digest recomputation control-plane rule (M508-g9b5gi
+        # S04). Every digest-like field of the segmentation oracle's three
+        # audited surfaces carries exactly one class: `recomputed` with the
+        # canonical bytes it digests, or `opaque` with a closed-vocabulary
+        # reason that is never accepted as a provenance source. Substituting
+        # the canonical bytes while leaving the digest string unchanged can no
+        # longer pass silently.
+        drift_flags.extend(self._check_oracle_digest_recomputation())
 
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
@@ -3199,6 +3472,297 @@ class TrajectoryService:
         flags.extend(_candidate_contract_flags(
             oracle_contract, self.root, dimension, prefix,
             _license_provenance_violations,
+            graph_task_suite_required=False,
+        ))
+        return flags
+
+    def _check_oracle_digest_recomputation(self) -> list[DriftFlag]:
+        """Evaluate the data-driven oracle digest recomputation contract (GAR-011).
+
+        Reads `scripts/governor/checks/oracle_digest_recomputation.yaml` (DATA)
+        and binds the three audited surfaces of the segmentation oracle (the
+        reviewed fixture, the canonical byte artifact and the declaration) to
+        the independent oracle `_oracle_digest_violations`:
+
+          1. `bindings.source_data` pins the canonical artifact by SHA-256 and is
+             verified here (the shared fixture helper does not inspect
+             `bindings`); a non-hex/absent digest fails closed.
+          2. The contract's closed vocabularies (`classes`,
+             `canonicalizations`, `opaque_reasons`, `alignments`,
+             `digest_field_patterns`) must be non-empty lists — an absent
+             vocabulary means "cannot decide" and is reported as
+             `..._missing_closed_vocabulary`.
+          3. Every declared digest field is classified by the oracle: it carries
+             exactly one class, a recomputed field names its canonical `ref` and
+             `canonicalization`, an opaque field names its reason from the closed
+             vocabulary and never carries a `ref`.
+          4. Every `(surface, pointer)` pair is declared exactly once
+             (`..._duplicate_field_binding`).
+          5. Discovery closure — every digest-like field reachable under the
+             declared `audit_pointers` is claimed by exactly one declaration
+             (`..._unclassified_digest_field`), and every declared pointer
+             resolves in its surface (`..._declared_field_not_found`). The walk
+             is bounded by `audit_pointers`, so a formula string such as
+             `canonicalization.digest` can never be mistaken for a digest.
+          6. Both-or-neither — a published canonical bytes object carries its
+             sibling `sha256`, and a published `sha256` carries the bytes it
+             digests (`..._bytes_without_sha256_pair` /
+             `..._sha256_without_bytes_pair`). A whole-file `ref` is skipped:
+             its bytes and digest are bound by `bindings.source_data`.
+          7. Opaque markers are never a canonical source for a recomputed record
+             (`..._opaque_used_as_canonical_source`).
+          8. Adjudications — a pin adjudicated as `removed_unreferenced_dangling_pin`
+             must stay absent (`..._adjudicated_field_reintroduced`); a
+             `repinned_to_recomputed_bytes` adjudication is informational
+             because the repinned field is already classified.
+          9. The positive fixture must mirror the declared identity set
+             (`..._fixture_field_drift`).
+         10. The shared fixture/marker helper is called with
+             `graph_task_suite_required=False` explicitly: this rule has no
+             durable snapshot graph task suite.
+
+        The rule has no durable snapshot graph task suite and never recomputes
+        a digest in Python — the SHA-256 mathematics lives in the independent
+        Rust reader (D273 / MEM885). Nothing is written into the report: the
+        oracle receives no private `_*` keys, so the contract travels unchanged.
+        """
+        path = self.root / "scripts/governor/checks/oracle_digest_recomputation.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="oracle_digest_recomputation_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="scholarly_parse_plane",
+            )]
+        prefix = "oracle_digest_recomputation"
+        dimension = str(contract.get("dimension") or "scholarly_parse_plane")
+        severity = str(contract.get("severity", "high"))
+        flags: list[DriftFlag] = []
+
+        def _flag(name: str, evidence: str) -> None:
+            flags.append(DriftFlag(
+                flag=name, severity=severity, evidence=evidence, dimension=dimension,
+            ))
+
+        # 1. Bound canonical artifact: existence plus exact SHA-256.
+        for binding in (contract.get("bindings") or {}).get("source_data", []):
+            bound_path = self.root / str(binding.get("path", ""))
+            if not bound_path.is_file():
+                _flag(f"{prefix}_binding_missing",
+                      f"source binding missing: {bound_path}")
+                continue
+            expected = binding.get("sha256")
+            observed = hashlib.sha256(bound_path.read_bytes()).hexdigest()
+            # A non-string or non-hex digest is unverifiable and must fail
+            # closed: a 64-zero YAML scalar parses as int 0, which a truthy
+            # guard would silently skip.
+            if not _is_sha256_hex(expected) or str(expected).lower() != observed:
+                _flag(f"{prefix}_binding_mismatch",
+                      f"{binding.get('path')}: expected {expected!r}, observed {observed}")
+
+        # 2. Contract-level closed vocabularies (fail-closed).
+        for vocabulary_key in (
+            "classes",
+            "canonicalizations",
+            "opaque_reasons",
+            "alignments",
+            "digest_field_patterns",
+        ):
+            vocabulary = contract.get(vocabulary_key)
+            if not isinstance(vocabulary, list) or not vocabulary:
+                _flag(f"{prefix}_missing_closed_vocabulary",
+                      f"contract does not declare a non-empty {vocabulary_key} list")
+
+        # 3. Audited surfaces: existence, readability and audit-pointer scope.
+        surfaces: dict = {}
+        for surface in contract.get("audited_surfaces") or []:
+            if not isinstance(surface, dict):
+                continue
+            surface_key = str(surface.get("key", ""))
+            surface_path = self.root / str(surface.get("path", ""))
+            if not surface_path.is_file():
+                _flag(f"{prefix}_surface_missing",
+                      f"audited surface missing: {surface_path}")
+                continue
+            try:
+                text = surface_path.read_text(encoding="utf-8")
+                document = (
+                    json.loads(text)
+                    if str(surface.get("format", "yaml")) == "json"
+                    else yaml.safe_load(text)
+                )
+            except (OSError, ValueError, yaml.YAMLError) as error:
+                _flag(f"{prefix}_surface_invalid", f"{surface_key}: unreadable: {error}")
+                continue
+            if document is None:
+                _flag(f"{prefix}_surface_invalid", f"{surface_key}: empty document")
+                continue
+            surfaces[surface_key] = (document, surface)
+            for pointer in surface.get("audit_pointers") or []:
+                if not _resolve_pointer_values(document, _pointer_segments(pointer)):
+                    _flag(f"{prefix}_surface_invalid",
+                          f"{surface_key}: audit pointer does not resolve: {pointer!r}")
+
+        declared = _digest_declared_records(contract)
+
+        # 4. Per-field classification by the independent oracle.
+        for record in declared:
+            current = record if isinstance(record, dict) else {}
+            for violation in sorted(_oracle_digest_violations(current, contract)):
+                _flag(f"{prefix}_{violation}",
+                      "digest_fields "
+                      f"field_id={current.get('field_id')!r} "
+                      f"surface={current.get('surface')!r} "
+                      f"pointer={current.get('pointer')!r}: {violation}")
+
+        # 5. Every (surface, pointer) pair is declared exactly once.
+        declared_keys: dict = {}
+        for record in declared:
+            if not isinstance(record, dict):
+                continue
+            pair = (str(record.get("surface")), str(record.get("pointer")))
+            declared_keys[pair] = declared_keys.get(pair, 0) + 1
+        for (surface_key, pointer), count in sorted(declared_keys.items()):
+            if count > 1:
+                _flag(f"{prefix}_duplicate_field_binding",
+                      f"{surface_key}:{pointer} is declared {count} times")
+
+        # 6. Discovery closure: no unclassified digest-like field, no dangling
+        #    declaration. The walk is scoped by the audit pointers, never by an
+        #    exclusion list.
+        patterns = contract.get("digest_field_patterns")
+        patterns = patterns if isinstance(patterns, list) else []
+        for surface_key, (document, surface) in sorted(surfaces.items()):
+            discovered: set = set()
+            for pointer in surface.get("audit_pointers") or []:
+                for node in _resolve_pointer_values(document, _pointer_segments(pointer)):
+                    _discover_digest_fields(
+                        node, _pointer_segments(pointer), patterns, discovered
+                    )
+            for segments in sorted(discovered):
+                matches = [
+                    record for record in declared
+                    if isinstance(record, dict)
+                    and str(record.get("surface")) == surface_key
+                    and _pointer_patterns_match(
+                        _pointer_segments(record.get("pointer")), list(segments)
+                    )
+                ]
+                if len(matches) != 1:
+                    _flag(f"{prefix}_unclassified_digest_field",
+                          f"{surface_key}:{_pointer_text(segments)} is claimed by "
+                          f"{len(matches)} declared records")
+            for record in declared:
+                if not isinstance(record, dict) or str(record.get("surface")) != surface_key:
+                    continue
+                if not _resolve_pointer_values(
+                    document, _pointer_segments(record.get("pointer"))
+                ):
+                    _flag(f"{prefix}_declared_field_not_found",
+                          f"{surface_key}:{record.get('pointer')!r} "
+                          f"(field_id={record.get('field_id')!r}) does not resolve")
+
+        # 7. Both-or-neither on a published canonical bytes object. The object
+        #    is the parent of the referenced `bytes`/`sha256` leaf; a whole-file
+        #    ref carries no sibling pair and is bound by `bindings.source_data`.
+        for record in declared:
+            if not isinstance(record, dict) or record.get("class") != "recomputed":
+                continue
+            ref = record.get("ref")
+            if not isinstance(ref, str) or ":" not in ref:
+                continue
+            ref_surface, _, ref_pointer = ref.partition(":")
+            if ref_surface == "self":
+                ref_surface = str(record.get("surface"))
+            ref_segments = _pointer_segments(ref_pointer)
+            if not ref_segments or ref_segments[-1] not in ("bytes", "sha256"):
+                continue
+            entry = surfaces.get(ref_surface)
+            if entry is None:
+                continue
+            for object_value in _resolve_pointer_values(entry[0], ref_segments[:-1]):
+                if not isinstance(object_value, dict):
+                    continue
+                has_bytes = "bytes" in object_value
+                has_sha256 = "sha256" in object_value
+                if has_bytes and not has_sha256:
+                    _flag(f"{prefix}_bytes_without_sha256_pair",
+                          f"field_id={record.get('field_id')!r} ref={ref!r}: canonical "
+                          "bytes object publishes no sibling sha256")
+                elif has_sha256 and not has_bytes:
+                    _flag(f"{prefix}_sha256_without_bytes_pair",
+                          f"field_id={record.get('field_id')!r} ref={ref!r}: sha256 "
+                          "without the canonical bytes it digests")
+
+        # 8. An opaque marker is never the provenance source of a recomputed
+        #    digest: the per-field oracle already reports the record it reads
+        #    on, this reports the resolved declaration. Both are fail-closed.
+        for record in declared:
+            if not isinstance(record, dict) or record.get("class") != "recomputed":
+                continue
+            matched = _digest_ref_matches(
+                record.get("ref"), record.get("surface"), declared
+            )
+            opaque_hits = [item for item in matched if item.get("class") == "opaque"]
+            if opaque_hits:
+                _flag(f"{prefix}_opaque_used_as_canonical_source",
+                      f"field_id={record.get('field_id')!r} ref={record.get('ref')!r} "
+                      "resolves to opaque marker(s) "
+                      f"{[item.get('field_id') for item in opaque_hits]}")
+
+        # 9. Adjudicated dangling pins must stay removed.
+        for adjudication in contract.get("adjudications") or []:
+            if not isinstance(adjudication, dict):
+                continue
+            if str(adjudication.get("action")) != "removed_unreferenced_dangling_pin":
+                continue
+            adjudicated_surface = str(adjudication.get("surface"))
+            entry = surfaces.get(adjudicated_surface)
+            if entry is None:
+                continue
+            if _resolve_pointer_values(
+                entry[0], _pointer_segments(adjudication.get("pointer"))
+            ):
+                _flag(f"{prefix}_adjudicated_field_reintroduced",
+                      f"field_id={adjudication.get('field_id')!r} "
+                      f"{adjudicated_surface}:{adjudication.get('pointer')!r} was "
+                      "adjudicated as removed; reinstatement must fail until it is "
+                      "explicitly classified")
+
+        # 10. The positive fixture must mirror the declared identity set.
+        positive = (contract.get("fixtures") or {}).get("positive") or {}
+        positive_path = self.root / str(positive.get("path", ""))
+        if positive_path.is_file():
+            try:
+                fixture_records = json.loads(positive_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError):
+                fixture_records = None
+            if isinstance(fixture_records, list):
+                fixture_ids = {
+                    record.get("field_id")
+                    for record in fixture_records
+                    if isinstance(record, dict)
+                }
+                declared_ids = {
+                    record.get("field_id")
+                    for record in declared
+                    if isinstance(record, dict)
+                }
+                if fixture_ids != declared_ids:
+                    _flag(
+                        f"{prefix}_fixture_field_drift",
+                        "positive fixture drifts from the declared classification: "
+                        f"missing={sorted(map(str, declared_ids - fixture_ids))}, "
+                        f"extra={sorted(map(str, fixture_ids - declared_ids))}",
+                    )
+
+        flags.extend(_candidate_contract_flags(
+            contract, self.root, dimension, prefix,
+            _oracle_digest_violations,
             graph_task_suite_required=False,
         ))
         return flags
