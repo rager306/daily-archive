@@ -253,6 +253,17 @@ pub(crate) fn stamp_p8_consolidation_observe(
 /// cannot count the reference claim as current-document conservation.
 /// The comparator stays in da-parse; parse-pdf does not call it.
 pub(crate) fn stamp_p9_conservation_observe(m: &mut serde_yaml::Mapping) {
+    merge_cascade_observe(m, "P9", p9_conservation_row());
+}
+
+/// The P9 conservation observation row exactly as parse-pdf emits it.
+///
+/// One builder feeds both the merged stamp and the public projection, so an
+/// emitted artifact and a contract test can never read two different rows.
+/// parse-pdf never runs the comparator, so the current-run namespace carries
+/// the explicit not-evaluated value and the preserved-TEI result is relocated
+/// — not dropped — under the historic namespace.
+fn p9_conservation_row() -> serde_yaml::Mapping {
     let mut p9 = serde_yaml::Mapping::new();
     p9.insert("stage".into(), "P9".into());
     p9.insert("production_authority".into(), "tei_lift".into());
@@ -261,21 +272,140 @@ pub(crate) fn stamp_p9_conservation_observe(m: &mut serde_yaml::Mapping) {
     p9.insert("computed_this_run".into(), false.into());
 
     let current = serde_yaml::Mapping::from_iter([
-        ("verdict_namespace".into(), "current_run".into()),
-        ("verdict".into(), "NotEvaluated".into()),
+        (
+            "verdict_namespace".into(),
+            P9_VERDICT_NAMESPACE_CURRENT_RUN.into(),
+        ),
+        ("verdict".into(), P9_CURRENT_RUN_NOT_EVALUATED.into()),
         ("evaluation_state".into(), "unmeasured".into()),
     ]);
     p9.insert("current_run".into(), current.into());
 
     let reference = serde_yaml::Mapping::from_iter([
-        ("verdict_namespace".into(), "historical_reference".into()),
+        (
+            "verdict_namespace".into(),
+            P9_VERDICT_NAMESPACE_HISTORICAL_REFERENCE.into(),
+        ),
         ("artifact_identity".into(), "preserved_tei".into()),
         ("artifact_digest".into(), "not_recorded".into()),
         ("evidence_state".into(), "historical".into()),
         ("verdict".into(), "conserved".into()),
     ]);
     p9.insert("reference_evidence".into(), reference.into());
-    merge_cascade_observe(m, "P9", p9);
+    p9
+}
+
+// ── GAR-005: which run produced the P9 conservation verdict ────────────────
+//
+// A conservation claim is accepted only when the same run measured it. The
+// namespaces and the classifier below are the machine-readable half of that
+// rule: the report declares its provenance, and a consumer reads the claim
+// through `classify_conservation_verdict_provenance` rather than by scanning
+// for a `conserved` value. The governor DATA rule
+// `conservation_verdict_provenance` (S01/T02) mirrors this reader.
+
+/// Namespace under which a verdict that *this* run computed is published.
+pub const P9_VERDICT_NAMESPACE_CURRENT_RUN: &str = "current_run";
+
+/// Namespace under which preserved-TEI reference evidence is published. A
+/// verdict here records what an earlier run observed; it is never a
+/// measurement of the document this run parsed.
+pub const P9_VERDICT_NAMESPACE_HISTORICAL_REFERENCE: &str = "historical_reference";
+
+/// The only current-run conservation verdict parse-pdf may publish: parse-pdf
+/// does not call the comparator, so a run that did not measure conservation
+/// reports no verdict instead of inheriting one.
+pub const P9_CURRENT_RUN_NOT_EVALUATED: &str = "NotEvaluated";
+
+/// Which run produced the conservation verdict a consumer reads.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConservationVerdictProvenance {
+    /// The current-run namespace carries the explicit not-evaluated value:
+    /// this run neither called the engine nor computed conservation. A historic
+    /// claim may still be readable through [`historic_conservation_reference`].
+    NotEvaluatedThisRun,
+    /// The current-run namespace carries a verdict from the conservation
+    /// engine's closed vocabulary: this run measured conservation itself.
+    MeasuredThisRun,
+    /// The provenance is absent, ill-formed, self-contradictory or outside the
+    /// closed vocabulary. Absence is not compliance: an unattributed claim is
+    /// never reported as a current measurement.
+    Unattributed,
+}
+
+/// The conservation engine's closed wire vocabulary. Borrowed from `da-parse`
+/// rather than restated here, so the report side cannot grow a second
+/// vocabulary that drifts from the engine.
+fn measured_conservation_verdicts() -> [&'static str; 3] {
+    [
+        da_parse::ConservationVerdict::Conserved.as_str(),
+        da_parse::ConservationVerdict::LossDetected.as_str(),
+        da_parse::ConservationVerdict::MalformedSource.as_str(),
+    ]
+}
+
+/// Classify a P9 conservation observation by verdict provenance.
+///
+/// This is a consistency contract over the provenance a report declares about
+/// itself, not a tamper-evident attestation: a writer able to rewrite both the
+/// report and this reader can satisfy it. Its value is that absence, drift and
+/// self-contradiction fail closed instead of passing as compliance.
+pub fn classify_conservation_verdict_provenance(
+    p9: &serde_yaml::Mapping,
+) -> ConservationVerdictProvenance {
+    let Some(current) = p9.get("current_run").and_then(|value| value.as_mapping()) else {
+        return ConservationVerdictProvenance::Unattributed;
+    };
+    // The declared namespace must agree with the key it lives under: a
+    // self-contradictory row is not a current-run measurement.
+    match current
+        .get("verdict_namespace")
+        .and_then(|value| value.as_str())
+    {
+        Some(namespace) if namespace == P9_VERDICT_NAMESPACE_CURRENT_RUN => {}
+        _ => return ConservationVerdictProvenance::Unattributed,
+    }
+    let Some(verdict) = current.get("verdict").and_then(|value| value.as_str()) else {
+        return ConservationVerdictProvenance::Unattributed;
+    };
+    if verdict == P9_CURRENT_RUN_NOT_EVALUATED {
+        return ConservationVerdictProvenance::NotEvaluatedThisRun;
+    }
+    if measured_conservation_verdicts().contains(&verdict) {
+        return ConservationVerdictProvenance::MeasuredThisRun;
+    }
+    ConservationVerdictProvenance::Unattributed
+}
+
+/// The historic conservation verdict an earlier run recorded, read through its
+/// explicitly historic namespace.
+///
+/// Reading the relocated value is a separate call from classification on
+/// purpose: the observation stays available, and it can never be mistaken for a
+/// current-run measurement.
+pub fn historic_conservation_reference(p9: &serde_yaml::Mapping) -> Option<&str> {
+    let reference = p9.get("reference_evidence")?.as_mapping()?;
+    match reference
+        .get("verdict_namespace")
+        .and_then(|value| value.as_str())
+    {
+        Some(namespace) if namespace == P9_VERDICT_NAMESPACE_HISTORICAL_REFERENCE => {
+            reference.get("verdict").and_then(|value| value.as_str())
+        }
+        _ => None,
+    }
+}
+
+/// The `cascade_observe` document that `run_parse_pdf` stamps P9 into.
+///
+/// The real document carries the sibling P0..P8 rows merged beside this one;
+/// this projection carries only P9. It exists so a consumer or contract test
+/// reads the observation at the documented location (`cascade_observe.P9`)
+/// instead of a rebuilt copy that could drift from the merge the stamp uses.
+pub fn p9_cascade_observe_document() -> serde_yaml::Mapping {
+    let mut document = serde_yaml::Mapping::new();
+    stamp_p9_conservation_observe(&mut document);
+    document
 }
 
 fn stamp_from_grammar(
