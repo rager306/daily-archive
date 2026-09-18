@@ -6095,6 +6095,387 @@ def test_fsm_interaction_map_summary_covers_every_automaton():
     assert sorted(summary["trigger_classes"]) == ["input", "model", "policy", "source"]
 
 
+# ---------------------------------------------------------------------------
+# GAR-012: quarantine semantic boundary (M509-yzblqx/S04/T02).
+# ---------------------------------------------------------------------------
+
+_QS_CONTRACT = "scripts/governor/checks/quarantine_semantic_boundary.yaml"
+_QS_SCHOLARLY = "scripts/governor/checks/scholarly_parse_plane.yaml"
+_QS_GROBID = "data/parse/grobid_compatibility.yaml"
+_QS_EXECUTED = "scripts/governor/checks/executed_population_binding.yaml"
+_QS_LICENSE = "scripts/governor/checks/component_license_provenance.yaml"
+_QS_REGISTRY = "doc/review/grobid-absorption-review-2026-09-10.jsonl"
+_QS_SEMANTIC_CLAIMS = [
+    "semantic_utility",
+    "scientific_relevance",
+    "output_quality",
+    "parity",
+    "legal_admissibility",
+    "deployment_readiness",
+]
+
+def _qs_routing(term: str, surface: str, kind: str, path: str, patterns: list[str]) -> dict:
+    return {
+        "routed_to": surface,
+        "evidence_kind": kind,
+        "path": path,
+        "required_patterns": patterns,
+        "rationale": f"{term} is decided by {surface}, not by quarantine",
+    }
+
+def _quarantine_semantic_boundary_contract() -> dict:
+    """Minimal valid GAR-012 boundary: isolation only, every non-claim routed."""
+    return {
+        "schema_version": "quarantine-semantic-boundary-test.v1",
+        "policy_id": "quarantine_semantic_boundary",
+        "dimension": "scholarly_parse_plane",
+        "severity": "medium",
+        "anchor": "GAR-012",
+        "finding": "GAR-012",
+        "finding_registry": _QS_REGISTRY,
+        "boundary_role": "isolation_only",
+        "canonical_contract": _QS_CONTRACT,
+        "boundary_annotation_key": "semantic_boundary",
+        "establishes": [
+            "input_isolation",
+            "safety_containment",
+            "production_authority_lock",
+        ],
+        "does_not_establish": list(_QS_SEMANTIC_CLAIMS),
+        "routing_evidence_kinds": [
+            "executed_or_evaluated_population",
+            "component_license_provenance",
+        ],
+        "quarantine_scan_routes": [
+            "quarantine_semantic_boundary",
+            "self",
+            "isolation_scan",
+            "quarantine_pass",
+        ],
+        "claim_routing": {
+            "semantic_utility": _qs_routing(
+                "semantic_utility", "executed_population_binding",
+                "executed_or_evaluated_population", _QS_EXECUTED,
+                ["policy_id: executed_population_binding", "corpus_execution"],
+            ),
+            "scientific_relevance": _qs_routing(
+                "scientific_relevance", "executed_population_binding",
+                "executed_or_evaluated_population", _QS_EXECUTED,
+                ["policy_id: executed_population_binding", "corpus_execution"],
+            ),
+            "output_quality": _qs_routing(
+                "output_quality", "executed_population_binding",
+                "executed_or_evaluated_population", _QS_EXECUTED,
+                ["policy_id: executed_population_binding", "corpus_execution"],
+            ),
+            "parity": _qs_routing(
+                "parity", "executed_population_binding",
+                "executed_or_evaluated_population", _QS_EXECUTED,
+                ["policy_id: executed_population_binding", "corpus_execution"],
+            ),
+            "legal_admissibility": _qs_routing(
+                "legal_admissibility", "component_license_provenance",
+                "component_license_provenance", _QS_LICENSE,
+                ["policy_id: component_license_provenance"],
+            ),
+            "deployment_readiness": _qs_routing(
+                "deployment_readiness", "component_license_provenance",
+                "component_license_provenance", _QS_LICENSE,
+                ["policy_id: component_license_provenance"],
+            ),
+        },
+        "semantic_claim_keys": [
+            "relevance", "utility", "usefulness", "semantic_utility",
+            "scientific_utility", "scientific_relevance", "admissibility",
+            "admissible", "quality", "quality_score", "parity",
+            "deployment_ready", "semantic_readiness",
+        ],
+        "rival_definition_keys": [
+            "tokens", "boundaries", "forbidden_tokens", "source_bindings",
+            "source_artifacts", "sanctioned_endpoints", "closed_taxonomy",
+            "quarantine_definitions", "planes", "defaults",
+        ],
+        "reused_definitions": [
+            {
+                "path": _QS_SCHOLARLY,
+                "scope": "planes.promotion_quarantine",
+                "used_for_scope": ["input_isolation", "production_authority_lock"],
+                "required_scope_annotations": {
+                    "isolation_only": True,
+                    "semantic_boundary": _QS_CONTRACT,
+                },
+            },
+            {
+                "path": _QS_SCHOLARLY,
+                "scope": "rest_batch_asset_quarantine",
+                "used_for_scope": ["input_isolation", "production_authority_lock"],
+                "required_scope_annotations": {
+                    "isolation_only": True,
+                    "semantic_boundary": _QS_CONTRACT,
+                },
+            },
+            {
+                "path": _QS_GROBID,
+                "scope": "defaults.*_quarantine",
+                "used_for_scope": ["input_isolation", "safety_containment"],
+                "required_patterns": [
+                    "visual_heads_quarantine",
+                    "feature_tagger_training_quarantine",
+                    "import_eligible: false",
+                    "auto_promote: forbidden",
+                ],
+            },
+        ],
+        "non_claim_invariants": [
+            {
+                "id": "quarantine_pass_is_not_a_quality_measurement",
+                "statement": "A quarantine outcome is containment, not a quality measurement.",
+            },
+            {
+                "id": "semantic_usefulness_requires_executed_evidence",
+                "statement": "Usefulness routes to executed/evaluated population evidence.",
+            },
+        ],
+    }
+
+def _quarantine_semantic_boundary_fixtures() -> dict:
+    """Fixture documents the boundary contract resolves against."""
+    return {
+        "scholarly": {
+            "planes": {
+                "promotion_quarantine": {
+                    "promotion_state": "candidate",
+                    "auto_promote": "forbidden",
+                    "import_eligible": False,
+                    "isolation_only": True,
+                    "semantic_boundary": _QS_CONTRACT,
+                }
+            },
+            "rest_batch_asset_quarantine": {
+                "isolation_only": True,
+                "semantic_boundary": _QS_CONTRACT,
+                "source_bindings": [],
+                "policy": {"import_eligible": False, "auto_promote": "forbidden"},
+            },
+        },
+        "grobid": {
+            "import_eligible": False,
+            "auto_promote": "forbidden",
+            "defaults": {
+                "visual_heads_quarantine": {"tokens": ["A"], "boundaries": ["b"]},
+                "body_accounting_quarantine": {"tokens": ["C"], "boundaries": ["d"]},
+                "feature_tagger_training_quarantine": {"tokens": ["E"]},
+                "fulltext_sequence_quarantine": {"tokens": ["F"]},
+            },
+        },
+    }
+
+def _write_quarantine_semantic_boundary(root: Path, contract: dict | None = None) -> None:
+    """Write a self-contained GAR-012 fixture (contract, scopes, evidence, registry)."""
+    _write(
+        root / _QS_CONTRACT,
+        yaml.safe_dump(contract or _quarantine_semantic_boundary_contract(), sort_keys=False),
+    )
+    fixtures = _quarantine_semantic_boundary_fixtures()
+    _write(root / _QS_SCHOLARLY, yaml.safe_dump(fixtures["scholarly"], sort_keys=False))
+    _write(root / _QS_GROBID, yaml.safe_dump(fixtures["grobid"], sort_keys=False))
+    _write(
+        root / _QS_EXECUTED,
+        "policy_id: executed_population_binding\ncorpus_execution: true\n",
+    )
+    _write(root / _QS_LICENSE, "policy_id: component_license_provenance\n")
+    _write(root / _QS_REGISTRY, json.dumps({"finding_id": "GAR-012"}) + "\n")
+
+def _quarantine_semantic_boundary_check(root: Path) -> list[DriftFlag]:
+    """Run the check through the trajectory service method (covers the wiring)."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = root
+    return service._check_quarantine_semantic_boundary()
+
+def _quarantine_semantic_boundary_flags(root: Path, contract: dict) -> set[str]:
+    _write_quarantine_semantic_boundary(root, contract)
+    return {flag.flag for flag in _quarantine_semantic_boundary_check(root)}
+
+def _qs_rewrite_scope(root: Path, mutate) -> None:
+    """Mutate the scholarly-plane fixture in place and rewrite it."""
+    path = root / _QS_SCHOLARLY
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    mutate(document)
+    _write(path, yaml.safe_dump(document, sort_keys=False))
+
+def test_quarantine_semantic_boundary_contract_is_clean_on_real_repo():
+    """The committed boundary must pass its own rule (a boundary that fails is dead DATA)."""
+    assert _quarantine_semantic_boundary_check(_scripts_dir.parent) == []
+
+def test_quarantine_semantic_boundary_fixture_contract_is_clean():
+    root = _make_root()
+    _write_quarantine_semantic_boundary(root)
+    assert _quarantine_semantic_boundary_check(root) == []
+
+def test_quarantine_semantic_boundary_absent_policy_is_silent():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    assert service._check_quarantine_semantic_boundary() == []
+
+def test_quarantine_semantic_boundary_invalid_yaml_is_flagged():
+    root = _make_root()
+    _write_quarantine_semantic_boundary(root)
+    _write(root / _QS_CONTRACT, "claim_routing: [unclosed\n")
+    flags = {flag.flag for flag in _quarantine_semantic_boundary_check(root)}
+    assert "quarantine_semantic_boundary_invalid" in flags
+
+def test_quarantine_semantic_boundary_non_mapping_contract_is_flagged():
+    root = _make_root()
+    _write_quarantine_semantic_boundary(root)
+    _write(root / _QS_CONTRACT, "- establishes\n- does_not_establish\n")
+    flags = {flag.flag for flag in _quarantine_semantic_boundary_check(root)}
+    assert "quarantine_semantic_boundary_invalid" in flags
+
+def test_quarantine_semantic_boundary_scope_missing_is_flagged():
+    """A vanished reused quarantine definition is a missing containment scope."""
+    root = _make_root()
+    _write_quarantine_semantic_boundary(root)
+    (root / _QS_SCHOLARLY).unlink()
+    flags = {flag.flag for flag in _quarantine_semantic_boundary_check(root)}
+    assert "quarantine_semantic_boundary_scope_missing" in flags
+
+def test_quarantine_semantic_boundary_scope_annotation_missing_is_flagged():
+    """A quarantine scope without `isolation_only` is no longer scoped to isolation."""
+    root = _make_root()
+    _write_quarantine_semantic_boundary(root)
+    _qs_rewrite_scope(
+        root,
+        lambda doc: doc["planes"]["promotion_quarantine"].pop("isolation_only"),
+    )
+    flags = {flag.flag for flag in _quarantine_semantic_boundary_check(root)}
+    assert "quarantine_semantic_boundary_scope_missing" in flags
+
+def test_quarantine_semantic_boundary_scope_pointer_wrong_is_flagged():
+    """A quarantine scope pointing at a rival boundary is not the canonical separation."""
+    root = _make_root()
+    _write_quarantine_semantic_boundary(root)
+    _qs_rewrite_scope(
+        root,
+        lambda doc: doc["rest_batch_asset_quarantine"].update(
+            {"semantic_boundary": "data/policies/other-boundary.yaml"}
+        ),
+    )
+    flags = {flag.flag for flag in _quarantine_semantic_boundary_check(root)}
+    assert "quarantine_semantic_boundary_scope_missing" in flags
+
+def test_quarantine_semantic_boundary_claim_leak_is_flagged():
+    """A quarantine definition that carries a utility key reads as a utility statement."""
+    root = _make_root()
+    _write_quarantine_semantic_boundary(root)
+    path = root / _QS_GROBID
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    document["defaults"]["visual_heads_quarantine"]["utility"] = True
+    _write(path, yaml.safe_dump(document, sort_keys=False))
+    flags = {flag.flag for flag in _quarantine_semantic_boundary_check(root)}
+    assert "quarantine_semantic_boundary_claim_leak" in flags
+
+def test_quarantine_semantic_boundary_routing_missing_is_flagged():
+    """Every semantic non-claim must route to evidence that can decide it."""
+    contract = _quarantine_semantic_boundary_contract()
+    del contract["claim_routing"]["output_quality"]
+    flags = _quarantine_semantic_boundary_flags(_make_root(), contract)
+    assert "quarantine_semantic_boundary_routing_missing" in flags
+
+def test_quarantine_semantic_boundary_routing_forbidden_is_flagged():
+    """A non-claim routed back to the quarantine scanner is the GAR-012 failure."""
+    contract = _quarantine_semantic_boundary_contract()
+    contract["claim_routing"]["semantic_utility"]["routed_to"] = "self"
+    flags = _quarantine_semantic_boundary_flags(_make_root(), contract)
+    assert "quarantine_semantic_boundary_routing_forbidden" in flags
+
+def test_quarantine_semantic_boundary_evidence_missing_is_flagged():
+    contract = _quarantine_semantic_boundary_contract()
+    contract["claim_routing"]["legal_admissibility"]["path"] = "scripts/governor/checks/gone.yaml"
+    flags = _quarantine_semantic_boundary_flags(_make_root(), contract)
+    assert "quarantine_semantic_boundary_evidence_missing" in flags
+
+def test_quarantine_semantic_boundary_rival_copy_is_flagged():
+    """A second copy of the quarantine token/boundary lists is a rival definition home."""
+    contract = _quarantine_semantic_boundary_contract()
+    contract["tokens"] = ["leaked"]
+    flags = _quarantine_semantic_boundary_flags(_make_root(), contract)
+    assert "quarantine_semantic_boundary_rival_copy" in flags
+
+def test_quarantine_semantic_boundary_finding_missing_is_flagged():
+    contract = _quarantine_semantic_boundary_contract()
+    contract["finding"] = "GAR-999"
+    flags = _quarantine_semantic_boundary_flags(_make_root(), contract)
+    assert "quarantine_semantic_boundary_finding_missing" in flags
+
+def test_quarantine_semantic_boundary_every_mutation_is_not_silent():
+    """Each violation class is isolated: the clean boundary is silent, every mutation reddens."""
+
+    def routing_missing(contract: dict) -> None:
+        del contract["claim_routing"]["output_quality"]
+
+    def routing_forbidden(contract: dict) -> None:
+        contract["claim_routing"]["semantic_utility"]["routed_to"] = "isolation_scan"
+
+    def evidence_missing(contract: dict) -> None:
+        contract["claim_routing"]["parity"]["path"] = "scripts/governor/checks/gone.yaml"
+
+    def rival_copy(contract: dict) -> None:
+        contract["boundaries"] = ["leaked"]
+
+    def finding_gone(contract: dict) -> None:
+        contract["finding"] = "GAR-999"
+
+    def broken_role(contract: dict) -> None:
+        contract["boundary_role"] = "quality_measurement"
+
+    def overlap(contract: dict) -> None:
+        contract["establishes"].append("semantic_utility")
+
+    def unknown_route(contract: dict) -> None:
+        contract["claim_routing"]["invented_claim"] = contract["claim_routing"]["parity"]
+
+    cases = [
+        ("routing", routing_missing, "quarantine_semantic_boundary_routing_missing"),
+        ("forbidden", routing_forbidden, "quarantine_semantic_boundary_routing_forbidden"),
+        ("evidence", evidence_missing, "quarantine_semantic_boundary_evidence_missing"),
+        ("rival", rival_copy, "quarantine_semantic_boundary_rival_copy"),
+        ("finding", finding_gone, "quarantine_semantic_boundary_finding_missing"),
+        ("role", broken_role, "quarantine_semantic_boundary_broken"),
+        ("overlap", overlap, "quarantine_semantic_boundary_broken"),
+        ("route", unknown_route, "quarantine_semantic_boundary_broken"),
+    ]
+    root = _make_root()
+    _write_quarantine_semantic_boundary(root)
+    assert _quarantine_semantic_boundary_check(root) == []
+    for label, mutate, expected in cases:
+        contract = _quarantine_semantic_boundary_contract()
+        mutate(contract)
+        flags = _quarantine_semantic_boundary_flags(root, contract)
+        assert flags, f"{label} mutation was silently accepted"
+        assert expected in flags, f"{label} expected {expected}, got {sorted(flags)}"
+
+def test_quarantine_semantic_boundary_is_wired_into_build_report():
+    """A rule that is implemented but never invoked is a dead rule."""
+    import inspect
+
+    source = inspect.getsource(TrajectoryService.build_report)
+    assert "_check_quarantine_semantic_boundary()" in source
+
+def test_quarantine_semantic_boundary_summary_separates_relevance_from_isolation():
+    """The summary keeps isolation claims and routed semantic claims apart."""
+    from governor.adapters.checks.quarantine_semantic_boundary import (
+        summarize_quarantine_semantic_boundary,
+    )
+
+    summary = summarize_quarantine_semantic_boundary(_scripts_dir.parent)
+    assert summary["present"] is True
+    assert summary["boundary_role"] == "isolation_only"
+    assert summary["unrouted"] == []
+    assert "relevance" not in summary["establishes"]
+    assert summary["routing"]["semantic_utility"] == "executed_population_binding"
+    assert summary["routing"]["legal_admissibility"] == "component_license_provenance"
+    assert summary["reused_scopes"]
+
 def _run_all_tests() -> int:
     """Simple test runner (no pytest dependency)."""
     tests = [
@@ -6346,6 +6727,23 @@ def _run_all_tests() -> int:
         test_fsm_interaction_map_every_mutation_is_not_silent,
         test_fsm_interaction_map_is_wired_into_build_report,
         test_fsm_interaction_map_summary_covers_every_automaton,
+        test_quarantine_semantic_boundary_contract_is_clean_on_real_repo,
+        test_quarantine_semantic_boundary_fixture_contract_is_clean,
+        test_quarantine_semantic_boundary_absent_policy_is_silent,
+        test_quarantine_semantic_boundary_invalid_yaml_is_flagged,
+        test_quarantine_semantic_boundary_non_mapping_contract_is_flagged,
+        test_quarantine_semantic_boundary_scope_missing_is_flagged,
+        test_quarantine_semantic_boundary_scope_annotation_missing_is_flagged,
+        test_quarantine_semantic_boundary_scope_pointer_wrong_is_flagged,
+        test_quarantine_semantic_boundary_claim_leak_is_flagged,
+        test_quarantine_semantic_boundary_routing_missing_is_flagged,
+        test_quarantine_semantic_boundary_routing_forbidden_is_flagged,
+        test_quarantine_semantic_boundary_evidence_missing_is_flagged,
+        test_quarantine_semantic_boundary_rival_copy_is_flagged,
+        test_quarantine_semantic_boundary_finding_missing_is_flagged,
+        test_quarantine_semantic_boundary_every_mutation_is_not_silent,
+        test_quarantine_semantic_boundary_is_wired_into_build_report,
+        test_quarantine_semantic_boundary_summary_separates_relevance_from_isolation,
     ]
     passed = 0
     failed = 0

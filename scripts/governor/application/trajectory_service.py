@@ -2097,6 +2097,16 @@ class TrajectoryService:
         # grows an executive controller it must never have.
         drift_flags.extend(self._check_fsm_interaction_map())
 
+        # GAR-012: quarantine semantic boundary (M509-yzblqx S04). The staged
+        # quarantine establishes input isolation and safety containment only:
+        # it is not a quality, relevance or admissibility measurement. The rule
+        # binds the existing quarantine definitions in the scholarly parse
+        # plane DATA (no second copy), fails when one carries a semantic claim
+        # key, and requires every non-claim to route to executed/evaluated
+        # evidence or the licence/provenance register rather than back to the
+        # scanner.
+        drift_flags.extend(self._check_quarantine_semantic_boundary())
+
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
         milestone_ctx = self._build_milestone_context()
@@ -4344,6 +4354,23 @@ class TrajectoryService:
         )
 
         return check_fsm_interaction_map(self.root)
+
+    def _check_quarantine_semantic_boundary(self) -> list[DriftFlag]:
+        """GAR-012: quarantine stays isolation, not a quality statement.
+
+        Reads `scripts/governor/checks/quarantine_semantic_boundary.yaml` (DATA)
+        through the adapter and returns its violation flags unchanged. The rule
+        resolves the existing quarantine definitions in the scholarly parse
+        plane DATA, fails when a reusable scope lost its `isolation_only`
+        annotation or gained a semantic claim key, and fails when a declared
+        semantic non-claim is not routed to executed/evaluated evidence or to
+        the component licence/provenance register.
+        """
+        from governor.adapters.checks.quarantine_semantic_boundary import (
+            check_quarantine_semantic_boundary,
+        )
+
+        return check_quarantine_semantic_boundary(self.root)
 
     def _check_logging_architecture(self) -> list[DriftFlag]:
         """Require valuable pipeline logs without leaking transport into core layers."""

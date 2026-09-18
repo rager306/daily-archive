@@ -70,7 +70,16 @@ planes:
     production_route: forbidden
     graph_write: forbidden
     import_eligible: false
+    # GAR-012: this quarantine establishes containment only. It carries no
+    # relevance, quality or admissibility claim; those route through the
+    # boundary contract below (isolation_only + semantic_boundary).
+    isolation_only: true
+    semantic_boundary: scripts/governor/checks/quarantine_semantic_boundary.yaml
 rest_batch_asset_quarantine:
+  # GAR-012: containment scope, defined once. The semantic boundary contract
+  # binds this section rather than restating its token/route lists.
+  isolation_only: true
+  semantic_boundary: scripts/governor/checks/quarantine_semantic_boundary.yaml
   source_bindings:
     - path: data/parse/api_compatibility_ledger.yaml
       sha256: fcce2f3e54780ba6385935aa111b733eb1a3dd25510e0907fa9baa0279092c28

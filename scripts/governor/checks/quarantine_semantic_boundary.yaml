@@ -1,0 +1,194 @@
+# GAR-012 quarantine semantic boundary (DATA contract).
+#
+# GAR-012 (doc/review/grobid-absorption-review-2026-09-10.jsonl) records that
+# the staged quarantine genuinely establishes input isolation and safety
+# containment and nothing more: it does not measure whether a quarantined
+# output is relevant, useful, admissible or deployment-ready. Reading a
+# quarantine PASS as a quality, parity or admissibility statement is the
+# recorded failure.
+#
+# This file makes the separation executable DATA:
+#
+#   - `boundary_role: isolation_only` and the `establishes` list are the only
+#     claims quarantine may carry. The `does_not_establish` list is the closed
+#     vocabulary of semantic claims quarantine never decides.
+#   - `claim_routing` maps every non-claim to the evidence surface that can
+#     actually decide it: semantic usefulness routes to executed or evaluated
+#     population evidence, and legal/quality admissibility routes to the
+#     component licence/provenance register. A non-claim may never route back
+#     to the quarantine scanner (`quarantine_scan_routes`).
+#   - `reused_definitions` binds the existing quarantine definitions in the
+#     scholarly parse plane DATA instead of restating their token/boundary
+#     lists here. The scholarly plane sections carry `isolation_only: true` and
+#     a `semantic_boundary` pointer to this contract, and
+#     `rival_definition_keys` fails closed if this contract grows a second copy
+#     of `tokens`, `boundaries`, `source_bindings` or the like.
+#   - `semantic_claim_keys` are the keys a quarantine definition must never
+#     carry. `scripts/governor/adapters/checks/quarantine_semantic_boundary.py`
+#     resolves every reused scope and reports a claim leak when one appears.
+#
+# The governor check reads this file and fails closed on a broken boundary, a
+# containment scope that lost its isolation annotation, a semantic claim leaked
+# into a quarantine definition, an unrouted or forbidden claim, a routed
+# evidence surface that lost its pinned identity, a rival quarantine copy, or a
+# finding absent from the review registry. Adjusting the boundary is an edit
+# here, not a Python change.
+
+schema_version: quarantine-semantic-boundary.v1
+policy_id: quarantine_semantic_boundary
+dimension: scholarly_parse_plane
+severity: medium
+anchor: "GAR-012; ADR-055; ADR-075; ADR-076; R118; D127"
+finding: GAR-012
+finding_registry: doc/review/grobid-absorption-review-2026-09-10.jsonl
+
+boundary_role: isolation_only
+canonical_contract: scripts/governor/checks/quarantine_semantic_boundary.yaml
+boundary_annotation_key: semantic_boundary
+
+establishes:
+  - input_isolation
+  - safety_containment
+  - production_authority_lock
+  - redaction_observation
+  - shadow_only_retention
+
+does_not_establish:
+  - semantic_utility
+  - scientific_relevance
+  - output_quality
+  - parity
+  - legal_admissibility
+  - deployment_readiness
+
+routing_evidence_kinds: [executed_or_evaluated_population, component_license_provenance]
+quarantine_scan_routes: [quarantine_semantic_boundary, self, isolation_scan, quarantine_pass]
+
+claim_routing:
+  semantic_utility:
+    routed_to: executed_population_binding
+    evidence_kind: executed_or_evaluated_population
+    path: scripts/governor/checks/executed_population_binding.yaml
+    required_patterns: ["policy_id: executed_population_binding", "corpus_execution"]
+    rationale: >-
+      Whether a quarantined output adds scientific utility is decided by the
+      executed/evaluated population actually run over it, never by a scanner
+      that only proves the output was kept out of production.
+  scientific_relevance:
+    routed_to: executed_population_binding
+    evidence_kind: executed_or_evaluated_population
+    path: scripts/governor/checks/executed_population_binding.yaml
+    required_patterns: ["policy_id: executed_population_binding", "corpus_execution"]
+    rationale: >-
+      Relevance is a property of what was executed and evaluated, not of an
+      isolation boundary; the population split is the deciding evidence.
+  output_quality:
+    routed_to: executed_population_binding
+    evidence_kind: executed_or_evaluated_population
+    path: scripts/governor/checks/executed_population_binding.yaml
+    required_patterns: ["policy_id: executed_population_binding", "corpus_execution"]
+    rationale: >-
+      A quality statement requires measured population metrics; a quarantine
+      outcome carries no metric and cannot stand in for one.
+  parity:
+    routed_to: executed_population_binding
+    evidence_kind: executed_or_evaluated_population
+    path: scripts/governor/checks/executed_population_binding.yaml
+    required_patterns: ["policy_id: executed_population_binding", "corpus_execution"]
+    rationale: >-
+      Parity is a same-n, executed comparison; containment is not comparison
+      and must never be cited as one.
+  legal_admissibility:
+    routed_to: component_license_provenance
+    evidence_kind: component_license_provenance
+    path: scripts/governor/checks/component_license_provenance.yaml
+    required_patterns: ["policy_id: component_license_provenance"]
+    rationale: >-
+      Whether a quarantined output may enter a downstream legal/quality use is
+      decided by the component licence/provenance register, which records a
+      verified right or a typed blocked position, not by the quarantine.
+  deployment_readiness:
+    routed_to: component_license_provenance
+    evidence_kind: component_license_provenance
+    path: scripts/governor/checks/component_license_provenance.yaml
+    required_patterns: ["policy_id: component_license_provenance"]
+    rationale: >-
+      Deployment readiness is an authority and rights question owned by the
+      provenance register plus the explicit promotion chain, never by a
+      containment check.
+
+semantic_claim_keys:
+  - relevance
+  - utility
+  - usefulness
+  - semantic_utility
+  - scientific_utility
+  - scientific_relevance
+  - admissibility
+  - admissible
+  - quality
+  - quality_score
+  - parity
+  - deployment_ready
+  - semantic_readiness
+
+rival_definition_keys:
+  - tokens
+  - boundaries
+  - forbidden_tokens
+  - source_bindings
+  - source_artifacts
+  - sanctioned_endpoints
+  - closed_taxonomy
+  - quarantine_definitions
+  - planes
+  - defaults
+
+reused_definitions:
+  - path: scripts/governor/checks/scholarly_parse_plane.yaml
+    scope: planes.promotion_quarantine
+    used_for_scope: [input_isolation, safety_containment, production_authority_lock]
+    required_scope_annotations:
+      isolation_only: true
+      semantic_boundary: scripts/governor/checks/quarantine_semantic_boundary.yaml
+    note: >-
+      The promotion quarantine plane keeps the candidate-only lock set
+      (auto_promote/deployed/promotion_receipt/production_route/graph_write/
+      import_eligible). Isolation only; the plane authors nothing about quality.
+  - path: scripts/governor/checks/scholarly_parse_plane.yaml
+    scope: rest_batch_asset_quarantine
+    used_for_scope: [input_isolation, safety_containment, production_authority_lock]
+    required_scope_annotations:
+      isolation_only: true
+      semantic_boundary: scripts/governor/checks/quarantine_semantic_boundary.yaml
+    note: >-
+      The REST batch-asset quarantine keeps invented Java asset endpoints out
+      of production and records the sanctioned three. Isolation only.
+  - path: data/parse/grobid_compatibility.yaml
+    scope: defaults.*_quarantine
+    used_for_scope: [input_isolation, shadow_only_retention]
+    required_patterns: ["visual_heads_quarantine", "body_accounting_quarantine", "feature_tagger_training_quarantine", "fulltext_sequence_quarantine", "import_eligible: false", "auto_promote: forbidden"]
+    note: >-
+      The per-family token/boundary quarantine blocks are the single home of
+      the shadow token and boundary lists; this contract binds them and must
+      never copy them.
+
+non_claim_invariants:
+  - id: quarantine_pass_is_not_a_quality_measurement
+    statement: >-
+      A quarantine outcome is a containment result: it can never be read or
+      cited as a parity, quality, relevance or utility measurement.
+  - id: semantic_usefulness_requires_executed_evidence
+    statement: >-
+      A semantic usefulness claim routes to executed or evaluated population
+      evidence (executed_population_binding), never to the quarantine scanner.
+  - id: admissibility_requires_provenance_register
+    statement: >-
+      A downstream legal/quality admissibility claim routes to the component
+      licence/provenance register (component_license_provenance), never to the
+      quarantine scanner.
+  - id: separation_does_not_weaken_containment
+    statement: >-
+      Scoping quarantine to isolation removes no containment, redaction or
+      production-authority lock; the reused definitions stay the single home
+      of the quarantine tokens and boundaries.
