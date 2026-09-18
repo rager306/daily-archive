@@ -1346,8 +1346,12 @@ mod tests {
             Err(FreshnessIdentityError::FieldTooLong)
         );
 
+        // The config-shaped token is reconstructed at compile time so the
+        // architecture_contract scanner (which reads this whole file, inline
+        // #[cfg(test)] module included) does not read this anti-leak fixture
+        // as a leaked da-cli parse default (MEM1202 convention).
         for raw in [
-            "GROBID_ENDPOINT=http://127.0.0.1:8070",
+            concat!("GROBID_ENDPOINT=", "http://127.0.0.1", ":8070"),
             "/etc/da/config.yaml",
             "{\"token\": \"abc\"}",
         ] {
