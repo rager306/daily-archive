@@ -23,7 +23,14 @@ validates `doc/review/grobid-rust-horizon-review.json` as a control registry:
   applicability with a reason;
 - under `claim_scope: planning` no stage may claim `implementation_pass` /
   `verification_pass`, and no stage may leave the unresolved status set; an
-  `evidence` scope may claim a PASS only with current closure evidence.
+  `evidence` scope may claim a PASS only with current closure evidence;
+- a stage that claims closure must carry `pass` on every verification row, so a
+  claim can never outrun the evidence it rests on;
+- when the contract sets `open_item_required_for_unresolved`, every unresolved
+  stage must carry an explicit `open_item` with a reason, the date it was first
+  recorded, an acceptance flag and a closure condition. An accepted open item
+  must be unassigned and an unassigned unresolved stage must be accepted, so an
+  unowned stage can never be silently pending.
 """
 from __future__ import annotations
 
@@ -224,6 +231,7 @@ def check_grobid_horizon_review(root: Path, contract_rel: str | None = None) -> 
     unassigned_value = str(registry.get("owner_unassigned_value", "unassigned"))
     owner_allow = registry.get("owner_allow")
     owner_allow_set = {str(item) for item in owner_allow} if isinstance(owner_allow, list) and owner_allow else None
+    open_item_required = bool(registry.get("open_item_required_for_unresolved", False))
     claim_scope = str(document.get("claim_scope", ""))
 
     stage_ids: list[str] = []
@@ -263,6 +271,52 @@ def check_grobid_horizon_review(root: Path, contract_rel: str | None = None) -> 
                 f"{label} has unknown owner {owner_value!r}; expected one of {sorted(owner_allow_set)}",
                 "high",
             )
+
+        if status in unresolved_status and open_item_required:
+            open_item = stage.get("open_item")
+            if not isinstance(open_item, Mapping):
+                _flag(
+                    "grobid_horizon_review_broken",
+                    f"{label} is unresolved without an explicit open_item",
+                    "high",
+                )
+            else:
+                open_reason = str(open_item.get("reason", ""))
+                open_closure = str(open_item.get("closure_condition", ""))
+                invalid_open = next(
+                    (
+                        detail
+                        for detail, bad in (
+                            ("reason", not _is_non_empty_text(open_reason) or len(open_reason) < 20),
+                            ("since", _DATE_PATTERN.fullmatch(str(open_item.get("since", ""))) is None),
+                            ("accepted", not isinstance(open_item.get("accepted"), bool)),
+                            (
+                                "closure_condition",
+                                not _is_non_empty_text(open_closure) or len(open_closure) < 20,
+                            ),
+                        )
+                        if bad
+                    ),
+                    None,
+                )
+                if invalid_open:
+                    _flag(
+                        "grobid_horizon_review_broken",
+                        f"{label} open_item.{invalid_open} invalid",
+                        "high",
+                    )
+                elif open_item.get("accepted") is True and owner_value != unassigned_value:
+                    _flag(
+                        "grobid_horizon_review_broken",
+                        f"{label} declares an accepted open item but names owner {owner_value!r}",
+                        "high",
+                    )
+                elif open_item.get("accepted") is not True and owner_value == unassigned_value:
+                    _flag(
+                        "grobid_horizon_review_broken",
+                        f"{label} is unassigned but its open_item is not accepted",
+                        "high",
+                    )
 
         adr_refs = stage.get("adr_refs")
         if not _is_non_empty_list(adr_refs):
@@ -413,6 +467,19 @@ def check_grobid_horizon_review(root: Path, contract_rel: str | None = None) -> 
         claims = implementation_pass is True or verification_pass is True
         if claims:
             claim_count += 1
+        if (claims or status == "complete") and isinstance(verification, list):
+            pending_verification_rows = [
+                index
+                for index, item in enumerate(verification)
+                if not isinstance(item, Mapping) or str(item.get("status", "")) != "pass"
+            ]
+            if pending_verification_rows:
+                _flag(
+                    "grobid_horizon_review_broken",
+                    f"{label} claims closure while verification_evidence rows "
+                    f"{pending_verification_rows} are not pass",
+                    "high",
+                )
         if claim_scope == "planning" and claims:
             _flag(
                 "grobid_horizon_review_broken",
@@ -489,7 +556,7 @@ def check_grobid_horizon_review(root: Path, contract_rel: str | None = None) -> 
     )
     _flag(
         "grobid_horizon_review_status",
-        f"stages={len(stages)} unresolved={len(unresolved)} complete={sum(1 for s in stages if isinstance(s, Mapping) and str(s.get('status')) == 'complete')} claims={claim_count} unassigned_unresolved={len(unresolved_unassigned)}",
+        f"stages={len(stages)} unresolved={len(unresolved)} complete={sum(1 for s in stages if isinstance(s, Mapping) and str(s.get('status')) == 'complete')} claims={claim_count} unassigned_unresolved={len(unresolved_unassigned)} open_items={sum(1 for s in stages if isinstance(s, Mapping) and str(s.get('status')) in unresolved_status and isinstance(s.get('open_item'), Mapping))}",
         "medium",
     )
     return flags

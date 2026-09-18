@@ -3475,6 +3475,11 @@ def _copy_component_license_contract(root: Path) -> None:
         "data/parse/feature_tagger_training_parity.yaml",
         "data/parse/grobid_model_rights.yaml",
         "crates/da-parse/tests/component_license_provenance_data_contract.rs",
+        # T01 (M509-yzblqx/S06) added the `rust_capability_license_reader`
+        # source marker that pins the capability-licence reader; the scratch
+        # root must carry that file too, or a semantically identical copy
+        # reports `source_marker_missing` for a file it was never given.
+        "crates/da-parse/tests/data_contracts.rs",
     ]
     inventory = yaml.safe_load(
         (repo / _COMPONENT_LICENSE_INVENTORY).read_text(encoding="utf-8")
@@ -6700,6 +6705,10 @@ def _run_all_tests() -> int:
         test_grobid_horizon_review_index_limitation_missing_is_flagged,
         test_grobid_horizon_review_stage_range_gap_is_flagged,
         test_grobid_horizon_review_unknown_status_is_flagged,
+        test_grobid_horizon_review_unresolved_without_open_item_is_flagged,
+        test_grobid_horizon_review_accepted_open_item_passes,
+        test_grobid_horizon_review_unassigned_without_acceptance_is_flagged,
+        test_grobid_horizon_review_complete_with_pending_verification_is_flagged,
         test_grobid_horizon_review_cli_accepts_contract_cleanly,
         test_grobid_horizon_review_cli_rejects_missing_review_cleanly,
         test_grobid_horizon_review_real_registry_is_valid,
@@ -7077,7 +7086,8 @@ def _horizon_contract(root: Path) -> Path:
         "  test_types: [Integration, E2E journey]\n"
         "  owner_field: owner\n"
         "  owner_unassigned_value: unassigned\n"
-        "  owner_allow: [unassigned]\n",
+        "  owner_allow: [unassigned]\n"
+        "  open_item_required_for_unresolved: true\n",
         encoding="utf-8",
     )
     return contract
@@ -7164,6 +7174,12 @@ def _horizon_stage(stage_id: str, **overrides) -> dict:
         ],
         "implementation_pass": False,
         "verification_pass": False,
+        "open_item": {
+            "reason": f"{stage_id} fixture stage stays explicitly open in this isolated root",
+            "since": "2026-09-12",
+            "accepted": True,
+            "closure_condition": f"{stage_id} closes when the fixture condition is measured",
+        },
     }
     stage.update(overrides)
     return stage
@@ -7395,6 +7411,70 @@ def test_grobid_horizon_review_unknown_status_is_flagged():
         f.flag == "grobid_horizon_review_broken" and "unknown status" in f.evidence for f in flags
     ), flags
 
+
+def test_grobid_horizon_review_unresolved_without_open_item_is_flagged():
+    root = _make_root()
+    path = _write_grobid_horizon_review(root)
+    document = _load_horizon(path)
+    document["stages"][0].pop("open_item", None)
+    _save_horizon(path, document)
+    flags = _horizon_flags(root)
+    assert any(
+        f.flag == "grobid_horizon_review_broken" and "explicit open_item" in f.evidence for f in flags
+    ), flags
+
+def test_grobid_horizon_review_accepted_open_item_passes():
+    root = _make_root()
+    path = _write_grobid_horizon_review(root)
+    document = _load_horizon(path)
+    document["stages"][0]["owner"] = "unassigned"
+    document["stages"][0]["open_item"] = {
+        "reason": "fixture stage stays open pending a measured closure condition sign-off",
+        "since": "2026-09-12",
+        "accepted": True,
+        "closure_condition": "fixture stage closes once the declared measurement is registered",
+    }
+    _save_horizon(path, document)
+    flags = _horizon_flags(root)
+    assert not [
+        f for f in _horizon_broken(flags) if "open_item" in f.evidence or "not accepted" in f.evidence
+    ], flags
+
+def test_grobid_horizon_review_unassigned_without_acceptance_is_flagged():
+    root = _make_root()
+    path = _write_grobid_horizon_review(root)
+    document = _load_horizon(path)
+    document["stages"][0]["owner"] = "unassigned"
+    document["stages"][0]["open_item"]["accepted"] = False
+    _save_horizon(path, document)
+    flags = _horizon_flags(root)
+    assert any(
+        f.flag == "grobid_horizon_review_broken" and "not accepted" in f.evidence for f in flags
+    ), flags
+
+def test_grobid_horizon_review_complete_with_pending_verification_is_flagged():
+    root = _make_root()
+    path = _write_grobid_horizon_review(root)
+    document = _load_horizon(path)
+    stage = document["stages"][0]
+    stage["status"] = "complete"
+    stage["implementation_pass"] = True
+    stage["verification_pass"] = True
+    stage["tested_source"]["verified"] = True
+    stage["completion_evidence"] = {
+        "mode": "command",
+        "ref": "cargo test -p da-parse --lib",
+        "result": "pass",
+        "artifacts": ["crates/da-parse/src/lib.rs"],
+        "observed_at": "2026-09-18",
+        "source_revision": "fixture-revision-1",
+    }
+    stage["verification_evidence"][0]["status"] = "pending"
+    _save_horizon(path, document)
+    flags = _horizon_flags(root)
+    assert any(
+        f.flag == "grobid_horizon_review_broken" and "not pass" in f.evidence for f in flags
+    ), flags
 
 def test_grobid_horizon_review_cli_accepts_contract_cleanly():
     root = _make_root()

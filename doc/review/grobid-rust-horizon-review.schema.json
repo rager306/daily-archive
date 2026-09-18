@@ -123,7 +123,19 @@
         },
         "implementation_pass": {"type": "boolean"},
         "verification_pass": {"type": "boolean"},
-        "completion_evidence": {"$ref": "#/$defs/completion_evidence"}
+        "completion_evidence": {"$ref": "#/$defs/completion_evidence"},
+        "open_item": {"$ref": "#/$defs/open_item"}
+      }
+    },
+    "open_item": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["reason", "since", "accepted", "closure_condition"],
+      "properties": {
+        "reason": {"minLength": 20, "type": "string"},
+        "since": {"pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "type": "string"},
+        "accepted": {"type": "boolean"},
+        "closure_condition": {"minLength": 20, "type": "string"}
       }
     },
     "implementation_evidence": {

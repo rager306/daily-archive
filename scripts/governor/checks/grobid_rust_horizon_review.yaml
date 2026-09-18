@@ -1,3 +1,27 @@
+# DATED CORRECTION 2026-09-18 (M509-yzblqx/S06, second entry) — closes the
+# documentary drift the first correction below recorded, and adds an explicit
+# open-item contract so an unresolved stage can never be silent:
+#   1. H07..H13 are promoted to `complete` with `completion_evidence`, because the
+#      owning wave M507-4fk6m6 closed (S01..S09 all complete with UAT/ASSESSMENT).
+#      The review prose does not create acceptance; the roadmap does, and the
+#      roadmap closed. This is the closure the first correction deliberately left
+#      to the owning wave. The five H07..H13 `verification_evidence` command rows
+#      the first correction repaired are now recorded `pass` (their measured
+#      results were already in the register), and the `governor_rule` rows whose
+#      expected text said "stays unresolved with no PASS claim" were rewritten to
+#      the closure they now carry.
+#   2. H05 (global budgets and bounded reorder) stays unresolved. The M506/S04
+#      ceiling work closed honestly with H05 unresolved and no live slice owns it
+#      (`native_route_recovery` reports `h05_closure: not_claimed`), so it is
+#      recorded as an explicitly accepted open item: owner `unassigned`,
+#      `open_item.accepted: true`, with a reason and a closure condition. It is NOT
+#      assigned to a wave that does not own budgets.
+#   3. New contract key `open_item_required_for_unresolved: true`: every unresolved
+#      stage must carry an `open_item {reason, since, accepted, closure_condition}`.
+#      An accepted open item must be unassigned, and an unassigned unresolved stage
+#      must be accepted — a silent `unassigned` cannot recur. `owner_allow` still
+#      gates named owners so a typo or a stale slice cannot pass validation.
+#
 # DATED CORRECTION 2026-09-18 — supersedes grobid_rust_horizon_review.yaml per the
 # ADR-076 §9/§10 convention (a dated snapshot is added, the reviewed one is not
 # rewritten). Rationale for the change:
@@ -97,3 +121,9 @@ registry:
   # pass validation silently. The next wave must extend this list with its own slices
   # BEFORE it claims any of these stages.
   owner_allow: [unassigned, M505-o169s4, M506-98qg7g/S01, M506-98qg7g/S02, M506-98qg7g/S03, M506-98qg7g/S04, M506-98qg7g/S05, M507-4fk6m6/S01, M507-4fk6m6/S02, M507-4fk6m6/S03, M507-4fk6m6/S04, M507-4fk6m6/S05, M507-4fk6m6/S06, M507-4fk6m6/S07, M507-4fk6m6/S08, M508-g9b5gi/S01, M508-g9b5gi/S02, M508-g9b5gi/S03, M508-g9b5gi/S04, M508-g9b5gi/S05]
+  # An unresolved stage may never be silent. It must declare an open_item with a
+  # reason, the date it was first recorded, an acceptance flag and a closure
+  # condition. `accepted: true` is only legal for an unassigned stage, and an
+  # unassigned unresolved stage must be accepted: either a live slice owns it, or
+  # the absence of an owner is itself an explicit, reasoned record.
+  open_item_required_for_unresolved: true
