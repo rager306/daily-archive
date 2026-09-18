@@ -1,0 +1,328 @@
+# GAR-014 bounded cross-automata invalidation map (DATA contract).
+#
+# GAR-014 (doc/review/grobid-absorption-review-2026-09-10.jsonl) records that
+# parse execution, derived maturity/authorization, article assurance and
+# learning/evaluation each keep local transitions and terminal behaviour, but
+# no maintained statement said which source, policy, model or input change
+# invalidates which derived readiness or authorization. This file is that
+# statement.
+#
+# It is a MAP, not a controller. It names the invalidating inputs, the
+# transitions each automaton keeps local, the retry preconditions, and the
+# states that authorize nothing. Nothing here executes, schedules or dispatches
+# another automaton's transition: `map_role: descriptive_only` and
+# `forbidden_controller_keys` are enforced by
+# `scripts/governor/adapters/checks/fsm_interaction_map.py`.
+#
+# The governor check resolves this file and fails when an automaton named below
+# has no invalidating input recorded in `invalidation_rules`, when a rule names
+# an undeclared automaton, when a trigger class (source/policy/model/input) is
+# not represented, or when a bound evidence source loses its pinned symbols.
+# Adjusting the map is an edit here, not a Python change.
+
+schema_version: fsm-interaction-map.v1
+policy_id: fsm_interaction_map
+dimension: scholarly_parse_plane
+severity: medium
+anchor: "GAR-014; ADR-055; ADR-059; ADR-076; D127; D204; D321; R118"
+finding: GAR-014
+finding_registry: doc/review/grobid-absorption-review-2026-09-10.jsonl
+
+map_role: descriptive_only
+forbidden_controller_keys: [controller, executor, runner, dispatch, orchestrate, execute_transition, tick, advance, step, command, apply]
+
+trigger_classes: [source, policy, model, input]
+actions: [reparse_and_rederive, full_rederivation, reauthorize, re_evaluate, fail_visible, none]
+
+automata:
+  parse_execution:
+    authority: java-grobid-http@0.9.0-crf
+    evidence_source: crates/da-domain/src/fsm_policy.rs
+    grants_production_authority: false
+    note: >-
+      The parse policy FSM selects grammar, REST profile, admission and later
+      budget points. A policy decision routes work; it emits no TEI field, no
+      authorization and no graph write.
+    local_transitions:
+      - id: grammar_route_is_local
+        states: [page_outline, xy_cut, grobid_structural]
+        stays_local: true
+        note: "Deterministic from ArticleFeatures thresholds in DATA; fail-open to xy_cut."
+      - id: profile_route_is_local
+        states: [structural, rich]
+        stays_local: true
+        note: "D204: structural is the corpus default and rich is never implied by grammar_route."
+      - id: batch_admission_is_local
+        states: [accept, defer, skip]
+        stays_local: true
+        note: "Admission schedules or defers work; it grants nothing."
+      - id: later_points_stay_later
+        states: [concurrency_tune, retry_policy, summary_depth]
+        stays_local: true
+        note: "ADR-076: unbound native decision points stay later and must never jump onto parse-pdf."
+    retry_preconditions:
+      - id: operational_retry_same_semantic_key
+        allowed_when: [failure_class_is_operational, semantic_cache_key_unchanged]
+        forbidden_when: [any_semantic_cache_key_field_changed]
+        requires_rederivation: false
+        note: "ACAP cache_contract excludes only timeout_seconds and retry_delay_seconds from the semantic key."
+      - id: semantic_change_forces_recompute
+        allowed_when: []
+        forbidden_when: [paper_id_changed, pdf_sha256_changed, raw_payload_sha256_changed, projector_schema_fingerprint_changed, profile_fingerprint_changed]
+        requires_rederivation: true
+        note: "A changed semantic cache key is a recompute, never a resume."
+    non_authorizing_states:
+      - page_outline
+      - xy_cut
+      - grobid_structural
+      - structural
+      - rich
+      - accept
+      - defer
+      - skip
+      - not_observed
+      - fallback
+      - rejected
+      - unsupported
+
+  derived_maturity:
+    authority: derived_evidence_maturity (metadata-only; no parse, write, promotion or import authority)
+    evidence_source: crates/da-application/src/derived_evidence_maturity.rs
+    grants_production_authority: false
+    note: >-
+      The evidence ladder and the freshness currency vocabulary are the
+      maturity/authorization automaton. Authorization is a separate dimension:
+      readiness is not a grant.
+    local_transitions:
+      - id: ladder_step_only_to_successor
+        states: [inventory_bound, oracle_bound, atom_proven, sequence_proven, shadow_observed, review_ready]
+        stays_local: true
+        note: "can_advance accepts exactly one immediate forward step; self, backward and skipped steps are rejected."
+      - id: human_gate_is_a_label_not_a_grant
+        states: [review_ready, human_gate_required]
+        stays_local: true
+        note: "human_gate_required means the human gate is required, never granted."
+      - id: freshness_currency_is_local_provenance
+        states: [unattributed, fresh, stale, superseded, mismatched, malformed]
+        stays_local: true
+        note: "Currency is derived against an explicitly selected target revision; observed_at is provenance, not a clock oracle."
+    retry_preconditions:
+      - id: retry_without_new_receipt
+        allowed_when: [receipt_set_unchanged, freshness_identity_unchanged]
+        forbidden_when: [bound_receipt_identity_changed]
+        requires_rederivation: false
+        note: "Re-reading an unchanged receipt set cannot advance the ladder."
+      - id: receipt_identity_change_forces_full_ladder
+        allowed_when: []
+        forbidden_when: [bound_receipt_source_sha256_changed, evidence_ref_changed, freshness_identity_changed, source_revision_superseded]
+        requires_rederivation: true
+        note: "No receipt prefix may be reused once its bound identity or currency verdict changes."
+    non_authorizing_states:
+      - inventory_bound
+      - oracle_bound
+      - atom_proven
+      - sequence_proven
+      - shadow_observed
+      - review_ready
+      - human_gate_required
+
+  article_assurance:
+    authority: ACAP (article_context_assurance.v1)
+    evidence_source: scripts/governor/checks/article_context_assurance.yaml
+    grants_production_authority: false
+    note: >-
+      ACAP admits one forward chain per article and records hard invariant
+      failures; an accepted checkpoint is assurance evidence, not an import or
+      production authorization (D127 stays locked).
+    local_transitions:
+      - id: forward_pipeline
+        states: [source_registered, source_verified, parsed, structured, extracted, evidence_linked, embedded, materialized, enriched, resolved, summarized, finalized, task_accepted, accepted_checkpoint]
+        stays_local: true
+        note: "Every layer declares required evidence before the next state is admitted."
+      - id: failure_is_terminal
+        states: [failed_visible]
+        stays_local: true
+        note: "failure_transition_from '*' lands in failed_visible; a terminal failure is not a transition."
+    retry_preconditions:
+      - id: retry_stage_before_failure_is_visible
+        allowed_when: [stage_not_failed_visible, hard_invariants_hold, semantic_key_unchanged]
+        forbidden_when: [hard_invariant_violated]
+        requires_rederivation: false
+        note: "Only an operational retry on the same semantic key may re-enter the same stage."
+      - id: retry_after_failed_visible_requires_new_run
+        allowed_when: []
+        forbidden_when: [failed_visible_is_terminal]
+        requires_rederivation: true
+        note: "failed_visible is terminal: recovery is a new run with re-derived evidence, not a retry edge."
+    non_authorizing_states:
+      - source_registered
+      - source_verified
+      - parsed
+      - structured
+      - extracted
+      - evidence_linked
+      - embedded
+      - materialized
+      - enriched
+      - resolved
+      - summarized
+      - finalized
+      - task_accepted
+      - accepted_checkpoint
+      - failed_visible
+
+  learning_evaluation:
+    authority: prompt candidate and optimizer admission (candidate-only; no auto-promote)
+    evidence_source: crates/da-domain/src/prompt_optimization.rs
+    grants_production_authority: false
+    note: >-
+      The learning/evaluation automaton covers the prompt candidate ladder and
+      the promotion decision record. `promoted` is promotion-scope only: it
+      never sets import_eligible, never deploys and never authorizes a
+      production route.
+    local_transitions:
+      - id: candidate_ladder
+        states: [baseline_registered, candidate_proposed, evaluated]
+        stays_local: true
+        note: "A candidate is evaluated against a same-n baseline; evaluation grants nothing."
+      - id: eligibility_is_not_deployment
+        states: [eligible, rejected]
+        stays_local: true
+        note: "eligible requires the hard gates plus a human decision reference and still deploys nothing."
+      - id: promotion_decision_is_separate
+        states: [proposed, verified, reviewed, promoted]
+        stays_local: true
+        note: "Promotion is a separate durable decision record with mandatory evidence on every non-terminal state."
+    retry_preconditions:
+      - id: retry_evaluation_same_fixtures
+        allowed_when: [fixture_digests_unchanged, same_n_unchanged, reward_definition_unchanged]
+        forbidden_when: [fixture_digest_changed, reward_definition_changed]
+        requires_rederivation: false
+        note: "Re-running the same evaluation over unchanged fixtures cannot make a candidate eligible."
+      - id: terminal_rejection_requires_new_candidate
+        allowed_when: []
+        forbidden_when: [rejected_is_terminal]
+        requires_rederivation: true
+        note: "A rejected candidate is immutable; rework is a new candidate row, not a retry edge."
+    non_authorizing_states:
+      - baseline_registered
+      - candidate_proposed
+      - evaluated
+      - eligible
+      - rejected
+      - proposed
+      - verified
+      - reviewed
+      - promoted
+
+invalidation_rules:
+  - trigger: source_digest_changed
+    trigger_class: source
+    invalidates: [parse_execution, derived_maturity, article_assurance]
+    action: full_rederivation
+    requires_rederivation: true
+    note: "source_digest or representation_digest change invalidates every derived artifact bound to it."
+  - trigger: source_revision_superseded
+    trigger_class: source
+    invalidates: [derived_maturity, learning_evaluation]
+    action: re_evaluate
+    requires_rederivation: true
+    note: "Stale/superseded currency cannot be rescued by byte-identical digests; evaluation fixtures rebind to the new revision."
+  - trigger: catalog_identity_changed
+    trigger_class: source
+    invalidates: [parse_execution, derived_maturity, article_assurance]
+    action: full_rederivation
+    requires_rederivation: true
+    note: "Bare/versioned identity normalization changes the canonical source identity (MEM688)."
+  - trigger: policy_hash_changed
+    trigger_class: policy
+    invalidates: [parse_execution, derived_maturity]
+    action: reparse_and_rederive
+    requires_rederivation: true
+    note: "PolicySource hash_stamp / registry revision change invalidates route decisions and the profile fingerprint."
+  - trigger: decision_point_set_changed
+    trigger_class: policy
+    invalidates: [parse_execution, derived_maturity]
+    action: reparse_and_rederive
+    requires_rederivation: true
+    note: "The closed DecisionPoint set may not drift; a vocabulary change invalidates recorded decisions."
+  - trigger: policy_authority_changed
+    trigger_class: policy
+    invalidates: [article_assurance, learning_evaluation]
+    action: reauthorize
+    requires_rederivation: true
+    note: "Assurance policy_sha256 and optimizer hard gates are authority inputs, not diagnostics."
+  - trigger: parser_identity_changed
+    trigger_class: model
+    invalidates: [parse_execution, derived_maturity]
+    action: reparse_and_rederive
+    requires_rederivation: true
+    note: "parser_identity is a label or sha256 fingerprint in the freshness identity; a change forces a reparse."
+  - trigger: embedder_model_binding_changed
+    trigger_class: model
+    invalidates: [derived_maturity, article_assurance]
+    action: full_rederivation
+    requires_rederivation: true
+    note: "model_binding_sha256, provider or model change invalidates embedded evidence and its checkpoint."
+  - trigger: prompt_model_binding_changed
+    trigger_class: model
+    invalidates: [learning_evaluation]
+    action: re_evaluate
+    requires_rederivation: true
+    note: "Prompt lineage binds provider, model and inference_config_sha256; a change invalidates the evaluated candidate."
+  - trigger: model_weights_changed
+    trigger_class: model
+    invalidates: [derived_maturity, learning_evaluation]
+    action: re_evaluate
+    requires_rederivation: true
+    note: "Changed weights invalidate shadow observations and any evaluation derived from them."
+  - trigger: config_fingerprint_changed
+    trigger_class: input
+    invalidates: [parse_execution, derived_maturity, article_assurance]
+    action: reparse_and_rederive
+    requires_rederivation: true
+    note: "config_identity is part of the freshness identity and of the cache key."
+  - trigger: receipt_identity_changed
+    trigger_class: input
+    invalidates: [derived_maturity]
+    action: full_rederivation
+    requires_rederivation: true
+    note: "A bound receipt's evidence_ref or source_sha256 change invalidates the maturity prefix."
+  - trigger: evidence_set_unattributed_or_malformed
+    trigger_class: input
+    invalidates: [derived_maturity]
+    action: fail_visible
+    requires_rederivation: true
+    note: "Unattributed, mismatched and malformed freshness assessments are typed blocks; absence is never compliance."
+  - trigger: hard_invariant_violated
+    trigger_class: input
+    invalidates: [article_assurance, derived_maturity]
+    action: fail_visible
+    requires_rederivation: true
+    note: "An ACAP hard-metric or hard-invariant failure fails the article visible and invalidates its derived readiness."
+
+non_authorizing_invariants:
+  - id: no_state_authorizes_import
+    statement: "No state in any automaton above sets import_eligible; D127 keeps import locked until explicit user authorization."
+  - id: shadow_and_review_evidence_do_not_authorize_production
+    statement: "shadow_observed and review_ready are evidence-completeness labels; production, promotion and import each require separate evidence."
+  - id: retry_never_bypasses_rederivation
+    statement: "A retry that changes a semantic key, a bound receipt identity or a failed terminal state must re-derive evidence instead of resuming."
+  - id: map_does_not_execute_transitions
+    statement: "This map is descriptive DATA; it introduces no controller, scheduler or dispatch surface."
+
+# The governor check resolves these files and fails when a pinned symbol is
+# gone, so the map cannot drift away from the automata it describes.
+evidence_bindings:
+  - path: crates/da-domain/src/fsm_policy.rs
+    required_patterns: [pub enum DecisionPoint, grammar_route, profile_route, batch_admission, concurrency_tune, retry_policy, summary_depth]
+  - path: crates/da-application/src/derived_evidence_maturity.rs
+    required_patterns: [pub enum MaturityState, human_gate_required, pub enum FreshnessOutcome, pub enum HumanAuthorization, pub fn can_advance, authorizes_production_or_import]
+  - path: scripts/governor/checks/article_context_assurance.yaml
+    required_patterns: ["initial_state: source_registered", "terminal_states: [accepted_checkpoint, failed_visible]", "failure_transition_to: failed_visible", "retry_requires_same_semantic_key: true", "candidate_only: true", "human_decision_required: true"]
+  - path: crates/da-domain/src/prompt_optimization.rs
+    required_patterns: [pub enum PromptCandidateState, pub struct PromptEvaluation, gates_passed, mark_eligible]
+
+# A pointer may exist so policy consumers find the canonical map, but it must
+# not carry a second copy of the map.
+pointer_sources: [data/policies/fsm_interaction_map.yaml]

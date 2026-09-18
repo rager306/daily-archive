@@ -5714,6 +5714,387 @@ def test_executed_population_binding_is_wired_into_build_report():
     assert "_check_executed_population_binding()" in source
 
 
+# ---------------------------------------------------------------------------
+# GAR-014: bounded cross-automata invalidation map (M509-yzblqx/S04/T01).
+# ---------------------------------------------------------------------------
+
+_FSM_INTERACTION_MAP_CONTRACT = "scripts/governor/checks/fsm_interaction_map.yaml"
+_FSM_INTERACTION_MAP_POINTER = "data/policies/fsm_interaction_map.yaml"
+_FSM_INTERACTION_MAP_EVIDENCE = "crates/da-domain/src/fsm_policy.rs"
+_FSM_INTERACTION_MAP_AUTOMATA = [
+    "parse_execution",
+    "derived_maturity",
+    "article_assurance",
+    "learning_evaluation",
+]
+
+
+def _fsm_interaction_map_contract() -> dict:
+    """Minimal valid GAR-014 map: four automata, each with an invalidating input."""
+
+    def automaton(prefix: str) -> dict:
+        return {
+            "authority": f"{prefix}-authority",
+            "evidence_source": _FSM_INTERACTION_MAP_EVIDENCE,
+            "grants_production_authority": False,
+            "local_transitions": [
+                {
+                    "id": f"{prefix}_local_step",
+                    "states": ["start", "done"],
+                    "stays_local": True,
+                }
+            ],
+            "retry_preconditions": [
+                {
+                    "id": f"{prefix}_retry_same_key",
+                    "allowed_when": ["semantic_key_unchanged"],
+                    "forbidden_when": ["semantic_key_changed"],
+                    "requires_rederivation": False,
+                },
+                {
+                    "id": f"{prefix}_rederive",
+                    "allowed_when": [],
+                    "forbidden_when": ["semantic_key_changed"],
+                    "requires_rederivation": True,
+                },
+            ],
+            "non_authorizing_states": ["start", "done"],
+        }
+
+    return {
+        "schema_version": "fsm-interaction-map-test.v1",
+        "policy_id": "fsm_interaction_map",
+        "dimension": "scholarly_parse_plane",
+        "severity": "medium",
+        "anchor": "GAR-014",
+        "finding": "GAR-014",
+        "finding_registry": "doc/review/review.jsonl",
+        "map_role": "descriptive_only",
+        "forbidden_controller_keys": ["controller", "executor", "dispatch"],
+        "trigger_classes": ["source", "policy", "model", "input"],
+        "actions": [
+            "reparse_and_rederive",
+            "full_rederivation",
+            "reauthorize",
+            "re_evaluate",
+            "fail_visible",
+            "none",
+        ],
+        "automata": {name: automaton(name) for name in _FSM_INTERACTION_MAP_AUTOMATA},
+        "invalidation_rules": [
+            {
+                "trigger": "source_digest_changed",
+                "trigger_class": "source",
+                "invalidates": ["parse_execution", "derived_maturity"],
+                "action": "full_rederivation",
+                "requires_rederivation": True,
+            },
+            {
+                "trigger": "policy_hash_changed",
+                "trigger_class": "policy",
+                "invalidates": ["article_assurance"],
+                "action": "reauthorize",
+                "requires_rederivation": True,
+            },
+            {
+                "trigger": "model_weights_changed",
+                "trigger_class": "model",
+                "invalidates": ["learning_evaluation"],
+                "action": "re_evaluate",
+                "requires_rederivation": True,
+            },
+            {
+                "trigger": "receipt_identity_changed",
+                "trigger_class": "input",
+                "invalidates": ["derived_maturity"],
+                "action": "full_rederivation",
+                "requires_rederivation": True,
+            },
+        ],
+        "non_authorizing_invariants": [
+            {
+                "id": "no_state_authorizes_import",
+                "statement": "No state in this map authorizes import or production.",
+            }
+        ],
+        "evidence_bindings": [
+            {
+                "path": _FSM_INTERACTION_MAP_EVIDENCE,
+                "required_patterns": ["pub enum DecisionPoint", "grammar_route"],
+            }
+        ],
+        "pointer_sources": [_FSM_INTERACTION_MAP_POINTER],
+    }
+
+
+def _write_fsm_interaction_map(root: Path, contract: dict | None = None) -> None:
+    """Write a self-contained GAR-014 fixture (map, evidence, pointer, registry)."""
+    _write(
+        root / _FSM_INTERACTION_MAP_CONTRACT,
+        yaml.safe_dump(contract or _fsm_interaction_map_contract(), sort_keys=False),
+    )
+    _write(
+        root / _FSM_INTERACTION_MAP_EVIDENCE,
+        "// fixture evidence\npub enum DecisionPoint { GrammarRoute }\n// grammar_route profile_route\n",
+    )
+    _write(
+        root / _FSM_INTERACTION_MAP_POINTER,
+        "schema_version: fsm-interaction-map-ref.v1\n"
+        f"canonical_map: {_FSM_INTERACTION_MAP_CONTRACT}\n",
+    )
+    _write(root / "doc/review/review.jsonl", json.dumps({"finding_id": "GAR-014"}) + "\n")
+
+
+def _fsm_interaction_map_check(root: Path) -> list[DriftFlag]:
+    """Run the check through the trajectory service method (covers the wiring)."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = root
+    return service._check_fsm_interaction_map()
+
+
+def _fsm_interaction_map_flags(root: Path, contract: dict) -> set[str]:
+    _write_fsm_interaction_map(root, contract)
+    return {flag.flag for flag in _fsm_interaction_map_check(root)}
+
+
+def test_fsm_interaction_map_contract_is_clean_on_real_repo():
+    """The committed map must pass its own rule (a mapping that fails is dead DATA)."""
+    assert _fsm_interaction_map_check(_scripts_dir.parent) == []
+
+
+def test_fsm_interaction_map_fixture_contract_is_clean():
+    root = _make_root()
+    _write_fsm_interaction_map(root)
+    assert _fsm_interaction_map_check(root) == []
+
+
+def test_fsm_interaction_map_absent_policy_is_silent():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    assert service._check_fsm_interaction_map() == []
+
+
+def test_fsm_interaction_map_invalid_yaml_is_flagged():
+    root = _make_root()
+    _write_fsm_interaction_map(root)
+    _write(root / _FSM_INTERACTION_MAP_CONTRACT, "automata: [unclosed\n")
+    flags = {flag.flag for flag in _fsm_interaction_map_check(root)}
+    assert "fsm_interaction_map_invalid" in flags
+
+
+def test_fsm_interaction_map_non_mapping_contract_is_flagged():
+    root = _make_root()
+    _write_fsm_interaction_map(root)
+    _write(root / _FSM_INTERACTION_MAP_CONTRACT, "- automata\n- invalidation_rules\n")
+    flags = {flag.flag for flag in _fsm_interaction_map_check(root)}
+    assert "fsm_interaction_map_invalid" in flags
+
+
+def test_fsm_interaction_map_unmapped_automaton_is_flagged():
+    """GAR-014 acceptance: every automaton needs an explicit invalidating input."""
+    contract = _fsm_interaction_map_contract()
+    contract["invalidation_rules"][2]["invalidates"] = ["parse_execution"]
+    flags = _fsm_interaction_map_flags(_make_root(), contract)
+    assert "fsm_interaction_map_unmapped_automaton" in flags
+
+
+def test_fsm_interaction_map_unknown_automaton_is_flagged():
+    contract = _fsm_interaction_map_contract()
+    contract["invalidation_rules"][2]["invalidates"] = ["ghost_automaton"]
+    flags = _fsm_interaction_map_flags(_make_root(), contract)
+    assert "fsm_interaction_map_unknown_automaton" in flags
+    # The declared automaton it replaced is now unmapped as well.
+    assert "fsm_interaction_map_unmapped_automaton" in flags
+
+
+def test_fsm_interaction_map_empty_invalidates_is_flagged():
+    contract = _fsm_interaction_map_contract()
+    contract["invalidation_rules"][2]["invalidates"] = []
+    flags = _fsm_interaction_map_flags(_make_root(), contract)
+    assert "fsm_interaction_map_broken" in flags
+
+
+def test_fsm_interaction_map_missing_trigger_class_is_flagged():
+    contract = _fsm_interaction_map_contract()
+    contract["invalidation_rules"][2]["trigger_class"] = "policy"
+    flags = _fsm_interaction_map_flags(_make_root(), contract)
+    assert "fsm_interaction_map_trigger_class_missing" in flags
+
+
+def test_fsm_interaction_map_controller_key_is_flagged():
+    """The map must not become an executive controller."""
+    contract = _fsm_interaction_map_contract()
+    contract["automata"]["parse_execution"]["dispatch"] = "run_parse"
+    flags = _fsm_interaction_map_flags(_make_root(), contract)
+    assert "fsm_interaction_map_controller_leak" in flags
+
+
+def test_fsm_interaction_map_non_descriptive_role_is_flagged():
+    contract = _fsm_interaction_map_contract()
+    contract["map_role"] = "executive_controller"
+    flags = _fsm_interaction_map_flags(_make_root(), contract)
+    assert "fsm_interaction_map_controller_leak" in flags
+
+
+def test_fsm_interaction_map_production_authority_is_flagged():
+    contract = _fsm_interaction_map_contract()
+    contract["automata"]["article_assurance"]["grants_production_authority"] = True
+    flags = _fsm_interaction_map_flags(_make_root(), contract)
+    assert "fsm_interaction_map_controller_leak" in flags
+
+
+def test_fsm_interaction_map_missing_automaton_sections_is_flagged():
+    contract = _fsm_interaction_map_contract()
+    del contract["automata"]["derived_maturity"]["retry_preconditions"]
+    del contract["automata"]["derived_maturity"]["non_authorizing_states"]
+    flags = _fsm_interaction_map_flags(_make_root(), contract)
+    assert "fsm_interaction_map_broken" in flags
+
+
+def test_fsm_interaction_map_retry_without_rederivation_is_flagged():
+    """A non-`none` action may not declare that re-derivation is unnecessary."""
+    contract = _fsm_interaction_map_contract()
+    contract["invalidation_rules"][0]["requires_rederivation"] = False
+    flags = _fsm_interaction_map_flags(_make_root(), contract)
+    assert "fsm_interaction_map_broken" in flags
+
+
+def test_fsm_interaction_map_evidence_path_missing_is_flagged():
+    contract = _fsm_interaction_map_contract()
+    contract["evidence_bindings"][0]["path"] = "crates/da-domain/src/gone.rs"
+    flags = _fsm_interaction_map_flags(_make_root(), contract)
+    assert "fsm_interaction_map_evidence_missing" in flags
+
+
+def test_fsm_interaction_map_evidence_drift_is_flagged():
+    """A pinned symbol disappearing from the bound source reddens the map."""
+    contract = _fsm_interaction_map_contract()
+    contract["evidence_bindings"][0]["required_patterns"].append("pub enum InventedAutomaton")
+    flags = _fsm_interaction_map_flags(_make_root(), contract)
+    assert "fsm_interaction_map_evidence_drift" in flags
+
+
+def test_fsm_interaction_map_duplicate_pointer_map_is_flagged():
+    """A pointer that grows rival rules is a second, divergent map."""
+    root = _make_root()
+    _write_fsm_interaction_map(root)
+    _write(
+        root / _FSM_INTERACTION_MAP_POINTER,
+        yaml.safe_dump(
+            {
+                "schema_version": "fsm-interaction-map.v1",
+                "canonical_map": _FSM_INTERACTION_MAP_CONTRACT,
+                "automata": {"parse_execution": {}},
+                "invalidation_rules": [{"trigger": "source_digest_changed"}],
+            }
+        ),
+    )
+    flags = {flag.flag for flag in _fsm_interaction_map_check(root)}
+    assert flags == {"fsm_interaction_map_duplicate_map"}
+
+
+def test_fsm_interaction_map_pointer_wrong_canonical_is_flagged():
+    root = _make_root()
+    _write_fsm_interaction_map(root)
+    _write(
+        root / _FSM_INTERACTION_MAP_POINTER,
+        "schema_version: fsm-interaction-map-ref.v1\n"
+        "canonical_map: data/policies/other-map.yaml\n",
+    )
+    flags = {flag.flag for flag in _fsm_interaction_map_check(root)}
+    assert flags == {"fsm_interaction_map_duplicate_map"}
+
+
+def test_fsm_interaction_map_finding_missing_from_registry_is_flagged():
+    contract = _fsm_interaction_map_contract()
+    contract["finding"] = "GAR-999"
+    flags = _fsm_interaction_map_flags(_make_root(), contract)
+    assert "fsm_interaction_map_finding_missing" in flags
+
+
+def test_fsm_interaction_map_every_mutation_is_not_silent():
+    """Each violation class is isolated: the clean map is silent, every mutation reddens."""
+
+    def unmapped(contract: dict) -> None:
+        contract["invalidation_rules"][2]["invalidates"] = ["parse_execution"]
+
+    def unknown(contract: dict) -> None:
+        contract["invalidation_rules"][2]["invalidates"] = ["ghost_automaton"]
+
+    def controller(contract: dict) -> None:
+        contract["automata"]["parse_execution"]["dispatch"] = "run_parse"
+
+    def role(contract: dict) -> None:
+        contract["map_role"] = "executive_controller"
+
+    def authority(contract: dict) -> None:
+        contract["automata"]["article_assurance"]["grants_production_authority"] = True
+
+    def empty_targets(contract: dict) -> None:
+        contract["invalidation_rules"][2]["invalidates"] = []
+
+    def missing_class(contract: dict) -> None:
+        contract["invalidation_rules"][2]["trigger_class"] = "policy"
+
+    def retry_bypass(contract: dict) -> None:
+        contract["invalidation_rules"][2]["requires_rederivation"] = False
+
+    def no_sections(contract: dict) -> None:
+        del contract["automata"]["derived_maturity"]["retry_preconditions"]
+
+    def evidence_missing(contract: dict) -> None:
+        contract["evidence_bindings"][0]["path"] = "crates/da-domain/src/gone.rs"
+
+    def evidence_drift(contract: dict) -> None:
+        contract["evidence_bindings"][0]["required_patterns"].append("pub enum InventedAutomaton")
+
+    def finding_gone(contract: dict) -> None:
+        contract["finding"] = "GAR-999"
+
+    cases = [
+        ("unmapped", unmapped, "fsm_interaction_map_unmapped_automaton"),
+        ("unknown", unknown, "fsm_interaction_map_unknown_automaton"),
+        ("controller", controller, "fsm_interaction_map_controller_leak"),
+        ("role", role, "fsm_interaction_map_controller_leak"),
+        ("authority", authority, "fsm_interaction_map_controller_leak"),
+        ("empty", empty_targets, "fsm_interaction_map_broken"),
+        ("class", missing_class, "fsm_interaction_map_trigger_class_missing"),
+        ("retry", retry_bypass, "fsm_interaction_map_broken"),
+        ("sections", no_sections, "fsm_interaction_map_broken"),
+        ("evidence", evidence_missing, "fsm_interaction_map_evidence_missing"),
+        ("drift", evidence_drift, "fsm_interaction_map_evidence_drift"),
+        ("finding", finding_gone, "fsm_interaction_map_finding_missing"),
+    ]
+    root = _make_root()
+    _write_fsm_interaction_map(root)
+    assert _fsm_interaction_map_check(root) == []
+    for label, mutate, expected in cases:
+        contract = _fsm_interaction_map_contract()
+        mutate(contract)
+        flags = _fsm_interaction_map_flags(root, contract)
+        assert flags, f"{label} mutation was silently accepted"
+        assert expected in flags, f"{label} expected {expected}, got {sorted(flags)}"
+
+
+def test_fsm_interaction_map_is_wired_into_build_report():
+    """A rule that is implemented but never invoked is a dead rule."""
+    import inspect
+
+    source = inspect.getsource(TrajectoryService.build_report)
+    assert "_check_fsm_interaction_map()" in source
+
+
+def test_fsm_interaction_map_summary_covers_every_automaton():
+    from governor.adapters.checks.fsm_interaction_map import summarize_fsm_interaction_map
+
+    summary = summarize_fsm_interaction_map(_scripts_dir.parent)
+    assert summary["present"] is True
+    assert summary["map_role"] == "descriptive_only"
+    assert sorted(summary["automata"]) == sorted(_FSM_INTERACTION_MAP_AUTOMATA)
+    assert summary["unmapped"] == []
+    assert sorted(summary["trigger_classes"]) == ["input", "model", "policy", "source"]
+
+
 def _run_all_tests() -> int:
     """Simple test runner (no pytest dependency)."""
     tests = [
@@ -5943,6 +6324,28 @@ def _run_all_tests() -> int:
         test_grobid_horizon_review_real_registry_is_valid,
         test_grobid_absorption_review_real_registry_closes_four_p0_findings,
         test_grobid_absorption_review_real_registry_closure_is_falsifiable,
+        test_fsm_interaction_map_contract_is_clean_on_real_repo,
+        test_fsm_interaction_map_fixture_contract_is_clean,
+        test_fsm_interaction_map_absent_policy_is_silent,
+        test_fsm_interaction_map_invalid_yaml_is_flagged,
+        test_fsm_interaction_map_non_mapping_contract_is_flagged,
+        test_fsm_interaction_map_unmapped_automaton_is_flagged,
+        test_fsm_interaction_map_unknown_automaton_is_flagged,
+        test_fsm_interaction_map_empty_invalidates_is_flagged,
+        test_fsm_interaction_map_missing_trigger_class_is_flagged,
+        test_fsm_interaction_map_controller_key_is_flagged,
+        test_fsm_interaction_map_non_descriptive_role_is_flagged,
+        test_fsm_interaction_map_production_authority_is_flagged,
+        test_fsm_interaction_map_missing_automaton_sections_is_flagged,
+        test_fsm_interaction_map_retry_without_rederivation_is_flagged,
+        test_fsm_interaction_map_evidence_path_missing_is_flagged,
+        test_fsm_interaction_map_evidence_drift_is_flagged,
+        test_fsm_interaction_map_duplicate_pointer_map_is_flagged,
+        test_fsm_interaction_map_pointer_wrong_canonical_is_flagged,
+        test_fsm_interaction_map_finding_missing_from_registry_is_flagged,
+        test_fsm_interaction_map_every_mutation_is_not_silent,
+        test_fsm_interaction_map_is_wired_into_build_report,
+        test_fsm_interaction_map_summary_covers_every_automaton,
     ]
     passed = 0
     failed = 0

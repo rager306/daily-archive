@@ -2089,6 +2089,14 @@ class TrajectoryService:
         # longer pass silently.
         drift_flags.extend(self._check_oracle_digest_recomputation())
 
+        # GAR-014: bounded cross-automata invalidation map (M509-yzblqx S04).
+        # The map is DATA; the rule resolves it and fails when an automaton
+        # named by the map has no invalidating input recorded, when a rule
+        # names an undeclared automaton, when a trigger class is missing, when
+        # a bound evidence source loses its pinned symbols, or when the map
+        # grows an executive controller it must never have.
+        drift_flags.extend(self._check_fsm_interaction_map())
+
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
         milestone_ctx = self._build_milestone_context()
@@ -4319,6 +4327,23 @@ class TrajectoryService:
                       f"{marker_key} gate script lost the feature-matrix markers: "
                       f"{missing} — documented CLI features are no longer compiled by the gate")
         return flags
+
+    def _check_fsm_interaction_map(self) -> list[DriftFlag]:
+        """GAR-014: bounded cross-automata invalidation map (M509-yzblqx S04).
+
+        Reads `scripts/governor/checks/fsm_interaction_map.yaml` (DATA) through
+        the adapter and returns its violation flags unchanged. The map names
+        the invalidating inputs, local transitions, retry preconditions and
+        non-authorizing states of the parse, maturity, assurance and
+        learning/evaluation automata; the rule fails closed when an automaton
+        has no invalidating input recorded or when the map drifts from the
+        evidence sources it binds.
+        """
+        from governor.adapters.checks.fsm_interaction_map import (
+            check_fsm_interaction_map,
+        )
+
+        return check_fsm_interaction_map(self.root)
 
     def _check_logging_architecture(self) -> list[DriftFlag]:
         """Require valuable pipeline logs without leaking transport into core layers."""
