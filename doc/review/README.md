@@ -12,7 +12,7 @@ Recomputed from `pipeline-integrity-review.jsonl` on **2026-08-19** after M401 S
 | Open | 0 | — |
 
 An independent controlled 2026-09-10 absorption review now lives in
-`grobid-absorption-review-2026-09-10.jsonl` (GAR-001..GAR-016: 11 unresolved / 5 enclosed). Its machine summary is
+`grobid-absorption-review-2026-09-10.jsonl` (GAR-001..GAR-016: 3 unresolved / 13 enclosed). Its machine summary is
 `grobid-absorption-review-2026-09-10-summary.md`. Narrative is not engine
 input: no prose inside this directory requires work, changes scope, or
 substitutes for runtime verification.
@@ -57,7 +57,7 @@ A revision-aware corpus rebuild and honest ontology acceptance remain operationa
 |---|---|
 | `pipeline-integrity-review.jsonl` | Historical canonical review dataset: PIR-001..PIR-022, all resolved; do not reopen it |
 | `pipeline-integrity-review.schema.json` | JSON Schema Draft 2020-12 for each PIR record |
-| `grobid-absorption-review-2026-09-10.jsonl` | Active corrective register GAR-001..GAR-016: 11 unresolved / 5 enclosed; owned by M502-2w7y8k S01..S09 |
+| `grobid-absorption-review-2026-09-10.jsonl` | Active corrective register GAR-001..GAR-016: 3 unresolved / 13 enclosed; the eight P1 findings (GAR-005..GAR-009, GAR-012..GAR-014) were closed by M509-yzblqx S01..S05, while the register's remaining open items stay with the M502-2w7y8k programme |
 | `grobid-absorption-review-2026-09-10.schema.json` | JSON Schema Draft 2020-12 for each GAR record, including `completion_evidence` for enclosed findings |
 | `grobid-absorption-review-2026-09-10-summary.md` | Human-readable audit summary, exclusions and ADR correction matrix |
 | `grobid-rust-horizon-review.json` | Planning-only long-horizon register: H01..H13, unresolved by default; no stage may claim a PASS |
