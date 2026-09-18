@@ -122,7 +122,9 @@ struct Report {
     source_fingerprint: String,
     config_fingerprint: String,
     corpus_id: String,
-    denominators: Denominators,
+    reference_population: serde_json::Value,
+    executed_population: serde_json::Value,
+    evaluated_population: serde_json::Value,
     policy: Policy,
     execution: Execution,
     outcomes: Vec<Outcome>,
@@ -131,16 +133,6 @@ struct Report {
     replay: Replay,
     gate: Gate,
     redaction: Redaction,
-}
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct Denominators {
-    corpus_documents: usize,
-    lanes: usize,
-    pages_per_lane: usize,
-    lane_pages: usize,
-    matrix_rows: usize,
-    lane_page_receipts: usize,
-    genre_documents: usize,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Policy {
@@ -1161,21 +1153,48 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             (o.status == "pass" && o.admitted_tokens == o.assigned_tokens)
                 || matches!(o.status.as_str(), "terminal_failure" | "invalid_evidence")
         });
+    // GAR-006: the reviewed reference (3 documents / 606 lane pages / 81 oracle
+    // rows) is a separate object from the executed population and from the
+    // evaluated population, so the corpus-scale numbers can no longer be read
+    // as this run's execution scope.
+    let reference_population = serde_json::json!({
+        "identity": "reviewed_three_document_segmentation_reference",
+        "role": "identity_only",
+        "documents": layout.corpus.documents.len(),
+        "lanes": LANES.len(),
+        "pages_per_lane": layout.corpus.page_denominator,
+        "lane_pages": LANES.len() * layout.corpus.page_denominator,
+        "document_lane_outcomes": LANES.len() * layout.corpus.documents.len(),
+        "genre_documents": layout.corpus.documents.len(),
+        "oracle_rows": matrix.len(),
+    });
+    let executed_population = serde_json::json!({
+        "corpus_execution": true,
+        "documents": layout.corpus.documents.len(),
+        "pages": outcomes.iter().map(|outcome| outcome.pages).sum::<usize>(),
+        "lane_outcomes": outcomes.len(),
+        "admitted_lane_outcomes": outcomes
+            .iter()
+            .filter(|outcome| outcome.status == "pass")
+            .count(),
+        "lane_page_receipts": page_receipts.len(),
+        "execution_evidence": "tracked_source_pdfs_with_sha256",
+    });
+    let evaluated_population = serde_json::json!({
+        "status": "not_evaluated",
+        "documents": 0,
+        "oracle": "reviewed_three_document_segmentation_oracle",
+        "reason": "shadow_boundary_diagnostics_without_a_quality_claim",
+    });
     let report = Report {
         schema_version: REPORT_SCHEMA.into(),
         manifest_fingerprint: sha(&segmentation_bytes),
         source_fingerprint: format!("sha256:{:x}", source_fingerprint.finalize()),
         config_fingerprint,
         corpus_id: manifest.source_corpus.corpus_id,
-        denominators: Denominators {
-            corpus_documents: 3,
-            lanes: 3,
-            pages_per_lane: 202,
-            lane_pages: 606,
-            matrix_rows: 81,
-            lane_page_receipts: 606,
-            genre_documents: 3,
-        },
+        reference_population,
+        executed_population,
+        evaluated_population,
         policy: Policy {
             observation_mode: manifest.policy_locks.observation_mode,
             promotion_state: manifest.policy_locks.promotion_state,

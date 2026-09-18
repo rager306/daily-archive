@@ -276,7 +276,49 @@ async fn main() {
             "demand_oracle_source_sha256": sha256_file(DEMAND_SOURCE),
             "data_sha256": sha256_file(DATA),
         },
-        "denominators": {"inventory": 19, "demand_review": 19, "executable": 4, "admitted": 3, "terminal": 3},
+        // GAR-006: the reviewed demand inventory (19 operations, 4 executable,
+        // 3 corpus documents / 202 pages per lane / 606 lane pages) is the
+        // referenced population. The executed population is the synthetic
+        // loopback run, and it says so instead of borrowing the review scale.
+        // Reference numbers come from
+        // `artifacts/parse_compat/rest_batch_asset_oracle_source.json`
+        // (`review_denominators`) and
+        // `crates/da-parse/tests/fixtures/rest_batch_asset_oracle.yaml`.
+        "reference_population": {
+            "identity": "reviewed_rest_batch_asset_demand_reference",
+            "role": "identity_only",
+            "documents": 3,
+            "inventory": 19,
+            "demand_review": 19,
+            "executable": 4,
+            "corpus_pages_per_lane": 202,
+            "corpus_lane_pages": 606,
+            "upstream_terminal_outcomes": 6,
+            "s03_s05_cells": 54,
+        },
+        "executed_population": {
+            "corpus_execution": false,
+            "documents": 3,
+            "operations": 3,
+            "source_kind": "synthetic_loopback_fixture",
+            "objects": write["summary"]["completed"],
+            "execution_evidence": "offline_loopback_stub_existing_typed_transport",
+        },
+        "evaluated_population": {
+            "status": "not_evaluated",
+            "documents": 0,
+            "oracle": "none",
+            "reason": "offline_stub_without_corpus_execution",
+        },
+        "outcomes": {
+            "accounting_contour": {
+                "admitted": write["summary"]["admitted"],
+                "completed": write["summary"]["completed"],
+                "backend_calls": write["summary"]["backend_calls"],
+                "loss": 0,
+            },
+            "quality_claims": [],
+        },
         "operations": [
             {"operation_id": "rest.processFulltextDocument", "disposition": "existing_typed_transport"},
             {"operation_id": "rest.processHeaderDocument", "disposition": "existing_typed_transport"},

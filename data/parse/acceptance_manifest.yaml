@@ -19,11 +19,22 @@ policy_locks:
   fallback_target: java-grobid-http@0.9.0-crf
 population_contract:
   schema_version: shadow-populations.v1
+  # GAR-006: every shadow report is enumerated here, so the contract (and the
+  # governor check that reads this DATA) fails when one of them is missing the
+  # reference/executed/evaluated split. The list is the complete shadow-report
+  # set under artifacts/parse_compat plus the two JSOND receipts emitted by the
+  # offline shadow examples (p5 join, native body accounting).
   report_paths:
   - artifacts/parse_compat/fulltext_block_semantics_shadow.json
   - artifacts/parse_compat/callout_matching_shadow.json
   - artifacts/parse_compat/consolidation_specialized_shadow.json
   - artifacts/parse_compat/feature_tagger_training_shadow.json
+  - artifacts/parse_compat/document_segmentation_shadow.json
+  - artifacts/parse_compat/native_fulltext_composition_shadow.json
+  - artifacts/parse_compat/native_visual_heads_shadow.json
+  - artifacts/parse_compat/rest_batch_asset_shadow.json
+  - artifacts/parse_compat/p5_shadow_join.json
+  - artifacts/parse_compat/native_body_accounting_shadow.json
   required_blocks:
   - reference_population
   - executed_population

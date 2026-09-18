@@ -2955,10 +2955,196 @@ fn validate_population_contract(p: &PopulationContract) -> Vec<String> {
     if p.report_paths.is_empty() {
         errs.push("[population-contract-reports] no shadow reports declared".into());
     }
+    let mut declared: BTreeSet<&str> = BTreeSet::new();
     for rel in &p.report_paths {
+        if !declared.insert(rel.as_str()) {
+            errs.push(format!(
+                "[population-contract-reports] duplicate shadow report `{rel}`"
+            ));
+        }
         if !repo_root().join(rel).is_file() {
             errs.push(format!(
                 "[population-contract-reports] missing shadow report `{rel}`"
+            ));
+        }
+    }
+    errs.extend(validate_shadow_population_reports(&repo_root(), p));
+    errs
+}
+
+/// GAR-006: the answer to "how many documents were executed?" must be readable
+/// from the report itself. The contract therefore requires more than four block
+/// keys: the reference population is identity-only (`role: identity_only`), the
+/// executed population carries its own execution evidence
+/// (`corpus_execution`, `execution_evidence`) and its own `documents` count,
+/// and the evaluated population carries a `status` with its own `documents`
+/// count. Key presence alone is not enough — a report that copies the reference
+/// numbers into the executed block, or that omits the evidence markers, is
+/// rejected, and the declared `forbidden_legacy_blocks` are enforced against
+/// every enumerated report so the undifferentiated `denominators` object
+/// cannot return through a new report.
+const SHADOW_POPULATION_BLOCKS: [&str; 4] = [
+    "reference_population",
+    "executed_population",
+    "evaluated_population",
+    "outcomes",
+];
+const REFERENCE_POPULATION_ROLE: &str = "identity_only";
+const NOT_EVALUATED_STATUS: &str = "not_evaluated";
+
+fn validate_shadow_population_reports(base: &Path, p: &PopulationContract) -> Vec<String> {
+    let mut errs = Vec::new();
+    for rel in &p.report_paths {
+        let path = base.join(rel);
+        if !path.is_file() {
+            continue; // the missing-file error belongs to validate_population_contract
+        }
+        let text = match std::fs::read_to_string(&path) {
+            Ok(text) => text,
+            Err(error) => {
+                errs.push(format!(
+                    "[population-contract-report] `{rel}` unreadable: {error}"
+                ));
+                continue;
+            }
+        };
+        match serde_json::from_str::<serde_json::Value>(&text) {
+            Ok(report) => errs.extend(validate_shadow_population_report(rel, &report, p)),
+            Err(error) => errs.push(format!(
+                "[population-contract-report] `{rel}` is not JSON: {error}"
+            )),
+        }
+    }
+    errs
+}
+
+fn population_string<'a>(block: &'a serde_json::Value, key: &str) -> Option<&'a str> {
+    block
+        .get(key)?
+        .as_str()
+        .filter(|text| !text.trim().is_empty())
+}
+
+fn population_documents(block: &serde_json::Value) -> Option<u64> {
+    block.get("documents")?.as_u64()
+}
+
+fn validate_shadow_population_report(
+    rel: &str,
+    report: &serde_json::Value,
+    p: &PopulationContract,
+) -> Vec<String> {
+    let mut errs = Vec::new();
+    let Some(root) = report.as_object() else {
+        errs.push(format!(
+            "[population-contract-report] `{rel}` is not a JSON object"
+        ));
+        return errs;
+    };
+    for block in SHADOW_POPULATION_BLOCKS {
+        let present = match block {
+            "outcomes" => root
+                .get(block)
+                .is_some_and(|v| v.is_object() || v.is_array()),
+            _ => root.get(block).is_some_and(serde_json::Value::is_object),
+        };
+        if !present {
+            errs.push(format!(
+                "[population-contract-blocks] `{rel}` is missing the `{block}` block — without the reference/executed/evaluated split a referenced population can still be read as an executed one"
+            ));
+        }
+    }
+    for legacy in &p.forbidden_legacy_blocks {
+        if root.contains_key(legacy.as_str()) {
+            errs.push(format!(
+                "[population-contract-legacy-blocks] `{rel}` still carries the undifferentiated legacy block `{legacy}`"
+            ));
+        }
+    }
+
+    let reference = root.get("reference_population");
+    let executed = root.get("executed_population");
+    let evaluated = root.get("evaluated_population");
+
+    if let Some(reference) = reference {
+        if population_string(reference, "role") != Some(REFERENCE_POPULATION_ROLE) {
+            errs.push(format!(
+                "[population-contract-distinguishable] `{rel}` reference population must declare `role: {REFERENCE_POPULATION_ROLE}` so its numbers cannot be read as executed"
+            ));
+        }
+        if population_string(reference, "identity").is_none() {
+            errs.push(format!(
+                "[population-contract-distinguishable] `{rel}` reference population must name its `identity`"
+            ));
+        }
+        if population_documents(reference).is_none() {
+            errs.push(format!(
+                "[population-contract-distinguishable] `{rel}` reference population must publish its own `documents` count"
+            ));
+        }
+    }
+    if let Some(executed) = executed {
+        for required in &p.executed_population_required_fields {
+            if executed.get(required.as_str()).is_none() {
+                errs.push(format!(
+                    "[population-contract-distinguishable] `{rel}` executed population must carry `{required}`"
+                ));
+            }
+        }
+        if executed
+            .get("corpus_execution")
+            .is_some_and(|value| !value.is_boolean())
+        {
+            errs.push(format!(
+                "[population-contract-distinguishable] `{rel}` `corpus_execution` must be a boolean"
+            ));
+        }
+        if population_string(executed, "execution_evidence").is_none() {
+            errs.push(format!(
+                "[population-contract-distinguishable] `{rel}` executed population must name non-empty `execution_evidence`"
+            ));
+        }
+        if population_documents(executed).is_none() {
+            errs.push(format!(
+                "[population-contract-distinguishable] `{rel}` executed population must publish its own `documents` count"
+            ));
+        }
+    }
+    if let Some(evaluated) = evaluated {
+        if population_string(evaluated, "status").is_none() {
+            errs.push(format!(
+                "[population-contract-distinguishable] `{rel}` evaluated population must declare a non-empty `status`"
+            ));
+        }
+        if population_documents(evaluated).is_none() {
+            errs.push(format!(
+                "[population-contract-distinguishable] `{rel}` evaluated population must publish its own `documents` count"
+            ));
+        }
+    }
+
+    // The three populations must stay separate objects: a report that publishes
+    // the same block three times has not split anything.
+    if let (Some(reference), Some(executed), Some(evaluated)) = (reference, executed, evaluated) {
+        for (left, right, label) in [
+            (reference, executed, "reference/executed"),
+            (reference, evaluated, "reference/evaluated"),
+            (executed, evaluated, "executed/evaluated"),
+        ] {
+            if left == right {
+                errs.push(format!(
+                    "[population-contract-distinguishable] `{rel}` {label} populations are the same object — the populations are not distinguishable"
+                ));
+            }
+        }
+        let status = population_string(evaluated, "status");
+        let corpus_execution = executed
+            .get("corpus_execution")
+            .and_then(serde_json::Value::as_bool);
+        if status != Some(NOT_EVALUATED_STATUS) && corpus_execution != Some(true) {
+            errs.push(format!(
+                "[population-contract-distinguishable] `{rel}` claims evaluated status `{}` without corpus execution evidence",
+                status.unwrap_or("<missing>")
             ));
         }
     }
@@ -3222,6 +3408,177 @@ fn additive_s20_sections_are_declared_and_locked() {
     assert_eq!(quarantine.implemented_new_endpoints, 0);
     assert_eq!(quarantine.product_gap, "none_independently_evidenced");
     assert!(!quarantine.source_artifacts.is_empty());
+}
+
+/// GAR-006: the contract must enumerate *every* shadow report, so a new report
+/// that publishes an undifferentiated population is caught by the enumeration
+/// instead of by a reader noticing the ambiguity later.
+#[test]
+fn population_contract_enumerates_every_shadow_report() {
+    let manifest: AcceptanceManifest = expect_loaded(ACCEPTANCE_REL_PATH);
+    let contract = &manifest.population_contract;
+    let declared: BTreeSet<&str> = contract.report_paths.iter().map(String::as_str).collect();
+
+    let dir = repo_root().join("artifacts/parse_compat");
+    let mut on_disk = BTreeSet::new();
+    for entry in std::fs::read_dir(&dir).expect("artifacts/parse_compat must be readable") {
+        let name = entry.expect("directory entry").file_name();
+        let name = name.to_string_lossy().into_owned();
+        if name.ends_with("_shadow.json") {
+            on_disk.insert(format!("artifacts/parse_compat/{name}"));
+        }
+    }
+    assert!(!on_disk.is_empty(), "no shadow reports found on disk");
+    let undeclared = on_disk
+        .iter()
+        .filter(|rel| !declared.contains(rel.as_str()))
+        .collect::<Vec<_>>();
+    assert!(
+        undeclared.is_empty(),
+        "shadow reports missing from population_contract.report_paths: {undeclared:?}"
+    );
+
+    // The two offline receipt examples emit their report JSON on demand, so
+    // they are enumerated explicitly rather than discovered by filename.
+    for rel in [
+        "artifacts/parse_compat/p5_shadow_join.json",
+        "artifacts/parse_compat/native_body_accounting_shadow.json",
+    ] {
+        assert!(
+            declared.contains(rel),
+            "`{rel}` must be enumerated by population_contract.report_paths"
+        );
+    }
+
+    let errs = validate_shadow_population_reports(&repo_root(), contract);
+    assert!(
+        errs.is_empty(),
+        "shadow population contract violations:\n{}",
+        errs.join("\n")
+    );
+}
+
+/// One synthetic report that satisfies the split, so each negative case below
+/// changes exactly one thing and the resulting tag is attributable.
+fn population_report_fixture() -> serde_json::Value {
+    serde_json::json!({
+        "schema_version": "synthetic-shadow.v1",
+        "reference_population": {
+            "identity": "reviewed_synthetic_reference",
+            "role": "identity_only",
+            "documents": 3,
+        },
+        "executed_population": {
+            "corpus_execution": false,
+            "documents": 1,
+            "execution_evidence": "tracked_offline_fixture:synthetic-shadow",
+        },
+        "evaluated_population": {"status": "not_evaluated", "documents": 0},
+        "outcomes": {"accounting_contour": {"admitted": 1}},
+    })
+}
+
+/// GAR-006: a report may not present a referenced population as an executed or
+/// evaluated one. Every mutation below is a way of publishing corpus-scale
+/// identity numbers without execution evidence for that population.
+#[test]
+fn gar006_mixed_or_missing_shadow_populations_are_rejected() {
+    let manifest: AcceptanceManifest = expect_loaded(ACCEPTANCE_REL_PATH);
+    let contract = &manifest.population_contract;
+
+    assert!(
+        validate_shadow_population_report("synthetic.json", &population_report_fixture(), contract)
+            .is_empty(),
+        "the fixture itself must satisfy the contract"
+    );
+
+    let mut missing_executed = population_report_fixture();
+    missing_executed
+        .as_object_mut()
+        .expect("fixture object")
+        .remove("executed_population");
+    negative(
+        "[population-contract-blocks]",
+        &validate_shadow_population_report("synthetic.json", &missing_executed, contract),
+        "missing executed population",
+    );
+
+    let mut missing_outcomes = population_report_fixture();
+    missing_outcomes
+        .as_object_mut()
+        .expect("fixture object")
+        .remove("outcomes");
+    negative(
+        "[population-contract-blocks]",
+        &validate_shadow_population_report("synthetic.json", &missing_outcomes, contract),
+        "missing outcomes block",
+    );
+
+    // Corpus-scale identity numbers copied into the executed block: the two
+    // populations are then the same object and nothing is distinguishable.
+    let mut copied = population_report_fixture();
+    let reference_copy = copied["reference_population"].clone();
+    copied["executed_population"] = reference_copy;
+    negative(
+        "[population-contract-distinguishable]",
+        &validate_shadow_population_report("synthetic.json", &copied, contract),
+        "reference numbers republished as executed",
+    );
+
+    let mut unlabelled_reference = population_report_fixture();
+    unlabelled_reference["reference_population"] = serde_json::json!({
+        "identity": "reviewed_synthetic_reference",
+        "documents": 3,
+    });
+    negative(
+        "[population-contract-distinguishable]",
+        &validate_shadow_population_report("synthetic.json", &unlabelled_reference, contract),
+        "reference population without its identity_only role",
+    );
+
+    let mut bare_executed = population_report_fixture();
+    bare_executed["executed_population"] = serde_json::json!({"documents": 1});
+    negative(
+        "[population-contract-distinguishable]",
+        &validate_shadow_population_report("synthetic.json", &bare_executed, contract),
+        "executed population without execution evidence",
+    );
+
+    let mut string_flag = population_report_fixture();
+    string_flag["executed_population"] = serde_json::json!({
+        "corpus_execution": "no",
+        "documents": 1,
+        "execution_evidence": "tracked_offline_fixture:synthetic-shadow",
+    });
+    negative(
+        "[population-contract-distinguishable]",
+        &validate_shadow_population_report("synthetic.json", &string_flag, contract),
+        "non-boolean corpus_execution",
+    );
+
+    // An evaluated status without corpus execution is the exact splice GAR-006
+    // forbids: a synthetic run inheriting an evaluated population.
+    let mut evaluated_without_execution = population_report_fixture();
+    evaluated_without_execution["evaluated_population"] =
+        serde_json::json!({"status": "evaluated", "documents": 3});
+    negative(
+        "[population-contract-distinguishable]",
+        &validate_shadow_population_report(
+            "synthetic.json",
+            &evaluated_without_execution,
+            contract,
+        ),
+        "evaluated claim without corpus execution",
+    );
+
+    // The forbidden legacy block is enforced per report, not only per manifest.
+    let mut legacy = population_report_fixture();
+    legacy["denominators"] = serde_json::json!({"documents": 3, "pages": 202});
+    negative(
+        "[population-contract-legacy-blocks]",
+        &validate_shadow_population_report("synthetic.json", &legacy, contract),
+        "legacy denominators block",
+    );
 }
 
 #[test]

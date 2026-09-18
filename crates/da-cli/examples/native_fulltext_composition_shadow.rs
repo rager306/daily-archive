@@ -38,7 +38,9 @@ struct Report {
     schema_version: &'static str,
     data_schema: String,
     source_identity: Identity,
-    denominators: Denominators,
+    reference_population: serde_json::Value,
+    executed_population: serde_json::Value,
+    evaluated_population: serde_json::Value,
     policy: Policy,
     execution: Execution,
     outcomes: Vec<Outcome>,
@@ -57,15 +59,6 @@ struct Identity {
     /// This report clones one hybrid fixture three times. Not hub/rlm/reca.
     identity_kind: &'static str,
     unique_source_sha256: usize,
-}
-#[derive(Debug, Serialize)]
-struct Denominators {
-    documents: usize,
-    lanes: usize,
-    admitted_rows: usize,
-    s12_named: usize,
-    s15_terminal: usize,
-    s16_visual_heads: usize,
 }
 #[derive(Debug, Serialize)]
 struct Policy {
@@ -453,14 +446,35 @@ fn main() {
             identity_kind: "synthetic_clone",
             unique_source_sha256: 1,
         },
-        denominators: Denominators {
-            documents: 3,
-            lanes: 3,
-            admitted_rows: 9,
-            s12_named: 3,
-            s15_terminal: 9,
-            s16_visual_heads: 27,
-        },
+        // GAR-006: the three populations are separate objects. The 3-document /
+        // 27-head numbers were previously published beside this synthetic
+        // execution in `denominators`, so a reader could not tell which
+        // documents actually ran. Only one synthetic source is executed here;
+        // the cloned document identities are named explicitly.
+        reference_population: serde_json::json!({
+            "identity": "reviewed_three_document_composition_reference",
+            "role": "identity_only",
+            "documents": 3,
+            "lanes": 3,
+            "referent_rows": 9,
+            "s12_named": 3,
+            "s15_terminal": 9,
+            "s16_visual_heads": 27,
+        }),
+        executed_population: serde_json::json!({
+            "corpus_execution": false,
+            "documents": 1,
+            "document_identities": 3,
+            "lanes": 3,
+            "objects": 9,
+            "execution_evidence": "tracked_synthetic_clone_fixture:native_fulltext_composition_oracle",
+        }),
+        evaluated_population: serde_json::json!({
+            "status": "not_evaluated",
+            "documents": 0,
+            "oracle": "none",
+            "reason": "synthetic_clone_fixture_without_corpus_execution",
+        }),
         policy: Policy {
             observation_mode: "shadow",
             promotion_state: "candidate",

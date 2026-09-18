@@ -93,7 +93,9 @@ struct Report {
     config_identity: ConfigIdentity,
     binary_identity: BinaryIdentity,
     donor_identity: Vec<DonorIdentity>,
-    denominators: Denominators,
+    reference_population: serde_json::Value,
+    executed_population: serde_json::Value,
+    evaluated_population: serde_json::Value,
     policy: Policy,
     execution: Execution,
     outcomes: Vec<LaneReceipt>,
@@ -126,15 +128,6 @@ struct DonorIdentity {
     donor: String,
     version: String,
     identity_digest: String,
-}
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct Denominators {
-    documents: usize,
-    lanes: usize,
-    pages_per_lane: usize,
-    lane_pages: usize,
-    heads: usize,
-    receipts: usize,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Policy {
@@ -653,14 +646,39 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             digest: binary,
         },
         donor_identity: donors_out,
-        denominators: Denominators {
-            documents: 3,
-            lanes: 3,
-            pages_per_lane: 202,
-            lane_pages: 606,
-            heads: 3,
-            receipts: 27,
-        },
+        // GAR-006: the corpus identity numbers (3 documents / 202 pages / 606
+        // lane pages / 27 oracle receipts) are the *reference* population this
+        // shadow is compared against. The executed population is the run
+        // itself, with its own document count and its own observable heads, so
+        // the two can no longer be read as one number set.
+        reference_population: serde_json::json!({
+            "identity": "reviewed_three_document_visual_heads_reference",
+            "role": "identity_only",
+            "documents": 3,
+            "lanes": 3,
+            "pages_per_lane": 202,
+            "lane_pages": 606,
+            "heads": 3,
+            "oracle_receipts": 27,
+        }),
+        executed_population: serde_json::json!({
+            "corpus_execution": true,
+            "documents": source_documents.len(),
+            "pages": 202,
+            "lane_receipts": outcomes.len(),
+            "observed_heads": outcomes
+                .iter()
+                .flat_map(|outcome| outcome.heads.values())
+                .filter(|head| head.oracle_status == "observed")
+                .count(),
+            "execution_evidence": "tracked_source_pdfs_with_sha256_and_donor_lanes",
+        }),
+        evaluated_population: serde_json::json!({
+            "status": "not_evaluated",
+            "documents": 0,
+            "oracle": "none",
+            "reason": "terminal_unsupported_absence_without_a_quality_claim",
+        }),
         policy: Policy {
             observation_mode: "shadow".into(),
             promotion_state: manifest.policy_locks.promotion_state,
