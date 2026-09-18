@@ -410,6 +410,7 @@ mod tests {
             shadow: None,
             review: None,
             human_decision_ref: None,
+            freshness: None,
             stale_identity: false,
             denominator_drift: false,
             pooling: false,

@@ -242,6 +242,14 @@ pub struct BoundReceipt {
     pub grobid_profile: String,
 }
 
+/// Upper bound for every free-form field of a [`FreshnessIdentity`].
+///
+/// The bound exists because a freshness identity travels into cached artifacts:
+/// an unbounded field would let a single oversized local artifact inflate every
+/// consumer of the evidence set. Digest fields are fixed-width by validation
+/// and need no separate bound.
+pub const MAX_FRESHNESS_IDENTITY_FIELD_LEN: usize = 200;
+
 /// Immutable lineage for a derived observation. `observed_at` is provenance,
 /// not a wall-clock freshness oracle: freshness is derived only against an
 /// explicitly selected target revision.
@@ -276,11 +284,28 @@ pub enum DeclaredRevisionTrust {
     DeferredCrossCheck { receipt_ref: String },
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum FreshnessIdentityError {
     EmptyField,
+    FieldTooLong,
+    /// `parser_identity` or `config_identity` is not a label or a sha256
+    /// fingerprint — for example a raw configuration value, URL or path.
+    UnsafeIdentityLabel,
     InvalidDigest,
     TargetRevisionMismatch,
+}
+
+impl FreshnessIdentityError {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::EmptyField => "empty_field",
+            Self::FieldTooLong => "field_too_long",
+            Self::UnsafeIdentityLabel => "unsafe_identity_label",
+            Self::InvalidDigest => "invalid_digest",
+            Self::TargetRevisionMismatch => "target_revision_mismatch",
+        }
+    }
 }
 
 /// Compare identity with the selected target without consulting the current
@@ -301,6 +326,17 @@ pub fn assess_freshness(
     ] {
         if value.trim().is_empty() {
             return Err(FreshnessIdentityError::EmptyField);
+        }
+        if value.len() > MAX_FRESHNESS_IDENTITY_FIELD_LEN {
+            return Err(FreshnessIdentityError::FieldTooLong);
+        }
+    }
+    for label in [
+        identity.parser_identity.as_str(),
+        identity.config_identity.as_str(),
+    ] {
+        if !valid_identity_label(label) {
+            return Err(FreshnessIdentityError::UnsafeIdentityLabel);
         }
     }
     if !valid_digest(&identity.source_digest) || !valid_digest(&identity.representation_digest) {
@@ -326,6 +362,150 @@ fn revision_number(value: &str) -> Option<u32> {
     value.rsplit_once('v')?.1.parse().ok()
 }
 
+/// A freshness identity bound into one evidence set, together with the
+/// declared-revision basis it was recorded under.
+///
+/// `identity.target_revision` is a **declaration** — the revision the producer
+/// claims the observation belongs to. Recording it is not trusting it: a TEI
+/// declaration must name exactly the identity target, any other source may only
+/// produce a deferred cross-check receipt, and every read re-checks the
+/// declaration ([`FreshnessBinding::validate_declaration`]). There is
+/// deliberately no `Verified` declaration state.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FreshnessBinding {
+    pub identity: FreshnessIdentity,
+    pub declared_revision: DeclaredRevisionTrust,
+}
+
+impl FreshnessBinding {
+    /// Record an identity under its declared-revision basis.
+    pub fn new(
+        identity: FreshnessIdentity,
+        declared_revision: DeclaredRevisionTrust,
+    ) -> Result<Self, FreshnessIdentityError> {
+        let binding = Self {
+            identity,
+            declared_revision,
+        };
+        binding.validate_declaration()?;
+        Ok(binding)
+    }
+
+    /// Re-check the declaration against the identity it accompanies. Callers
+    /// that deserialize an artifact must call this instead of assuming the two
+    /// fields agree.
+    pub fn validate_declaration(&self) -> Result<(), FreshnessIdentityError> {
+        match &self.declared_revision {
+            DeclaredRevisionTrust::TeiDeclared { revision } => {
+                if revision.trim().is_empty() {
+                    return Err(FreshnessIdentityError::EmptyField);
+                }
+                if revision.len() > MAX_FRESHNESS_IDENTITY_FIELD_LEN {
+                    return Err(FreshnessIdentityError::FieldTooLong);
+                }
+                if revision != &self.identity.target_revision {
+                    return Err(FreshnessIdentityError::TargetRevisionMismatch);
+                }
+            }
+            DeclaredRevisionTrust::DeferredCrossCheck { receipt_ref } => {
+                if receipt_ref.trim().is_empty() {
+                    return Err(FreshnessIdentityError::EmptyField);
+                }
+                if receipt_ref.len() > MAX_FRESHNESS_IDENTITY_FIELD_LEN {
+                    return Err(FreshnessIdentityError::FieldTooLong);
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+/// The bounded, typed currency verdict for one evidence set.
+///
+/// `Unattributed` exists so that a set carrying no identity cannot be read as
+/// fresh: currency is unknown, not asserted.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "state", rename_all = "snake_case", deny_unknown_fields)]
+pub enum FreshnessAssessment {
+    /// No identity is bound: the set does not say which run produced it.
+    Unattributed,
+    Fresh {
+        observed_revision: String,
+    },
+    Stale {
+        target_revision: String,
+        observed_revision: String,
+    },
+    Superseded {
+        target_revision: String,
+        observed_revision: String,
+    },
+    /// The identity declares one target while the caller selected another.
+    Mismatched {
+        declared_target_revision: String,
+        selected_target_revision: String,
+    },
+    /// The identity or its declaration is unusable; absence is not compliance.
+    Malformed {
+        error: FreshnessIdentityError,
+    },
+}
+
+impl FreshnessAssessment {
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Unattributed => "unattributed",
+            Self::Fresh { .. } => "fresh",
+            Self::Stale { .. } => "stale",
+            Self::Superseded { .. } => "superseded",
+            Self::Mismatched { .. } => "mismatched",
+            Self::Malformed { .. } => "malformed",
+        }
+    }
+
+    pub const fn is_fresh(&self) -> bool {
+        matches!(self, Self::Fresh { .. })
+    }
+}
+
+/// Assess one evidence set against an explicitly selected target revision.
+///
+/// When `selected_target_revision` is `None` the binding's own declared target
+/// is used, which is all a stored set can answer on its own. Neither path
+/// consults a clock or a digest: revision ordering decides currency, so two
+/// byte-identical digests cannot rescue a superseded input.
+pub fn assess_set_freshness(
+    set: &FamilyEvidenceSet,
+    selected_target_revision: Option<&str>,
+) -> FreshnessAssessment {
+    let Some(binding) = &set.freshness else {
+        return FreshnessAssessment::Unattributed;
+    };
+    if let Err(error) = binding.validate_declaration() {
+        return FreshnessAssessment::Malformed { error };
+    }
+    let selected = selected_target_revision.unwrap_or(&binding.identity.target_revision);
+    match assess_freshness(&binding.identity, selected) {
+        Ok(FreshnessOutcome::Fresh) => FreshnessAssessment::Fresh {
+            observed_revision: binding.identity.observed_revision.clone(),
+        },
+        Ok(FreshnessOutcome::Stale) => FreshnessAssessment::Stale {
+            target_revision: binding.identity.target_revision.clone(),
+            observed_revision: binding.identity.observed_revision.clone(),
+        },
+        Ok(FreshnessOutcome::Superseded) => FreshnessAssessment::Superseded {
+            target_revision: binding.identity.target_revision.clone(),
+            observed_revision: binding.identity.observed_revision.clone(),
+        },
+        Err(FreshnessIdentityError::TargetRevisionMismatch) => FreshnessAssessment::Mismatched {
+            declared_target_revision: binding.identity.target_revision.clone(),
+            selected_target_revision: selected.to_owned(),
+        },
+        Err(error) => FreshnessAssessment::Malformed { error },
+    }
+}
+
 /// The complete, injected receipt set for one paper and one evidence family.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -346,6 +526,11 @@ pub struct FamilyEvidenceSet {
     pub review: Option<BoundReceipt>,
     #[serde(default)]
     pub human_decision_ref: Option<String>,
+    /// Bounded revision/freshness identity for this set, when the producing
+    /// path recorded one. `None` means currency is unknown — never that the
+    /// set was measured against the selected target.
+    #[serde(default)]
+    pub freshness: Option<FreshnessBinding>,
     #[serde(default)]
     pub stale_identity: bool,
     #[serde(default)]
@@ -467,18 +652,94 @@ fn valid_digest(value: &str) -> bool {
     value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
+/// A parser or configuration identity is a *label or a sha256 fingerprint*,
+/// never a raw configuration value.
+///
+/// The accepted alphabet excludes the separators that carry secrets and
+/// locations: no whitespace, no `=`, `:`, `/`, `?` or `&`, so an environment
+/// dump (`TOKEN=...`), a URL or a filesystem path is rejected instead of being
+/// persisted into an artifact. The rule is syntactic — a label-shaped secret is
+/// indistinguishable from a label by construction, which is why the producer
+/// must emit a label or fingerprint rather than pass configuration through.
+fn valid_identity_label(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= MAX_FRESHNESS_IDENTITY_FIELD_LEN
+        && value.bytes().all(|byte| {
+            byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'@' | b'+' | b'-')
+        })
+}
+
 /// Derive the highest contiguous maturity prefix from immutable receipts.
 ///
 /// This function has no authority to promote, import, write, or consult a
 /// runtime parse state. Explicit authority or integrity claims always win
-/// over receipt presence and are returned as typed blocks.
+/// over receipt presence and are returned as typed blocks. A bound freshness
+/// identity is evaluated as well: an observation that is stale or superseded
+/// blocks with [`BlockedReason::StaleIdentity`], while a set that carries no
+/// identity keeps its legacy behaviour (currency is unknown, not asserted).
 pub fn derive_maturity(set: &FamilyEvidenceSet) -> MaturityDerivation {
+    derive_maturity_inner(set, None)
+}
+
+/// Currency-required variant of [`derive_maturity`].
+///
+/// The caller has selected the target revision, so the set must positively
+/// account for it: no identity, a declaration that names a different target,
+/// a stale or superseded observation, or an unusable identity all block with
+/// [`BlockedReason::StaleIdentity`] or [`BlockedReason::MalformedReceipt`].
+/// A declared revision is never treated as trusted — it is compared against
+/// the selected target instead.
+pub fn derive_maturity_against_target(
+    set: &FamilyEvidenceSet,
+    selected_target_revision: &str,
+) -> MaturityDerivation {
+    derive_maturity_inner(set, Some(selected_target_revision))
+}
+
+fn derive_maturity_inner(
+    set: &FamilyEvidenceSet,
+    selected_target_revision: Option<&str>,
+) -> MaturityDerivation {
     if set.claims_promoted || set.deployed || set.import_eligible {
         return blocked(
             BlockedReason::AttemptedAutomaticPromotion,
             Some("authority_claim".to_owned()),
             Vec::new(),
         );
+    }
+
+    match assess_set_freshness(set, selected_target_revision) {
+        FreshnessAssessment::Fresh { .. } => {}
+        FreshnessAssessment::Unattributed => {
+            if selected_target_revision.is_some() {
+                return blocked(
+                    BlockedReason::StaleIdentity,
+                    Some("freshness_identity".to_owned()),
+                    Vec::new(),
+                );
+            }
+        }
+        FreshnessAssessment::Stale { .. } | FreshnessAssessment::Superseded { .. } => {
+            return blocked(
+                BlockedReason::StaleIdentity,
+                Some("freshness_identity.observed_revision".to_owned()),
+                Vec::new(),
+            );
+        }
+        FreshnessAssessment::Mismatched { .. } => {
+            return blocked(
+                BlockedReason::StaleIdentity,
+                Some("freshness_identity.target_revision".to_owned()),
+                Vec::new(),
+            );
+        }
+        FreshnessAssessment::Malformed { .. } => {
+            return blocked(
+                BlockedReason::MalformedReceipt,
+                Some("freshness_identity".to_owned()),
+                Vec::new(),
+            );
+        }
     }
 
     let integrity_flags = [
@@ -742,6 +1003,7 @@ mod tests {
             shadow: None,
             review: None,
             human_decision_ref: None,
+            freshness: None,
             stale_identity: false,
             denominator_drift: false,
             pooling: false,
@@ -1030,5 +1292,155 @@ mod tests {
         let mut json = serde_json::to_value(&family).unwrap();
         json["unexpected"] = true.into();
         assert!(serde_json::from_value::<FamilyEvidenceSet>(json).is_err());
+    }
+
+    fn bound_freshness(identity: FreshnessIdentity) -> FreshnessBinding {
+        FreshnessBinding::new(
+            identity.clone(),
+            DeclaredRevisionTrust::TeiDeclared {
+                revision: identity.target_revision.clone(),
+            },
+        )
+        .expect("a matching TEI declaration is accepted")
+    }
+
+    #[test]
+    fn freshness_binding_records_a_declaration_without_trusting_it() {
+        assert_eq!(
+            FreshnessBinding::new(
+                freshness_identity(),
+                DeclaredRevisionTrust::TeiDeclared {
+                    revision: "arxiv:1234.5678v4".into(),
+                },
+            ),
+            Err(FreshnessIdentityError::TargetRevisionMismatch)
+        );
+        assert_eq!(
+            FreshnessBinding::new(
+                freshness_identity(),
+                DeclaredRevisionTrust::DeferredCrossCheck {
+                    receipt_ref: "  ".into(),
+                },
+            ),
+            Err(FreshnessIdentityError::EmptyField)
+        );
+        let deferred = FreshnessBinding::new(
+            freshness_identity(),
+            DeclaredRevisionTrust::DeferredCrossCheck {
+                receipt_ref: "cross-check-1".into(),
+            },
+        )
+        .expect("a non-TEI source may defer");
+        assert!(matches!(
+            deferred.declared_revision,
+            DeclaredRevisionTrust::DeferredCrossCheck { .. }
+        ));
+    }
+
+    #[test]
+    fn freshness_is_bounded_and_rejects_config_shaped_identities() {
+        let mut oversized = freshness_identity();
+        oversized.cache_key = "k".repeat(MAX_FRESHNESS_IDENTITY_FIELD_LEN + 1);
+        assert_eq!(
+            assess_freshness(&oversized, "arxiv:1234.5678v3"),
+            Err(FreshnessIdentityError::FieldTooLong)
+        );
+
+        for raw in [
+            "GROBID_ENDPOINT=http://127.0.0.1:8070",
+            "/etc/da/config.yaml",
+            "{\"token\": \"abc\"}",
+        ] {
+            let mut identity = freshness_identity();
+            identity.config_identity = raw.into();
+            assert_eq!(
+                assess_freshness(&identity, "arxiv:1234.5678v3"),
+                Err(FreshnessIdentityError::UnsafeIdentityLabel),
+                "a raw config value must not be readable as a measurement: {raw}"
+            );
+        }
+
+        let mut label_shaped = freshness_identity();
+        label_shaped.parser_identity = "RevisionMaterializationUseCase@revision-owned-v1".into();
+        assert_eq!(
+            assess_freshness(&label_shaped, "arxiv:1234.5678v3"),
+            Ok(FreshnessOutcome::Fresh)
+        );
+    }
+
+    #[test]
+    fn a_bound_set_blocks_when_its_input_is_not_current() {
+        let mut family = set();
+        family.inventory = Some(receipt(ReceiptKind::Inventory, "inventory-ref"));
+
+        family.freshness = Some(bound_freshness(freshness_identity()));
+        assert_eq!(
+            reached(derive_maturity(&family)).0,
+            MaturityState::InventoryBound
+        );
+        assert!(assess_set_freshness(&family, None).is_fresh());
+
+        let mut superseded = freshness_identity();
+        superseded.observed_revision = "arxiv:1234.5678v4".into();
+        family.freshness = Some(bound_freshness(superseded));
+        assert_eq!(
+            blocked_reason(derive_maturity(&family)),
+            BlockedReason::StaleIdentity
+        );
+        assert_eq!(
+            assess_set_freshness(&family, None),
+            FreshnessAssessment::Superseded {
+                target_revision: "arxiv:1234.5678v3".into(),
+                observed_revision: "arxiv:1234.5678v4".into(),
+            }
+        );
+        assert_eq!(
+            blocked_reason(derive_maturity_against_target(&family, "arxiv:1234.5678v3")),
+            BlockedReason::StaleIdentity
+        );
+
+        family.freshness = Some(bound_freshness(freshness_identity()));
+        assert_eq!(
+            blocked_reason(derive_maturity_against_target(&family, "arxiv:1234.5678v9")),
+            BlockedReason::StaleIdentity
+        );
+        assert_eq!(
+            assess_set_freshness(&family, Some("arxiv:1234.5678v9")).as_str(),
+            "mismatched"
+        );
+
+        family.freshness = None;
+        assert_eq!(
+            assess_set_freshness(&family, None),
+            FreshnessAssessment::Unattributed
+        );
+        assert_eq!(
+            reached(derive_maturity(&family)).0,
+            MaturityState::InventoryBound
+        );
+        assert_eq!(
+            blocked_reason(derive_maturity_against_target(&family, "arxiv:1234.5678v3")),
+            BlockedReason::StaleIdentity
+        );
+    }
+
+    #[test]
+    fn a_deserialized_contradictory_declaration_is_not_a_measurement() {
+        let mut family = set();
+        family.inventory = Some(receipt(ReceiptKind::Inventory, "inventory-ref"));
+        family.freshness = Some(bound_freshness(freshness_identity()));
+        let mut json = serde_json::to_value(&family).unwrap();
+        json["freshness"]["declared_revision"]["revision"] = "arxiv:1234.5678v4".into();
+        let contradiction: FamilyEvidenceSet = serde_json::from_value(json).unwrap();
+        assert!(matches!(
+            assess_set_freshness(&contradiction, None),
+            FreshnessAssessment::Malformed {
+                error: FreshnessIdentityError::TargetRevisionMismatch
+            }
+        ));
+        assert_eq!(
+            blocked_reason(derive_maturity(&contradiction)),
+            BlockedReason::MalformedReceipt
+        );
     }
 }

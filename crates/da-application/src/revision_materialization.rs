@@ -16,6 +16,10 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
+use crate::derived_evidence_maturity::{
+    DeclaredRevisionTrust, FreshnessBinding, FreshnessIdentity,
+};
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RevisionManifestationInput {
     pub format: String,
@@ -70,6 +74,71 @@ pub struct RevisionMaterializationResult {
     pub import_eligible: bool,
 }
 
+/// Version label for one revision of a canonical article (`<id>v<n>`), the same
+/// convention the revision node stores as `source_key`.
+pub fn revision_label(canonical_id: &str, revision: u32) -> String {
+    format!("{}v{}", canonical_id.trim(), revision)
+}
+
+/// Non-graph identity inputs for one revision observation.
+///
+/// `parser_identity` and `config_identity` are labels or sha256 fingerprints —
+/// never raw configuration values, URLs or paths — and `observed_at` comes from
+/// the injected [`Clock`], so a replay is deterministically stamped. The
+/// observation time is provenance, not a freshness oracle.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RevisionObservationIdentity {
+    pub parser_identity: String,
+    pub config_identity: String,
+    pub cache_key: String,
+    pub observed_at: String,
+}
+
+impl RevisionMaterializationResult {
+    /// Bind the bounded freshness identity for this materialization.
+    ///
+    /// `target_revision` is the revision this run selected; `observed_revision`
+    /// is the highest revision the graph actually held when the observation was
+    /// taken (`current_revision`). Re-materializing a source whose revision is
+    /// already superseded therefore yields an identity that cannot read as
+    /// fresh, and the digests cannot change that: `source_digest` is the parsed
+    /// source checksum and `representation_digest` is the manifestation content
+    /// identity, both identical across such a replay by construction.
+    pub fn freshness_binding(
+        &self,
+        request: &RevisionMaterializationRequest,
+        observation: &RevisionObservationIdentity,
+        declared_revision: DeclaredRevisionTrust,
+    ) -> Result<FreshnessBinding, RevisionMaterializationError> {
+        let source_digest = request.parsed.pdf_hash.trim().to_ascii_lowercase();
+        if source_digest.len() != 64 || !source_digest.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Err(RevisionMaterializationError::Invalid(
+                "parsed source digest must be a 64-character sha256".into(),
+            ));
+        }
+        FreshnessBinding::new(
+            FreshnessIdentity {
+                target_revision: revision_label(&request.canonical_id, request.revision),
+                observed_revision: revision_label(&request.canonical_id, self.current_revision),
+                source_digest,
+                representation_digest: content_identity_sha256(&request.manifestations),
+                parser_identity: observation.parser_identity.clone(),
+                config_identity: observation.config_identity.clone(),
+                cache_key: observation.cache_key.clone(),
+                observed_at: observation.observed_at.clone(),
+            },
+            declared_revision,
+        )
+        .map_err(|error| {
+            RevisionMaterializationError::Invalid(format!(
+                "freshness identity is not usable: {}",
+                error.as_str()
+            ))
+        })
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum RevisionMaterializationError {
     #[error("invalid revision materialization request: {0}")]
@@ -96,6 +165,24 @@ pub struct RevisionMaterializationUseCase {
 impl RevisionMaterializationUseCase {
     pub fn new(graph_store: Arc<dyn DirectGraphStore>, clock: Arc<dyn Clock>) -> Self {
         Self { graph_store, clock }
+    }
+
+    /// Stamp one observation identity with the injected clock instant.
+    ///
+    /// The clock is the only source of `observed_at`; freshness itself is never
+    /// derived from it (revision ordering decides currency).
+    pub fn observation_identity(
+        &self,
+        parser_identity: impl Into<String>,
+        config_identity: impl Into<String>,
+        cache_key: impl Into<String>,
+    ) -> RevisionObservationIdentity {
+        RevisionObservationIdentity {
+            parser_identity: parser_identity.into(),
+            config_identity: config_identity.into(),
+            cache_key: cache_key.into(),
+            observed_at: self.clock.now().to_rfc3339(),
+        }
     }
 
     pub async fn materialize(
