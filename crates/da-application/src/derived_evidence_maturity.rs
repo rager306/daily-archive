@@ -575,11 +575,40 @@ pub enum MaturityDerivation {
 /// `Pending` is the safe default: a complete review package is not a human
 /// decision. In particular, `human_decision_ref` is diagnostic provenance and
 /// must never be interpreted as an authorization grant.
+///
+/// `Authorized` is a caller-supplied claim, not an authenticated gate: the
+/// variant carries no signature, expiry, or durable record lookup, so nothing
+/// wired to production, import, graph writes, or promotion may treat it as
+/// permission to act. Authorization stays quarantined here until a durable,
+/// replay-resistant approval lookup exists (D127).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
 pub enum HumanAuthorization {
     Pending,
     Authorized { decision_ref: String },
+}
+
+impl HumanAuthorization {
+    /// The unresolved default: review work is in progress or awaiting a human.
+    pub const fn pending() -> Self {
+        Self::Pending
+    }
+
+    /// A blank or whitespace-only reference is not an approval.
+    pub fn is_authorized(&self) -> bool {
+        matches!(
+            self,
+            Self::Authorized { decision_ref } if !decision_ref.trim().is_empty()
+        )
+    }
+
+    /// Observable label for the authorization dimension.
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Pending => "pending",
+            Self::Authorized { .. } => "authorized",
+        }
+    }
 }
 
 /// The machine-checkable result of separating review-package readiness from
@@ -596,43 +625,69 @@ impl ReviewReadiness {
     /// Production/import behavior is allowed only after an explicit,
     /// non-empty human authorization. Readiness alone never grants rights.
     pub fn authorizes_production_or_import(&self) -> bool {
-        self.maturity == MaturityState::ReviewReady
-            && matches!(
-                &self.authorization,
-                HumanAuthorization::Authorized { decision_ref }
-                    if !decision_ref.trim().is_empty()
-            )
+        self.maturity == MaturityState::ReviewReady && self.authorization.is_authorized()
     }
 }
 
 /// Derive review-package completeness without conflating it with a human gate.
 ///
 /// This is the canonical readiness surface for callers that need to decide
-/// whether review work can begin. The older `derive_maturity` function keeps
-/// its closed ladder and `HumanGateRequired` terminal state for wire/backward
-/// compatibility; this function deliberately reports the evidence terminal as
-/// `ReviewReady` and leaves authorization `Pending`.
+/// whether review work can begin. The evidence dimension comes from the
+/// receipt set only (see [`derive_maturity`]); the authorization dimension is
+/// the unresolved default [`HumanAuthorization::Pending`], because this
+/// function has no approval input and completeness is never an approval.
 pub fn derive_review_readiness(
     set: &FamilyEvidenceSet,
 ) -> Result<ReviewReadiness, MaturityDerivation> {
+    derive_review_readiness_with_authorization(set, HumanAuthorization::Pending)
+}
+
+/// Two-input readiness: evidence from `set`, authorization from the caller.
+///
+/// The two dimensions are independent. A complete receipt set derives
+/// `ReviewReady` regardless of the supplied authorization, and an approval
+/// never fabricates evidence: an incomplete set keeps its evidence prefix even
+/// when `authorization` is `Authorized`. Completeness alone can never produce
+/// `Authorized`, because only the caller can name one.
+pub fn derive_review_readiness_with_authorization(
+    set: &FamilyEvidenceSet,
+    authorization: HumanAuthorization,
+) -> Result<ReviewReadiness, MaturityDerivation> {
     match derive_maturity(set) {
-        MaturityDerivation::Reached {
-            state: MaturityState::HumanGateRequired,
-            evidence_refs,
-        } => Ok(ReviewReadiness {
-            maturity: MaturityState::ReviewReady,
-            evidence_refs,
-            authorization: HumanAuthorization::Pending,
-        }),
         MaturityDerivation::Reached {
             state,
             evidence_refs,
         } => Ok(ReviewReadiness {
             maturity: state,
             evidence_refs,
-            authorization: HumanAuthorization::Pending,
+            authorization,
         }),
         blocked @ MaturityDerivation::Blocked { .. } => Err(blocked),
+    }
+}
+
+/// Composite ladder: evidence maturity with the authorization dimension applied.
+///
+/// `HumanGateRequired` is produced exactly when the evidence dimension has
+/// reached `ReviewReady` (every receipt present) and the authorization
+/// dimension is still unresolved. It means the human gate is *required*, never
+/// *granted*: supplying an explicit approval leaves the state at `ReviewReady`
+/// and changes no receipt. Incomplete evidence is passed through unchanged, so
+/// a missing receipt can never be mistaken for a pending human decision.
+pub fn derive_gate_maturity(
+    set: &FamilyEvidenceSet,
+    authorization: &HumanAuthorization,
+) -> MaturityDerivation {
+    match derive_maturity(set) {
+        MaturityDerivation::Reached {
+            state: MaturityState::ReviewReady,
+            evidence_refs,
+        } if !authorization.is_authorized() => MaturityDerivation::Reached {
+            state: MaturityState::HumanGateRequired,
+            evidence_refs,
+        },
+        reached @ MaturityDerivation::Reached { .. } => reached,
+        blocked @ MaturityDerivation::Blocked { .. } => blocked,
     }
 }
 
@@ -670,6 +725,13 @@ fn valid_identity_label(value: &str) -> bool {
 }
 
 /// Derive the highest contiguous maturity prefix from immutable receipts.
+///
+/// This is the **evidence dimension** only. Its terminal is `ReviewReady`:
+/// when every required receipt is present the review package is complete. Human
+/// authorization is a separate dimension supplied through
+/// [`derive_review_readiness_with_authorization`]; `HumanGateRequired` is the
+/// composite label produced by [`derive_gate_maturity`] when complete evidence
+/// is paired with an unresolved authorization. It means required, not granted.
 ///
 /// This function has no authority to promote, import, write, or consult a
 /// runtime parse state. Explicit authority or integrity claims always win
@@ -862,7 +924,9 @@ fn derive_maturity_inner(
     } else {
         MaturityDerivation::Reached {
             state: if evidence_refs.len() == ReceiptKind::ALL.len() {
-                MaturityState::HumanGateRequired
+                // Evidence terminal. The human gate is a separate dimension:
+                // see `derive_gate_maturity` for the composite label.
+                MaturityState::ReviewReady
             } else {
                 MaturityState::ALL[evidence_refs.len() - 1]
             },
@@ -1053,7 +1117,9 @@ mod tests {
             }
             let (state, refs) = reached(derive_maturity(&family));
             let expected_state = if prefix == kinds.len() {
-                MaturityState::HumanGateRequired
+                // Evidence terminal: a complete review package is ReviewReady.
+                // The composite human-gate label is a separate dimension.
+                MaturityState::ReviewReady
             } else {
                 MaturityState::ALL[prefix - 1]
             };
@@ -1169,9 +1235,44 @@ mod tests {
                 authorization: HumanAuthorization::Authorized {
                     decision_ref: "  ".into(),
                 },
-                ..readiness
+                ..readiness.clone()
             }
             .authorizes_production_or_import()
+        );
+
+        // The evidence dimension is unchanged by the authorization dimension:
+        // complete evidence is ReviewReady either way, and the composite label
+        // is `HumanGateRequired` only while no approval is present.
+        assert_eq!(
+            derive_review_readiness_with_authorization(&family, authorized.authorization.clone())
+                .unwrap()
+                .maturity,
+            MaturityState::ReviewReady
+        );
+        assert_eq!(
+            reached(derive_gate_maturity(&family, &HumanAuthorization::Pending)).0,
+            MaturityState::HumanGateRequired
+        );
+        assert_eq!(
+            reached(derive_gate_maturity(
+                &family,
+                &HumanAuthorization::Authorized {
+                    decision_ref: "human-approval-1".into(),
+                }
+            ))
+            .0,
+            MaturityState::ReviewReady
+        );
+        assert_eq!(
+            reached(derive_gate_maturity(
+                &family,
+                &HumanAuthorization::Authorized {
+                    decision_ref: "  ".into(),
+                }
+            ))
+            .0,
+            MaturityState::HumanGateRequired,
+            "a blank reference is not an approval"
         );
     }
 
@@ -1287,7 +1388,13 @@ mod tests {
         }
         assert_eq!(
             reached(derive_maturity(&family)).0,
-            MaturityState::HumanGateRequired
+            MaturityState::ReviewReady
+        );
+        // The diagnostic ref is provenance, never an approval: the
+        // authorization dimension stays unresolved.
+        assert_eq!(
+            derive_review_readiness(&family).unwrap().authorization,
+            HumanAuthorization::Pending
         );
         let mut json = serde_json::to_value(&family).unwrap();
         json["unexpected"] = true.into();

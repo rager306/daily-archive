@@ -4,8 +4,8 @@
 //! graph, promotion, import, or model execution capability.
 
 use crate::derived_evidence_maturity::{
-    BlockedReason, FamilyEvidenceSet, FamilyId, MaturityDerivation, MaturityState, ReceiptKind,
-    can_advance, derive_maturity,
+    BlockedReason, FamilyEvidenceSet, FamilyId, HumanAuthorization, MaturityDerivation,
+    MaturityState, ReceiptKind, can_advance, derive_gate_maturity,
 };
 use serde::{Deserialize, Serialize};
 
@@ -210,13 +210,16 @@ fn contract(
 /// Render exactly one bounded next-proof task, or a typed non-action outcome.
 ///
 /// The renderer is deterministic and only copies evidence references produced by
-/// `derive_maturity`; the prompt contract itself is never evidence.
+/// the composite maturity derivation; the prompt contract itself is never
+/// evidence. The renderer has no approval input, so it evaluates the evidence
+/// dimension against the unresolved default authorization: complete evidence
+/// means the next action is a human gate, not an automated proof task.
 pub fn render_prompt(set: &FamilyEvidenceSet, spec: &FamilyPromptSpec) -> PromptRender {
     if let Some(field) = validate_spec(set, spec) {
         return malformed(field);
     }
 
-    match derive_maturity(set) {
+    match derive_gate_maturity(set, &HumanAuthorization::Pending) {
         MaturityDerivation::Blocked {
             reason,
             missing_or_offending,

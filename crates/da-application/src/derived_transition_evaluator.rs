@@ -6,8 +6,9 @@
 use serde::{Deserialize, Serialize};
 
 use crate::derived_evidence_maturity::{
-    BlockedReason, BoundReceipt, FamilyEvidenceSet, FamilyId, MaturityDerivation, MaturityState,
-    ReceiptKind, can_advance, derive_maturity,
+    BlockedReason, BoundReceipt, FamilyEvidenceSet, FamilyId, HumanAuthorization,
+    MaturityDerivation, MaturityState, ReceiptKind, ReviewReadiness, can_advance,
+    derive_gate_maturity,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -131,6 +132,27 @@ impl TransitionEvaluation {
             missing_or_offending: offending,
             evidence_refs: refs,
             raised_flags,
+        }
+    }
+
+    /// The two independently readable review dimensions of a human-gate landing.
+    ///
+    /// `Some` exactly when the evidence dimension is complete: that is
+    /// `ReviewReady`, never `HumanGateRequired` (which means *required*, not a
+    /// completed review). The authorization dimension observed here is the
+    /// unresolved default `Pending`, because the evaluator consumes evidence
+    /// only and has no approval input; an explicit approval is supplied through
+    /// `derive_review_readiness_with_authorization`. `None` for every other
+    /// outcome, so a caller can tell a review that lacks evidence apart from
+    /// one that waits on a human decision.
+    pub fn review_readiness(&self) -> Option<ReviewReadiness> {
+        match self {
+            Self::HumanGate { evidence_refs, .. } => Some(ReviewReadiness {
+                maturity: MaturityState::ReviewReady,
+                evidence_refs: evidence_refs.clone(),
+                authorization: HumanAuthorization::Pending,
+            }),
+            _ => None,
         }
     }
 }
@@ -429,7 +451,9 @@ pub fn evaluate_transition(
     // Compute the landing before adding this diagnostic flag, otherwise the
     // flag itself would hide the state that triggered the requirement.
     let candidate_reaches_human_gate = matches!(
-        derive_maturity(&candidate),
+        // The evaluator has no approval input, so the composite gate label is
+        // derived against the unresolved default authorization.
+        derive_gate_maturity(&candidate, &HumanAuthorization::Pending),
         MaturityDerivation::Reached {
             state: MaturityState::HumanGateRequired,
             ..
@@ -447,8 +471,8 @@ pub fn evaluate_transition(
     }
 
     let raised = raised_flags(&candidate, prior);
-    let derivation = derive_maturity(&candidate);
-    let prior_derivation = derive_maturity(prior);
+    let derivation = derive_gate_maturity(&candidate, &HumanAuthorization::Pending);
+    let prior_derivation = derive_gate_maturity(prior, &HumanAuthorization::Pending);
     let from = match prior_derivation {
         MaturityDerivation::Reached { state, .. } => Some(state),
         MaturityDerivation::Blocked {
