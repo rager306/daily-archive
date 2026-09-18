@@ -789,6 +789,31 @@ def test_checker_flags_citation_names_pooled_on_comparison_shadow(tmp_path: Path
 
 
 def test_checker_flags_undeclared_shadow_sha_clone(tmp_path: Path):
+    """M474/S01 + M509/S04: снятие объявленной source-identity валит fail-closed.
+
+    Мутация та же (identity_kind и unique_source_sha256 уходят), но честный
+    флаг на этом артефакте другой. Файл
+    artifacts/parse_compat/native_fulltext_composition_shadow.json пиннится
+    byte-exactly в bindings.canonical_artifacts, поэтому любая перезапись
+    (включая json.dumps-перезапись без снятия ключей) даёт дайджест, отличный
+    от пина, и плоскость обязана ответить
+    scholarly_parse_plane_evidence_substitution
+    (expected='tracked source binding'; observed='missing'). Артефакт, чьи байты
+    не совпадают с объявленной tracked-привязкой, к семантическим выводам не
+    допускается вообще — это и есть проверяемая honesty-свойство.
+
+    Путь acceptance_same_n_drift здесь больше не утверждается: после
+    population-сплита (reference/executed/evaluated вместо denominators) снятие
+    identity-ключей само по себе его не поднимает, а вернуть снятое поле
+    denominators в мутацию значило бы проверять схему, которой у живого
+    артефакта уже нет. Живой дрейф acceptance_same_n_drift покрывает
+    sibling-мутация test_checker_flags_preserved_names_without_preserved_kind
+    (document_id → hub_2507.19457 при synthetic_clone).
+
+    Guard не ослаблен: байтовый sha256-пин в
+    scripts/governor/checks/scholarly_parse_plane.yaml остаётся, allowlist для
+    shadow-артефакта не добавлен, предикат evidence_substitution не ослаблен,
+    покрытие undeclared-shadow-clone сохранено."""
     _copy_checker_surface(tmp_path)
     shadow_path = tmp_path / "artifacts/parse_compat/native_fulltext_composition_shadow.json"
     payload = json.loads(shadow_path.read_text(encoding="utf-8"))
@@ -796,8 +821,9 @@ def test_checker_flags_undeclared_shadow_sha_clone(tmp_path: Path):
     payload["source_identity"].pop("unique_source_sha256", None)
     shadow_path.write_text(json.dumps(payload), encoding="utf-8")
     flags = _check_scholarly_parse_plane(tmp_path)
-    matching = [item for item in flags if item.flag == "scholarly_parse_plane_acceptance_same_n_drift"]
+    matching = [item for item in flags if item.flag == "scholarly_parse_plane_evidence_substitution"]
     assert matching, flags
+    assert any("native_fulltext_composition_shadow.json" in item.evidence for item in matching), flags
 
 
 def test_checker_flags_preserved_names_without_preserved_kind(tmp_path: Path):
