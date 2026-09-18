@@ -327,6 +327,47 @@ fn test_extract_citations_ordinal_fallback_without_xml_id() {
     assert_eq!(citations[0].anchors[0].ref_id, "b0");
 }
 
+/// GAR-013 (M509-yzblqx/S05/T01): a positional fallback key that collides
+/// with another entry's declared `xml:id` is decided by the published
+/// precedence, not by which entry was lifted last. Entry 0 declares "b2";
+/// entry 2 has no id and falls back to the positional key "b2". The ref must
+/// link to the declared entry.
+#[test]
+fn test_extract_citations_declared_id_outranks_ordinal_fallback() {
+    let tei = r##"<TEI><text><body><head n="1">Intro</head><p>See <ref type="bibr" target="#b2">[2]</ref></p></body><back><div type="references"><listBibl>
+<biblStruct xml:id="b2"><analytic><title level="a" type="main">Declared</title></analytic></biblStruct>
+<biblStruct><analytic><title level="a" type="main">Middle</title></analytic></biblStruct>
+<biblStruct><analytic><title level="a" type="main">Positional</title></analytic></biblStruct>
+</listBibl></div></back></text></TEI>"##;
+    let citations = TeiLifter::extract_citations(tei);
+    assert_eq!(citations.len(), 3);
+    assert_eq!(citations[0].anchors.len(), 1, "declared id takes the link");
+    assert_eq!(citations[0].anchors[0].ref_id, "b2");
+    assert_eq!(citations[0].anchors[0].quote, "[2]");
+    assert!(
+        citations[2].anchors.is_empty(),
+        "the positional key that lost the precedence is not also linked"
+    );
+    assert!(citations[1].anchors.is_empty());
+}
+
+/// GAR-013 (M509-yzblqx/S05/T01): two entries declaring the same `xml:id`
+/// make the target ambiguous. The ref is left unlinked — never attached to the
+/// entry lifted last — so the loss stays visible instead of becoming a guess.
+#[test]
+fn test_extract_citations_duplicate_declared_id_stays_unlinked() {
+    let tei = r##"<TEI><text><body><head n="1">Intro</head><p>See <ref type="bibr" target="#b0">[1]</ref></p></body><back><div type="references"><listBibl>
+<biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
+<biblStruct xml:id="b0"><analytic><title level="a" type="main">Duplicate</title></analytic></biblStruct>
+</listBibl></div></back></text></TEI>"##;
+    let citations = TeiLifter::extract_citations(tei);
+    assert_eq!(citations.len(), 2);
+    assert!(
+        citations[0].anchors.is_empty() && citations[1].anchors.is_empty(),
+        "an ambiguous target is never guessed onto one of the competing entries"
+    );
+}
+
 /// Flat TEI with a numbering restart (two `<head n="1">`, e.g. an
 /// appendix restarting section numbers): anchors from the second window
 /// must resolve to the same uniquified path the section pass produces

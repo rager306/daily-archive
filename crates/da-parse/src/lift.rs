@@ -961,11 +961,14 @@ impl TeiLifter {
         };
 
         let mut citations = Vec::new();
-        // GROBID assigns xml:id="bN" to back-matter biblStruct entries;
-        // in-text `<ref type="bibr" target="#bN">` anchors resolve through
-        // this map. biblStruct without xml:id falls back to its ordinal key
-        // ("b{index}") for synthetic/hand-written TEI.
-        let mut id_to_index: HashMap<String, usize> = HashMap::new();
+        // GAR-013 / S05-T01: occurrence → entry link keys are published by
+        // `da_ports::citation_link` and resolved through it, so a competing or
+        // partial match resolves by the stated precedence instead of by
+        // construction order (e.g. `id_to_index.insert` used to let the last
+        // duplicate `xml:id` win). Each lifted biblStruct publishes exactly one
+        // key: its declared `xml:id`, else its positional fallback `b{index}`
+        // for synthetic/hand-written TEI.
+        let mut entry_keys: Vec<da_ports::citation_link::CitationEntryLinkKeys> = Vec::new();
         let mut pos = 0;
         while let Some(bibl_start) = back[pos..].find("<biblStruct") {
             let abs = pos + bibl_start;
@@ -997,8 +1000,10 @@ impl TeiLifter {
             let raw_text = Self::strip_xml_tags(entry);
 
             let xml_id = Self::extract_bibl_xml_id(&back[abs..=tag_end]);
-            let key = xml_id.unwrap_or_else(|| format!("b{}", citations.len()));
-            id_to_index.insert(key, citations.len());
+            entry_keys.push(da_ports::citation_link::CitationEntryLinkKeys::new(
+                citations.len() as u32,
+                xml_id.as_deref(),
+            ));
 
             citations.push(CitationEntry {
                 raw_text,
@@ -1011,19 +1016,26 @@ impl TeiLifter {
         }
 
         // T03: attach in-text `<ref type="bibr">` anchors resolved against
-        // back-matter biblStruct xml:id targets. Refs without a target or with
-        // an unresolvable target are dropped here (the citation then stays
-        // anchor-less and ingest records typed missingness no_in_text_anchor).
+        // back-matter biblStruct entries. Refs without a target, with an
+        // unresolvable target, or matching more than one entry are dropped
+        // here (the citation then stays anchor-less and ingest records typed
+        // missingness no_in_text_anchor) — an unresolved or ambiguous anchor is
+        // never assigned to a guessed entry.
         for anchor in Self::extract_ref_anchors(tei) {
-            let Some(target) = anchor.target.as_deref() else {
-                continue;
-            };
-            let Some(&idx) = id_to_index.get(target) else {
+            let outcome = da_ports::citation_link::resolve_occurrence_to_entry(
+                anchor.target.as_deref(),
+                &entry_keys,
+            );
+            let Some(idx) = outcome.entry_index() else {
                 continue;
             };
             if let Some(entry) = citations.get_mut(idx) {
+                let ref_id = outcome
+                    .linked_key()
+                    .map(|key| key.match_text())
+                    .unwrap_or_default();
                 entry.anchors.push(da_ports::parser::CitationAnchor {
-                    ref_id: target.to_string(),
+                    ref_id,
                     section_path_id: anchor.section_path_id,
                     quote: anchor.quote,
                     offset: anchor.offset,

@@ -10,6 +10,7 @@ pub mod algorithms;
 pub mod assurance;
 pub mod cache_payload;
 pub mod catalog;
+pub mod citation_link;
 pub mod clock;
 pub mod doi_prefix;
 pub mod embedder;
@@ -56,6 +57,12 @@ pub use cache_payload::{
 pub use catalog::{
     CatalogInventoryError, CatalogInventoryPort, CatalogInventorySnapshot, CatalogMutationPort,
     CatalogPdfLocator, CatalogWriteDisposition,
+};
+pub use citation_link::{
+    AmbiguousLinkReason, CITATION_LINK_PRECEDENCE, CITATION_LINK_SCHEMA_VERSION,
+    CitationEntryLinkKeys, CitationLinkCounts, CitationLinkKey, CitationLinkKeyKind,
+    CitationLinkOutcome, UnlinkedCitationReason, normalize_link_key_text, positional_entry_key,
+    precedence_rank, resolve_anchor_to_entry, resolve_occurrence_to_entry, resolve_occurrences,
 };
 pub use clock::{Clock, FixedClock, SystemClock};
 pub use embedder::Embedder;
