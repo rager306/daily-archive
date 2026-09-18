@@ -197,7 +197,11 @@ fn v5_parsed() -> ParsedArticle {
     )
 }
 
-async fn materialize(ingest: &IngestUseCase, parsed: &ParsedArticle, revision: u32) {
+async fn materialize(
+    ingest: &IngestUseCase,
+    parsed: &ParsedArticle,
+    revision: u32,
+) -> da_application::ingest::IngestResult {
     ingest
         .materialize_parsed_with_context(
             parsed,
@@ -209,7 +213,7 @@ async fn materialize(ingest: &IngestUseCase, parsed: &ParsedArticle, revision: u
             Some(&revision_context(revision, &parsed.pdf_hash)),
         )
         .await
-        .expect("revision materialization must succeed");
+        .expect("revision materialization must succeed")
 }
 
 fn anchor_ids(anchors: &[CitationAnchor]) -> Vec<(String, Option<String>, String, Option<u32>)> {
@@ -621,4 +625,225 @@ async fn legacy_wire_bounds_decode_on_revision_edges() {
         Some(1),
         "OPEN invalid_at is an open bound — the SUPERSEDES predecessor edge stays active"
     );
+}
+
+// ---------------------------------------------------------------------------
+// GAR-013 / M509-yzblqx S05-T02: entry → work identity.
+// ---------------------------------------------------------------------------
+
+/// One bibliography entry with only the identifiers under test.
+fn cited(raw_text: &str, arxiv_id: Option<&str>, doi: Option<&str>) -> CitationEntry {
+    CitationEntry {
+        raw_text: raw_text.into(),
+        doi: doi.map(str::to_string),
+        arxiv_id: arxiv_id.map(str::to_string),
+        title: None,
+        anchors: vec![],
+    }
+}
+
+fn one_section() -> Vec<Section> {
+    vec![Section {
+        title: "Body".into(),
+        text: "body text".into(),
+        level: 1,
+        ..Default::default()
+    }]
+}
+
+/// Read back the persisted entry → work outcome from a revision-owned HAS_PART
+/// edge (GAR-013).
+async fn read_work_outcome(
+    inner: &MockGraphStore,
+    revision: u64,
+    raw_text: &str,
+) -> serde_json::Value {
+    let reference = inner
+        .find_node_by_string_property("Reference", "vid", &vid::reference_vid(raw_text))
+        .await
+        .expect("Reference node");
+    let (edge_id, _) = inner
+        .get_edges_between(revision, reference, "hasPart")
+        .await[0];
+    let text = inner
+        .get_edge_property_string(edge_id, "citation_work_outcome")
+        .await
+        .expect("unresolved work outcome must be persisted");
+    serde_json::from_str(&text).unwrap()
+}
+
+/// The published entry → work resolver never guesses: a canonical arXiv
+/// identity resolves, while absent, partial and ambiguous identifiers each map
+/// to their own named outcome.
+#[test]
+fn entry_to_work_resolver_never_guesses() {
+    use da_application::ingest::{
+        AmbiguousWorkReason, EntryWorkOutcome, KnownWorkIdentity, PartialWorkReason,
+        resolve_entry_to_work,
+    };
+
+    let shared_doi = "10.1/shared";
+    let known = vec![
+        KnownWorkIdentity {
+            work_node_id: 7,
+            arxiv_id: Some("2301.00001".into()),
+            doi: Some(shared_doi.into()),
+        },
+        KnownWorkIdentity {
+            work_node_id: 9,
+            arxiv_id: Some("2301.00002".into()),
+            doi: Some(shared_doi.into()),
+        },
+    ];
+
+    // A canonical arXiv identity is the work key and wins; the version suffix
+    // is part of the occurrence, not of the work identity.
+    assert_eq!(
+        resolve_entry_to_work(Some("arXiv:2301.00001v2"), Some("10.1/other"), &known),
+        EntryWorkOutcome::ResolvedArxiv {
+            arxiv_id: "2301.00001".into()
+        }
+    );
+
+    // A DOI claimed by two distinct works is ambiguous with every candidate.
+    assert_eq!(
+        resolve_entry_to_work(None, Some("https://doi.org/10.1/Shared"), &known),
+        EntryWorkOutcome::AmbiguousIdentifier {
+            reason: AmbiguousWorkReason::DoiMatchesMultipleWorks,
+            candidate_work_node_ids: vec![7, 9],
+        }
+    );
+
+    // A DOI-only entry stays partial even when exactly one work claims it: a
+    // DOI is never promoted into a guessed Citation link.
+    assert_eq!(
+        resolve_entry_to_work(None, Some(shared_doi), &known[..1]).partial_reason(),
+        Some(PartialWorkReason::DoiWithoutArxivWorkKey)
+    );
+
+    // A malformed arXiv identifier stays partial, not guessed.
+    assert_eq!(
+        resolve_entry_to_work(Some("not-an-arxiv-id"), None, &known).partial_reason(),
+        Some(PartialWorkReason::MalformedArxivId)
+    );
+
+    // No identifier at all, and a blank identifier, are both absence.
+    assert_eq!(
+        resolve_entry_to_work(None, None, &known),
+        EntryWorkOutcome::AbsentIdentifier
+    );
+    assert_eq!(
+        resolve_entry_to_work(Some("   "), Some("  "), &known),
+        EntryWorkOutcome::AbsentIdentifier
+    );
+}
+
+/// Through the real ingest boundary, an entry that cannot be resolved to a
+/// single work stays unresolved, is persisted with its named reason, and is
+/// countable — no Citation node or CITES edge is invented for it.
+#[tokio::test]
+async fn unresolved_entry_to_work_links_stay_countable() {
+    const SHARED_DOI: &str = "10.5555/shared";
+
+    let inner = MockGraphStore::new();
+    let instrumented = InstrumentedGraphStore::new(Arc::new(inner.clone()));
+    let ingest = IngestUseCase::materializer_only_with_clock(
+        Arc::new(instrumented.clone()),
+        Arc::new(FixedClock::from_timestamp(1_700_000_000)),
+    );
+
+    // Revision 1: two distinct works share one DOI. Both resolve because each
+    // carries a canonical arXiv identity, so two works now claim SHARED_DOI.
+    let r1 = parsed_article(
+        sha(11),
+        one_section(),
+        vec![
+            cited("Work A", Some("2301.00011"), Some(SHARED_DOI)),
+            cited("Work B", Some("2301.00012"), Some(SHARED_DOI)),
+        ],
+    );
+    let r1_result = materialize(&ingest, &r1, 1).await;
+    assert_eq!(r1_result.work_identity_counts.resolved, 2);
+    assert_eq!(r1_result.work_identity_counts.unresolved(), 0);
+    assert_eq!(inner.get_nodes_by_label("Citation").await.len(), 2);
+
+    // Revision 6: three entries that cannot resolve a single work identity.
+    let r6 = parsed_article(
+        sha(66),
+        one_section(),
+        vec![
+            // Two works claim this DOI → ambiguous, not resolved to one.
+            cited("Ambiguous DOI", None, Some(SHARED_DOI)),
+            // Identifier present but not canonicalizable → partial.
+            cited("Malformed arxiv", Some("not-an-arxiv-id"), None),
+            // Nothing to resolve at all → absent.
+            cited("No identifiers", None, None),
+        ],
+    );
+    let r6_result = materialize(&ingest, &r6, 6).await;
+
+    assert_eq!(r6_result.cites_resolved, 0, "no guessed work link");
+    assert_eq!(r6_result.work_identity_counts.resolved, 0);
+    assert_eq!(r6_result.work_identity_counts.ambiguous, 1);
+    assert_eq!(r6_result.work_identity_counts.partial, 1);
+    assert_eq!(r6_result.work_identity_counts.absent, 1);
+    assert_eq!(r6_result.work_identity_counts.total(), 3);
+    assert_eq!(r6_result.work_identity_counts.unresolved(), 3);
+    assert_eq!(
+        inner.get_nodes_by_label("Citation").await.len(),
+        2,
+        "unresolved entries must not invent a Citation node"
+    );
+
+    // The outcome reaches the wire: each unresolved entry persists its named
+    // reason on its revision-owned HAS_PART edge.
+    let rev6 = inner
+        .find_node_by_string_property(
+            "PaperRevision",
+            "vid",
+            &paper_revision_vid("arxiv", PAPER_ID, 6).unwrap(),
+        )
+        .await
+        .expect("v6 revision node");
+    let ambiguous = read_work_outcome(&inner, rev6, "Ambiguous DOI").await;
+    assert_eq!(ambiguous["outcome"], "ambiguous_identifier");
+    assert_eq!(ambiguous["reason"], "doi_matches_multiple_works");
+    assert_eq!(
+        ambiguous["candidate_work_node_ids"]
+            .as_array()
+            .unwrap()
+            .len(),
+        2,
+        "every competing work is reported, never a single guess"
+    );
+
+    let partial = read_work_outcome(&inner, rev6, "Malformed arxiv").await;
+    assert_eq!(partial["outcome"], "partial_identifier");
+    assert_eq!(partial["reason"], "malformed_arxiv_id");
+
+    let absent = read_work_outcome(&inner, rev6, "No identifiers").await;
+    assert_eq!(absent["outcome"], "absent_identifier");
+
+    // Resolved entries carry the resolved outcome on their CITES edge, so the
+    // same machine-readable surface distinguishes resolved from unresolved.
+    let rev1 = inner
+        .find_node_by_string_property(
+            "PaperRevision",
+            "vid",
+            &paper_revision_vid("arxiv", PAPER_ID, 1).unwrap(),
+        )
+        .await
+        .expect("v1 revision node");
+    let cited_a = inner
+        .find_node_by_string_property("Citation", "arxiv_id", "2301.00011")
+        .await
+        .expect("Citation 2301.00011");
+    let (cites_edge, _) = inner.get_edges_between(rev1, cited_a, "CITES").await[0];
+    let resolved_text = inner
+        .get_edge_property_string(cites_edge, "citation_work_outcome")
+        .await
+        .expect("resolved work outcome must be persisted");
+    let resolved: serde_json::Value = serde_json::from_str(&resolved_text).unwrap();
+    assert_eq!(resolved["outcome"], "resolved_arxiv");
+    assert_eq!(resolved["arxiv_id"], "2301.00011");
 }

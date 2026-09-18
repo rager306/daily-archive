@@ -41,7 +41,10 @@ pub use catalog_reconcile::CatalogReconcileUseCase;
 pub use extraction_materialization_stage::{
     ExtractionMaterializationReport, ExtractionMaterializationStage,
 };
-pub use ingest::{IngestUseCase, embedding_fingerprint};
+pub use ingest::{
+    AmbiguousWorkReason, EntryWorkCounts, EntryWorkOutcome, IngestUseCase, KnownWorkIdentity,
+    PartialWorkReason, embedding_fingerprint, resolve_entry_to_work,
+};
 pub use pipeline::{
     ArticleJourneyComposition, MultimodalComposition, MultimodalFingerprintSummary,
     PipelineOrchestrator, PipelineOrchestratorError, PipelineRunReport, StageDisposition,
@@ -266,6 +269,7 @@ mod serde_roundtrip_tests {
             pdf_classification: None,
             pdf_triage: da_domain::PdfTriageStatus::NotConfigured,
             page_text_missingness: None,
+            work_identity_counts: crate::ingest::EntryWorkCounts::default(),
         });
         // M350: with classification attached
         roundtrip_json(&IngestResult {
@@ -291,6 +295,7 @@ mod serde_roundtrip_tests {
             }),
             pdf_triage: da_domain::PdfTriageStatus::Classified,
             page_text_missingness: None,
+            work_identity_counts: crate::ingest::EntryWorkCounts::default(),
         });
     }
 

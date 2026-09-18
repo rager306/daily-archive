@@ -68,6 +68,7 @@ fn ingest() -> da_application::ingest::IngestResult {
         pdf_classification: None,
         pdf_triage: da_domain::PdfTriageStatus::NotConfigured,
         page_text_missingness: None,
+        work_identity_counts: da_application::ingest::EntryWorkCounts::default(),
     }
 }
 

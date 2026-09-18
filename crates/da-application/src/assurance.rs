@@ -373,6 +373,7 @@ mod tests {
             pdf_classification: None::<PdfClassification>,
             pdf_triage: da_domain::PdfTriageStatus::NotConfigured,
             page_text_missingness: None,
+            work_identity_counts: crate::ingest::EntryWorkCounts::default(),
         }
     }
 

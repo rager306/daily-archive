@@ -65,6 +65,266 @@ pub struct IngestResult {
     /// `None` = not classified. `Some(empty)` = classified, no OCR pages.
     #[serde(default)]
     pub page_text_missingness: Option<Vec<PageTextMissing>>,
+    /// Entry → work identity outcomes (M509-yzblqx/S05, GAR-013). Every
+    /// bibliography entry is classified; absent/partial/ambiguous entries stay
+    /// countable here instead of vanishing into an unlinked Reference.
+    #[serde(default)]
+    pub work_identity_counts: EntryWorkCounts,
+}
+
+/// Version of the published entry → work identity contract (GAR-013).
+pub const ENTRY_WORK_SCHEMA_VERSION: u16 = 1;
+
+/// One work identity already present in the graph, projected onto the
+/// identifiers a bibliography entry may carry.
+///
+/// The graph's work key is the canonical arXiv identity (`Citation` nodes are
+/// globally deduped by `arxiv_id` — MEM471); a DOI is a secondary identifier,
+/// retained here for conflict detection only.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct KnownWorkIdentity {
+    /// Node id of the known work (`Citation` node).
+    pub work_node_id: u64,
+    /// Canonical arXiv identity of the work, when it has one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arxiv_id: Option<String>,
+    /// Normalized DOI of the work, when it has one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub doi: Option<String>,
+}
+
+/// Why an entry's identifiers are partial: something is present, but the
+/// identity does not establish a work link.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PartialWorkReason {
+    /// Only a DOI is present. A DOI is a valid external identifier but is not
+    /// the graph's work key, so it is recorded as partial and is never
+    /// promoted into a guessed `Citation` link.
+    DoiWithoutArxivWorkKey,
+    /// An arXiv identifier is present but not canonicalizable.
+    MalformedArxivId,
+}
+
+/// Why an entry's identifier matches more than one known work.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AmbiguousWorkReason {
+    /// The entry's DOI is already claimed by more than one known work.
+    /// Every candidate is reported; none is chosen.
+    DoiMatchesMultipleWorks,
+}
+
+/// Published outcome of resolving one bibliography entry to an external work.
+///
+/// Only [`EntryWorkOutcome::ResolvedArxiv`] permits a `Citation` link; every
+/// other variant stays unresolved and is carried to the consumer with a named
+/// reason instead of being replaced by a guessed identity.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "snake_case")]
+pub enum EntryWorkOutcome {
+    /// The entry carries a canonical arXiv identity: the work link resolves.
+    ResolvedArxiv {
+        /// Canonical arXiv identity (version suffix removed).
+        arxiv_id: String,
+    },
+    /// Neither an arXiv identity nor a DOI is present: nothing to resolve.
+    AbsentIdentifier,
+    /// An identifier exists but is not sufficient for a work link.
+    PartialIdentifier {
+        /// Why the identity is partial.
+        reason: PartialWorkReason,
+        /// Raw declared arXiv identifier, when one was present.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        arxiv_id: Option<String>,
+        /// Normalized DOI, when one was present.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        doi: Option<String>,
+    },
+    /// The entry's identifiers match more than one known work.
+    AmbiguousIdentifier {
+        /// Why the match was ambiguous.
+        reason: AmbiguousWorkReason,
+        /// Every competing work node id, ascending. Never a single guess.
+        candidate_work_node_ids: Vec<u64>,
+    },
+}
+
+impl EntryWorkOutcome {
+    /// Stable machine-readable discriminator, matching the serialized `outcome`
+    /// tag.
+    pub fn kind(&self) -> &'static str {
+        match self {
+            Self::ResolvedArxiv { .. } => "resolved_arxiv",
+            Self::AbsentIdentifier => "absent_identifier",
+            Self::PartialIdentifier { .. } => "partial_identifier",
+            Self::AmbiguousIdentifier { .. } => "ambiguous_identifier",
+        }
+    }
+
+    /// True only when the entry resolved to an arXiv work identity.
+    pub fn is_resolved(&self) -> bool {
+        matches!(self, Self::ResolvedArxiv { .. })
+    }
+
+    /// The resolved canonical arXiv id, when the outcome resolved.
+    pub fn arxiv_id(&self) -> Option<&str> {
+        match self {
+            Self::ResolvedArxiv { arxiv_id } => Some(arxiv_id.as_str()),
+            _ => None,
+        }
+    }
+
+    /// True when the entry stayed unresolved for a named reason.
+    pub fn is_unresolved(&self) -> bool {
+        !self.is_resolved()
+    }
+
+    /// The partial reason, when the outcome is partial.
+    pub fn partial_reason(&self) -> Option<PartialWorkReason> {
+        match self {
+            Self::PartialIdentifier { reason, .. } => Some(*reason),
+            _ => None,
+        }
+    }
+
+    /// The ambiguous reason, when the outcome is ambiguous.
+    pub fn ambiguous_reason(&self) -> Option<AmbiguousWorkReason> {
+        match self {
+            Self::AmbiguousIdentifier { reason, .. } => Some(*reason),
+            _ => None,
+        }
+    }
+
+    /// Competing work node ids, when the outcome is ambiguous.
+    pub fn candidate_work_node_ids(&self) -> &[u64] {
+        match self {
+            Self::AmbiguousIdentifier {
+                candidate_work_node_ids,
+                ..
+            } => candidate_work_node_ids,
+            _ => &[],
+        }
+    }
+}
+
+/// Countable summary of every entry → work outcome of one materialization.
+///
+/// `unresolved()` = `absent + partial + ambiguous`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EntryWorkCounts {
+    /// Entries that resolved to an arXiv work identity.
+    pub resolved: usize,
+    /// Entries with no identifier at all.
+    pub absent: usize,
+    /// Entries with an identifier that cannot establish a work link.
+    pub partial: usize,
+    /// Entries whose identifier matches more than one known work.
+    pub ambiguous: usize,
+}
+
+impl EntryWorkCounts {
+    /// Count a batch of outcomes.
+    pub fn from_outcomes(outcomes: &[EntryWorkOutcome]) -> Self {
+        let mut counts = Self::default();
+        for outcome in outcomes {
+            match outcome {
+                EntryWorkOutcome::ResolvedArxiv { .. } => counts.resolved += 1,
+                EntryWorkOutcome::AbsentIdentifier => counts.absent += 1,
+                EntryWorkOutcome::PartialIdentifier { .. } => counts.partial += 1,
+                EntryWorkOutcome::AmbiguousIdentifier { .. } => counts.ambiguous += 1,
+            }
+        }
+        counts
+    }
+
+    /// Number of outcomes counted.
+    pub fn total(&self) -> usize {
+        self.resolved + self.absent + self.partial + self.ambiguous
+    }
+
+    /// Entries that produced no work link (absent + partial + ambiguous).
+    pub fn unresolved(&self) -> usize {
+        self.absent + self.partial + self.ambiguous
+    }
+}
+
+/// Normalize a DOI for identity comparison: trim, lowercase, strip one
+/// `doi:`/`https://doi.org/`/`http://doi.org/` prefix. Blank → `None`.
+fn normalize_doi_key(raw: Option<&str>) -> Option<String> {
+    let raw = raw?.trim().to_ascii_lowercase();
+    let stripped = raw
+        .trim_start_matches("https://doi.org/")
+        .trim_start_matches("http://doi.org/")
+        .trim_start_matches("doi:")
+        .trim();
+    if stripped.is_empty() {
+        None
+    } else {
+        Some(stripped.to_string())
+    }
+}
+
+/// Canonical arXiv identity of a raw identifier, or `None` when absent or not
+/// canonicalizable. Exact canonicalization only — no prefix or fuzzy match.
+fn canonical_arxiv_key(raw: Option<&str>) -> Option<String> {
+    let raw = raw?.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    da_domain::load::try_parse_arxiv_locator(raw).map(|(canonical, _)| canonical)
+}
+
+/// Resolve one bibliography entry to a work identity (M509-yzblqx/S05,
+/// GAR-013).
+///
+/// Pure and deterministic: the outcome depends only on the entry's identifiers
+/// and the known works, never on construction or iteration order. Published
+/// precedence: a canonical arXiv identity is the work key and resolves; a DOI
+/// is never promoted into a work link. A DOI claimed by more than one known
+/// work is ambiguous and reports every candidate — it is never collapsed into
+/// one guessed identity.
+pub fn resolve_entry_to_work(
+    arxiv_id: Option<&str>,
+    doi: Option<&str>,
+    known_works: &[KnownWorkIdentity],
+) -> EntryWorkOutcome {
+    let arxiv_was_present = arxiv_id.map(|raw| !raw.trim().is_empty()).unwrap_or(false);
+    let doi_key = normalize_doi_key(doi);
+
+    if let Some(canonical) = canonical_arxiv_key(arxiv_id) {
+        return EntryWorkOutcome::ResolvedArxiv {
+            arxiv_id: canonical,
+        };
+    }
+    if arxiv_was_present {
+        return EntryWorkOutcome::PartialIdentifier {
+            reason: PartialWorkReason::MalformedArxivId,
+            arxiv_id: arxiv_id.map(|raw| raw.trim().to_string()),
+            doi: doi_key,
+        };
+    }
+    if let Some(doi_key) = doi_key {
+        let mut candidates: Vec<u64> = known_works
+            .iter()
+            .filter(|work| work.doi.as_deref() == Some(doi_key.as_str()))
+            .map(|work| work.work_node_id)
+            .collect();
+        candidates.sort_unstable();
+        candidates.dedup();
+        if candidates.len() > 1 {
+            return EntryWorkOutcome::AmbiguousIdentifier {
+                reason: AmbiguousWorkReason::DoiMatchesMultipleWorks,
+                candidate_work_node_ids: candidates,
+            };
+        }
+        return EntryWorkOutcome::PartialIdentifier {
+            reason: PartialWorkReason::DoiWithoutArxivWorkKey,
+            arxiv_id: None,
+            doi: Some(doi_key),
+        };
+    }
+    EntryWorkOutcome::AbsentIdentifier
 }
 
 impl IngestUseCase {
@@ -910,15 +1170,69 @@ impl IngestUseCase {
             .filter(|c| !c.anchors.is_empty())
             .count();
         let now_rfc3339 = self.clock.now().to_rfc3339();
+
+        // M509-yzblqx/S05 (GAR-013): entry → work identity outcomes. A DOI
+        // conflict can only be seen against the works already in the graph, so
+        // the known-work index is built from the existing `Citation` nodes —
+        // and only when some entry could need it (a DOI-bearing or
+        // malformed-arXiv entry), so a pure-arXiv bibliography pays nothing.
+        // Citation nodes created below join the index, so later entries in the
+        // same bibliography see them too.
+        let needs_work_index = parsed.citations.iter().any(|c| {
+            normalize_doi_key(c.doi.as_deref()).is_some()
+                || (canonical_arxiv_key(c.arxiv_id.as_deref()).is_none()
+                    && c.arxiv_id
+                        .as_deref()
+                        .map(|raw| !raw.trim().is_empty())
+                        .unwrap_or(false))
+        });
+        let mut known_works: Vec<KnownWorkIdentity> = Vec::new();
+        if needs_work_index {
+            for work_node in self.graph_store.get_nodes_by_label("Citation").await {
+                let stored_arxiv = self
+                    .graph_store
+                    .get_node_property_string(work_node, "arxiv_id")
+                    .await;
+                let stored_doi = self
+                    .graph_store
+                    .get_node_property_string(work_node, "doi")
+                    .await;
+                known_works.push(KnownWorkIdentity {
+                    work_node_id: work_node,
+                    arxiv_id: canonical_arxiv_key(stored_arxiv.as_deref()),
+                    doi: normalize_doi_key(stored_doi.as_deref()),
+                });
+            }
+        }
+        let mut work_outcomes: Vec<EntryWorkOutcome> = Vec::with_capacity(parsed.citations.len());
+
         for citation in &parsed.citations {
+            // GAR-013: classify the entry → work identity first. Only a
+            // resolved outcome may produce a CITES edge; absent/partial/
+            // ambiguous entries stay unresolved and are never guessed.
+            let work_outcome = resolve_entry_to_work(
+                citation.arxiv_id.as_deref(),
+                citation.doi.as_deref(),
+                &known_works,
+            );
+            work_outcomes.push(work_outcome.clone());
+            if let EntryWorkOutcome::PartialIdentifier {
+                reason: PartialWorkReason::MalformedArxivId,
+                arxiv_id: Some(raw),
+                ..
+            } = &work_outcome
+            {
+                tracing::warn!(
+                    event = "citation_arxiv_id_rejected",
+                    paper_id,
+                    arxiv_id = raw.as_str(),
+                    "Citation remains Reference-only because arXiv identity is invalid"
+                );
+            }
             // T03: does this citation produce a CITES edge (resolvable arXiv
             // identity)? Anchors live on the CITES edge when it exists and on
             // the HAS_PART edge only for Reference-only citations (D249).
-            let resolves_to_citation = citation
-                .arxiv_id
-                .as_deref()
-                .map(|id| vid::citation_arxiv_vid(id).is_ok())
-                .unwrap_or(false);
+            let resolves_to_citation = work_outcome.is_resolved();
             // Create Reference node for ALL citations (full bibliography).
             // Reference stores raw_text + metadata, even for unresolved citations.
             // Citation node is created separately for resolvable arxiv_ids.
@@ -1024,6 +1338,9 @@ impl IngestUseCase {
                     // the revision-owned HAS_PART edge. Resolvable citations use
                     // the CITES edge instead — never both, never Paper-sourced
                     // edges, never the global Reference/Citation node.
+                    // GAR-013: the named entry → work outcome is persisted on
+                    // the same revision-owned edge, so an unresolved work link
+                    // stays observable and countable instead of vanishing.
                     if !resolves_to_citation {
                         write_citation_anchors_on_edge(
                             self.graph_store.as_ref(),
@@ -1031,6 +1348,8 @@ impl IngestUseCase {
                             citation,
                         )
                         .await?;
+                        write_entry_work_outcome(self.graph_store.as_ref(), edge_id, &work_outcome)
+                            .await?;
                         revision_anchor_edges_written += 1;
                     }
                     revision_reference_edges_written += 1;
@@ -1046,13 +1365,21 @@ impl IngestUseCase {
                 }
             }
 
-            if let Some(ref arxiv_id) = citation.arxiv_id {
+            let resolved_arxiv_id = if resolves_to_citation {
+                citation.arxiv_id.as_deref()
+            } else {
+                None
+            };
+            if let Some(arxiv_id) = resolved_arxiv_id {
                 let Ok(cited_vid) = vid::citation_arxiv_vid(arxiv_id) else {
-                    tracing::warn!(
-                        event = "citation_arxiv_id_rejected",
+                    // resolve_entry_to_work only ever resolves canonicalizable
+                    // identities, so reaching here is a contract violation:
+                    // leave the entry unresolved and stay visible.
+                    tracing::error!(
+                        event = "citation_work_contract_violation",
                         paper_id,
                         arxiv_id,
-                        "Citation remains Reference-only because arXiv identity is invalid"
+                        "Resolved entry-to-work outcome carried a non-canonical arXiv id"
                     );
                     continue;
                 };
@@ -1070,7 +1397,7 @@ impl IngestUseCase {
                             .set_node_property_string(new_node, "vid", cited_vid)
                             .await?;
                         self.graph_store
-                            .set_node_property_string(new_node, "arxiv_id", arxiv_id.clone())
+                            .set_node_property_string(new_node, "arxiv_id", arxiv_id.to_string())
                             .await?;
                         if let Some(ref title) = citation.title {
                             self.graph_store
@@ -1094,6 +1421,13 @@ impl IngestUseCase {
                         self.graph_store
                             .set_node_property_bool(new_node, "import_eligible", eligible) // D127
                             .await?;
+                        // GAR-013: this new work is now known, so later entries
+                        // in the same bibliography resolve against it too.
+                        known_works.push(KnownWorkIdentity {
+                            work_node_id: new_node,
+                            arxiv_id: canonical_arxiv_key(Some(arxiv_id)),
+                            doi: normalize_doi_key(citation.doi.as_deref()),
+                        });
                         new_node
                     }
                 };
@@ -1138,7 +1472,11 @@ impl IngestUseCase {
                     // T03 (D247/D249): resolvable citations carry their in-text
                     // anchors on the PaperRevision CITES edge (never on the
                     // globally deduped Citation node or the Paper-sourced edge).
+                    // GAR-013: the resolved entry → work outcome is persisted on
+                    // the same revision-owned edge.
                     write_citation_anchors_on_edge(self.graph_store.as_ref(), edge_id, citation)
+                        .await?;
+                    write_entry_work_outcome(self.graph_store.as_ref(), edge_id, &work_outcome)
                         .await?;
                     revision_anchor_edges_written += 1;
                     revision_cites_edges_written += 1;
@@ -1151,6 +1489,8 @@ impl IngestUseCase {
                 }
             }
         }
+
+        let work_identity_counts = EntryWorkCounts::from_outcomes(&work_outcomes);
 
         tracing::info!(
             event = "parsed_article_materialized",
@@ -1166,6 +1506,10 @@ impl IngestUseCase {
             revision_cites_edges_written,
             citations_with_anchors,
             revision_anchor_edges_written,
+            work_resolved = work_identity_counts.resolved,
+            work_absent = work_identity_counts.absent,
+            work_partial = work_identity_counts.partial,
+            work_ambiguous = work_identity_counts.ambiguous,
             import_eligible = eligible,
             "Parsed article materialized through direct graph API"
         );
@@ -1186,6 +1530,7 @@ impl IngestUseCase {
             pdf_classification,
             pdf_triage,
             page_text_missingness: parsed.page_text_missingness.clone(),
+            work_identity_counts,
         })
     }
 
@@ -1367,6 +1712,28 @@ async fn write_citation_anchors_on_edge(
     let missingness = citation_anchor_missingness(&citation.anchors);
     store
         .set_edge_property_string(edge_id, "citation_anchor_missingness", &missingness)
+        .await?;
+    Ok(())
+}
+
+/// Persist the published entry → work outcome on a revision-owned edge
+/// (GAR-013).
+///
+/// The outcome is stored as its tagged JSON object so a reader can count
+/// unresolved work links by reason (`absent_identifier`, `partial_identifier`,
+/// `ambiguous_identifier`) instead of trusting a missing CITES edge to mean
+/// "no identity". Callers invoke this only for PaperRevision-sourced
+/// HAS_PART/CITES edges — never for Paper-sourced edges and never for the
+/// globally deduped Citation/Reference nodes (MEM796/MEM798).
+async fn write_entry_work_outcome(
+    store: &dyn da_ports::graph_store::DirectGraphStore,
+    edge_id: u64,
+    outcome: &EntryWorkOutcome,
+) -> anyhow::Result<()> {
+    let outcome_json =
+        serde_json::to_string(outcome).context("serialize entry → work outcome to JSON")?;
+    store
+        .set_edge_property_string(edge_id, "citation_work_outcome", &outcome_json)
         .await?;
     Ok(())
 }
