@@ -28,6 +28,10 @@ from governor.adapters import (
     YAMLRuleRepository,
 )
 from governor.application import AuditService
+from governor.adapters.checks.conservation_verdict_provenance import (
+    conservation_provenance_violations,
+    missing_provenance_vocabulary,
+)
 from governor.application.trajectory_service import (
     TrajectoryService,
     _boundary_positional_violations,
@@ -4761,6 +4765,336 @@ def _copy_data_integrity_contract(root: Path) -> None:
     import shutil
     shutil.copy2(repo / rel, root / rel)
 
+# GAR-005 (M509-yzblqx S01/T02): conservation verdict provenance. The P9
+# observation is a pure in-memory document, so the rule is exercised over the
+# committed DATA contract, its two fixtures and the two Rust surfaces that
+# declare the namespaces it mirrors. Every mutation happens on a scratch copy:
+# no committed file is touched. Two tests bypass the Governor wiring with direct
+# oracle calls so the rule cannot go green by accident, and one test mutates the
+# clean fixture into the pre-fix shape to prove the failing case the plan
+# demands — a historic verdict presented as current — is actually caught.
+
+_CONSERVATION_PROVENANCE_PREFIX = "conservation_verdict_provenance"
+_CONSERVATION_PROVENANCE_CONTRACT = (
+    "scripts/governor/checks/conservation_verdict_provenance.yaml"
+)
+_CONSERVATION_PROVENANCE_POSITIVE = (
+    "governor/fixtures/conservation_verdict_provenance/report_clean.positive.json"
+)
+_CONSERVATION_PROVENANCE_NEGATIVE = (
+    "governor/fixtures/conservation_verdict_provenance/report_broken.negative.json"
+)
+_CONSERVATION_PROVENANCE_RUST_SURFACE = "crates/da-cli/src/source_cli.rs"
+_CONSERVATION_PROVENANCE_RUST_CONTRACT = (
+    "crates/da-cli/tests/conservation_provenance.rs"
+)
+
+
+def _copy_conservation_provenance_contract(root: Path) -> None:
+    """Copy the provenance contract and every path the rule actually reads.
+
+    The rule reads the DATA contract, both fixtures and the two Rust surfaces
+    named by `source_markers`; without the Rust files the check would report
+    `..._source_marker_missing` instead of exercising the fixture logic.
+    """
+    repo = _scripts_dir.parent
+    for rel in [
+        _CONSERVATION_PROVENANCE_CONTRACT,
+        _CONSERVATION_PROVENANCE_POSITIVE,
+        _CONSERVATION_PROVENANCE_NEGATIVE,
+        _CONSERVATION_PROVENANCE_RUST_SURFACE,
+        _CONSERVATION_PROVENANCE_RUST_CONTRACT,
+    ]:
+        _write(root / rel, (repo / rel).read_text(encoding="utf-8"))
+
+
+def _conservation_provenance_service() -> TrajectoryService:
+    """Scratch TrajectoryService with the committed provenance contract copied in."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_conservation_provenance_contract(service.root)
+    return service
+
+
+def _conservation_provenance_flags_named(flags, name: str):
+    return [f for f in flags if f.flag == f"{_CONSERVATION_PROVENANCE_PREFIX}_{name}"]
+
+
+def _conservation_provenance_contract_document(service: TrajectoryService) -> dict:
+    return yaml.safe_load(
+        (service.root / _CONSERVATION_PROVENANCE_CONTRACT).read_text(encoding="utf-8")
+    )
+
+
+def _write_conservation_provenance_contract(
+    service: TrajectoryService, contract: dict
+) -> None:
+    _write(
+        service.root / _CONSERVATION_PROVENANCE_CONTRACT,
+        yaml.safe_dump(contract, sort_keys=False),
+    )
+
+
+def test_conservation_provenance_pass_on_clean_fixtures():
+    """The committed contract, fixtures and Rust markers satisfy the rule."""
+    service = _conservation_provenance_service()
+    assert service._check_conservation_verdict_provenance() == []
+
+
+def test_conservation_provenance_missing_contract_is_silent():
+    """No contract DATA means no rule to evaluate, not a failing rule."""
+    service = _conservation_provenance_service()
+    (service.root / _CONSERVATION_PROVENANCE_CONTRACT).unlink()
+    assert service._check_conservation_verdict_provenance() == []
+
+
+def test_conservation_provenance_missing_fixture_is_flagged():
+    for rel, which in [
+        (_CONSERVATION_PROVENANCE_POSITIVE, "positive"),
+        (_CONSERVATION_PROVENANCE_NEGATIVE, "negative"),
+    ]:
+        service = _conservation_provenance_service()
+        (service.root / rel).unlink()
+        flags = service._check_conservation_verdict_provenance()
+        missing = _conservation_provenance_flags_named(flags, "fixture_missing")
+        assert len(missing) == 1
+        assert which in missing[0].evidence
+        assert missing[0].severity == "high"
+        assert missing[0].dimension == "scholarly_parse_plane"
+
+
+def test_conservation_provenance_positive_fixture_must_be_clean():
+    """The failing case the plan names: a historic verdict presented as current."""
+    service = _conservation_provenance_service()
+    path = service.root / _CONSERVATION_PROVENANCE_POSITIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    row = records[0]["cascade_observe"]["P9"]
+    # Promote the relocated historic claim into the current-run namespace while
+    # the honesty flags keep denying the computation.
+    row["current_run"]["verdict"] = "conserved"
+    row["current_run"]["evaluation_state"] = "measured"
+    _write(path, json.dumps(records))
+    flags = service._check_conservation_verdict_provenance()
+    broken = _conservation_provenance_flags_named(flags, "broken")
+    assert len(broken) == 1
+    assert "historic_verdict_presented_as_current" in broken[0].evidence
+    assert "honesty_flags_disagree" in broken[0].evidence
+
+
+def test_conservation_provenance_negative_fixture_must_trigger_labelled_violations():
+    service = _conservation_provenance_service()
+    path = service.root / _CONSERVATION_PROVENANCE_NEGATIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    # Declare the namespace the record was missing so its label can no longer
+    # fire: the mismatch must be reported rather than silently accepted.
+    for record in records:
+        if record.get("violation") == "namespace_not_declared":
+            row = record["record"]["cascade_observe"]["P9"]["current_run"]
+            row["verdict_namespace"] = "current_run"
+    _write(path, json.dumps(records))
+    flags = service._check_conservation_verdict_provenance()
+    broken = _conservation_provenance_flags_named(flags, "broken")
+    assert any("namespace_not_declared" in f.evidence for f in broken)
+
+
+def test_conservation_provenance_negative_fixture_must_cover_required_violations():
+    service = _conservation_provenance_service()
+    path = service.root / _CONSERVATION_PROVENANCE_NEGATIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    # `provenance_absent` is produced by exactly one record: removing it leaves
+    # a detectable hole in the required coverage.
+    records = [r for r in records if r.get("violation") != "provenance_absent"]
+    _write(path, json.dumps(records))
+    flags = service._check_conservation_verdict_provenance()
+    broken = _conservation_provenance_flags_named(flags, "broken")
+    assert any(
+        "missing required violation coverage" in f.evidence
+        and "provenance_absent" in f.evidence
+        for f in broken
+    )
+
+
+def test_conservation_provenance_missing_vocabulary_is_flagged():
+    """An empty measured vocabulary would make every record clean: fail closed."""
+    service = _conservation_provenance_service()
+    contract = _conservation_provenance_contract_document(service)
+    contract["provenance"]["measured_verdicts"] = []
+    assert missing_provenance_vocabulary(contract) == ["measured_verdicts"]
+    _write_conservation_provenance_contract(service, contract)
+    flags = service._check_conservation_verdict_provenance()
+    missing = _conservation_provenance_flags_named(flags, "vocabulary_missing")
+    assert len(missing) == 1
+    assert "measured_verdicts" in missing[0].evidence
+    assert missing[0].severity == "high"
+
+
+def test_conservation_provenance_source_marker_missing_is_flagged():
+    service = _conservation_provenance_service()
+    _write(service.root / _CONSERVATION_PROVENANCE_RUST_SURFACE, "fn main() {}\n")
+    flags = service._check_conservation_verdict_provenance()
+    marker = _conservation_provenance_flags_named(flags, "source_marker_missing")
+    assert len(marker) == 1
+    assert "rust_surface" in marker[0].evidence
+
+    service = _conservation_provenance_service()
+    _write(service.root / _CONSERVATION_PROVENANCE_RUST_CONTRACT, "fn main() {}\n")
+    flags = service._check_conservation_verdict_provenance()
+    marker = _conservation_provenance_flags_named(flags, "source_marker_missing")
+    assert len(marker) == 1
+    assert "rust_contract" in marker[0].evidence
+
+
+def test_conservation_provenance_invalid_yaml_is_flagged():
+    service = _conservation_provenance_service()
+    _write(service.root / _CONSERVATION_PROVENANCE_CONTRACT, "{bad yaml: [")
+    flags = service._check_conservation_verdict_provenance()
+    assert flags[0].flag == f"{_CONSERVATION_PROVENANCE_PREFIX}_invalid"
+
+
+def test_conservation_provenance_absent_snapshot_suite_is_not_flagged():
+    """The rule has no durable snapshot task suite; the opt-out must be explicit."""
+    service = _conservation_provenance_service()
+    contract = _conservation_provenance_contract_document(service)
+    assert "graph_task_suite" not in contract
+    opted_out = _candidate_contract_flags(
+        contract, service.root, "scholarly_parse_plane",
+        _CONSERVATION_PROVENANCE_PREFIX, conservation_provenance_violations,
+        graph_task_suite_required=False,
+    )
+    assert not [
+        f for f in opted_out
+        if f.flag == f"{_CONSERVATION_PROVENANCE_PREFIX}_suite_missing"
+    ], opted_out
+    default = _candidate_contract_flags(
+        contract, service.root, "scholarly_parse_plane",
+        _CONSERVATION_PROVENANCE_PREFIX, conservation_provenance_violations,
+    )
+    assert any(
+        f.flag == f"{_CONSERVATION_PROVENANCE_PREFIX}_suite_missing" for f in default
+    )
+
+
+def test_conservation_provenance_oracle_rejects_historic_verdict_as_current():
+    """Falsifiable without the Governor harness (ADR-051)."""
+    contract = _conservation_provenance_contract_document(
+        _conservation_provenance_service()
+    )
+    # The pre-fix GAR-005 shape: a bare top-level verdict with no namespace.
+    pre_fix = {"cascade_observe": {"P9": {
+        "engine_called": False,
+        "computed_this_run": False,
+        "tracked_verdict": "conserved",
+    }}}
+    assert "historic_verdict_presented_as_current" in (
+        conservation_provenance_violations(pre_fix, contract)
+    )
+    # A run that declares its own measurement is accepted.
+    measured = {"cascade_observe": {"P9": {
+        "engine_called": True,
+        "computed_this_run": True,
+        "current_run": {
+            "verdict_namespace": "current_run",
+            "verdict": "conserved",
+            "evaluation_state": "measured",
+        },
+    }}}
+    assert conservation_provenance_violations(measured, contract) == set()
+    # A historic claim inside the current-run namespace while the flags deny
+    # the computation is the same failure, and it is named twice on purpose:
+    # once for the misplaced claim, once for the disagreement with the flags.
+    denied = {"cascade_observe": {"P9": {
+        "engine_called": False,
+        "computed_this_run": False,
+        "current_run": {
+            "verdict_namespace": "current_run",
+            "verdict": "conserved",
+            "evaluation_state": "measured",
+        },
+    }}}
+    assert {
+        "historic_verdict_presented_as_current",
+        "honesty_flags_disagree",
+    } <= conservation_provenance_violations(denied, contract)
+
+
+def test_conservation_provenance_oracle_fails_closed_on_absent_and_unknown():
+    """Absence is never compliance: every malformed shape names a label."""
+    contract = _conservation_provenance_contract_document(
+        _conservation_provenance_service()
+    )
+    cases = [
+        ({"report_id": "no-observation"}, {"provenance_absent"}),
+        ({"cascade_observe": {"P9": {
+            "engine_called": False, "computed_this_run": False}}},
+         {"missing_current_run"}),
+        ({"cascade_observe": {"P9": {
+            "current_run": {"verdict": "NotEvaluated"}}}},
+         {"namespace_not_declared"}),
+        ({"cascade_observe": {"P9": {"current_run": {
+            "verdict_namespace": "historical_reference",
+            "verdict": "NotEvaluated"}}}},
+         {"namespace_contradicts_key"}),
+        ({"cascade_observe": {"P9": {"current_run": {
+            "verdict_namespace": "current_run"}}}},
+         {"missing_current_verdict"}),
+        ({"cascade_observe": {"P9": {"current_run": {
+            "verdict_namespace": "current_run",
+            "verdict": "probably_fine"}}}},
+         {"unknown_verdict_token"}),
+        ({"cascade_observe": {"P9": {
+            "current_run": {
+                "verdict_namespace": "current_run",
+                "verdict": "NotEvaluated",
+            },
+            "reference_evidence": {"verdict": "conserved"}}}},
+         {"historic_reference_mislabelled"}),
+        ("not-a-record", {"missing_record_object"}),
+    ]
+    for record, expected in cases:
+        violations = conservation_provenance_violations(record, contract)
+        assert expected <= violations, (record, violations)
+        assert violations, record
+
+
+def test_conservation_provenance_oracle_bounds_provenance_identity():
+    """Provenance is a bounded identity, not a payload (Q3 R4)."""
+    contract = _conservation_provenance_contract_document(
+        _conservation_provenance_service()
+    )
+    record = {"cascade_observe": {"P9": {
+        "engine_called": False,
+        "computed_this_run": False,
+        "current_run": {
+            "verdict_namespace": "current_run",
+            "verdict": "NotEvaluated",
+        },
+        "reference_evidence": {
+            "verdict_namespace": "historical_reference",
+            "evidence_state": "historical",
+            "verdict": "conserved",
+            "artifact_digest": "a" * 512,
+        },
+    }}}
+    violations = conservation_provenance_violations(record, contract)
+    assert violations == {"oversized_provenance_value"}, violations
+
+
+def test_conservation_provenance_is_wired_into_build_report():
+    """A rule that is implemented but never invoked is a dead rule.
+
+    `build_report` is the single governor validation path (the `preflight` and
+    `doctor` entry points both go through it). Constructing it needs every
+    collaborator, so this pins the call site instead: deleting the delegation
+    fails here rather than silently disabling the rule. The end-to-end
+    behaviour is additionally evidenced by `governor --phase preflight`
+    producing no `conservation_verdict_provenance` flag on the committed tree.
+    """
+    import inspect
+
+    source = inspect.getsource(TrajectoryService.build_report)
+    assert "_check_conservation_verdict_provenance()" in source
+
+
 def _run_all_tests() -> int:
     """Simple test runner (no pytest dependency)."""
     tests = [
@@ -4858,6 +5192,20 @@ def _run_all_tests() -> int:
         test_component_license_provenance_absent_snapshot_suite_is_not_flagged,
         test_component_license_provenance_real_inventory_mutations_are_flagged,
         test_component_license_provenance_oracle_rejects_untyped_status_without_governor,
+        test_conservation_provenance_pass_on_clean_fixtures,
+        test_conservation_provenance_missing_contract_is_silent,
+        test_conservation_provenance_missing_fixture_is_flagged,
+        test_conservation_provenance_positive_fixture_must_be_clean,
+        test_conservation_provenance_negative_fixture_must_trigger_labelled_violations,
+        test_conservation_provenance_negative_fixture_must_cover_required_violations,
+        test_conservation_provenance_missing_vocabulary_is_flagged,
+        test_conservation_provenance_source_marker_missing_is_flagged,
+        test_conservation_provenance_invalid_yaml_is_flagged,
+        test_conservation_provenance_absent_snapshot_suite_is_not_flagged,
+        test_conservation_provenance_oracle_rejects_historic_verdict_as_current,
+        test_conservation_provenance_oracle_fails_closed_on_absent_and_unknown,
+        test_conservation_provenance_oracle_bounds_provenance_identity,
+        test_conservation_provenance_is_wired_into_build_report,
         test_oracle_digest_recomputation_pass_on_clean_fixtures,
         test_oracle_digest_recomputation_missing_contract_is_silent,
         test_oracle_digest_recomputation_missing_fixture_is_flagged,

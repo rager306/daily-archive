@@ -1,0 +1,178 @@
+[
+  {
+    "violation": "provenance_absent",
+    "record": {
+      "report_id": "parse-pdf/no-observation",
+      "cascade_observe": {
+        "P8": { "stage": "P8", "observe_mode": "production_stamp" }
+      }
+    }
+  },
+  {
+    "violation": "missing_current_run",
+    "record": {
+      "report_id": "parse-pdf/historic-only",
+      "cascade_observe": {
+        "P9": {
+          "stage": "P9",
+          "engine_called": false,
+          "computed_this_run": false,
+          "reference_evidence": {
+            "verdict_namespace": "historical_reference",
+            "evidence_state": "historical",
+            "verdict": "conserved"
+          }
+        }
+      }
+    }
+  },
+  {
+    "violation": "namespace_not_declared",
+    "record": {
+      "report_id": "parse-pdf/undeclared-namespace",
+      "cascade_observe": {
+        "P9": {
+          "engine_called": false,
+          "computed_this_run": false,
+          "current_run": {
+            "verdict": "NotEvaluated",
+            "evaluation_state": "unmeasured"
+          }
+        }
+      }
+    }
+  },
+  {
+    "violation": "namespace_contradicts_key",
+    "record": {
+      "report_id": "parse-pdf/namespace-under-wrong-key",
+      "cascade_observe": {
+        "P9": {
+          "engine_called": false,
+          "computed_this_run": false,
+          "current_run": {
+            "verdict_namespace": "historical_reference",
+            "verdict": "NotEvaluated",
+            "evaluation_state": "unmeasured"
+          }
+        }
+      }
+    }
+  },
+  {
+    "violation": "missing_current_verdict",
+    "record": {
+      "report_id": "parse-pdf/no-verdict",
+      "cascade_observe": {
+        "P9": {
+          "engine_called": false,
+          "computed_this_run": false,
+          "current_run": {
+            "verdict_namespace": "current_run",
+            "evaluation_state": "unmeasured"
+          }
+        }
+      }
+    }
+  },
+  {
+    "violation": "unknown_verdict_token",
+    "record": {
+      "report_id": "parse-pdf/unknown-token",
+      "cascade_observe": {
+        "P9": {
+          "engine_called": true,
+          "computed_this_run": true,
+          "current_run": {
+            "verdict_namespace": "current_run",
+            "verdict": "probably_fine",
+            "evaluation_state": "measured"
+          }
+        }
+      }
+    }
+  },
+  {
+    "violation": "historic_verdict_presented_as_current",
+    "record": {
+      "report_id": "parse-pdf/pre-fix-2507.19457",
+      "note": "The pre-fix GAR-005 shape: a bare top-level tracked_verdict with no namespace at all, beside honest not-computed flags.",
+      "cascade_observe": {
+        "P9": {
+          "stage": "P9",
+          "production_authority": "tei_lift",
+          "observe_mode": "candidate_lift",
+          "engine_called": false,
+          "computed_this_run": false,
+          "tracked_verdict": "conserved",
+          "tracked_on_preserved_tei": true
+        }
+      }
+    }
+  },
+  {
+    "violation": "honesty_flags_disagree",
+    "record": {
+      "report_id": "parse-pdf/current-run-not-computed",
+      "note": "A historic verdict relocated into the current-run namespace while the honesty flags still deny the computation.",
+      "cascade_observe": {
+        "P9": {
+          "engine_called": true,
+          "computed_this_run": false,
+          "current_run": {
+            "verdict_namespace": "current_run",
+            "verdict": "conserved",
+            "evaluation_state": "measured"
+          }
+        }
+      }
+    }
+  },
+  {
+    "violation": "historic_reference_mislabelled",
+    "record": {
+      "report_id": "parse-pdf/historic-claim-in-current-namespace",
+      "note": "The preserved-TEI claim declares the current-run namespace instead of the historic one.",
+      "cascade_observe": {
+        "P9": {
+          "engine_called": false,
+          "computed_this_run": false,
+          "current_run": {
+            "verdict_namespace": "current_run",
+            "verdict": "NotEvaluated",
+            "evaluation_state": "unmeasured"
+          },
+          "reference_evidence": {
+            "verdict_namespace": "current_run",
+            "evidence_state": "historical",
+            "verdict": "conserved"
+          }
+        }
+      }
+    }
+  },
+  {
+    "violation": "oversized_provenance_value",
+    "record": {
+      "report_id": "parse-pdf/unbounded-identity",
+      "note": "Provenance is a bounded identity, not a payload: a 512-char digest field is rejected.",
+      "cascade_observe": {
+        "P9": {
+          "engine_called": false,
+          "computed_this_run": false,
+          "current_run": {
+            "verdict_namespace": "current_run",
+            "verdict": "NotEvaluated",
+            "evaluation_state": "unmeasured"
+          },
+          "reference_evidence": {
+            "verdict_namespace": "historical_reference",
+            "evidence_state": "historical",
+            "verdict": "conserved",
+            "artifact_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,144 @@
+# Conservation verdict provenance contract — GAR-005 closure at the control plane.
+#
+# DATA for the Governor `conservation_verdict_provenance` check. GAR-005
+# (M502-2w7y8k/S02, re-closed with fresh contracts by M509-yzblqx/S01) recorded
+# that the P9 conservation stamp carried a historic `conserved` verdict beside
+# `engine_called=false` and `computed_this_run=false`: the honesty flags were
+# truthful, but the object combined a past result with a current-run stamp, so
+# downstream aggregation could count a not-computed verdict as successful
+# current-document conservation.
+#
+# The shipped Rust surface (`crates/da-cli/src/source_cli.rs`) now publishes the
+# two namespaces separately: `current_run.verdict` carries the explicit
+# `NotEvaluated` value for every run parse-pdf can produce today, and the
+# preserved-TEI result is relocated — not dropped — under `reference_evidence`
+# with `verdict_namespace: historical_reference` and
+# `evidence_state: historical`. This contract makes that split executable:
+#
+#   - a measured verdict (the conservation engine's closed vocabulary) is
+#     accepted ONLY under the current-run namespace key, and only when the
+#     observation asserts the measurement: both honesty flags literally true and
+#     `evaluation_state` a non-empty string other than the shipped `unmeasured`
+#     value. A past result wearing a current-run stamp is the GAR-005 failure and
+#     is named `historic_verdict_presented_as_current` (with
+#     `honesty_flags_disagree` as its companion).
+#   - a measured verdict OUTSIDE both declared namespaces is rejected the same
+#     way. This is the pre-fix `tracked_verdict: conserved` shape, and rejecting
+#     it is the point: a bare token must not read as a current measurement.
+#   - absence and drift fail closed. No observation at all is
+#     `provenance_absent` — absence is never compliance. A missing current-run
+#     block, an undeclared or contradictory namespace, a missing verdict and a
+#     token outside the closed vocabularies are each their own typed label.
+#   - a historic claim must carry BOTH its historic namespace declaration and
+#     `evidence_state: historical`, otherwise it is
+#     `historic_reference_mislabelled`: relocating a verdict must not launder it
+#     back into currency.
+#   - the identity strings are bounded by `max_value_length`, and an oversized
+#     provenance value is `oversized_provenance_value`. Provenance is a bounded
+#     identity, not a payload (M509/S01 Q3 R4).
+#
+# Boundary of the claim (M509/S01 Q3 R2, stated rather than implied): this is a
+# consistency and fail-closed contract over the provenance an artifact declares
+# about itself, not a tamper-evident attestation. An actor able to rewrite both
+# the artifact and this DATA rule can satisfy it. Its value is that absence,
+# drift and self-contradiction stop passing as compliance.
+#
+# Semantics of the independent Python oracle
+# `conservation_provenance_violations` in
+# `scripts/governor/adapters/checks/conservation_verdict_provenance.py`
+# (ADR-051 — it shares no code with the Rust classifier
+# `classify_conservation_verdict_provenance`; it re-derives currency from the
+# declared fields):
+#   - positive (`report_clean`): the verbatim production row (not-evaluated
+#     current run with the relocated historic reference), a not-evaluated row
+#     that carries no historic claim at all, and a synthetic run that declares
+#     its own measurement — all three must be clean.
+#   - negative (`report_broken`): one record per entry-level label, and every
+#     label in `require_violations` must appear — removing a negative case is
+#     flagged.
+#   - this contract deliberately declares no `graph_task_suite`: the P9
+#     observation has no durable snapshot-level task suite, so the check passes
+#     `graph_task_suite_required=False` explicitly instead of silently skipping
+#     suite enforcement for the existing multimodal contracts.
+#
+# This is DATA — tightening an expectation is an edit here (plus the committed
+# fixture JSON), not a Python change.
+
+schema_version: conservation-verdict-provenance.v1
+policy_id: conservation_verdict_provenance
+dimension: scholarly_parse_plane
+severity: high
+anchor: "GAR-005, R093, R117, R120, ADR-076, ADR-051"
+
+# Closed vocabularies and the location of the observation. Every token here is a
+# live wire literal of the shipped surfaces: `current_run`,
+# `historical_reference` and `NotEvaluated` are exported constants of
+# `da_cli::source_cli`, `unmeasured` is the emitted `evaluation_state`, and the
+# measured vocabulary is `da_parse::ConservationVerdict::as_str()`.
+provenance:
+  # Where the P9 observation lives inside a report record.
+  container_key: cascade_observe
+  stage_key: P9
+  # The two namespace keys, each with its own declared namespace token.
+  current_run_key: current_run
+  historic_key: reference_evidence
+  namespaces: [current_run, historical_reference]
+  current_run_namespace: current_run
+  historic_namespace: historical_reference
+  historic_evidence_state: historical
+  unmeasured_state: unmeasured
+  not_evaluated_verdict: NotEvaluated
+  honesty_flags: [engine_called, computed_this_run]
+  # Keys whose value, when it names a measured verdict, is a conservation claim.
+  claim_keys: [verdict, tracked_verdict, tracked_on_preserved_tei]
+  # `da_parse::ConservationVerdict::as_str()` — the engine's closed vocabulary.
+  measured_verdicts: [conserved, loss_detected, malformed_source]
+  # Bounded identity: a provenance string longer than this is a payload, not an
+  # identity (M509/S01 Q3 R4).
+  max_value_length: 128
+  # Closed set of entry-level labels the oracle can emit.
+  violations:
+    - provenance_absent
+    - missing_current_run
+    - namespace_not_declared
+    - namespace_contradicts_key
+    - missing_current_verdict
+    - unknown_verdict_token
+    - historic_verdict_presented_as_current
+    - honesty_flags_disagree
+    - historic_reference_mislabelled
+    - oversized_provenance_value
+
+fixtures:
+  positive:
+    id: report_clean
+    path: governor/fixtures/conservation_verdict_provenance/report_clean.positive.json
+    expect: clean
+  negative:
+    id: report_broken
+    path: governor/fixtures/conservation_verdict_provenance/report_broken.negative.json
+    expect:
+      require_violations:
+        - provenance_absent
+        - missing_current_run
+        - namespace_not_declared
+        - namespace_contradicts_key
+        - missing_current_verdict
+        - unknown_verdict_token
+        - historic_verdict_presented_as_current
+        - honesty_flags_disagree
+        - historic_reference_mislabelled
+        - oversized_provenance_value
+
+# Enforcement points that must keep existing in the shipped Rust surface. The
+# rule reads these files as text; it never executes them.
+source_markers:
+  rust_surface:
+    path: crates/da-cli/src/source_cli.rs
+    required_patterns: [p9_conservation_row, classify_conservation_verdict_provenance,
+                        P9_VERDICT_NAMESPACE_CURRENT_RUN, P9_VERDICT_NAMESPACE_HISTORICAL_REFERENCE,
+                        P9_CURRENT_RUN_NOT_EVALUATED, historic_conservation_reference]
+  rust_contract:
+    path: crates/da-cli/tests/conservation_provenance.rs
+    required_patterns: [p9_cascade_observe_document,
+                        stamped_p9_publishes_no_conservation_verdict_for_a_run_that_did_not_measure_it]

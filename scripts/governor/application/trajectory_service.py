@@ -1997,6 +1997,14 @@ class TrajectoryService:
         # agreement cannot hide permuted boundaries.
         drift_flags.extend(self._check_boundary_positional_metrics())
 
+        # GAR-005: conservation verdict provenance control-plane rule
+        # (M509-yzblqx S01). A historic `conserved` verdict returned beside
+        # `computed_this_run=false` is the recorded failure: the rule accepts a
+        # measured verdict only inside the current-run namespace with the
+        # honesty flags asserting the computation, and rejects any unscoped
+        # token instead of letting a bare `conserved` read as current.
+        drift_flags.extend(self._check_conservation_verdict_provenance())
+
         # GAR-003: donor visual adapter content preservation control-plane rule
         # (M508-g9b5gi S02). Binds the durable positive-fixture artifact to an
         # independent oracle so a `primitives: Vec::new()` drop path cannot
@@ -3050,6 +3058,72 @@ class TrajectoryService:
             contract, self.root, "scholarly_parse_plane",
             "boundary_positional_metrics",
             _boundary_positional_violations,
+            graph_task_suite_required=False,
+        ))
+        return flags
+
+    def _check_conservation_verdict_provenance(self) -> list[DriftFlag]:
+        """Evaluate the data-driven conservation verdict provenance contract (GAR-005).
+
+        Reads `scripts/governor/checks/conservation_verdict_provenance.yaml`
+        (DATA) and validates report observations against the independent Python
+        oracle `conservation_provenance_violations` in
+        `governor.adapters.checks.conservation_verdict_provenance`: a measured
+        conservation verdict is accepted only when the same run declares the
+        measurement — the verdict sits under the current-run namespace key,
+        that mapping declares the current-run namespace, both honesty flags are
+        literally true and `evaluation_state` is not the shipped `unmeasured`
+        value. A measured token anywhere else is the pre-fix GAR-005 shape and
+        is rejected as `historic_verdict_presented_as_current`. Absence and
+        unknown tokens fail closed: a report with no observation at all is
+        `provenance_absent`, never compliance.
+
+        The provenance vocabulary is validated first because an empty measured
+        vocabulary would make every record clean; flagging it is the difference
+        between failing closed and silently passing the whole rule. The P9
+        observation has no durable snapshot graph task suite, so the shared
+        helper is called with `graph_task_suite_required=False` explicitly.
+        """
+        from governor.adapters.checks.conservation_verdict_provenance import (
+            conservation_provenance_violations,
+            missing_provenance_vocabulary,
+        )
+
+        path = self.root / "scripts/governor/checks/conservation_verdict_provenance.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="conservation_verdict_provenance_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="scholarly_parse_plane",
+            )]
+        dimension = str(contract.get("dimension") or "scholarly_parse_plane")
+        severity = str(contract.get("severity", "high"))
+        flags: list[DriftFlag] = []
+
+        # Fail closed on an incomplete vocabulary: without the measured set the
+        # oracle cannot tell a measured verdict from an unknown one and would
+        # accept every record.
+        missing = missing_provenance_vocabulary(contract)
+        if missing:
+            flags.append(DriftFlag(
+                flag="conservation_verdict_provenance_vocabulary_missing",
+                severity=severity,
+                evidence=(
+                    "provenance vocabulary is absent or empty, so the oracle "
+                    f"would fail open: missing {missing}"
+                ),
+                dimension=dimension,
+            ))
+
+        flags.extend(_candidate_contract_flags(
+            contract, self.root, dimension,
+            "conservation_verdict_provenance",
+            conservation_provenance_violations,
             graph_task_suite_required=False,
         ))
         return flags
