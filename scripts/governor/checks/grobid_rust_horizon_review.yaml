@@ -1,3 +1,27 @@
+# DATED CORRECTION 2026-09-18 — supersedes grobid_rust_horizon_review.yaml per the
+# ADR-076 §9/§10 convention (a dated snapshot is added, the reviewed one is not
+# rewritten). Rationale for the change:
+#   1. tested_source on every stage moved from git:3b327d7 (verified=false) to the
+#      current revision with verified=true, because this review executed the stages'
+#      recorded verification commands against the current tree.
+#   2. index_freshness on every stage moved from 'stale' to 'fresh': both indexes were
+#      genuinely rebuilt on 2026-09-18 (GitNexus up-to-date at fbd7080; CBM project
+#      root-daily-archive, 497628 nodes). The stale duplicate CBM entry `daily-archive`
+#      was deleted, so CBM queries must name `root-daily-archive`.
+#   3. Three recorded verification commands were measured defective and were replaced:
+#      H07 `cargo test -p da-parse --lib feature_abi` matched 0 tests (the symbol lives
+#      in da-domain); H08 and H11 commands were rejected by cargo outright
+#      (two filter words without `--`, 'unexpected argument'). Replacements were run
+#      and pass: H07 da-domain feature_abi 5, da-adapters feature_provider_parity 5;
+#      H08 da-domain scalar_crf 11; H11 reading_order 25, native_body_accounting 1.
+#   4. NO STATUS WAS PROMOTED. The contract requires status=complete together with
+#      completion_evidence to claim a PASS, and that closure belongs to the owning
+#      wave (M507), not to a review. H07..H13 therefore stay pending even though their
+#      implementation is present and their repaired verification commands pass — this
+#      is documentary drift for the owning wave to close, recorded rather than papered
+#      over.
+#   5. owner_allow gained the M508-g9b5gi slices (S01..S05), the wave that followed.
+#
 # GROBID Rust long-horizon review registry contract (read-only control metadata).
 #
 # DATA for the Governor `grobid_horizon_review` validation path selected through
@@ -72,4 +96,4 @@ registry:
   # Extend instead of writing a free-form owner, so a typo or a stale slice can never
   # pass validation silently. The next wave must extend this list with its own slices
   # BEFORE it claims any of these stages.
-  owner_allow: [unassigned, M505-o169s4, M506-98qg7g/S01, M506-98qg7g/S02, M506-98qg7g/S03, M506-98qg7g/S04, M506-98qg7g/S05, M507-4fk6m6/S01, M507-4fk6m6/S02, M507-4fk6m6/S03, M507-4fk6m6/S04, M507-4fk6m6/S05, M507-4fk6m6/S06, M507-4fk6m6/S07, M507-4fk6m6/S08]
+  owner_allow: [unassigned, M505-o169s4, M506-98qg7g/S01, M506-98qg7g/S02, M506-98qg7g/S03, M506-98qg7g/S04, M506-98qg7g/S05, M507-4fk6m6/S01, M507-4fk6m6/S02, M507-4fk6m6/S03, M507-4fk6m6/S04, M507-4fk6m6/S05, M507-4fk6m6/S06, M507-4fk6m6/S07, M507-4fk6m6/S08, M508-g9b5gi/S01, M508-g9b5gi/S02, M508-g9b5gi/S03, M508-g9b5gi/S04, M508-g9b5gi/S05]
