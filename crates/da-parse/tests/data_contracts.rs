@@ -920,6 +920,7 @@ fn validate_ledger(l: &LedgerFile) -> Vec<String> {
     errs.extend(validate_typed_transport_placement(l));
     errs.extend(validate_registry_endpoint_dialects(&load_registry_value()));
     errs.extend(validate_registry_config_keys(&load_registry_value()));
+    errs.extend(validate_registry_capability_licenses(&load_registry_value()));
     errs.extend(validate_data_parse_tree());
     errs.extend(validate_batch_cache_registry_consistency(
         &l.batch_cache_observation,
@@ -1473,6 +1474,122 @@ fn load_registry_value() -> serde_yaml::Value {
     let text = std::fs::read_to_string(&full)
         .unwrap_or_else(|e| panic!("registry of record unreadable: {e}"));
     serde_yaml::from_str(&text).unwrap_or_else(|e| panic!("registry yaml malformed: {e}"))
+}
+
+/// ADR-076 §9.4 / R137: every capability row must declare its licence identity.
+///
+/// The value is either `inventory:<component_id>` — a reference to a position of
+/// the single canonical licence ledger `data/parse/license_inventory.yaml`, which
+/// carries the source/licence/redistribution evidence, so the row references that
+/// evidence instead of restating a licence token — or the explicit fail-closed
+/// token `unknown` for a capability whose rights no inventory position
+/// establishes. A row without the field, a reference that does not resolve to a
+/// canonical component, or a token outside this closed form is rejected: the
+/// ledger may never leave a capability's licence unstated.
+fn validate_registry_capability_licenses(registry: &serde_yaml::Value) -> Vec<String> {
+    const TAG: &str = "[capability-license-drift]";
+    const REF_PREFIX: &str = "inventory:";
+    const UNKNOWN: &str = "unknown";
+    let mut errs = Vec::new();
+    let Some(caps) = registry.get("capabilities").and_then(|c| c.as_sequence()) else {
+        errs.push(format!("{TAG} registry lost its capabilities sequence"));
+        return errs;
+    };
+    let inventory: serde_yaml::Value = expect_loaded("data/parse/license_inventory.yaml");
+    let component_ids: HashSet<String> = inventory
+        .get("components")
+        .and_then(|c| c.as_sequence())
+        .map(|seq| {
+            seq.iter()
+                .filter_map(|c| c.get("component_id").and_then(|v| v.as_str()))
+                .map(|s| s.to_string())
+                .collect()
+        })
+        .unwrap_or_default();
+    if component_ids.is_empty() {
+        errs.push(format!(
+            "{TAG} canonical licence inventory declares no `component_id`"
+        ));
+    }
+    for (idx, cap) in caps.iter().enumerate() {
+        let id = cap
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("<unnamed>");
+        match cap.get("license").and_then(|v| v.as_str()) {
+            Some(value) if value.trim() == UNKNOWN => {}
+            Some(value) if value.starts_with(REF_PREFIX) => {
+                let component = &value[REF_PREFIX.len()..];
+                if component.trim().is_empty() {
+                    errs.push(format!(
+                        "{TAG} capabilities[{idx}] {id}: empty licence reference `{value}`"
+                    ));
+                } else if !component_ids.contains(component) {
+                    errs.push(format!(
+                        "{TAG} capabilities[{idx}] {id}: licence reference `{value}` does not resolve to a canonical inventory component"
+                    ));
+                }
+            }
+            Some(value) => errs.push(format!(
+                "{TAG} capabilities[{idx}] {id}: `{value}` is neither `{REF_PREFIX}<component_id>` nor `{UNKNOWN}`"
+            )),
+            None => errs.push(format!(
+                "{TAG} capabilities[{idx}] {id}: every capability row must declare a `license` identity (ADR-076 §9.4)"
+            )),
+        }
+    }
+    errs
+}
+
+#[test]
+fn capability_rows_must_declare_a_resolvable_license_identity() {
+    let registry = load_registry_value();
+    let errs = validate_registry_capability_licenses(&registry);
+    assert!(errs.is_empty(), "capability licence errors: {errs:#?}");
+
+    fn row_mut(doc: &mut serde_yaml::Value) -> &mut serde_yaml::Mapping {
+        doc.get_mut("capabilities")
+            .and_then(|c| c.as_sequence_mut())
+            .and_then(|seq| seq.first_mut())
+            .and_then(|row| row.as_mapping_mut())
+            .expect("capabilities sequence with a mapping row")
+    }
+
+    // A row without the field is rejected (the exact ADR-076 §9.4 gap).
+    let mut missing = registry.clone();
+    row_mut(&mut missing).remove(serde_yaml::Value::String("license".to_string()));
+    let errs = validate_registry_capability_licenses(&missing);
+    assert!(
+        errs.iter()
+            .any(|e| e.contains("must declare a `license` identity")),
+        "a capability row without `license` was accepted: {errs:#?}"
+    );
+
+    // A reference that does not resolve to a canonical component is rejected.
+    let mut unresolvable = registry.clone();
+    row_mut(&mut unresolvable).insert(
+        serde_yaml::Value::String("license".to_string()),
+        serde_yaml::Value::String("inventory:does-not-exist".to_string()),
+    );
+    let errs = validate_registry_capability_licenses(&unresolvable);
+    assert!(
+        errs.iter().any(|e| e.contains("does not resolve")),
+        "an unresolvable licence reference was accepted: {errs:#?}"
+    );
+
+    // A token outside the closed `inventory:<id>` / `unknown` form is rejected
+    // (a bare licence token must reference the inventory, not restate it).
+    let mut token = registry.clone();
+    row_mut(&mut token).insert(
+        serde_yaml::Value::String("license".to_string()),
+        serde_yaml::Value::String("Apache-2.0".to_string()),
+    );
+    let errs = validate_registry_capability_licenses(&token);
+    assert!(
+        errs.iter()
+            .any(|e| e.contains("is neither `inventory:<component_id>` nor `unknown`")),
+        "a bare licence token was accepted: {errs:#?}"
+    );
 }
 
 /// The registry-of-record `stage.tei_lift` capability must keep binding the

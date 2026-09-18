@@ -160,6 +160,29 @@ surfaces:
     blocked_reason_field: evidence
     evidence_field: evidence
 
+# ADR-076 §9.4 / R137: every capability row in the compatibility ledger must
+# declare its licence identity. This surface is NOT one of the three component
+# surfaces above — a capability row carries one `license` field, not a
+# status/boundary/redistribution dialect — so it is bound here by its own shape.
+# The preferred value references a position of the canonical inventory
+# (`data/parse/license_inventory.yaml`) as `inventory:<component_id>`; the
+# explicit token `unknown` is the fail-closed refusal for a capability whose
+# rights no inventory position establishes. The independent Rust reader
+# `validate_registry_capability_licenses` in `crates/da-parse/tests/data_contracts.rs`
+# rejects a row without the field, a reference that does not resolve, or a token
+# outside this closed form; the `rust_capability_license_reader` source marker
+# keeps that reader present.
+capability_license:
+  surface: data/parse/grobid_compatibility.yaml
+  pointer: capabilities
+  id_field: id
+  license_field: license
+  inventory: data/parse/license_inventory.yaml
+  inventory_entries_key: components
+  inventory_id_field: component_id
+  reference_prefix: "inventory:"
+  unknown_token: unknown
+
 bindings:
   source_data:
     - path: data/parse/license_inventory.yaml
@@ -195,6 +218,13 @@ source_markers:
   rust_contract:
     path: crates/da-parse/tests/component_license_provenance_data_contract.rs
     required_patterns: [license_provenance_errs, blocked_reason, surface_claims, UNVERIFIED, import_eligible]
+  rust_capability_license_reader:
+    path: crates/da-parse/tests/data_contracts.rs
+    required_patterns:
+      - validate_registry_capability_licenses
+      - capability-license-drift
+      - REF_PREFIX
+      - UNKNOWN
   canonical_inventory:
     path: data/parse/license_inventory.yaml
     required_patterns: [license_status_vocabulary, surface_claims, blocked_reason, gpl_violation_status]

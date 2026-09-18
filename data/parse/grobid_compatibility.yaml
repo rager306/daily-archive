@@ -778,6 +778,17 @@ defaults:
   - DA_PARSE_LEARNING_RVF_PATH
   - DA_PARSE_LEARNING_REDB_INDEX_PATH
 
+# capabilities[].license — per-capability licence identity (ADR-076 §9.4, R137).
+# Every row declares exactly one of:
+#   inventory:<component_id>  a reference to a component position of the single
+#                             canonical licence ledger data/parse/license_inventory.yaml,
+#                             which carries the source/licence/redistribution evidence;
+#                             the field references that evidence instead of restating a
+#                             licence token here;
+#   unknown                   the explicit fail-closed refusal for a capability whose
+#                             rights no inventory position establishes.
+# The ledger data contract rejects a row without this field, a reference that does not
+# resolve to a canonical component, and a token outside this closed form.
 capability_groups:
   1: service_liveness
   2: fulltext
@@ -792,6 +803,7 @@ capabilities:
   # Group 1 — service liveness (ADR-075 §2.8 required subset)
   # ------------------------------------------------------------------
   - id: rest.isalive
+    license: inventory:java-grobid-0.9.0-crf
     group: 1
     kind: endpoint
     state: proxy
@@ -817,6 +829,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.health
+    license: inventory:java-grobid-0.9.0-crf
     group: 1
     kind: endpoint
     state: proxy
@@ -845,6 +858,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.version
+    license: inventory:java-grobid-0.9.0-crf
     group: 1
     kind: endpoint
     state: proxy
@@ -876,6 +890,7 @@ capabilities:
   # Group 2 — fulltext
   # ------------------------------------------------------------------
   - id: rest.processFulltextDocument
+    license: inventory:java-grobid-0.9.0-crf
     group: 2
     kind: endpoint
     state: proxy
@@ -935,6 +950,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.processFulltextAssetDocument
+    license: inventory:java-grobid-0.9.0-crf
     group: 2
     kind: endpoint
     state: absent
@@ -964,6 +980,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.processFulltextDocumentHTML
+    license: inventory:java-grobid-0.9.0-crf
     group: 2
     kind: endpoint
     state: absent
@@ -993,6 +1010,7 @@ capabilities:
   # Group 3 — header and references (ADR-075 §2.8 required subset)
   # ------------------------------------------------------------------
   - id: rest.processHeaderDocument
+    license: inventory:java-grobid-0.9.0-crf
     group: 3
     kind: endpoint
     state: proxy
@@ -1039,6 +1057,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.processHeaderFundingDocument
+    license: inventory:java-grobid-0.9.0-crf
     group: 3
     kind: endpoint
     state: absent
@@ -1069,6 +1088,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.processReferences
+    license: inventory:java-grobid-0.9.0-crf
     group: 3
     kind: endpoint
     state: proxy
@@ -1119,6 +1139,7 @@ capabilities:
   # Group 4 — fine-grained date/name/affiliation/citation
   # ------------------------------------------------------------------
   - id: rest.processDate
+    license: inventory:feature-tagger-training-corpus-and-models
     group: 4
     kind: endpoint
     state: shadow
@@ -1152,6 +1173,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.processHeaderNames
+    license: inventory:feature-tagger-training-corpus-and-models
     group: 4
     kind: endpoint
     state: shadow
@@ -1180,6 +1202,7 @@ capabilities:
     invention_budget: 0
 
   - id: rest.processCitationNames
+    license: inventory:feature-tagger-training-corpus-and-models
     group: 4
     kind: endpoint
     state: shadow
@@ -1208,6 +1231,7 @@ capabilities:
     invention_budget: 0
 
   - id: rest.processAffiliations
+    license: inventory:feature-tagger-training-corpus-and-models
     group: 4
     kind: endpoint
     state: shadow
@@ -1239,6 +1263,7 @@ capabilities:
     invention_budget: 0
 
   - id: rest.processCitation
+    license: inventory:feature-tagger-training-corpus-and-models
     group: 4
     kind: endpoint
     state: shadow
@@ -1269,6 +1294,7 @@ capabilities:
     invention_budget: 0
 
   - id: rest.processCitationListTEI
+    license: inventory:feature-tagger-training-corpus-and-models
     group: 4
     kind: endpoint
     state: shadow
@@ -1301,6 +1327,7 @@ capabilities:
   # Group 5 — coordinates and annotations
   # ------------------------------------------------------------------
   - id: dialect.teiCoordinates
+    license: inventory:java-grobid-0.9.0-crf
     group: 5
     kind: request_dialect
     state: proxy
@@ -1338,6 +1365,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.referenceAnnotations
+    license: inventory:java-grobid-0.9.0-crf
     group: 5
     kind: endpoint
     state: absent
@@ -1364,6 +1392,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.annotatePDF
+    license: inventory:java-grobid-0.9.0-crf
     group: 5
     kind: endpoint
     state: absent
@@ -1394,6 +1423,7 @@ capabilities:
   # Java training endpoints are recorded but are not compatibility requirements.
   # ------------------------------------------------------------------
   - id: learning.sona_trajectory
+    license: inventory:project-owned-da-parse
     group: 6
     kind: learning_surface
     state: absent
@@ -1426,6 +1456,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: learning.microlora_ewc
+    license: inventory:project-owned-da-parse
     group: 6
     kind: learning_surface
     state: absent
@@ -1454,6 +1485,7 @@ capabilities:
     rollback_target: previous_policy_hash
 
   - id: learning.ruvllm_ablation
+    license: inventory:project-owned-da-parse
     group: 6
     kind: learning_surface
     state: candidate
@@ -1482,6 +1514,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.createTraining
+    license: inventory:feature-tagger-training-corpus-and-models
     group: 6
     kind: endpoint
     state: absent
@@ -1508,6 +1541,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.trainingResult
+    license: inventory:feature-tagger-training-corpus-and-models
     group: 6
     kind: endpoint
     state: absent
@@ -1533,6 +1567,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.allTraining
+    license: inventory:feature-tagger-training-corpus-and-models
     group: 6
     kind: endpoint
     state: absent
@@ -1558,6 +1593,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.killTraining
+    license: inventory:feature-tagger-training-corpus-and-models
     group: 6
     kind: endpoint
     state: absent
@@ -1584,6 +1620,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.model
+    license: inventory:feature-tagger-training-corpus-and-models
     group: 6
     kind: endpoint
     state: absent
@@ -1612,6 +1649,7 @@ capabilities:
   # Group 7 — patent family: visible, deferred, never promoted (D294/R110)
   # ------------------------------------------------------------------
   - id: rest.processCitationPatentTEI
+    license: inventory:java-grobid-0.9.0-crf
     group: 7
     kind: endpoint
     state: absent
@@ -1638,6 +1676,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.processCitationPatentST36
+    license: inventory:java-grobid-0.9.0-crf
     group: 7
     kind: endpoint
     state: absent
@@ -1664,6 +1703,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.processCitationPatentPDF
+    license: inventory:java-grobid-0.9.0-crf
     group: 7
     kind: endpoint
     state: absent
@@ -1690,6 +1730,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: rest.processCitationPatentTXT
+    license: inventory:java-grobid-0.9.0-crf
     group: 7
     kind: endpoint
     state: absent
@@ -1719,6 +1760,7 @@ capabilities:
   # Internal cascade stages (not REST). Replacement order from ADR-075 §2.5.
   # ------------------------------------------------------------------
   - id: stage.pdfalto_layout
+    license: inventory:pdfalto_runtime
     group: 2
     kind: internal_stage
     state: shadow
@@ -1745,6 +1787,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: stage.document_segmentation
+    license: inventory:feature-tagger-training-corpus-and-models
     group: 2
     kind: internal_stage
     state: shadow
@@ -1770,6 +1813,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: stage.header_composition
+    license: inventory:feature-tagger-training-corpus-and-models
     group: 3
     kind: internal_stage
     state: shadow
@@ -1808,6 +1852,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: stage.reference_segmentation
+    license: inventory:feature-tagger-training-corpus-and-models
     group: 3
     kind: internal_stage
     state: shadow
@@ -1854,6 +1899,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: stage.figure_table_formula
+    license: inventory:pdffigures2
     group: 2
     kind: internal_stage
     state: shadow
@@ -1879,6 +1925,7 @@ capabilities:
     rollback_target: java-grobid-http@0.9.0-crf
 
   - id: stage.bibliographic_consolidation
+    license: inventory:java-grobid-0.9.0-crf
     group: 2
     kind: internal_stage
     state: fallback
@@ -1908,6 +1955,7 @@ capabilities:
     rollback_target: java-grobid-http@structural-profile
 
   - id: stage.tei_lift
+    license: inventory:project-owned-da-parse
     group: 2
     kind: internal_stage
     state: candidate
@@ -1955,6 +2003,7 @@ capabilities:
   # S18/T01 additive fulltext composition authority. Native substitution is
   # receipt-bound and remains shadow-only; S15/S16 manifests stay immutable.
   - id: parse.component.native_fulltext_composition_shadow
+    license: inventory:project-owned-da-parse
     group: 3
     kind: internal_stage
     state: shadow
