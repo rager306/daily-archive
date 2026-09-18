@@ -253,6 +253,62 @@ def _promotion_journal_violations(journal: list, contract: dict) -> set[str]:
     return violations
 
 
+def _promotion_qualification_violations(package: dict, contract: dict) -> set[str]:
+    """Return disqualifier codes for one measured family promotion package.
+
+    Mirrors `da_application::native_family_promotion_gate`
+    `derive_promotion_qualification`: the three disqualifying conditions this
+    contract enforces are a shared *measured* producer digest, producer
+    independence that is not established by measured identities, and
+    contamination that was never assessed. Tri-state contamination is read
+    verbatim — an absent field is unknown, never clean. The oracle consumes
+    measured values (contamination, producer provenance) and the one
+    cardinality requirement declared as DATA in
+    `qualification_contract.policy`; it invents no measurement and evaluates no
+    validation-quality threshold (those stay in Rust). Returns a set of
+    violation codes (empty = qualified measurements).
+    """
+    violations: set[str] = set()
+    policy = (contract.get("qualification_contract") or {}).get("policy") or {}
+    try:
+        required = int(policy.get("minimum_independent_producers", 0))
+    except (TypeError, ValueError):
+        required = 0
+
+    contamination = package.get("contamination")
+    if contamination == "detected":
+        violations.add("contamination_detected")
+    elif contamination != "not_detected":
+        # Absent, null or any unrecognized value is an unknown measurement —
+        # never a clean NotDetected.
+        violations.add("contamination_not_assessed")
+
+    producers = package.get("producer_provenance")
+    if not isinstance(producers, list):
+        producers = []
+    complete_digests: list[str] = []
+    for producer in producers:
+        if not isinstance(producer, dict):
+            continue
+        digest = producer.get("code_digest")
+        method = producer.get("method")
+        authority = producer.get("authority")
+        if not all(
+            isinstance(value, str) and value.strip()
+            for value in (digest, method, authority)
+        ):
+            # An incomplete measured identity does not count as independence.
+            continue
+        complete_digests.append(digest.strip())
+
+    distinct = set(complete_digests)
+    if len(complete_digests) != len(distinct):
+        violations.add("shared_producer_digest")
+    if len(distinct) < required:
+        violations.add("weak_producer_independence")
+    return violations
+
+
 def _acap_admission_violations(record: dict, contract: dict, transitions: set) -> set[str]:
     """Return violation codes for one ACAP runtime admission record (PIR-014).
 
@@ -2909,6 +2965,91 @@ class TrajectoryService:
                         _flag("promotion_evidence_contract_broken",
                               f"negative fixture {negative.get('id')} missing required "
                               f"violation coverage: {missing_required}")
+
+        # Qualification fixtures: the measured-value disqualifiers this slice
+        # establishes (shared producer digest, weak measured independence,
+        # unknown contamination) must fail the contract rather than pass as
+        # clean. This consumes measured values; it re-derives no policy.
+        qualification = contract.get("qualification_contract") or {}
+        q_fixtures = qualification.get("fixtures") or {}
+        q_positive = q_fixtures.get("positive") or {}
+        q_positive_path = self.root / str(q_positive.get("path", ""))
+        if not q_positive_path.is_file():
+            _flag("promotion_evidence_contract_fixture_missing",
+                  f"qualification positive fixture missing: {q_positive_path}")
+        else:
+            try:
+                q_packages = json.loads(q_positive_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as error:
+                _flag("promotion_evidence_contract_fixture_invalid",
+                      f"qualification positive fixture unreadable: {error}")
+            else:
+                if not isinstance(q_packages, list) or not q_packages:
+                    _flag("promotion_evidence_contract_fixture_invalid",
+                          "qualification positive fixture must be a non-empty JSON array")
+                else:
+                    broken = []
+                    for index, package in enumerate(q_packages):
+                        if not isinstance(package, dict):
+                            broken.append((index, ["malformed_package"]))
+                            continue
+                        violations = _promotion_qualification_violations(
+                            package, contract)
+                        if violations:
+                            broken.append((index, sorted(violations)))
+                    if broken:
+                        _flag("promotion_evidence_contract_broken",
+                              f"qualification positive fixture {q_positive.get('id')} "
+                              f"must be measured-clean, got violations: {broken}")
+
+        q_negative = q_fixtures.get("negative") or {}
+        q_negative_path = self.root / str(q_negative.get("path", ""))
+        if not q_negative_path.is_file():
+            _flag("promotion_evidence_contract_fixture_missing",
+                  f"qualification negative fixture missing: {q_negative_path}")
+        else:
+            try:
+                q_records = json.loads(q_negative_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as error:
+                _flag("promotion_evidence_contract_fixture_invalid",
+                      f"qualification negative fixture unreadable: {error}")
+            else:
+                if not isinstance(q_records, list) or not q_records:
+                    _flag("promotion_evidence_contract_fixture_invalid",
+                          "qualification negative fixture must be a non-empty JSON array")
+                else:
+                    observed: set[str] = set()
+                    mismatches = []
+                    for record in q_records:
+                        if not isinstance(record, dict):
+                            observed.add("malformed_record")
+                            continue
+                        label = str(record.get("violation", "unnamed"))
+                        package = record.get("package")
+                        violations = (
+                            _promotion_qualification_violations(package, contract)
+                            if isinstance(package, dict)
+                            else {"missing_record_shape"}
+                        )
+                        observed.update(violations)
+                        if label not in violations:
+                            mismatches.append(
+                                f"{label}: expected to trigger {label}, "
+                                f"got {sorted(violations)}"
+                            )
+                    if mismatches:
+                        _flag("promotion_evidence_contract_broken",
+                              f"qualification negative fixture {q_negative.get('id')} "
+                              f"records do not trigger their labelled disqualifiers: "
+                              f"{'; '.join(mismatches)}")
+                    require = list(
+                        (q_negative.get("expect") or {}).get("require_violations", [])
+                    )
+                    missing_required = [v for v in require if v not in observed]
+                    if missing_required:
+                        _flag("promotion_evidence_contract_broken",
+                              f"qualification negative fixture {q_negative.get('id')} "
+                              f"missing required disqualifier coverage: {missing_required}")
 
         # Source markers: the Rust enforcement points must stay present.
         for marker_key, entry in (contract.get("source_markers") or {}).items():

@@ -118,6 +118,51 @@ fixtures:
         - double_promotion
         - terminal_mutation
 
+# Family promotion *qualification* dimension (GAR-008, R134).
+#
+# Completeness (above) and measurement qualification are independent: a
+# complete review package can be unqualified, and qualification never grants a
+# promotion. This block mirrors the measured-value policy implemented in
+# `da_application::native_family_promotion_gate::derive_promotion_qualification`
+# — it does *not* re-derive the policy. The oracle consumes the measured
+# values carried by the fixtures (tri-state contamination and measured producer
+# provenance) and never invents a measurement or a quality threshold. The one
+# numeric cardinality requirement is declared here as DATA mirroring the Rust
+# `PromotionQualificationPolicy::default()` (pinned by
+# `source_markers.qualification`), so the Python oracle holds no threshold of
+# its own; the validation-quality / validation-gap thresholds stay in Rust.
+#
+# The three disqualifiers this slice establishes are enforced outside the Rust
+# implementation: a shared measured producer digest, producer independence
+# that is not established by measured identities, and contamination that was
+# never assessed (or was detected). Each must fail the contract rather than
+# pass as clean.
+qualification_contract:
+  policy:
+    minimum_independent_producers: 3
+  measured_fields:
+    contamination: [detected, not_detected, not_assessed]
+    producer_provenance: [method, authority, code_digest]
+  disqualifiers:
+    - shared_producer_digest
+    - weak_producer_independence
+    - contamination_detected
+    - contamination_not_assessed
+  fixtures:
+    positive:
+      id: family_qualification_clean
+      path: governor/fixtures/promotion_contract/family_qualification.positive.json
+      expect: qualified
+    negative:
+      id: family_qualification_disqualifiers
+      path: governor/fixtures/promotion_contract/family_qualification.negative.json
+      expect:
+        require_violations:
+          - shared_producer_digest
+          - weak_producer_independence
+          - contamination_detected
+          - contamination_not_assessed
+
 # Enforcement points that must keep existing on the Rust side.
 source_markers:
   domain:
@@ -134,3 +179,10 @@ source_markers:
     required_patterns:
       - "PromotionCommitSink"
       - "PromotionTransitionRequest"
+  qualification:
+    path: crates/da-application/src/native_family_promotion_gate.rs
+    required_patterns:
+      - "PromotionDisqualifier"
+      - "derive_promotion_qualification"
+      - "minimum_independent_producers"
+      - "ContaminationAssessment"

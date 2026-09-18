@@ -1712,6 +1712,23 @@ fixtures:
     path: governor/fixtures/promotion_contract/contract_violations.negative.json
     expect:
       require_violations: [missing_evidence, import_leak, self_confirmation, reviewer_not_independent, promoter_not_independent, transition_mismatch, invalid_timestamp, double_promotion, terminal_mutation]
+qualification_contract:
+  policy:
+    minimum_independent_producers: 3
+  measured_fields:
+    contamination: [detected, not_detected, not_assessed]
+    producer_provenance: [method, authority, code_digest]
+  disqualifiers: [shared_producer_digest, weak_producer_independence, contamination_detected, contamination_not_assessed]
+  fixtures:
+    positive:
+      id: family_qualification_clean
+      path: governor/fixtures/promotion_contract/family_qualification.positive.json
+      expect: qualified
+    negative:
+      id: family_qualification_disqualifiers
+      path: governor/fixtures/promotion_contract/family_qualification.negative.json
+      expect:
+        require_violations: [shared_producer_digest, weak_producer_independence, contamination_detected, contamination_not_assessed]
 source_markers:
   domain:
     path: crates/da-domain/src/promotion.rs
@@ -1719,6 +1736,9 @@ source_markers:
   service:
     path: crates/da-application/src/promotion.rs
     required_patterns: [PromotionCommitSink, PromotionTransitionRequest]
+  qualification:
+    path: crates/da-application/src/native_family_promotion_gate.rs
+    required_patterns: [PromotionDisqualifier, derive_promotion_qualification, minimum_independent_producers, ContaminationAssessment]
 """)
     _write(root / "crates/da-domain/src/promotion.rs", (
         "pub enum PromotionError { ImportEligibleLeak, SelfConfirmation, "
@@ -1727,6 +1747,12 @@ source_markers:
     _write(root / "crates/da-application/src/promotion.rs", (
         "pub struct PromotionService;\n"
         "PromotionCommitSink PromotionTransitionRequest\n"
+    ))
+    _write(root / "crates/da-application/src/native_family_promotion_gate.rs", (
+        "pub enum PromotionDisqualifier { SharedProducerDigest, WeakProducerIndependence }\n"
+        "pub fn derive_promotion_qualification() {}\n"
+        "pub struct PromotionQualificationPolicy { minimum_independent_producers: usize }\n"
+        "pub use ContaminationAssessment;\n"
     ))
     _write(root / "governor/fixtures/promotion_contract/valid_decisions.positive.json", json.dumps([
         {
@@ -1912,6 +1938,67 @@ source_markers:
             ],
         },
     ]))
+
+    def _producer(code: str, method: str = "same-n-critic") -> dict:
+        return {
+            "method": method,
+            "authority": "fixture-authority",
+            "code_digest": code * 64,
+            "input_digest": "c" * 64,
+        }
+
+    _write(
+        root / "governor/fixtures/promotion_contract/family_qualification.positive.json",
+        json.dumps([
+            {
+                "contamination": "not_detected",
+                "producer_provenance": [_producer("1"), _producer("2"), _producer("3")],
+            },
+        ]),
+    )
+    _write(
+        root / "governor/fixtures/promotion_contract/family_qualification.negative.json",
+        json.dumps([
+            {
+                "violation": "shared_producer_digest",
+                "package": {
+                    "contamination": "not_detected",
+                    "producer_provenance": [
+                        _producer("1"), _producer("1"), _producer("2"), _producer("3"),
+                    ],
+                },
+            },
+            {
+                "violation": "weak_producer_independence",
+                "package": {
+                    "contamination": "not_detected",
+                    "producer_provenance": [_producer("4"), _producer("5")],
+                },
+            },
+            {
+                "violation": "weak_producer_independence",
+                "package": {
+                    "contamination": "not_detected",
+                    "producer_provenance": [
+                        _producer("6"), _producer("7"), _producer("8", method="   "),
+                    ],
+                },
+            },
+            {
+                "violation": "contamination_not_assessed",
+                "package": {
+                    "producer_provenance": [_producer("9"), _producer("a"), _producer("b")],
+                },
+            },
+            {
+                "violation": "contamination_detected",
+                "package": {
+                    "contamination": "detected",
+                    "producer_provenance": [_producer("d"), _producer("e"), _producer("f")],
+                },
+            },
+        ]),
+    )
     return contract
 
 def test_promotion_evidence_contract_pass_on_clean_fixtures():
@@ -1993,6 +2080,114 @@ def test_promotion_evidence_contract_invalid_yaml_is_flagged():
            "{bad yaml: [")
     flags = service._check_promotion_evidence_contract()
     assert flags[0].flag == "promotion_evidence_contract_invalid"
+
+def test_promotion_evidence_contract_qualification_pass_on_clean_fixture():
+    """A measured-clean qualification fixture plus full disqualifier coverage passes."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    assert service._check_promotion_evidence_contract() == []
+
+def test_promotion_evidence_contract_qualification_positive_fixture_must_be_clean():
+    """Unknown contamination in the positive fixture is never read as clean."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    # Remove the measurement entirely: an absent assessment is unknown.
+    path = service.root / "governor/fixtures/promotion_contract/family_qualification.positive.json"
+    packages = json.loads(path.read_text())
+    del packages[0]["contamination"]
+    _write(path, json.dumps(packages))
+    flags = service._check_promotion_evidence_contract()
+    broken = [f for f in flags if f.flag == "promotion_evidence_contract_broken"]
+    assert len(broken) == 1
+    assert "qualification positive" in broken[0].evidence
+    assert "contamination_not_assessed" in broken[0].evidence
+
+def test_promotion_evidence_contract_qualification_shared_digest_cannot_pass_as_clean():
+    """A package whose producers share one measured digest is not clean."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    path = service.root / "governor/fixtures/promotion_contract/family_qualification.positive.json"
+    packages = json.loads(path.read_text())
+    producers = packages[0]["producer_provenance"]
+    producers[1]["code_digest"] = producers[0]["code_digest"]
+    _write(path, json.dumps(packages))
+    flags = service._check_promotion_evidence_contract()
+    broken = [f for f in flags if f.flag == "promotion_evidence_contract_broken"]
+    assert len(broken) == 1
+    assert "qualification positive" in broken[0].evidence
+    assert "shared_producer_digest" in broken[0].evidence
+
+def test_promotion_evidence_contract_qualification_weak_independence_cannot_pass_as_clean():
+    """A measured producer set below the declared cardinality is not clean."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    path = service.root / "governor/fixtures/promotion_contract/family_qualification.positive.json"
+    packages = json.loads(path.read_text())
+    packages[0]["producer_provenance"] = packages[0]["producer_provenance"][:2]
+    _write(path, json.dumps(packages))
+    flags = service._check_promotion_evidence_contract()
+    broken = [f for f in flags if f.flag == "promotion_evidence_contract_broken"]
+    assert len(broken) == 1
+    assert "qualification positive" in broken[0].evidence
+    assert "weak_producer_independence" in broken[0].evidence
+
+def test_promotion_evidence_contract_qualification_negative_fixture_must_trigger_labelled_disqualifiers():
+    """A negative record drifting away from its labelled disqualifier is flagged."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    path = service.root / "governor/fixtures/promotion_contract/family_qualification.negative.json"
+    records = json.loads(path.read_text())
+    for record in records:
+        if record.get("violation") == "shared_producer_digest":
+            producers = record["package"]["producer_provenance"]
+            producers[1]["code_digest"] = "9" * 64
+    _write(path, json.dumps(records))
+    flags = service._check_promotion_evidence_contract()
+    broken = [f for f in flags if f.flag == "promotion_evidence_contract_broken"]
+    assert any("shared_producer_digest" in f.evidence for f in broken)
+
+def test_promotion_evidence_contract_qualification_unknown_contamination_is_flagged():
+    """Laundering an unknown contamination measurement into clean fails closed."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    path = service.root / "governor/fixtures/promotion_contract/family_qualification.negative.json"
+    records = json.loads(path.read_text())
+    for record in records:
+        if record.get("violation") == "contamination_not_assessed":
+            record["package"]["contamination"] = "not_detected"
+    _write(path, json.dumps(records))
+    flags = service._check_promotion_evidence_contract()
+    broken = [f for f in flags if f.flag == "promotion_evidence_contract_broken"]
+    assert any("contamination_not_assessed" in f.evidence for f in broken)
+
+def test_promotion_evidence_contract_qualification_negative_fixture_must_cover_disqualifiers():
+    """Removing a disqualifier case fails the coverage requirement."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    path = service.root / "governor/fixtures/promotion_contract/family_qualification.negative.json"
+    records = json.loads(path.read_text())
+    records = [r for r in records if r.get("violation") != "contamination_detected"]
+    _write(path, json.dumps(records))
+    flags = service._check_promotion_evidence_contract()
+    broken = [f for f in flags if f.flag == "promotion_evidence_contract_broken"]
+    assert any("missing required disqualifier coverage" in f.evidence for f in broken)
+    assert any("contamination_detected" in f.evidence for f in broken)
+
+def test_promotion_evidence_contract_qualification_missing_fixture_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    (service.root / "governor/fixtures/promotion_contract/family_qualification.negative.json").unlink()
+    flags = service._check_promotion_evidence_contract()
+    missing = [f for f in flags if f.flag == "promotion_evidence_contract_fixture_missing"]
+    assert any("qualification negative" in f.evidence for f in missing)
 
 def _write_acap_runtime_control_plane_contract(root: Path) -> Path:
     """Write the ACAP runtime control-plane contract + fixtures into a temp root."""
@@ -5551,6 +5746,14 @@ def _run_all_tests() -> int:
         test_promotion_evidence_contract_negative_fixture_must_cover_required_violations,
         test_promotion_evidence_contract_source_marker_missing_is_flagged,
         test_promotion_evidence_contract_invalid_yaml_is_flagged,
+        test_promotion_evidence_contract_qualification_pass_on_clean_fixture,
+        test_promotion_evidence_contract_qualification_positive_fixture_must_be_clean,
+        test_promotion_evidence_contract_qualification_shared_digest_cannot_pass_as_clean,
+        test_promotion_evidence_contract_qualification_weak_independence_cannot_pass_as_clean,
+        test_promotion_evidence_contract_qualification_negative_fixture_must_trigger_labelled_disqualifiers,
+        test_promotion_evidence_contract_qualification_unknown_contamination_is_flagged,
+        test_promotion_evidence_contract_qualification_negative_fixture_must_cover_disqualifiers,
+        test_promotion_evidence_contract_qualification_missing_fixture_is_flagged,
         test_acap_runtime_control_plane_pass_on_clean_fixtures,
         test_acap_runtime_control_plane_missing_fixture_is_flagged,
         test_acap_runtime_control_plane_positive_fixture_must_be_clean,
