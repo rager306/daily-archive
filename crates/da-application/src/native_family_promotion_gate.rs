@@ -5,6 +5,9 @@
 //! request for human review.
 
 use crate::derived_evidence_maturity::FamilyId;
+use crate::parse_learning_evaluation::{
+    ContaminationAssessment, ProducerProvenance, PromotionQualityPolicy,
+};
 use serde::{Deserialize, Serialize};
 
 /// The nine mandatory, ordered proof slots in a family review package.
@@ -98,8 +101,11 @@ pub struct NamedGap {
     pub must_remain_visible: bool,
 }
 
-/// Injected evidence package. It carries proof occupancy, not metric math.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// Injected evidence package. Proof occupancy and measured values are separate
+/// concerns: completeness lives in the proof slots, qualification inputs live
+/// in the measured fields, and an absent measurement is never read as a clean
+/// claim.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FamilyPromotionEvidence {
     pub family: FamilyId,
@@ -133,8 +139,20 @@ pub struct FamilyPromotionEvidence {
     pub stale_identity: bool,
     #[serde(default)]
     pub denominator_mismatch: bool,
+    /// Tri-state measured contamination. An absent measurement deserializes to
+    /// `NotAssessed`, never to a clean `NotDetected`.
+    #[serde(default = "contamination_not_assessed")]
+    pub contamination: ContaminationAssessment,
+    /// Measured producer identities. Independence is a property of these
+    /// values; display labels never establish it.
     #[serde(default)]
-    pub contamination: bool,
+    pub producer_provenance: Vec<ProducerProvenance>,
+    /// Measured candidate train quality; `None` means it was never measured.
+    #[serde(default)]
+    pub measured_train_quality: Option<f64>,
+    /// Measured candidate validation quality; `None` means never measured.
+    #[serde(default)]
+    pub measured_validation_quality: Option<f64>,
     #[serde(default)]
     pub nonfinite_metric: bool,
     #[serde(default)]
@@ -174,7 +192,10 @@ impl FamilyPromotionEvidence {
             named_gap_hidden: false,
             stale_identity: false,
             denominator_mismatch: false,
-            contamination: false,
+            contamination: ContaminationAssessment::NotAssessed,
+            producer_provenance: Vec::new(),
+            measured_train_quality: None,
+            measured_validation_quality: None,
             nonfinite_metric: false,
             producer_not_independent: false,
             conservation_veto: false,
@@ -201,7 +222,7 @@ impl FamilyPromotionEvidence {
             "named_gap_hidden" => self.named_gap_hidden = true,
             "stale_identity" => self.stale_identity = true,
             "denominator_mismatch" => self.denominator_mismatch = true,
-            "contamination" => self.contamination = true,
+            "contamination" => self.contamination = ContaminationAssessment::Detected,
             "nonfinite_metric" => self.nonfinite_metric = true,
             "producer_not_independent" => self.producer_not_independent = true,
             "conservation_veto" => self.conservation_veto = true,
@@ -247,6 +268,10 @@ fn valid_digest(value: &str) -> bool {
     value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
+fn contamination_not_assessed() -> ContaminationAssessment {
+    ContaminationAssessment::NotAssessed
+}
+
 fn blocked(reason: PromotionGateBlockReason, detail: &str) -> PromotionGateDerivation {
     PromotionGateDerivation::Blocked {
         reason,
@@ -279,7 +304,7 @@ pub fn derive_promotion_gate(package: &FamilyPromotionEvidence) -> PromotionGate
             PromotionGateBlockReason::NamedGapHidden,
         ),
         (
-            package.contamination,
+            package.contamination == ContaminationAssessment::Detected,
             PromotionGateBlockReason::Contamination,
         ),
         (
@@ -397,6 +422,196 @@ pub fn derive_promotion_gate(package: &FamilyPromotionEvidence) -> PromotionGate
         deployed: false,
         this_wave_promotes: None,
         import_eligible: false,
+    }
+}
+
+/// Explicit numeric and cardinality policy that measured values are judged
+/// against. The policy never substitutes for a measurement: every threshold is
+/// applied to a measured value, and an absent measurement is unqualified.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PromotionQualificationPolicy {
+    /// Measured candidate quality thresholds, shared with the evaluation
+    /// dialect (`parse_learning_evaluation::PromotionQualityPolicy`).
+    pub quality: PromotionQualityPolicy,
+    /// Minimum number of pairwise-distinct, complete measured producer
+    /// identities required to establish independence.
+    pub minimum_independent_producers: usize,
+}
+
+impl Default for PromotionQualificationPolicy {
+    fn default() -> Self {
+        Self {
+            quality: PromotionQualityPolicy::default(),
+            // The same-n protocol compares exactly three measured producers:
+            // the baseline evaluator, the candidate evaluator and the trainer.
+            minimum_independent_producers: 3,
+        }
+    }
+}
+
+/// One typed reason a package is not technically qualified. The two
+/// contamination variants keep *detected* separate from *never assessed*:
+/// unknown contamination is not clean. These names are the vocabulary an
+/// external contract consumes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PromotionDisqualifier {
+    /// Two measured producers share one code digest (shared provenance).
+    SharedProducerDigest,
+    /// Too few distinct, complete measured producer identities.
+    WeakProducerIndependence,
+    /// Contamination was measured and detected.
+    ContaminationDetected,
+    /// Contamination was never assessed; unknown is not a clean measurement.
+    ContaminationNotAssessed,
+    /// Candidate train/validation quality was never measured.
+    UnmeasuredQuality,
+    /// Measured validation gap exceeds the explicit threshold.
+    ValidationGapExceeded,
+    /// Measured validation quality is below the explicit threshold.
+    ValidationQualityBelowThreshold,
+}
+
+/// The independent qualification dimension, computed only from measured
+/// values. It says nothing about review-package completeness, and it never
+/// grants a promotion: the highest review disposition stays
+/// [`PromotionGateDerivation::HumanGateRequired`].
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "qualified", rename_all = "snake_case", deny_unknown_fields)]
+pub enum PromotionQualificationDecision {
+    Qualified {
+        independent_producers: usize,
+        contamination: ContaminationAssessment,
+        validation_gap: f64,
+    },
+    Unqualified {
+        reason: PromotionDisqualifier,
+        /// The measured value that failed the policy, preserved verbatim so an
+        /// operator can see *which* measurement blocked the promotion.
+        measured: String,
+    },
+}
+
+fn unqualified(
+    reason: PromotionDisqualifier,
+    measured: impl Into<String>,
+) -> PromotionQualificationDecision {
+    PromotionQualificationDecision::Unqualified {
+        reason,
+        measured: measured.into(),
+    }
+}
+
+fn shared_code_digest(producers: &[ProducerProvenance]) -> Option<String> {
+    for (index, producer) in producers.iter().enumerate() {
+        if producers[index + 1..]
+            .iter()
+            .any(|other| other.code_digest == producer.code_digest)
+        {
+            return Some(producer.code_digest.as_str().to_owned());
+        }
+    }
+    None
+}
+
+/// Compute technical promotion qualification from measured values only.
+///
+/// Completeness is deliberately *not* consulted: [`derive_promotion_gate`] owns
+/// review-package completeness, this function owns measured qualification. A
+/// complete package can be unqualified, and an incomplete package can carry
+/// measured values that satisfy the policy. Unknown contamination, a shared
+/// producer digest and too few measured producer identities are disqualifying,
+/// never clean.
+pub fn derive_promotion_qualification(
+    package: &FamilyPromotionEvidence,
+    policy: PromotionQualificationPolicy,
+) -> PromotionQualificationDecision {
+    match package.contamination {
+        ContaminationAssessment::Detected => {
+            return unqualified(PromotionDisqualifier::ContaminationDetected, "detected");
+        }
+        ContaminationAssessment::NotAssessed => {
+            return unqualified(
+                PromotionDisqualifier::ContaminationNotAssessed,
+                "not_assessed",
+            );
+        }
+        ContaminationAssessment::NotDetected => {}
+    }
+
+    if let Some(digest) = shared_code_digest(&package.producer_provenance) {
+        return unqualified(PromotionDisqualifier::SharedProducerDigest, digest);
+    }
+    let distinct = package
+        .producer_provenance
+        .iter()
+        .filter(|producer| {
+            !producer.method.trim().is_empty() && !producer.authority.trim().is_empty()
+        })
+        .count();
+    if distinct < policy.minimum_independent_producers {
+        return unqualified(
+            PromotionDisqualifier::WeakProducerIndependence,
+            format!("{distinct} < {}", policy.minimum_independent_producers),
+        );
+    }
+
+    let (Some(train_quality), Some(validation_quality)) = (
+        package.measured_train_quality,
+        package.measured_validation_quality,
+    ) else {
+        return unqualified(PromotionDisqualifier::UnmeasuredQuality, "not_measured");
+    };
+    if !train_quality.is_finite() || !validation_quality.is_finite() {
+        return unqualified(PromotionDisqualifier::UnmeasuredQuality, "nonfinite");
+    }
+    let validation_gap = train_quality - validation_quality;
+    if validation_quality < policy.quality.minimum_validation_quality {
+        return unqualified(
+            PromotionDisqualifier::ValidationQualityBelowThreshold,
+            format!(
+                "{validation_quality} < {}",
+                policy.quality.minimum_validation_quality
+            ),
+        );
+    }
+    if validation_gap > policy.quality.maximum_validation_gap {
+        return unqualified(
+            PromotionDisqualifier::ValidationGapExceeded,
+            format!(
+                "{validation_gap} > {}",
+                policy.quality.maximum_validation_gap
+            ),
+        );
+    }
+
+    PromotionQualificationDecision::Qualified {
+        independent_producers: distinct,
+        contamination: ContaminationAssessment::NotDetected,
+        validation_gap,
+    }
+}
+
+/// One package's two independent decisions: review-package completeness and
+/// measured technical qualification. Neither implies the other, and neither
+/// grants a promotion.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PromotionGateReport {
+    pub completeness: PromotionGateDerivation,
+    pub qualification: PromotionQualificationDecision,
+}
+
+/// Derive both dimensions from one package. The default policy is explicit and
+/// overridable; the completeness decision is untouched by qualification.
+pub fn derive_promotion_gate_report(
+    package: &FamilyPromotionEvidence,
+    policy: PromotionQualificationPolicy,
+) -> PromotionGateReport {
+    PromotionGateReport {
+        completeness: derive_promotion_gate(package),
+        qualification: derive_promotion_qualification(package, policy),
     }
 }
 
@@ -640,5 +855,34 @@ mod tests {
                 matches!(derive_promotion_gate(&value), PromotionGateDerivation::Blocked { reason, .. } if reason == expected)
             );
         }
+    }
+
+    #[test]
+    fn absent_measurements_deserialize_fail_closed_and_never_qualify() {
+        let mut minimal = serde_json::to_value(package()).unwrap();
+        let object = minimal.as_object_mut().unwrap();
+        object.remove("contamination");
+        object.remove("producer_provenance");
+        object.remove("measured_train_quality");
+        object.remove("measured_validation_quality");
+        let back: FamilyPromotionEvidence = serde_json::from_value(minimal).unwrap();
+        assert_eq!(back.contamination, ContaminationAssessment::NotAssessed);
+        assert!(back.producer_provenance.is_empty());
+        assert!(back.measured_train_quality.is_none());
+        assert!(back.measured_validation_quality.is_none());
+
+        // Completeness ignores absent measurements (it has its own concern).
+        assert!(matches!(
+            derive_promotion_gate(&back),
+            PromotionGateDerivation::HumanGateRequired { .. }
+        ));
+        // Qualification never reads absence as clean.
+        assert!(matches!(
+            derive_promotion_qualification(&back, PromotionQualificationPolicy::default()),
+            PromotionQualificationDecision::Unqualified {
+                reason: PromotionDisqualifier::ContaminationNotAssessed,
+                ref measured,
+            } if measured == "not_assessed"
+        ));
     }
 }
