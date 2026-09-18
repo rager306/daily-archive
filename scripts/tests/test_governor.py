@@ -32,6 +32,11 @@ from governor.adapters.checks.conservation_verdict_provenance import (
     conservation_provenance_violations,
     missing_provenance_vocabulary,
 )
+from governor.adapters.checks.executed_population_binding import (
+    declared_report_paths,
+    executed_population_violations,
+    missing_binding_vocabulary,
+)
 from governor.application.trajectory_service import (
     TrajectoryService,
     _boundary_positional_violations,
@@ -5095,6 +5100,425 @@ def test_conservation_provenance_is_wired_into_build_report():
     assert "_check_conservation_verdict_provenance()" in source
 
 
+# ── GAR-006 executed population binding (M509-yzblqx/S02/T02) ─────────────────
+# The split contract in `crates/da-parse/tests/data_contracts.rs` (T01) proves the
+# reports HAVE three populations; the rule under test proves a corpus-scale claim
+# is BOUND to execution evidence for the population it names, and that
+# `executed ⊆ reference` / `evaluated ⊆ executed` hold. Every mutation happens on
+# a scratch copy of the committed DATA, its two fixtures, the shared population
+# contract and the ten committed shadow reports: no committed file is touched.
+# Two tests bypass the Governor wiring with direct oracle calls (ADR-051), and the
+# plan's two named failing cases — a large referenced count beside a small
+# execution, and an absent executed population — are asserted both through the
+# committed fixtures and directly.
+
+_EXECUTED_POPULATION_PREFIX = "executed_population_binding"
+_EXECUTED_POPULATION_CONTRACT = (
+    "scripts/governor/checks/executed_population_binding.yaml"
+)
+_EXECUTED_POPULATION_POSITIVE = (
+    "governor/fixtures/executed_population_binding/report_clean.positive.json"
+)
+_EXECUTED_POPULATION_NEGATIVE = (
+    "governor/fixtures/executed_population_binding/report_broken.negative.json"
+)
+_EXECUTED_POPULATION_MANIFEST = "data/parse/acceptance_manifest.yaml"
+_EXECUTED_POPULATION_MARKERS = ("crates/da-parse/tests/data_contracts.rs",)
+
+
+def _executed_population_declared_reports(repo: Path) -> list[str]:
+    """The shadow reports the shared population contract enumerates."""
+    manifest = yaml.safe_load(
+        (repo / _EXECUTED_POPULATION_MANIFEST).read_text(encoding="utf-8")
+    )
+    contract = yaml.safe_load(
+        (repo / _EXECUTED_POPULATION_CONTRACT).read_text(encoding="utf-8")
+    )
+    return declared_report_paths(manifest, contract)
+
+
+def _copy_executed_population_binding(root: Path) -> None:
+    """Copy every path the binding rule actually reads.
+
+    The rule reads the DATA contract, both fixtures, the shared population
+    contract and its declared reports, plus the two source markers; without the
+    reports the check would report `..._report_missing` instead of exercising the
+    live binding logic.
+    """
+    repo = _scripts_dir.parent
+    for rel in [
+        _EXECUTED_POPULATION_CONTRACT,
+        _EXECUTED_POPULATION_POSITIVE,
+        _EXECUTED_POPULATION_NEGATIVE,
+        _EXECUTED_POPULATION_MANIFEST,
+        *_EXECUTED_POPULATION_MARKERS,
+        *_executed_population_declared_reports(repo),
+    ]:
+        _write(root / rel, (repo / rel).read_text(encoding="utf-8"))
+
+
+def _executed_population_service() -> TrajectoryService:
+    """Scratch TrajectoryService with the committed binding DATA copied in."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_executed_population_binding(service.root)
+    return service
+
+
+def _executed_population_flags_named(flags, name: str):
+    return [f for f in flags if f.flag == f"{_EXECUTED_POPULATION_PREFIX}_{name}"]
+
+
+def _executed_population_contract_document(service: TrajectoryService) -> dict:
+    return yaml.safe_load(
+        (service.root / _EXECUTED_POPULATION_CONTRACT).read_text(encoding="utf-8")
+    )
+
+
+def _executed_population_fixture(service: TrajectoryService, rel: str):
+    return json.loads((service.root / rel).read_text(encoding="utf-8"))
+
+
+def test_executed_population_binding_pass_on_clean_fixtures():
+    """The committed DATA, fixtures, markers and all ten shadow reports pass."""
+    service = _executed_population_service()
+    assert service._check_executed_population_binding() == []
+
+
+def test_executed_population_binding_missing_contract_is_silent():
+    """No contract DATA means no rule to evaluate, not a failing rule."""
+    service = _executed_population_service()
+    (service.root / _EXECUTED_POPULATION_CONTRACT).unlink()
+    assert service._check_executed_population_binding() == []
+
+
+def test_executed_population_binding_missing_fixture_is_flagged():
+    for rel, which in [
+        (_EXECUTED_POPULATION_POSITIVE, "positive"),
+        (_EXECUTED_POPULATION_NEGATIVE, "negative"),
+    ]:
+        service = _executed_population_service()
+        (service.root / rel).unlink()
+        flags = service._check_executed_population_binding()
+        missing = _executed_population_flags_named(flags, "fixture_missing")
+        assert len(missing) == 1
+        assert which in missing[0].evidence
+        assert missing[0].severity == "high"
+        assert missing[0].dimension == "population_honesty"
+
+
+def test_executed_population_binding_positive_fixture_must_be_clean():
+    """The failing case the plan names: a corpus claim with no evidence."""
+    service = _executed_population_service()
+    path = service.root / _EXECUTED_POPULATION_POSITIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    # The honest synthetic fixture starts claiming corpus execution while the
+    # evidence that would bind that population is removed.
+    executed = records[1]["executed_population"]
+    executed["corpus_execution"] = True
+    del executed["execution_evidence"]
+    path.write_text(json.dumps(records), encoding="utf-8")
+    flags = service._check_executed_population_binding()
+    broken = _executed_population_flags_named(flags, "broken")
+    assert len(broken) == 1
+    assert "corpus_claim_without_execution_evidence" in broken[0].evidence
+
+
+def test_executed_population_binding_negative_fixture_must_trigger_labelled_violations():
+    service = _executed_population_service()
+    path = service.root / _EXECUTED_POPULATION_NEGATIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    # Give the absent-executed-population record a present executed population:
+    # its label can no longer fire, so the mismatch must be reported.
+    for record in records:
+        if record.get("violation") == "executed_population_absent":
+            record["record"]["executed_population"] = {
+                "corpus_execution": False,
+                "documents": 1,
+                "execution_evidence": "tracked_offline_fixture:x",
+            }
+    path.write_text(json.dumps(records), encoding="utf-8")
+    flags = service._check_executed_population_binding()
+    broken = _executed_population_flags_named(flags, "broken")
+    assert any("executed_population_absent" in f.evidence for f in broken)
+
+
+def test_executed_population_binding_negative_fixture_must_cover_required_violations():
+    service = _executed_population_service()
+    path = service.root / _EXECUTED_POPULATION_NEGATIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    # The plan's first named failing case is the only source of this label:
+    # removing it leaves a detectable hole in the required coverage.
+    records = [
+        r for r in records
+        if r.get("violation") != "evaluated_population_exceeds_executed"
+    ]
+    path.write_text(json.dumps(records), encoding="utf-8")
+    flags = service._check_executed_population_binding()
+    broken = _executed_population_flags_named(flags, "broken")
+    assert any(
+        "missing required violation coverage" in f.evidence
+        and "evaluated_population_exceeds_executed" in f.evidence
+        for f in broken
+    )
+
+
+def test_executed_population_binding_missing_vocabulary_is_flagged():
+    """An empty evidence vocabulary would make a corpus claim unbound-by-default."""
+    service = _executed_population_service()
+    contract = _executed_population_contract_document(service)
+    contract["populations"]["evidence_kinds"] = []
+    contract["populations"]["corpus_scale_documents"] = 0
+    assert missing_binding_vocabulary(contract) == [
+        "evidence_kinds", "corpus_scale_documents",
+    ]
+    _write(
+        service.root / _EXECUTED_POPULATION_CONTRACT,
+        yaml.safe_dump(contract, sort_keys=False),
+    )
+    flags = service._check_executed_population_binding()
+    missing = _executed_population_flags_named(flags, "vocabulary_missing")
+    assert len(missing) == 1
+    assert "evidence_kinds" in missing[0].evidence
+    assert missing[0].severity == "high"
+
+
+def test_executed_population_binding_source_marker_missing_is_flagged():
+    service = _executed_population_service()
+    _write(service.root / _EXECUTED_POPULATION_MANIFEST, "# stripped markers\n")
+    flags = service._check_executed_population_binding()
+    marker = _executed_population_flags_named(flags, "source_marker_missing")
+    assert len(marker) == 1
+    assert "population_contract" in marker[0].evidence
+
+    service = _executed_population_service()
+    _write(service.root / _EXECUTED_POPULATION_MARKERS[0], "fn main() {}\n")
+    flags = service._check_executed_population_binding()
+    marker = _executed_population_flags_named(flags, "source_marker_missing")
+    assert len(marker) == 1
+    assert "population_split_contract_test" in marker[0].evidence
+
+
+def test_executed_population_binding_invalid_yaml_is_flagged():
+    service = _executed_population_service()
+    _write(service.root / _EXECUTED_POPULATION_CONTRACT, "{bad yaml: [")
+    flags = service._check_executed_population_binding()
+    assert flags[0].flag == f"{_EXECUTED_POPULATION_PREFIX}_invalid"
+
+
+def test_executed_population_binding_absent_snapshot_suite_is_not_flagged():
+    """The rule has no durable snapshot task suite; the opt-out must be explicit."""
+    service = _executed_population_service()
+    contract = _executed_population_contract_document(service)
+    assert "graph_task_suite" not in contract
+    opted_out = _candidate_contract_flags(
+        contract, service.root, "population_honesty",
+        _EXECUTED_POPULATION_PREFIX, executed_population_violations,
+        graph_task_suite_required=False,
+    )
+    assert not [
+        f for f in opted_out
+        if f.flag == f"{_EXECUTED_POPULATION_PREFIX}_suite_missing"
+    ], opted_out
+    default = _candidate_contract_flags(
+        contract, service.root, "population_honesty",
+        _EXECUTED_POPULATION_PREFIX, executed_population_violations,
+    )
+    assert any(
+        f.flag == f"{_EXECUTED_POPULATION_PREFIX}_suite_missing" for f in default
+    )
+
+
+def test_executed_population_binding_oracle_rejects_absent_executed_population():
+    """The plan's second named failing case, falsifiable without the harness."""
+    contract = _executed_population_contract_document(
+        _executed_population_service()
+    )
+    no_executed = {
+        "report_id": "executed_population_missing",
+        "reference_population": {
+            "role": "identity_only", "identity": "reviewed_corpus_reference",
+            "documents": 589, "lane_pages": 606,
+        },
+        "evaluated_population": {"status": "not_evaluated", "documents": 0},
+    }
+    assert executed_population_violations(no_executed, contract) == {
+        "executed_population_absent"
+    }
+
+
+def test_executed_population_binding_oracle_rejects_large_reference_beside_small_execution():
+    """The plan's first named failing case, falsifiable without the harness."""
+    contract = _executed_population_contract_document(
+        _executed_population_service()
+    )
+    reference = {
+        "role": "identity_only", "identity": "reviewed_corpus_reference",
+        "documents": 589, "lane_pages": 606,
+    }
+    small_execution = {
+        "corpus_execution": False, "documents": 3, "pages": 202,
+        "execution_evidence": "tracked_offline_fixture:small_constructed_input",
+    }
+    # The large referenced count presented as an evaluation outcome of a small
+    # execution is rejected ...
+    presented = {
+        "reference_population": dict(reference),
+        "executed_population": dict(small_execution),
+        "evaluated_population": {"status": "not_evaluated", "documents": 589},
+    }
+    violations = executed_population_violations(presented, contract)
+    assert "evaluated_population_exceeds_executed" in violations, violations
+    # ... while the honest sibling (the same numbers with the evaluation
+    # explicitly empty) is clean, so the rule does not reject honest reports.
+    honest = {
+        "reference_population": dict(reference),
+        "executed_population": dict(small_execution),
+        "evaluated_population": {"status": "not_evaluated", "documents": 0},
+    }
+    assert executed_population_violations(honest, contract) == set()
+
+
+def test_executed_population_binding_oracle_rejects_replayed_and_spliced_receipts():
+    contract = _executed_population_contract_document(
+        _executed_population_service()
+    )
+    reference = {
+        "role": "identity_only", "identity": "reviewed_corpus_reference",
+        "documents": 600,
+    }
+    # A valid token copied from a real corpus report cannot bind a corpus-scale
+    # executed number.
+    replayed = {
+        "reference_population": dict(reference),
+        "executed_population": {
+            "corpus_execution": True, "identity": "reviewed_corpus_reference",
+            "documents": 589,
+            "execution_evidence": "tracked_source_pdfs_with_sha256",
+        },
+        "evaluated_population": {"status": "not_evaluated", "documents": 0},
+    }
+    assert executed_population_violations(replayed, contract) == {
+        "execution_evidence_unbound"
+    }
+    # A structured receipt whose identity and count belong to another report.
+    spliced = {
+        "reference_population": dict(reference),
+        "executed_population": {
+            "corpus_execution": True, "identity": "reviewed_corpus_reference",
+            "documents": 589,
+            "execution_evidence": {
+                "kind": "tracked_source_pdfs_with_sha256",
+                "population_identity": "some_other_report",
+                "documents": 3,
+            },
+        },
+        "evaluated_population": {"status": "not_evaluated", "documents": 0},
+    }
+    assert executed_population_violations(spliced, contract) == {
+        "execution_receipt_mismatch"
+    }
+
+
+def test_executed_population_binding_oracle_accepts_bound_receipt_and_bounds_identity():
+    contract = _executed_population_contract_document(
+        _executed_population_service()
+    )
+    bound = {
+        "reference_population": {
+            "role": "identity_only", "identity": "reviewed_corpus_reference",
+            "documents": 12,
+        },
+        "executed_population": {
+            "corpus_execution": True, "identity": "reviewed_corpus_reference",
+            "documents": 12,
+            "execution_evidence": {
+                "kind": "tracked_source_pdfs_with_sha256",
+                "population_identity": "reviewed_corpus_reference",
+                "documents": 12,
+                "digest": "sha256:00ff",
+            },
+        },
+        "evaluated_population": {
+            "status": "evaluated", "documents": 12,
+            "oracle": "reviewed_corpus_oracle",
+        },
+    }
+    assert executed_population_violations(bound, contract) == set()
+    # Identity and evidence are bounded identities, not payloads (Q3 R4).
+    oversized = {
+        "reference_population": {
+            "role": "identity_only", "identity": "a" * 512, "documents": 3,
+        },
+        "executed_population": {
+            "corpus_execution": False, "documents": 1,
+            "execution_evidence": "tracked_offline_fixture:x",
+        },
+        "evaluated_population": {"status": "not_evaluated", "documents": 0},
+    }
+    assert executed_population_violations(oversized, contract) == {
+        "oversized_population_value"
+    }
+
+
+def test_executed_population_binding_live_report_presented_as_executed_is_flagged():
+    """A committed shadow report mutated into the GAR-006 shape is rejected."""
+    service = _executed_population_service()
+    rel = "artifacts/parse_compat/callout_matching_shadow.json"
+    document = json.loads((service.root / rel).read_text(encoding="utf-8"))
+    document["reference_population"]["documents"] = 589
+    document["evaluated_population"]["documents"] = 589
+    _write(service.root / rel, json.dumps(document))
+    flags = service._check_executed_population_binding()
+    broken = _executed_population_flags_named(flags, "report_broken")
+    assert len(broken) == 1
+    assert rel in broken[0].evidence
+    assert "evaluated_population_exceeds_executed" in broken[0].evidence
+    assert broken[0].severity == "high"
+
+
+def test_executed_population_binding_live_report_missing_is_flagged():
+    service = _executed_population_service()
+    rel = "artifacts/parse_compat/callout_matching_shadow.json"
+    (service.root / rel).unlink()
+    flags = service._check_executed_population_binding()
+    missing = _executed_population_flags_named(flags, "report_missing")
+    assert len(missing) == 1
+    assert rel in missing[0].evidence
+
+
+def test_executed_population_binding_undeclared_report_is_flagged():
+    """A shadow report outside the shared contract is never bound: fail closed."""
+    service = _executed_population_service()
+    rogue = service.root / "artifacts/parse_compat/rogue_shadow.json"
+    _write(rogue, json.dumps({
+        "schema_version": "shadow-populations.v1",
+        "reference_population": {"documents": 589},
+        "executed_population": {"documents": 3},
+        "evaluated_population": {"documents": 0},
+    }))
+    flags = service._check_executed_population_binding()
+    undeclared = _executed_population_flags_named(flags, "report_undeclared")
+    assert len(undeclared) == 1
+    assert "rogue_shadow.json" in undeclared[0].evidence
+
+
+def test_executed_population_binding_is_wired_into_build_report():
+    """A rule that is implemented but never invoked is a dead rule.
+
+    `build_report` is the single governor validation path (`preflight` and
+    `doctor` both go through it). Constructing it needs every collaborator, so
+    this pins the call site instead: deleting the delegation fails here rather
+    than silently disabling the rule. The end-to-end behaviour is additionally
+    evidenced by `governor --phase preflight` producing no
+    `executed_population_binding` flag on the committed tree.
+    """
+    import inspect
+
+    source = inspect.getsource(TrajectoryService.build_report)
+    assert "_check_executed_population_binding()" in source
+
+
 def _run_all_tests() -> int:
     """Simple test runner (no pytest dependency)."""
     tests = [
@@ -5206,6 +5630,24 @@ def _run_all_tests() -> int:
         test_conservation_provenance_oracle_fails_closed_on_absent_and_unknown,
         test_conservation_provenance_oracle_bounds_provenance_identity,
         test_conservation_provenance_is_wired_into_build_report,
+        test_executed_population_binding_pass_on_clean_fixtures,
+        test_executed_population_binding_missing_contract_is_silent,
+        test_executed_population_binding_missing_fixture_is_flagged,
+        test_executed_population_binding_positive_fixture_must_be_clean,
+        test_executed_population_binding_negative_fixture_must_trigger_labelled_violations,
+        test_executed_population_binding_negative_fixture_must_cover_required_violations,
+        test_executed_population_binding_missing_vocabulary_is_flagged,
+        test_executed_population_binding_source_marker_missing_is_flagged,
+        test_executed_population_binding_invalid_yaml_is_flagged,
+        test_executed_population_binding_absent_snapshot_suite_is_not_flagged,
+        test_executed_population_binding_oracle_rejects_absent_executed_population,
+        test_executed_population_binding_oracle_rejects_large_reference_beside_small_execution,
+        test_executed_population_binding_oracle_rejects_replayed_and_spliced_receipts,
+        test_executed_population_binding_oracle_accepts_bound_receipt_and_bounds_identity,
+        test_executed_population_binding_live_report_presented_as_executed_is_flagged,
+        test_executed_population_binding_live_report_missing_is_flagged,
+        test_executed_population_binding_undeclared_report_is_flagged,
+        test_executed_population_binding_is_wired_into_build_report,
         test_oracle_digest_recomputation_pass_on_clean_fixtures,
         test_oracle_digest_recomputation_missing_contract_is_silent,
         test_oracle_digest_recomputation_missing_fixture_is_flagged,

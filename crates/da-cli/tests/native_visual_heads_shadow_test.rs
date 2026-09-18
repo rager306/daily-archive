@@ -162,11 +162,20 @@ fn native_visual_shadow_has_nine_terminal_lane_receipts() {
     let text = fs::read_to_string(&report).expect("canonical report");
     let value: Value = serde_json::from_str(&text).expect("valid JSON report");
     assert_eq!(value["schema_version"], "native-visual-heads-shadow.v1");
-    assert_eq!(value["denominators"]["documents"], 3);
-    assert_eq!(value["denominators"]["lanes"], 3);
-    assert_eq!(value["denominators"]["pages_per_lane"], 202);
-    assert_eq!(value["denominators"]["lane_pages"], 606);
-    assert_eq!(value["denominators"]["receipts"], 27);
+    // GAR-006: the 3-document / 606-lane-page / 27-receipt numbers belong to
+    // the referenced population; the executed population reports its own
+    // documents and its own observable heads.
+    assert_eq!(value["reference_population"]["role"], "identity_only");
+    assert_eq!(value["reference_population"]["documents"], 3);
+    assert_eq!(value["reference_population"]["lanes"], 3);
+    assert_eq!(value["reference_population"]["pages_per_lane"], 202);
+    assert_eq!(value["reference_population"]["lane_pages"], 606);
+    assert_eq!(value["reference_population"]["oracle_receipts"], 27);
+    assert_eq!(value["executed_population"]["corpus_execution"], true);
+    assert_eq!(value["executed_population"]["documents"], 3);
+    assert_eq!(value["executed_population"]["lane_receipts"], 9);
+    assert_eq!(value["evaluated_population"]["status"], "not_evaluated");
+    assert_eq!(value["evaluated_population"]["documents"], 0);
     assert_eq!(value["outcomes"].as_array().expect("outcomes").len(), 9);
     assert_eq!(
         value["outcomes"]

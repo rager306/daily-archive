@@ -250,12 +250,36 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
             && receipt["status"] == "pass"
     }));
     assert_eq!(value["schema_version"], "document-segmentation-shadow.v2");
-    assert_eq!(value["denominators"]["corpus_documents"], 3);
-    assert_eq!(value["denominators"]["lanes"], 3);
-    assert_eq!(value["denominators"]["pages_per_lane"], 202);
-    assert_eq!(value["denominators"]["lane_pages"], 606);
-    assert_eq!(value["denominators"]["matrix_rows"], 81);
-    assert_eq!(value["denominators"]["lane_page_receipts"], 606);
+    // GAR-006: the reviewed reference, the executed population and the
+    // evaluated population are separate objects with their own document
+    // counts, so 606 referenced lane pages cannot be read as 606 executed ones.
+    assert_eq!(value["reference_population"]["role"], "identity_only");
+    assert_eq!(value["reference_population"]["documents"], 3);
+    assert_eq!(value["reference_population"]["lanes"], 3);
+    assert_eq!(value["reference_population"]["pages_per_lane"], 202);
+    assert_eq!(value["reference_population"]["lane_pages"], 606);
+    assert_eq!(value["reference_population"]["oracle_rows"], 81);
+    assert_eq!(value["executed_population"]["corpus_execution"], true);
+    assert_eq!(value["executed_population"]["documents"], 3);
+    assert_eq!(value["executed_population"]["lane_outcomes"], 9);
+    assert_eq!(value["executed_population"]["lane_page_receipts"], 606);
+    assert!(
+        value["executed_population"]["pages"]
+            .as_u64()
+            .expect("executed pages")
+            <= value["reference_population"]["lane_pages"]
+                .as_u64()
+                .expect("referenced lane pages"),
+        "executed pages may never exceed the referenced lane pages"
+    );
+    assert!(
+        value["executed_population"]["admitted_lane_outcomes"]
+            .as_u64()
+            .expect("admitted lane outcomes")
+            <= 9
+    );
+    assert_eq!(value["evaluated_population"]["status"], "not_evaluated");
+    assert_eq!(value["evaluated_population"]["documents"], 0);
     assert_eq!(value["outcomes"].as_array().expect("outcomes").len(), 9);
     assert_eq!(value["matrix"].as_array().expect("matrix").len(), 81);
     let page_receipts = value["page_receipts"].as_array().expect("page receipts");

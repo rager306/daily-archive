@@ -126,12 +126,22 @@ fn source_bound_shadow_report_is_terminal_replayed_and_quarantined() {
     assert_eq!(value["data_schema"], "native-fulltext-composition.v1");
     assert_eq!(value["source_identity"]["identity_kind"], "synthetic_clone");
     assert_eq!(value["source_identity"]["unique_source_sha256"], 1);
-    assert_eq!(value["denominators"]["documents"], 3);
-    assert_eq!(value["denominators"]["lanes"], 3);
-    assert_eq!(value["denominators"]["admitted_rows"], 9);
-    assert_eq!(value["denominators"]["s12_named"], 3);
-    assert_eq!(value["denominators"]["s15_terminal"], 9);
-    assert_eq!(value["denominators"]["s16_visual_heads"], 27);
+    // GAR-006: the referenced corpus identity is separate from the executed
+    // population and from the evaluated population, so a 3-document / 27-head
+    // reference cannot be read as this synthetic run's execution scope.
+    assert_eq!(value["reference_population"]["role"], "identity_only");
+    assert_eq!(value["reference_population"]["documents"], 3);
+    assert_eq!(value["reference_population"]["lanes"], 3);
+    assert_eq!(value["reference_population"]["referent_rows"], 9);
+    assert_eq!(value["reference_population"]["s12_named"], 3);
+    assert_eq!(value["reference_population"]["s15_terminal"], 9);
+    assert_eq!(value["reference_population"]["s16_visual_heads"], 27);
+    assert_eq!(value["executed_population"]["corpus_execution"], false);
+    assert_eq!(value["executed_population"]["documents"], 1);
+    assert_eq!(value["executed_population"]["document_identities"], 3);
+    assert_eq!(value["executed_population"]["objects"], 9);
+    assert_eq!(value["evaluated_population"]["status"], "not_evaluated");
+    assert_eq!(value["evaluated_population"]["documents"], 0);
     assert_eq!(value["execution"]["admitted"], 9);
     assert_eq!(value["execution"]["terminal"], 9);
     assert_eq!(value["outcomes"].as_array().expect("outcomes").len(), 9);

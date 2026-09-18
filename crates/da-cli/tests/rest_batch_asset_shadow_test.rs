@@ -89,10 +89,24 @@ fn rest_batch_shadow_is_source_bound_bounded_and_digest_only() {
             Some(64)
         );
     }
+    // GAR-006: the reviewed demand inventory is the referenced population; the
+    // executed population is the synthetic loopback run and says so.
+    assert_eq!(value["reference_population"]["role"], "identity_only");
+    assert_eq!(value["reference_population"]["documents"], 3);
+    assert_eq!(value["reference_population"]["inventory"], 19);
+    assert_eq!(value["reference_population"]["demand_review"], 19);
+    assert_eq!(value["reference_population"]["executable"], 4);
+    assert_eq!(value["reference_population"]["corpus_lane_pages"], 606);
+    assert_eq!(value["executed_population"]["corpus_execution"], false);
+    assert_eq!(value["executed_population"]["documents"], 3);
+    assert_eq!(value["executed_population"]["operations"], 3);
     assert_eq!(
-        value["denominators"],
-        serde_json::json!({"inventory": 19, "demand_review": 19, "executable": 4, "admitted": 3, "terminal": 3})
+        value["executed_population"]["source_kind"],
+        "synthetic_loopback_fixture"
     );
+    assert_eq!(value["evaluated_population"]["status"], "not_evaluated");
+    assert_eq!(value["evaluated_population"]["documents"], 0);
+    assert_eq!(value["outcomes"]["quality_claims"], serde_json::json!([]));
     let operations = value["operations"]
         .as_array()
         .expect("operation dispositions");

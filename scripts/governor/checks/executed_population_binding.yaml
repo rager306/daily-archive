@@ -1,0 +1,176 @@
+# Executed population binding contract — GAR-006 closure at the control plane.
+#
+# DATA for the Governor `executed_population_binding` check. GAR-006
+# (re-closed with fresh contracts by M509-yzblqx/S02) recorded that a shadow
+# report could publish a corpus-scale identity number beside a small executed
+# population and still read as a corpus-scale result: the reference, executed
+# and evaluated populations were either one undifferentiated object or a
+# presence-only split, so a number describing the *referenced* population could
+# be consumed as if it described what was *executed*.
+#
+# T01 of this slice split every shadow report into the three populations. This
+# contract makes the split *value- and relation-aware* rather than presence-only,
+# so the GAR-006 hole does not survive under a schema-valid report:
+#
+#   - a report CLAIMS corpus execution when `executed_population.corpus_execution`
+#     is literally true, or `evaluated_population.status` is a measured status,
+#     or the executed document count reaches `corpus_scale_documents`;
+#   - a claim is accepted only with execution evidence for that population. No
+#     evidence is `corpus_claim_without_execution_evidence` (the fabrication
+#     shape); a string token outside the declared `evidence_kinds` is
+#     `unknown_execution_evidence_kind` (the pre-fix `"n/a"` shape); a bare token
+#     for a corpus-scale number is `execution_evidence_unbound` (replay of a
+#     valid token from another report is indistinguishable, so it is refused);
+#   - a structured receipt must bind identically: its documented population and
+#     its `documents` count must agree with the executed population, or it is
+#     `execution_receipt_mismatch` (the splice shape);
+#   - the relations `executed ⊆ reference` and `evaluated ⊆ executed` are
+#     checked, so a corpus-scale reference count carried into the evaluated
+#     population beside a small execution is
+#     `evaluated_population_exceeds_executed` — the plan's named failing case;
+#   - absence fails closed. A missing reference/executed/evaluated population,
+#     a population without a numeric `documents` count, a measured status with
+#     `corpus_execution` not literally true and an oversized identity/evidence
+#     value each carry their own typed label.
+#
+# The governed reports are enumerated by the shared population contract in
+# `data/parse/acceptance_manifest.yaml`, so this rule and the population-split
+# contract cannot disagree about which shadow reports exist; a `*_shadow.json`
+# on disk that the contract does not declare is `..._report_undeclared`.
+#
+# Boundary of the claim (M509/S02 Q3 R2, stated rather than implied): this is a
+# consistency and fail-closed contract over the populations an artifact declares
+# about itself, not a tamper-evident attestation. An actor able to rewrite both
+# the report and this DATA rule can satisfy it. Its value is that absence, drift
+# and self-contradiction stop passing as compliance, and that a corpus-scale
+# number must name the evidence that produced it.
+#
+# Semantics of the independent Python oracle `executed_population_violations` in
+# `scripts/governor/adapters/checks/executed_population_binding.py` (ADR-051 — it
+# shares no code with the Rust shadow producers or the da-parse data contract):
+#   - positive (`report_clean`): an honest corpus execution (real source PDFs,
+#     evidence token, executed count inside the reference), an honest synthetic
+#     fixture (small executed count, `corpus_execution: false`, no claim) and a
+#     declared measurement whose receipt binds identity and count — all clean.
+#   - negative (`report_broken`): one record per entry-level label, and every
+#     label in `require_violations` must appear — removing a negative case (for
+#     example the large-reference-beside-small-executed case) is flagged.
+#   - this contract deliberately declares no `graph_task_suite`: the shadow
+#     reports have no durable snapshot-level task suite, so the check passes
+#     `graph_task_suite_required=False` explicitly instead of silently skipping
+#     suite enforcement.
+#
+# This is DATA — tightening an expectation is an edit here (plus the committed
+# fixture JSON), not a Python change.
+
+schema_version: executed-population-binding.v1
+policy_id: executed_population_binding
+dimension: population_honesty
+severity: high
+anchor: "GAR-006, R093, R117, R133, ADR-076, ADR-051"
+
+populations:
+  # Where the three populations live inside a shadow report document. The keys
+  # are the live wire keys every shipped shadow producer publishes.
+  reference_key: reference_population
+  executed_key: executed_population
+  evaluated_key: evaluated_population
+  documents_key: documents
+  identity_key: identity
+  execution_flag: corpus_execution
+  evidence_key: execution_evidence
+  status_key: status
+  # Statuses that explicitly decline to claim an evaluation outcome. Anything
+  # else is a measured status and requires `corpus_execution: true`.
+  not_evaluated_statuses: [not_evaluated, none]
+  # A document count at or above this is corpus-scale: it claims the corpus
+  # rather than a local/synthetic sample, and therefore must carry execution
+  # evidence that BINDS (a bare token cannot bind it).
+  corpus_scale_documents: 50
+  # Bounded identity: an identity/evidence string longer than this is a payload,
+  # not an identity (M509/S02 Q3 R4, transferred from M509/S01).
+  max_value_length: 128
+  # Closed vocabulary of declared evidence kinds — the token before the first
+  # ':' in a string evidence value. Live wire literals of the shipped shadow
+  # producers; adding a producer with a new evidence token is an edit here, so a
+  # new claim cannot arrive undeclared.
+  evidence_kinds:
+    - offline_loopback_stub_existing_typed_transport
+    - tracked_offline_fixture
+    - tracked_offline_join_fixture
+    - tracked_reviewed_oracle_receipts
+    - tracked_source_pdfs_with_sha256
+    - tracked_source_pdfs_with_sha256_and_donor_lanes
+    - tracked_synthetic_clone_fixture
+  # Keys of a structured execution receipt. A receipt must agree with the
+  # executed population it claims to have produced.
+  receipt_documents_key: documents
+  receipt_identity_key: population_identity
+  receipt_kind_key: kind
+  # Closed set of entry-level labels the oracle can emit.
+  violations:
+    - missing_record_object
+    - population_count_absent
+    - reference_population_absent
+    - executed_population_absent
+    - evaluated_population_absent
+    - corpus_claim_without_execution_evidence
+    - unknown_execution_evidence_kind
+    - execution_evidence_unbound
+    - execution_receipt_mismatch
+    - measured_status_without_corpus_execution
+    - executed_population_exceeds_reference
+    - evaluated_population_exceeds_executed
+    - oversized_population_value
+
+# The governed report set is the shared population contract, so the binding rule
+# and the population-split contract cannot disagree about which reports exist.
+report_contract:
+  path: data/parse/acceptance_manifest.yaml
+  key: population_contract
+  paths_key: report_paths
+  # Scope of the fail-closed enumeration: a shadow report on disk that the
+  # contract does not declare is `..._report_undeclared`.
+  glob: artifacts/parse_compat/*_shadow.json
+  # Closed set of report-level labels the check can emit.
+  violations:
+    - report_contract_invalid
+    - report_missing
+    - report_invalid
+    - report_broken
+    - report_undeclared
+
+fixtures:
+  positive:
+    id: report_clean
+    path: governor/fixtures/executed_population_binding/report_clean.positive.json
+    expect: clean
+  negative:
+    id: report_broken
+    path: governor/fixtures/executed_population_binding/report_broken.negative.json
+    expect:
+      require_violations:
+        - missing_record_object
+        - population_count_absent
+        - reference_population_absent
+        - executed_population_absent
+        - evaluated_population_absent
+        - corpus_claim_without_execution_evidence
+        - unknown_execution_evidence_kind
+        - execution_evidence_unbound
+        - execution_receipt_mismatch
+        - measured_status_without_corpus_execution
+        - executed_population_exceeds_reference
+        - evaluated_population_exceeds_executed
+        - oversized_population_value
+
+# Enforcement points that must keep existing. The rule reads these files as
+# text; it never executes them.
+source_markers:
+  population_contract:
+    path: data/parse/acceptance_manifest.yaml
+    required_patterns: [population_contract, report_paths,
+                        executed_population_required_fields]
+  population_split_contract_test:
+    path: crates/da-parse/tests/data_contracts.rs
+    required_patterns: [validate_shadow_population_reports]

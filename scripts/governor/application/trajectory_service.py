@@ -1909,6 +1909,12 @@ class TrajectoryService:
         # fail closed rather than becoming synthetic quality claims.
         drift_flags.extend(self._check_shadow_population_contract())
 
+        # GAR-006: the population split is only half the guarantee — a
+        # corpus-scale identity number must also be BOUND to execution evidence
+        # for the population it claims, and the relations executed ⊆ reference
+        # and evaluated ⊆ executed must hold.
+        drift_flags.extend(self._check_executed_population_binding())
+
         # ACAP validates multi-layer FSM, metrics, cache/prompt/optimizer and reports.
         drift_flags.extend(self._check_article_context_assurance())
 
@@ -2359,6 +2365,138 @@ class TrajectoryService:
                     evidence=details,
                     dimension="population_honesty",
                 ))
+        return flags
+
+    def _check_executed_population_binding(self) -> list[DriftFlag]:
+        """Evaluate the executed population binding contract (GAR-006).
+
+        Reads `scripts/governor/checks/executed_population_binding.yaml` (DATA)
+        and validates both its fixtures and the governed shadow reports against
+        the independent Python oracle `executed_population_violations` in
+        `governor.adapters.checks.executed_population_binding`. The population
+        split alone is presence-only: a report could still publish
+        `documents: 589`, `corpus_execution: false`, `execution_evidence: "n/a"`
+        and pass. This rule is value- and relation-aware instead:
+
+          * a corpus claim (`corpus_execution: true`, a measured evaluated
+            status, or a corpus-scale executed count) requires execution
+            evidence; a bare token cannot bind a corpus-scale number, and a
+            structured receipt must agree with the executed population's
+            identity and count (replay and splice are both refused);
+          * `executed ⊆ reference` and `evaluated ⊆ executed` are enforced, so
+            a large referenced count carried into the evaluated population
+            beside a small execution is caught;
+          * absence fails closed: a missing population, a population without a
+            numeric count and a measured status with `corpus_execution` not
+            literally true each carry their own typed label.
+
+        The governed reports are the shared population contract's report set
+        (`data/parse/acceptance_manifest.yaml`), so this rule and the
+        population-split contract cannot disagree about which shadow reports
+        exist; a report on disk that the contract does not declare is flagged
+        rather than silently skipped. The vocabulary is validated first because
+        an empty population/evidence vocabulary would make every record clean.
+        The shadow reports have no durable snapshot graph task suite, so the
+        shared helper is called with `graph_task_suite_required=False`
+        explicitly.
+        """
+        from governor.adapters.checks.executed_population_binding import (
+            declared_report_paths,
+            executed_population_violations,
+            missing_binding_vocabulary,
+        )
+
+        path = self.root / "scripts/governor/checks/executed_population_binding.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="executed_population_binding_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="population_honesty",
+            )]
+        prefix = "executed_population_binding"
+        dimension = str(contract.get("dimension") or "population_honesty")
+        severity = str(contract.get("severity", "high"))
+        flags: list[DriftFlag] = []
+
+        def _flag(name: str, evidence: str) -> None:
+            flags.append(DriftFlag(
+                flag=f"{prefix}_{name}", severity=severity,
+                evidence=evidence, dimension=dimension,
+            ))
+
+        # Fail closed on an incomplete vocabulary: without the population keys,
+        # the evidence kinds and the corpus-scale threshold the oracle cannot
+        # tell a bound claim from an unbound one and would accept every record.
+        missing = missing_binding_vocabulary(contract)
+        if missing:
+            _flag("vocabulary_missing",
+                  "population/evidence vocabulary is absent or empty, so the "
+                  f"oracle would fail open: missing {missing}")
+
+        flags.extend(_candidate_contract_flags(
+            contract, self.root, dimension,
+            prefix,
+            executed_population_violations,
+            graph_task_suite_required=False,
+        ))
+
+        # ── the governed reports ─────────────────────────────────────────
+        report_contract = contract.get("report_contract") or {}
+        manifest_path = self.root / str(report_contract.get("path", ""))
+        if not manifest_path.is_file():
+            # No report set to bind against: the fixtures and source markers
+            # above are the whole rule, mirroring the missing-contract
+            # convention (absence of the DATA is not itself a failure).
+            return flags
+        try:
+            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            _flag("report_contract_invalid",
+                  f"cannot load the population report contract {manifest_path}: {error}")
+            return flags
+        declared = declared_report_paths(manifest, contract)
+        if not declared:
+            _flag("report_contract_invalid",
+                  f"{manifest_path} declares no population report paths, so no "
+                  "shadow report would be bound to its execution evidence")
+            return flags
+
+        # Fail closed on a report on disk that the shared contract does not
+        # declare: an unenumerated report is never checked, which is exactly
+        # how a corpus-scale number could leave the governed set unnoticed.
+        glob_pattern = str(report_contract.get("glob") or "")
+        if glob_pattern:
+            declared_set = set(declared)
+            for found in sorted(self.root.glob(glob_pattern)):
+                try:
+                    relative = str(found.relative_to(self.root))
+                except ValueError:  # pragma: no cover - glob is rooted at self.root
+                    relative = str(found)
+                if relative not in declared_set:
+                    _flag("report_undeclared",
+                          f"shadow report {relative} is not declared by "
+                          f"{manifest_path}, so it is never bound to execution evidence")
+
+        for relative in declared:
+            report_path = self.root / relative
+            if not report_path.is_file():
+                _flag("report_missing", f"missing shadow report {relative}")
+                continue
+            try:
+                document = json.loads(report_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as error:
+                _flag("report_invalid", f"unreadable shadow report {relative}: {error}")
+                continue
+            violations = executed_population_violations(document, contract)
+            if violations:
+                _flag("report_broken",
+                      f"{relative}: populations are not bound to execution "
+                      f"evidence: {sorted(violations)}")
         return flags
 
     def _check_information_preservation(self) -> list[DriftFlag]:
