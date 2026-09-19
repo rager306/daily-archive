@@ -3,7 +3,7 @@
 Source window: GSD work of 2026-09-08 … 2026-09-10 (M497–M501 closure wave).
 Baseline source revision for record evidence: `git:6f328bdfb9b136deecd0ded7917c086e8ad5899b`.
 Registry: `doc/review/grobid-absorption-review-2026-09-10.jsonl` (GAR-001…GAR-016).
-Status: 3 unresolved / 13 enclosed (4 P0 findings resolved by M508-g9b5gi/S05: GAR-001, GAR-003, GAR-004, GAR-011; the eight P1 findings GAR-005..GAR-009 and GAR-012..GAR-014 resolved by M509-yzblqx S01..S05; GAR-002 superseded administrative correction from 2026-09-10).
+Status: 1 unresolved / 15 enclosed (4 P0 findings resolved by M508-g9b5gi/S05: GAR-001, GAR-003, GAR-004, GAR-011; the eight P1 findings GAR-005..GAR-009 and GAR-012..GAR-014 resolved by M509-yzblqx S01..S05; GAR-010 and GAR-016 resolved by M510-jsg1pj S02/S01 on 2026-09-19; GAR-002 superseded administrative correction from 2026-09-10. The single open record is GAR-015, an accepted open item owned by M502-2w7y8k/S09).
 Owner program: `M502-2w7y8k` (GROBID absorption correctness horizon, slices S01…S09).
 Locks preserved: `import_eligible=false`, no graph writes, no auto-promote,
 no production splice, no PIR-015 splice, no redistribution.
@@ -38,13 +38,13 @@ summary. Human-readable narrative is not a source of requirements or scope.
 | GAR-007 | ReviewReady is unreachable in the maturity derivation despite ladder order | P1 | M509-yzblqx/S03 (resolved) |
 | GAR-008 | Promotion dry run proves completeness better than evidentiary sufficiency | P1 | M509-yzblqx/S03 (resolved) |
 | GAR-009 | Freshness identity and revision selection are not bound into evidence receipts | P1 | M509-yzblqx/S01 (resolved) |
-| GAR-010 | Meta-prompt normatives lack a machine-checkable authority and change-control model | P2 | M502-2w7y8k/S07 |
-| GAR-011 | Oracle digests are cross-referenced but not recomputed from canonical source bytes | P1 | M502-2w7y8k/S03 |
+| GAR-010 | Meta-prompt normatives lack a machine-checkable authority and change-control model | P2 | M510-jsg1pj/S02 (resolved) |
+| GAR-011 | Oracle digests are cross-referenced but not recomputed from canonical source bytes | P0 | M502-2w7y8k/S03 |
 | GAR-012 | Production quarantine proves input isolation, not semantic utility or legal admissibility | P1 | M509-yzblqx/S04 (resolved) |
 | GAR-013 | Citation occurrence, bibliography entry and external work lack explicit link semantics | P1 | M509-yzblqx/S05 (resolved) |
 | GAR-014 | Cross-automata state invalidation has no interaction map | P1 | M509-yzblqx/S04 (resolved) |
-| GAR-015 | External holdout remains unexecuted with no acceptance statistics or release evidence | P1 | M502-2w7y8k/S09 |
-| GAR-016 | UAT verdict lineage is not machine-checked | P1 | M502-2w7y8k/S01 |
+| GAR-015 | External holdout remains unexecuted with no acceptance statistics or release evidence | P2 | M502-2w7y8k/S09 (accepted open item) |
+| GAR-016 | UAT verdict lineage is not machine-checked | P2 | M510-jsg1pj/S01 (resolved) |
 
 ## Exclusions (deliberately rejected fixes)
 
@@ -108,8 +108,8 @@ Wave `M509-yzblqx` then closed the eight P1 findings (GAR-005..GAR-009 and
 GAR-012..GAR-014) through slices S01..S05, each record now carrying six-key
 `completion_evidence` at source revision
 `git:2871d87c9c9e4d46f49d76edeb2e6c33f17ba970`; together with the four P0
-closures and the GAR-002 supersession this leaves the current state at
-3 unresolved / 13 enclosed.
+closures and the GAR-002 supersession that wave left the register at
+3 unresolved / 13 enclosed (superseded by the M510 closure section below).
 
 | Finding | Status | Governor rule | Executable check |
 |---|---|---|---|
@@ -165,7 +165,62 @@ PYTHONPATH=scripts python3 -m governor review --registry scripts/governor/checks
 ```
 
 No lock was weakened by this closure: `deployed=false`, `import_eligible=false`,
-`auto_promote` remains forbidden, and no production splice was added. The three
-remaining open records (GAR-010, GAR-015, GAR-016) stay named in
-`manifest.yaml` under `long_horizon.next_wave`, and the 2026-09-10 source-window
-framing above is unchanged.
+`auto_promote` remains forbidden, and no production splice was added. At that
+revision the three remaining open records (GAR-010, GAR-015, GAR-016) stayed
+named in `manifest.yaml` under `long_horizon.next_wave`; the M510 closure
+section below supersedes that count, and the 2026-09-10 source-window framing
+above is unchanged.
+
+## Closure (M510-jsg1pj/S04)
+
+Wave `M510-jsg1pj` re-executed each remaining priority-two finding's recorded
+verification at the current tree and closed two of the three; the third is
+recorded at the status its evidence actually supports.
+
+| Finding | Owner slice | Status | Executable check |
+|---|---|---|---|
+| GAR-016 | M510-jsg1pj/S01 | resolved | `cargo test -p da-cli --test uat_verdict_lineage` (10 passed, 0 failed) |
+| GAR-010 | M510-jsg1pj/S02 | resolved | `PYTHONPATH=scripts python3 -m pytest scripts/tests/test_governor.py -k prompt_normative -q` (21 passed), reached through `PYTHONPATH=scripts python3 -m governor --phase preflight` (exit 0, zero `prompt_normative_contract` flags) |
+
+Both closures carry the six-key `completion_evidence` contract at source
+revision `git:c2191476e497b2e0bc53888342f163654dd31a99`, observed 2026-09-19. GAR-016
+keeps `governor.coverage=gap` because `uat_verdict_lineage` is still a proposal
+and not a governor rule on disk; GAR-010 moves `gap` to `existing` because
+`prompt_normative_contract` exists on disk.
+
+**GAR-015 — accepted open item, not a closure.** The bounded external holdout
+package is declared and machine-checked in `data/parse/acceptance_manifest.yaml`
+(`external_holdout_contract`: acceptance margins, document-level uncertainty
+method, transfer latency/cost accounting, a probe identity frozen apart from
+production corpora, retire-on-change invalidation rules, and a fail-closed
+citation/release gate) and enforced by the `external_holdout_package` DATA rule,
+but the probe is `external_holdout_contract.execution_status: not_executed` and
+`release_decision_package.human_release_review.decision` is `pending` with
+`reviewer: null`. Both of the record's verification entries (the artifact
+`external-holdout-package` and the human `release-review-decision`) are therefore
+unsatisfied, and `bytes_absent` external rows stay non-evidence.
+
+- **Owner:** `M502-2w7y8k/S09`, the package owner of record that delivered the
+  release decision package. No owner is invented: no live slice owns the probe
+  execution or the named human decision, and M510-jsg1pj/S03 delivered only the
+  declaration.
+- **Reason it is open:** no executed frozen external probe and no recorded
+  human release decision exist.
+- **Closure condition:** execute the frozen probe apart from production corpora
+  with the declared per-document margins and publish probe identity, statistics,
+  cost/latency and invalidation rules as one package, then record a named human
+  reviewer's release decision. Citation stays blocked until both exist.
+- **No rewording:** the record's claim, title, risk, remediation and acceptance
+  criteria are unchanged; `status` stays `open` and only the assessment note and
+  its date/source revision were added.
+
+`governor review` reports the reconciled register state as a machine-readable
+status line:
+
+```bash
+PYTHONPATH=scripts python3 -m governor review --registry scripts/governor/checks/grobid_absorption_review.yaml
+# review registry: records=16 unresolved=1 enclosed=15 unassigned_unresolved=0
+```
+
+No lock was weakened: `deployed=false`, `import_eligible=false`, `auto_promote`
+remains forbidden, `this_wave_promotes=none`, and no production splice was added.

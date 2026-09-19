@@ -283,3 +283,53 @@ No lock changed: `deployed=false`, `import_eligible=false`, `auto_promote`
 remains forbidden, `this_wave_promotes=none`, there is no production splice,
 and D127 stays closed. §9.3, §10 and §11 remain dated snapshots and are not
 amended.
+
+## 13. Dated corrections (2026-09-19) — added by M510-jsg1pj/S04
+
+This section follows the §9/§10/§11/§12 convention: it adds a new dated
+snapshot rather than rewriting §9.3, §10, §11 or §12.
+
+GAR-015 (external holdout remains unexecuted with no acceptance statistics or
+release evidence) is recorded as an **accepted open item**, not as a closure.
+No closure is claimable: the bounded external holdout package is declared and
+machine-checked in `data/parse/acceptance_manifest.yaml`
+(`external_holdout_contract` — acceptance margins, a per-document uncertainty
+method, transfer latency/cost accounting, a probe identity frozen apart from
+production corpora, retire-on-change invalidation rules, and a fail-closed
+citation/release gate; `release_decision_package` — the three release gates),
+and the `external_holdout_package` DATA rule enforces it, but
+`external_holdout_contract.execution_status` is `not_executed` and
+`release_decision_package.human_release_review.decision` is `pending` with
+`reviewer: null`. Both of the record's verification entries — the artifact
+`external-holdout-package` and the human `release-review-decision` — are
+therefore unsatisfied, and `bytes_absent` external rows stay non-evidence.
+
+- **Owner:** `M502-2w7y8k/S09`, the package owner of record that delivered the
+  release decision package. No owner is invented: no live slice owns the probe
+  execution or the named human decision, and `M510-jsg1pj/S03` delivered only
+  the declaration.
+- **Reason it is open:** no executed frozen external probe and no recorded
+  human release decision exist.
+- **Closure condition:** execute the frozen probe apart from production corpora
+  with the declared per-document margins and publish probe identity, statistics,
+  cost/latency and invalidation rules as one package, then record a named human
+  reviewer's release decision. Citation stays blocked until both exist.
+- **No rewording:** the record's claim, title, risk, remediation and acceptance
+  criteria are unchanged; `status` stays `open`, and only the
+  `assessment` note, date and source revision were updated.
+
+The live human-facing prose (`doc/review/README.md`,
+`doc/review/grobid-absorption-review-2026-09-10-summary.md`) and
+`doc/review/manifest.yaml` (the owners map, `current_state` and
+`long_horizon.next_wave`) were reconciled to the same measured state: GAR-010
+and GAR-016 are enclosed with the delivering slices named as their owners
+(`M510-jsg1pj/S02` and `M510-jsg1pj/S01`), and GAR-015 is the single open
+record, carried as an accepted open item with its owner, reason and closure
+condition. `PYTHONPATH=scripts python3 -m governor review --registry
+scripts/governor/checks/grobid_absorption_review.yaml` reports
+`records=16 unresolved=1 enclosed=15 unassigned_unresolved=0`.
+
+No lock changed: `deployed=false`, `import_eligible=false`, `auto_promote`
+remains forbidden, `this_wave_promotes=none`, there is no production splice,
+and D127 stays closed. §9.3, §10, §11 and §12 remain dated snapshots and are
+not amended.

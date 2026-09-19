@@ -5,9 +5,9 @@ created_at: '2026-08-14'
 language: ru
 status: active
 source_revision: git:6f328bdfb9b136deecd0ded7917c086e8ad5899b
-last_assessed_at: '2026-09-17'
+last_assessed_at: '2026-09-19'
 assessment_baseline: 'PIR recomputed from JSONL after M401-itcqhx/S05 T03 (22 resolved / 0 open). GAR-001..GAR-016 were added 2026-09-10 as an independent controlled absorption review at source revision git:6f328bdfb9b136deecd0ded7917c086e8ad5899b: 15 unresolved / 1 enclosed (GAR-002 superseded administrative correction). PIR records stay historical; the GAR registry is the active corrective register.'
-current_state: 'GAR registry: 3 unresolved / 13 enclosed after M509-yzblqx closed the eight P1 findings GAR-005..GAR-009 and GAR-012..GAR-014 through slices S01..S05 on 2026-09-18 (13 resolved: the 4 P0 findings closed by M508-g9b5gi/S05 plus those 8 P1 findings; GAR-002 superseded on 2026-09-10). The three open P2 findings GAR-010, GAR-015, GAR-016 remain named under long_horizon.next_wave.'
+current_state: 'GAR registry: 1 unresolved / 15 enclosed. After M509-yzblqx closed the eight P1 findings GAR-005..GAR-009 and GAR-012..GAR-014 through slices S01..S05 on 2026-09-18, wave M510-jsg1pj re-executed each remaining priority-two finding''s recorded verification at the current tree on 2026-09-19 and closed GAR-016 (UAT verdict lineage, delivered by M510-jsg1pj/S01) and GAR-010 (prompt normatives, delivered by M510-jsg1pj/S02) with six-key completion_evidence. The fifteen enclosed records are the 4 P0 closures of M508-g9b5gi/S05, those 8 P1 closures, the pre-existing GAR-002 supersession and those 2 P2 closures. The single open record is GAR-015 (external holdout remains unexecuted with no acceptance statistics or release evidence): its probe is external_holdout_contract.execution_status=not_executed and its human release decision is pending with reviewer=null, so it is recorded as an accepted open item with owner M502-2w7y8k/S09, a reason and a closure condition under long_horizon.next_wave.deferred_findings, not reworded into closure.'
 format:
   primary: jsonl
   rationale: One atomic finding per line supports streaming LLM review, stable diffs, independent schema validation, and status tracking.
@@ -89,13 +89,13 @@ long_horizon:
       GAR-007: M509-yzblqx/S03
       GAR-008: M509-yzblqx/S03
       GAR-009: M509-yzblqx/S01
-      GAR-010: M502-2w7y8k/S07
+      GAR-010: M510-jsg1pj/S02
       GAR-011: M502-2w7y8k/S03
       GAR-012: M509-yzblqx/S04
       GAR-013: M509-yzblqx/S05
       GAR-014: M509-yzblqx/S04
       GAR-015: M502-2w7y8k/S09
-      GAR-016: M502-2w7y8k/S01
+      GAR-016: M510-jsg1pj/S01
   planning_register:
     registry: doc/review/grobid-rust-horizon-review.json
     contract: scripts/governor/checks/grobid_rust_horizon_review.yaml
@@ -126,46 +126,56 @@ long_horizon:
       status: complete
       depends_on: M400-multimodal-graph
   next_wave:
-    id: unassigned
+    id: M510-jsg1pj
     title: GAR priority-two contract wave (prompt normatives, external holdout, verdict lineage)
-    status: planned
-    owns: [GAR-010, GAR-015, GAR-016]
+    status: in_progress
+    owns: [GAR-015]
     depends_on: M509-yzblqx
     statement: >-
-      Named next wave, not started. M509-yzblqx closes only the eight P1
-      findings and the two parse control-data gaps, so these three priority-two
-      findings stay open in the corrective register and are carried here by name
-      so they are not silently dropped when this wave closes. Naming is not
-      resolution: no finding below is reworded, weakened or marked resolved.
-    deferred_findings:
+      Reconciled 2026-09-19: this declared wave is M510-jsg1pj. It closed two
+      of the three priority-two findings on measured evidence re-executed at the
+      current tree (GAR-016 by M510-jsg1pj/S01, GAR-010 by M510-jsg1pj/S02) and
+      did not close the third. GAR-015 requires an executed frozen external
+      probe and a named human release decision; the wave prepared the bounded
+      package and fabricated neither, so GAR-015 is carried here as an accepted
+      open item. Naming is not resolution: its claim, title, risk and acceptance
+      criteria are unrewritten and its status stays open.
+    closed_findings:
       - finding_id: GAR-010
-        title: Meta-prompt normatives lack a machine-checkable authority and change-control model
-        priority: P2
-        status: open
-        owner_slice: M502-2w7y8k/S07
-        reason_deferred: >-
-          A normative prompt/meta-prompt authority and change-control model
-          (rule identifiers, evidence obligations, typed verification operations,
-          optimizer-immutable proof boundaries) is outside M509's bounded parse
-          control-data claim and stays open in the corrective register.
+        closed_by: M510-jsg1pj/S02
+        closure_evidence: doc/review/grobid-absorption-review-2026-09-10.jsonl (completion_evidence)
+      - finding_id: GAR-016
+        closed_by: M510-jsg1pj/S01
+        closure_evidence: doc/review/grobid-absorption-review-2026-09-10.jsonl (completion_evidence)
+    deferred_findings:
       - finding_id: GAR-015
         title: External holdout remains unexecuted with no acceptance statistics or release evidence
         priority: P2
         status: open
+        accepted_open_item: true
         owner_slice: M502-2w7y8k/S09
         reason_deferred: >-
-          An executed, frozen external holdout with acceptance margins, cost
-          accounting and a human release decision needs external dataset
-          execution plus human review, neither of which M509 carries.
-      - finding_id: GAR-016
-        title: UAT verdict lineage is not machine-checked
-        priority: P2
-        status: open
-        owner_slice: M502-2w7y8k/S01
-        reason_deferred: >-
-          Machine-checked verdict lineage for report-producing CLI tests is a
-          test-output provenance change deferred so M509 keeps a bounded claim;
-          the record stays open with its original wording.
+          The bounded external holdout package is declared and machine-checked
+          in data/parse/acceptance_manifest.yaml (acceptance margins,
+          document-level uncertainty method, transfer latency/cost accounting,
+          a probe identity frozen apart from production corpora, retire-on-change
+          invalidation and a fail-closed citation/release gate) and enforced by
+          the external_holdout_package DATA rule, but
+          external_holdout_contract.execution_status is still not_executed and
+          release_decision_package.human_release_review.decision is pending with
+          reviewer=null. Both recorded verification entries (the artifact
+          external-holdout-package and the human release-review-decision) are
+          therefore unsatisfied and bytes_absent external rows stay non-evidence.
+        closure_condition: >-
+          Execute the frozen external probe apart from production corpora with
+          the declared per-document margins, publish probe identity, statistics,
+          cost/latency and invalidation rules as one package, and record a named
+          human reviewer's release decision. Citation stays blocked until both
+          exist; declaring the package is preparation, not closure.
+        acceptance_evidence: >-
+          doc/review/grobid-absorption-review-2026-09-10.jsonl (GAR-015
+          assessment note, status open), data/parse/acceptance_manifest.yaml
+          (external_holdout_contract, release_decision_package)
   execution_mode: GSD auto/headless
   interconnection_rule: Later waves may not claim earlier-wave invariants; each wave validates its own acceptance evidence before closeout.
 governor_integration:
