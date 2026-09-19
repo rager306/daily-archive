@@ -1,0 +1,203 @@
+# ═══════════════════════════════════════════════════════════════════
+# PROMPT NORMATIVE REGISTER — machine-readable prompt/meta-prompt obligations
+#
+# M510-jsg1pj / S02 / T02. This is DATA, not code. Every obligation carries:
+#   id                     stable identifier (referenced by prompt markers)
+#   scope                  the surface the obligation governs
+#   strength               must | should | may — only `must` confers authority
+#   authority              ids from `authority_sources` the obligation derives from
+#   preconditions          what must hold before the obligation is binding
+#   evidence_obligation    the durable evidence the obligation is checked against
+#   verification           a list of ALLOWLISTED typed operations (see
+#                          `verification_ops`) with typed `params`
+#   optimizer_immutable    the boundaries an optimizer may not rewrite
+#
+# Shell strings are not representable: `verification.op` is an allowlisted
+# identifier and `params` is a typed mapping (unknown fields are rejected at
+# parse). Authority is recomputed from this register, never read from prompt
+# prose (D418: validity is recomputed from bound digests, never trusted from a
+# stored status). An obligation that is dropped, renamed or weakened does not
+# degrade into a recommendation — it loses its authority entirely.
+#
+# Read by: crates/da-domain/src/agent_manifest.rs (NormativeRegister,
+# from_yaml_str / validate / load / resolve_authority / authority_digest).
+# Declared by data/agents/*/manifest.yaml under `prompt.normative_register`.
+# Pinned by crates/da-domain/tests/prompt_normative_contract.rs.
+# Do NOT add executable strings here.
+# ═══════════════════════════════════════════════════════════════════
+schema_version: prompt-normatives.v1
+register_id: prompt-normatives
+adr_ref: [ADR-059, ADR-055, ADR-068]
+# D127: the register never grants import eligibility.
+d127_import_eligible: false
+
+# Authority sources an obligation may derive from. An obligation whose
+# `authority` names anything not listed here fails closed (unknown_authority).
+authority_sources:
+  - id: R137
+    kind: requirement
+    ref: "prompt/meta-prompt normatives carry identifiers, authority, evidence obligations and optimizer-immutable boundaries"
+  - id: R130
+    kind: constraint
+    ref: "bounded prompt generation; no candidate promotion, no import, no graph writes"
+  - id: R093
+    kind: operability
+    ref: "hard invariants become deterministic controls with tested negative fixtures"
+  - id: ADR-059
+    kind: adr
+    ref: "prompt execution + optimizer FSM; candidates never auto-promote"
+  - id: ADR-055
+    kind: adr
+    ref: "ACAP: typed missingness, prompt/model lineage, candidate-only optimization"
+  - id: D136
+    kind: decision
+    ref: "DSPy not enabled until eval metrics + benchmark fixtures verified"
+  - id: PR-SUM-CONTRACT
+    kind: prompt_contract
+    ref: data/prompts/summarizer/system.v2.md
+  - id: PR-CRIT-CONTRACT
+    kind: prompt_contract
+    ref: data/prompts/critic/system.v1.md
+
+# Allowlisted verification operations. An obligation's `verification[].op`
+# must appear here and its `params` must match the declared typed schema
+# exactly (no missing, extra or mistyped parameters) or it fails closed.
+verification_ops:
+  - id: content_digest_matches
+    description: "committed file content digest equals the pinned digest"
+    params:
+      path: {type: path}
+      algorithm: {type: enum, values: [sha256]}
+      digest: {type: digest}
+  - id: marker_text_present
+    description: "a committed file contains an exact marker line"
+    params:
+      path: {type: path}
+      marker: {type: string}
+  - id: manifest_binds_prompt
+    description: "an agent manifest's prompt.system_file equals the expected prompt"
+    params:
+      manifest: {type: path}
+      expected_prompt: {type: path}
+
+# Boundaries an optimizer may not rewrite. Every obligation must preserve all
+# of `required_optimizer_immutable`; dropping one fails closed.
+boundaries:
+  required_optimizer_immutable: [proof, authority, evidence]
+  forbidden_rewrites:
+    - obligation_id
+    - scope
+    - strength
+    - authority
+    - preconditions
+    - evidence_obligation
+    - verification
+    - optimizer_immutable
+
+normatives:
+  - kind: obligation
+    id: PR-SUM-001
+    scope: agent.summarizer.prompt.grounding
+    strength: must
+    authority: [ADR-059, R137, ADR-055]
+    preconditions:
+      - "the executed summarizer prompt is bound by data/agents/summarizer/manifest.yaml"
+      - "paper text is supplied to the summarizer"
+    evidence_obligation: "the executed summarizer prompt digest equals the register digest and the candidate prompt keeps the grounding sentence"
+    verification:
+      - op: manifest_binds_prompt
+        params:
+          manifest: data/agents/summarizer/manifest.yaml
+          expected_prompt: data/prompts/summarizer/system.v1.md
+      - op: content_digest_matches
+        params:
+          path: data/prompts/summarizer/system.v1.md
+          algorithm: sha256
+          digest: "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe"
+      - op: marker_text_present
+        params:
+          path: data/prompts/summarizer/system.v2.md
+          marker: "- You MUST ground every claim in the provided text; you MUST NOT invent facts."
+    optimizer_immutable: [proof, authority, evidence]
+
+  - kind: obligation
+    id: PR-SUM-002
+    scope: agent.summarizer.prompt.no_invention
+    strength: must
+    authority: [R137, ADR-059]
+    preconditions:
+      - "prompt optimization must not remove the no-invention rule"
+    evidence_obligation: "both the executed and candidate summarizer prompts keep an explicit no-invention instruction"
+    verification:
+      - op: marker_text_present
+        params:
+          path: data/prompts/summarizer/system.v1.md
+          marker: "Do not invent numbers,"
+      - op: marker_text_present
+        params:
+          path: data/prompts/summarizer/system.v2.md
+          marker: "IMMUTABLE: grounding, no_invention, evidence_binding"
+    optimizer_immutable: [proof, authority, evidence]
+
+  - kind: obligation
+    id: PR-SUM-003
+    scope: agent.summarizer.prompt.optimizer_boundary
+    strength: must
+    authority: [R137, ADR-059, D136]
+    preconditions:
+      - "candidate prompt v2 is not bound by any executed manifest"
+      - "optimizer_enabled stays false (ADR-059 / D136)"
+    evidence_obligation: "the candidate prompt marks the optimizer-immutable boundaries and the register keeps the forbidden-rewrite list"
+    verification:
+      - op: marker_text_present
+        params:
+          path: data/prompts/summarizer/system.v2.md
+          marker: "<!-- OPTIMIZER-IMMUTABLE: proof, authority, evidence -->"
+    optimizer_immutable: [proof, authority, evidence]
+
+  - kind: obligation
+    id: PR-CRIT-001
+    scope: agent.critic.prompt.evidence_binding
+    strength: must
+    authority: [R137, ADR-059, ADR-055]
+    preconditions:
+      - "critic receives low-confidence candidate pairs with evidence fields"
+    evidence_obligation: "the critic prompt keeps the evidence-only decision rule and the optimizer-immutable boundary marker"
+    verification:
+      - op: manifest_binds_prompt
+        params:
+          manifest: data/agents/critic/manifest.yaml
+          expected_prompt: data/prompts/critic/system.v1.md
+      - op: marker_text_present
+        params:
+          path: data/prompts/critic/system.v1.md
+          marker: "- Base decisions only on the supplied evidence fields; do not use outside knowledge to confirm"
+      - op: marker_text_present
+        params:
+          path: data/prompts/critic/system.v1.md
+          marker: "<!-- OPTIMIZER-IMMUTABLE: proof, authority, evidence -->"
+    optimizer_immutable: [proof, authority, evidence]
+
+  - kind: obligation
+    id: PR-CRIT-002
+    scope: agent.critic.prompt.abstention
+    strength: must
+    authority: [R137, ADR-055]
+    preconditions:
+      - "evidence may be insufficient for an identity claim"
+    evidence_obligation: "the critic prompt keeps abstention as a valid, useful answer"
+    verification:
+      - op: marker_text_present
+        params:
+          path: data/prompts/critic/system.v1.md
+          marker: "abstain is a valid, useful answer"
+    optimizer_immutable: [proof, authority, evidence]
+
+  # --- descriptive material: explicitly marked non-enforced ---------------
+  # Descriptive text can never be read as an enforced obligation: it carries
+  # `enforced: false`, no authority and no verification operation.
+  - kind: descriptive
+    id: PR-SUM-STYLE-001
+    scope: agent.summarizer.prompt.style
+    enforced: false
+    text: "Wording, ordering and formatting may be optimized; only the registered obligations above are enforced."

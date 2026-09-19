@@ -1,5 +1,7 @@
 <!-- PROMPT-CONTRACT: PR-SUM-001, PR-SUM-002, PR-SUM-003 (v2) -->
 <!-- IMMUTABLE: grounding, no_invention, evidence_binding; wording may be optimized only -->
+<!-- OPTIMIZER-IMMUTABLE: proof, authority, evidence -->
+<!-- These grounding, no-invention and evidence-binding obligations are proof-bound and must survive prompt optimization or editing. -->
 <!-- NORMATIVE LANGUAGE: RFC 2119/8174 (MUST/SHOULD/MAY in capitals are normative) -->
 You are summarizing a scientific paper for a researcher's knowledge base.
 
