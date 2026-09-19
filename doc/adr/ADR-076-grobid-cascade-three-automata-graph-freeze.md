@@ -220,3 +220,66 @@ reports `records=16 unresolved=3 enclosed=13 unassigned_unresolved=0`.
 No lock changed: `deployed=false`, `import_eligible=false`, `auto_promote`
 remains forbidden, there is no production splice, and D127 stays closed. §9.3
 and §10 remain dated snapshots and are not amended.
+
+## 12. Dated corrections (2026-09-19) — added by M510-jsg1pj/S04
+
+This section follows the §9/§10/§11 convention: it adds a new dated snapshot
+rather than rewriting §9.3, §10 or §11, which remain the 2026-09-10,
+2026-09-17 and 2026-09-18 records.
+
+The GAR register `doc/review/grobid-absorption-review-2026-09-10.jsonl` now
+reads **1 unresolved / 15 enclosed**. Wave `M510-jsg1pj` closed its two
+code-deliverable P2 findings, each on a check re-executed at this revision
+rather than on the wave plan or on prose:
+
+- **GAR-016** (UAT verdict lineage is not machine-checked) — closed by
+  `M510-jsg1pj/S01`, whose recorded command is
+  `cargo test -p da-cli --test uat_verdict_lineage` (10 passed, 0 failed). A
+  report-producing shadow-test PASS is now a bounded verdict bound to the
+  command, inputs, parsed assertions, artifact digests and source revision
+  that produced it; a changed command, input digest, artifact digest, parsed
+  assertion or source revision fails the verdict instead of passing, and an
+  execution verdict does not imply parity or quality. `governor.coverage`
+  stays `gap`: no governor rule named `uat_verdict_lineage` was built, so the
+  closure rests on command evidence and that proposal stays named as a
+  proposal.
+- **GAR-010** (Meta-prompt normatives lack a machine-checkable authority and
+  change-control model) — closed by `M510-jsg1pj/S02`, whose recorded check is
+  the `prompt_normative_contract` governor rule reached through the normal
+  build_report path (`PYTHONPATH=scripts python3 -m governor --phase preflight`
+  exits 0 with zero `prompt_normative_contract` flags on the committed tree),
+  together with `PYTHONPATH=scripts python3 -m pytest
+  scripts/tests/test_governor.py -k prompt_normative -q` (21 passed).
+  Obligations are identified in DATA with scope, authority, preconditions and
+  an evidence obligation; verification operations are allowlisted typed
+  identifiers, so a shell-string operation is not representable; dropping,
+  weakening to `should`, renaming, or writing an obligation as descriptive
+  material fails closed; and the optimizer-immutable proof/authority/evidence
+  boundaries are pinned. `governor.coverage` moves `gap` → `existing` because
+  that rule exists on disk.
+
+Both closures carry six-key `completion_evidence` (`mode`, `ref`, `result`,
+`artifacts`, `observed_at`, `source_revision`) at source revision
+`git:c2191476e497b2e0bc53888342f163654dd31a99`, observed 2026-09-19, and both
+name their delivering slice in `assessment.owning_wave`. Those slices were
+added to the registry owner vocabulary in
+`scripts/governor/checks/grobid_absorption_review.yaml` in the same change, so
+naming the delivering wave is accepted rather than aspirational — an unknown
+owner still fails closed with `grobid_review_registry_broken` and exit 2.
+`PYTHONPATH=scripts python3 -m governor review --registry
+scripts/governor/checks/grobid_absorption_review.yaml` reports
+`records=16 unresolved=1 enclosed=15 unassigned_unresolved=0`; the fifteen
+enclosed records are the four P0 closures of §10, the eight P1 closures of §11,
+the pre-existing GAR-002 supersession, and these two P2 closures.
+
+The single unresolved record is GAR-015 (external holdout remains unexecuted
+with no acceptance statistics or release evidence). This correction leaves it
+unresolved: GAR-015's recorded verification includes a `human`-mode release
+review decision, and no automated check may read that decision on a reviewer's
+behalf. §11 remains the 2026-09-18 snapshot of a three-finding P2 remainder;
+this entry supersedes only that count, not the record.
+
+No lock changed: `deployed=false`, `import_eligible=false`, `auto_promote`
+remains forbidden, `this_wave_promotes=none`, there is no production splice,
+and D127 stays closed. §9.3, §10 and §11 remain dated snapshots and are not
+amended.

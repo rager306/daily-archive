@@ -198,12 +198,35 @@ def main() -> int:
     return 0
 
 
+def _resolve_review_contract(project_root: Path, registry: str | None) -> str | None:
+    """Resolve a review contract argument against the committed contract home.
+
+    `--registry` is a path argument, so a bare filename such as
+    `grobid_absorption_review.yaml` would otherwise be read as `<root>/<name>`
+    and fail closed as a missing contract even though the contract exists at
+    its committed home `scripts/governor/checks/`. A bare filename therefore
+    resolves to that home; every other form (repo-relative, absolute) is
+    passed through unchanged, so a contract that genuinely does not exist
+    still fails closed instead of silently selecting a different registry.
+    """
+    if not registry:
+        return registry
+    requested = Path(registry)
+    if requested.is_absolute() or requested.parent != Path("."):
+        return registry
+    committed = Path("scripts") / "governor" / "checks" / requested.name
+    if (project_root / committed).is_file():
+        return str(committed)
+    return registry
+
+
 def _run_review_registry(args) -> int:
     """Validate a review registry and report unresolved/enclosed counts (read-only)."""
     from governor.adapters.checks.review_registry_dispatch import check_review_registry
 
     project_root = Path(args.root).resolve() if args.root else _detect_root()
-    flags = check_review_registry(project_root, getattr(args, "registry", None))
+    registry = _resolve_review_contract(project_root, getattr(args, "registry", None))
+    flags = check_review_registry(project_root, registry)
     status_flags = [f for f in flags if f.flag.endswith("_status")]
     invalid = [f for f in flags if f.flag.endswith(("_invalid", "_missing"))]
     broken = [f for f in flags if f.flag.endswith("_broken")]
