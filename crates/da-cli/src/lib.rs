@@ -54,6 +54,12 @@ pub mod snapshot_lineage;
 pub mod source_acquire;
 pub mod source_cli;
 pub mod summarize_revisions;
+// S01/T01 (GAR-016): bounded, machine-checked verdict lineage for the
+// report-producing CLI tests. Pure std/serde/sha2 over `da_domain::ContentDigest`,
+// so the module and its unit tests compile in the default feature set (no
+// `pdf-layout`). Test/library provenance only: no production route, no graph
+// write, `import_eligible` stays false.
+pub mod uat_verdict_lineage;
 // S02/T01: donor visual sidecar → native visual observation converter. Every
 // type it consumes (`da_adapters::VisualObservation`,
 // `da_adapters::LayoutShadowObservation`) exists only with `pdf-layout`, and
