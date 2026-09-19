@@ -1,8 +1,13 @@
 #![cfg(feature = "pdf-layout")]
 
+use da_cli::uat_verdict_lineage::{
+    BoundArtifact, CommandIdentity, ParsedAssertion, SourceRevision, VerdictBinding, VerdictClaim,
+    VerdictLineage, VerdictStatus,
+};
+use da_domain::ContentDigest;
 use serde_json::Value;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::tempdir;
 
@@ -99,6 +104,93 @@ fn assert_redacted(value: &Value, path: &str, in_redaction: bool) {
     }
 }
 
+/// GAR-016: the tracked sources the emitted verdict is executed against. The
+/// test itself is included, so a changed assertion or command shape changes the
+/// bound source revision instead of silently reusing an old PASS.
+const VERDICT_SOURCE_FILES: [&str; 3] = [
+    "crates/da-cli/examples/document_segmentation_shadow.rs",
+    "crates/da-cli/tests/document_segmentation_shadow_test.rs",
+    "crates/da-cli/src/uat_verdict_lineage.rs",
+];
+
+fn input_artifact(repo_root: &Path, relative: &str) -> BoundArtifact {
+    let bytes = fs::read(repo_root.join(relative))
+        .unwrap_or_else(|error| panic!("verdict input `{relative}`: {error}"));
+    BoundArtifact::of_bytes(relative, &bytes).expect("host-free input name")
+}
+
+fn source_revision(repo_root: &Path) -> SourceRevision {
+    let mut material = String::new();
+    for relative in VERDICT_SOURCE_FILES {
+        let bytes = fs::read(repo_root.join(relative))
+            .unwrap_or_else(|error| panic!("source revision input `{relative}`: {error}"));
+        material.push_str(relative);
+        material.push('\n');
+        material.push_str(ContentDigest::of_bytes(&bytes).as_str());
+        material.push('\n');
+    }
+    SourceRevision::new(&format!(
+        "files:sha256:{}",
+        ContentDigest::of_text(&material).as_str()
+    ))
+    .expect("host-free source revision")
+}
+
+fn resolve<'a>(value: &'a Value, dotted_path: &str) -> &'a Value {
+    dotted_path.split('.').fold(value, |current, segment| {
+        current
+            .get(segment)
+            .unwrap_or_else(|| panic!("report is missing `{dotted_path}` at `{segment}`"))
+    })
+}
+
+fn observed_assertion(value: &Value, dotted_path: &str, expected: Value) -> ParsedAssertion {
+    assert_eq!(
+        resolve(value, dotted_path),
+        &expected,
+        "report assertion drifted at `{dotted_path}`"
+    );
+    ParsedAssertion::new(dotted_path, expected).expect("host-free assertion path")
+}
+
+/// The invocation identity with the ephemeral report path and the checkout root
+/// replaced by stable placeholders, so the verdict is reproducible across
+/// checkouts while still changing when the command or any argument changes.
+fn invocation_argv(argv: &[String], repo_root: &Path, report: &Path) -> Vec<String> {
+    let report_text = report.to_string_lossy().into_owned();
+    let root_prefix = format!("{}/", repo_root.to_string_lossy());
+    argv.iter()
+        .map(|argument| {
+            if argument.as_str() == report_text.as_str() {
+                "<report>".to_owned()
+            } else {
+                argument.replace(&root_prefix, "")
+            }
+        })
+        .collect()
+}
+
+/// Emit the bounded verdict to disk, reload it and recompute its status from the
+/// observed binding. A tampered file fails to load; a drifted binding fails to
+/// verify; only an unchanged execution binding yields the execution PASS.
+fn emit_and_reload(dir: &Path, file_name: &str, binding: VerdictBinding) -> VerdictStatus {
+    let lineage = VerdictLineage::new(binding.clone()).expect("bounded verdict");
+    let path = dir.join(file_name);
+    fs::write(&path, lineage.to_json_pretty().expect("serialize verdict")).expect("write verdict");
+    let durable = fs::read_to_string(&path).expect("durable verdict file");
+    assert!(
+        !durable.contains(&dir.to_string_lossy().to_string()),
+        "the durable verdict must not carry the report host path"
+    );
+    let restored = VerdictLineage::from_json(&durable)
+        .expect("the durable verdict reloads with an intact binding");
+    println!(
+        "{}",
+        serde_json::to_string(&restored).expect("emit bounded verdict")
+    );
+    restored.verify(&binding)
+}
+
 #[test]
 fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
     let dir = tempdir().expect("temporary report directory");
@@ -158,7 +250,7 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
         );
         repo_root.join("target/debug/examples/document_segmentation_shadow")
     };
-    let output = Command::new(binary)
+    let output = Command::new(&binary)
         .args(&args)
         .current_dir(&repo_root)
         .output()
@@ -363,4 +455,69 @@ fn source_bound_shadow_report_is_terminal_redacted_and_unpooled() {
             .iter()
             .any(|row| row["boundary_displacement"].is_number())
     );
+
+    // GAR-016: the PASS is emitted as a bounded verdict bound to the exact
+    // command, inputs, source revision, produced artifact and parsed
+    // assertions, not asserted from the report fields alone. The report itself
+    // is content-addressed, and this invocation's argv is hashed, so neither
+    // the durable verdict nor this test has to trust the report's prose.
+    let observed = VerdictBinding::new(
+        VerdictClaim::Execution,
+        CommandIdentity::new(
+            "da-cli:shadow:document_segmentation",
+            binary.to_string_lossy().as_ref(),
+            &invocation_argv(&args, &repo_root, &report),
+        )
+        .expect("host-free command identity"),
+        vec![
+            input_artifact(&repo_root, "data/parse/layout_bakeoff.yaml"),
+            input_artifact(&repo_root, "data/parse/document_segmentation.yaml"),
+            input_artifact(
+                &repo_root,
+                "artifacts/parse_compat/document_segmentation_oracle_source.json",
+            ),
+        ],
+        source_revision(&repo_root),
+        vec![
+            BoundArtifact::of_bytes("document-segmentation-shadow.json", text.as_bytes())
+                .expect("host-free artifact name"),
+        ],
+        vec![
+            observed_assertion(
+                &value,
+                "schema_version",
+                Value::String("document-segmentation-shadow.v2".to_owned()),
+            ),
+            observed_assertion(&value, "policy.import_eligible", Value::Bool(false)),
+            observed_assertion(
+                &value,
+                "policy.auto_promote",
+                Value::String("forbidden".to_owned()),
+            ),
+            observed_assertion(
+                &value,
+                "reference_population.role",
+                Value::String("identity_only".to_owned()),
+            ),
+            observed_assertion(
+                &value,
+                "executed_population.corpus_execution",
+                Value::Bool(true),
+            ),
+            observed_assertion(
+                &value,
+                "evaluated_population.status",
+                Value::String("not_evaluated".to_owned()),
+            ),
+            observed_assertion(&value, "replay.semantic_equal", Value::Bool(true)),
+        ],
+    )
+    .expect("non-empty verdict binding");
+    let status = emit_and_reload(
+        dir.path(),
+        "document-segmentation-shadow.verdict.json",
+        observed,
+    );
+    assert!(status.is_execution_pass(), "{status:?}");
+    assert_eq!(status.claim(), Some(VerdictClaim::Execution));
 }
