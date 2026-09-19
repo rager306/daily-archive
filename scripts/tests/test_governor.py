@@ -37,6 +37,10 @@ from governor.adapters.checks.executed_population_binding import (
     executed_population_violations,
     missing_binding_vocabulary,
 )
+from governor.adapters.checks.prompt_normative_contract import (
+    missing_normative_vocabulary,
+    prompt_normative_violations,
+)
 from governor.application.trajectory_service import (
     TrajectoryService,
     _boundary_positional_violations,
@@ -7998,3 +8002,376 @@ def test_exclude_cfg_test_regions_keeps_production_matches():
 
     assert {line for _, line, _ in plain} == {3, 12}, "baseline must see both matches"
     assert {line for _, line, _ in guarded} == {3}, "only the cfg(test) match is excluded"
+
+# ── M510/S02/T03: prompt normative register contract ─────────────────────────
+# The Rust register (`crates/da-domain/src/agent_manifest.rs`, T02) proves an
+# obligation whose content changes loses its authority. This rule is the
+# control-plane half: the committed register must keep identifiers, scope,
+# authority, preconditions, evidence obligations and allowlisted typed
+# verification operations, and the check EXECUTES those typed operations in
+# Python against the real tree. Every mutation happens on a scratch copy of the
+# committed DATA, its two fixtures, the register, the governed prompts and the
+# manifests, so no committed file is touched. The plan's named failing case — an
+# unidentified or weakened obligation must fail closed rather than degrade into
+# a recommendation — is asserted through the committed negative fixture and
+# directly against the oracle.
+
+_PROMPT_NORMATIVE_PREFIX = "prompt_normative_contract"
+_PROMPT_NORMATIVE_CONTRACT = (
+    "scripts/governor/checks/prompt_normative_contract.yaml"
+)
+_PROMPT_NORMATIVE_POSITIVE = (
+    "governor/fixtures/prompt_normative_contract/contract.positive.json"
+)
+_PROMPT_NORMATIVE_NEGATIVE = (
+    "governor/fixtures/prompt_normative_contract/contract.negative.json"
+)
+
+
+def _prompt_normative_governed_files(repo: Path) -> list[str]:
+    """Every repo file the rule actually reads.
+
+    The contract, both fixtures, the register, the governed prompts, the source
+    markers and every file a verification operation names. Deriving the set from
+    the DATA keeps the scratch tree complete as the register evolves.
+    """
+    contract = yaml.safe_load(
+        (repo / _PROMPT_NORMATIVE_CONTRACT).read_text(encoding="utf-8")
+    )
+    register_rel = str(contract["register"]["path"])
+    register = yaml.safe_load((repo / register_rel).read_text(encoding="utf-8"))
+    files = [
+        _PROMPT_NORMATIVE_CONTRACT,
+        _PROMPT_NORMATIVE_POSITIVE,
+        _PROMPT_NORMATIVE_NEGATIVE,
+        register_rel,
+    ]
+    markers = contract.get("markers") or {}
+    files += [str(p) for p in markers.get("prompt_marker_paths") or []]
+    files += [str(p) for p in markers.get("optimizer_immutable_marker_paths") or []]
+    files += [
+        str(entry.get("path"))
+        for entry in (contract.get("source_markers") or {}).values()
+        if entry.get("path")
+    ]
+    for entry in register.get("normatives") or []:
+        if not isinstance(entry, dict):
+            continue
+        for verification in entry.get("verification") or []:
+            params = verification.get("params") or {}
+            for key in ("path", "manifest", "expected_prompt"):
+                value = params.get(key)
+                if isinstance(value, str) and value:
+                    files.append(value)
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for rel in files:
+        if rel and rel not in seen:
+            seen.add(rel)
+            ordered.append(rel)
+    return ordered
+
+
+def _copy_prompt_normative(root: Path) -> None:
+    repo = _scripts_dir.parent
+    for rel in _prompt_normative_governed_files(repo):
+        _write(root / rel, (repo / rel).read_text(encoding="utf-8"))
+
+
+def _prompt_normative_service() -> TrajectoryService:
+    """Scratch TrajectoryService with the committed normative DATA copied in."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_prompt_normative(service.root)
+    return service
+
+
+def _prompt_normative_flags_named(flags, name: str):
+    return [f for f in flags if f.flag == f"{_PROMPT_NORMATIVE_PREFIX}_{name}"]
+
+
+def _prompt_normative_contract_document(service: TrajectoryService) -> dict:
+    return yaml.safe_load(
+        (service.root / _PROMPT_NORMATIVE_CONTRACT).read_text(encoding="utf-8")
+    )
+
+
+def _prompt_normative_register_rel(service: TrajectoryService) -> str:
+    return str(_prompt_normative_contract_document(service)["register"]["path"])
+
+
+def _prompt_normative_register_document(service: TrajectoryService) -> dict:
+    return yaml.safe_load(
+        (service.root / _prompt_normative_register_rel(service)).read_text(encoding="utf-8")
+    )
+
+
+def _write_prompt_normative_register(service: TrajectoryService, document: dict) -> None:
+    _write(
+        service.root / _prompt_normative_register_rel(service),
+        yaml.safe_dump(document, sort_keys=False, allow_unicode=True),
+    )
+
+
+def test_prompt_normative_contract_clean_on_committed_tree():
+    """The real-tree run must show zero flags on the committed prompts."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _scripts_dir.parent
+    assert service._check_prompt_normative_contract() == []
+
+
+def test_prompt_normative_contract_pass_on_clean_fixtures():
+    service = _prompt_normative_service()
+    assert service._check_prompt_normative_contract() == []
+
+
+def test_prompt_normative_contract_missing_contract_is_silent():
+    service = _prompt_normative_service()
+    (service.root / _PROMPT_NORMATIVE_CONTRACT).unlink()
+    assert service._check_prompt_normative_contract() == []
+
+
+def test_prompt_normative_contract_missing_fixture_is_flagged():
+    for rel, which in [
+        (_PROMPT_NORMATIVE_POSITIVE, "positive"),
+        (_PROMPT_NORMATIVE_NEGATIVE, "negative"),
+    ]:
+        service = _prompt_normative_service()
+        (service.root / rel).unlink()
+        flags = service._check_prompt_normative_contract()
+        missing = _prompt_normative_flags_named(flags, "fixture_missing")
+        assert len(missing) == 1
+        assert which in missing[0].evidence
+        assert missing[0].severity == "high"
+        assert missing[0].dimension == "prompt_authority"
+
+
+def test_prompt_normative_contract_positive_fixture_must_be_clean():
+    """The plan's weakened-obligation case on the positive fixture."""
+    service = _prompt_normative_service()
+    path = service.root / _PROMPT_NORMATIVE_POSITIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    records[0]["normatives"][0]["strength"] = "should"
+    path.write_text(json.dumps(records), encoding="utf-8")
+    flags = service._check_prompt_normative_contract()
+    broken = _prompt_normative_flags_named(flags, "broken")
+    assert len(broken) == 1
+    assert "weak_obligation" in broken[0].evidence
+
+
+def test_prompt_normative_contract_negative_fixture_must_trigger_labelled_violations():
+    service = _prompt_normative_service()
+    path = service.root / _PROMPT_NORMATIVE_NEGATIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    # Give the weakened-obligation record its `must` strength back: the label can
+    # no longer fire, so the mismatch must be reported.
+    for record in records:
+        if record.get("violation") == "weak_obligation":
+            record["record"]["normatives"][0]["strength"] = "must"
+    path.write_text(json.dumps(records), encoding="utf-8")
+    flags = service._check_prompt_normative_contract()
+    broken = _prompt_normative_flags_named(flags, "broken")
+    assert any("weak_obligation" in f.evidence for f in broken)
+
+
+def test_prompt_normative_contract_negative_fixture_must_cover_required_violations():
+    service = _prompt_normative_service()
+    path = service.root / _PROMPT_NORMATIVE_NEGATIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    records = [r for r in records if r.get("violation") != "weak_obligation"]
+    path.write_text(json.dumps(records), encoding="utf-8")
+    flags = service._check_prompt_normative_contract()
+    broken = _prompt_normative_flags_named(flags, "broken")
+    assert any(
+        "missing required violation coverage" in f.evidence
+        and "weak_obligation" in f.evidence
+        for f in broken
+    )
+
+
+def test_prompt_normative_contract_missing_vocabulary_is_flagged():
+    """Without `must_strength` a weakened obligation would read as clean."""
+    service = _prompt_normative_service()
+    contract = _prompt_normative_contract_document(service)
+    contract["register"]["must_strength"] = ""
+    contract["register"]["required_obligations"] = []
+    missing = missing_normative_vocabulary(contract)
+    assert "register.must_strength" in missing
+    assert "register.required_obligations" in missing
+    _write(
+        service.root / _PROMPT_NORMATIVE_CONTRACT,
+        yaml.safe_dump(contract, sort_keys=False),
+    )
+    flags = service._check_prompt_normative_contract()
+    vocabulary = _prompt_normative_flags_named(flags, "vocabulary_missing")
+    assert len(vocabulary) == 1
+    assert "register.must_strength" in vocabulary[0].evidence
+    assert vocabulary[0].severity == "high"
+
+
+def test_prompt_normative_contract_invalid_yaml_is_flagged():
+    service = _prompt_normative_service()
+    _write(service.root / _PROMPT_NORMATIVE_CONTRACT, "{bad yaml: [")
+    flags = service._check_prompt_normative_contract()
+    assert flags[0].flag == f"{_PROMPT_NORMATIVE_PREFIX}_invalid"
+
+
+def test_prompt_normative_contract_source_marker_missing_is_flagged():
+    service = _prompt_normative_service()
+    _write(service.root / "crates/da-domain/src/agent_manifest.rs", "// stripped\n")
+    flags = service._check_prompt_normative_contract()
+    marker = _prompt_normative_flags_named(flags, "source_marker_missing")
+    assert len(marker) == 1
+    assert "normative_register_type" in marker[0].evidence
+
+    service = _prompt_normative_service()
+    _write(service.root / "crates/da-domain/tests/prompt_normative_contract.rs", "// stripped\n")
+    flags = service._check_prompt_normative_contract()
+    marker = _prompt_normative_flags_named(flags, "source_marker_missing")
+    assert len(marker) == 1
+    assert "normative_register_contract_test" in marker[0].evidence
+
+
+def test_prompt_normative_contract_absent_snapshot_suite_is_not_flagged():
+    """The rule has no durable snapshot task suite; the opt-out must be explicit."""
+    service = _prompt_normative_service()
+    contract = _prompt_normative_contract_document(service)
+    assert "graph_task_suite" not in contract
+    opted_out = _candidate_contract_flags(
+        contract, service.root, "prompt_authority",
+        _PROMPT_NORMATIVE_PREFIX, prompt_normative_violations,
+        graph_task_suite_required=False,
+    )
+    assert not [
+        f for f in opted_out
+        if f.flag == f"{_PROMPT_NORMATIVE_PREFIX}_suite_missing"
+    ], opted_out
+    default = _candidate_contract_flags(
+        contract, service.root, "prompt_authority",
+        _PROMPT_NORMATIVE_PREFIX, prompt_normative_violations,
+    )
+    assert any(
+        f.flag == f"{_PROMPT_NORMATIVE_PREFIX}_suite_missing" for f in default
+    )
+
+
+def test_prompt_normative_contract_live_register_weakened_obligation_is_flagged():
+    """Weakening a live `must` obligation loses authority, fail-closed."""
+    service = _prompt_normative_service()
+    register = _prompt_normative_register_document(service)
+    for entry in register["normatives"]:
+        if entry.get("id") == "PR-SUM-001":
+            entry["strength"] = "should"
+    _write_prompt_normative_register(service, register)
+    flags = service._check_prompt_normative_contract()
+    broken = _prompt_normative_flags_named(flags, "register_broken")
+    assert len(broken) == 1
+    assert "weak_obligation" in broken[0].evidence
+
+
+def test_prompt_normative_contract_live_register_dropped_obligation_is_flagged():
+    service = _prompt_normative_service()
+    register = _prompt_normative_register_document(service)
+    register["normatives"] = [
+        e for e in register["normatives"] if e.get("id") != "PR-CRIT-002"
+    ]
+    _write_prompt_normative_register(service, register)
+    flags = service._check_prompt_normative_contract()
+    missing = _prompt_normative_flags_named(flags, "obligation_missing")
+    assert len(missing) == 1
+    assert "PR-CRIT-002" in missing[0].evidence
+
+
+def test_prompt_normative_contract_live_prompt_marker_unknown_obligation_is_flagged():
+    service = _prompt_normative_service()
+    prompt = service.root / "data/prompts/critic/system.v1.md"
+    text = prompt.read_text(encoding="utf-8").replace(
+        "PR-CRIT-001, PR-CRIT-002", "PR-CRIT-001, PR-CRIT-999"
+    )
+    _write(prompt, text)
+    flags = service._check_prompt_normative_contract()
+    unknown = _prompt_normative_flags_named(flags, "prompt_marker_unknown_obligation")
+    assert len(unknown) == 1
+    assert "PR-CRIT-999" in unknown[0].evidence
+
+
+def test_prompt_normative_contract_live_optimizer_marker_missing_is_flagged():
+    service = _prompt_normative_service()
+    prompt = service.root / "data/prompts/summarizer/system.v2.md"
+    text = prompt.read_text(encoding="utf-8").replace(
+        "<!-- OPTIMIZER-IMMUTABLE: proof, authority, evidence -->", ""
+    )
+    _write(prompt, text)
+    flags = service._check_prompt_normative_contract()
+    marker = _prompt_normative_flags_named(flags, "optimizer_immutable_marker_missing")
+    assert len(marker) == 1
+    assert "system.v2.md" in marker[0].evidence
+
+
+def test_prompt_normative_contract_live_verification_execution_failure_is_flagged():
+    """The rule executes the allowlisted typed ops, so a drifted digest fails."""
+    service = _prompt_normative_service()
+    register = _prompt_normative_register_document(service)
+    for entry in register["normatives"]:
+        if entry.get("id") != "PR-SUM-001":
+            continue
+        for verification in entry.get("verification") or []:
+            if verification.get("op") == "content_digest_matches":
+                verification["params"]["digest"] = "0" * 64
+    _write_prompt_normative_register(service, register)
+    flags = service._check_prompt_normative_contract()
+    failed = _prompt_normative_flags_named(flags, "verification_failed")
+    assert len(failed) == 1
+    assert "content_digest_matches" in failed[0].evidence
+    assert "PR-SUM-001" in failed[0].evidence
+
+
+def test_prompt_normative_contract_oracle_rejects_unidentified_obligation():
+    """The plan's unidentified-obligation case, falsifiable without the harness."""
+    contract = _prompt_normative_contract_document(_prompt_normative_service())
+    register = _prompt_normative_register_document(_prompt_normative_service())
+    del register["normatives"][0]["id"]
+    assert "missing_obligation_id" in prompt_normative_violations(register, contract)
+
+
+def test_prompt_normative_contract_oracle_rejects_weakened_obligation():
+    """The plan's weakened-obligation case, falsifiable without the harness."""
+    contract = _prompt_normative_contract_document(_prompt_normative_service())
+    register = _prompt_normative_register_document(_prompt_normative_service())
+    register["normatives"][0]["strength"] = "should"
+    assert "weak_obligation" in prompt_normative_violations(register, contract)
+
+
+def test_prompt_normative_contract_oracle_rejects_shell_string_verification():
+    contract = _prompt_normative_contract_document(_prompt_normative_service())
+    register = _prompt_normative_register_document(_prompt_normative_service())
+    register["normatives"][0]["verification"] = [
+        {"op": "shell", "params": {"command": "sha256sum data/prompts/summarizer/system.v1.md"}}
+    ]
+    assert "unknown_verification_op" in prompt_normative_violations(register, contract)
+
+
+def test_prompt_normative_contract_oracle_rejects_descriptive_as_enforced():
+    contract = _prompt_normative_contract_document(_prompt_normative_service())
+    register = _prompt_normative_register_document(_prompt_normative_service())
+    for entry in register["normatives"]:
+        if entry.get("kind") == "descriptive":
+            entry["enforced"] = True
+    violations = prompt_normative_violations(register, contract)
+    assert "descriptive_marked_enforced" in violations
+
+
+def test_prompt_normative_contract_is_wired_into_build_report():
+    """A rule that is implemented but never invoked is a dead rule.
+
+    `build_report` is the single governor validation path (`preflight` and
+    `doctor` both go through it). Constructing it needs every collaborator, so
+    this pins the call site instead: deleting the delegation fails here rather
+    than silently disabling the rule. The end-to-end behaviour is additionally
+    evidenced by `governor --phase preflight` producing no
+    `prompt_normative_contract` flag on the committed tree.
+    """
+    import inspect
+
+    source = inspect.getsource(TrajectoryService.build_report)
+    assert "_check_prompt_normative_contract()" in source

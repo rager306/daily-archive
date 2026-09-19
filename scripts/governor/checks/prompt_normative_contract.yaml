@@ -1,0 +1,161 @@
+# Prompt normative contract — the control-plane half of M510-jsg1pj/S02/T02.
+#
+# DATA for the Governor `prompt_normative_contract` check. The prompt/meta-prompt
+# normative register (`data/prompts/normatives.yaml`) gives every obligation an
+# identifier, scope, authority, preconditions, an evidence obligation and a
+# verification operation expressed as an ALLOWLISTED typed identifier with typed
+# parameters — never a shell string. T02 built the Rust register and its
+# fail-closed authority resolution; this rule pins that contract live:
+#
+#   * the committed register must validate (identifiers present, `must` strength,
+#     authority from registered sources, preconditions, evidence obligation,
+#     allowlisted typed verification, preserved optimizer-immutable boundaries,
+#     descriptive material marked `enforced: false` and never laundering into
+#     authority, D127 import lock closed);
+#   * the guardrail is dynamic, not declarative: this check EXECUTES the
+#     allowlisted typed operations in Python against the real tree
+#     (`content_digest_matches`, `marker_text_present`, `manifest_binds_prompt`),
+#     so a drifted prompt digest or a renamed executed prompt is a control-plane
+#     failure, not just a Rust unit-test failure;
+#   * the required obligation ids, authority sources and verification ops must
+#     stay identified: dropping one is `obligation_missing` /
+#     `authority_source_missing` / `verification_op_missing`, so the register
+#     cannot silently shrink;
+#   * the `<!-- PROMPT-CONTRACT: ... -->` markers on the committed prompts must
+#     reference registered ids, and the prompts T02 marks must carry the
+#     optimizer-immutable boundary marker, so a prompt cannot cite an obligation
+#     the register no longer identifies;
+#   * the negative fixture must show an unidentified or weakened obligation
+#     failing closed (a `must` weakened to `should` is `weak_obligation`, an
+#     entry with no id is `missing_obligation_id`), not degrading into a
+#     recommendation;
+#   * a raw `shell:` verification is not representable: the op must be in the
+#     register's own allowlist and its parameter types must match, or the
+#     register fails closed (`unknown_verification_op`, `untyped_parameter`,
+#     `invalid_path_parameter`, `invalid_digest_parameter`).
+#
+# Fail-open guard: `missing_normative_vocabulary` refuses a contract whose
+# register schema, `must_strength`, required obligation set or marker vocabulary
+# is empty — without them the oracle cannot tell a weakened obligation from an
+# enforced one and would accept every register.
+#
+# Boundary of the claim (stated rather than implied): this is a consistency and
+# fail-closed contract over the register document, not a tamper-evident
+# attestation. An actor able to rewrite both the register and this DATA rule can
+# satisfy it. Its value is that absence, weakening, renaming and shell-string
+# verification stop passing as compliance.
+#
+# This is DATA — tightening an expectation is an edit here (plus the committed
+# fixture JSON), not a Python change.
+
+schema_version: prompt-normative-contract.v1
+policy_id: prompt_normative_contract
+dimension: prompt_authority
+severity: high
+anchor: "M510/S02, R137, R130, R093, ADR-059, ADR-055, ADR-068, D136, D127, D418"
+
+register:
+  # The live register the rule governs.
+  path: data/prompts/normatives.yaml
+  schema_version: prompt-normatives.v1
+  register_id: prompt-normatives
+  d127_key: d127_import_eligible
+  # Only `must` confers authority. A `should`/`may` strength is a weakening, not
+  # a downgrade to a recommendation.
+  allowed_strengths: [must, should, may]
+  must_strength: must
+  # Obligations that must stay identified. Dropping one is a violation, so the
+  # register cannot shrink below the contract it was closed with.
+  required_obligations: [PR-SUM-001, PR-SUM-002, PR-SUM-003, PR-CRIT-001, PR-CRIT-002]
+  # Authority sources the obligations derive from; `unknown_authority` refuses a
+  # source that is not declared here.
+  required_authority_sources:
+    - R137
+    - R130
+    - R093
+    - ADR-059
+    - ADR-055
+    - D136
+    - PR-SUM-CONTRACT
+    - PR-CRIT-CONTRACT
+  # Allowlisted verification operations. An obligation using anything else is
+  # `unknown_verification_op`.
+  required_verification_ops: [content_digest_matches, marker_text_present, manifest_binds_prompt]
+  # Boundaries an optimizer may not rewrite; every obligation must preserve all
+  # of them to keep its authority.
+  required_optimizer_immutable: [proof, authority, evidence]
+  required_forbidden_rewrites: [obligation_id, authority, evidence_obligation]
+
+markers:
+  # `<!-- PROMPT-CONTRACT: PR-SUM-001, PR-SUM-002 -->` marker syntax on prompts.
+  prompt_contract_prefix: "<!-- PROMPT-CONTRACT: "
+  # Boundary marker present on the prompts an optimizer may not silently rewrite.
+  optimizer_immutable_marker: "<!-- OPTIMIZER-IMMUTABLE: proof, authority, evidence -->"
+  # Prompts whose contract markers must name registered obligations.
+  prompt_marker_paths:
+    - data/prompts/summarizer/system.v2.md
+    - data/prompts/article-summary/baseline.v1.md
+    - data/prompts/critic/system.v1.md
+  # Prompts that must carry the optimizer-immutable proof/authority/evidence
+  # boundary. The executed summarizer source and its derived baseline are
+  # digest-bound instead (the drift test in T01 covers them).
+  optimizer_immutable_marker_paths:
+    - data/prompts/summarizer/system.v2.md
+    - data/prompts/critic/system.v1.md
+
+verification_execution:
+  # The allowlisted typed operations the control plane executes itself. This is a
+  # whitelist of identifiers, never a shell string: an op outside it is not
+  # executed at all (it is already `unknown_verification_op`).
+  enabled: true
+  ops: [content_digest_matches, marker_text_present, manifest_binds_prompt]
+  # Key inside a manifest's `prompt` block that binds the executed prompt.
+  manifest_prompt_key: system_file
+
+fixtures:
+  positive:
+    id: register_clean
+    path: governor/fixtures/prompt_normative_contract/contract.positive.json
+    expect: clean
+  negative:
+    id: register_broken
+    path: governor/fixtures/prompt_normative_contract/contract.negative.json
+    expect:
+      require_violations:
+        - missing_register_object
+        - unsupported_schema_version
+        - missing_import_lock
+        - import_eligibility_leak
+        - incomplete_immutable_boundary_set
+        - missing_verification_ops
+        - unknown_parameter_type
+        - missing_obligation_id
+        - missing_scope
+        - missing_strength
+        - weak_obligation
+        - missing_authority
+        - unknown_authority
+        - missing_preconditions
+        - missing_evidence_obligation
+        - missing_verification
+        - unknown_verification_op
+        - untyped_parameter
+        - invalid_path_parameter
+        - enum_value_not_allowed
+        - missing_immutable_boundary
+        - descriptive_marked_enforced
+        - descriptive_authority_leak
+
+# Enforcement points that must keep existing. The rule reads these files as text;
+# it never executes Rust.
+source_markers:
+  normative_register_type:
+    path: crates/da-domain/src/agent_manifest.rs
+    required_patterns: [NormativeRegister, resolve_authority, optimizer_immutable,
+                        d127_import_eligible, weak_obligation]
+  normative_register_contract_test:
+    path: crates/da-domain/tests/prompt_normative_contract.rs
+    required_patterns: [weakening_an_obligation_is_rejected_not_downgraded,
+                        dropping_a_normative_destroys_its_authority_fail_closed,
+                        descriptive_material_cannot_be_read_as_enforced,
+                        shell_string_verification_operations_are_rejected_fail_closed]

@@ -1,0 +1,215 @@
+[
+  {
+    "schema_version": "prompt-normatives.v1",
+    "register_id": "prompt-normatives",
+    "d127_import_eligible": false,
+    "authority_sources": [
+      {
+        "id": "R137",
+        "kind": "requirement",
+        "ref": "prompt normatives carry identifiers"
+      },
+      {
+        "id": "ADR-059",
+        "kind": "adr",
+        "ref": "prompt execution + optimizer FSM"
+      }
+    ],
+    "verification_ops": [
+      {
+        "id": "content_digest_matches",
+        "description": "committed file content digest equals the pinned digest",
+        "params": {
+          "path": {
+            "type": "path"
+          },
+          "algorithm": {
+            "type": "enum",
+            "values": [
+              "sha256"
+            ]
+          },
+          "digest": {
+            "type": "digest"
+          }
+        }
+      },
+      {
+        "id": "marker_text_present",
+        "description": "a committed file contains an exact marker line",
+        "params": {
+          "path": {
+            "type": "path"
+          },
+          "marker": {
+            "type": "string"
+          }
+        }
+      },
+      {
+        "id": "manifest_binds_prompt",
+        "description": "an agent manifest prompt.system_file equals the expected prompt",
+        "params": {
+          "manifest": {
+            "type": "path"
+          },
+          "expected_prompt": {
+            "type": "path"
+          }
+        }
+      }
+    ],
+    "boundaries": {
+      "required_optimizer_immutable": [
+        "proof",
+        "authority",
+        "evidence"
+      ],
+      "forbidden_rewrites": [
+        "obligation_id",
+        "authority",
+        "evidence_obligation"
+      ]
+    },
+    "normatives": [
+      {
+        "kind": "obligation",
+        "id": "PR-SUM-001",
+        "scope": "agent.summarizer.prompt.grounding",
+        "strength": "must",
+        "authority": [
+          "R137",
+          "ADR-059"
+        ],
+        "preconditions": [
+          "the executed summarizer prompt is bound by the manifest"
+        ],
+        "evidence_obligation": "the executed prompt digest equals the register digest",
+        "verification": [
+          {
+            "op": "marker_text_present",
+            "params": {
+              "path": "data/prompts/summarizer/system.v1.md",
+              "marker": "Do not invent numbers,"
+            }
+          }
+        ],
+        "optimizer_immutable": [
+          "proof",
+          "authority",
+          "evidence"
+        ]
+      }
+    ]
+  },
+  {
+    "schema_version": "prompt-normatives.v1",
+    "register_id": "prompt-normatives",
+    "d127_import_eligible": false,
+    "authority_sources": [
+      {
+        "id": "R137",
+        "kind": "requirement",
+        "ref": "prompt normatives carry identifiers"
+      },
+      {
+        "id": "ADR-059",
+        "kind": "adr",
+        "ref": "prompt execution + optimizer FSM"
+      }
+    ],
+    "verification_ops": [
+      {
+        "id": "content_digest_matches",
+        "description": "committed file content digest equals the pinned digest",
+        "params": {
+          "path": {
+            "type": "path"
+          },
+          "algorithm": {
+            "type": "enum",
+            "values": [
+              "sha256"
+            ]
+          },
+          "digest": {
+            "type": "digest"
+          }
+        }
+      },
+      {
+        "id": "marker_text_present",
+        "description": "a committed file contains an exact marker line",
+        "params": {
+          "path": {
+            "type": "path"
+          },
+          "marker": {
+            "type": "string"
+          }
+        }
+      },
+      {
+        "id": "manifest_binds_prompt",
+        "description": "an agent manifest prompt.system_file equals the expected prompt",
+        "params": {
+          "manifest": {
+            "type": "path"
+          },
+          "expected_prompt": {
+            "type": "path"
+          }
+        }
+      }
+    ],
+    "boundaries": {
+      "required_optimizer_immutable": [
+        "proof",
+        "authority",
+        "evidence"
+      ],
+      "forbidden_rewrites": [
+        "obligation_id",
+        "authority",
+        "evidence_obligation"
+      ]
+    },
+    "normatives": [
+      {
+        "kind": "obligation",
+        "id": "PR-SUM-001",
+        "scope": "agent.summarizer.prompt.grounding",
+        "strength": "must",
+        "authority": [
+          "R137",
+          "ADR-059"
+        ],
+        "preconditions": [
+          "the executed summarizer prompt is bound by the manifest"
+        ],
+        "evidence_obligation": "the executed prompt digest equals the register digest",
+        "verification": [
+          {
+            "op": "marker_text_present",
+            "params": {
+              "path": "data/prompts/summarizer/system.v1.md",
+              "marker": "Do not invent numbers,"
+            }
+          }
+        ],
+        "optimizer_immutable": [
+          "proof",
+          "authority",
+          "evidence"
+        ]
+      },
+      {
+        "kind": "descriptive",
+        "id": "PR-SUM-STYLE-001",
+        "scope": "agent.summarizer.prompt.style",
+        "enforced": false,
+        "text": "Wording, ordering and formatting may be optimized."
+      }
+    ]
+  }
+]

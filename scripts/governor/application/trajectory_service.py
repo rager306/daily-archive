@@ -1813,6 +1813,29 @@ def _candidate_contract_flags(
                       f"graph task suite missing markers: {missing}")
     return flags
 
+def _normative_marker_ids(text: str, prefix: str) -> list[str]:
+    """The obligation ids declared by `<!-- PROMPT-CONTRACT: ... -->` markers.
+
+    Mirrors the Rust helper in `crates/da-domain/tests/prompt_normative_contract.rs`:
+    one marker line per prompt, ids separated by commas, an optional trailing
+    annotation after the id (`PR-SUM-003 (v2)`) ignored. A prompt that cites an
+    id the register does not identify is register/prompt drift, not a warning.
+    """
+    ids: list[str] = []
+    if not prefix:
+        return ids
+    for line in text.splitlines():
+        if not line.startswith(prefix):
+            continue
+        rest = line[len(prefix):]
+        if rest.endswith(" -->"):
+            rest = rest[:-4]
+        for token in rest.split(","):
+            token = token.strip()
+            if token:
+                ids.append(token.split()[0])
+    return ids
+
 
 def _deep_has_key(node, key: str) -> bool:
     """True if `key` appears anywhere in a nested dict/list structure.
@@ -2029,6 +2052,13 @@ class TrajectoryService:
         # read_only_agent_contract_verify_test.rs), and D127 stays locked
         # (no import_eligible key anywhere in the envelope).
         drift_flags.extend(self._check_read_only_agent_contract())
+
+        # M510/S02: prompt normative contract — the prompt/meta-prompt register
+        # keeps identifiers, authority, evidence obligations and allowlisted
+        # typed verification operations; this rule executes those allowlisted
+        # operations against the real tree and fails closed on a dropped,
+        # weakened or unidentified obligation (never a recommendation).
+        drift_flags.extend(self._check_prompt_normative_contract())
 
         # M442 S01: feature-matrix gate pin — the architecture gate must keep
         # compiling documented CLI feature combinations (M441 lesson: the
@@ -2572,6 +2602,274 @@ class TrajectoryService:
                       f"{relative}: populations are not bound to execution "
                       f"evidence: {sorted(violations)}")
         return flags
+
+    def _check_prompt_normative_contract(self) -> list[DriftFlag]:
+        """Evaluate the prompt normative register contract (M510/S02/T02).
+
+        Reads `scripts/governor/checks/prompt_normative_contract.yaml` (DATA) and
+        validates both its fixtures and the live `data/prompts/normatives.yaml`
+        register against the independent Python oracle
+        `prompt_normative_violations` in
+        `governor.adapters.checks.prompt_normative_contract`. The register is not
+        a README: an obligation that is unidentified, weakened (`must` -> `should`),
+        renamed into a duplicate, stripped of its authority/preconditions/evidence,
+        or checked by a non-allowlisted operation fails closed and every
+        obligation in the register loses authority (D418: validity is recomputed
+        from bound content, never trusted from a label).
+
+        Beyond the structural contract this rule is dynamic, not declarative:
+
+          * the register's allowlisted typed verification operations
+            (`content_digest_matches`, `marker_text_present`, `manifest_binds_prompt`)
+            are executed here in Python against the real tree, so a drifted
+            prompt digest or a renamed executed prompt is a control-plane
+            failure, not only a Rust unit-test failure;
+          * the required obligation ids, authority sources and verification ops
+            must stay identified, so the register cannot silently shrink;
+          * the committed prompts' `PROMPT-CONTRACT` markers must reference
+            registered ids and the marked prompts must carry the
+            optimizer-immutable boundary marker.
+
+        Verification operations are identifiers, never shell strings: an op
+        outside `verification_execution.ops` is not executed at all (the oracle
+        already reports it as `unknown_verification_op`), and every path
+        parameter is confined to the repository before any read.
+        """
+        from governor.adapters.checks.prompt_normative_contract import (
+            missing_normative_vocabulary,
+            prompt_normative_violations,
+        )
+
+        path = self.root / "scripts/governor/checks/prompt_normative_contract.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="prompt_normative_contract_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="prompt_authority",
+            )]
+        prefix = "prompt_normative_contract"
+        dimension = str(contract.get("dimension") or "prompt_authority")
+        severity = str(contract.get("severity", "high"))
+        flags: list[DriftFlag] = []
+
+        def _flag(name: str, evidence: str) -> None:
+            flags.append(DriftFlag(
+                flag=f"{prefix}_{name}", severity=severity,
+                evidence=evidence, dimension=dimension,
+            ))
+
+        # A contract with no `must_strength`, required obligation set or marker
+        # vocabulary cannot tell a weakened obligation from an enforced one, so
+        # it would accept every register. Refuse it instead of failing open.
+        missing = missing_normative_vocabulary(contract)
+        if missing:
+            _flag("vocabulary_missing",
+                  "the prompt normative contract is absent or empty, so the "
+                  f"oracle would fail open: missing {missing}")
+
+        flags.extend(_candidate_contract_flags(
+            contract, self.root, dimension, prefix,
+            prompt_normative_violations,
+            graph_task_suite_required=False,
+        ))
+
+        # ── the live register ────────────────────────────────────────────
+        register_contract = contract.get("register") or {}
+        register_rel = str(register_contract.get("path") or "")
+        if not register_rel:
+            _flag("register_missing", "the contract declares no register path")
+            return flags
+        register_path = self.root / register_rel
+        if not register_path.is_file():
+            _flag("register_missing", f"missing normative register {register_rel}")
+            return flags
+        try:
+            register = yaml.safe_load(register_path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError) as error:
+            _flag("register_invalid",
+                  f"unreadable normative register {register_rel}: {error}")
+            return flags
+        if not isinstance(register, dict):
+            _flag("register_invalid",
+                  f"normative register {register_rel} must be a mapping")
+            return flags
+
+        register_violations = prompt_normative_violations(register, contract)
+        if register_violations:
+            _flag("register_broken",
+                  f"{register_rel} does not satisfy the prompt normative "
+                  f"contract: {sorted(register_violations)}")
+
+        entries = [e for e in (register.get("normatives") or []) if isinstance(e, dict)]
+        registered_ids = {e.get("id") for e in entries if isinstance(e.get("id"), str)}
+        obligations = {e.get("id") for e in entries if e.get("kind") == "obligation"}
+        for required in register_contract.get("required_obligations") or []:
+            if required not in obligations:
+                _flag("obligation_missing",
+                      f"{register_rel} no longer identifies required obligation {required}")
+        source_ids = {
+            source.get("id") for source in (register.get("authority_sources") or [])
+            if isinstance(source, dict) and isinstance(source.get("id"), str)
+        }
+        for required in register_contract.get("required_authority_sources") or []:
+            if required not in source_ids:
+                _flag("authority_source_missing",
+                      f"{register_rel} no longer declares required authority source {required}")
+        op_ids = {
+            op.get("id") for op in (register.get("verification_ops") or [])
+            if isinstance(op, dict) and isinstance(op.get("id"), str)
+        }
+        for required in register_contract.get("required_verification_ops") or []:
+            if required not in op_ids:
+                _flag("verification_op_missing",
+                      f"{register_rel} no longer allowlists required verification op {required}")
+
+        # ── register/prompt drift ────────────────────────────────────────
+        markers = contract.get("markers") or {}
+        marker_prefix = str(markers.get("prompt_contract_prefix") or "")
+        for rel in markers.get("prompt_marker_paths") or []:
+            prompt_path = self.root / str(rel)
+            if not prompt_path.is_file():
+                _flag("prompt_missing", f"missing governed prompt {rel}")
+                continue
+            text = prompt_path.read_text(errors="replace")
+            for obligation_id in _normative_marker_ids(text, marker_prefix):
+                if obligation_id not in registered_ids:
+                    _flag("prompt_marker_unknown_obligation",
+                          f"{rel} declares contract id {obligation_id} that "
+                          f"{register_rel} does not identify")
+        immutable_marker = str(markers.get("optimizer_immutable_marker") or "")
+        for rel in markers.get("optimizer_immutable_marker_paths") or []:
+            prompt_path = self.root / str(rel)
+            if not prompt_path.is_file():
+                _flag("prompt_missing", f"missing governed prompt {rel}")
+                continue
+            if immutable_marker and immutable_marker not in prompt_path.read_text(errors="replace"):
+                _flag("optimizer_immutable_marker_missing",
+                      f"{rel} must carry the optimizer-immutable boundary "
+                      f"marker {immutable_marker!r}")
+
+        # ── execute the allowlisted typed operations ─────────────────────
+        flags.extend(self._execute_normative_verifications(register, contract, register_rel))
+        return flags
+
+    def _execute_normative_verifications(
+        self, register: dict, contract: dict, register_rel: str
+    ) -> list[DriftFlag]:
+        """Execute the register's allowlisted typed operations against the tree.
+
+        This is what makes the register's verification dynamic rather than
+        declarative: the operation is an identifier from
+        `verification_execution.ops` and its parameters are typed. A shell
+        string is never executed: an op outside the allowlist is skipped here
+        because the oracle already reports it as `unknown_verification_op`.
+        """
+        execution = contract.get("verification_execution") or {}
+        if not execution.get("enabled", False):
+            return []
+        allowed = {str(op) for op in execution.get("ops") or []}
+        manifest_key = str(execution.get("manifest_prompt_key") or "system_file")
+        dimension = str(contract.get("dimension") or "prompt_authority")
+        severity = str(contract.get("severity", "high"))
+        flags: list[DriftFlag] = []
+        for entry in register.get("normatives") or []:
+            if not isinstance(entry, dict) or entry.get("kind") != "obligation":
+                continue
+            entry_id = entry.get("id", "<unnamed>")
+            for verification in entry.get("verification") or []:
+                if not isinstance(verification, dict):
+                    continue
+                op = str(verification.get("op") or "")
+                if op not in allowed:
+                    continue
+                params = verification.get("params")
+                if not isinstance(params, dict):
+                    params = {}
+                error = self._run_normative_verification(op, params, manifest_key)
+                if error:
+                    flags.append(DriftFlag(
+                        flag="prompt_normative_contract_verification_failed",
+                        severity=severity,
+                        evidence=f"{register_rel}:{entry_id}: {error}",
+                        dimension=dimension,
+                    ))
+        return flags
+
+    def _run_normative_verification(
+        self, op: str, params: dict, manifest_key: str
+    ) -> str | None:
+        """Run one allowlisted typed verification operation.
+
+        Returns a human-readable error string, or None when the operation
+        holds. Path parameters are confined to the repository before any read,
+        so a verification operation is never a generic file-read primitive.
+        """
+        def _repo_path(value) -> str | None:
+            if not isinstance(value, str) or not value:
+                return None
+            if value.startswith("/") or "://" in value or "\0" in value:
+                return None
+            if ".." in value.replace("\\", "/").split("/"):
+                return None
+            return value
+
+        if op == "content_digest_matches":
+            rel = _repo_path(params.get("path"))
+            algorithm = params.get("algorithm")
+            digest = params.get("digest")
+            if rel is None:
+                return f"content_digest_matches: unsafe path {params.get('path')!r}"
+            if algorithm != "sha256":
+                return f"content_digest_matches: unsupported algorithm {algorithm!r}"
+            target = self.root / rel
+            if not target.is_file():
+                return f"content_digest_matches: missing file {rel}"
+            actual = hashlib.sha256(target.read_bytes()).hexdigest()
+            if actual != digest:
+                return f"content_digest_matches: {rel} digest {actual} != {digest}"
+            return None
+
+        if op == "marker_text_present":
+            rel = _repo_path(params.get("path"))
+            marker = params.get("marker")
+            if rel is None:
+                return f"marker_text_present: unsafe path {params.get('path')!r}"
+            if not isinstance(marker, str) or not marker:
+                return "marker_text_present: marker must be a non-empty string"
+            target = self.root / rel
+            if not target.is_file():
+                return f"marker_text_present: missing file {rel}"
+            if marker not in target.read_text(errors="replace"):
+                return f"marker_text_present: {rel} does not contain marker {marker!r}"
+            return None
+
+        if op == "manifest_binds_prompt":
+            rel = _repo_path(params.get("manifest"))
+            expected = _repo_path(params.get("expected_prompt"))
+            if rel is None:
+                return f"manifest_binds_prompt: unsafe manifest path {params.get('manifest')!r}"
+            if expected is None:
+                return ("manifest_binds_prompt: unsafe prompt path "
+                        f"{params.get('expected_prompt')!r}")
+            target = self.root / rel
+            if not target.is_file():
+                return f"manifest_binds_prompt: missing manifest {rel}"
+            try:
+                manifest = yaml.safe_load(target.read_text(encoding="utf-8")) or {}
+            except (OSError, yaml.YAMLError) as error:
+                return f"manifest_binds_prompt: unreadable manifest {rel}: {error}"
+            bound = ((manifest.get("prompt") or {}).get(manifest_key)
+                     if isinstance(manifest, dict) else None)
+            if bound != expected:
+                return f"manifest_binds_prompt: {rel} binds {bound!r} not {expected!r}"
+            return None
+
+        return f"unexecutable verification op {op!r}"
 
     def _check_information_preservation(self) -> list[DriftFlag]:
         """Evaluate data-driven source-to-sink fidelity contracts."""
