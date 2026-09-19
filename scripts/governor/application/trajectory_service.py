@@ -2137,6 +2137,15 @@ class TrajectoryService:
         # scanner.
         drift_flags.extend(self._check_quarantine_semantic_boundary())
 
+        # GAR-015: bounded external holdout package (M510-jsg1pj/S03). A
+        # complete package is DATA in the acceptance manifest; the rule fails
+        # closed when a declared element is missing, when an unexecuted or
+        # bytes_absent external row is read as executed evidence, when prose
+        # alone authorizes a citation, or when an executed result is claimed
+        # without the recorded human release decision. No executed external
+        # probe is claimed here.
+        drift_flags.extend(self._check_external_holdout_package())
+
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
         milestone_ctx = self._build_milestone_context()
@@ -4141,6 +4150,165 @@ class TrajectoryService:
         flags.extend(_candidate_contract_flags(
             oracle_contract, self.root, dimension, prefix,
             _license_provenance_violations,
+            graph_task_suite_required=False,
+        ))
+        return flags
+
+    def _check_external_holdout_package(self) -> list[DriftFlag]:
+        """Evaluate the bounded external holdout package contract (GAR-015).
+
+        Reads `scripts/governor/checks/external_holdout_package.yaml` (DATA) and
+        binds the canonical `data/parse/acceptance_manifest.yaml` to the
+        independent oracle `external_holdout_package_violations` in
+        `governor.adapters.checks.external_holdout_package`:
+
+          1. `bindings.source_data` pins the canonical manifest by SHA-256 and is
+             verified here (the shared fixture helper does not inspect
+             `bindings`); a non-hex/absent digest fails closed.
+          2. The contract's declared vocabulary is validated first: without it
+             the oracle cannot decide package completeness and would accept
+             every package, so an absent declaration is flagged rather than
+             skipped.
+          3. The live manifest's `external_holdout_contract`,
+             `release_decision_package` and `classes` sections are assembled into
+             the envelope the oracle consumes, and every failure class it
+             re-derives is surfaced as `external_holdout_package_<label>`. An
+             executed external probe whose recorded human release decision is
+             still pending, an unexecuted/bytes-absent row read as evidence, a
+             missing declared element or a broken citation lock therefore fail
+             closed. Any label the oracle emits that the contract does not
+             declare is surfaced as `..._label_undeclared` so the vocabulary
+             cannot silently drift.
+          4. The human release decision must exist as a real repository artifact:
+             the oracle is pure, so the `decision_record` existence check lives
+             here (`..._release_decision_artifact_missing`).
+          5. The positive fixture must mirror the live declared element set
+             (`..._fixture_drift`), so a manifest that renames/re-points an
+             element cannot pass beside a stale fixture.
+
+        The package has no durable snapshot graph task suite, so the shared
+        helper is called with `graph_task_suite_required=False` explicitly.
+        Nothing is written into any artifact.
+        """
+        from governor.adapters.checks.external_holdout_package import (
+            declared_package_elements,
+            external_holdout_package_violations,
+            missing_external_holdout_vocabulary,
+        )
+
+        path = self.root / "scripts/governor/checks/external_holdout_package.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="external_holdout_package_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="scholarly_parse_plane",
+            )]
+        prefix = "external_holdout_package"
+        dimension = str(contract.get("dimension") or "scholarly_parse_plane")
+        severity = str(contract.get("severity", "high"))
+        flags: list[DriftFlag] = []
+
+        def _flag(name: str, evidence: str) -> None:
+            flags.append(DriftFlag(
+                flag=name, severity=severity, evidence=evidence, dimension=dimension,
+            ))
+
+        # 1. Bound canonical manifest: existence plus exact SHA-256.
+        for binding in (contract.get("bindings") or {}).get("source_data", []):
+            bound_path = self.root / str(binding.get("path", ""))
+            if not bound_path.is_file():
+                _flag(f"{prefix}_binding_missing",
+                      f"source binding missing: {bound_path}")
+                continue
+            expected = binding.get("sha256")
+            observed = hashlib.sha256(bound_path.read_bytes()).hexdigest()
+            # A non-string or non-hex digest is unverifiable and must fail
+            # closed: a 64-zero YAML scalar parses as int 0, which a truthy
+            # guard would silently skip.
+            if not _is_sha256_hex(expected) or str(expected).lower() != observed:
+                _flag(f"{prefix}_binding_mismatch",
+                      f"{binding.get('path')}: expected {expected!r}, observed {observed}")
+
+        # 2. Fail closed on an incomplete vocabulary: without the declared
+        #    element set the oracle cannot decide completeness.
+        missing = missing_external_holdout_vocabulary(contract)
+        if missing:
+            _flag(f"{prefix}_vocabulary_missing",
+                  f"package vocabulary is absent or empty, so the oracle would "
+                  f"fail open: missing {missing}")
+
+        # 3. The live manifest assembled into the oracle envelope.
+        canonical = contract.get("canonical_manifest") or {}
+        manifest_path = self.root / str(canonical.get("path", ""))
+        live_envelope = None
+        if not manifest_path.is_file():
+            _flag(f"{prefix}_manifest_missing",
+                  f"canonical acceptance manifest missing: {manifest_path}")
+        else:
+            try:
+                manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+            except (OSError, yaml.YAMLError) as error:
+                manifest = None
+                _flag(f"{prefix}_manifest_invalid",
+                      f"acceptance manifest unreadable: {error}")
+            if isinstance(manifest, dict):
+                live_envelope = {
+                    "external_holdout_contract": manifest.get("external_holdout_contract"),
+                    "release_decision_package": manifest.get("release_decision_package"),
+                    "classes": manifest.get("classes"),
+                }
+                live_violations = external_holdout_package_violations(
+                    live_envelope, contract
+                )
+                declared_labels = set(contract.get("violations") or [])
+                for label in sorted(live_violations):
+                    _flag(f"{prefix}_{label}",
+                          f"live acceptance_manifest.yaml: {label}")
+                    if label not in declared_labels:
+                        _flag(f"{prefix}_label_undeclared",
+                              f"oracle emitted undeclared label {label!r}")
+            elif manifest is not None:
+                _flag(f"{prefix}_manifest_invalid",
+                      "acceptance manifest must be a YAML mapping")
+
+        # 4. The recorded human release decision must be a real artifact.
+        if isinstance(live_envelope, dict):
+            release = live_envelope.get("release_decision_package")
+            human = release.get("human_release_review") if isinstance(release, dict) else None
+            decision_record = human.get("decision_record") if isinstance(human, dict) else None
+            if _non_empty_string(decision_record) and not (
+                self.root / str(decision_record)
+            ).is_file():
+                _flag(f"{prefix}_release_decision_artifact_missing",
+                      f"recorded human release decision artifact missing: {decision_record}")
+
+        # 5. The positive fixture must mirror the live declared element set.
+        positive = (contract.get("fixtures") or {}).get("positive") or {}
+        positive_path = self.root / str(positive.get("path", ""))
+        if isinstance(live_envelope, dict) and positive_path.is_file():
+            try:
+                fixture_records = json.loads(positive_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError):
+                fixture_records = None
+            if isinstance(fixture_records, list) and fixture_records:
+                first = fixture_records[0] if isinstance(fixture_records[0], dict) else {}
+                live_ids = declared_package_elements(live_envelope)
+                fixture_ids = declared_package_elements(first)
+                if not live_ids or live_ids != fixture_ids:
+                    _flag(
+                        f"{prefix}_fixture_drift",
+                        "positive fixture drifts from the live declared element set: "
+                        f"live={live_ids}, fixture={fixture_ids}",
+                    )
+
+        flags.extend(_candidate_contract_flags(
+            contract, self.root, dimension, prefix,
+            external_holdout_package_violations,
             graph_task_suite_required=False,
         ))
         return flags

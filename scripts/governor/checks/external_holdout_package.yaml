@@ -1,0 +1,217 @@
+# Bounded external holdout package contract — GAR-015 at the control plane.
+#
+# DATA for the Governor `external_holdout_package` check. GAR-015 recorded that an
+# optional frozen external probe could be cited as evidence without the bounded
+# package the finding demands: no declared acceptance margins, no document-level
+# uncertainty method, no transfer latency/cost accounting, no probe identity
+# frozen apart from the production corpora, no invalidation rules, and no
+# machine-recorded human release decision. T01 (M510-jsg1pj/S03) declared that
+# package in `data/parse/acceptance_manifest.yaml` as DATA; this contract makes
+# the declaration executable:
+#
+#   - `package_elements.required` names the six canonical element ids AND their
+#     canonical refs. The rule fails closed when any one is absent, duplicated,
+#     re-pointed or dangling, so the completeness claim is checked against a
+#     declared set instead of a hardcoded Python list. A manifest that drops an
+#     element is refused with `package_element_missing` — it is never silently
+#     downgraded to a partial package.
+#   - `violations` is the closed vocabulary of package failure labels the
+#     independent oracle in
+#     `scripts/governor/adapters/checks/external_holdout_package.py` can emit. An
+#     absent/empty vocabulary means "cannot decide", so the oracle returns the
+#     single guard token `missing_closed_vocabulary` instead of accepting every
+#     package.
+#   - the citation rule is the finding's headline property and is enforced
+#     fail-closed: while neither the probe nor an external row is executed, the
+#     representation is never evidence, prose alone never authorizes a citation,
+#     and only a recorded human release decision (a required, resolvable
+#     `decision_record` with a named reviewer) makes an executed result citable.
+#     The repository-level existence of that artifact is enforced by the Governor
+#     wiring (`..._release_decision_artifact_missing`), because the oracle is pure
+#     and never touches the filesystem.
+#   - `bindings.source_data` pins the canonical manifest by SHA-256; the digest is
+#     recomputed on every run, so a manifest edit that does not update the pin
+#     surfaces as `..._binding_mismatch` and a non-hex digest is rejected as
+#     unverifiable.
+#
+# The contract deliberately declares no `graph_task_suite`: the external holdout
+# package has no durable snapshot-level task suite, so the check passes
+# `graph_task_suite_required=False` explicitly instead of silently skipping suite
+# enforcement for the existing multimodal contracts.
+#
+# This is DATA — tightening an expectation is an edit here (plus the committed
+# fixture JSON), not a Python change.
+
+schema_version: external-holdout-package.v1
+policy_id: external_holdout_package
+dimension: scholarly_parse_plane
+severity: high
+anchor: "GAR-015, R091, R112, R113, ADR-051, ADR-075, ADR-076, D127"
+
+canonical_manifest:
+  path: data/parse/acceptance_manifest.yaml
+  contract_schema_version: external-holdout-readonly.v1
+  release_package_schema_version: release-decision-package.v1
+
+# The six canonical package elements (GAR-015). Each `ref` is a dotted path into
+# the envelope the rule builds from the manifest (`external_holdout_contract`,
+# `release_decision_package`, `classes`).
+package_elements:
+  required:
+  - id: acceptance_margins
+    ref: external_holdout_contract.acceptance_margins
+  - id: document_level_uncertainty_method
+    ref: external_holdout_contract.document_level_reporting.uncertainty_method
+  - id: transfer_latency_and_cost_accounting
+    ref: external_holdout_contract.transfer_accounting
+  - id: frozen_probe_identity
+    ref: external_holdout_contract.identity_binding
+  - id: result_invalidation_rules
+    ref: external_holdout_contract.result_invalidation
+  - id: recorded_human_release_decision
+    ref: release_decision_package.human_release_review
+
+# Mirrors of the declarations the oracle re-derives from a package.
+required_invalidation_keys:
+- on_probe_identity_change
+- on_source_revision_change
+- on_manifest_identity_change
+- on_margin_revision_change
+required_authorization_gates:
+- named_reviewer
+- explicit_decision
+- passing_quality_gate
+- passing_cost_gate
+- passing_rights_gate
+document_uncertainty_fields:
+- document_id
+- state
+- identity_sha256
+- uncertainty_low
+- uncertainty_high
+required_margin_metrics:
+- document_agreement_ratio
+- document_uncertainty_interval_width
+allowed_margin_directions: [at_least, at_most]
+allowed_margin_claim_scopes: [local_proxy_only]
+closed_execution_states: [not_executed, executed]
+# `pending` is a valid (open) state: the finding stays open and citation is simply
+# blocked. Only `recorded`/`approved` make an executed result citable.
+closed_decision_states: [pending, recorded, approved, rejected]
+recorded_decision_states: [recorded, approved]
+# External rows (`classes.<class>.rows`) may only be `bytes_absent` or
+# `executed`. Any other token cannot be classified and fails closed.
+closed_external_row_states: [executed, bytes_absent]
+document_unit: document
+fail_visible_value: fail_visible
+forbidden_value: forbidden
+retire_value: retire_result
+bytes_absent_value: bytes_absent
+executed_value: executed
+not_executed_value: not_executed
+
+# Closed vocabulary of package failure labels the independent oracle can emit.
+# `missing_closed_vocabulary` and `package_root_missing` are fail-closed guards,
+# not reachable per-record package states.
+violations:
+- missing_closed_vocabulary
+- package_root_missing
+- package_element_missing
+- package_element_unexpected
+- package_element_duplicated
+- package_element_ref_drift
+- package_element_ref_unresolved
+- package_completeness_lock_eroded
+- margin_measured_before_execution
+- margin_missing
+- margin_not_provisional
+- margin_behavior_not_fail_visible
+- pooled_corpus_claim
+- uncertainty_method_missing
+- uncertainty_not_document_level
+- uncertainty_fields_missing
+- transfer_accounting_missing
+- transfer_measured_before_execution
+- unknown_transfer_read_as_zero
+- pooled_transfer_claim
+- transfer_claim_allowed
+- probe_identity_not_frozen
+- probe_identity_overlaps_production
+- invalidation_rule_missing
+- retired_result_citable
+- unexecuted_rows_read_as_evidence
+- bytes_absent_rows_read_as_evidence
+- prose_alone_authorizes_citation
+- citation_without_release_decision
+- execution_state_unknown
+- execution_claimed_without_release
+- release_decision_not_recorded
+- release_decision_prose_only
+- release_decision_claimed_without_record
+- external_bytes_load_permitted
+
+bindings:
+  source_data:
+  - path: data/parse/acceptance_manifest.yaml
+    sha256: fb6cb2e897116552a378ee78332fe5f8069fb3e2ea6372763e6fcab07a7b70ad
+
+fixtures:
+  positive:
+    id: package_complete
+    path: governor/fixtures/external_holdout_package/contract.positive.json
+    expect: clean
+  negative:
+    id: package_broken
+    path: governor/fixtures/external_holdout_package/contract.negative.json
+    expect:
+      require_violations:
+      - package_root_missing
+      - package_element_missing
+      - package_element_unexpected
+      - package_element_duplicated
+      - package_element_ref_drift
+      - package_element_ref_unresolved
+      - package_completeness_lock_eroded
+      - margin_measured_before_execution
+      - margin_missing
+      - margin_not_provisional
+      - margin_behavior_not_fail_visible
+      - pooled_corpus_claim
+      - uncertainty_method_missing
+      - uncertainty_not_document_level
+      - uncertainty_fields_missing
+      - transfer_accounting_missing
+      - transfer_measured_before_execution
+      - unknown_transfer_read_as_zero
+      - pooled_transfer_claim
+      - transfer_claim_allowed
+      - probe_identity_not_frozen
+      - probe_identity_overlaps_production
+      - invalidation_rule_missing
+      - retired_result_citable
+      - unexecuted_rows_read_as_evidence
+      - bytes_absent_rows_read_as_evidence
+      - prose_alone_authorizes_citation
+      - citation_without_release_decision
+      - execution_state_unknown
+      - execution_claimed_without_release
+      - release_decision_not_recorded
+      - release_decision_prose_only
+      - release_decision_claimed_without_record
+      - external_bytes_load_permitted
+      each_label_isolated: true
+      severity: high
+
+# Enforcement points that must keep existing: the Rust data-contract reader of the
+# same manifest section (T01) and its typed error tags.
+source_markers:
+  rust_data_contract:
+    path: crates/da-parse/tests/data_contracts.rs
+    required_patterns:
+    - validate_external_holdout_contract
+    - external-holdout-package-missing
+    - ExternalHoldoutPackageElements
+    - external-holdout-citation
+
+redaction:
+  forbidden: [raw_tei, pdf_bytes, body_text, text, hostname, physical_path, secret]

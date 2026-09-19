@@ -37,6 +37,10 @@ from governor.adapters.checks.executed_population_binding import (
     executed_population_violations,
     missing_binding_vocabulary,
 )
+from governor.adapters.checks.external_holdout_package import (
+    external_holdout_package_violations,
+    missing_external_holdout_vocabulary,
+)
 from governor.adapters.checks.prompt_normative_contract import (
     missing_normative_vocabulary,
     prompt_normative_violations,
@@ -3845,6 +3849,376 @@ def test_component_license_provenance_oracle_rejects_untyped_status_without_gove
     assert "missing_closed_vocabulary" in \
         _license_provenance_violations(clean, no_vocabulary)
 
+# Self-tests for the committed `external_holdout_package` contract (GAR-015,
+# M510-jsg1pj/S03/T02). The scratch root receives the REAL acceptance manifest,
+# the contract DATA, both fixtures, the recorded human release decision artifact
+# and the independent Rust data-contract reader — never a synthetic stand-in —
+# so the fixture logic AND the strict oracle are exercised over the shipped
+# declaration. Every mutation happens on that copy: no committed file is
+# touched. Two tests bypass the Governor wiring on purpose (direct oracle call +
+# the explicit `graph_task_suite_required=False` opt-out), so the rule cannot go
+# green by accident, and one test pins the plan's two fail-closed properties
+# (a missing declared element is refused; an unexecuted external row is never
+# executed evidence).
+
+_EXTERNAL_HOLDOUT_PREFIX = "external_holdout_package"
+_EXTERNAL_HOLDOUT_CONTRACT = (
+    "scripts/governor/checks/external_holdout_package.yaml"
+)
+_EXTERNAL_HOLDOUT_MANIFEST = "data/parse/acceptance_manifest.yaml"
+_EXTERNAL_HOLDOUT_DECISION = "doc/review/HUMAN-REVIEW-TEMPLATE.md"
+_EXTERNAL_HOLDOUT_RUST = "crates/da-parse/tests/data_contracts.rs"
+_EXTERNAL_HOLDOUT_POSITIVE = (
+    "governor/fixtures/external_holdout_package/contract.positive.json"
+)
+_EXTERNAL_HOLDOUT_NEGATIVE = (
+    "governor/fixtures/external_holdout_package/contract.negative.json"
+)
+
+def _copy_external_holdout(root: Path) -> None:
+    """Copy the holdout contract and every path it actually reads.
+
+    The rule reads the registry manifest, the human release-decision artifact,
+    the independent Rust data-contract reader, the contract DATA and both
+    fixtures. The oracle is pure (it resolves `ref` strings inside the envelope),
+    so the scratch tree only needs those files.
+    """
+    repo = _scripts_dir.parent
+    for rel in (
+        _EXTERNAL_HOLDOUT_CONTRACT,
+        _EXTERNAL_HOLDOUT_MANIFEST,
+        _EXTERNAL_HOLDOUT_DECISION,
+        _EXTERNAL_HOLDOUT_RUST,
+        _EXTERNAL_HOLDOUT_POSITIVE,
+        _EXTERNAL_HOLDOUT_NEGATIVE,
+    ):
+        _write(root / rel, (repo / rel).read_text(encoding="utf-8"))
+
+def _external_holdout_service() -> TrajectoryService:
+    """Scratch TrajectoryService with the committed holdout contract copied in."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_external_holdout(service.root)
+    return service
+
+def _external_holdout_flags_named(flags, name: str):
+    return [f for f in flags if f.flag == f"{_EXTERNAL_HOLDOUT_PREFIX}_{name}"]
+
+def _external_holdout_contract(service: TrajectoryService) -> dict:
+    return yaml.safe_load(
+        (service.root / _EXTERNAL_HOLDOUT_CONTRACT).read_text(encoding="utf-8")
+    )
+
+def _external_holdout_live_envelope(service: TrajectoryService) -> dict:
+    manifest = yaml.safe_load(
+        (service.root / _EXTERNAL_HOLDOUT_MANIFEST).read_text(encoding="utf-8")
+    )
+    return {
+        "external_holdout_contract": manifest["external_holdout_contract"],
+        "release_decision_package": manifest["release_decision_package"],
+        "classes": manifest["classes"],
+    }
+
+def test_external_holdout_package_clean_on_committed_tree():
+    """The real-tree run must show zero flags on the committed manifest."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _scripts_dir.parent
+    assert service._check_external_holdout_package() == []
+
+def test_external_holdout_package_pass_on_clean_fixtures():
+    """The committed manifest, fixtures and markers satisfy the contract."""
+    service = _external_holdout_service()
+    assert service._check_external_holdout_package() == []
+
+def test_external_holdout_package_missing_contract_is_silent():
+    service = _external_holdout_service()
+    (service.root / _EXTERNAL_HOLDOUT_CONTRACT).unlink()
+    assert service._check_external_holdout_package() == []
+
+def test_external_holdout_package_missing_fixture_is_flagged():
+    for rel, which in [
+        (_EXTERNAL_HOLDOUT_POSITIVE, "positive"),
+        (_EXTERNAL_HOLDOUT_NEGATIVE, "negative"),
+    ]:
+        service = _external_holdout_service()
+        (service.root / rel).unlink()
+        flags = service._check_external_holdout_package()
+        missing = _external_holdout_flags_named(flags, "fixture_missing")
+        assert len(missing) == 1
+        assert which in missing[0].evidence
+        assert missing[0].severity == "high"
+        assert missing[0].dimension == "scholarly_parse_plane"
+
+def test_external_holdout_package_positive_fixture_must_be_clean():
+    service = _external_holdout_service()
+    path = service.root / _EXTERNAL_HOLDOUT_POSITIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    records[0]["external_holdout_contract"]["citation_rule"][
+        "unexecuted_external_rows_are_evidence"
+    ] = True
+    _write(path, json.dumps(records))
+    flags = service._check_external_holdout_package()
+    broken = _external_holdout_flags_named(flags, "broken")
+    assert len(broken) == 1
+    assert "unexecuted_rows_read_as_evidence" in broken[0].evidence
+
+def test_external_holdout_package_negative_fixture_must_trigger_labelled_violations():
+    service = _external_holdout_service()
+    path = service.root / _EXTERNAL_HOLDOUT_NEGATIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    # Restore the citation lock on the unexecuted-evidence record so its label
+    # can no longer fire: the mismatch must be reported.
+    for record in records:
+        if record.get("violation") == "unexecuted_rows_read_as_evidence":
+            record["record"]["external_holdout_contract"]["citation_rule"][
+                "unexecuted_external_rows_are_evidence"
+            ] = False
+    _write(path, json.dumps(records))
+    flags = service._check_external_holdout_package()
+    broken = _external_holdout_flags_named(flags, "broken")
+    assert any("unexecuted_rows_read_as_evidence" in f.evidence for f in broken)
+
+def test_external_holdout_package_negative_fixture_must_cover_required_violations():
+    service = _external_holdout_service()
+    path = service.root / _EXTERNAL_HOLDOUT_NEGATIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    records = [r for r in records if r.get("violation") != "package_element_missing"]
+    _write(path, json.dumps(records))
+    flags = service._check_external_holdout_package()
+    broken = _external_holdout_flags_named(flags, "broken")
+    assert any(
+        "missing required violation coverage" in f.evidence
+        and "package_element_missing" in f.evidence
+        for f in broken
+    )
+
+def test_external_holdout_package_invalid_yaml_is_flagged():
+    service = _external_holdout_service()
+    _write(service.root / _EXTERNAL_HOLDOUT_CONTRACT, "{bad yaml: [")
+    flags = service._check_external_holdout_package()
+    assert flags[0].flag == f"{_EXTERNAL_HOLDOUT_PREFIX}_invalid"
+
+def test_external_holdout_package_binding_mismatch_is_flagged():
+    service = _external_holdout_service()
+    path = service.root / _EXTERNAL_HOLDOUT_CONTRACT
+    text = path.read_text(encoding="utf-8")
+    digest = (yaml.safe_load(text) or {})["bindings"]["source_data"][0]["sha256"]
+    assert str(digest) in text
+    # A 64-zero scalar parses as int 0, which the binding guard must reject as
+    # unverifiable rather than skip.
+    _write(path, text.replace(str(digest), "0" * 64))
+    flags = service._check_external_holdout_package()
+    assert len(_external_holdout_flags_named(flags, "binding_mismatch")) == 1
+
+def test_external_holdout_package_binding_missing_is_flagged():
+    service = _external_holdout_service()
+    (service.root / _EXTERNAL_HOLDOUT_MANIFEST).unlink()
+    flags = service._check_external_holdout_package()
+    assert len(_external_holdout_flags_named(flags, "binding_missing")) == 1
+
+def test_external_holdout_package_manifest_missing_is_flagged():
+    service = _external_holdout_service()
+    # Drop the SHA binding first so the absence is reported as the missing
+    # canonical artifact rather than as an unverifiable binding.
+    path = service.root / _EXTERNAL_HOLDOUT_CONTRACT
+    contract = yaml.safe_load(path.read_text(encoding="utf-8"))
+    contract.pop("bindings", None)
+    _write(path, yaml.safe_dump(contract, sort_keys=False))
+    (service.root / _EXTERNAL_HOLDOUT_MANIFEST).unlink()
+    flags = service._check_external_holdout_package()
+    assert len(_external_holdout_flags_named(flags, "manifest_missing")) == 1
+
+def test_external_holdout_package_missing_vocabulary_is_flagged():
+    """Without the declared element set completeness is undecidable."""
+    service = _external_holdout_service()
+    path = service.root / _EXTERNAL_HOLDOUT_CONTRACT
+    contract = yaml.safe_load(path.read_text(encoding="utf-8"))
+    contract["package_elements"]["required"] = []
+    _write(path, yaml.safe_dump(contract, sort_keys=False))
+    flags = service._check_external_holdout_package()
+    vocabulary = _external_holdout_flags_named(flags, "vocabulary_missing")
+    assert len(vocabulary) == 1
+    assert "package_elements.required" in vocabulary[0].evidence
+    assert vocabulary[0].severity == "high"
+
+def test_external_holdout_package_release_decision_artifact_missing_is_flagged():
+    service = _external_holdout_service()
+    (service.root / _EXTERNAL_HOLDOUT_DECISION).unlink()
+    flags = service._check_external_holdout_package()
+    missing = _external_holdout_flags_named(flags, "release_decision_artifact_missing")
+    assert len(missing) == 1
+    assert _EXTERNAL_HOLDOUT_DECISION in missing[0].evidence
+
+def test_external_holdout_package_fixture_drift_is_flagged():
+    service = _external_holdout_service()
+    path = service.root / _EXTERNAL_HOLDOUT_POSITIVE
+    records = json.loads(path.read_text(encoding="utf-8"))
+    records[0]["external_holdout_contract"]["package_elements"]["elements"].pop()
+    _write(path, json.dumps(records))
+    flags = service._check_external_holdout_package()
+    assert len(_external_holdout_flags_named(flags, "fixture_drift")) == 1
+
+def test_external_holdout_package_source_marker_missing_is_flagged():
+    service = _external_holdout_service()
+    _write(service.root / _EXTERNAL_HOLDOUT_RUST, "fn main() {}\n")
+    flags = service._check_external_holdout_package()
+    marker = _external_holdout_flags_named(flags, "source_marker_missing")
+    assert len(marker) == 1
+    assert "rust_data_contract" in marker[0].evidence
+
+def test_external_holdout_package_absent_snapshot_suite_is_not_flagged():
+    """The rule has no durable snapshot task suite; the opt-out must be explicit."""
+    service = _external_holdout_service()
+    contract = _external_holdout_contract(service)
+    assert "graph_task_suite" not in contract
+    opted_out = _candidate_contract_flags(
+        contract, service.root, "scholarly_parse_plane",
+        _EXTERNAL_HOLDOUT_PREFIX, external_holdout_package_violations,
+        graph_task_suite_required=False,
+    )
+    assert not [
+        f for f in opted_out
+        if f.flag == f"{_EXTERNAL_HOLDOUT_PREFIX}_suite_missing"
+    ], opted_out
+    default = _candidate_contract_flags(
+        contract, service.root, "scholarly_parse_plane",
+        _EXTERNAL_HOLDOUT_PREFIX, external_holdout_package_violations,
+    )
+    assert any(
+        f.flag == f"{_EXTERNAL_HOLDOUT_PREFIX}_suite_missing" for f in default
+    )
+
+def test_external_holdout_package_vocabulary_covers_oracle_labels():
+    """The closed vocabulary is complete and fails closed when it is absent."""
+    service = _external_holdout_service()
+    contract = _external_holdout_contract(service)
+    assert missing_external_holdout_vocabulary(contract) == []
+    declared = set(contract["violations"])
+    records = json.loads(
+        (service.root / _EXTERNAL_HOLDOUT_NEGATIVE).read_text(encoding="utf-8")
+    )
+    emitted = set()
+    for record in records:
+        emitted |= external_holdout_package_violations(record["record"], contract)
+    emitted |= external_holdout_package_violations({}, contract)
+    emitted |= external_holdout_package_violations(
+        _external_holdout_live_envelope(service), contract
+    )
+    assert emitted <= declared, sorted(emitted - declared)
+    assert set(
+        contract["fixtures"]["negative"]["expect"]["require_violations"]
+    ) == declared - {"missing_closed_vocabulary"}
+
+    # Fail-closed: an empty vocabulary means "cannot decide", not "accept".
+    no_vocabulary = dict(contract)
+    no_vocabulary["violations"] = []
+    assert external_holdout_package_violations(
+        _external_holdout_live_envelope(service), no_vocabulary
+    ) == {"missing_closed_vocabulary"}
+
+def test_external_holdout_package_refuses_missing_element_and_unexecuted_evidence():
+    """GAR-015's two fail-closed properties, asserted from the committed fixture.
+
+    A package missing any declared element is refused, and an unexecuted
+    external row can never be read as executed evidence. Both are proved from
+    the committed negative fixture and again without the Governor wiring; the
+    committed live package claims neither.
+    """
+    service = _external_holdout_service()
+    contract = _external_holdout_contract(service)
+    records = json.loads(
+        (service.root / _EXTERNAL_HOLDOUT_NEGATIVE).read_text(encoding="utf-8")
+    )
+    by_label = {record["violation"]: record["record"] for record in records}
+    assert "package_element_missing" in by_label
+    assert "unexecuted_rows_read_as_evidence" in by_label
+
+    assert "package_element_missing" in external_holdout_package_violations(
+        by_label["package_element_missing"], contract
+    )
+    assert "unexecuted_rows_read_as_evidence" in external_holdout_package_violations(
+        by_label["unexecuted_rows_read_as_evidence"], contract
+    )
+
+    # The committed live declaration passes: unexecuted/bytes_absent rows are
+    # locked, so a citation is blocked rather than silently admitted.
+    assert external_holdout_package_violations(
+        _external_holdout_live_envelope(service), contract
+    ) == set()
+
+def test_external_holdout_package_missing_any_declared_element_is_refused():
+    """Every one of the six declared elements is load-bearing.
+
+    Remove each element in turn from a clean package: the package must be
+    refused each time, so completeness is not a property of any single element.
+    """
+    service = _external_holdout_service()
+    contract = _external_holdout_contract(service)
+    clean = json.loads(
+        (service.root / _EXTERNAL_HOLDOUT_POSITIVE).read_text(encoding="utf-8")
+    )[0]
+    elements = clean["external_holdout_contract"]["package_elements"]["elements"]
+    assert len(elements) == 6
+    for index, element in enumerate(elements):
+        package = json.loads(json.dumps(clean))
+        package["external_holdout_contract"]["package_elements"]["elements"].pop(index)
+        violations = external_holdout_package_violations(package, contract)
+        assert "package_element_missing" in violations, (element["id"], sorted(violations))
+
+def test_external_holdout_package_live_manifest_citation_unlock_is_flagged():
+    """Weakening the live citation lock flags on the real manifest path."""
+    service = _external_holdout_service()
+    path = service.root / _EXTERNAL_HOLDOUT_MANIFEST
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    manifest["external_holdout_contract"]["citation_rule"][
+        "unexecuted_external_rows_are_evidence"
+    ] = True
+    _write(path, yaml.safe_dump(manifest, sort_keys=False))
+    flags = service._check_external_holdout_package()
+    unlocked = _external_holdout_flags_named(
+        flags, "unexecuted_rows_read_as_evidence"
+    )
+    assert len(unlocked) == 1
+    assert "live acceptance_manifest.yaml" in unlocked[0].evidence
+
+def test_external_holdout_package_oracle_rejects_unexecuted_rows_without_governor():
+    """The discrimination lives in the independent oracle, not in the wiring."""
+    service = _external_holdout_service()
+    contract = _external_holdout_contract(service)
+    clean = json.loads(
+        (service.root / _EXTERNAL_HOLDOUT_POSITIVE).read_text(encoding="utf-8")
+    )[0]
+    assert external_holdout_package_violations(clean, contract) == set()
+
+    incomplete = json.loads(json.dumps(clean))
+    incomplete["external_holdout_contract"]["package_elements"]["elements"].pop()
+    assert "package_element_missing" in external_holdout_package_violations(
+        incomplete, contract
+    )
+
+    unexecuted = json.loads(json.dumps(clean))
+    unexecuted["external_holdout_contract"]["citation_rule"][
+        "unexecuted_external_rows_are_evidence"
+    ] = True
+    assert "unexecuted_rows_read_as_evidence" in external_holdout_package_violations(
+        unexecuted, contract
+    )
+
+    # An executed probe without the recorded human decision is still refused:
+    # execution alone never authorizes a citation.
+    claimed = json.loads(json.dumps(clean))
+    claimed["external_holdout_contract"]["execution_status"] = "executed"
+    assert "execution_claimed_without_release" in external_holdout_package_violations(
+        claimed, contract
+    )
+
+def test_external_holdout_package_is_wired_into_build_report():
+    """A rule that is implemented but never invoked is a dead rule."""
+    import inspect
+
+    source = inspect.getsource(TrajectoryService.build_report)
+    assert "_check_external_holdout_package()" in source
+
 
 # Self-tests for the committed `oracle_digest_recomputation` contract (T03/T04).
 # The scratch root receives the REAL contract DATA, the three audited
@@ -6590,6 +6964,28 @@ def _run_all_tests() -> int:
         test_component_license_provenance_absent_snapshot_suite_is_not_flagged,
         test_component_license_provenance_real_inventory_mutations_are_flagged,
         test_component_license_provenance_oracle_rejects_untyped_status_without_governor,
+        test_external_holdout_package_clean_on_committed_tree,
+        test_external_holdout_package_pass_on_clean_fixtures,
+        test_external_holdout_package_missing_contract_is_silent,
+        test_external_holdout_package_missing_fixture_is_flagged,
+        test_external_holdout_package_positive_fixture_must_be_clean,
+        test_external_holdout_package_negative_fixture_must_trigger_labelled_violations,
+        test_external_holdout_package_negative_fixture_must_cover_required_violations,
+        test_external_holdout_package_invalid_yaml_is_flagged,
+        test_external_holdout_package_binding_mismatch_is_flagged,
+        test_external_holdout_package_binding_missing_is_flagged,
+        test_external_holdout_package_manifest_missing_is_flagged,
+        test_external_holdout_package_missing_vocabulary_is_flagged,
+        test_external_holdout_package_release_decision_artifact_missing_is_flagged,
+        test_external_holdout_package_fixture_drift_is_flagged,
+        test_external_holdout_package_source_marker_missing_is_flagged,
+        test_external_holdout_package_absent_snapshot_suite_is_not_flagged,
+        test_external_holdout_package_vocabulary_covers_oracle_labels,
+        test_external_holdout_package_refuses_missing_element_and_unexecuted_evidence,
+        test_external_holdout_package_missing_any_declared_element_is_refused,
+        test_external_holdout_package_live_manifest_citation_unlock_is_flagged,
+        test_external_holdout_package_oracle_rejects_unexecuted_rows_without_governor,
+        test_external_holdout_package_is_wired_into_build_report,
         test_conservation_provenance_pass_on_clean_fixtures,
         test_conservation_provenance_missing_contract_is_silent,
         test_conservation_provenance_missing_fixture_is_flagged,
