@@ -3833,6 +3833,102 @@ fn additive_s20_sections_are_declared_and_locked() {
     assert!(!quarantine.source_artifacts.is_empty());
 }
 
+/// GAR-015 stays open: the committed tree declares an unexecuted external probe
+/// with no measured margins, no transfer accounting and no release claim, and the
+/// recorded human release gate has not been taken (`reviewer: null`,
+/// `decision: pending`). This pins the open state itself: an unexecuted external
+/// or bytes_absent representation is never executed evidence, prose never
+/// authorizes, and every prohibited authorization stays blocked. The independent
+/// fail-closed oracle over the same declarations lives in
+/// `external_holdout_package_contract.rs` (ADR-051).
+#[test]
+fn external_holdout_finding_stays_open_and_unexecuted() {
+    let manifest: AcceptanceManifest = expect_loaded(ACCEPTANCE_REL_PATH);
+    let holdout = &manifest.external_holdout_contract;
+
+    // No executed probe, no external bytes, nothing measured before execution.
+    assert_eq!(holdout.execution_status, "not_executed");
+    assert_eq!(holdout.byte_policy.external_bytes, "bytes_absent");
+    assert!(!holdout.byte_policy.external_rows_are_evidence);
+    assert!(!holdout.acceptance_margins.measured);
+    assert!(holdout.acceptance_margins.margins_are_provisional);
+    assert!(holdout.acceptance_margins.declared_before_execution);
+    assert!(!holdout.transfer_accounting.measured);
+    assert!(!holdout.transfer_accounting.transfer_bytes_loaded);
+    assert!(!holdout.transfer_accounting.transfer_claim_allowed);
+    assert!(!holdout.cost_bounds.release_claim_allowed);
+    assert_eq!(
+        holdout.identity_binding.production_corpus_identity_overlap,
+        "forbidden"
+    );
+    assert!(!holdout.result_invalidation.retired_result_may_be_cited);
+
+    // The citation gate is fail-closed on every declared branch.
+    assert!(holdout.citation_rule.requires_executed_state);
+    assert!(
+        holdout
+            .citation_rule
+            .requires_recorded_human_release_decision
+    );
+    assert!(!holdout.citation_rule.unexecuted_external_rows_are_evidence);
+    assert!(!holdout.citation_rule.bytes_absent_rows_are_evidence);
+    assert!(!holdout.citation_rule.prose_alone_authorizes_citation);
+    assert_eq!(
+        holdout.citation_rule.citation_without_release_decision,
+        "forbidden"
+    );
+    assert_eq!(
+        holdout.citation_rule.citation_of_unexecuted_external_rows,
+        "forbidden"
+    );
+
+    // The recorded human release gate is the only authorization path, and it has
+    // not been taken: prose alone never authorizes anything.
+    let release = &manifest.release_decision_package;
+    assert_eq!(release.package_status, "pending_human_review");
+    assert!(release.human_release_review.required);
+    assert!(release.human_release_review.reviewer.is_none());
+    assert_eq!(release.human_release_review.decision, "pending");
+    assert!(!release.human_release_review.prose_alone_authorizes_release);
+    assert_eq!(release.quality.status, "blocked");
+    assert_eq!(release.cost.status, "bounded_not_measured");
+    assert_eq!(release.rights.status, "blocked");
+    assert_eq!(
+        release.quality.evidence.external_holdout_status,
+        "not_executed"
+    );
+    let prohibited = &release.prohibited_authorizations;
+    assert_eq!(prohibited.redistribution, "blocked");
+    assert_eq!(prohibited.production_use, "blocked");
+    assert_eq!(prohibited.model_distribution, "blocked");
+    assert_eq!(prohibited.external_downloads, "blocked");
+    assert_eq!(prohibited.graph_write_or_import, "blocked");
+
+    // A recorded decision must exist as a repository artifact before anything
+    // could ever become citable.
+    assert!(
+        repo_root()
+            .join(&holdout.citation_rule.release_decision_record)
+            .is_file()
+    );
+    assert_eq!(
+        release.human_release_review.decision_record,
+        holdout.citation_rule.release_decision_record
+    );
+
+    // No executed external probe exists: every external row is bytes_absent.
+    for class in [
+        &manifest.classes.publisher_acceptance,
+        &manifest.classes.layout_omnidocbench,
+    ] {
+        assert!(!class.rows.is_empty());
+        assert!(
+            class.rows.iter().all(|row| row.state == "bytes_absent"),
+            "no external row may be executed on the committed tree"
+        );
+    }
+}
+
 /// GAR-006: the contract must enumerate *every* shadow report, so a new report
 /// that publishes an undifferentiated population is caught by the enumeration
 /// instead of by a reader noticing the ambiguity later.
