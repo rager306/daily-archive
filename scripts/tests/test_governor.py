@@ -7947,11 +7947,11 @@ def test_grobid_absorption_review_real_registry_closes_four_p0_findings():
     """The four GAR P0 findings closed by this wave stay closed, with proof.
 
     Registry integrity alone never enforces closure, so this test discriminates
-    on committed facts: the GAR counts (3 unresolved, 13 enclosed), the exact
+    on committed facts: the GAR counts (1 unresolved, 15 enclosed), the exact
     six completion_evidence keys (additionalProperties: false), artifact
-    existence under the repository root, and the twelve enclosed ids that must
+    existence under the repository root, and the fourteen enclosed ids that must
     read resolved (GAR-002 is superseded history, not a contribution of this
-    wave; GAR-010, GAR-015 and GAR-016 remain open).
+    wave; GAR-015 is the single remaining open record).
     """
     from governor.adapters.checks.grobid_review_registry import check_grobid_review_registry
 
@@ -7965,8 +7965,8 @@ def test_grobid_absorption_review_real_registry_closes_four_p0_findings():
     assert blockers == [], blockers
     status = next(f for f in flags if f.flag == "grobid_review_registry_status")
     assert "records=16" in status.evidence, status.evidence
-    assert "unresolved=3" in status.evidence, status.evidence
-    assert "enclosed=13" in status.evidence, status.evidence
+    assert "unresolved=1" in status.evidence, status.evidence
+    assert "enclosed=15" in status.evidence, status.evidence
     assert "unassigned_unresolved=0" in status.evidence, status.evidence
 
     contract = yaml.safe_load(
@@ -8025,9 +8025,11 @@ def test_grobid_absorption_review_real_registry_closes_four_p0_findings():
         "GAR-007",
         "GAR-008",
         "GAR-009",
+        "GAR-010",
         "GAR-012",
         "GAR-013",
         "GAR-014",
+        "GAR-016",
     )
     for number in range(1, 17):
         finding_id = f"GAR-{number:03d}"
@@ -8061,12 +8063,12 @@ def test_grobid_absorption_review_real_registry_closure_is_falsifiable():
       A1 proof stripped (status stays resolved, completion_evidence removed)
          -> grobid_review_registry_broken "closure proof", severity high;
       A2 record reopened (status back to open, proof removed)
-         -> counts move to unresolved=4 enclosed=12, so the copy is really the
+         -> counts move to unresolved=2 enclosed=14, so the copy is really the
             thing being read and closure is not frozen text;
       B  completion artifact points at a path that does not exist
          -> grobid_review_registry_broken "completion artifact missing".
     The unmodified copy is the positive control: zero *_broken/_invalid/_missing
-    flags with unresolved=3 enclosed=13, so the farm itself is not the flag
+    flags with unresolved=1 enclosed=15, so the farm itself is not the flag
     source.
     """
     from governor.adapters.checks.grobid_review_registry import check_grobid_review_registry
@@ -8129,8 +8131,8 @@ def test_grobid_absorption_review_real_registry_closure_is_falsifiable():
     try:
         blockers, status = _registry_flags(root)
         assert blockers == [], blockers
-        assert "records=16" in status.evidence and "unresolved=3" in status.evidence
-        assert "enclosed=13" in status.evidence, status.evidence
+        assert "records=16" in status.evidence and "unresolved=1" in status.evidence
+        assert "enclosed=15" in status.evidence, status.evidence
         assert "unassigned_unresolved=0" in status.evidence, status.evidence
     finally:
         tmp.cleanup()
@@ -8143,8 +8145,8 @@ def test_grobid_absorption_review_real_registry_closure_is_falsifiable():
         assert len(closure) == 1, blockers
         assert "GAR-001" in closure[0].evidence, closure[0].evidence
         assert closure[0].severity == "high", closure[0].severity
-        assert "unresolved=3" in status.evidence, status.evidence
-        assert "enclosed=13" in status.evidence, status.evidence
+        assert "unresolved=1" in status.evidence, status.evidence
+        assert "enclosed=15" in status.evidence, status.evidence
     finally:
         tmp.cleanup()
 
@@ -8153,8 +8155,8 @@ def test_grobid_absorption_review_real_registry_closure_is_falsifiable():
     try:
         blockers, status = _registry_flags(root)
         assert blockers == [], blockers
-        assert "unresolved=4" in status.evidence, status.evidence
-        assert "enclosed=12" in status.evidence, status.evidence
+        assert "unresolved=2" in status.evidence, status.evidence
+        assert "enclosed=14" in status.evidence, status.evidence
     finally:
         tmp.cleanup()
 
@@ -8166,8 +8168,8 @@ def test_grobid_absorption_review_real_registry_closure_is_falsifiable():
         assert len(missing) == 1, blockers
         assert "GAR-011" in missing[0].evidence, missing[0].evidence
         assert missing[0].severity == "high", missing[0].severity
-        assert "unresolved=3" in status.evidence, status.evidence
-        assert "enclosed=13" in status.evidence, status.evidence
+        assert "unresolved=1" in status.evidence, status.evidence
+        assert "enclosed=15" in status.evidence, status.evidence
     finally:
         tmp.cleanup()
 
@@ -8176,17 +8178,18 @@ def test_grobid_absorption_review_real_registry_closure_is_falsifiable():
 
 
 def test_grobid_absorption_review_real_registry_closes_eight_p1_findings():
-    """The eight GAR P1 findings from this wave close with discriminated proof.
+    """The eight GAR P1 findings plus the two P2 closures carry discriminated proof.
 
-    The four-P0 test cannot absorb these: GAR-007, GAR-009 and GAR-013 stay
-    governor.coverage="gap" by design (their proposed rules were never built),
-    so extending that test's coverage-in-{existing,partial} assertion would
-    either be wrong or dishonest. This test pins the truthful per-finding
+    The four-P0 test cannot absorb these: GAR-007, GAR-009, GAR-013 and GAR-016
+    stay governor.coverage="gap" by design (their proposed rules were never
+    built), so extending that test's coverage-in-{existing,partial} assertion
+    would either be wrong or dishonest. This test pins the truthful per-finding
     coverage instead, and separately pins that a claimed existing/partial
     coverage may not point at a governor rule that does not exist on disk -
-    that is the honesty pin for GAR-013 staying gap. It also pins that closing
-    the eight does not close the register: GAR-010, GAR-015 and GAR-016 remain
-    open P2 work.
+    that is the honesty pin for the gap records. It also pins that closing them
+    does not close the register: GAR-015 remains the single open P2 record, and
+    the delivering slices that own GAR-010 and GAR-016 are in the registry
+    owner vocabulary rather than aspirational names.
     """
     from governor.adapters.checks.grobid_review_registry import check_grobid_review_registry
 
@@ -8200,8 +8203,8 @@ def test_grobid_absorption_review_real_registry_closes_eight_p1_findings():
     assert blockers == [], blockers
     status = next(f for f in flags if f.flag == "grobid_review_registry_status")
     assert "records=16" in status.evidence, status.evidence
-    assert "unresolved=3" in status.evidence, status.evidence
-    assert "enclosed=13" in status.evidence, status.evidence
+    assert "unresolved=1" in status.evidence, status.evidence
+    assert "enclosed=15" in status.evidence, status.evidence
     assert "unassigned_unresolved=0" in status.evidence, status.evidence
 
     contract = yaml.safe_load(
@@ -8217,18 +8220,20 @@ def test_grobid_absorption_review_real_registry_closes_eight_p1_findings():
     ]
     by_id = {str(record["finding_id"]): record for record in records}
 
-    # Truthful per-finding governor coverage. GAR-007/GAR-009/GAR-013 stay gap:
-    # their proposed rules are not governor rules yet and must not be advertised
-    # as existing.
+    # Truthful per-finding governor coverage. GAR-007/GAR-009/GAR-013/GAR-016
+    # stay gap: their proposed rules are not governor rules yet and must not be
+    # advertised as existing.
     expected_coverage = {
         "GAR-005": ("existing", ["conservation_verdict_provenance"]),
         "GAR-006": ("existing", ["executed_population_binding"]),
         "GAR-007": ("gap", []),
         "GAR-008": ("partial", ["promotion_evidence_contract"]),
         "GAR-009": ("gap", []),
+        "GAR-010": ("existing", ["prompt_normative_contract"]),
         "GAR-012": ("existing", ["quarantine_semantic_boundary"]),
         "GAR-013": ("gap", []),
         "GAR-014": ("existing", ["fsm_interaction_map"]),
+        "GAR-016": ("gap", []),
     }
     closed_ids = tuple(expected_coverage)
     for finding_id in closed_ids:
@@ -8275,12 +8280,27 @@ def test_grobid_absorption_review_real_registry_closes_eight_p1_findings():
         if coverage == "gap":
             assert existing_rules == [], finding_id
 
-    # Closing the eight must not be read as closing the register.
-    for finding_id in ("GAR-010", "GAR-015", "GAR-016"):
-        assert by_id[finding_id]["status"] == "open", (
+    # Closing them must not be read as closing the register: GAR-015 alone
+    # stays open, and the two P2 closures name delivering slices that are
+    # legitimate owners, so the owner vocabulary reconciliation is pinned
+    # rather than assumed.
+    for finding_id in ("GAR-010", "GAR-016"):
+        assert by_id[finding_id]["status"] == "resolved", (
             finding_id,
             by_id[finding_id]["status"],
         )
+    assert by_id["GAR-015"]["status"] == "open", by_id["GAR-015"]["status"]
+
+    owner_allow = {str(item) for item in contract["registry"]["owner_allow"]}
+    for finding_id, delivering_slice in (
+        ("GAR-010", "M510-jsg1pj/S02"),
+        ("GAR-016", "M510-jsg1pj/S01"),
+    ):
+        assert by_id[finding_id]["assessment"]["owning_wave"] == delivering_slice, (
+            finding_id,
+            by_id[finding_id]["assessment"]["owning_wave"],
+        )
+        assert delivering_slice in owner_allow, (finding_id, delivering_slice)
 
 
 if __name__ == "__main__":
