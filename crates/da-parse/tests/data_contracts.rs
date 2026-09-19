@@ -531,7 +531,8 @@ struct ExternalHoldoutBytePolicy {
 }
 
 /// Identity binding of external rows (digest of canonical identity, never a
-/// byte hash).
+/// byte hash). The probe identity is frozen before execution and apart from
+/// the production corpora (GAR-015).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ExternalHoldoutIdentityBinding {
@@ -540,6 +541,126 @@ struct ExternalHoldoutIdentityBinding {
     digest_is_byte_hash: bool,
     digest_is_authority_binding: bool,
     mismatch_behavior: String,
+    frozen_before_execution: bool,
+    frozen_apart_from_production_corpora: bool,
+    production_corpus_identity_overlap: String,
+    identity_source: String,
+}
+
+/// One declared package element: a stable id and a manifest-internal pointer.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutPackageElement {
+    id: String,
+    #[serde(rename = "ref")]
+    reference: String,
+}
+
+/// The bounded declaration package an external probe must carry before any of
+/// its rows may be cited (GAR-015).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutPackageElements {
+    schema_version: String,
+    required_before_citation: bool,
+    citation_blocked_until_complete: bool,
+    elements: Vec<ExternalHoldoutPackageElement>,
+}
+
+/// One declared acceptance margin. `margin` is a declared threshold, never a
+/// value fitted after seeing a result.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutMargin {
+    metric: String,
+    direction: String,
+    margin: f64,
+    tolerance: String,
+    claim_scope: String,
+}
+
+/// Acceptance margins declared before execution and explicitly not measured.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutMargins {
+    schema_version: String,
+    declared_before_execution: bool,
+    measured: bool,
+    unit: String,
+    basis: String,
+    margins: Vec<ExternalHoldoutMargin>,
+    resolution_floor_documents: u32,
+    same_n_required: bool,
+    margins_are_provisional: bool,
+    failed_or_missing_margin_behavior: String,
+    claim_without_measured_margin: String,
+}
+
+/// Transfer latency accounting: bounded, not measured, never zero when unknown.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutTransferLatency {
+    unit: String,
+    measured: bool,
+    lower_bound_includes: Vec<String>,
+    upper_bound_includes: Vec<String>,
+    declared_timeout_secs: u32,
+    timeout_source: String,
+    unknown_latency_is_not_zero: bool,
+    pooled_latency_claim: String,
+}
+
+/// Transfer cost accounting, bound to the existing `cost_bounds` block rather
+/// than restating it.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutTransferCost {
+    reference: String,
+    currency: String,
+    measured: bool,
+    unknown_cost_is_not_zero: bool,
+    pooled_cost_claim: String,
+}
+
+/// The finding's `transfer latency and cost accounting` element (GAR-015).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutTransferAccounting {
+    schema_version: String,
+    unit: String,
+    measured: bool,
+    latency: ExternalHoldoutTransferLatency,
+    cost: ExternalHoldoutTransferCost,
+    transfer_bytes_loaded: bool,
+    transfer_claim_allowed: bool,
+}
+
+/// Invalidation rules that retire a prior result instead of leaving it citable.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutResultInvalidation {
+    on_probe_identity_change: String,
+    on_source_revision_change: String,
+    on_manifest_identity_change: String,
+    on_margin_revision_change: String,
+    stale_result_behavior: String,
+    retired_result_may_be_cited: bool,
+}
+
+/// Fail-closed citation rule: unexecuted external or bytes_absent rows are not
+/// executed evidence, and only a recorded human release decision makes an
+/// executed external row citable (GAR-015, R135).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutCitationRule {
+    requires_executed_state: bool,
+    requires_recorded_human_release_decision: bool,
+    release_decision_record: String,
+    unexecuted_external_rows_are_evidence: bool,
+    bytes_absent_rows_are_evidence: bool,
+    prose_alone_authorizes_citation: bool,
+    citation_without_release_decision: String,
+    citation_of_unexecuted_external_rows: String,
 }
 
 /// Denominator policy: only local bound rows count toward the local proxy.
@@ -585,9 +706,14 @@ struct ExternalHoldoutContract {
     execution_status: String,
     byte_policy: ExternalHoldoutBytePolicy,
     identity_binding: ExternalHoldoutIdentityBinding,
+    package_elements: ExternalHoldoutPackageElements,
+    acceptance_margins: ExternalHoldoutMargins,
     denominator_policy: ExternalHoldoutDenominatorPolicy,
     document_level_reporting: ExternalHoldoutDocumentReporting,
     cost_bounds: ExternalHoldoutCostBounds,
+    transfer_accounting: ExternalHoldoutTransferAccounting,
+    result_invalidation: ExternalHoldoutResultInvalidation,
+    citation_rule: ExternalHoldoutCitationRule,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -3299,6 +3425,145 @@ fn validate_external_holdout_contract(e: &ExternalHoldoutContract) -> Vec<String
     {
         errs.push("[external-holdout-identity] identity binding drifted".into());
     }
+    if !i.frozen_before_execution
+        || !i.frozen_apart_from_production_corpora
+        || i.production_corpus_identity_overlap != "forbidden"
+        || i.identity_source != "external_authority_identity_only"
+    {
+        errs.push(
+            "[external-holdout-identity-frozen] probe identity not frozen apart from production corpora"
+                .into(),
+        );
+    }
+    let pkg = &e.package_elements;
+    let expected_elements: [(&str, &str); 6] = [
+        (
+            "acceptance_margins",
+            "external_holdout_contract.acceptance_margins",
+        ),
+        (
+            "document_level_uncertainty_method",
+            "external_holdout_contract.document_level_reporting.uncertainty_method",
+        ),
+        (
+            "transfer_latency_and_cost_accounting",
+            "external_holdout_contract.transfer_accounting",
+        ),
+        (
+            "frozen_probe_identity",
+            "external_holdout_contract.identity_binding",
+        ),
+        (
+            "result_invalidation_rules",
+            "external_holdout_contract.result_invalidation",
+        ),
+        (
+            "recorded_human_release_decision",
+            "release_decision_package.human_release_review",
+        ),
+    ];
+    if pkg.schema_version != "external-holdout-package-elements.v1"
+        || !pkg.required_before_citation
+        || !pkg.citation_blocked_until_complete
+    {
+        errs.push("[external-holdout-package] package completeness lock eroded".into());
+    }
+    let declared: Vec<(&str, &str)> = pkg
+        .elements
+        .iter()
+        .map(|el| (el.id.as_str(), el.reference.as_str()))
+        .collect();
+    if declared != expected_elements {
+        errs.push(
+            "[external-holdout-package-missing] declared package elements are incomplete or drifted"
+                .into(),
+        );
+    }
+    let m = &e.acceptance_margins;
+    if m.schema_version != "external-holdout-margins.v1"
+        || !m.declared_before_execution
+        || m.measured
+        || m.unit != "document"
+        || m.basis.is_empty()
+        || m.margins.is_empty()
+        || m.resolution_floor_documents == 0
+        || !m.same_n_required
+        || !m.margins_are_provisional
+        || m.failed_or_missing_margin_behavior != "fail_visible"
+        || m.claim_without_measured_margin != "forbidden"
+    {
+        errs.push(
+            "[external-holdout-margins] acceptance margins not declared before execution".into(),
+        );
+    }
+    for margin in &m.margins {
+        if margin.metric.is_empty()
+            || !matches!(margin.direction.as_str(), "at_least" | "at_most")
+            || !(margin.margin > 0.0 && margin.margin <= 1.0)
+            || margin.tolerance.is_empty()
+            || margin.claim_scope != "local_proxy_only"
+        {
+            errs.push("[external-holdout-margins] malformed margin row".into());
+        }
+    }
+    let t = &e.transfer_accounting;
+    if t.schema_version != "external-holdout-transfer.v1"
+        || t.unit != "document"
+        || t.measured
+        || t.transfer_bytes_loaded
+        || t.transfer_claim_allowed
+    {
+        errs.push("[external-holdout-transfer] transfer accounting eroded".into());
+    }
+    let lat = &t.latency;
+    if lat.unit != "seconds_per_document"
+        || lat.measured
+        || lat.lower_bound_includes.is_empty()
+        || lat.upper_bound_includes.is_empty()
+        || lat.declared_timeout_secs == 0
+        || !lat.unknown_latency_is_not_zero
+        || lat.pooled_latency_claim != "forbidden"
+    {
+        errs.push("[external-holdout-transfer] transfer latency accounting eroded".into());
+    }
+    let timeout_path = lat.timeout_source.split('#').next().unwrap_or_default();
+    if !repo_root().join(timeout_path).is_file() {
+        errs.push("[external-holdout-transfer] latency timeout source missing".into());
+    }
+    let tc = &t.cost;
+    if tc.reference != "data/parse/acceptance_manifest.yaml#external_holdout_contract.cost_bounds"
+        || tc.currency != "USD"
+        || tc.measured
+        || !tc.unknown_cost_is_not_zero
+        || tc.pooled_cost_claim != "forbidden"
+    {
+        errs.push("[external-holdout-transfer] transfer cost accounting eroded".into());
+    }
+    let inv = &e.result_invalidation;
+    if inv.on_probe_identity_change != "retire_result"
+        || inv.on_source_revision_change != "retire_result"
+        || inv.on_manifest_identity_change != "retire_result"
+        || inv.on_margin_revision_change != "retire_result"
+        || inv.stale_result_behavior != "fail_visible"
+        || inv.retired_result_may_be_cited
+    {
+        errs.push("[external-holdout-invalidation] result invalidation triggers drifted".into());
+    }
+    let cr = &e.citation_rule;
+    if !cr.requires_executed_state
+        || !cr.requires_recorded_human_release_decision
+        || cr.release_decision_record.is_empty()
+        || cr.unexecuted_external_rows_are_evidence
+        || cr.bytes_absent_rows_are_evidence
+        || cr.prose_alone_authorizes_citation
+        || cr.citation_without_release_decision != "forbidden"
+        || cr.citation_of_unexecuted_external_rows != "forbidden"
+    {
+        errs.push("[external-holdout-citation] execution citation rule eroded".into());
+    }
+    if !repo_root().join(&cr.release_decision_record).is_file() {
+        errs.push("[external-holdout-citation] release decision record missing".into());
+    }
     let d = &e.denominator_policy;
     if !d.local_bound_rows_only
         || d.bytes_absent_rows_in_local_denominator
@@ -3507,6 +3772,47 @@ fn additive_s20_sections_are_declared_and_locked() {
         "forbidden"
     );
     assert!(holdout.cost_bounds.unknown_cost_is_not_zero);
+    // GAR-015: the complete bounded package is declared, declared before any
+    // execution, and citing an unexecuted row stays forbidden.
+    assert!(
+        holdout
+            .identity_binding
+            .frozen_apart_from_production_corpora
+    );
+    assert_eq!(
+        holdout.identity_binding.production_corpus_identity_overlap,
+        "forbidden"
+    );
+    assert_eq!(holdout.package_elements.elements.len(), 6);
+    assert!(holdout.package_elements.required_before_citation);
+    assert!(holdout.package_elements.citation_blocked_until_complete);
+    assert!(holdout.acceptance_margins.declared_before_execution);
+    assert!(!holdout.acceptance_margins.measured);
+    assert_eq!(holdout.acceptance_margins.margins.len(), 2);
+    assert!(!holdout.transfer_accounting.measured);
+    assert!(!holdout.transfer_accounting.transfer_bytes_loaded);
+    assert!(
+        holdout
+            .transfer_accounting
+            .latency
+            .unknown_latency_is_not_zero
+    );
+    assert_eq!(
+        holdout.result_invalidation.stale_result_behavior,
+        "fail_visible"
+    );
+    assert!(!holdout.result_invalidation.retired_result_may_be_cited);
+    assert!(
+        holdout
+            .citation_rule
+            .requires_recorded_human_release_decision
+    );
+    assert!(!holdout.citation_rule.unexecuted_external_rows_are_evidence);
+    assert!(!holdout.citation_rule.bytes_absent_rows_are_evidence);
+    assert_eq!(
+        holdout.citation_rule.citation_without_release_decision,
+        "forbidden"
+    );
 
     let release = &manifest.release_decision_package;
     assert_eq!(release.schema_version, "release-decision-package.v1");
@@ -3808,6 +4114,62 @@ fn acceptance_manifest_rejects_isolated_mutations() {
         "[acceptance-omnidocbench-as-tei]",
         &validate_acceptance_manifest(&role),
         "OmniDocBench used as TEI oracle",
+    );
+
+    let mut measured_margin = valid.clone();
+    measured_margin
+        .external_holdout_contract
+        .acceptance_margins
+        .measured = true;
+    negative(
+        "[external-holdout-margins]",
+        &validate_acceptance_manifest(&measured_margin),
+        "margin measured before execution",
+    );
+
+    let mut incomplete = valid.clone();
+    incomplete
+        .external_holdout_contract
+        .package_elements
+        .elements
+        .pop();
+    negative(
+        "[external-holdout-package-missing]",
+        &validate_acceptance_manifest(&incomplete),
+        "incomplete external holdout package",
+    );
+
+    let mut unexecuted = valid.clone();
+    unexecuted
+        .external_holdout_contract
+        .citation_rule
+        .unexecuted_external_rows_are_evidence = true;
+    negative(
+        "[external-holdout-citation]",
+        &validate_acceptance_manifest(&unexecuted),
+        "unexecuted external row read as evidence",
+    );
+
+    let mut prose = valid.clone();
+    prose
+        .external_holdout_contract
+        .citation_rule
+        .prose_alone_authorizes_citation = true;
+    negative(
+        "[external-holdout-citation]",
+        &validate_acceptance_manifest(&prose),
+        "prose-only external citation",
+    );
+
+    let mut stale = valid.clone();
+    stale
+        .external_holdout_contract
+        .result_invalidation
+        .retired_result_may_be_cited = true;
+    negative(
+        "[external-holdout-invalidation]",
+        &validate_acceptance_manifest(&stale),
+        "retired external result still citable",
     );
 
     let mut locks = valid;

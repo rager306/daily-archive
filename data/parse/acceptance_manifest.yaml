@@ -79,6 +79,56 @@ external_holdout_contract:
     digest_is_byte_hash: false
     digest_is_authority_binding: true
     mismatch_behavior: fail_visible
+    frozen_before_execution: true
+    frozen_apart_from_production_corpora: true
+    production_corpus_identity_overlap: forbidden
+    identity_source: external_authority_identity_only
+  # GAR-015: the bounded package of declarations an optional frozen external
+  # probe must carry before any of its rows may be cited. Completeness is DATA:
+  # every element below is named once, and citing a result while any element is
+  # absent is forbidden rather than silently downgraded.
+  package_elements:
+    schema_version: external-holdout-package-elements.v1
+    required_before_citation: true
+    citation_blocked_until_complete: true
+    elements:
+    - id: acceptance_margins
+      ref: external_holdout_contract.acceptance_margins
+    - id: document_level_uncertainty_method
+      ref: external_holdout_contract.document_level_reporting.uncertainty_method
+    - id: transfer_latency_and_cost_accounting
+      ref: external_holdout_contract.transfer_accounting
+    - id: frozen_probe_identity
+      ref: external_holdout_contract.identity_binding
+    - id: result_invalidation_rules
+      ref: external_holdout_contract.result_invalidation
+    - id: recorded_human_release_decision
+      ref: release_decision_package.human_release_review
+  # GAR-015 acceptance margins, declared before execution and explicitly not
+  # measured. A margin never fitted after seeing a result and never averaged
+  # across a pooled corpus.
+  acceptance_margins:
+    schema_version: external-holdout-margins.v1
+    declared_before_execution: true
+    measured: false
+    unit: document
+    basis: same_n_local_proxy_documents; no pooled corpus claim
+    margins:
+    - metric: document_agreement_ratio
+      direction: at_least
+      margin: 0.9
+      tolerance: same_document_within_declared_tolerance
+      claim_scope: local_proxy_only
+    - metric: document_uncertainty_interval_width
+      direction: at_most
+      margin: 0.25
+      tolerance: bounded_interval_per_document
+      claim_scope: local_proxy_only
+    resolution_floor_documents: 3
+    same_n_required: true
+    margins_are_provisional: true
+    failed_or_missing_margin_behavior: fail_visible
+    claim_without_measured_margin: forbidden
   denominator_policy:
     local_bound_rows_only: true
     bytes_absent_rows_in_local_denominator: false
@@ -108,6 +158,56 @@ external_holdout_contract:
     - permitted_external_acquisition_if_later_approved
     unknown_cost_is_not_zero: true
     release_claim_allowed: false
+  # GAR-015 transfer latency and cost accounting: the missing half of the
+  # finding's demand. Latency and cost are bounded (not measured), an unknown
+  # value is never read as zero, and neither may be pooled into a corpus claim.
+  transfer_accounting:
+    schema_version: external-holdout-transfer.v1
+    unit: document
+    measured: false
+    latency:
+      unit: seconds_per_document
+      measured: false
+      lower_bound_includes:
+      - manifest_validation
+      - local_proxy_execution
+      upper_bound_includes:
+      - external_acquisition_if_later_approved
+      - human_review
+      declared_timeout_secs: 900
+      timeout_source: data/parse/external_holdout_results.yaml#timeout_secs
+      unknown_latency_is_not_zero: true
+      pooled_latency_claim: forbidden
+    cost:
+      reference: data/parse/acceptance_manifest.yaml#external_holdout_contract.cost_bounds
+      currency: USD
+      measured: false
+      unknown_cost_is_not_zero: true
+      pooled_cost_claim: forbidden
+    transfer_bytes_loaded: false
+    transfer_claim_allowed: false
+  # GAR-015: a change to the probe identity, the source revision, the manifest
+  # identity or the declared margins retires the prior result instead of
+  # leaving it citable.
+  result_invalidation:
+    on_probe_identity_change: retire_result
+    on_source_revision_change: retire_result
+    on_manifest_identity_change: retire_result
+    on_margin_revision_change: retire_result
+    stale_result_behavior: fail_visible
+    retired_result_may_be_cited: false
+  # GAR-015 fail-closed citation rule: an unexecuted external or bytes_absent
+  # representation is never executed evidence, and only a recorded human
+  # release decision makes an executed external row citable.
+  citation_rule:
+    requires_executed_state: true
+    requires_recorded_human_release_decision: true
+    release_decision_record: doc/review/HUMAN-REVIEW-TEMPLATE.md
+    unexecuted_external_rows_are_evidence: false
+    bytes_absent_rows_are_evidence: false
+    prose_alone_authorizes_citation: false
+    citation_without_release_decision: forbidden
+    citation_of_unexecuted_external_rows: forbidden
 release_decision_package:
   schema_version: release-decision-package.v1
   purpose: bounded_evaluation_and_release_review_only
