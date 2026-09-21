@@ -13,6 +13,30 @@ GSD S01–S09 задают исполнение; ADR-076 §14 фиксирует
 Production promotion и снятие D127 не разрешены. Human release — только
 настоящим ответом владельца; GAR-015 автоматически не закрывается.
 
+### M511-j7wz2f/S01/T01 — RED зафиксирован как исполняемая регрессия
+
+Диагностический probe аудита (`grobid-composition-repro.rs`, rustc вне cargo)
+превращён в отслеживаемую регрессию на публичном композиторе:
+`crates/da-parse/tests/native_fulltext_composition_contract.rs`
+
+- `a_xml_red_preserved_tei_emissions_are_rejected_by_an_independent_parser`
+  (по умолчанию) — фиксирует измеренный RED: `Accepted` на трёх сохранённых TEI
+  при том, что независимый парсер отвергает эмиссию; пины — `</title></title>`
+  ровно один раз, рост числа закрывающих `</title>`, потеря `xml:lang` у
+  синтезированного `<teiHeader>`, и точный диагностический текст.
+- `preserved_tei_composition_is_independently_well_formed` — целевой гейт,
+  `#[ignore]` пока дефект RED; при `--ignored` падает с
+  `Err("expected 'titleStmt' tag, not 'title' at 6:<col>")` на всех трёх.
+
+Независимый парсер — `roxmltree` 0.21.1 как **dev-dependency** (в `src/`
+недостижим), Cargo.lock менялся точечно. Каждый прогон проверяет sha256
+сохранённых фикстур, поэтому падение не может «съесть» знаменатель.
+Замеры: gsd_exec `33c46aa7-0fcf-4421-9223-2e851556cee2` (обычный прогон rc=0 +
+ignored-gate rc=101), `6a10f8d4-24ac-4c84-b6b0-afb3defd27f8` (диагностика по
+фикстурам). Это измерение публичного shadow-композитора: production-
+достижимость не доказана, H14 остаётся незакрытым (`implementation_pass=false`),
+замки не менялись.
+
 ## Current baseline
 
 Recomputed from `pipeline-integrity-review.jsonl` on **2026-08-19** after M401 S05 closed PIR-017 and PIR-021. Do **not** increment the printed M397 table (Resolved 7 / Open 15) — later waves already resolved PIR-006..PIR-016 and PIR-018..PIR-020 in the JSONL while this README stayed stale.

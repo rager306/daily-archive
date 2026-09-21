@@ -132,7 +132,11 @@ measured_state:
     command: "cargo test -p da-parse --tests"
     measured_at: "2026-09-21"
     suites: 100
-    passed: 1351
+    # S01/T01 (2026-09-21): базовый прогон 1352 passed / 1 ignored после
+    # добавления A-XML регрессии; ignored — целевой гейт
+    # preserved_tei_composition_is_independently_well_formed (RED до S01/T02).
+    passed: 1352
+    ignored: 1
     failed: 0
     test_files_in_crates_da_parse_tests: 99
     # ИСПРАВЛЕНИЕ: теги имён файлов ПЕРЕКРЫВАЮТСЯ и не являются разбиением.
@@ -239,7 +243,16 @@ corrections:
 validation_commands:
   - command: "PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml"
     expected: "exit=0; только grobid_horizon_review_scope_warning и grobid_horizon_review_status (medium)"
+  # S01/T01 (2026-09-21) добавил отслеживаемую A-XML регрессию (независимый
+  # парсер roxmltree как dev-dependency), поэтому счётчики сдвинулись:
+  # базовый прогон 1352 passed / 0 failed / 1 ignored (100 suites), где ignored —
+  # целевой гейт preserved_tei_composition_is_independently_well_formed,
+  # RED до починки эмиттера в S01/T02.
   - command: "cargo test -p da-parse --tests"
-    expected: "1351 passed; 0 failed; 100 suites"
+    expected: "1352 passed; 0 failed; 1 ignored; 100 suites"
+  # Ожидаемый RED, НЕ регрессия в обратную сторону: пока эмиттер не починен,
+  # гейт обязан падать — падение и есть доказательство дефекта.
+  - command: "cargo test -p da-parse --test native_fulltext_composition_contract -- --ignored"
+    expected: "rc=101: независимый парсер отвергает Accepted-эмиссию на всех трёх сохранённых TEI (RED до S01/T02)"
   - command: "python3 -c \"import json,sys,jsonschema;d=json.load(open('doc/review/grobid-absorption-followup.json'));s=json.load(open('doc/review/grobid-rust-horizon-review.schema.json'));jsonschema.Draft202012Validator(s).validate(d);print('schema-ok')\""
     expected: "schema-ok"

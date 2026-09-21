@@ -35,8 +35,9 @@
         },
         {
           "path": "crates/da-parse/tests/native_fulltext_composition_contract.rs",
-          "note": "контракт композиции: проверяет исход, но не парсит эмиссию независимым XML-парсером",
-          "state": "partial"
+          "note": "контракт композиции: теперь парсит эмиссию независимым XML-парсером (roxmltree, dev-dependency) на трёх sha256-пиннутых сохранённых TEI; a_xml_red_* фиксирует замеренный RED, целевой гейт preserved_tei_composition_is_independently_well_formed остаётся #[ignore]/RED (gsd_exec 33c46aa7)",
+          "state": "partial",
+          "symbol": "a_xml_red_preserved_tei_emissions_are_rejected_by_an_independent_parser"
         },
         {
           "path": "crates/da-parse/tests/native_fulltext_composition_properties.rs",
@@ -47,6 +48,12 @@
           "path": ".gsd/exec/6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f.stdout",
           "note": "запись репро: Accepted на 3 сохранённых реальных TEI, независимый парсер INVALID",
           "state": "present"
+        },
+        {
+          "path": "crates/da-parse/Cargo.toml",
+          "note": "roxmltree 0.21.1 добавлен только в [dev-dependencies] как независимый парсер; прод-import-root композитора не изменён (D321/квар­антин), Cargo.lock получил один точечный пакет",
+          "state": "present",
+          "symbol": "roxmltree"
         }
       ],
       "verification_evidence": [
@@ -60,6 +67,12 @@
           "mode": "command",
           "ref": "cargo test -p da-parse --test native_fulltext_composition_contract",
           "expected": "добавлен негативный тест: дублированный закрывающий тег даёт Rejected",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "gsd_exec 33c46aa7-0fcf-4421-9223-2e851556cee2: cargo test -p da-parse --test native_fulltext_composition_contract --offline (дефолт rc=0 с запинненным RED; --ignored rc=101)",
+          "expected": "на всех трёх сохранённых TEI композитор даёт Accepted, независимый парсер — Err(\"expected 'titleStmt' tag, not 'title' at 6:<col>\"); H14 остаётся незакрытым до починки эмиттера",
           "status": "pending"
         },
         {
@@ -100,7 +113,8 @@
         {
           "id": "H14-N2",
           "scenario": "Независимый парсер находит mismatched tag, тогда как композитор сообщает Accepted",
-          "expected": "регрессионный тест падает (расхождение исхода и корректности зафиксировано)"
+          "expected": "регрессионный тест падает (расхождение исхода и корректности зафиксировано)",
+          "ref": "crates/da-parse/tests/native_fulltext_composition_contract.rs::preserved_tei_composition_is_independently_well_formed (#[ignore], RED: rc=101 при --ignored, gsd_exec 33c46aa7)"
         }
       ],
       "test_matrix": [

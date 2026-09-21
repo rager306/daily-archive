@@ -62,6 +62,29 @@ PY
 
 Это диагностический probe: exit=0 означает, что измерение выполнено, НЕ что SUT корректен. Измеренный результат — INVALID для hub_2507.19457, reca_2605.26525v1, rlm_2512.24601 и dangling={'b0'}.
 
+### Регрессия M511-j7wz2f/S01/T01 (измерение, не исправление)
+
+Тот же замер теперь исполняется в тестовой поверхности библиотеки, без rustc вне cargo:
+`crates/da-parse/tests/native_fulltext_composition_contract.rs`.
+
+- Независимый парсер — Rust `roxmltree` 0.21.1, добавленный **только** в
+  `[dev-dependencies]` da-parse (квар­антин import-root продакшена `{crate, serde, sha2, std}`
+  не изменён; `Cargo.lock` правился точечно: один пакет).
+- Каждый прогон читает три сохранённых TEI из `tests/fixtures/preserved/` и
+  проверяет их sha256 по `provenance.yaml` до измерения (fail-visible при дрейфе).
+- Дефолтный прогон зелёный и пинит замеренный RED
+  (`a_xml_red_preserved_tei_emissions_are_rejected_by_an_independent_parser`):
+  `Accepted` на всех трёх, `</title></title>` ровно один раз, рост числа
+  закрывающих `</title>`, потеря `xml:lang` у синтезированного `<teiHeader>`, и
+  точный диагностический текст `expected 'titleStmt' tag, not 'title' at 6:<col>`.
+- Целевой гейт `preserved_tei_composition_is_independently_well_formed` остаётся
+  `#[ignore]` и падает при `--ignored` (rc=101): дефект RED, починка — S01/T02.
+
+Доказательства gsd_exec: `6a10f8d4-24ac-4c84-b6b0-afb3defd27f8` (три фикстуры,
+диагностика независимого парсера), `33c46aa7-0fcf-4421-9223-2e851556cee2`
+(дефолтный прогон rc=0 и ignored-gate rc=101). Замки не менялись: D127/D321
+закрыты, H14 остаётся незакрытым.
+
 ## Риски, не выдаваемые за воспроизведённые дефекты
 
 | Область | Наблюдение | Требуемая проверка |

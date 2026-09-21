@@ -363,3 +363,12 @@ Planning registry проверяется существующим `horizon-json-
 плана исполнения. Замки сохранены: `deployed=false`, `import_eligible=false`,
 `auto_promote=forbidden`, `graph_write=forbidden`, `this_wave_promotes=none`.
 Разрешение M511 не является разрешением снять D127.
+
+- S01/T01 (измерение, не исправление): диагностический probe аудита превращён в
+  отслеживаемую регрессию `crates/da-parse/tests/native_fulltext_composition_contract.rs`
+  с независимым парсером `roxmltree` **только** как dev-dependency (прод-import-root
+  композитора `{crate, serde, sha2, std}` не изменён). Замеренный RED (Accepted при
+  невалидном XML на трёх сохранённых TEI) запиннен дефолтным тестом; целевой гейт
+  `preserved_tei_composition_is_independently_well_formed` остаётся `#[ignore]`/RED.
+  H14 не закрывается: `header_xml`/`preserve_header_children` не изменялись,
+  `implementation_pass=false`, замки и D127/D321 не трогались.

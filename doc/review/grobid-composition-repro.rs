@@ -1,3 +1,19 @@
+// Archived measurement probe for A-XML/A-REF (audit 2026-09-21).
+//
+// STATUS: archived audit evidence, NOT a cargo target and NOT production
+// reachability evidence. The same measurement is now executed as a tracked
+// regression in the library test surface:
+//   crates/da-parse/tests/native_fulltext_composition_contract.rs
+//     * a_xml_red_preserved_tei_emissions_are_rejected_by_an_independent_parser
+//       (runs by default; pins the measured RED)
+//     * preserved_tei_composition_is_independently_well_formed
+//       (#[ignore]d flip gate; fails while the defect is RED)
+// Both use the dev-only `roxmltree` parser (never importable from src/) and
+// verify the sha256 of the three preserved fixtures before measuring.
+//
+// Measurement re-confirmed on the tracked fixtures: `Accepted` on all three
+// (hub_2507.19457, reca_2605.26525v1, rlm_2512.24601) with an independent
+// parser rejecting every emission at the duplicated `</title>`.
 use da_parse::*;
 
 const SOURCE: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";

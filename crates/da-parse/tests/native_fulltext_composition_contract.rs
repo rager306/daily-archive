@@ -1,4 +1,6 @@
 use da_parse::*;
+use sha2::{Digest, Sha256};
+use std::path::{Path, PathBuf};
 
 const SOURCE: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const ARTIFACT: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
@@ -402,4 +404,180 @@ fn foreign_valid_artifact_digest_rejects_and_preserves_java_envelope() {
             ..
         }
     ));
+}
+
+// ───── M511-j7wz2f / S01 / T01: A-XML RED — real preserved TEI, ─────
+// ───── independent XML parser, recorded as an expected diagnostic ─────
+//
+// Measured 2026-09-21 (`doc/review/grobid-absorption-audit-2026-09-21.md`,
+// gsd_exec 6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f) and re-measured from the
+// tracked fixtures here: `compose_native_fulltext` returns `Accepted` for all
+// three sha256-pinned preserved TEI while an independent XML parser rejects the
+// emitted document with `mismatched tag` at a duplicated `</title>`.
+//
+// Root-cause surface: `preserve_header_children` walks *every* parsed tag,
+// closing tags included, so `element_range` can be entered at a `</title>` and
+// then run to the next `<title>` in the document, pushing a range that starts
+// with a stray closing tag and swallows the elements between. The synthesized
+// `<teiHeader>` additionally drops the source header attributes (`xml:lang`).
+//
+// `compose_native_fulltext` has no runtime caller (library re-export, shadow
+// example and tests only — GitNexus reports no incoming edge, confirmed by a
+// text search over `crates/*/src`). Nothing below proves production
+// reachability, and nothing below changes a lock: D127 / D321 stay closed and
+// the composer import-root set stays `{crate, serde, sha2, std}` — `roxmltree`
+// is a dev-dependency and is never reachable from `src/`.
+//
+// Two artifacts, deliberately different:
+//   * `preserved_tei_composition_is_independently_well_formed` is the
+//     regression gate. It is RED today, so it carries `#[ignore]` with the
+//     expected diagnostic; S01/T02 removes the attribute once range pairing and
+//     header attributes are repaired.
+//   * `a_xml_red_preserved_tei_emissions_are_rejected_by_an_independent_parser`
+//     runs by default and pins the measured RED (Accepted + independent
+//     rejection + the duplicate closing tag + the dropped header attribute) so
+//     the defect can neither be silently declared fixed nor silently lost.
+//     S01/T02 replaces it with the post-fix preservation assertions.
+
+/// The three sha256-pinned preserved TEI, in `provenance.yaml` order.
+const PRESERVED_TEI: [(&str, &str); 3] = [
+    (
+        "hub_2507.19457.tei.xml",
+        "985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b79e7ec4",
+    ),
+    (
+        "rlm_2512.24601.tei.xml",
+        "e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3",
+    ),
+    (
+        "reca_2605.26525v1.tei.xml",
+        "dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040",
+    ),
+];
+
+fn preserved_repo_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+/// Read a preserved TEI fixture and verify its frozen checksum. A missing or
+/// drifted fixture is FATAL: the regression must never silently shrink.
+fn preserved_tei_source(name: &str, declared_sha256: &str) -> String {
+    let rel = format!("crates/da-parse/tests/fixtures/preserved/{name}");
+    let bytes = std::fs::read(preserved_repo_root().join(&rel)).unwrap_or_else(|error| {
+        panic!("FATAL {rel}: preserved fixture missing/unreadable ({error})")
+    });
+    let actual = hex::encode(Sha256::digest(&bytes));
+    assert_eq!(
+        actual, declared_sha256,
+        "FATAL {name}: preserved fixture bytes drifted from the frozen checksum"
+    );
+    String::from_utf8(bytes)
+        .unwrap_or_else(|error| panic!("FATAL {name}: preserved fixture is not UTF-8 ({error})"))
+}
+
+/// Independent well-formedness verdict. `roxmltree` is a strict,
+/// non-validating XML parser that shares no code with the composer's own tag
+/// scanner, so `Accepted` and "parses as XML" stay separate facts.
+fn independent_xml_verdict(xml: &str) -> Result<(), String> {
+    roxmltree::Document::parse(xml)
+        .map(|_| ())
+        .map_err(|error| error.to_string())
+}
+
+/// Compose the audit's measurement configuration (header admitted, references
+/// left to the Java fallback) against a real preserved TEI document.
+fn emit_preserved_tei(name: &str, declared_sha256: &str) -> String {
+    let source = preserved_tei_source(name, declared_sha256);
+    match compose_native_fulltext(input(
+        &source,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
+    )) {
+        NativeFulltextCompositionOutcome::Accepted(candidate) => {
+            String::from_utf8(candidate.envelope.raw_tei().to_vec())
+                .unwrap_or_else(|error| panic!("{name}: emitted document is not UTF-8 ({error})"))
+        }
+        other => panic!("{name}: expected Accepted for the preserved TEI, got {other:?}"),
+    }
+}
+
+/// A-XML regression gate. RED until S01/T02 repairs range pairing and header
+/// attributes: the independent parser rejects all three emissions today.
+#[test]
+#[ignore = "A-XML RED (H14 / M511 S01 T01): emitter still produces a stray closing tag + drops header attributes on all three preserved TEI; remove this #[ignore] in S01/T02 once the composition is structurally sound"]
+fn preserved_tei_composition_is_independently_well_formed() {
+    for (name, sha256) in PRESERVED_TEI {
+        let source = preserved_tei_source(name, sha256);
+        assert_eq!(
+            independent_xml_verdict(&source),
+            Ok(()),
+            "{name}: the preserved fixture must itself be well-formed"
+        );
+        let emitted = emit_preserved_tei(name, sha256);
+        assert_eq!(
+            independent_xml_verdict(&emitted),
+            Ok(()),
+            "A-XML: an Accepted emission must be well-formed XML ({name})"
+        );
+    }
+}
+
+/// Expected diagnostic for the measured RED, pinned over all three fixtures.
+///
+/// S01/T02 replaces this with post-fix preservation assertions: the emission
+/// must parse, keep one `<title>` per source title, and keep the header
+/// attributes.
+#[test]
+fn a_xml_red_preserved_tei_emissions_are_rejected_by_an_independent_parser() {
+    for (name, sha256) in PRESERVED_TEI {
+        let source = preserved_tei_source(name, sha256);
+        assert_eq!(
+            independent_xml_verdict(&source),
+            Ok(()),
+            "{name}: the preserved fixture must itself be well-formed, otherwise the \
+             independent parser proves nothing about the emission"
+        );
+        assert!(
+            !source.contains("</title></title>"),
+            "{name}: the fixture must not already carry the duplicated closing tag"
+        );
+        assert!(
+            source.contains("<teiHeader xml:lang"),
+            "{name}: the fixture must carry the header attribute the emitter drops"
+        );
+
+        let emitted = emit_preserved_tei(name, sha256);
+        let verdict = independent_xml_verdict(&emitted);
+        let diagnostic = match verdict {
+            Ok(()) => panic!(
+                "A-XML RED no longer reproduces for {name}: an Accepted emission parsed as \
+                 well-formed. Update S01/T01/T02 instead of relaxing this pin."
+            ),
+            Err(diagnostic) => diagnostic,
+        };
+        println!(
+            "[a-xml-red] {name}: independent parser rejects the Accepted emission: {diagnostic}"
+        );
+        assert!(
+            diagnostic.contains("expected 'titleStmt' tag, not 'title'")
+                && diagnostic.contains("at 6:"),
+            "{name}: the independent diagnostic drifted from the measured RED (mismatched tag at 
+             the duplicated </title>): {diagnostic}"
+        );
+
+        assert_eq!(
+            emitted.matches("</title></title>").count(),
+            1,
+            "{name}: exactly one range entry starts at a closing </title> tag"
+        );
+        assert!(
+            emitted.matches("</title>").count() > source.matches("</title>").count(),
+            "{name}: the emission carries more closing title tags than its source"
+        );
+        assert!(
+            !emitted.contains("<teiHeader xml:lang"),
+            "{name}: the synthesized <teiHeader> must reproduce the dropped header attribute \
+             once S01/T02 lands"
+        );
+    }
 }
