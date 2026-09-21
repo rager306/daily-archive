@@ -15,6 +15,10 @@ Production promotion и снятие D127 не разрешены. Human release
 
 ### M511-j7wz2f/S01/T01 — RED зафиксирован как исполняемая регрессия
 
+> Историческая запись: измеренный здесь RED снят в S01/T02 (гейт больше не
+> `#[ignore]`), а S01/T03 закрыл найденный остаточный namespace-случай. Счёт
+> 1352/1 и ignored-гейт относятся к ревизии T01; актуальные замеры — ниже.
+
 Диагностический probe аудита (`grobid-composition-repro.rs`, rustc вне cargo)
 превращён в отслеживаемую регрессию на публичном композиторе:
 `crates/da-parse/tests/native_fulltext_composition_contract.rs`
@@ -36,6 +40,42 @@ ignored-gate rc=101), `6a10f8d4-24ac-4c84-b6b0-afb3defd27f8` (диагности
 фикстурам). Это измерение публичного shadow-композитора: production-
 достижимость не доказана, H14 остаётся незакрытым (`implementation_pass=false`),
 замки не менялись.
+
+### M511-j7wz2f/S01/T02 — RED→GREEN: структурная XML-композиция
+
+Эмиттер переписан структурно, а не косметически: `XmlDocument` спаривает
+открывающие и закрывающие теги одним стеком (диапазон всегда
+`(open start, close end)`), содержимое заголовка переразмещается по родителю
+(дети `titleStmt` → в синтезированный `titleStmt`; дети `fileDesc` без
+`titleStmt` → в синтезированный `fileDesc`; остальные дети `teiHeader` → после
+него), атрибуты исходного `<teiHeader>` воспроизводятся дословно, и эмиссия
+перечитывается до `Accepted` (`ComposedOutputNotWellFormed`), иначе отдаётся
+байт-идентичный Java-envelope. Гейт
+`preserved_tei_composition_is_independently_well_formed` больше не `#[ignore]`
+и зелёный на трёх сохранённых TEI; RED-пин T01 заменён независимой
+консервацией (`preserved_tei_emissions_conserve_every_source_header_subtree`).
+Замеры: `cargo test -p da-parse --test native_fulltext_composition_contract` —
+17 passed, 0 ignored; `cargo test -p da-parse --tests` — 100 suites, 1359 passed,
+0 failed, 0 ignored (gsd_exec `796cf21e-8a88-4502-a915-fd2a6a60b99d`,
+`412df4be-f747-4457-9c3b-a6eff4bf779e`).
+
+### M511-j7wz2f/S01/T03 — остаточный namespace-случай и доказательства среза
+
+Обязательная для T03 проверка namespace-негативов воспроизвела остаточный
+дефект того же класса: объявление `xmlns:ext` на **синтезируемых** обёртках
+`fileDesc`/`titleStmt` не воспроизводилось, поэтому композитор возвращал
+`Accepted` при эмиссии, отвергаемой независимым парсером
+(`an unknown namespace prefix 'ext' at 1:202` / `1:153`, gsd_exec
+`c9cbe8d7-b4dc-492a-aa7d-ab7134a5335b`). Закрыто узко: с этих двух обёрток
+переносятся только `xmlns`/`xmlns:*` (прочие атрибуты обёрток, например
+собственный `xml:lang`, — семантический остаток поля H16, не well-formedness).
+Регрессия `wrapper_namespace_declarations_are_carried_so_no_prefix_is_unbound`.
+Malformed-набор расширен лишним закрывающим тегом, незавершённым комментарием и
+незавершённой CDATA. Shadow-пример проверяется только под обязательной фичей
+`pdf-layout`: план-команда без неё даёт rc=101, с фичей check и реальный прогон —
+exit=0 (`replay.semantic_equal=true`, `conservation.no_silent_loss=true`,
+9 terminal из 9 admitted). Замки не менялись; H14 остаётся planning-записью с
+`implementation_pass=false`.
 
 ## Current baseline
 

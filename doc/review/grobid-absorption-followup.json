@@ -29,20 +29,20 @@
       "implementation_evidence": [
         {
           "path": "crates/da-parse/src/native_fulltext_composition.rs",
-          "note": "поверхность эмиссии заголовка: синтез <titleStmt> и вставка сохранённых детей; здесь наблюдается дублированный закрывающий тег",
+          "note": "поверхность эмиссии заголовка: синтез <titleStmt> и вставка сохранённых детей. S01/T02 спарил открывающие и закрывающие теги одним стеком и переразместил детей заголовка по родителю, S01/T03 переносит xmlns/xmlns:* с синтезируемых обёрток fileDesc/titleStmt. Остаётся partial: не-namespace атрибуты обёрток (например собственный xml:lang) по-прежнему не копируются — семантический остаток поля (H16), не well-formedness.",
           "state": "partial",
           "symbol": "header_xml"
         },
         {
           "path": "crates/da-parse/tests/native_fulltext_composition_contract.rs",
-          "note": "контракт композиции: теперь парсит эмиссию независимым XML-парсером (roxmltree, dev-dependency) на трёх sha256-пиннутых сохранённых TEI; a_xml_red_* фиксирует замеренный RED, целевой гейт preserved_tei_composition_is_independently_well_formed остаётся #[ignore]/RED (gsd_exec 33c46aa7)",
-          "state": "partial",
-          "symbol": "a_xml_red_preserved_tei_emissions_are_rejected_by_an_independent_parser"
+          "note": "контракт композиции: эмиссия перечитывается независимым XML-парсером (roxmltree, dev-dependency) на трёх sha256-пиннутых сохранённых TEI. Гейт preserved_tei_composition_is_independently_well_formed больше не #[ignore] и зелёный (S01/T02); RED-пин T01 заменён независимой консервацией preserved_tei_emissions_conserve_every_source_header_subtree; S01/T03 добавил регрессию wrapper_namespace_declarations_are_carried_so_no_prefix_is_unbound на замеренный остаточный дефект (до правки: Accepted при Err(an unknown namespace prefix 'ext' at 1:202), gsd_exec c9cbe8d7) и расширил malformed-набор. Замер: 17 passed / 0 ignored.",
+          "state": "present",
+          "symbol": "preserved_tei_composition_is_independently_well_formed"
         },
         {
           "path": "crates/da-parse/tests/native_fulltext_composition_properties.rs",
-          "note": "property-инварианты композиции; well-formed эмиссии среди них не заявлен",
-          "state": "partial"
+          "note": "property-инвариант accepted_header_splice_stays_well_formed_and_loses_no_title (roxmltree на эмиссии) заявлен с S01/T02, поэтому well-formed эмиссии входит в инварианты, а не только в примеры",
+          "state": "present"
         },
         {
           "path": ".gsd/exec/6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f.stdout",
@@ -60,19 +60,19 @@
         {
           "mode": "runtime",
           "ref": "независимый XML-парсер на эмиссии композитора для трёх сохранённых реальных TEI",
-          "expected": "документ well-formed; при нарушении — Rejected, а не Accepted",
+          "expected": "документ well-formed; при нарушении — Rejected, а не Accepted. Замерено на S01/T02+T03: все три эмиссии принимаются roxmltree, включая случай, когда объявление xmlns стоит на синтезируемой обёртке",
           "status": "pending"
         },
         {
           "mode": "command",
           "ref": "cargo test -p da-parse --test native_fulltext_composition_contract",
-          "expected": "добавлен негативный тест: дублированный закрывающий тег даёт Rejected",
+          "expected": "17 passed; 0 failed; 0 ignored, включая A-XML гейт, namespace-регрессию на синтезируемые обёртки и расширенный malformed-набор (лишний закрывающий тег, незавершённый комментарий, незавершённая CDATA)",
           "status": "pending"
         },
         {
           "mode": "command",
-          "ref": "gsd_exec 33c46aa7-0fcf-4421-9223-2e851556cee2: cargo test -p da-parse --test native_fulltext_composition_contract --offline (дефолт rc=0 с запинненным RED; --ignored rc=101)",
-          "expected": "на всех трёх сохранённых TEI композитор даёт Accepted, независимый парсер — Err(\"expected 'titleStmt' tag, not 'title' at 6:<col>\"); H14 остаётся незакрытым до починки эмиттера",
+          "ref": "gsd_exec 412df4be-f747-4457-9c3b-a6eff4bf779e: cargo test -p da-parse --tests (1359 passed, 0 failed, 0 ignored, 100 suites) и 796cf21e-8a88-4502-a915-fd2a6a60b99d: cargo test -p da-parse --test native_fulltext_composition_contract (17 passed, 0 ignored)",
+          "expected": "после S01/T02+T03 эмиссия well-formed на трёх сохранённых TEI и на namespace-обёртках; исторический RED S01/T01 (Accepted при невалидном XML, ignored-гейт rc=101) снят и сохранён в corrections C07; H14 остаётся planning-записью с implementation_pass=false",
           "status": "pending"
         },
         {
@@ -107,14 +107,15 @@
       "negative_tests": [
         {
           "id": "H14-N1",
-          "scenario": "Композитор принимает TEI, в котором синтезированный <titleStmt> содержит лишний закрывающий тег",
-          "expected": "fail-closed: результат Rejected, а не Accepted"
+          "scenario": "Композитор принимает TEI, в котором синтезированный <titleStmt> содержит лишний закрывающий тег или усечённое объявление разметки",
+          "expected": "fail-closed: результат Rejected, а не Accepted",
+          "ref": "crates/da-parse/tests/native_fulltext_composition_contract.rs::malformed_external_entity_duplicate_id_and_replay_are_safe"
         },
         {
           "id": "H14-N2",
-          "scenario": "Независимый парсер находит mismatched tag, тогда как композитор сообщает Accepted",
-          "expected": "регрессионный тест падает (расхождение исхода и корректности зафиксировано)",
-          "ref": "crates/da-parse/tests/native_fulltext_composition_contract.rs::preserved_tei_composition_is_independently_well_formed (#[ignore], RED: rc=101 при --ignored, gsd_exec 33c46aa7)"
+          "scenario": "Независимый парсер находит mismatched tag или unbound prefix, тогда как композитор сообщает Accepted",
+          "expected": "на заявленном классе расхождение невозможно: регрессионный тест зелёный (fail-closed), а не падает",
+          "ref": "crates/da-parse/tests/native_fulltext_composition_contract.rs::preserved_tei_composition_is_independently_well_formed и ::wrapper_namespace_declarations_are_carried_so_no_prefix_is_unbound (без #[ignore], gsd_exec 412df4be)"
         }
       ],
       "test_matrix": [
@@ -140,10 +141,10 @@
       "implementation_pass": false,
       "verification_pass": false,
       "open_item": {
-        "reason": "H14 не закрыт: корректность XML-эмиссии композитора не доказана; измеренный вход даёт Accepted при невалидном документе.",
+        "reason": "H14 остаётся открытым в planning-реестре: implementation_pass=false и verification_pass=false по политике claim_scope=planning. На замеренной ревизии S01/T02+T03 область зелёная (независимый парсер принимает эмиссии трёх сохранённых TEI и эмиссии с объявлением xmlns на синтезируемых обёртках; 1359 passed / 0 ignored), но закрытие этапа требует evidence-scope записи и решения владельца — эта запись PASS не фабрикует.",
         "since": "2026-09-21",
         "accepted": false,
-        "closure_condition": "Эмиссия композитора well-formed на сохранённых реальных TEI, отрицательный тест на лишний закрывающий тег зелёный, и независимый парсер подтверждает результат."
+        "closure_condition": "Эмиссия композитора well-formed на сохранённых реальных TEI, отрицательный тест на лишний закрывающий тег зелёный, и независимый парсер подтверждает результат. На замеренной области (S01/T02+T03, 2026-09-21) условие выполнено; закрытие этапа остаётся решением вне planning-записи."
       }
     },
     {
@@ -351,6 +352,11 @@
           "id": "H16-N2",
           "scenario": "Лейн помечается закрытым Rust-прогоном с отменой права fallback",
           "expected": "fail-closed: нарушение политики lane fallback обнаружено"
+        },
+        {
+          "id": "H16-N3",
+          "scenario": "Атрибут синтезируемой обёртки (например xml:lang на fileDesc/titleStmt) теряется молча при композиции",
+          "expected": "fail-closed: сохранение атрибута либо типизированная потеря; измеренный остаток S01/T03 назван, а не замалчивается как отсутствовавший"
         }
       ],
       "test_matrix": [

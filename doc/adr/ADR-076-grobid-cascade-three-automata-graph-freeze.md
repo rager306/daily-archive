@@ -372,3 +372,39 @@ Planning registry проверяется существующим `horizon-json-
   `preserved_tei_composition_is_independently_well_formed` остаётся `#[ignore]`/RED.
   H14 не закрывается: `header_xml`/`preserve_header_children` не изменялись,
   `implementation_pass=false`, замки и D127/D321 не трогались.
+- S01/T02 (исправление, RED→GREEN): `XmlDocument` спаривает открывающие и
+  закрывающие теги одним стеком, поэтому диапазон всегда начинается с
+  открывающего тега; содержимое заголовка переразмещается по родителю
+  (`titleStmt` → в синтезированный `titleStmt`, `fileDesc` без `titleStmt` → в
+  синтезированный `fileDesc`, остальные дети `teiHeader` → после него — попарно
+  непересекающиеся и полные), атрибуты исходного `<teiHeader>` воспроизводятся
+  дословно, и эмиссия перечитывается до `Accepted`
+  (`ComposedOutputNotWellFormed`), иначе возвращается байт-идентичный
+  Java-envelope. Гейт `preserved_tei_composition_is_independently_well_formed`
+  больше не `#[ignore]`; независимый `roxmltree` (dev-dependency, prod
+  import-root `{crate, serde, sha2, std}` не изменён) принимает эмиссии трёх
+  сохранённых TEI. Замер: `cargo test -p da-parse --tests` → 100 suites /
+  1359 passed / 0 failed / 0 ignored. H14 не закрывается этой записью:
+  `implementation_pass=false` и planning-семантика реестра сохраняются.
+- S01/T03 (интеграция и границы): обязательная для T03 проверка
+  namespace-негативов воспроизвела остаточный дефект того же класса —
+  объявление `xmlns:ext` на **синтезируемых** обёртках `fileDesc`/`titleStmt`
+  не воспроизводилось, поэтому композитор возвращал `Accepted` при эмиссии,
+  отвергаемой независимым парсером (`an unknown namespace prefix 'ext' at 1:202`
+  и `1:153`; gsd_exec `c9cbe8d7-b4dc-492a-aa7d-ab7134a5335b`). Закрыто узко:
+  с этих двух обёрток переносятся только `xmlns`/`xmlns:*`; прочие атрибуты
+  обёрток (в том числе собственный `xml:lang`) по-прежнему не копируются — это
+  семантический остаток поля (H16), не well-formedness. Регрессия
+  `wrapper_namespace_declarations_are_carried_so_no_prefix_is_unbound`.
+  Malformed-набор расширен лишним закрывающим тегом, незавершённым комментарием
+  и незавершённой CDATA. Shadow-пример проверен сборкой и реальным прогоном под
+  обязательной фичей `pdf-layout`: без неё `cargo check -p da-cli --example
+  native_fulltext_composition_shadow` даёт rc=101 (`target … requires the
+  features`), поэтому план-команда адаптирована, а не «зелёная пустота».
+  Реестр проверен существующим `horizon-json-v1`: `governor review --registry
+  doc/review/grobid-absorption-roadmap-2026-09-21.yaml` → exit=0, схема
+  `grobid-rust-horizon-review.schema.json` → schema-ok. Замки не менялись:
+  `deployed=false`, `import_eligible=false`, `auto_promote=forbidden`,
+  `graph_write=forbidden`, `this_wave_promotes=none`, D127/D321 закрыты.
+  H14 остаётся planning-записью с `implementation_pass=false`: замеренная
+  область зелёная, но закрытие этапа не фабрикуется.

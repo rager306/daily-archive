@@ -462,6 +462,17 @@ fn header_xml(
     // subtrees holding unbound prefixes, so the declaration is reproduced
     // verbatim.
     let attributes = document.open_tag_attributes(existing, "teiHeader")?;
+    // The composer synthesizes `fileDesc` and `titleStmt`, so a namespace
+    // declaration carried by the *source* wrapper would be dropped with the
+    // wrapper while its children are moved into the composed one: the preserved
+    // `ext:` descendants would then hold an unbound prefix and an independent
+    // parser would reject the emission even though this module accepted it
+    // (measured for S01/T03: `an unknown namespace prefix 'ext' at 1:202` for a
+    // declaration on `fileDesc` and `1:153` for one on `titleStmt`).  Only
+    // `xmlns`/`xmlns:*` are reproduced, so no other wrapper attribute — for
+    // example an `xml:id` that could collide with a synthesized id — is copied.
+    let file_desc_declarations = document.namespace_declarations(existing, "fileDesc")?;
+    let title_stmt_declarations = document.namespace_declarations(existing, "titleStmt")?;
     // Placement is structural, never name-guessed.  The synthesized skeleton is
     // `teiHeader > fileDesc > titleStmt`, so a source subtree is re-inserted
     // under the wrapper it actually came from:
@@ -484,7 +495,11 @@ fn header_xml(
     let header = document.child_spans_excluding("teiHeader", &["fileDesc", "titleStmt"])?;
     let mut out = String::from("<teiHeader");
     out.push_str(attributes);
-    out.push_str("><fileDesc><titleStmt>");
+    out.push_str("><fileDesc");
+    out.push_str(&file_desc_declarations);
+    out.push_str("><titleStmt");
+    out.push_str(&title_stmt_declarations);
+    out.push('>');
     for a in &c.candidate.authors {
         out.push_str("<author xml:id=\"author-");
         out.push_str(&a.ordinal.to_string());
@@ -593,6 +608,44 @@ fn is_self_closing(body: &str) -> bool {
         }
     }
     last == Some('/')
+}
+
+/// Attribute substrings of an open tag body, honouring quoted values.
+///
+/// A value may contain whitespace (`note="a b"`) or the other quote character
+/// (`note="it's"`), so a token ends only at unquoted whitespace.  The body is the
+/// text after the element name and before a trailing `/`, so a self-closing tag
+/// yields no tokens.
+fn attribute_tokens(body: &str) -> Vec<&str> {
+    let mut tokens = Vec::new();
+    let mut quote: Option<char> = None;
+    let mut start: Option<usize> = None;
+    for (offset, c) in body.char_indices() {
+        match quote {
+            Some(open) => {
+                if c == open {
+                    quote = None;
+                }
+            }
+            None => match c {
+                '"' | '\'' => quote = Some(c),
+                c if c.is_whitespace() => {
+                    if let Some(from) = start.take() {
+                        tokens.push(&body[from..offset]);
+                    }
+                }
+                _ => {
+                    if start.is_none() {
+                        start = Some(offset);
+                    }
+                }
+            },
+        }
+    }
+    if let Some(from) = start {
+        tokens.push(&body[from..]);
+    }
+    tokens
 }
 
 /// Structural view of a TEI document, used for splice ranges and for the
@@ -834,6 +887,44 @@ impl XmlDocument {
             .strip_suffix('/')
             .unwrap_or(attributes)
             .trim_end())
+    }
+
+    /// Namespace declarations (`xmlns`, `xmlns:*`) carried by `name`'s open tag,
+    /// each rendered with a leading space (`""` when the element is absent or
+    /// declares none).
+    ///
+    /// The composer synthesizes `fileDesc` and `titleStmt` instead of preserving
+    /// the source wrappers, so their own attributes are not otherwise reproduced.
+    /// Dropping a declaration there leaves the moved children holding an unbound
+    /// prefix — a well-formedness failure this module's own parser cannot see,
+    /// because it deliberately does not interpret namespaces.  A missing element
+    /// is not an error: the absence paths are owned by `child_spans*`, and there
+    /// is no declaration to reproduce for an element that is not there.
+    fn namespace_declarations(
+        &self,
+        source: &str,
+        name: &str,
+    ) -> Result<String, NativeFulltextCompositionError> {
+        let Some(index) = self.element_index_opt(name)? else {
+            return Ok(String::new());
+        };
+        let element = &self.elements[index];
+        // The parser requires the open tag to start with the element name, so the
+        // name length is an exact char boundary after `<`.
+        let tag = &source[element.start + 1..element.open_end - 1];
+        let body = tag[name.len()..].trim_end();
+        let body = body.strip_suffix('/').unwrap_or(body);
+        let mut declarations = String::new();
+        for attribute in attribute_tokens(body) {
+            let declaration = attribute == "xmlns"
+                || attribute.starts_with("xmlns=")
+                || attribute.starts_with("xmlns:");
+            if declaration && attribute.contains('=') {
+                declarations.push(' ');
+                declarations.push_str(attribute);
+            }
+        }
+        Ok(declarations)
     }
 
     fn reference_range(&self) -> Result<(usize, usize), NativeFulltextCompositionError> {

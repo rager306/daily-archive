@@ -38,6 +38,8 @@ Rust-реализация существенно продвинулась, но 
 | A-REF | P0 | `native_fulltext_composition.rs:493–520`: проверяются только переданные anchors, а не фактические body targets; emit меняет id на bibl-ordinal | При исходном body target=#b0 и пустых supplied anchors Rust возвращает Accepted; b0 отсутствует в выходном множестве xml:id | Есть тест чужого переданного anchor, но нет проверки полноты anchors относительно исходного body |
 | A-FIELDS | P1 | `native_fulltext_composition.rs:460–520`: header emitter читает authors/date, references emitter только source | Статическое чтение: структурированные header fields, author affiliations и citation fields не сериализуются этими функциями | Сохранение строки не проверяет семантическую эквивалентность title/email/id/affiliation/citation roles |
 
+Статус после корректирующей волны: A-XML закрыт на замеренной области — S01/T02 починил эмиттер (RED→GREEN), S01/T03 закрыл найденный остаточный namespace-случай (разделы ниже). A-REF и A-FIELDS остаются открытыми и принадлежат S02/S03.
+
 Воспроизведение: `doc/review/grobid-composition-repro.rs`. Оно использует те же синтетические admissions/candidates, что штатные контракты, но реальный Java TEI как документ. Это тест публичного композитора, НЕ end-to-end доказательство достижимости через production admission.
 
 ```bash
@@ -84,6 +86,64 @@ PY
 диагностика независимого парсера), `33c46aa7-0fcf-4421-9223-2e851556cee2`
 (дефолтный прогон rc=0 и ignored-gate rc=101). Замки не менялись: D127/D321
 закрыты, H14 остаётся незакрытым.
+
+### Регрессия M511-j7wz2f/S01/T02 (исправление: RED→GREEN)
+
+Эмиттер исправлен структурно, а не косметически:
+
+- `XmlDocument` спаривает открывающие и закрывающие теги одним стеком, поэтому
+  диапазон всегда `(start открывающего тега, конец закрывающего)` и не может
+  начинаться с `</…>`;
+- содержимое заголовка переразмещается по родителю: дети исходного `titleStmt` —
+  внутрь синтезированного `titleStmt`; дети исходного `fileDesc` без `titleStmt` —
+  в синтезированный `fileDesc`; остальные дети `teiHeader` — после него; три
+  множества попарно непересекающиеся и вместе покрывают каждого потомка исходного
+  `teiHeader`, кроме двух синтезируемых обёрток;
+- атрибуты исходного `<teiHeader>` воспроизводятся дословно;
+- эмиссия перечитывается структурным валидатором до `Accepted`
+  (`ComposedOutputNotWellFormed`), иначе возвращается байт-идентичный
+  Java-envelope.
+
+Гейт `preserved_tei_composition_is_independently_well_formed` больше не
+`#[ignore]`: три сохранённых TEI (перепроверяемые по sha256 при каждом прогоне)
+проходят независимый `roxmltree`. RED-пин T01 заменён независимой консервацией
+(`preserved_tei_emissions_conserve_every_source_header_subtree`).
+
+### Остаточный namespace-дефект, найденный и закрытый в M511-j7wz2f/S01/T03
+
+Обязательная для T03 проверка namespace-негативов воспроизвела ещё один случай
+того же класса: объявление `xmlns:ext` на **синтезируемой** обёртке `fileDesc`
+или `titleStmt` не воспроизводилось, поэтому композитор возвращал `Accepted` при
+эмиссии, которую независимый парсер отвергал —
+`an unknown namespace prefix 'ext' at 1:202` (объявление на `fileDesc`) и
+`1:153` (на `titleStmt`); gsd_exec
+`c9cbe8d7-b4dc-492a-aa7d-ab7134a5335b`. Дефект закрыт узко: с этих двух обёрток
+переносятся только `xmlns`/`xmlns:*`. Прочие их атрибуты (например собственный
+`xml:lang`) по-прежнему не копируются — это семантический остаток поля (H16), а
+не well-formedness. Регрессия:
+`wrapper_namespace_declarations_are_carried_so_no_prefix_is_unbound`.
+
+### Свидетельства среза M511-j7wz2f/S01/T03 (интеграция и границы)
+
+| Проверка | Свежий результат |
+|---|---|
+| `cargo test -p da-parse --tests` | 100 suites, 1359 passed, 0 failed, 0 ignored |
+| `cargo test -p da-parse --test native_fulltext_composition_contract` | 17 passed, 0 ignored |
+| `cargo clippy -p da-parse --all-targets --no-deps -- -D warnings` | exit=0 |
+| `cargo fmt -p da-parse -p da-cli -- --check` | exit=0 |
+| shadow-пример | план-команда без фичи даёт rc=101 (`target … requires the features: pdf-layout`); с `--features pdf-layout` check exit=0 и реальный прогон exit=0 (`replay.semantic_equal=true`, `conservation.no_silent_loss=true`, 9 terminal из 9 admitted, три лейна) |
+| `governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml` | exit=0 |
+
+Негативы проверены явно: malformed (усечённый документ, лишний закрывающий тег,
+незавершённый комментарий, незавершённая CDATA), внешняя сущность
+(`<!DOCTYPE … <!ENTITY …>`), дублированный `xml:id` во входе и в эмиссии,
+namespace (объявление на `teiHeader`, внутри переносимого поддерева и на
+синтезируемых обёртках). H14 не закрывается этой записью: `implementation_pass=false`
+сохраняется, а закрытие этапа — решение вне planning-реестра. Замки не менялись:
+`deployed=false`, `import_eligible=false`, `auto_promote=forbidden`,
+`graph_write=forbidden`, `this_wave_promotes=none`, D127/D321 закрыты. H14 не
+означает полной миграции: три сохранённых TEI и shadow-пример не доказывают
+production-достижимость.
 
 ## Риски, не выдаваемые за воспроизведённые дефекты
 

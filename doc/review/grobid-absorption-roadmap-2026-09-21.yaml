@@ -132,11 +132,14 @@ measured_state:
     command: "cargo test -p da-parse --tests"
     measured_at: "2026-09-21"
     suites: 100
-    # S01/T01 (2026-09-21): базовый прогон 1352 passed / 1 ignored после
-    # добавления A-XML регрессии; ignored — целевой гейт
-    # preserved_tei_composition_is_independently_well_formed (RED до S01/T02).
-    passed: 1352
-    ignored: 1
+    # S01/T01 (2026-09-21) дал базовые 1352 passed / 1 ignored, где ignored —
+    # целевой гейт preserved_tei_composition_is_independently_well_formed (RED).
+    # S01/T02 снял #[ignore] и заменил RED-пин независимой консервацией, S01/T03
+    # добавил регрессию на namespace-обёртки и расширил malformed-набор; ниже —
+    # свежий замер после этих правок (исторический счёт относится к S01/T01 и
+    # сохранён в C07).
+    passed: 1359
+    ignored: 0
     failed: 0
     test_files_in_crates_da_parse_tests: 99
     # ИСПРАВЛЕНИЕ: теги имён файлов ПЕРЕКРЫВАЮТСЯ и не являются разбиением.
@@ -182,6 +185,9 @@ index_freshness:
     CLI context не показывает callers композитора, CBM показывает 13.
     CBM реиндексирован: 499260 узлов / 644211 рёбер. Свежесть не означает
     полноту связей; результаты сверены с исходниками и Rust probe.
+    S01/T02 и S01/T03 правили тела композитора после этого снимка: символов не
+    добавлялось и не переименовывалось, но соответствие тел индексу не
+    пересобиралось — это названное ограничение, а не свежесть.
 
 # ---------------------------------------------------------------------------
 # corrections — что именно исправлено относительно предыдущей редакции.
@@ -236,6 +242,30 @@ corrections:
       CLI работает, CBM MCP работает. Обнаружено расхождение callers;
       отсутствие ребра не означает отсутствие вызова.
     evidence: .codebase-memory/artifact.json
+  - id: C07
+    previous: >
+      A-XML (Accepted композитора при невалидном XML, C05) числился открытым с
+      измеренным ignored-гейтом и счётчиками 1352 passed / 1 ignored; S01/T01
+      сознательно фиксировал RED, а не исправление.
+    corrected: >
+      S01/T02 починил эмиттер структурно: спаривание открывающих и закрывающих
+      тегов одним стеком, переразмещение детей заголовка по родителю,
+      воспроизведение атрибутов исходного <teiHeader> дословно и перечитывание
+      эмиссии до Accepted (ComposedOutputNotWellFormed), иначе байт-идентичный
+      Java-envelope. Гейт preserved_tei_composition_is_independently_well_formed
+      больше не #[ignore] и зелёный на трёх сохранённых TEI; RED-пин T01 заменён
+      независимой консервацией. S01/T03, выполняя обязательную проверку
+      namespace-негативов, воспроизвёл остаточный дефект того же класса:
+      объявление xmlns:ext на СИНТЕЗИРУЕМЫХ обёртках fileDesc/titleStmt не
+      воспроизводилось, поэтому Accepted возвращался при эмиссии, отвергаемой
+      независимым парсером (an unknown namespace prefix 'ext' at 1:202 для
+      fileDesc и 1:153 для titleStmt; gsd_exec c9cbe8d7), и закрыл его узко —
+      переносятся только xmlns/xmlns:*. Прочие атрибуты обёрток (например
+      собственный xml:lang) по-прежнему не копируются: это семантический
+      остаток поля (H16), не well-formedness. Свежий замер da-parse: 100 suites,
+      1359 passed, 0 failed, 0 ignored (gsd_exec 412df4be). H14 не закрывается
+      этой записью: implementation_pass=false и planning-семантика сохраняются.
+    evidence: .gsd/exec/412df4be-f747-4457-9c3b-a6eff4bf779e.stdout
 
 # ---------------------------------------------------------------------------
 # validation_commands — как воспроизвести проверку (read-only).
@@ -244,15 +274,17 @@ validation_commands:
   - command: "PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml"
     expected: "exit=0; только grobid_horizon_review_scope_warning и grobid_horizon_review_status (medium)"
   # S01/T01 (2026-09-21) добавил отслеживаемую A-XML регрессию (независимый
-  # парсер roxmltree как dev-dependency), поэтому счётчики сдвинулись:
-  # базовый прогон 1352 passed / 0 failed / 1 ignored (100 suites), где ignored —
-  # целевой гейт preserved_tei_composition_is_independently_well_formed,
-  # RED до починки эмиттера в S01/T02.
+  # парсер roxmltree как dev-dependency). S01/T02 починил эмиттер (RED→GREEN) и
+  # снял #[ignore] с целевого гейта, S01/T03 добавил namespace-регрессию и
+  # malformed-случаи, поэтому исторический счётчик 1352 passed / 1 ignored
+  # относится к S01/T01 и заменён свежим замером (см. C07).
   - command: "cargo test -p da-parse --tests"
-    expected: "1352 passed; 0 failed; 1 ignored; 100 suites"
-  # Ожидаемый RED, НЕ регрессия в обратную сторону: пока эмиттер не починен,
-  # гейт обязан падать — падение и есть доказательство дефекта.
-  - command: "cargo test -p da-parse --test native_fulltext_composition_contract -- --ignored"
-    expected: "rc=101: независимый парсер отвергает Accepted-эмиссию на всех трёх сохранённых TEI (RED до S01/T02)"
+    expected: "1359 passed; 0 failed; 0 ignored; 100 suites"
+  # Исторический RED S01/T01, снятый починкой S01/T02: гейт
+  # preserved_tei_composition_is_independently_well_formed больше не #[ignore] и
+  # входит в зелёный прогон выше; namespace на синтезируемых обёртках закрыт
+  # регрессией wrapper_namespace_declarations_are_carried_so_no_prefix_is_unbound.
+  - command: "cargo test -p da-parse --test native_fulltext_composition_contract"
+    expected: "17 passed; 0 failed; 0 ignored (A-XML гейт, namespace-регрессия, malformed-набор)"
   - command: "python3 -c \"import json,sys,jsonschema;d=json.load(open('doc/review/grobid-absorption-followup.json'));s=json.load(open('doc/review/grobid-rust-horizon-review.schema.json'));jsonschema.Draft202012Validator(s).validate(d);print('schema-ok')\""
     expected: "schema-ok"

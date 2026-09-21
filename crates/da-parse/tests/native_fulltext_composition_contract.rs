@@ -318,6 +318,12 @@ fn malformed_external_entity_duplicate_id_and_replay_are_safe() {
         "<TEI><teiHeader>",
         "<!DOCTYPE TEI [<!ENTITY x SYSTEM \"secret\">]><TEI/>",
         "<TEI id=\"x\"><teiHeader id=\"x\"/><text><listBibl/></text></TEI>",
+        // S01/T03: a stray closing tag, an unterminated comment and an
+        // unterminated CDATA section are malformed/unbalanced inputs, not
+        // composer crashes, and each must keep the byte-identical Java envelope.
+        "<TEI><teiHeader/></TEI></TEI>",
+        "<TEI><!-- unterminated comment",
+        "<TEI><![CDATA[unterminated",
     ] {
         let result = compose_native_fulltext(input(
             xml,
@@ -685,6 +691,64 @@ fn nested_repeated_namespaced_and_unknown_header_subtrees_survive_structurally()
             .any(|(name, bytes)| name == "profileDesc" && bytes.contains("<p>abstract</p>")),
         "profileDesc must stay a child of teiHeader: {header_children:?}"
     );
+}
+
+/// Namespace declarations travel with the subtrees they cover — including when
+/// the declaration sits on a wrapper the composer synthesizes.
+///
+/// S01/T03 measured the residual defect this closes (gsd_exec
+/// c9cbe8d7-b4dc-492a-aa7d-ab7134a5335b): a source `<fileDesc xmlns:ext="…">` or
+/// `<titleStmt xmlns:ext="…">` returned `Accepted` while `roxmltree` rejected the
+/// emission with `an unknown namespace prefix 'ext' at 1:202` / `1:153` — the
+/// declaration was dropped with the wrapper whose children were moved. The
+/// composer now reproduces `xmlns`/`xmlns:*` from both wrappers. Non-namespace
+/// wrapper attributes (a wrapper-level `xml:lang`, for instance) are still not
+/// copied: that is a semantic-loss residual for the field lanes, not a
+/// well-formedness one.
+#[test]
+fn wrapper_namespace_declarations_are_carried_so_no_prefix_is_unbound() {
+    for (xml, fragment, prefixed_local) in [
+        (
+            "<TEI><teiHeader xml:lang=\"en\"><fileDesc xmlns:ext=\"urn:example:ext\"><titleStmt><title>Java</title></titleStmt><sourceDesc><ext:blob><ext:inner/></ext:blob></sourceDesc></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>",
+            "<fileDesc xmlns:ext=\"urn:example:ext\">",
+            "blob",
+        ),
+        (
+            "<TEI><teiHeader xml:lang=\"en\"><fileDesc><titleStmt xmlns:ext=\"urn:example:ext\"><title>Java</title><ext:note/></titleStmt></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>",
+            "<titleStmt xmlns:ext=\"urn:example:ext\">",
+            "note",
+        ),
+    ] {
+        let outcome = compose_native_fulltext(input(
+            xml,
+            AdmissionDisposition::Passed,
+            AdmissionDisposition::Unsupported,
+        ));
+        let NativeFulltextCompositionOutcome::Accepted(candidate) = outcome else {
+            panic!("a wrapper declaration must not reject the splice: {outcome:?}")
+        };
+        let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+        assert_eq!(independent_xml_verdict(&output), Ok(()), "{output}");
+        assert!(
+            output.contains(fragment),
+            "the wrapper declaration was dropped: {output}"
+        );
+        // The independent parser is the namespace judge: the preserved prefix must
+        // resolve to the URI the source declared, not merely parse.
+        let document = roxmltree::Document::parse(&output).expect("independent parser accepts");
+        assert!(
+            document.descendants().any(|node| {
+                node.is_element()
+                    && node.tag_name().name() == prefixed_local
+                    && node.tag_name().namespace() == Some("urn:example:ext")
+            }),
+            "{prefixed_local} did not resolve into the declared namespace: {output}"
+        );
+        assert_eq!(
+            tei_element_bytes(xml.as_bytes(), "body").unwrap(),
+            tei_element_bytes(candidate.envelope.raw_tei(), "body").unwrap()
+        );
+    }
 }
 
 /// Markup declarations are not elements: a comment carrying `<title>` and a CDATA
