@@ -1,0 +1,955 @@
+{
+  "schema_version": "grobid-rust-horizon-review.v1",
+  "review_id": "REV-2026-09-21-grobid-absorption-followup",
+  "policy_id": "grobid_horizon_review",
+  "created_at": "2026-09-21",
+  "claim_scope": "planning",
+  "status_semantics": "planning: реестр планирования follow-up H14..H21. Статусы только из unresolved-набора (pending), implementation_pass и verification_pass всегда false, владельцы unassigned, open_item.accepted нигде не true. Запись не создаёт milestone/slice/task, не является доказательством реализации и не даёт права на production-маршрут, графовую запись или промоушен.",
+  "review_policy": {
+    "no_claim_from_adr_only": true,
+    "no_pass_without_verified_source": true,
+    "implementation_and_verification_evidence_separate": true,
+    "index_freshness_required_or_limited": true,
+    "negative_tests_required": true,
+    "matrix_applicability_requires_reason": true
+  },
+  "stages": [
+    {
+      "stage_id": "H14",
+      "title": "P0: композитор — корректность XML (well-formed) как условие Accepted",
+      "scope": "P0. Измерено: композитор принимает (Accepted) три сохранённых реальных TEI (hub_2507.19457, reca_2605.26525v1, rlm_2512.24601), но эмитированный документ отвергается независимым XML-парсером — mismatched tag на дублированном </title> в синтезированном <titleStmt> (репро: gsd_exec 6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f). Требуется сделать well-formed эмиссии обязательным постусловием и локализовать дефект в поверхности эмиттера crates/da-parse/src/native_fulltext_composition.rs (header_xml / preserve_header_children).",
+      "status": "pending",
+      "depends_on": [],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-075",
+        "ADR-076",
+        "ADR-051"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/native_fulltext_composition.rs",
+          "note": "поверхность эмиссии заголовка: синтез <titleStmt> и вставка сохранённых детей; здесь наблюдается дублированный закрывающий тег",
+          "state": "partial",
+          "symbol": "header_xml"
+        },
+        {
+          "path": "crates/da-parse/tests/native_fulltext_composition_contract.rs",
+          "note": "контракт композиции: проверяет исход, но не парсит эмиссию независимым XML-парсером",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/tests/native_fulltext_composition_properties.rs",
+          "note": "property-инварианты композиции; well-formed эмиссии среди них не заявлен",
+          "state": "partial"
+        },
+        {
+          "path": ".gsd/exec/6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f.stdout",
+          "note": "запись репро: Accepted на 3 сохранённых реальных TEI, независимый парсер INVALID",
+          "state": "present"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "runtime",
+          "ref": "независимый XML-парсер на эмиссии композитора для трёх сохранённых реальных TEI",
+          "expected": "документ well-formed; при нарушении — Rejected, а не Accepted",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test native_fulltext_composition_contract",
+          "expected": "добавлен негативный тест: дублированный закрывающий тег даёт Rejected",
+          "status": "pending"
+        },
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml",
+          "expected": "этап H14 не заявляет PASS до появления исполняемого доказательства",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "bcdd0cfc5e34f64821798463fe23b2f3845efe56",
+        "verified": false,
+        "note": "Запись планирования: команды на этой ревизии не исполнялись в рамках этого реестра. verified=false."
+      },
+      "index_freshness": {
+        "state": "fresh",
+        "gitnexus": {
+          "state": "rebuilt",
+          "revision": "bcdd0cfc5",
+          "nodes": 81431,
+          "edges": 130142,
+          "access": "CLI; MCP Connection closed"
+        },
+        "codebase_memory": {
+          "project": "root-daily-archive",
+          "nodes": 499260,
+          "edges": 644211,
+          "access": "MCP trace_path/check_index_coverage executed"
+        },
+        "limitation": "Свежие индексы не доказывают полноту: GitNexus incoming пуст, CBM показывает 13 callers композитора. Связи проверены по исходникам; defects подтверждены реальным Rust probe."
+      },
+      "negative_tests": [
+        {
+          "id": "H14-N1",
+          "scenario": "Композитор принимает TEI, в котором синтезированный <titleStmt> содержит лишний закрывающий тег",
+          "expected": "fail-closed: результат Rejected, а не Accepted"
+        },
+        {
+          "id": "H14-N2",
+          "scenario": "Независимый парсер находит mismatched tag, тогда как композитор сообщает Accepted",
+          "expected": "регрессионный тест падает (расхождение исхода и корректности зафиксировано)"
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "applicable",
+          "reason": "well-formed — инвариант выхода композитора"
+        },
+        {
+          "contour": "6 System Journey E2E",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "реальные TEI через композитор плюс независимый парсер"
+        },
+        {
+          "contour": "4 Port Contract Suite",
+          "type": "Contract",
+          "applicability": "not_applicable",
+          "reason": "композитор не является реализацией port-trait и не имеет контрактного набора"
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false,
+      "open_item": {
+        "reason": "H14 не закрыт: корректность XML-эмиссии композитора не доказана; измеренный вход даёт Accepted при невалидном документе.",
+        "since": "2026-09-21",
+        "accepted": false,
+        "closure_condition": "Эмиссия композитора well-formed на сохранённых реальных TEI, отрицательный тест на лишний закрывающий тег зелёный, и независимый парсер подтверждает результат."
+      }
+    },
+    {
+      "stage_id": "H15",
+      "title": "P0: библиография — целостность ID и target в теле документа",
+      "scope": "P0. Измерено: references_xml эмитит <listBibl> с xml:id=\"bibl-{ordinal}\", тогда как сохранённое тело сохраняет ссылки вида target=\"#b0\" исходного <listBibl>; гард резолва ограничен списком c.candidate.anchors, поэтому при пустом списке anchors вход принимается (Accepted), но в документе остаются висячие ссылки (репро: gsd_exec 6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f — \"empty supplied anchors: Accepted\", \"dangling refs: {'b0'}\"). Требуется: единое ID-пространство либо перенос/перепривязка body-target, и проверка висячих ссылок не может быть вакуумной при пустых anchors.",
+      "status": "pending",
+      "depends_on": [],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-076",
+        "ADR-075",
+        "ADR-051"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/native_fulltext_composition.rs",
+          "note": "эмиссия списка библиографии (xml:id=bibl-N) и гард резолва, ограниченный caller-supplied anchors",
+          "state": "partial",
+          "symbol": "references_xml"
+        },
+        {
+          "path": "crates/da-parse/src/native_composition.rs",
+          "note": "композиция ссылок: anchors и adjacent pairs",
+          "state": "partial",
+          "symbol": "compose_references"
+        },
+        {
+          "path": "crates/da-parse/src/native_bibliography_sequence.rs",
+          "note": "источник ordinal библиографии, от которого зависит ID-пространство",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/tests/native_bibliography_same_n.rs",
+          "note": "независимый same-n оракул библиографии (ordinal/ids)",
+          "state": "present"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "runtime",
+          "ref": "резолв target=\"#...\" в эмитированном документе против множества xml:id",
+          "expected": "висячих ссылок нет; пустой список anchors не даёт Accepted при висячих body-ссылках",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test native_bibliography_same_n",
+          "expected": "паритет ordinal и идентификаторов сохранён",
+          "status": "pending"
+        },
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml",
+          "expected": "этап H15 не заявляет PASS до появления исполняемого доказательства",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "bcdd0cfc5e34f64821798463fe23b2f3845efe56",
+        "verified": false,
+        "note": "Запись планирования: команды на этой ревизии не исполнялись в рамках этого реестра. verified=false."
+      },
+      "index_freshness": {
+        "state": "fresh",
+        "gitnexus": {
+          "state": "rebuilt",
+          "revision": "bcdd0cfc5",
+          "nodes": 81431,
+          "edges": 130142,
+          "access": "CLI; MCP Connection closed"
+        },
+        "codebase_memory": {
+          "project": "root-daily-archive",
+          "nodes": 499260,
+          "edges": 644211,
+          "access": "MCP trace_path/check_index_coverage executed"
+        },
+        "limitation": "Свежие индексы не доказывают полноту: GitNexus incoming пуст, CBM показывает 13 callers композитора. Связи проверены по исходникам; defects подтверждены реальным Rust probe."
+      },
+      "negative_tests": [
+        {
+          "id": "H15-N1",
+          "scenario": "Пустой список anchors при сохранённых body-ссылках target=\"#b0\"",
+          "expected": "fail-closed: Rejected (висячая ссылка), а не Accepted"
+        },
+        {
+          "id": "H15-N2",
+          "scenario": "Сгенерированный listBibl использует ID-пространство, отличное от body-target",
+          "expected": "детектор висячих ссылок срабатывает и фиксирует расхождение"
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "4 Port Contract Suite",
+          "type": "Contract",
+          "applicability": "applicable",
+          "reason": "контракт сохранения идентификаторов библиографии"
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "applicable",
+          "reason": "отсутствие висячих ссылок как инвариант документа"
+        },
+        {
+          "contour": "5 Adapter Integration",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "прогон на сохранённых реальных TEI"
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false,
+      "open_item": {
+        "reason": "H15 не закрыт: единое ID-пространство библиографии и тела не установлено; пустые anchors дают вакуумную проверку.",
+        "since": "2026-09-21",
+        "accepted": false,
+        "closure_condition": "ID-пространство библиографии и body-target согласовано, проверка висячих ссылок не вакуумна, отрицательный тест зелёный."
+      }
+    },
+    {
+      "stage_id": "H16",
+      "title": "P1: верность семантических полей и политика fallback по лейнам",
+      "scope": "P1. Проверить верность семантических полей (заголовок/тело/лейны gazetteer) на сохранённых реальных TEI и зафиксировать политику fallback по лейнам: каждый лейн остаётся selectable для Java-fallback, а Rust-прогон не может молча подменять семантику. Расхождение обязано быть типизированным (тип отсутствия/тип отказа), а не пустым значением или прозой.",
+      "status": "pending",
+      "depends_on": [],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-076",
+        "ADR-053",
+        "ADR-051"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/native_header_fields.rs",
+          "note": "проекция полей заголовка (семантическая поверхность)",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/src/native_body.rs",
+          "note": "семантика тела (P5): наблюдение production_stamp, native — shadow join",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/src/native_bibliography_gazetteer.rs",
+          "note": "лейны и резолв gazetteer (lane_keys/for_lane)",
+          "state": "partial"
+        },
+        {
+          "path": "data/parse/native_visual_families.yaml",
+          "note": "gazetteer_lanes и caller_supplied typed spans как источник политики лейнов",
+          "state": "present"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "runtime",
+          "ref": "сверка семантических полей на сохранённых реальных TEI и политики lane fallback",
+          "expected": "расхождение видно как тип; право лейна на Java-fallback сохраняется",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test native_header_same_n",
+          "expected": "независимый same-n оракул заголовка зелёный",
+          "status": "pending"
+        },
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml",
+          "expected": "этап H16 не заявляет PASS до появления исполняемого доказательства",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "bcdd0cfc5e34f64821798463fe23b2f3845efe56",
+        "verified": false,
+        "note": "Запись планирования: команды на этой ревизии не исполнялись в рамках этого реестра. verified=false."
+      },
+      "index_freshness": {
+        "state": "fresh",
+        "gitnexus": {
+          "state": "rebuilt",
+          "revision": "bcdd0cfc5",
+          "nodes": 81431,
+          "edges": 130142,
+          "access": "CLI; MCP Connection closed"
+        },
+        "codebase_memory": {
+          "project": "root-daily-archive",
+          "nodes": 499260,
+          "edges": 644211,
+          "access": "MCP trace_path/check_index_coverage executed"
+        },
+        "limitation": "Свежие индексы не доказывают полноту: GitNexus incoming пуст, CBM показывает 13 callers композитора. Связи проверены по исходникам; defects подтверждены реальным Rust probe."
+      },
+      "negative_tests": [
+        {
+          "id": "H16-N1",
+          "scenario": "Семантическое поле теряется молча при Rust-прогоне",
+          "expected": "fail-closed: типизированное отсутствие вместо пустого значения"
+        },
+        {
+          "id": "H16-N2",
+          "scenario": "Лейн помечается закрытым Rust-прогоном с отменой права fallback",
+          "expected": "fail-closed: нарушение политики lane fallback обнаружено"
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Contract",
+          "applicability": "applicable",
+          "reason": "верность семантических полей"
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "applicable",
+          "reason": "отсутствие не равно пустому значению"
+        },
+        {
+          "contour": "3 Application Functional",
+          "type": "Business logic",
+          "applicability": "applicable",
+          "reason": "политика lane fallback как правило применения"
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false,
+      "open_item": {
+        "reason": "H16 не закрыт: верность семантических полей и политика lane fallback не подтверждены независимой проверкой.",
+        "since": "2026-09-21",
+        "accepted": false,
+        "closure_condition": "Семантические поля сверены с независимым оракулом на сохранённых TEI, политика fallback по лейнам зафиксирована и проверяема, отрицательные тесты зелёные."
+      }
+    },
+    {
+      "stage_id": "H17",
+      "title": "P1: визуальные типизированные отсутствия и деноминаторы",
+      "scope": "P1. Визуальные семейства (figure/table/formula) обязаны выдавать типизированное отсутствие и сохранять референсный/исполненный деноминатор без пулинга. Проверить, что отсутствие не записывается как 0 без типа, а деноминаторы не смешиваются между компонентами и популяциями.",
+      "status": "pending",
+      "depends_on": [],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-076",
+        "ADR-060",
+        "ADR-051"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/native_visual.rs",
+          "note": "типизированные отсутствия визуальных семейств (NativeFigureAbsence/NativeTableAbsence/NativeFormulaAbsence)",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/tests/native_visual_family_same_n.rs",
+          "note": "независимый same-n оракул визуальных семейств",
+          "state": "present"
+        },
+        {
+          "path": "data/parse/native_visual_families.yaml",
+          "note": "emitted/referenced columns и правила группировки визуальных семейств",
+          "state": "present"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "runtime",
+          "ref": "сверка типизированных отсутствий и деноминаторов на сохранённых TEI",
+          "expected": "отсутствие типизировано, деноминатор сохранён, пулинг компонентов не допускается",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test native_visual_family_same_n",
+          "expected": "независимый оракул визуальных семейств зелёный",
+          "status": "pending"
+        },
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml",
+          "expected": "этап H17 не заявляет PASS до появления исполняемого доказательства",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "bcdd0cfc5e34f64821798463fe23b2f3845efe56",
+        "verified": false,
+        "note": "Запись планирования: команды на этой ревизии не исполнялись в рамках этого реестра. verified=false."
+      },
+      "index_freshness": {
+        "state": "fresh",
+        "gitnexus": {
+          "state": "rebuilt",
+          "revision": "bcdd0cfc5",
+          "nodes": 81431,
+          "edges": 130142,
+          "access": "CLI; MCP Connection closed"
+        },
+        "codebase_memory": {
+          "project": "root-daily-archive",
+          "nodes": 499260,
+          "edges": 644211,
+          "access": "MCP trace_path/check_index_coverage executed"
+        },
+        "limitation": "Свежие индексы не доказывают полноту: GitNexus incoming пуст, CBM показывает 13 callers композитора. Связи проверены по исходникам; defects подтверждены реальным Rust probe."
+      },
+      "negative_tests": [
+        {
+          "id": "H17-N1",
+          "scenario": "Отсутствие figure/table/formula записано как 0 без типа",
+          "expected": "fail-closed: требуется типизированное отсутствие"
+        },
+        {
+          "id": "H17-N2",
+          "scenario": "Референсный и исполненный деноминаторы смешаны (пулинг)",
+          "expected": "детектор пулинга/размытия деноминаторов срабатывает"
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Contract",
+          "applicability": "applicable",
+          "reason": "типизированные отсутствия визуальных семейств"
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "applicable",
+          "reason": "сохранение деноминатора без пулинга"
+        },
+        {
+          "contour": "1 Determinism Infrastructure",
+          "type": "Contract",
+          "applicability": "not_applicable",
+          "reason": "деноминаторы не зависят от портов Clock/ID/RNG"
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false,
+      "open_item": {
+        "reason": "H17 не закрыт: типизированные визуальные отсутствия и сохранение деноминаторов независимо не подтверждены.",
+        "since": "2026-09-21",
+        "accepted": false,
+        "closure_condition": "Отсутствия типизированы, деноминаторы сохранены без пулинга, отрицательные тесты на смешение и 0-без-типа зелёные."
+      }
+    },
+    {
+      "stage_id": "H18",
+      "title": "P1: независимая семантическая регрессия на реальном корпусе",
+      "scope": "P1. Построить независимую семантическую регрессию на реальном корпусе (не на синтетических фикстурах), с зафиксированными identity корпуса и деноминаторами, чтобы падение было числом (precision/recall/F1), а не прозой. Оракул не должен делить код с проверяемой реализацией.",
+      "status": "pending",
+      "depends_on": [
+        "H14",
+        "H15"
+      ],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-051",
+        "ADR-075"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-cli/examples/eval_batch.rs",
+          "note": "существующая оценка на золотом корпусе (измеримая метрика)",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/native_fulltext_composition_oracle.rs",
+          "note": "оракул композиции (независимая проверка)",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/native_fulltext_composition_properties.rs",
+          "note": "property-инварианты композиции",
+          "state": "partial"
+        },
+        {
+          "path": "data/gold_standard",
+          "note": "золотой корпус как деноминатор",
+          "state": "present"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "runtime",
+          "ref": "независимая семантическая регрессия на реальном корпусе",
+          "expected": "регресс выражен числом с фиксированным деноминатором и identity корпуса",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo run -p da-cli --example eval_batch",
+          "expected": "метрики воспроизводимы на зафиксированном корпусе",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test native_fulltext_composition_properties",
+          "expected": "property-инварианты зелёные",
+          "status": "pending"
+        },
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml",
+          "expected": "этап H18 не заявляет PASS до появления исполняемого доказательства",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "bcdd0cfc5e34f64821798463fe23b2f3845efe56",
+        "verified": false,
+        "note": "Запись планирования: команды на этой ревизии не исполнялись в рамках этого реестра. verified=false."
+      },
+      "index_freshness": {
+        "state": "fresh",
+        "gitnexus": {
+          "state": "rebuilt",
+          "revision": "bcdd0cfc5",
+          "nodes": 81431,
+          "edges": 130142,
+          "access": "CLI; MCP Connection closed"
+        },
+        "codebase_memory": {
+          "project": "root-daily-archive",
+          "nodes": 499260,
+          "edges": 644211,
+          "access": "MCP trace_path/check_index_coverage executed"
+        },
+        "limitation": "Свежие индексы не доказывают полноту: GitNexus incoming пуст, CBM показывает 13 callers композитора. Связи проверены по исходникам; defects подтверждены реальным Rust probe."
+      },
+      "negative_tests": [
+        {
+          "id": "H18-N1",
+          "scenario": "Метрика становится мягче при изменении состава корпуса",
+          "expected": "fail-closed: identity корпуса и деноминатор зафиксированы"
+        },
+        {
+          "id": "H18-N2",
+          "scenario": "Оракул делит код с проверяемой реализацией",
+          "expected": "независимость оракула выявлена и проверка переработана"
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "6 System Journey E2E",
+          "type": "E2E journey",
+          "applicability": "applicable",
+          "reason": "прогон на реальном корпусе"
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "applicable",
+          "reason": "инварианты и метаморфные отношения"
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Mutation",
+          "applicability": "applicable",
+          "reason": "мутационная проверка чувствительности регрессии"
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false,
+      "open_item": {
+        "reason": "H18 не закрыт: независимая семантическая регрессия на реальном корпусе не построена.",
+        "since": "2026-09-21",
+        "accepted": false,
+        "closure_condition": "Регрессия воспроизводима на зафиксированном реальном корпусе, независима от SUT и выражена числом с зафиксированным деноминатором."
+      }
+    },
+    {
+      "stage_id": "H19",
+      "title": "P1: H05 — глобальные потолки ресурсов и bounded reorder",
+      "scope": "P1. H05 (Global budgets and bounded reorder) — единственный незакрытый этап горизонта; в doc/review/grobid-rust-horizon-review.json он записан как accepted open item с owner unassigned, потолки RSS/Java-CPU/latency tails остаются not_observed. Требуется: измерить потолки при конкурентных батчах со медленным ordinal-0 и отличать транспортный timeout от убитого Java-процесса.",
+      "status": "pending",
+      "depends_on": [],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-076",
+        "ADR-075",
+        "ADR-051"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/batch.rs",
+          "note": "batch-бюджеты и bounded-поля (workers/queue/in-flight/max_documents)",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-adapters/src/parse_cursor.rs",
+          "note": "курсор и батч-адаптер уровня интеграции",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/tests/batch_budget_contract.rs",
+          "note": "контракт бюджетов батча",
+          "state": "present"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "runtime",
+          "ref": "измерение RSS/Java-CPU/latency tails при конкурентных батчах со медленным ordinal-0",
+          "expected": "потолки измерены; транспортный timeout отличается от убитого Java-процесса",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test batch_budget_contract",
+          "expected": "контракт бюджетов батча зелёный",
+          "status": "pending"
+        },
+        {
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H05 остаётся accepted open item до появления измеренных потолков",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "bcdd0cfc5e34f64821798463fe23b2f3845efe56",
+        "verified": false,
+        "note": "Запись планирования: команды на этой ревизии не исполнялись в рамках этого реестра. verified=false."
+      },
+      "index_freshness": {
+        "state": "fresh",
+        "gitnexus": {
+          "state": "rebuilt",
+          "revision": "bcdd0cfc5",
+          "nodes": 81431,
+          "edges": 130142,
+          "access": "CLI; MCP Connection closed"
+        },
+        "codebase_memory": {
+          "project": "root-daily-archive",
+          "nodes": 499260,
+          "edges": 644211,
+          "access": "MCP trace_path/check_index_coverage executed"
+        },
+        "limitation": "Свежие индексы не доказывают полноту: GitNexus incoming пуст, CBM показывает 13 callers композитора. Связи проверены по исходникам; defects подтверждены реальным Rust probe."
+      },
+      "negative_tests": [
+        {
+          "id": "H19-N1",
+          "scenario": "Потолки RSS/Java-CPU/latency помечены observed без измерения",
+          "expected": "fail-closed: состояние not_observed сохраняется"
+        },
+        {
+          "id": "H19-N2",
+          "scenario": "Транспортный timeout записан как убийство Java-процесса",
+          "expected": "классификация отказа зафиксирована типом, а не предположением"
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "5 Adapter Integration",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "реальный batch через Java HTTP"
+        },
+        {
+          "contour": "1 Determinism Infrastructure",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "bounded reorder и детерминизм порядка при медленном ordinal-0"
+        },
+        {
+          "contour": "3 Application Functional",
+          "type": "Business logic",
+          "applicability": "applicable",
+          "reason": "политика бюджетов и пределов"
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false,
+      "open_item": {
+        "reason": "H19 не закрыт: глобальные потолки ресурсов не измерены; H05 остаётся accepted open item в horizon-реестре.",
+        "since": "2026-09-21",
+        "accepted": false,
+        "closure_condition": "Потолки RSS/Java-CPU/latency измерены на конкурентных батчах со медленным ordinal-0, классификация отказа зафиксирована, и H05 закрывается в horizon-реестре с completion evidence."
+      }
+    },
+    {
+      "stage_id": "H20",
+      "title": "P2: замороженный внешний holdout и реальное решение человека о релизе",
+      "scope": "P2. Пакет замороженного внешнего holdout объявлен как DATA, и пилот уже исполнен (data/parse/external_holdout_results.yaml, 2026-09-12: total 5, succeeded 5; отчёт artifacts/parse_compat/holdout_results.json). Не исполнен именно релизный замороженный прогон: в data/parse/acceptance_manifest.yaml external_holdout_status=not_executed, release_decision_package.package_status=pending_human_review, human_release_review.reviewer=null, decision=pending. Решение о релизе принимает человек; автоматическая проверка не может прочитать его за рецензента, и проза не даёт права на цитирование.",
+      "status": "pending",
+      "depends_on": [
+        "H18"
+      ],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-076",
+        "ADR-051"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "data/parse/acceptance_manifest.yaml",
+          "note": "release_decision_package: pending_human_review; reviewer null; fail-closed citation_rule",
+          "state": "present"
+        },
+        {
+          "path": "data/parse/external_holdout_results.yaml",
+          "note": "исполненный пилот 2026-09-12 (total 5, succeeded 5) — пилот существует, релизный прогон нет",
+          "state": "present"
+        },
+        {
+          "path": "data/parse/holdout_manifests.yaml",
+          "note": "замороженный список статей вне gold_standard (identity пакета)",
+          "state": "present"
+        },
+        {
+          "path": "doc/review/HUMAN-REVIEW-TEMPLATE.md",
+          "note": "шаблон записи решения человека (decision_record)",
+          "state": "present"
+        },
+        {
+          "path": "scripts/governor/checks/external_holdout_package.yaml",
+          "note": "контракт ограниченного пакета: элементы, acceptance margins, cost accounting, invalidation",
+          "state": "present"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "human",
+          "ref": "записанное решение человека о релизе внешнего holdout (named_reviewer + explicit_decision)",
+          "expected": "decision_record заполнен, reviewer не null, decision не pending; только тогда результат цитируем",
+          "status": "pending"
+        },
+        {
+          "mode": "artifact",
+          "ref": "artifacts/parse_compat/holdout_results.json",
+          "expected": "исполненный результат пакета доступен как артефакт",
+          "status": "pending"
+        },
+        {
+          "mode": "runtime",
+          "ref": "исполнение замороженного внешнего пакета с acceptance margins и cost accounting",
+          "expected": "margins проверены, стоимость учтена, pooled-заявление о качестве запрещено",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "bcdd0cfc5e34f64821798463fe23b2f3845efe56",
+        "verified": false,
+        "note": "Запись планирования: команды на этой ревизии не исполнялись в рамках этого реестра. verified=false."
+      },
+      "index_freshness": {
+        "state": "fresh",
+        "gitnexus": {
+          "state": "rebuilt",
+          "revision": "bcdd0cfc5",
+          "nodes": 81431,
+          "edges": 130142,
+          "access": "CLI; MCP Connection closed"
+        },
+        "codebase_memory": {
+          "project": "root-daily-archive",
+          "nodes": 499260,
+          "edges": 644211,
+          "access": "MCP trace_path/check_index_coverage executed"
+        },
+        "limitation": "Свежие индексы не доказывают полноту: GitNexus incoming пуст, CBM показывает 13 callers композитора. Связи проверены по исходникам; defects подтверждены реальным Rust probe."
+      },
+      "negative_tests": [
+        {
+          "id": "H20-N1",
+          "scenario": "Прозаический текст объявляет релиз без записанного решения человека",
+          "expected": "fail-closed: цитирование запрещено (requires_recorded_human_release_decision)"
+        },
+        {
+          "id": "H20-N2",
+          "scenario": "Неисполненный внешний ряд цитируется как доказательство",
+          "expected": "fail-closed: unexecuted_external_rows_are_evidence=false"
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "6 System Journey E2E",
+          "type": "E2E journey",
+          "applicability": "applicable",
+          "reason": "исполнение замороженного внешнего пакета"
+        },
+        {
+          "contour": "5 Adapter Integration",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "внешний корпус и внешний сервис"
+        },
+        {
+          "contour": "3 Application Functional",
+          "type": "Business logic",
+          "applicability": "applicable",
+          "reason": "правило цитирования и релиза"
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false,
+      "open_item": {
+        "reason": "H20 не закрыт: релизный замороженный прогон не исполнен и решение человека о релизе не записано (reviewer=null, decision=pending). Пилот существует и не подменяет релизное решение.",
+        "since": "2026-09-21",
+        "accepted": false,
+        "closure_condition": "Исполнен замороженный релизный пакет с проверенными margins и cost accounting И записано решение человека (named_reviewer, explicit_decision); до этого остаётся открытым."
+      }
+    },
+    {
+      "stage_id": "H21",
+      "title": "P2: ledger паритета Java-источник → Rust → независимый тест",
+      "scope": "P2. Каждый метод Java-источника (донор GROBID), перенесённый в Rust, должен быть сопоставлен в ledger с тремя звеньями: Java-источник, Rust-поверхность, независимый тест. Область (required/supporting/not_compatibility_requirement/deferred) должна быть явной: supporting-строка не может выдаваться за required, а отсутствие звена — за паритет. Замер: required 15, supporting 14, not_compatibility_requirement 5, deferred 4.",
+      "status": "pending",
+      "depends_on": [],
+      "owner": "unassigned",
+      "adr_refs": [
+        "ADR-075",
+        "ADR-051"
+      ],
+      "implementation_evidence": [
+        {
+          "path": "crates/da-parse/src/native_composition.rs",
+          "note": "Rust-поверхность композиции ссылок",
+          "state": "partial"
+        },
+        {
+          "path": "crates/da-parse/src/native_bibliography_features.rs",
+          "note": "Rust-поверхность feature-колонок библиографии (ABI)",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/native_bibliography_same_n.rs",
+          "note": "независимый same-n тест как третье звено паритета",
+          "state": "present"
+        }
+      ],
+      "verification_evidence": [
+        {
+          "mode": "artifact",
+          "ref": "data/parse/grobid_compatibility.yaml",
+          "expected": "каждая Rust-поверхность сопоставлена с Java-источником и независимым тестом, scope указан явно",
+          "status": "pending"
+        },
+        {
+          "mode": "runtime",
+          "ref": "сверка цепочки Java-источник → Rust-поверхность → независимый тест",
+          "expected": "нет метода без одного из трёх звеньев; required и supporting различены",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test native_bibliography_same_n",
+          "expected": "независимый тест звена паритета зелёный",
+          "status": "pending"
+        }
+      ],
+      "tested_source": {
+        "revision": "bcdd0cfc5e34f64821798463fe23b2f3845efe56",
+        "verified": false,
+        "note": "Запись планирования: команды на этой ревизии не исполнялись в рамках этого реестра. verified=false."
+      },
+      "index_freshness": {
+        "state": "fresh",
+        "gitnexus": {
+          "state": "rebuilt",
+          "revision": "bcdd0cfc5",
+          "nodes": 81431,
+          "edges": 130142,
+          "access": "CLI; MCP Connection closed"
+        },
+        "codebase_memory": {
+          "project": "root-daily-archive",
+          "nodes": 499260,
+          "edges": 644211,
+          "access": "MCP trace_path/check_index_coverage executed"
+        },
+        "limitation": "Свежие индексы не доказывают полноту: GitNexus incoming пуст, CBM показывает 13 callers композитора. Связи проверены по исходникам; defects подтверждены реальным Rust probe."
+      },
+      "negative_tests": [
+        {
+          "id": "H21-N1",
+          "scenario": "Rust-метод без Java-источника и без независимого теста",
+          "expected": "fail-closed: строка ledger помечена неполной, паритет не заявлен"
+        },
+        {
+          "id": "H21-N2",
+          "scenario": "supporting-строка выдана за required",
+          "expected": "fail-closed: подмена области scope обнаружена"
+        }
+      ],
+      "test_matrix": [
+        {
+          "contour": "7 Architecture Invariant",
+          "type": "Contract",
+          "applicability": "applicable",
+          "reason": "полнота ledger отображения"
+        },
+        {
+          "contour": "4 Port Contract Suite",
+          "type": "Contract",
+          "applicability": "applicable",
+          "reason": "независимый тест на Rust-поверхности"
+        },
+        {
+          "contour": "2 Domain Semantic",
+          "type": "Property",
+          "applicability": "applicable",
+          "reason": "инвариант паритета трёх звеньев"
+        }
+      ],
+      "implementation_pass": false,
+      "verification_pass": false,
+      "open_item": {
+        "reason": "H21 не закрыт: ledger паритета Java-источник → Rust → независимый тест не построен, scope не зафиксирован построчно.",
+        "since": "2026-09-21",
+        "accepted": false,
+        "closure_condition": "Ledger содержит все три звена для каждой перенесённой поверхности, scope строк явный, отрицательные тесты на неполное звено и подмену scope зелёные."
+      }
+    }
+  ]
+}

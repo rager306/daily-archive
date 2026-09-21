@@ -2,6 +2,17 @@
 
 This directory contains a compact, source-bound review of the daily-archive Rust pipeline, cache invalidation, temporal article structure, context conservation, FSMs, agent readiness and multimodal understanding.
 
+## Текущая корректирующая волна — 2026-09-21
+
+**M511-j7wz2f** запланирована владельцем по новому [аудиту абсорбции](grobid-absorption-audit-2026-09-21.md).
+Воспроизведены Accepted с повреждённым XML и висячей bibliography-ссылкой;
+исторические закрытые GAR-записи не означают отсутствия этих новых дефектов.
+[Roadmap governor](grobid-absorption-roadmap-2026-09-21.yaml) и
+[H14–H21](grobid-absorption-followup.json) — план, не доказательство реализации.
+GSD S01–S09 задают исполнение; ADR-076 §14 фиксирует границы.
+Production promotion и снятие D127 не разрешены. Human release — только
+настоящим ответом владельца; GAR-015 автоматически не закрывается.
+
 ## Current baseline
 
 Recomputed from `pipeline-integrity-review.jsonl` on **2026-08-19** after M401 S05 closed PIR-017 and PIR-021. Do **not** increment the printed M397 table (Resolved 7 / Open 15) — later waves already resolved PIR-006..PIR-016 and PIR-018..PIR-020 in the JSONL while this README stayed stale.

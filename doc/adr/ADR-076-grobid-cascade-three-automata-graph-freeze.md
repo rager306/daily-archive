@@ -333,3 +333,33 @@ No lock changed: `deployed=false`, `import_eligible=false`, `auto_promote`
 remains forbidden, `this_wave_promotes=none`, there is no production splice,
 and D127 stays closed. §9.3, §10, §11 and §12 remain dated snapshots and are
 not amended.
+
+## 14. Корректировка 2026-09-21: semantic correctness до расширения допуска
+
+Аудит `doc/review/grobid-absorption-audit-2026-09-21.md` на `bcdd0cfc5`
+воспроизвёл Accepted с невалидным XML на трёх реальных TEI и Accepted с
+висячим body target `#b0` при пустых supplied anchors. Production-достижимость
+не доказана: проверялся публичный shadow-композитор. 1351 зелёный тест da-parse
+не заменяет независимого разбора выходного документа.
+
+Владелец разрешил техническую волну **M511-j7wz2f**, S01–S09:
+H14→S01 XML; H15→S02 ссылки; H16→S03 поля/fallback; H17→S04 visual/accounting;
+H18→S05 корпус; H19→S06 остаток H05; H20→S08 external probe;
+H21→S07 Java/Rust parity ledger; S09 интеграция и согласование документов.
+
+- Accepted требует корректного XML и разрешимых локальных bibliography targets;
+  source identity, body conservation и безопасный fallback не ослабляются.
+- Процент миграции нельзя выводить из LOC, закрытых задач или production=0.
+  Нужна связь pinned Java behavior → Rust symbol → независимое доказательство.
+- 38 license references не означают blanket legal clearance; blocked-компоненты
+  license_inventory сохраняются.
+- Пятистатейный пилот не заменяет frozen external probe. GAR-015 остаётся открыт
+  до реального human release decision; auto не фабрикует reviewer или ответ.
+- Исторические H01–H13/GAR closure не переписываются задним числом.
+
+Planning registry проверяется существующим `horizon-json-v1`:
+`PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml`.
+Успех команды означает целостность плана, не выполнение задач. GSD — источник
+плана исполнения. Замки сохранены: `deployed=false`, `import_eligible=false`,
+`auto_promote=forbidden`, `graph_write=forbidden`, `this_wave_promotes=none`.
+Разрешение M511 не является разрешением снять D127.

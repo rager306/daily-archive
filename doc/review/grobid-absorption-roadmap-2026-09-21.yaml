@@ -1,0 +1,245 @@
+# GROBID absorption — follow-up roadmap. Governor-consumable wrapper (2026-09-21).
+#
+# ЧТО ЭТО
+#   DATA-обёртка для Governor-команды `review`. Объявляет
+#   `format: horizon-json-v1`, поэтому существующий dispatch
+#   (`scripts/governor/adapters/checks/review_registry_dispatch.py`) направляет
+#   проверку на УЖЕ существующий адаптер `grobid_horizon_review`, а тот читает
+#   НОВЫЙ реестр этапов `doc/review/grobid-absorption-followup.json` (H14..H21)
+#   и валидирует его по УЖЕ существующей схеме
+#   `doc/review/grobid-rust-horizon-review.schema.json`.
+#   Новая схема и новый CLI-путь не создаются — переиспользуется horizon-json-v1.
+#
+# ЧЕМ ЭТО ЗАМЕНЯЕТ ПРЕДЫДУЩУЮ ВЕРСИЮ ЭТОГО ЖЕ ПУТИ
+#   Предыдущая редакция была инертным roadmap-документом без ключа `format`,
+#   поэтому `governor review --registry <этот файл>` уходил в GAR-JSONL-валидатор
+#   и падал fail-closed (измерено до правки):
+#     review registry: INVALID
+#     grobid_review_registry_fixture_missing [high]: review findings missing: None
+#     exit=2
+#   Теперь файл указывает на реальный реестр, и проверка идёт существующим
+#   адаптером horizon-json-v1.
+#
+# ГРАНИЦЫ (planning-only, без фабрикации человеческого принятия)
+#   `claim_scope: planning` в реестре: ни один этап H14..H21 не заявляет PASS
+#   (implementation_pass=false, verification_pass=false), статусы только из
+#   unresolved-набора (`pending`), владельцы `unassigned`.
+#   `open_item_required_for_unresolved: false` — обёртка НЕ требует принятия
+#   открытого пункта, поэтому `open_item.accepted` нигде не выставлен в true.
+#   Единственный фактически существующий accepted open item — H05 в
+#   `doc/review/grobid-rust-horizon-review.json`; здесь он не дублируется и не
+#   перепринимается.
+#   planning-запись не создаёт milestone/slice/task, не является доказательством
+#   реализации и не даёт никакого права на production-маршрут.
+#
+# ПРОВЕРКА (обе команды — read-only)
+#   PYTHONPATH=scripts python3 -m governor review \
+#     --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml
+
+schema_version: grobid-absorption-followup-roadmap.v1
+policy_id: grobid_absorption_followup_roadmap
+format: horizon-json-v1
+dimension: scholarly_parse_plane
+severity: medium
+anchor: "ADR-075 назначение, ADR-076 honesty freeze, H14..H21 follow-up, H05 accepted open item"
+created_at: "2026-09-21"
+reviewed_source: "feat/da-parse @ bcdd0cfc5e34f64821798463fe23b2f3845efe56"
+
+# ---------------------------------------------------------------------------
+# registry — контракт для диспетчера и адаптера grobid_horizon_review.
+# ---------------------------------------------------------------------------
+registry:
+  review: doc/review/grobid-absorption-followup.json
+  review_schema: doc/review/grobid-rust-horizon-review.schema.json
+  stage_id_pattern: "^H[0-9]{2}$"
+  stage_id_range: [H14, H21]
+  allow_status: [pending, in_progress, blocked, complete, superseded]
+  unresolved_status: [pending, in_progress, blocked]
+  required_stage_fields:
+    - stage_id
+    - title
+    - scope
+    - status
+    - depends_on
+    - owner
+    - adr_refs
+    - implementation_evidence
+    - verification_evidence
+    - tested_source
+    - index_freshness
+    - negative_tests
+    - test_matrix
+    - implementation_pass
+    - verification_pass
+  # ADR-051: две оси — 7 контуров x 8 типов тестов. Ровно эти строки обязаны
+  # использовать строки test_matrix в реестре.
+  contours:
+    - "1 Determinism Infrastructure"
+    - "2 Domain Semantic"
+    - "3 Application Functional"
+    - "4 Port Contract Suite"
+    - "5 Adapter Integration"
+    - "6 System Journey E2E"
+    - "7 Architecture Invariant"
+  test_types:
+    - Unit
+    - Property
+    - Serde roundtrip
+    - Contract
+    - Integration
+    - Business logic
+    - Mutation
+    - E2E journey
+  owner_field: owner
+  owner_unassigned_value: unassigned
+  # Владельцы только `unassigned`: follow-up не назначается на волну, которой
+  # не существует. Расширять этот список следует тогда, когда реальная
+  # milestone-slice возьмёт этап (как это сделано в grobid_rust_horizon_review.yaml).
+  owner_allow: [unassigned]
+  # Открытый пункт НЕ принимается автоматически. Принятие H05 уже записано в
+  # horizon-реестре; здесь принятие не подразумевается и не фабрикуется.
+  open_item_required_for_unresolved: false
+
+# ---------------------------------------------------------------------------
+# measured_state — исправленные измерения. Перепроверять, не доверять.
+# ---------------------------------------------------------------------------
+measured_state:
+  capability_ledger:
+    total: 38
+    by_state: {proxy: 7, shadow: 12, candidate: 2, fallback: 1, absent: 16, production: 0}
+    # ИСПРАВЛЕНИЕ: production=0 — это счётчик строк в состоянии `production`
+    # (0 из 38), а НЕ «миграция завершена на 0 %». Процентной метрики нет.
+    production_is_a_state_count_not_a_migration_percentage: true
+    # ИСПРАВЛЕНИЕ: лицензионные идентификаторы есть на всех 38 строках
+    # (`license: inventory:*`), но это учёт происхождения, а не юридическая
+    # очистка. Единственный ledger прав — data/parse/license_inventory.yaml.
+    license_identity_label_present_on_all_rows: true
+    blanket_legal_clearance_established: false
+    absent_scope_breakdown: {deferred: 4, not_compatibility_requirement: 5, supporting: 7}
+  license_inventory:
+    canonical: data/parse/license_inventory.yaml
+    components: 22
+    license_status: {verified: 7, blocked: 15}
+    redistribution_policy:
+      new_distribution: forbidden
+      commercial_use: false
+      import_eligible: false
+      graph_write: forbidden
+      auto_promote: forbidden
+      gpl_linking: forbidden
+      unknown_rights: blocked
+  tests:
+    command: "cargo test -p da-parse --tests"
+    measured_at: "2026-09-21"
+    suites: 100
+    passed: 1351
+    failed: 0
+    test_files_in_crates_da_parse_tests: 99
+    # ИСПРАВЛЕНИЕ: теги имён файлов ПЕРЕКРЫВАЮТСЯ и не являются разбиением.
+    # 14 файлов несут более одного тега, сумма тегов (108) больше числа файлов (99).
+    file_tags_are_overlapping_not_exclusive: true
+    file_tag_counts: {contract: 55, properties: 16, oracle: 15, data_contract: 13, same_n: 8, metamorphic: 1}
+  horizon:
+    stages_total: 13
+    complete: 12
+    in_progress: 1
+    in_progress_stage: H05
+    h05_is_an_accepted_open_item_with_owner_unassigned: true
+  locks:
+    import_eligible: false
+    deployed: false
+    production_route: forbidden
+    auto_promote: forbidden
+    graph_write: forbidden
+    this_wave_promotes: none
+
+# ---------------------------------------------------------------------------
+# index_freshness — индексы кода на момент правки (не выдавать stale за fresh).
+# ---------------------------------------------------------------------------
+index_freshness:
+  state: fresh
+  gitnexus:
+    state: rebuilt
+    reason: "Повтор с buffer pool 4 GiB завершён успешно; CLI context выполнен"
+    indexed_commit: bcdd0cf
+    current_commit: bcdd0cf
+  codebase_memory:
+    project: root-daily-archive
+    commit: bcdd0cfc5e34f64821798463fe23b2f3845efe56
+    indexed_at: "2026-09-21T13:51:53Z"
+    nodes: 499260
+    edges: 644211
+    artifact: .codebase-memory/artifact.json
+  mcp:
+    state: partial
+    note: "CBM MCP trace_path/check_index_coverage выполнены; GitNexus MCP Connection closed, использован CLI."
+  limitation: >
+    GitNexus переиндексирован: 81431 узел, 130142 ребра, 639 flows.
+    CLI context не показывает callers композитора, CBM показывает 13.
+    CBM реиндексирован: 499260 узлов / 644211 рёбер. Свежесть не означает
+    полноту связей; результаты сверены с исходниками и Rust probe.
+
+# ---------------------------------------------------------------------------
+# corrections — что именно исправлено относительно предыдущей редакции.
+# ---------------------------------------------------------------------------
+corrections:
+  - id: C01
+    previous: "«Absorption is complete ... and zero percent complete on the production route»"
+    corrected: >
+      production=0 — это 0 строк из 38 в состоянии `production`, а не 0 %
+      миграции. Отдельной процентной метрики не существует, и её нельзя вывести
+      из счётчика состояний.
+    evidence: data/parse/grobid_compatibility.yaml
+  - id: C02
+    previous: "licensed: 38 (единственное булево поле)"
+    corrected: >
+      Лицензия присутствует как идентификатор происхождения на всех 38 строках,
+      но правовая очистка не установлена: canonical license_inventory.yaml
+      содержит 22 компонента, license_status verified=7 / blocked=15, а
+      redistribution_policy запрещает новое распространение, коммерческое
+      использование, import_eligible, graph_write и auto_promote;
+      unknown_rights=blocked.
+    evidence: data/parse/license_inventory.yaml
+  - id: C03
+    previous: "absent: 16 (как один класс «нет реализации»)"
+    corrected: >
+      16 строк `absent` разложены по product_scope: 4 deferred,
+      5 not_compatibility_requirement, 7 supporting. Это разные решения
+      (отложено / вне требования совместимости / вспомогательное), и их нельзя
+      сводить к «16 нежелательных».
+    evidence: data/parse/grobid_compatibility.yaml
+  - id: C04
+    previous: "tests.by_kind: {contract: 54, properties: 16, oracle: 14, data_contract: 12, same_n: 7, metamorphic: 1}"
+    corrected: >
+      Теги имён файлов перекрываются: 99 файлов, 14 файлов несут более одного
+      тега, сумма тегов 108 ≠ 99. Поле by_kind нельзя использовать как
+      разбиение. Замер на 2026-09-21: contract 55, properties 16, oracle 15,
+      data_contract 13, same_n 8, metamorphic 1.
+    evidence: crates/da-parse/tests/
+  - id: C05
+    previous: "«shadow PASS — ограниченное исполнение», без проверки корректности эмиссии"
+    corrected: >
+      Accepted от композитора не означает корректность выхода. Фактическое
+      репро: 3 сохранённых реальных TEI дают Accepted, но эмитированный XML
+      отвергается независимым парсером (mismatched tag на дублированном
+      </title> в синтезированном <titleStmt>); вход с пустым списком anchors
+      тоже даёт Accepted, но с висячей ссылкой b0.
+    evidence: .gsd/exec/6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f.stdout
+  - id: C06
+    previous: "индексы считались свежими"
+    corrected: >
+      Оба индекса пересобраны на bcdd0cf. GitNexus MCP недоступен,
+      CLI работает, CBM MCP работает. Обнаружено расхождение callers;
+      отсутствие ребра не означает отсутствие вызова.
+    evidence: .codebase-memory/artifact.json
+
+# ---------------------------------------------------------------------------
+# validation_commands — как воспроизвести проверку (read-only).
+# ---------------------------------------------------------------------------
+validation_commands:
+  - command: "PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml"
+    expected: "exit=0; только grobid_horizon_review_scope_warning и grobid_horizon_review_status (medium)"
+  - command: "cargo test -p da-parse --tests"
+    expected: "1351 passed; 0 failed; 100 suites"
+  - command: "python3 -c \"import json,sys,jsonschema;d=json.load(open('doc/review/grobid-absorption-followup.json'));s=json.load(open('doc/review/grobid-rust-horizon-review.schema.json'));jsonschema.Draft202012Validator(s).validate(d);print('schema-ok')\""
+    expected: "schema-ok"
