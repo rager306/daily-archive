@@ -167,6 +167,85 @@ proptest! {
             tei_element_bytes(candidate.envelope.raw_tei(), "body").unwrap()
         );
     }
+
+    /// M511-j7wz2f/S01/T04: one measured A-XML class was a namespace declaration
+    /// written with whitespace around `=` (`Name S? Eq S? AttValue`).  However
+    /// legal XML spells it, the declaration must travel with the subtree it
+    /// covers, the emission must parse for an independent parser, and the
+    /// preserved prefix must resolve to the declared URI.
+    #[test]
+    fn wrapper_declaration_spacing_never_breaks_the_emission(
+        left in prop::collection::vec(prop::sample::select(vec![' ', '\t', '\n', '\r']), 0..3)
+            .prop_map(|chars| chars.into_iter().collect::<String>()),
+        right in prop::collection::vec(prop::sample::select(vec![' ', '\t', '\n', '\r']), 0..3)
+            .prop_map(|chars| chars.into_iter().collect::<String>()),
+    ) {
+        let declarations = format!("xmlns:ext{left}={right}\"urn:example:ext\"");
+        for xml in [
+            format!(
+                "<TEI><teiHeader><fileDesc {declarations}><titleStmt><title>Java</title></titleStmt><sourceDesc><ext:blob/></sourceDesc></fileDesc></teiHeader>{XML_BODY}"
+            ),
+            format!(
+                "<TEI><teiHeader><fileDesc><titleStmt {declarations}><title>Java</title><ext:note/></titleStmt></fileDesc></teiHeader>{XML_BODY}"
+            ),
+        ] {
+            let outcome =
+                compose_native_fulltext(input(xml.clone(), AdmissionDisposition::Passed));
+            let NativeFulltextCompositionOutcome::Accepted(candidate) = outcome else {
+                prop_assert!(false, "legal declaration spacing rejected {xml}");
+                unreachable!()
+            };
+            let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+            prop_assert!(
+                output.contains("xmlns:ext=\"urn:example:ext\""),
+                "the declaration was not carried: {output}"
+            );
+            let parsed = roxmltree::Document::parse(&output);
+            prop_assert!(parsed.is_ok(), "emission is not well-formed: {output}");
+            prop_assert!(
+                parsed.unwrap().descendants().any(|node| {
+                    node.is_element() && node.tag_name().namespace() == Some("urn:example:ext")
+                }),
+                "the preserved prefix did not resolve: {output}"
+            );
+            prop_assert_eq!(
+                tei_element_bytes(xml.as_bytes(), "body").unwrap(),
+                tei_element_bytes(candidate.envelope.raw_tei(), "body").unwrap()
+            );
+        }
+    }
+
+    /// M511-j7wz2f/S01/T04: no adversarial source text may produce an `Accepted`
+    /// emission an independent parser rejects.  Either the emission parses (and
+    /// the Java body bytes are untouched), or the composition refuses and hands
+    /// back the byte-identical Java envelope — never a republished ill-formed
+    /// document, which is what the composer used to return for a raw `&`.
+    #[test]
+    fn adversarial_title_text_never_yields_an_unparseable_accepted_emission(
+        text in prop::collection::vec(prop::char::any(), 0..24)
+            .prop_map(|chars| chars.into_iter().collect::<String>()),
+    ) {
+        let xml = format!(
+            "<TEI><teiHeader><fileDesc><titleStmt><title>{text}</title></titleStmt></fileDesc></teiHeader>{XML_BODY}"
+        );
+        match compose_native_fulltext(input(xml.clone(), AdmissionDisposition::Passed)) {
+            NativeFulltextCompositionOutcome::Accepted(candidate) => {
+                let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+                let parsed = roxmltree::Document::parse(&output);
+                prop_assert!(
+                    parsed.is_ok(),
+                    "an Accepted emission must parse independently: {output}"
+                );
+                prop_assert_eq!(
+                    tei_element_bytes(xml.as_bytes(), "body").unwrap(),
+                    tei_element_bytes(candidate.envelope.raw_tei(), "body").unwrap()
+                );
+            }
+            NativeFulltextCompositionOutcome::Rejected { fallback, .. } => {
+                prop_assert_eq!(fallback.raw_tei(), xml.as_bytes());
+            }
+        }
+    }
 }
 
 #[test]

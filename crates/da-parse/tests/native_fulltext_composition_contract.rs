@@ -865,3 +865,308 @@ fn header_skeleton_absence_is_supplied_and_ambiguity_is_typed() {
         }
     }
 }
+
+// ───── M511-j7wz2f / S01 / T04: `Accepted` is provably well-formed — ─────
+// ───── declarations at any legal spacing, prefix bindings, independent ─────
+// ───── assent on every adversarial emission ─────
+//
+// T04 measured a P0 class (gsd_exec 02527830-1994-4a28-96de-9630fc69d19a): the
+// composer returned `Accepted` for emissions an independent parser rejected.
+//
+//   * `xmlns:ext = "urn:example:ext"` and `xmlns:ext ="urn:example:ext"` on
+//     either synthesized wrapper were dropped — `attribute_tokens` split the tag
+//     body on unquoted whitespace, so a declaration written with spaces around
+//     `=` became three tokens and neither its name nor its value survived —
+//     leaving `ext:` unbound in the moved subtree;
+//   * a raw `&` in preserved source bytes was republished unchanged.
+//
+// `validate_emitted` could not see either: it ran the same `XmlDocument::parse`
+// the splice ranges were built on, and that scanner deliberately does not
+// interpret namespaces or references. The emitter now also runs a separate
+// `validate_well_formed` pass over its own bytes (an enumerated class list: one
+// document element, `Name`/`QName` legality, `Name S? Eq S? AttValue` attribute
+// form, duplicate attribute, reference syntax, prefix bindings, `]]>`, `--` in a
+// comment, CDATA placement, depth, legal characters, DOCTYPE/ENTITY forbidden).
+// That list is not a validating parser, so these tests keep the independent
+// parser (`roxmltree`) as the judge of the stronger claim.
+
+/// Whitespace is legal on both sides of `=` (`Name S? Eq S? AttValue`), and a
+/// declaration written that way must still travel with the subtree it covers —
+/// including from a wrapper the composer synthesizes, and with several
+/// declarations in one tag.
+#[test]
+fn space_around_equals_namespace_declaration_is_carried_on_every_wrapper() {
+    for (xml, fragments, resolved) in [
+        (
+            "<TEI><teiHeader xml:lang=\"en\"><fileDesc xmlns:ext = \"urn:example:ext\"><titleStmt><title>Java</title></titleStmt><sourceDesc><ext:blob><ext:inner/></ext:blob></sourceDesc></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>",
+            &["<fileDesc xmlns:ext=\"urn:example:ext\">"][..],
+            &[("blob", "urn:example:ext"), ("inner", "urn:example:ext")][..],
+        ),
+        (
+            "<TEI><teiHeader xml:lang=\"en\"><fileDesc><titleStmt xmlns:ext =\"urn:example:ext\"><title>Java</title><ext:note/></titleStmt></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>",
+            &["<titleStmt xmlns:ext=\"urn:example:ext\">"][..],
+            &[("note", "urn:example:ext")][..],
+        ),
+        (
+            "<TEI><teiHeader xml:lang=\"en\"><fileDesc\n  xmlns:a = \"urn:a\"\n\txmlns:b\t=\t\"urn:b\"\n><titleStmt><title>Java</title></titleStmt><sourceDesc><a:one/><b:two/></sourceDesc></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>",
+            &["<fileDesc xmlns:a=\"urn:a\" xmlns:b=\"urn:b\">"][..],
+            &[("one", "urn:a"), ("two", "urn:b")][..],
+        ),
+    ] {
+        let NativeFulltextCompositionOutcome::Accepted(candidate) = compose_native_fulltext(input(
+            xml,
+            AdmissionDisposition::Passed,
+            AdmissionDisposition::Unsupported,
+        )) else {
+            panic!("a legally spelled wrapper declaration must not reject the splice: {xml}")
+        };
+        let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+        assert_eq!(independent_xml_verdict(&output), Ok(()), "{output}");
+        for fragment in fragments {
+            assert!(
+                output.contains(fragment),
+                "the wrapper declaration {fragment} was dropped: {output}"
+            );
+        }
+        // The independent parser is the namespace judge: each preserved prefix
+        // must resolve to the URI the source declared, not merely parse.
+        let document = roxmltree::Document::parse(&output).expect("independent parser accepts");
+        for (local, uri) in resolved {
+            assert!(
+                document.descendants().any(|node| {
+                    node.is_element()
+                        && node.tag_name().name() == *local
+                        && node.tag_name().namespace() == Some(*uri)
+                }),
+                "{local} did not resolve into {uri}: {output}"
+            );
+        }
+        assert_eq!(
+            tei_element_bytes(xml.as_bytes(), "body").unwrap(),
+            tei_element_bytes(candidate.envelope.raw_tei(), "body").unwrap()
+        );
+    }
+}
+
+/// A prefix that resolves to no declaration in the emission is a typed refusal,
+/// not `Accepted` — and the fallback is the byte-identical Java envelope.
+///
+/// The positive control below is the same shape with the declaration on an
+/// ancestor that survives the splice: scope, not the wrapper, is what makes a
+/// prefix bound, so that case stays admitted.
+#[test]
+fn unbound_prefix_in_a_moved_subtree_is_typed_and_falls_back_to_java() {
+    let xml = "<TEI><teiHeader xml:lang=\"en\"><fileDesc><titleStmt><title>Java</title></titleStmt><sourceDesc><ext:blob/></sourceDesc></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>";
+    match compose_native_fulltext(input(
+        xml,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
+    )) {
+        NativeFulltextCompositionOutcome::Rejected { fallback, error } => {
+            let message = format!("{error:?}");
+            assert!(
+                matches!(
+                    error,
+                    NativeFulltextCompositionError::ComposedOutputNotWellFormed(_)
+                ),
+                "an unbound prefix must be a typed refusal, got {error:?}"
+            );
+            assert!(
+                message.contains("unbound namespace prefix") && message.contains("ext"),
+                "the refusal must name the unbound prefix: {message}"
+            );
+            assert_eq!(fallback.raw_tei(), xml.as_bytes());
+        }
+        NativeFulltextCompositionOutcome::Accepted(_) => {
+            panic!("an emission with an unbound prefix must not be published")
+        }
+    }
+
+    let declared = "<TEI xmlns:ext=\"urn:example:ext\"><teiHeader xml:lang=\"en\"><fileDesc><titleStmt><title>Java</title></titleStmt><sourceDesc><ext:blob/></sourceDesc></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>";
+    let NativeFulltextCompositionOutcome::Accepted(candidate) = compose_native_fulltext(input(
+        declared,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
+    )) else {
+        panic!("a declaration on a surviving ancestor keeps the prefix bound")
+    };
+    let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+    assert_eq!(independent_xml_verdict(&output), Ok(()), "{output}");
+    assert!(
+        roxmltree::Document::parse(&output)
+            .expect("independent parser accepts")
+            .descendants()
+            .any(|node| node.is_element()
+                && node.tag_name().name() == "blob"
+                && node.tag_name().namespace() == Some("urn:example:ext")),
+        "the root declaration must still bind ext:blob: {output}"
+    );
+}
+
+/// A raw `&` in the source is the other measured class: the composer copies
+/// preserved bytes verbatim, so it cannot claim such an emission is well-formed.
+/// It must refuse and hand back the byte-identical Java envelope, whether the `&`
+/// sits in the admitted header subtree or only in the body it copies through.
+#[test]
+fn raw_ampersand_in_source_is_rejected_with_the_byte_identical_java_envelope() {
+    let sources = [
+        "<TEI><teiHeader xml:lang=\"en\"><fileDesc><titleStmt><title>Smith & Sons</title></titleStmt></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>",
+        "<TEI><teiHeader xml:lang=\"en\"><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>Smith & Sons</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>",
+        "<TEI><teiHeader xml:lang=\"en\"><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>Smith &foo; Sons</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>",
+    ];
+    for xml in sources {
+        match compose_native_fulltext(input(
+            xml,
+            AdmissionDisposition::Passed,
+            AdmissionDisposition::Unsupported,
+        )) {
+            NativeFulltextCompositionOutcome::Rejected { fallback, error } => {
+                let message = format!("{error:?}");
+                assert!(
+                    matches!(
+                        error,
+                        NativeFulltextCompositionError::ComposedOutputNotWellFormed(_)
+                    ),
+                    "a raw `&` must be a typed refusal, got {error:?}"
+                );
+                assert!(
+                    message.contains("reference"),
+                    "the refusal must name the reference class: {message}"
+                );
+                assert_eq!(fallback.raw_tei(), xml.as_bytes());
+            }
+            NativeFulltextCompositionOutcome::Accepted(_) => {
+                panic!("an ill-formed emission must not be published: {xml}")
+            }
+        }
+    }
+
+    // The module's own range scanner still reads this source: it never
+    // interpreted references, which is exactly why `Accepted` may not rest on it.
+    assert!(
+        tei_element_bytes(sources[1].as_bytes(), "body").is_ok(),
+        "the structural scanner is intentionally reference-blind"
+    );
+    assert!(
+        independent_xml_verdict(sources[1]).is_err(),
+        "an independent parser rejects the raw `&` the composer must not republish"
+    );
+}
+
+/// Every adversarial source is either refused with the byte-identical Java
+/// envelope or emitted as XML an independent parser accepts — never an
+/// `Accepted` candidate built on ill-formed bytes.
+#[test]
+fn adversarial_sources_are_never_accepted_without_independent_assent() {
+    const HEADER: &str = "<teiHeader xml:lang=\"en\"><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader>";
+    let document = |payload: &str| {
+        format!(
+            "<TEI>{HEADER}<text><body><p>{payload}</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>"
+        )
+    };
+    let sources = [
+        ("raw ampersand", document("a & b")),
+        ("literal ]]> in character data", document("a ]]> b")),
+        ("duplicate attribute", document("<x id=\"a\" id=\"b\"/>")),
+        ("unquoted attribute value", document("<x id=a/>")),
+        ("illegal XML character", document("a\u{1}b")),
+        ("`--` inside a comment", document("<!-- a -- b -->")),
+        ("unbound namespace prefix", document("<ext:blob/>")),
+        ("unsupported `<!` declaration", document("<!doctype TEI>")),
+        (
+            "reserved `xml` processing instruction",
+            document("<?xml version=\"1.0\"?>"),
+        ),
+        ("illegal element name", document("<1bad/>")),
+        (
+            "two document elements",
+            format!(
+                "<TEI>{HEADER}<text><body><p>body</p></body><listBibl><biblStruct xml:id=\"b0\">r</biblStruct></listBibl></text></TEI><extra/>"
+            ),
+        ),
+        (
+            "CDATA outside the document element",
+            format!(
+                "<![CDATA[x]]><TEI>{HEADER}<text><body><p>body</p></body><listBibl><biblStruct xml:id=\"b0\">r</biblStruct></listBibl></text></TEI>"
+            ),
+        ),
+    ];
+    let mut rejected = 0usize;
+    for (class, source) in &sources {
+        assert!(
+            independent_xml_verdict(source).is_err(),
+            "{class}: the adversarial source must itself be ill-formed, else the case proves nothing"
+        );
+        match compose_native_fulltext(input(
+            source,
+            AdmissionDisposition::Passed,
+            AdmissionDisposition::Passed,
+        )) {
+            NativeFulltextCompositionOutcome::Accepted(candidate) => {
+                let output = String::from_utf8_lossy(candidate.envelope.raw_tei()).to_string();
+                assert_eq!(
+                    independent_xml_verdict(&output),
+                    Ok(()),
+                    "{class}: an Accepted emission must parse independently: {output}"
+                );
+                assert_eq!(
+                    tei_element_bytes(source.as_bytes(), "body").unwrap(),
+                    tei_element_bytes(candidate.envelope.raw_tei(), "body").unwrap(),
+                    "{class}: an Accepted emission may not rewrite the Java body"
+                );
+            }
+            NativeFulltextCompositionOutcome::Rejected { fallback, .. } => {
+                assert_eq!(
+                    fallback.raw_tei(),
+                    source.as_bytes(),
+                    "{class}: a refusal must hand back the byte-identical Java envelope"
+                );
+                rejected += 1;
+            }
+        }
+    }
+    assert_eq!(
+        rejected,
+        sources.len(),
+        "every adversarial source is ill-formed, so none may be spliced"
+    );
+}
+
+/// Positive control for the well-formedness pass: legal markup must not be
+/// rejected, including references, CDATA carrying markup, a processing
+/// instruction, a comment with single dashes, and attribute values holding `/`
+/// and `>`.
+#[test]
+fn legal_markup_is_not_rejected_by_the_well_formedness_pass() {
+    let xml = "<TEI><teiHeader xml:lang=\"en\" note=\"a/b&gt;c\"><fileDesc><titleStmt><title>Smith &amp; Sons &#x2013; apos &apos;</title><ext:note xmlns:ext=\"urn:example:ext\"/></titleStmt></fileDesc><profileDesc><!-- a - b - c --><?target data?><p><![CDATA[ <p> ]] & ]] not a tag ]]></p></profileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>";
+    let outcome = compose_native_fulltext(input(
+        xml,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
+    ));
+    let NativeFulltextCompositionOutcome::Accepted(candidate) = &outcome else {
+        panic!("legal XML must not be refused by the well-formedness pass: {outcome:?}")
+    };
+    let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+    assert_eq!(independent_xml_verdict(&output), Ok(()), "{output}");
+    for fragment in [
+        "Smith &amp; Sons &#x2013; apos &apos;",
+        "<!-- a - b - c -->",
+        "<?target data?>",
+        "<![CDATA[ <p> ]] & ]] not a tag ]]>",
+        "<ext:note xmlns:ext=\"urn:example:ext\"/>",
+    ] {
+        assert!(
+            output.contains(fragment),
+            "legal markup lost {fragment}: {output}"
+        );
+    }
+    assert!(
+        output.contains("<teiHeader xml:lang=\"en\" note=\"a/b&gt;c\">"),
+        "an attribute value holding `/` and `>` must survive verbatim: {output}"
+    );
+    assert_eq!(
+        tei_element_bytes(xml.as_bytes(), "body").unwrap(),
+        tei_element_bytes(candidate.envelope.raw_tei(), "body").unwrap()
+    );
+}

@@ -126,9 +126,10 @@ pub enum NativeFulltextCompositionError {
     DuplicateId,
     UnbalancedXml,
     AmbiguousSplice(String),
-    /// The splice produced a document the module's own structural parser
-    /// rejects.  Composed bytes are never accepted on trust: the emitter
-    /// re-reads its own output before `Accepted`.
+    /// The splice produced a document the module's own structural parser or its
+    /// well-formedness checker rejects.  Composed bytes are never accepted on
+    /// trust: the emitter re-reads its own output before `Accepted`, and the
+    /// message names the enforced class that failed (see `validate_well_formed`).
     ComposedOutputNotWellFormed(String),
     InvalidUtf8,
     ChangedReadingOrder,
@@ -404,25 +405,418 @@ fn fallback_entry(
         fallback_target: r.fallback_target.clone(),
     }
 }
+/// The typed refusal for an emission that fails an enforced well-formedness
+/// constraint.  It reuses the composer's existing `ComposedOutputNotWellFormed`
+/// class, so the fallback path (byte-identical Java envelope) and every consumer
+/// stay unchanged while the message names the class that failed.
+fn wfc(detail: impl Into<String>) -> NativeFulltextCompositionError {
+    NativeFulltextCompositionError::ComposedOutputNotWellFormed(detail.into())
+}
+
+/// XML 1.0 `Char`.
+fn is_legal_xml_char(c: char) -> bool {
+    matches!(c, '\u{9}' | '\u{A}' | '\u{D}')
+        || ('\u{20}'..='\u{D7FF}').contains(&c)
+        || ('\u{E000}'..='\u{FFFD}').contains(&c)
+        || ('\u{10000}'..='\u{10FFFF}').contains(&c)
+}
+
+/// `NameStartChar` without `:` — the colon is the `QName` separator and is
+/// checked by `qname_parts`.
+fn is_name_start_char(c: char) -> bool {
+    c == '_'
+        || c.is_ascii_alphabetic()
+        || matches!(
+            c,
+            '\u{C0}'..='\u{D6}'
+                | '\u{D8}'..='\u{F6}'
+                | '\u{F8}'..='\u{2FF}'
+                | '\u{370}'..='\u{37D}'
+                | '\u{37F}'..='\u{1FFF}'
+                | '\u{200C}'..='\u{200D}'
+                | '\u{2070}'..='\u{218F}'
+                | '\u{2C00}'..='\u{2FEF}'
+                | '\u{3001}'..='\u{D7FF}'
+                | '\u{F900}'..='\u{FDCF}'
+                | '\u{FDF0}'..='\u{FFFD}'
+                | '\u{10000}'..='\u{EFFFF}'
+        )
+}
+
+fn is_name_char(c: char) -> bool {
+    is_name_start_char(c)
+        || c.is_ascii_digit()
+        || matches!(
+            c,
+            '-' | '.' | '\u{B7}' | '\u{300}'..='\u{36F}' | '\u{203F}'..='\u{2040}'
+        )
+}
+
+/// XML `Name`, which is also `NCName` here because `:` is not a `NameChar`.
+fn is_legal_name(name: &str) -> bool {
+    let mut chars = name.chars();
+    match chars.next() {
+        Some(first) if is_name_start_char(first) => {}
+        _ => return false,
+    }
+    chars.all(is_name_char)
+}
+
+/// `QName` decomposition into `(prefix, local)`, or `None` when the name is not a
+/// legal `QName` (at most one colon, legal `NCName` on both sides).
+fn qname_parts(name: &str) -> Option<(Option<&str>, &str)> {
+    let mut parts = name.split(':');
+    let first = parts.next()?;
+    let second = parts.next();
+    let third = parts.next();
+    match (second, third) {
+        (None, None) if is_legal_name(first) => Some((None, first)),
+        (Some(local), None) if is_legal_name(first) && is_legal_name(local) => {
+            Some((Some(first), local))
+        }
+        _ => None,
+    }
+}
+
+/// One open element of the well-formedness scan: the name as written plus the
+/// namespace declarations its start tag carried.  A declaration is in scope for
+/// the element's own name and attributes, not only for its children, so both are
+/// checked against `declarations` plus the enclosing elements.
+struct OpenElement {
+    name: String,
+    /// `("", uri)` for `xmlns="uri"`, `(prefix, uri)` for `xmlns:prefix="uri"`.
+    declarations: Vec<(String, String)>,
+}
+
+/// Resolve `prefix` against the inner-most declaration in scope: the element's
+/// own declarations first, then the enclosing elements from the inside out.  The
+/// `xml` prefix is bound whatever the document says, so it needs no declaration.
+fn resolve_prefix<'a>(
+    stack: &'a [OpenElement],
+    local: &'a [(String, String)],
+    prefix: &str,
+) -> Option<&'a str> {
+    if prefix == "xml" {
+        return Some("xml");
+    }
+    local
+        .iter()
+        .rev()
+        .find(|(candidate, _)| candidate == prefix)
+        .or_else(|| {
+            stack.iter().rev().find_map(|element| {
+                element
+                    .declarations
+                    .iter()
+                    .rev()
+                    .find(|(candidate, _)| candidate == prefix)
+            })
+        })
+        .map(|(_, uri)| uri.as_str())
+}
+
+/// `&` must start a legal reference.
+///
+/// A bare `&` is an A-XML class measured on a real preserved TEI: the composer
+/// copies preserved source bytes verbatim, so without this check an ill-formed
+/// source would be republished as `Accepted`.
+///
+/// Only the five predefined entities may appear.  `<!DOCTYPE`/`<!ENTITY` are
+/// forbidden, so no other entity can be declared in a document this module emits;
+/// a named entity it cannot resolve is a rejection, never a silent pass.
+fn validate_references(data: &str) -> Result<(), NativeFulltextCompositionError> {
+    let mut at = 0usize;
+    while let Some(relative) = data[at..].find('&') {
+        let start = at + relative;
+        let rest = &data[start + 1..];
+        let Some(end) = rest.find(';') else {
+            return Err(wfc("`&` does not start a character or entity reference"));
+        };
+        let name = &rest[..end];
+        let legal = if let Some(hex) = name.strip_prefix("#x") {
+            !hex.is_empty() && hex.chars().all(|c| c.is_ascii_hexdigit())
+        } else if let Some(decimal) = name.strip_prefix('#') {
+            !decimal.is_empty() && decimal.chars().all(|c| c.is_ascii_digit())
+        } else {
+            matches!(name, "amp" | "lt" | "gt" | "quot" | "apos")
+        };
+        if !legal {
+            return Err(wfc(format!("`&{name};` is not a legal reference")));
+        }
+        let code_point = name
+            .strip_prefix("#x")
+            .and_then(|hex| u32::from_str_radix(hex, 16).ok())
+            .or_else(|| {
+                name.strip_prefix('#')
+                    .and_then(|decimal| decimal.parse().ok())
+            });
+        if let Some(code_point) = code_point
+            && char::from_u32(code_point).is_none_or(|c| !is_legal_xml_char(c))
+        {
+            return Err(wfc(format!(
+                "`&{name};` is not a legal XML character reference"
+            )));
+        }
+        at = start + 1 + end + 1;
+    }
+    Ok(())
+}
+
+/// `AttValue`: a raw `<` is forbidden and every `&` must start a legal reference.
+fn validate_attribute_value(value: &str) -> Result<(), NativeFulltextCompositionError> {
+    if value.contains('<') {
+        return Err(wfc("`<` is not allowed in an attribute value"));
+    }
+    validate_references(value)
+}
+
+/// Character data between tags: `]]>` may not appear literally, text outside the
+/// document element must be whitespace, and `&` must start a legal reference.
+fn validate_char_data(
+    text: &str,
+    from: usize,
+    to: usize,
+    inside_element: bool,
+) -> Result<(), NativeFulltextCompositionError> {
+    let data = &text[from..to];
+    if data.contains("]]>") {
+        return Err(wfc("`]]>` is not allowed in character data"));
+    }
+    if !inside_element && !data.chars().all(char::is_whitespace) {
+        return Err(wfc("character data outside the document element"));
+    }
+    validate_references(data)
+}
+
+/// Well-formedness classes enforced before `Accepted`, and why this is not a
+/// general XML processor.
+///
+/// The composer used to return `Accepted` on emissions an independent parser
+/// rejected (measured S01/T04, at least the classes below).  `XmlDocument::parse`
+/// is the structural range/identity scanner the splice itself is built on, so it
+/// cannot be the arbiter of the bytes it helped select; this checker is a
+/// separate pass over the emitted document, for the constraints a splice can
+/// violate while copying source bytes verbatim:
+///
+/// * exactly one document element, and no non-whitespace character data outside it;
+/// * `Name`/`QName` legality for elements, attributes, prefixes and PI targets;
+/// * attribute lists in `Name S? Eq S? AttValue` form, quoted values, and no
+///   duplicate attribute name on one element;
+/// * `&` starts one of the five predefined entities or a numeric character
+///   reference (a raw `&` is a measured class);
+/// * namespace declarations and prefix bindings: every prefixed element or
+///   attribute name must resolve in scope, so a prefix whose declaration did not
+///   travel with its subtree is a typed rejection, not `Accepted`;
+/// * `]]>` in character data, `--` inside a comment, CDATA only inside the
+///   document element, the depth limit, and legal XML characters only;
+/// * `<!DOCTYPE`/`<!ENTITY` stay forbidden.
+///
+/// It is deliberately not a validating parser: no DTD, no entity expansion, no
+/// schema (`xmlns:xml` re-binding and URI-reference validity are outside this
+/// list).  The offline independent oracle — `roxmltree`, a dev-dependency used by
+/// the S01 contract tests — is what judges every adversarial emission beyond the
+/// list, and this function is never called proof of the stronger claim.
+fn validate_well_formed(text: &str) -> Result<(), NativeFulltextCompositionError> {
+    if let Some(illegal) = text.chars().find(|c| !is_legal_xml_char(*c)) {
+        return Err(wfc(format!(
+            "illegal XML character U+{:04X}",
+            illegal as u32
+        )));
+    }
+    let mut stack: Vec<OpenElement> = Vec::new();
+    let mut root_seen = false;
+    let mut pos = 0usize;
+    while let Some(relative) = text[pos..].find('<') {
+        let start = pos + relative;
+        validate_char_data(text, pos, start, !stack.is_empty())?;
+        let rest = &text[start + 1..];
+        match rest.chars().next() {
+            Some('?') => {
+                let close = text[start..]
+                    .find("?>")
+                    .ok_or_else(|| wfc("unterminated processing instruction"))?;
+                let content = &text[start + 2..start + close];
+                let target = content.split(char::is_whitespace).next().unwrap_or("");
+                if qname_parts(target).is_none() {
+                    return Err(wfc(format!(
+                        "illegal processing-instruction target `{target}`"
+                    )));
+                }
+                if target == "xml" && start != 0 {
+                    return Err(wfc(
+                        "the `xml` processing-instruction target is reserved for the declaration",
+                    ));
+                }
+                pos = start + close + 2;
+            }
+            Some('!') => {
+                if rest.starts_with("!--") {
+                    let close = text[start..]
+                        .find("-->")
+                        .ok_or_else(|| wfc("unterminated comment"))?;
+                    if text[start + 4..start + close].contains("--") {
+                        return Err(wfc("`--` inside a comment"));
+                    }
+                    pos = start + close + 3;
+                } else if rest.starts_with("![CDATA[") {
+                    if stack.is_empty() {
+                        return Err(wfc("CDATA section outside the document element"));
+                    }
+                    let close = text[start..]
+                        .find("]]>")
+                        .ok_or_else(|| wfc("unterminated CDATA section"))?;
+                    pos = start + close + 3;
+                } else if rest.starts_with("!DOCTYPE") || rest.starts_with("!ENTITY") {
+                    return Err(NativeFulltextCompositionError::ForbiddenExternalEntity);
+                } else {
+                    return Err(wfc("unsupported `<!` markup declaration"));
+                }
+            }
+            Some('/') => {
+                let end = tag_end(text, start + 1).ok_or_else(|| wfc("unterminated close tag"))?;
+                let name = text[start + 2..end].trim_end();
+                if name.is_empty()
+                    || name.contains(char::is_whitespace)
+                    || qname_parts(name).is_none()
+                {
+                    return Err(wfc(format!("illegal close tag `</{name}>`")));
+                }
+                let Some(open) = stack.pop() else {
+                    return Err(wfc(format!(
+                        "close tag `</{name}>` without an open element"
+                    )));
+                };
+                if open.name != name {
+                    return Err(wfc(format!(
+                        "close tag `</{name}>` does not match the open element `<{}>`",
+                        open.name
+                    )));
+                }
+                pos = end + 1;
+            }
+            Some(_) => {
+                let end = tag_end(text, start + 1).ok_or_else(|| wfc("unterminated open tag"))?;
+                let body = tag_attributes(&text[start + 1..end]);
+                let name_end = body.find(char::is_whitespace).unwrap_or(body.len());
+                let name = &body[..name_end];
+                let Some((prefix, _local)) = qname_parts(name) else {
+                    return Err(wfc(format!("illegal element name `{name}`")));
+                };
+                if prefix == Some("xmlns") {
+                    return Err(wfc(format!(
+                        "the `xmlns` prefix cannot be an element prefix (`{name}`)"
+                    )));
+                }
+                let attributes = parse_attributes(&body[name_end..])
+                    .map_err(|_| wfc(format!("illegal attribute list on `<{name}>`")))?;
+                // Declarations are collected first: they are in scope for this
+                // element's own name and attributes whatever their order is.
+                let mut local: Vec<(String, String)> = Vec::new();
+                let mut seen: Vec<&str> = Vec::new();
+                for (attribute, value) in &attributes {
+                    if seen.contains(attribute) {
+                        return Err(wfc(format!(
+                            "duplicate attribute `{attribute}` on `<{name}>`"
+                        )));
+                    }
+                    seen.push(attribute);
+                    if *attribute == "xmlns" {
+                        local.push((String::new(), (*value).to_owned()));
+                    } else if let Some(declared) = attribute.strip_prefix("xmlns:") {
+                        if !is_legal_name(declared) || declared == "xmlns" {
+                            return Err(wfc(format!(
+                                "illegal namespace prefix `{declared}` on `<{name}>`"
+                            )));
+                        }
+                        if value.is_empty() {
+                            return Err(wfc(format!(
+                                "namespace prefix `{declared}` cannot be undeclared"
+                            )));
+                        }
+                        local.push((declared.to_owned(), (*value).to_owned()));
+                    }
+                }
+                for (attribute, value) in &attributes {
+                    validate_attribute_value(value)?;
+                    if *attribute == "xmlns" || attribute.starts_with("xmlns:") {
+                        continue;
+                    }
+                    let Some((attribute_prefix, _)) = qname_parts(attribute) else {
+                        return Err(wfc(format!("illegal attribute name `{attribute}`")));
+                    };
+                    if let Some(attribute_prefix) = attribute_prefix
+                        && resolve_prefix(&stack, &local, attribute_prefix).is_none()
+                    {
+                        return Err(wfc(format!(
+                            "unbound namespace prefix `{attribute_prefix}` on attribute \
+                             `{attribute}` in `<{name}>`"
+                        )));
+                    }
+                }
+                if let Some(prefix) = prefix
+                    && resolve_prefix(&stack, &local, prefix).is_none()
+                {
+                    return Err(wfc(format!(
+                        "unbound namespace prefix `{prefix}` on element `{name}`"
+                    )));
+                }
+                let empty = is_self_closing(&text[start + 1..end]);
+                if !empty && stack.len() >= NATIVE_FULLTEXT_MAX_XML_DEPTH {
+                    return Err(wfc("element nesting exceeded the depth limit"));
+                }
+                if stack.is_empty() {
+                    if root_seen {
+                        return Err(wfc("more than one document element"));
+                    }
+                    root_seen = true;
+                }
+                if !empty {
+                    stack.push(OpenElement {
+                        name: name.to_owned(),
+                        declarations: local,
+                    });
+                }
+                pos = end + 1;
+            }
+            None => return Err(wfc("`<` at the end of the document")),
+        }
+    }
+    validate_char_data(text, pos, text.len(), !stack.is_empty())?;
+    if let Some(unclosed) = stack.first() {
+        return Err(wfc(format!("unclosed element `<{}>`", unclosed.name)));
+    }
+    if !root_seen {
+        return Err(wfc("no document element"));
+    }
+    Ok(())
+}
+
 /// Re-read the emitted document before it may be accepted.
 ///
 /// `Accepted` is a claim about the bytes the candidate carries, so the emitter
-/// runs the same structural validation over its own output that it ran over its
-/// input: tag shape, element balance, and `xml:id`/`id` uniqueness across the
-/// whole document — which is also what catches a preserved source id colliding
-/// with a synthesized `author-N`/`bibl-N`.  A failure is typed and falls back to
-/// the byte-identical Java envelope instead of publishing a damaged candidate.
+/// re-reads its own output first:
 ///
-/// Scope note: this is well-formedness and identity hygiene, not TEI schema
-/// validation.  The module imports typed leaves, hashing, serde and formatting
-/// only; a schema validator would be a runtime dependency, so the stronger
-/// schema claim belongs to the offline independent oracle instead.
+/// 1. `XmlDocument::parse` — the structural range/identity scanner the splice was
+///    built on — covers tag shape, element balance and `xml:id`/`id` uniqueness
+///    across the whole document, which is also what catches a preserved source id
+///    colliding with a synthesized `author-N`/`bibl-N`;
+/// 2. `validate_well_formed` — a separate pass enforcing the well-formedness
+///    class list documented on it, including namespace prefix bindings.
+///
+/// Both are needed, and neither is the whole claim: (2) exists because (1) shares
+/// the composer's own heritage and cannot be the arbiter of the bytes it helped
+/// select, and (2) is itself an enumerated class list rather than a validating
+/// parser, so the offline independent oracle (`roxmltree` in the S01 contract
+/// tests) remains the judge of the stronger claim.  A failure of either is typed
+/// and falls back to the byte-identical Java envelope instead of publishing a
+/// damaged candidate.
 fn validate_emitted(bytes: &[u8]) -> Result<(), NativeFulltextCompositionError> {
     let text =
         std::str::from_utf8(bytes).map_err(|_| NativeFulltextCompositionError::InvalidUtf8)?;
     XmlDocument::parse(text).map(|_| ()).map_err(|error| {
         NativeFulltextCompositionError::ComposedOutputNotWellFormed(format!("{error:?}"))
-    })
+    })?;
+    validate_well_formed(text)
 }
 
 fn component_name(component: FulltextComponent) -> &'static str {
@@ -610,42 +1004,79 @@ fn is_self_closing(body: &str) -> bool {
     last == Some('/')
 }
 
-/// Attribute substrings of an open tag body, honouring quoted values.
+/// Open-tag body without the tag's own trailing `/`.
 ///
-/// A value may contain whitespace (`note="a b"`) or the other quote character
-/// (`note="it's"`), so a token ends only at unquoted whitespace.  The body is the
-/// text after the element name and before a trailing `/`, so a self-closing tag
-/// yields no tokens.
-fn attribute_tokens(body: &str) -> Vec<&str> {
-    let mut tokens = Vec::new();
-    let mut quote: Option<char> = None;
-    let mut start: Option<usize> = None;
-    for (offset, c) in body.char_indices() {
-        match quote {
-            Some(open) => {
-                if c == open {
-                    quote = None;
-                }
-            }
-            None => match c {
-                '"' | '\'' => quote = Some(c),
-                c if c.is_whitespace() => {
-                    if let Some(from) = start.take() {
-                        tokens.push(&body[from..offset]);
-                    }
-                }
-                _ => {
-                    if start.is_none() {
-                        start = Some(offset);
-                    }
-                }
-            },
+/// `is_self_closing` is quote-aware, so `<a b="x/"/>` loses only the tag's slash
+/// and keeps the attribute value intact, while `<a b="x/">` keeps both.  A bare
+/// `strip_suffix('/')` would truncate the value instead.
+fn tag_attributes(body: &str) -> &str {
+    let trimmed = body.trim_end();
+    if is_self_closing(trimmed) {
+        trimmed[..trimmed.len() - 1].trim_end()
+    } else {
+        trimmed
+    }
+}
+
+/// Attribute `(name, value)` pairs of an open-tag attribute text.
+///
+/// The XML grammar is `Name S? Eq S? AttValue`: whitespace is legal on both sides
+/// of `=`, and every value is quoted.  A lexer that splits on unquoted whitespace
+/// cannot see `xmlns:ext = "urn:x"` — it yields `xmlns:ext`, `=`, `"urn:x"` as
+/// three tokens, so neither a name nor a value survives, which is how a wrapper's
+/// namespace declaration used to be dropped together with the wrapper while its
+/// children moved into the composed one.
+///
+/// A malformed attribute list is a typed rejection rather than a guess: the
+/// composer cannot reproduce a declaration it cannot read.
+fn parse_attributes(body: &str) -> Result<Vec<(&str, &str)>, NativeFulltextCompositionError> {
+    let bytes = body.as_bytes();
+    let mut at = 0usize;
+    let mut attributes = Vec::new();
+    while at < bytes.len() {
+        while at < bytes.len() && bytes[at].is_ascii_whitespace() {
+            at += 1;
         }
+        if at == bytes.len() {
+            break;
+        }
+        let name_start = at;
+        while at < bytes.len() && !bytes[at].is_ascii_whitespace() && bytes[at] != b'=' {
+            at += 1;
+        }
+        let name = &body[name_start..at];
+        if name.is_empty() {
+            return Err(NativeFulltextCompositionError::MalformedXml);
+        }
+        while at < bytes.len() && bytes[at].is_ascii_whitespace() {
+            at += 1;
+        }
+        if bytes.get(at) != Some(&b'=') {
+            return Err(NativeFulltextCompositionError::MalformedXml);
+        }
+        at += 1;
+        while at < bytes.len() && bytes[at].is_ascii_whitespace() {
+            at += 1;
+        }
+        let Some(&quote) = bytes.get(at) else {
+            return Err(NativeFulltextCompositionError::MalformedXml);
+        };
+        if quote != b'"' && quote != b'\'' {
+            return Err(NativeFulltextCompositionError::MalformedXml);
+        }
+        at += 1;
+        let value_start = at;
+        while at < bytes.len() && bytes[at] != quote {
+            at += 1;
+        }
+        if at == bytes.len() {
+            return Err(NativeFulltextCompositionError::MalformedXml);
+        }
+        let value = &body[value_start..at];
+        at += 1;
+        attributes.push((name, value));
     }
-    if let Some(from) = start {
-        tokens.push(&body[from..]);
-    }
-    tokens
+    Ok(attributes)
 }
 
 /// Structural view of a TEI document, used for splice ranges and for the
@@ -657,7 +1088,9 @@ fn attribute_tokens(body: &str) -> Vec<&str> {
 /// `(start of the open tag, end of the close tag)` and can never begin with
 /// `</`.  Namespace prefixes are not interpreted here — the composer preserves
 /// declarations together with the subtrees they cover, and a splice only needs
-/// byte-exact spans.
+/// byte-exact spans.  That is also why this scanner is not the arbiter of the
+/// emission: `validate_well_formed` is a separate pass, and the offline
+/// independent oracle (`roxmltree`) is the judge beyond it.
 #[derive(Debug)]
 struct XmlDocument {
     elements: Vec<XmlElement>,
@@ -882,24 +1315,27 @@ impl XmlDocument {
         // The parser requires the open tag to start with the element name, so
         // the name length is an exact char boundary after `<`.
         let tag = &source[element.start + 1..element.open_end - 1];
-        let attributes = tag[name.len()..].trim_end();
-        Ok(attributes
-            .strip_suffix('/')
-            .unwrap_or(attributes)
-            .trim_end())
+        Ok(tag_attributes(&tag[name.len()..]))
     }
 
     /// Namespace declarations (`xmlns`, `xmlns:*`) carried by `name`'s open tag,
-    /// each rendered with a leading space (`""` when the element is absent or
+    /// each re-emitted as ` name="value"` (`""` when the element is absent or
     /// declares none).
     ///
     /// The composer synthesizes `fileDesc` and `titleStmt` instead of preserving
     /// the source wrappers, so their own attributes are not otherwise reproduced.
     /// Dropping a declaration there leaves the moved children holding an unbound
-    /// prefix — a well-formedness failure this module's own parser cannot see,
-    /// because it deliberately does not interpret namespaces.  A missing element
-    /// is not an error: the absence paths are owned by `child_spans*`, and there
-    /// is no declaration to reproduce for an element that is not there.
+    /// prefix — a well-formedness failure `XmlDocument::parse` cannot see, because
+    /// it deliberately does not interpret namespaces, and which only the separate
+    /// `validate_well_formed` pass (and the independent oracle) can catch.
+    ///
+    /// The pair is read through `parse_attributes`, so `xmlns:ext = "urn:x"` and
+    /// `xmlns:ext ="urn:x"` are carried like the compact spelling; the earlier
+    /// whitespace tokenizer saw three tokens (`xmlns:ext`, `=`, `"urn:x"`) and
+    /// silently dropped the declaration.  A declaration that cannot be read is a
+    /// typed rejection, never a silent omission.  A missing element is not an
+    /// error: the absence paths are owned by `child_spans*`, and there is no
+    /// declaration to reproduce for an element that is not there.
     fn namespace_declarations(
         &self,
         source: &str,
@@ -912,16 +1348,15 @@ impl XmlDocument {
         // The parser requires the open tag to start with the element name, so the
         // name length is an exact char boundary after `<`.
         let tag = &source[element.start + 1..element.open_end - 1];
-        let body = tag[name.len()..].trim_end();
-        let body = body.strip_suffix('/').unwrap_or(body);
+        let body = tag_attributes(&tag[name.len()..]);
         let mut declarations = String::new();
-        for attribute in attribute_tokens(body) {
-            let declaration = attribute == "xmlns"
-                || attribute.starts_with("xmlns=")
-                || attribute.starts_with("xmlns:");
-            if declaration && attribute.contains('=') {
+        for (attribute, value) in parse_attributes(body)? {
+            if attribute == "xmlns" || attribute.starts_with("xmlns:") {
                 declarations.push(' ');
                 declarations.push_str(attribute);
+                declarations.push_str("=\"");
+                declarations.push_str(value);
+                declarations.push('"');
             }
         }
         Ok(declarations)
