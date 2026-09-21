@@ -406,20 +406,46 @@ fn foreign_valid_artifact_digest_rejects_and_preserves_java_envelope() {
     ));
 }
 
-// ───── M511-j7wz2f / S01 / T01: A-XML RED — real preserved TEI, ─────
-// ───── independent XML parser, recorded as an expected diagnostic ─────
+// ───── M511-j7wz2f / S01 / T02: A-XML GREEN — real preserved TEI, ─────
+// ───── independent XML parser, structural header placement ─────
 //
-// Measured 2026-09-21 (`doc/review/grobid-absorption-audit-2026-09-21.md`,
-// gsd_exec 6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f) and re-measured from the
-// tracked fixtures here: `compose_native_fulltext` returns `Accepted` for all
-// three sha256-pinned preserved TEI while an independent XML parser rejects the
-// emitted document with `mismatched tag` at a duplicated `</title>`.
+// T01 measured the RED (`doc/review/grobid-absorption-audit-2026-09-21.md`,
+// gsd_exec 6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f) from the tracked fixtures:
+// `compose_native_fulltext` returned `Accepted` for all three sha256-pinned
+// preserved TEI while an independent XML parser rejected the emitted document
+// with `mismatched tag` at a duplicated `</title>`.
 //
-// Root-cause surface: `preserve_header_children` walks *every* parsed tag,
-// closing tags included, so `element_range` can be entered at a `</title>` and
-// then run to the next `<title>` in the document, pushing a range that starts
-// with a stray closing tag and swallows the elements between. The synthesized
-// `<teiHeader>` additionally drops the source header attributes (`xml:lang`).
+// Root cause, fixed in T02: `preserve_header_children` walked *every* parsed tag,
+// closing tags included, so an element range could be entered at a `</title>` and
+// then run to the next `<title>` in the document, pushing a range that started
+// with a stray closing tag and swallowed the elements between. The synthesized
+// `<teiHeader>` additionally dropped the source header attributes (`xml:lang`,
+// `xmlns:*`).
+//
+// T02 fixed it structurally rather than cosmetically:
+//   * `XmlDocument` pairs open and close tags in one stack, so a span is always
+//     `(open tag start, close tag end)` and can never start at a closing tag;
+//   * header content is re-placed by *parent* (children of `titleStmt` into the
+//     composed title statement, children of `fileDesc` minus `titleStmt` into the
+//     composed file description, the rest after it), which is provably disjoint
+//     and complete for every descendant of the source `teiHeader`;
+//   * the source `<teiHeader>` attributes are reproduced verbatim;
+//   * the emitted bytes are re-parsed before `Accepted`
+//     (`ComposedOutputNotWellFormed`), so a damaged splice is a typed rejection
+//     and the byte-identical Java envelope is used instead.
+//
+// This file is still the A-XML judge, and the judge is still independent:
+// `roxmltree` shares no code with the composer's tag scanner, and it resolves
+// namespace prefixes, so an unbound prefix or a lost declaration fails here.
+//
+// Evidence: the T01 regression gate
+// (`preserved_tei_composition_is_independently_well_formed`) was RED in T01 and
+// is green here with its `#[ignore]` removed (gsd_exec
+// d38840db-e9b4-44cc-9cd4-1fb3b85096d6). T01's RED pin was replaced by
+// `preserved_tei_emissions_conserve_every_source_header_subtree`, which asserts
+// post-fix conservation instead of the defect; the structural requirements
+// (repeat, nesting, attributes, namespaces, unknown subtrees, output validation)
+// are covered by the tests below it.
 //
 // `compose_native_fulltext` has no runtime caller (library re-export, shadow
 // example and tests only — GitNexus reports no incoming edge, confirmed by a
@@ -427,17 +453,6 @@ fn foreign_valid_artifact_digest_rejects_and_preserves_java_envelope() {
 // reachability, and nothing below changes a lock: D127 / D321 stay closed and
 // the composer import-root set stays `{crate, serde, sha2, std}` — `roxmltree`
 // is a dev-dependency and is never reachable from `src/`.
-//
-// Two artifacts, deliberately different:
-//   * `preserved_tei_composition_is_independently_well_formed` is the
-//     regression gate. It is RED today, so it carries `#[ignore]` with the
-//     expected diagnostic; S01/T02 removes the attribute once range pairing and
-//     header attributes are repaired.
-//   * `a_xml_red_preserved_tei_emissions_are_rejected_by_an_independent_parser`
-//     runs by default and pins the measured RED (Accepted + independent
-//     rejection + the duplicate closing tag + the dropped header attribute) so
-//     the defect can neither be silently declared fixed nor silently lost.
-//     S01/T02 replaces it with the post-fix preservation assertions.
 
 /// The three sha256-pinned preserved TEI, in `provenance.yaml` order.
 const PRESERVED_TEI: [(&str, &str); 3] = [
@@ -501,10 +516,42 @@ fn emit_preserved_tei(name: &str, declared_sha256: &str) -> String {
     }
 }
 
-/// A-XML regression gate. RED until S01/T02 repairs range pairing and header
-/// attributes: the independent parser rejects all three emissions today.
+/// Independent children of the first element whose local name is `parent`, as
+/// (local name, exact source bytes) pairs.
+///
+/// Extraction goes through `roxmltree`, not through the composer's own parser, so
+/// a range-pairing regression cannot hide behind the code under test.
+fn independent_children(xml: &str, parent: &str) -> Vec<(String, String)> {
+    let document = roxmltree::Document::parse(xml).expect("independent parser accepts");
+    let node = document
+        .descendants()
+        .find(|node| node.is_element() && node.tag_name().name() == parent)
+        .unwrap_or_else(|| panic!("{parent} present"));
+    node.children()
+        .filter(|child| child.is_element())
+        .map(|child| {
+            (
+                child.tag_name().name().to_owned(),
+                xml[child.range()].to_owned(),
+            )
+        })
+        .collect()
+}
+
+/// Independent element count by local name.
+fn independent_count(xml: &str, tag: &str) -> usize {
+    roxmltree::Document::parse(xml)
+        .expect("independent parser accepts")
+        .descendants()
+        .filter(|node| node.is_element() && node.tag_name().name() == tag)
+        .count()
+}
+
+/// A-XML regression gate: an `Accepted` emission of a real preserved TEI must be
+/// well-formed for an independent parser.
+///
+/// Green since S01/T02; the `#[ignore]` T01 carried for the measured RED is gone.
 #[test]
-#[ignore = "A-XML RED (H14 / M511 S01 T01): emitter still produces a stray closing tag + drops header attributes on all three preserved TEI; remove this #[ignore] in S01/T02 once the composition is structurally sound"]
 fn preserved_tei_composition_is_independently_well_formed() {
     for (name, sha256) in PRESERVED_TEI {
         let source = preserved_tei_source(name, sha256);
@@ -522,62 +569,235 @@ fn preserved_tei_composition_is_independently_well_formed() {
     }
 }
 
-/// Expected diagnostic for the measured RED, pinned over all three fixtures.
+/// Post-fix conservation, replacing T01's RED pin.
 ///
-/// S01/T02 replaces this with post-fix preservation assertions: the emission
-/// must parse, keep one `<title>` per source title, and keep the header
-/// attributes.
+/// The emission must parse, keep the source header attributes, keep one title
+/// element per source title element, and re-place every source header subtree
+/// under the wrapper it came from — all judged by the independent parser.
 #[test]
-fn a_xml_red_preserved_tei_emissions_are_rejected_by_an_independent_parser() {
+fn preserved_tei_emissions_conserve_every_source_header_subtree() {
     for (name, sha256) in PRESERVED_TEI {
         let source = preserved_tei_source(name, sha256);
         assert_eq!(
             independent_xml_verdict(&source),
             Ok(()),
-            "{name}: the preserved fixture must itself be well-formed, otherwise the \
-             independent parser proves nothing about the emission"
+            "{name}: the fixture must itself be well-formed"
         );
         assert!(
-            !source.contains("</title></title>"),
-            "{name}: the fixture must not already carry the duplicated closing tag"
+            source.contains("<teiHeader xml:lang=\"en\">"),
+            "{name}: the fixture must carry the header attribute the emitter used to drop"
         );
-        assert!(
-            source.contains("<teiHeader xml:lang"),
-            "{name}: the fixture must carry the header attribute the emitter drops"
-        );
-
         let emitted = emit_preserved_tei(name, sha256);
-        let verdict = independent_xml_verdict(&emitted);
-        let diagnostic = match verdict {
-            Ok(()) => panic!(
-                "A-XML RED no longer reproduces for {name}: an Accepted emission parsed as \
-                 well-formed. Update S01/T01/T02 instead of relaxing this pin."
-            ),
-            Err(diagnostic) => diagnostic,
-        };
-        println!(
-            "[a-xml-red] {name}: independent parser rejects the Accepted emission: {diagnostic}"
-        );
-        assert!(
-            diagnostic.contains("expected 'titleStmt' tag, not 'title'")
-                && diagnostic.contains("at 6:"),
-            "{name}: the independent diagnostic drifted from the measured RED (mismatched tag at 
-             the duplicated </title>): {diagnostic}"
-        );
-
         assert_eq!(
-            emitted.matches("</title></title>").count(),
-            1,
-            "{name}: exactly one range entry starts at a closing </title> tag"
+            independent_xml_verdict(&emitted),
+            Ok(()),
+            "A-XML: an Accepted emission must be well-formed XML ({name})"
         );
         assert!(
-            emitted.matches("</title>").count() > source.matches("</title>").count(),
-            "{name}: the emission carries more closing title tags than its source"
+            emitted.contains("<teiHeader xml:lang=\"en\">"),
+            "{name}: the source <teiHeader> attributes must survive the splice"
         );
         assert!(
-            !emitted.contains("<teiHeader xml:lang"),
-            "{name}: the synthesized <teiHeader> must reproduce the dropped header attribute \
-             once S01/T02 lands"
+            !emitted.contains("</title></title>"),
+            "{name}: no range may start at a closing </title> tag"
         );
+        assert_eq!(
+            independent_count(&emitted, "title"),
+            independent_count(&source, "title"),
+            "{name}: every source <title> must survive exactly once"
+        );
+        for (parent, excluded) in [
+            ("teiHeader", &["fileDesc", "titleStmt"][..]),
+            ("fileDesc", &["titleStmt"][..]),
+            ("titleStmt", &[] as &[&str]),
+        ] {
+            let emitted_children = independent_children(&emitted, parent);
+            let mut conserved = 0usize;
+            for (child_name, bytes) in independent_children(&source, parent) {
+                if excluded.contains(&child_name.as_str()) {
+                    continue;
+                }
+                assert!(
+                    emitted_children.contains(&(child_name.clone(), bytes.clone())),
+                    "{name}: {parent}/{child_name} was lost or rewritten by the splice"
+                );
+                conserved += 1;
+            }
+            assert!(
+                conserved > 0,
+                "{name}: {parent} exercised no preserved child, so the assertion proved nothing"
+            );
+        }
+    }
+}
+
+/// Structural requirements: repeated and nested same-name tags, an attribute
+/// whose value contains `>`, and a namespace declaration carried by the header
+/// itself.
+///
+/// The independent parser is also the namespace judge: it resolves prefixes, so a
+/// preserved `ext:` subtree whose declaration was dropped could not parse.
+#[test]
+fn nested_repeated_namespaced_and_unknown_header_subtrees_survive_structurally() {
+    let xml = "<TEI xmlns:ext=\"urn:example:ext\"><teiHeader xml:lang=\"en\" xmlns:ext=\"urn:example:ext\"><fileDesc><titleStmt><title type=\"main\" note=\"a>b\">First title</title><title type=\"sub\">Second title</title><custom><custom>inner</custom><custom>third</custom></custom></titleStmt><publicationStmt><publisher>Example</publisher></publicationStmt><sourceDesc><ext:blob><ext:inner/></ext:blob></sourceDesc></fileDesc><profileDesc><abstract><p>abstract</p></abstract></profileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>";
+    let outcome = compose_native_fulltext(input(
+        xml,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
+    ));
+    let NativeFulltextCompositionOutcome::Accepted(candidate) = outcome else {
+        panic!("header composition should be admitted, got {outcome:?}")
+    };
+    let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+    assert_eq!(independent_xml_verdict(&output), Ok(()), "{output}");
+    assert_eq!(
+        output
+            .matches("<teiHeader xml:lang=\"en\" xmlns:ext=\"urn:example:ext\">")
+            .count(),
+        1,
+        "the source header attributes must be reproduced verbatim: {output}"
+    );
+    for fragment in [
+        "<title type=\"main\" note=\"a>b\">First title</title>",
+        "<title type=\"sub\">Second title</title>",
+        "<custom><custom>inner</custom><custom>third</custom></custom>",
+        "<publicationStmt><publisher>Example</publisher></publicationStmt>",
+        "<ext:blob><ext:inner/></ext:blob>",
+        "<abstract><p>abstract</p></abstract>",
+    ] {
+        assert!(
+            output.contains(fragment),
+            "header lost {fragment}: {output}"
+        );
+    }
+    assert_eq!(independent_count(&output, "title"), 2);
+    assert_eq!(
+        independent_count(&output, "custom"),
+        3,
+        "one outer and two nested custom elements"
+    );
+    // Placement, not just survival: profileDesc belongs to teiHeader, not to the
+    // composed fileDesc.
+    let header_children = independent_children(&output, "teiHeader");
+    assert!(
+        header_children
+            .iter()
+            .any(|(name, bytes)| name == "profileDesc" && bytes.contains("<p>abstract</p>")),
+        "profileDesc must stay a child of teiHeader: {header_children:?}"
+    );
+}
+
+/// Markup declarations are not elements: a comment carrying `<title>` and a CDATA
+/// section carrying `<p>` must not be read as tags.
+#[test]
+fn commented_markup_and_cdata_are_not_read_as_elements() {
+    let xml = "<TEI><teiHeader><fileDesc><titleStmt><title>Java</title><!-- <title>comment, not a tag</title> --></titleStmt></fileDesc></teiHeader><text><body><p><![CDATA[ <p>not a tag</p> ]]></p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>";
+    let outcome = compose_native_fulltext(input(
+        xml,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
+    ));
+    let NativeFulltextCompositionOutcome::Accepted(candidate) = outcome else {
+        panic!("commented and CDATA markup must not break the splice, got {outcome:?}")
+    };
+    let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+    assert_eq!(independent_xml_verdict(&output), Ok(()), "{output}");
+    assert!(output.contains("<title>Java</title>"));
+    assert_eq!(
+        independent_count(&output, "title"),
+        1,
+        "the comment's <title> must not be counted as an element"
+    );
+    assert_eq!(
+        tei_element_bytes(xml.as_bytes(), "body").unwrap(),
+        tei_element_bytes(candidate.envelope.raw_tei(), "body").unwrap(),
+        "CDATA body bytes must stay Java's"
+    );
+}
+
+/// The emitter validates its own output before `Accepted`: a preserved source id
+/// that collides with a synthesized `author-N` is a typed rejection, not a
+/// published duplicate.
+#[test]
+fn emitted_duplicate_id_is_typed_and_falls_back_to_java() {
+    let xml = "<TEI><teiHeader><fileDesc><titleStmt><title>Java</title><note xml:id=\"author-0\">collides with the synthesized author id</note></titleStmt></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>";
+    match compose_native_fulltext(input(
+        xml,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
+    )) {
+        NativeFulltextCompositionOutcome::Rejected { fallback, error } => {
+            assert!(
+                matches!(
+                    error,
+                    NativeFulltextCompositionError::ComposedOutputNotWellFormed(_)
+                ),
+                "a duplicate xml:id in the emission must be typed, got {error:?}"
+            );
+            assert_eq!(fallback.raw_tei(), xml.as_bytes());
+        }
+        NativeFulltextCompositionOutcome::Accepted(_) => {
+            panic!("an emission with a duplicate xml:id must not be published")
+        }
+    }
+}
+
+/// A missing `fileDesc`/`titleStmt` is supplied by the synthesized skeleton, so it
+/// stays composable and lossless; a duplicated one cannot be placed without
+/// guessing and is a typed rejection.
+#[test]
+fn header_skeleton_absence_is_supplied_and_ambiguity_is_typed() {
+    for xml in [
+        // no titleStmt: the composed skeleton supplies it.
+        "<TEI><teiHeader xml:lang=\"en\"><fileDesc><publicationStmt><publisher>Example</publisher></publicationStmt><sourceDesc><p>source</p></sourceDesc></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>",
+        // no fileDesc: the composed skeleton supplies it, profileDesc stays a header child.
+        "<TEI><teiHeader xml:lang=\"en\"><titleStmt><title>Java title</title></titleStmt><profileDesc><abstract><p>abstract</p></abstract></profileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>",
+    ] {
+        let NativeFulltextCompositionOutcome::Accepted(candidate) = compose_native_fulltext(input(
+            xml,
+            AdmissionDisposition::Passed,
+            AdmissionDisposition::Unsupported,
+        )) else {
+            panic!("a missing skeleton wrapper must be supplied, not rejected: {xml}")
+        };
+        let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+        assert_eq!(independent_xml_verdict(&output), Ok(()), "{output}");
+        for fragment in ["<surname>Smith</surname>", "<teiHeader xml:lang=\"en\">"] {
+            assert!(output.contains(fragment), "{fragment} missing: {output}");
+        }
+        for fragment in [
+            "<publisher>Example</publisher>",
+            "<p>source</p>",
+            "<title>Java title</title>",
+            "<p>abstract</p>",
+        ] {
+            if xml.contains(fragment) {
+                assert!(output.contains(fragment), "{fragment} lost: {output}");
+            }
+        }
+    }
+
+    for xml in [
+        // two title statements: the composer cannot choose a parent for the source titles.
+        "<TEI><teiHeader><fileDesc><titleStmt><title>a</title></titleStmt><titleStmt><title>b</title></titleStmt></fileDesc></teiHeader><text><body><p>body</p></body><listBibl><biblStruct xml:id=\"b0\">r</biblStruct></listBibl></text></TEI>",
+        // two file descriptions, unique titleStmt: the fileDesc set is ambiguous.
+        "<TEI><teiHeader><fileDesc><titleStmt><title>a</title></titleStmt></fileDesc><fileDesc><publicationStmt/></fileDesc></teiHeader><text><body><p>body</p></body><listBibl><biblStruct xml:id=\"b0\">r</biblStruct></listBibl></text></TEI>",
+    ] {
+        match compose_native_fulltext(input(
+            xml,
+            AdmissionDisposition::Passed,
+            AdmissionDisposition::Unsupported,
+        )) {
+            NativeFulltextCompositionOutcome::Rejected { fallback, error } => {
+                assert!(
+                    matches!(error, NativeFulltextCompositionError::AmbiguousSplice(_)),
+                    "an ambiguous skeleton must be typed, got {error:?}"
+                );
+                assert_eq!(fallback.raw_tei(), xml.as_bytes());
+            }
+            NativeFulltextCompositionOutcome::Accepted(_) => {
+                panic!("an ambiguous header skeleton must not be spliced")
+            }
+        }
     }
 }

@@ -126,6 +126,10 @@ pub enum NativeFulltextCompositionError {
     DuplicateId,
     UnbalancedXml,
     AmbiguousSplice(String),
+    /// The splice produced a document the module's own structural parser
+    /// rejects.  Composed bytes are never accepted on trust: the emitter
+    /// re-reads its own output before `Accepted`.
+    ComposedOutputNotWellFormed(String),
     InvalidUtf8,
     ChangedReadingOrder,
     ArtifactDigestMismatch {
@@ -225,7 +229,7 @@ fn compose_inner(
             ));
         }
     }
-    if let Ok(body) = ranges.unique("body") {
+    if let Some(body) = ranges.optional_unique("body")? {
         for (range, _, _, _) in &replacements {
             if range.0 < body.1 && range.1 > body.0 {
                 return Err(NativeFulltextCompositionError::ChangedReadingOrder);
@@ -253,6 +257,7 @@ fn compose_inner(
         bytes.splice(range.0..range.1, fragment_bytes.iter().copied());
         components.push(manifest_entry(component, &receipt, fragment_bytes));
     }
+    validate_emitted(&bytes)?;
     for (component, receipt, outcome) in [
         (
             FulltextComponent::Header,
@@ -399,38 +404,25 @@ fn fallback_entry(
         fallback_target: r.fallback_target.clone(),
     }
 }
-fn preserve_header_children(existing: &str) -> String {
-    let Ok(document) = XmlDocument::parse(existing) else {
-        return String::new();
-    };
-    let structural = [
-        "teiHeader",
-        "fileDesc",
-        "titleStmt",
-        "date",
-        "author",
-        "forename",
-        "surname",
-    ];
-    let mut ranges = Vec::new();
-    for (name, start, end) in &document.tags {
-        if structural.iter().any(|item| item == name) || name.starts_with("#id:") {
-            continue;
-        }
-        let range = document.element_range((*start, *end), name);
-        if !ranges.contains(&range)
-            && !ranges
-                .iter()
-                .any(|known: &(usize, usize)| known.0 <= range.0 && range.1 <= known.1)
-        {
-            ranges.push(range);
-        }
-    }
-    ranges.sort_by_key(|range| range.0);
-    ranges
-        .into_iter()
-        .map(|(start, end)| existing[start..end].to_owned())
-        .collect()
+/// Re-read the emitted document before it may be accepted.
+///
+/// `Accepted` is a claim about the bytes the candidate carries, so the emitter
+/// runs the same structural validation over its own output that it ran over its
+/// input: tag shape, element balance, and `xml:id`/`id` uniqueness across the
+/// whole document — which is also what catches a preserved source id colliding
+/// with a synthesized `author-N`/`bibl-N`.  A failure is typed and falls back to
+/// the byte-identical Java envelope instead of publishing a damaged candidate.
+///
+/// Scope note: this is well-formedness and identity hygiene, not TEI schema
+/// validation.  The module imports typed leaves, hashing, serde and formatting
+/// only; a schema validator would be a runtime dependency, so the stronger
+/// schema claim belongs to the offline independent oracle instead.
+fn validate_emitted(bytes: &[u8]) -> Result<(), NativeFulltextCompositionError> {
+    let text =
+        std::str::from_utf8(bytes).map_err(|_| NativeFulltextCompositionError::InvalidUtf8)?;
+    XmlDocument::parse(text).map(|_| ()).map_err(|error| {
+        NativeFulltextCompositionError::ComposedOutputNotWellFormed(format!("{error:?}"))
+    })
 }
 
 fn component_name(component: FulltextComponent) -> &'static str {
@@ -463,8 +455,36 @@ fn header_xml(
 ) -> Result<String, NativeFulltextCompositionError> {
     let existing =
         std::str::from_utf8(existing).map_err(|_| NativeFulltextCompositionError::InvalidUtf8)?;
-    let preserved = preserve_header_children(existing);
-    let mut out = String::from("<teiHeader><fileDesc><titleStmt>");
+    let document = XmlDocument::parse(existing)?;
+    // The source header open tag carries declarations that the preserved
+    // subtrees depend on (`xmlns:*`), plus `xml:lang` and any other attribute
+    // the Java envelope was produced with.  Dropping them left preserved
+    // subtrees holding unbound prefixes, so the declaration is reproduced
+    // verbatim.
+    let attributes = document.open_tag_attributes(existing, "teiHeader")?;
+    // Placement is structural, never name-guessed.  The synthesized skeleton is
+    // `teiHeader > fileDesc > titleStmt`, so a source subtree is re-inserted
+    // under the wrapper it actually came from:
+    //
+    //   A = children of the source `titleStmt`   -> inside the composed titleStmt
+    //   B = children of the source `fileDesc`    -> siblings of the composed
+    //       minus `titleStmt`                       titleStmt, inside the composed
+    //                                               fileDesc
+    //   C = children of the source `teiHeader`   -> siblings of the composed
+    //       minus `fileDesc` and `titleStmt`        fileDesc
+    //
+    // A, B and C are pairwise disjoint (each element has exactly one parent) and
+    // together they cover every descendant of the source `teiHeader` except the
+    // two wrappers the composer synthesizes, so no element subtree is duplicated
+    // and none is dropped.  A missing `fileDesc`/`titleStmt` just leaves its set
+    // empty; an *ambiguous* wrapper cannot be placed without guessing, so it is a
+    // typed rejection rather than a silent re-parenting.
+    let title_stmt = document.child_spans("titleStmt")?;
+    let file_desc = document.child_spans_excluding("fileDesc", &["titleStmt"])?;
+    let header = document.child_spans_excluding("teiHeader", &["fileDesc", "titleStmt"])?;
+    let mut out = String::from("<teiHeader");
+    out.push_str(attributes);
+    out.push_str("><fileDesc><titleStmt>");
     for a in &c.candidate.authors {
         out.push_str("<author xml:id=\"author-");
         out.push_str(&a.ordinal.to_string());
@@ -478,7 +498,9 @@ fn header_xml(
         out.push_str(&esc(&a.name.surname));
         out.push_str("</surname></author>");
     }
-    out.push_str(&preserved);
+    for (start, end) in title_stmt {
+        out.push_str(&existing[start..end]);
+    }
     out.push_str("</titleStmt><date when=\"");
     out.push_str(&c.candidate.date.year.to_string());
     if let Some(month) = c.candidate.date.month {
@@ -487,7 +509,15 @@ fn header_xml(
     if let Some(day) = c.candidate.date.day {
         out.push_str(&format!("-{day:02}"));
     }
-    out.push_str("\"/></fileDesc></teiHeader>");
+    out.push_str("\"/>");
+    for (start, end) in file_desc {
+        out.push_str(&existing[start..end]);
+    }
+    out.push_str("</fileDesc>");
+    for (start, end) in header {
+        out.push_str(&existing[start..end]);
+    }
+    out.push_str("</teiHeader>");
     Ok(out)
 }
 fn references_xml(
@@ -520,102 +550,292 @@ fn references_xml(
     Ok(out)
 }
 
+/// Index of the `>` that closes the tag whose body starts at `from`.
+///
+/// A `>` inside a quoted attribute value is legal XML and must not end the tag:
+/// a naive `find('>')` would move every following offset into the middle of an
+/// attribute, which is exactly the class of mistake that corrupts a splice.
+fn tag_end(s: &str, from: usize) -> Option<usize> {
+    let mut quote: Option<char> = None;
+    for (offset, c) in s[from..].char_indices() {
+        match quote {
+            Some(open) => {
+                if c == open {
+                    quote = None;
+                }
+            }
+            None => match c {
+                '"' | '\'' => quote = Some(c),
+                '>' => return Some(from + offset),
+                _ => {}
+            },
+        }
+    }
+    None
+}
+
+/// Whether a tag body closes itself, ignoring a `/` inside a quoted value.
+fn is_self_closing(body: &str) -> bool {
+    let mut quote: Option<char> = None;
+    let mut last = None;
+    for c in body.chars() {
+        match quote {
+            Some(open) => {
+                if c == open {
+                    quote = None;
+                }
+            }
+            None => match c {
+                '"' | '\'' => quote = Some(c),
+                c if c.is_whitespace() => {}
+                c => last = Some(c),
+            },
+        }
+    }
+    last == Some('/')
+}
+
+/// Structural view of a TEI document, used for splice ranges and for the
+/// pre-acceptance validation of composed bytes.
+///
+/// The composer cannot work from a lexical tag list: a range that starts at a
+/// closing tag silently truncates the source.  Elements are therefore paired by
+/// the same open/close stack that validates balance, so every span is
+/// `(start of the open tag, end of the close tag)` and can never begin with
+/// `</`.  Namespace prefixes are not interpreted here — the composer preserves
+/// declarations together with the subtrees they cover, and a splice only needs
+/// byte-exact spans.
 #[derive(Debug)]
 struct XmlDocument {
-    tags: Vec<(String, usize, usize)>,
+    elements: Vec<XmlElement>,
 }
+
+#[derive(Debug)]
+struct XmlElement {
+    name: String,
+    /// Index of the `<` that opens the element.
+    start: usize,
+    /// Exclusive index just past the element's closing `>`.
+    end: usize,
+    /// Exclusive index just past the element's open tag.
+    open_end: usize,
+    /// Index of the enclosing element, `None` at the document root.
+    parent: Option<usize>,
+}
+
 impl XmlDocument {
     fn parse(s: &str) -> Result<Self, NativeFulltextCompositionError> {
         if s.contains("<!DOCTYPE") || s.contains("<!ENTITY") {
             return Err(NativeFulltextCompositionError::ForbiddenExternalEntity);
         }
-        let mut stack: Vec<String> = Vec::new();
-        let mut tags = Vec::new();
+        let mut elements: Vec<XmlElement> = Vec::new();
+        let mut stack: Vec<usize> = Vec::new();
+        let mut seen_ids: Vec<String> = Vec::new();
         let mut pos = 0;
-        while let Some(start) = s[pos..].find('<') {
-            let start = pos + start;
-            let end = s[start..]
-                .find('>')
-                .ok_or(NativeFulltextCompositionError::MalformedXml)?
-                + start;
-            let raw = &s[start + 1..end];
-            if raw.starts_with('!') || raw.starts_with('?') {
-                pos = end + 1;
-                continue;
+        while let Some(offset) = s[pos..].find('<') {
+            let start = pos + offset;
+            match s[start + 1..].chars().next() {
+                // Markup declaration: a comment or a CDATA section.  Both may
+                // legally contain `<` and `>`, so the terminator is searched
+                // for instead of stopping at the first `>`.
+                Some('!') => {
+                    let rest = &s[start + 1..];
+                    let terminator = if rest.starts_with("!--") {
+                        "-->"
+                    } else if rest.starts_with("![CDATA[") {
+                        "]]>"
+                    } else {
+                        ">"
+                    };
+                    // `find` is relative to `start`, so the offset must be
+                    // rebased before it becomes the next scan position.
+                    let close = start
+                        + s[start..]
+                            .find(terminator)
+                            .ok_or(NativeFulltextCompositionError::MalformedXml)?;
+                    pos = close + terminator.len();
+                    continue;
+                }
+                // Processing instruction, including the XML declaration.
+                Some('?') => {
+                    let close = start
+                        + s[start..]
+                            .find("?>")
+                            .ok_or(NativeFulltextCompositionError::MalformedXml)?;
+                    pos = close + 2;
+                    continue;
+                }
+                _ => {}
             }
+            let end = tag_end(s, start + 1).ok_or(NativeFulltextCompositionError::MalformedXml)?;
+            let raw = &s[start + 1..end];
             let closing = raw.starts_with('/');
-            let body = raw.trim_start_matches('/').trim();
-            let self_close = body.ends_with('/');
+            let body = raw.trim_start_matches('/');
             let name = body
-                .trim_end_matches('/')
-                .split_whitespace()
+                .split(|c: char| c.is_whitespace() || c == '/')
                 .next()
                 .unwrap_or("");
             if name.is_empty() || !name.bytes().next().is_some_and(|b| b.is_ascii_alphabetic()) {
                 return Err(NativeFulltextCompositionError::MalformedXml);
             }
-            if let Some(attribute) = raw.split_whitespace().find(|attribute| {
-                attribute.starts_with("id=\"") || attribute.starts_with("xml:id=\"")
-            }) {
-                let id = attribute
-                    .split("=\"")
-                    .nth(1)
-                    .and_then(|x| x.split('"').next())
-                    .ok_or(NativeFulltextCompositionError::MalformedXml)?;
-                let id_key = format!("#id:{id}");
-                if tags.iter().any(|(n, _, _)| n == &id_key) {
-                    return Err(NativeFulltextCompositionError::DuplicateId);
-                }
-                tags.push((id_key, start, end + 1));
-            }
+            let open_end = end + 1;
             if closing {
-                if stack.pop().as_deref() != Some(name) {
+                let Some(index) = stack.pop() else {
+                    return Err(NativeFulltextCompositionError::UnbalancedXml);
+                };
+                if elements[index].name != name {
                     return Err(NativeFulltextCompositionError::UnbalancedXml);
                 }
-            } else if !self_close {
-                if stack.len() >= NATIVE_FULLTEXT_MAX_XML_DEPTH {
+                elements[index].end = open_end;
+            } else {
+                if let Some(attribute) = body.split_whitespace().find(|attribute| {
+                    attribute.starts_with("id=\"") || attribute.starts_with("xml:id=\"")
+                }) {
+                    let id = attribute
+                        .split("=\"")
+                        .nth(1)
+                        .and_then(|x| x.split('"').next())
+                        .ok_or(NativeFulltextCompositionError::MalformedXml)?;
+                    if seen_ids.iter().any(|seen| seen == id) {
+                        return Err(NativeFulltextCompositionError::DuplicateId);
+                    }
+                    seen_ids.push(id.to_owned());
+                }
+                let empty = is_self_closing(body);
+                if !empty && stack.len() >= NATIVE_FULLTEXT_MAX_XML_DEPTH {
                     return Err(NativeFulltextCompositionError::MalformedXml);
                 }
-                stack.push(name.to_owned());
+                elements.push(XmlElement {
+                    name: name.to_owned(),
+                    start,
+                    end: open_end,
+                    open_end,
+                    parent: stack.last().copied(),
+                });
+                if !empty {
+                    stack.push(elements.len() - 1);
+                }
             }
-            tags.push((name.to_owned(), start, end + 1));
-            pos = end + 1;
+            pos = open_end;
         }
         if !stack.is_empty() {
             return Err(NativeFulltextCompositionError::UnbalancedXml);
         }
-        Ok(Self { tags })
+        Ok(Self { elements })
     }
+
+    /// Exactly one element with this name anywhere in the document.
     fn unique(&self, name: &str) -> Result<(usize, usize), NativeFulltextCompositionError> {
-        let matches: Vec<(usize, usize)> = self
-            .tags
-            .iter()
-            .filter(|tag| tag.0 == name)
-            .map(|tag| (tag.1, tag.2))
-            .collect();
-        if matches.is_empty() || matches.len() > 2 {
-            return Err(NativeFulltextCompositionError::AmbiguousSplice(name.into()));
-        }
-        let opening = matches[0];
-        Ok(self.element_range(opening, name))
+        self.element_index(name).map(|index| {
+            let element = &self.elements[index];
+            (element.start, element.end)
+        })
     }
-    fn element_range(&self, opening: (usize, usize), name: &str) -> (usize, usize) {
-        let mut depth = 0;
-        let mut end = opening.1;
-        for (n, a, b) in &self.tags {
-            if *a < opening.0 {
-                continue;
+
+    /// The single element with this name, or `None` when the document has no
+    /// such element.  An ambiguous name is still a typed failure: silently
+    /// skipping a guard would be worse than falling back to Java.
+    fn optional_unique(
+        &self,
+        name: &str,
+    ) -> Result<Option<(usize, usize)>, NativeFulltextCompositionError> {
+        match self.element_index_opt(name)? {
+            Some(index) => {
+                let element = &self.elements[index];
+                Ok(Some((element.start, element.end)))
             }
-            if n == name {
-                depth += 1;
-                if depth == 2 {
-                    end = *b;
-                    break;
+            None => Ok(None),
+        }
+    }
+
+    fn element_index(&self, name: &str) -> Result<usize, NativeFulltextCompositionError> {
+        self.element_index_opt(name)?
+            .ok_or_else(|| NativeFulltextCompositionError::AmbiguousSplice(name.into()))
+    }
+
+    fn element_index_opt(
+        &self,
+        name: &str,
+    ) -> Result<Option<usize>, NativeFulltextCompositionError> {
+        let mut found = None;
+        for (index, element) in self.elements.iter().enumerate() {
+            if element.name == name {
+                if found.is_some() {
+                    return Err(NativeFulltextCompositionError::AmbiguousSplice(name.into()));
                 }
+                found = Some(index);
             }
         }
-        (opening.0, end)
+        Ok(found)
     }
+
+    /// Whole-subtree spans of the direct children of the single element named
+    /// `parent`, in source order.
+    ///
+    /// A missing `parent` yields no children instead of an error: the composer
+    /// synthesizes `fileDesc` and `titleStmt` itself, so their absence removes no
+    /// source subtree.  An *ambiguous* `parent` is a typed failure, because the
+    /// composer cannot place the source content without guessing.
+    fn child_spans(
+        &self,
+        parent: &str,
+    ) -> Result<Vec<(usize, usize)>, NativeFulltextCompositionError> {
+        let Some(index) = self.element_index_opt(parent)? else {
+            return Ok(Vec::new());
+        };
+        Ok(self
+            .children_of(index)
+            .map(|element| (element.start, element.end))
+            .collect())
+    }
+
+    /// Direct child spans of `parent` minus children whose name is excluded.
+    /// Every span is a whole subtree, so preserved children can never overlap.
+    fn child_spans_excluding(
+        &self,
+        parent: &str,
+        excluded: &[&str],
+    ) -> Result<Vec<(usize, usize)>, NativeFulltextCompositionError> {
+        let Some(index) = self.element_index_opt(parent)? else {
+            return Ok(Vec::new());
+        };
+        Ok(self
+            .children_of(index)
+            .filter(|element| !excluded.contains(&element.name.as_str()))
+            .map(|element| (element.start, element.end))
+            .collect())
+    }
+
+    fn children_of(&self, index: usize) -> impl Iterator<Item = &XmlElement> {
+        self.elements
+            .iter()
+            .filter(move |element| element.parent == Some(index))
+    }
+
+    /// Verbatim attribute text of `name`'s open tag (`""` when it has none,
+    /// no trailing `/`).
+    ///
+    /// Namespace declarations and `xml:lang` live here: dropping them leaves
+    /// preserved subtrees with unbound prefixes or a lost language tag, so the
+    /// source declaration is reproduced byte-for-byte around the synthesized
+    /// element.
+    fn open_tag_attributes<'a>(
+        &self,
+        source: &'a str,
+        name: &str,
+    ) -> Result<&'a str, NativeFulltextCompositionError> {
+        let index = self.element_index(name)?;
+        let element = &self.elements[index];
+        // The parser requires the open tag to start with the element name, so
+        // the name length is an exact char boundary after `<`.
+        let tag = &source[element.start + 1..element.open_end - 1];
+        let attributes = tag[name.len()..].trim_end();
+        Ok(attributes
+            .strip_suffix('/')
+            .unwrap_or(attributes)
+            .trim_end())
+    }
+
     fn reference_range(&self) -> Result<(usize, usize), NativeFulltextCompositionError> {
         self.unique("listBibl")
     }

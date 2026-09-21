@@ -277,6 +277,17 @@ fn independent_oracle_matches_hybrid_candidate_and_all_fallback_families() {
     };
     let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
     assert!(output.contains("<surname>Smith</surname>"));
+    // M511-j7wz2f/S01/T02: the composed header skeleton is pinned here by hand,
+    // not derived from the composer, so a placement regression fails this oracle.
+    // T01 emitted the source `</title>` as the first byte of the preserved range
+    // (losing the title and the header attributes); the reproduced skeleton must
+    // keep `title` inside the composed `titleStmt`.
+    assert!(
+        output.contains(
+            "<teiHeader><fileDesc><titleStmt><author xml:id=\"author-0\"><forename>J</forename><surname>Smith</surname></author><title>Java title</title></titleStmt><date when=\"2024-02-29\"/></fileDesc></teiHeader>"
+        ),
+        "composed header skeleton drifted: {output}"
+    );
     assert!(output.contains("<biblStruct xml:id=\"bibl-0\">Reference one</biblStruct>"));
     assert!(output.contains(
         "<figure xml:id=\"fig-1\"><figDesc>Caption</figDesc><graphic coords=\"1,2,3,4\"/>"

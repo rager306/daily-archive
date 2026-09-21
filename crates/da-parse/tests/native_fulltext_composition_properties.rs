@@ -4,6 +4,8 @@ use proptest::prelude::*;
 const SOURCE: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const XML_PREFIX: &str = "<TEI><teiHeader><fileDesc><titleStmt><title>";
 const XML_SUFFIX: &str = "</title></titleStmt></fileDesc></teiHeader><text><body><p>fallback</p></body><listBibl><biblStruct>ref</biblStruct></listBibl></text></TEI>";
+/// Body and bibliography only: lets a property build its own header statement.
+const XML_BODY: &str = "<text><body><p>fallback</p></body><listBibl><biblStruct>ref</biblStruct></listBibl></text></TEI>";
 
 fn receipt(
     component: FulltextComponent,
@@ -120,6 +122,50 @@ proptest! {
         let NativeFulltextCompositionOutcome::Accepted(b) = b else { panic!() };
         prop_assert_eq!(a.envelope.raw_tei(), b.envelope.raw_tei());
         prop_assert_eq!(a.manifest, b.manifest);
+    }
+
+    /// M511-j7wz2f/S01/T02: an accepted header splice stays well-formed and loses
+    /// no source title, whatever the repetition and nesting inside the source
+    /// title statement.  The T01 defect was a range that could start at a closing
+    /// `</title>` and swallow the elements up to the next `<title>`, so titles are
+    /// generated as repeats and the nested subtree is generated two levels deep.
+    #[test]
+    fn accepted_header_splice_stays_well_formed_and_loses_no_title(
+        titles in prop::collection::vec("[A-Za-z0-9][A-Za-z0-9 ]{0,30}", 1..4),
+        nested in "[A-Za-z0-9 ]{0,20}",
+    ) {
+        let mut statement = String::new();
+        for (index, title) in titles.iter().enumerate() {
+            statement.push_str(&format!("<title type=\"t{index}\">{title}</title>"));
+        }
+        statement.push_str(&format!("<custom><custom>{nested}</custom></custom>"));
+        let xml = format!(
+            "<TEI><teiHeader><fileDesc><titleStmt>{statement}</titleStmt></fileDesc></teiHeader>{XML_BODY}"
+        );
+        let outcome = compose_native_fulltext(input(xml.clone(), AdmissionDisposition::Passed));
+        let NativeFulltextCompositionOutcome::Accepted(candidate) = outcome else {
+            prop_assert!(false, "header splice rejected for {xml}: {outcome:?}");
+            unreachable!()
+        };
+        let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+        let parsed = roxmltree::Document::parse(&output);
+        prop_assert!(parsed.is_ok(), "emission is not well-formed: {output}");
+        prop_assert_eq!(
+            roxmltree::Document::parse(&output)
+                .unwrap()
+                .descendants()
+                .filter(|node| node.is_element() && node.tag_name().name() == "title")
+                .count(),
+            titles.len()
+        );
+        prop_assert!(
+            output.contains(&format!("<custom><custom>{nested}</custom></custom>")),
+            "nested subtree lost: {output}"
+        );
+        prop_assert_eq!(
+            tei_element_bytes(xml.as_bytes(), "body").unwrap(),
+            tei_element_bytes(candidate.envelope.raw_tei(), "body").unwrap()
+        );
     }
 }
 
