@@ -11,6 +11,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::collections::BTreeSet;
 use std::fmt;
 
 pub const NATIVE_FULLTEXT_COMPOSITION_SCHEMA_VERSION: &str =
@@ -83,11 +84,51 @@ pub struct FulltextComponentManifest {
     pub fallback_target: String,
 }
 
+/// What the composed document did to the source's citation links.
+///
+/// S02/T02: the composer used to rename every bibliography entry into a
+/// synthesized `bibl-{ordinal}` domain while copying the source body verbatim,
+/// so a kept `target="#b0"` was dangling in an emission still reported as
+/// `Accepted` (measured 217 occurrences / 120 unique dangling targets across the
+/// three sha256-pinned preserved TEI).  The ledger is the observable record of
+/// the repair: the source's own published keys are republished and every
+/// mandatory local target is resolved before acceptance.
+///
+/// All counts are computed from the source and emitted documents, never from the
+/// caller's `anchors`: with an empty supplied anchor stream the old pre-splice
+/// guard had nothing to check, which is exactly how the dangling links survived.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReferenceLinkLedger {
+    /// Direct `biblStruct` children of the source's unique `listBibl` whose keys
+    /// the admitted band republishes.  `0` when the band falls back to Java.
+    pub source_entries: usize,
+    /// Admitted native reference entries the band spliced in.
+    pub admitted_references: usize,
+    /// `ref type="bibr"` elements carrying a local `#`-fragment `target`, by the
+    /// XML attribute grammar (so `target = '#b0'` counts like the compact
+    /// spelling).  Repeats are occurrences, not identities.
+    pub target_occurrences: usize,
+    /// Distinct fragments those occurrences demand.
+    pub required_targets: usize,
+    /// Mandatory targets that resolve in the emitted document's id space.
+    pub resolved_targets: usize,
+    /// Distinct `xml:id` values in the emitted document — the address space a
+    /// `#fragment` target can resolve against.  `xml:id` is the only attribute
+    /// whose ID-ness is defined without a DTD or schema, which is why a plain
+    /// `id` is not part of this space.
+    pub id_space: usize,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NativeFulltextManifest {
     pub schema_version: String,
     pub identity: FulltextCompositionIdentity,
     pub components: Vec<FulltextComponentManifest>,
+    /// `#[serde(default)]`: manifests serialized before S02/T02 stay decodable
+    /// (R085-style backward compatibility), and an absent ledger degrades to the
+    /// all-zero record rather than an error.
+    #[serde(default)]
+    pub reference_links: ReferenceLinkLedger,
     pub native_components: usize,
     pub fallback_components: usize,
     pub java_fallback_bytes: usize,
@@ -126,6 +167,27 @@ pub enum NativeFulltextCompositionError {
     DuplicateId,
     UnbalancedXml,
     AmbiguousSplice(String),
+    /// The admitted reference band cannot be republished under the source's own
+    /// published citation keys: the number of admitted entries differs from the
+    /// number of direct `biblStruct` children of the source `listBibl`, or their
+    /// ordinals do not follow the source order.  The composer never renumbers a
+    /// bibliography into a different domain, because the kept document's own
+    /// `target="#b0"` links would then point at entries that no longer exist.
+    BibliographyDomainMismatch(String),
+    /// Two source bibliography children publish the same key.  One key is one
+    /// identity: publishing both would make a `#fragment` target ambiguous, so
+    /// this is a typed refusal rather than a silent first-wins choice.
+    BibliographyKeyCollision(String),
+    /// A mandatory local reference of the kept document does not resolve in the
+    /// id space of the emitted document.  `Accepted` is a claim about the bytes
+    /// returned, so a dangling `target="#b0"` may never be republished as
+    /// accepted; the typed refusal keeps the byte-identical Java envelope.
+    UnresolvedBibliographyTarget(String),
+    /// A direct `listBibl` child cannot be conserved under its own key: it is not
+    /// a `biblStruct`, or its declared `xml:id` is not a legal `NCName` and can
+    /// therefore not be re-emitted as an attribute value.  Dropping such a child
+    /// would silently lose a bibliography entry, so it is named here instead.
+    InconservableBibliographyChild(String),
     /// The splice produced a document the module's own structural parser or its
     /// well-formedness checker rejects.  Composed bytes are never accepted on
     /// trust: the emitter re-reads its own output before `Accepted`, and the
@@ -185,11 +247,16 @@ fn compose_inner(
     let text =
         std::str::from_utf8(java).map_err(|_| NativeFulltextCompositionError::InvalidUtf8)?;
     let ranges = XmlDocument::parse(text)?;
+    // The obligations the kept document carries are read from the kept document,
+    // not from the caller's anchor stream: with empty supplied anchors the old
+    // pre-splice guard was vacuous and a dangling `#b0` survived into `Accepted`.
+    let (target_occurrences, required_targets) = mandatory_targets(&ranges, text)?;
 
     let mut bytes = java.to_vec();
     let mut components = Vec::with_capacity(7);
     let header_receipt = admission(&input, FulltextComponent::Header)?;
     let refs_receipt = admission(&input, FulltextComponent::References)?;
+    let mut reference_links = ReferenceLinkLedger::default();
     let mut replacements = Vec::new();
     if is_admitted(&header_receipt, &input.identity) {
         let HeaderCompositionOutcome::Accepted { composition } = &input.header else {
@@ -213,7 +280,8 @@ fn compose_inner(
                 FulltextComponent::References,
             ));
         };
-        let fragment = references_xml(composition)?;
+        let (fragment, published) = references_xml(composition, &ranges, text)?;
+        reference_links = published;
         let range = ranges.reference_range()?;
         replacements.push((
             range,
@@ -258,7 +326,35 @@ fn compose_inner(
         bytes.splice(range.0..range.1, fragment_bytes.iter().copied());
         components.push(manifest_entry(component, &receipt, fragment_bytes));
     }
-    validate_emitted(&bytes)?;
+    // Post-splice resolve gate (S02/T02).  `Accepted` is a claim about the bytes
+    // returned, so before this module may publish them it asks the question the
+    // kept document actually poses: does every local `target="#fragment"` in the
+    // source resolve in the emitted document's own id space?  The composer used
+    // to rename the bibliography into `bibl-{ordinal}` and never ask, so all 120
+    // mandatory targets of the preserved fixtures resolved nowhere while the
+    // emission was reported as accepted.  A dangling link is now a typed refusal
+    // and the byte-identical Java envelope is returned instead.
+    let emitted = validate_emitted(&bytes)?;
+    let emitted_ids: BTreeSet<&str> = emitted.xml_ids.iter().map(String::as_str).collect();
+    let unresolved: Vec<&str> = required_targets
+        .iter()
+        .filter(|target| !emitted_ids.contains(target.as_str()))
+        .map(String::as_str)
+        .collect();
+    if !unresolved.is_empty() {
+        return Err(
+            NativeFulltextCompositionError::UnresolvedBibliographyTarget(format!(
+                "{} of {} mandatory source targets do not resolve in the emitted document (head {:?})",
+                unresolved.len(),
+                required_targets.len(),
+                &unresolved[..unresolved.len().min(8)]
+            )),
+        );
+    }
+    reference_links.target_occurrences = target_occurrences;
+    reference_links.required_targets = required_targets.len();
+    reference_links.resolved_targets = required_targets.len();
+    reference_links.id_space = emitted_ids.len();
     for (component, receipt, outcome) in [
         (
             FulltextComponent::Header,
@@ -314,6 +410,7 @@ fn compose_inner(
             schema_version: NATIVE_FULLTEXT_COMPOSITION_SCHEMA_VERSION.into(),
             identity,
             components,
+            reference_links,
             native_components,
             fallback_components,
             java_fallback_bytes: java.len(),
@@ -810,13 +907,18 @@ fn validate_well_formed(text: &str) -> Result<(), NativeFulltextCompositionError
 /// tests) remains the judge of the stronger claim.  A failure of either is typed
 /// and falls back to the byte-identical Java envelope instead of publishing a
 /// damaged candidate.
-fn validate_emitted(bytes: &[u8]) -> Result<(), NativeFulltextCompositionError> {
+///
+/// It returns the structural view it parsed, so the post-splice reference-resolve
+/// gate in `compose_inner` reads the emitted document exactly once instead of
+/// parsing it a second time to ask the same question.
+fn validate_emitted(bytes: &[u8]) -> Result<XmlDocument, NativeFulltextCompositionError> {
     let text =
         std::str::from_utf8(bytes).map_err(|_| NativeFulltextCompositionError::InvalidUtf8)?;
-    XmlDocument::parse(text).map(|_| ()).map_err(|error| {
+    let document = XmlDocument::parse(text).map_err(|error| {
         NativeFulltextCompositionError::ComposedOutputNotWellFormed(format!("{error:?}"))
     })?;
-    validate_well_formed(text)
+    validate_well_formed(text)?;
+    Ok(document)
 }
 
 fn component_name(component: FulltextComponent) -> &'static str {
@@ -972,34 +1074,180 @@ fn header_xml(
     out.push_str("</teiHeader>");
     Ok(out)
 }
+/// The source bibliography's own published keys, one per direct `listBibl`
+/// child, in document order.
+///
+/// S02/T02: the composer used to publish a synthesized `bibl-{ordinal}` domain
+/// while keeping the source body byte-for-byte, so every kept `target="#b0"`
+/// became dangling in an emission still reported as `Accepted` (measured on the
+/// three sha256-pinned preserved TEI: 217 occurrences, 120 unique mandatory
+/// targets, all dangling).  The keys are therefore read from the document the
+/// composer is keeping, never invented:
+///
+/// * a `biblStruct` that declares `xml:id` publishes that identifier;
+/// * otherwise it publishes GROBID's positional fallback `b{ordinal}`, the same
+///   text `da_ports::citation_link::positional_entry_key` publishes;
+/// * a direct child that is not a `biblStruct` cannot be carried under its own
+///   key, so it is a typed `InconservableBibliographyChild` instead of a silent
+///   drop;
+/// * a declared `xml:id` that is not a legal `NCName` cannot be re-emitted as an
+///   attribute value and is refused the same way;
+/// * two children publishing one key are a typed `BibliographyKeyCollision`: one
+///   key is one identity, and publishing both would make a `#fragment` target
+///   ambiguous.
+fn source_published_keys(
+    document: &XmlDocument,
+    source: &str,
+) -> Result<Vec<String>, NativeFulltextCompositionError> {
+    let list = document.element_index("listBibl")?;
+    let mut keys: Vec<String> = Vec::new();
+    let mut published: BTreeSet<String> = BTreeSet::new();
+    for (ordinal, child) in document.element_children_of(list).into_iter().enumerate() {
+        if document.elements[child].name != "biblStruct" {
+            return Err(
+                NativeFulltextCompositionError::InconservableBibliographyChild(format!(
+                    "listBibl/{}",
+                    document.elements[child].name
+                )),
+            );
+        }
+        let key = match document.xml_id_at(source, child)? {
+            Some(declared) => {
+                if !is_legal_name(declared) {
+                    return Err(
+                        NativeFulltextCompositionError::InconservableBibliographyChild(format!(
+                            "listBibl/biblStruct[{ordinal}] xml:id={declared:?} is not a legal NCName"
+                        )),
+                    );
+                }
+                declared.to_owned()
+            }
+            None => format!("b{ordinal}"),
+        };
+        if !published.insert(key.clone()) {
+            return Err(NativeFulltextCompositionError::BibliographyKeyCollision(
+                format!("listBibl/biblStruct[{ordinal}] republishes the key {key:?}"),
+            ));
+        }
+        keys.push(key);
+    }
+    Ok(keys)
+}
+
+/// The obligations the *source* document carries: every `ref` with
+/// `type="bibr"` whose `target` is a non-empty local `#fragment`, counted as
+/// occurrences plus the distinct fragments they demand.
+///
+/// This is deliberately independent of `candidate.anchors`.  The pre-splice
+/// guard only ever saw the *supplied* anchor stream, so the audit configuration
+/// (an empty stream beside a live body link) left it vacuous and a dangling
+/// `#b0` travelled into an accepted emission.  The document the composer keeps
+/// is the authority on what its own ids must satisfy.
+///
+/// Both attributes are read through the XML attribute grammar, so
+/// `type = 'bibr'` and `target = "#b0"` count exactly like the compact
+/// spellings; refs inside comments or CDATA sections are invisible here because
+/// the structural scanner never creates elements for them.
+fn mandatory_targets(
+    document: &XmlDocument,
+    source: &str,
+) -> Result<(usize, BTreeSet<String>), NativeFulltextCompositionError> {
+    let mut occurrences = 0usize;
+    let mut targets = BTreeSet::new();
+    for index in 0..document.elements.len() {
+        if document.elements[index].name != "ref" {
+            continue;
+        }
+        let attributes = document.attributes_at(source, index)?;
+        let value = |name: &str| {
+            attributes
+                .iter()
+                .find(|(attribute, _)| *attribute == name)
+                .map(|(_, value)| *value)
+        };
+        if value("type") != Some("bibr") {
+            continue;
+        }
+        let Some(target) = value("target") else {
+            continue;
+        };
+        let Some(fragment) = target.strip_prefix('#') else {
+            continue;
+        };
+        if fragment.is_empty() {
+            continue;
+        }
+        occurrences += 1;
+        targets.insert(fragment.to_owned());
+    }
+    Ok((occurrences, targets))
+}
+
+/// The `<listBibl>` fragment the reference band contributes, under the source's
+/// own published keys, plus the ledger of what it republished and demanded.
+///
+/// The domain is checked before anything is emitted: the admitted entries must
+/// be exactly the source's direct `biblStruct` children, in source order,
+/// because renumbering or reordering them is what makes the kept body's targets
+/// dangle.  Supplied anchors must resolve in that same published domain — a
+/// target that reaches into a different document is not a link this band can
+/// honour.
 fn references_xml(
     c: &crate::ReferenceCompositionCandidate,
-) -> Result<String, NativeFulltextCompositionError> {
+    document: &XmlDocument,
+    source: &str,
+) -> Result<(String, ReferenceLinkLedger), NativeFulltextCompositionError> {
+    let keys = source_published_keys(document, source)?;
+    let references = &c.candidate.references;
+    if references.len() != keys.len() {
+        return Err(NativeFulltextCompositionError::BibliographyDomainMismatch(
+            format!(
+                "admitted {} references, the source listBibl declares {} biblStruct children",
+                references.len(),
+                keys.len()
+            ),
+        ));
+    }
+    for (index, reference) in references.iter().enumerate() {
+        if reference.ordinal != index {
+            return Err(NativeFulltextCompositionError::BibliographyDomainMismatch(
+                format!(
+                    "admitted reference ordinal {} sits at position {index}; the source order is the key domain",
+                    reference.ordinal
+                ),
+            ));
+        }
+    }
+    let published: BTreeSet<&str> = keys.iter().map(String::as_str).collect();
     for anchor in &c.candidate.anchors {
         if let Some(target) = &anchor.target {
             let target = target.strip_prefix('#').unwrap_or(target);
-            let resolves = c
-                .candidate
-                .references
-                .iter()
-                .any(|reference| format!("bibl-{}", reference.ordinal) == target);
-            if !resolves {
-                return Err(NativeFulltextCompositionError::AmbiguousSplice(format!(
-                    "unresolved bibliography target: {target}"
-                )));
+            if !published.contains(target) {
+                return Err(
+                    NativeFulltextCompositionError::UnresolvedBibliographyTarget(format!(
+                        "supplied anchor target #{target} is not published by the source listBibl"
+                    )),
+                );
             }
         }
     }
     let mut out = String::from("<listBibl>");
-    for r in &c.candidate.references {
-        out.push_str("<biblStruct xml:id=\"bibl-");
-        out.push_str(&r.ordinal.to_string());
+    for (key, reference) in keys.iter().zip(references) {
+        out.push_str("<biblStruct xml:id=\"");
+        out.push_str(key);
         out.push_str("\">");
-        out.push_str(&esc(&r.source));
+        out.push_str(&esc(&reference.source));
         out.push_str("</biblStruct>");
     }
     out.push_str("</listBibl>");
-    Ok(out)
+    Ok((
+        out,
+        ReferenceLinkLedger {
+            source_entries: keys.len(),
+            admitted_references: references.len(),
+            ..ReferenceLinkLedger::default()
+        },
+    ))
 }
 
 /// Index of the `>` that closes the tag whose body starts at `from`.
@@ -1143,6 +1391,14 @@ fn parse_attributes(body: &str) -> Result<Vec<(&str, &str)>, NativeFulltextCompo
 #[derive(Debug)]
 struct XmlDocument {
     elements: Vec<XmlElement>,
+    /// Every `xml:id` value in document order — the document's link address
+    /// space.  `xml:id` alone, not `id`: without a DTD or schema only `xml:id` is
+    /// defined to be of type ID, so a plain `id="b0"` is not something a
+    /// `target="#b0"` can address through this module's contract (the same
+    /// declared-id form `da_ports::citation_link` publishes).  The uniqueness
+    /// gate keeps reading both spellings, because two elements sharing an
+    /// identifier is a well-formedness problem whatever the attribute is called.
+    xml_ids: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -1170,6 +1426,7 @@ impl XmlDocument {
         let mut elements: Vec<XmlElement> = Vec::new();
         let mut stack: Vec<usize> = Vec::new();
         let mut seen_ids: Vec<String> = Vec::new();
+        let mut xml_ids: Vec<String> = Vec::new();
         let mut pos = 0;
         while let Some(offset) = s[pos..].find('<') {
             let start = pos + offset;
@@ -1258,6 +1515,9 @@ impl XmlDocument {
                             return Err(NativeFulltextCompositionError::DuplicateId);
                         }
                         seen_ids.push(value.to_owned());
+                        if attribute == "xml:id" {
+                            xml_ids.push(value.to_owned());
+                        }
                     }
                 }
                 let empty = is_self_closing(body);
@@ -1281,7 +1541,7 @@ impl XmlDocument {
         if !stack.is_empty() {
             return Err(NativeFulltextCompositionError::UnbalancedXml);
         }
-        Ok(Self { elements })
+        Ok(Self { elements, xml_ids })
     }
 
     /// Exactly one element with this name anywhere in the document.
@@ -1327,6 +1587,57 @@ impl XmlDocument {
             }
         }
         Ok(found)
+    }
+
+    /// `(name, value)` pairs of the open tag of the element at `index`, read
+    /// through the XML attribute grammar (`Name S? Eq S? AttValue`).
+    ///
+    /// S02/T02 reads the *source document's own* reference obligations through
+    /// this accessor — declared `xml:id`, `type="bibr"`, `target="#b0"` — so a
+    /// legal spelling with whitespace around `=` or single quotes is the same
+    /// attribute as the compact double-quoted one.  The values are the raw
+    /// source bytes; a value that cannot be re-emitted verbatim (an escaped
+    /// entity, an illegal `NCName`) is refused by the caller rather than
+    /// guessed at.
+    ///
+    /// The parser requires the open tag to start with the element name, so
+    /// `element.name.len()` is an exact char boundary after `<`.
+    fn attributes_at<'a>(
+        &self,
+        source: &'a str,
+        index: usize,
+    ) -> Result<Vec<(&'a str, &'a str)>, NativeFulltextCompositionError> {
+        let element = &self.elements[index];
+        let tag = &source[element.start + 1..element.open_end - 1];
+        let body = tag_attributes(&tag[element.name.len()..]);
+        parse_attributes(body)
+    }
+
+    /// Declared `xml:id` of the element at `index`, raw as written, or `None`.
+    ///
+    /// Only the namespaced spelling counts: it is the declared-id form the
+    /// published link contract and the independent oracle both read, and the
+    /// only attribute whose ID-ness a DTD-less document defines.
+    fn xml_id_at<'a>(
+        &self,
+        source: &'a str,
+        index: usize,
+    ) -> Result<Option<&'a str>, NativeFulltextCompositionError> {
+        Ok(self
+            .attributes_at(source, index)?
+            .into_iter()
+            .find(|(name, _)| *name == "xml:id")
+            .map(|(_, value)| value))
+    }
+
+    /// Indexes of the direct element children of the element at `index` in
+    /// document order.  Interval children (text, comments, processing
+    /// instructions) have no index and are therefore not "children" here, which
+    /// is what the bibliography-key domain means by a direct child.
+    fn element_children_of(&self, index: usize) -> Vec<usize> {
+        (0..self.elements.len())
+            .filter(|candidate| self.elements[*candidate].parent == Some(index))
+            .collect()
     }
 
     /// The single *direct* child of `parent` named `name`, or `None` when that

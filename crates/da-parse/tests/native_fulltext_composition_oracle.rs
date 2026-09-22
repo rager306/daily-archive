@@ -288,7 +288,10 @@ fn independent_oracle_matches_hybrid_candidate_and_all_fallback_families() {
         ),
         "composed header skeleton drifted: {output}"
     );
-    assert!(output.contains("<biblStruct xml:id=\"bibl-0\">Reference one</biblStruct>"));
+    // S02/T02: the composed band republishes the source key (`ref-1`), not a
+    // synthesized `bibl-{ordinal}`; the independent inventory above reads the same
+    // key straight from the frozen fixture.
+    assert!(output.contains("<biblStruct xml:id=\"ref-1\">Reference one</biblStruct>"));
     assert!(output.contains(
         "<figure xml:id=\"fig-1\"><figDesc>Caption</figDesc><graphic coords=\"1,2,3,4\"/>"
     ));

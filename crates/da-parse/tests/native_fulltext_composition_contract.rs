@@ -162,9 +162,12 @@ fn bibliography_anchor_must_resolve_to_composed_reference() {
         panic!("foreign bibliography target must reject composition")
     };
     assert_eq!(fallback.raw_tei(), xml.as_bytes());
+    // S02/T02: the class is now precise — a target the source `listBibl` does not
+    // publish is an unresolved bibliography target, not a generic splice
+    // ambiguity.  Either way the fallback is the byte-identical Java envelope.
     assert!(matches!(
         error,
-        NativeFulltextCompositionError::AmbiguousSplice(_)
+        NativeFulltextCompositionError::UnresolvedBibliographyTarget(_)
     ));
 }
 
@@ -179,7 +182,7 @@ fn accepted_header_and_references_are_independent_and_other_families_fallback() 
     };
     let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
     assert!(output.contains("<surname>Smith</surname>"));
-    assert!(output.contains("<biblStruct xml:id=\"bibl-0\">Smith 2024</biblStruct>"));
+    assert!(output.contains("<biblStruct xml:id=\"java-ref\">Smith 2024</biblStruct>"));
     assert!(output.contains("<body><p>body bytes</p></body>"));
     assert_eq!(candidate.manifest.native_components, 2);
     assert_eq!(candidate.manifest.fallback_components, 5);
@@ -275,7 +278,7 @@ fn each_lane_can_fallback_without_pooling_or_changing_other_lane() {
     assert!(h.contains("<surname>Smith</surname>"));
     assert!(h.contains("<biblStruct xml:id=\"java-ref\">Java ref</biblStruct>"));
     assert!(r.contains("<title>Java</title>"));
-    assert!(r.contains("<biblStruct xml:id=\"bibl-0\">Smith 2024</biblStruct>"));
+    assert!(r.contains("<biblStruct xml:id=\"java-ref\">Smith 2024</biblStruct>"));
 }
 
 #[test]
@@ -309,7 +312,7 @@ fn forged_pass_and_stale_identity_fail_closed_to_unchanged_java() {
     let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
     assert!(output.contains("<title>Java</title>"));
     assert!(!output.contains("<surname>Smith</surname>"));
-    assert!(output.contains("<biblStruct xml:id=\"bibl-0\">Smith 2024</biblStruct>"));
+    assert!(output.contains("<biblStruct xml:id=\"java-ref\">Smith 2024</biblStruct>"));
 }
 
 #[test]
