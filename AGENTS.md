@@ -1,7 +1,7 @@
 <!-- project-current:start -->
 # daily-archive — agent map (what / where)
 
-Runtime: **Rust workspace** `crates/da-{domain,ports,application,parse,adapters,cli}` (hexagonal / onion).  
+Runtime: **Rust workspace** `crates/da-{domain,ports,application,parse,adapters,cli,mcp}` (hexagonal / onion).  
 Frozen evidence: Python stack cold-archived under `archive/python-era-cold-*/` (see `archive/PYTHON-ERA-COLD.md`); `legacy/` is a restore stub — not on the runtime path.
 
 ## Hard locks (do not violate)
@@ -39,8 +39,7 @@ Use the engine tools. `.gsd/continue.md` and `CHANGELOG.md` are hand-writable.
 **One-time setup (do this first):** install system RocksDB 8.10.0 and create
 `.cargo/config.toml` from `.cargo/config.example.toml`. This eliminates
 `cc1plus` (C++ RocksDB recompilation, 5–10 min) on every `cargo` invocation.
-See `.cargo/config.example.toml` for full instructions. After setup,
-`cargo check -p da-cli` drops from ~5-10 min to **~6s**.
+See `.cargo/config.example.toml` for full instructions.
 
 **sccache (cross-workspace cache):** `~/.cargo/config.toml` sets
 `build.rustc-wrapper = "sccache"` globally. Combined with
@@ -50,9 +49,6 @@ this caches samyama/ruvector compilation across workspaces and `cargo clean`.
 `/root/daily-archive`). Workspace members (da-*, kg-*) keep `incremental=true`
 for fast iteration. Vendor workspaces (`samyama-graph`, `ruvector`) have their
 own `.cargo/config.toml` with `ROCKSDB_LIB_DIR`.
-
-Results: `cargo check -p da-cli` after `cargo clean -p samyama*` → **2.9s**
-(was ~15s). samyama-graph cold build: **23s** (was 2m38s, 99.7% cache hits).
 
 `cargo test --workspace` / `cargo check --workspace` triggers
 `librocksdb-sys` (Samyama RocksDB FFI) rebuild for the test profile —
@@ -108,124 +104,9 @@ Get real evidence IDs via `gsd_uat_exec` with `intent: "uat-runtime-check"`
 or `intent: "uat-artifact-check"`. The `hasRuntimeExecutableUatEvidenceText`
 bypass then activates and `verdict: pass` is preserved.
 
-### Manual closeout when Attempt is unavailable (canonical, M306-proven)
+### Manual closeout when Attempt is unavailable
 
-**Prefer this path in free-form sessions.** Do **not** treat `/gsd auto` as
-the only seal path when code is already green.
-
-#### When you hit this
-
-| Symptom | Meaning |
-|---------|---------|
-| `gsd_task_complete` → **Canonical Task completion requires a running or replay-matched Attempt** | Lifecycle exists; only auto `attempt.claim` mints a running Attempt. Manual session cannot complete the task row. |
-| Closeout → **canonical milestone validation authorization is not current** | Need fresh `gsd_validate_milestone` with engine `testedSourceRevision` (`sha256:…`), not git SHA. |
-| Closeout → **quality gate Q5/Q6/Q7/Q8 is still pending** | Waiver-skip / free-form delivery left task-scoped gates pending. |
-| Agent `gsd_save_gate_result` after skip → **no tasks found for MID/SID** | Agent tool re-renders PLAN from DB; skipped tasks break render. Use **engine** `saveGateResult` via `gsd_exec` node. |
-
-**Forbidden:** hand-edit `gsd.db` with `sqlite3` / python / better-sqlite3.
-Engine owns WAL (single writer). Never invent Attempt rows.
-
-#### Canonical unblock order (delivered code already committed)
-
-1. **`gsd_skip_slice`** — reason: work delivered + commit SHA + what shipped.
-   Cascades pending tasks → skipped (authorized waiver for deps).
-2. **Runtime UAT** — `gsd_uat_exec` per check, then `gsd_uat_result_save`:
-   - `checks[].evidence` = **array** of `{kind:"gsd_uat_exec", ref:"<UUID>"}`
-   - `presentation.presentedTools` **must** include:
-     `gsd_uat_exec`, `gsd_uat_result_save`, `gsd_resume`,
-     `gsd_milestone_status`, `gsd_journal_query`
-   - `presentation.blockedTools` **must** list (with reason):
-     `gsd_exec`, `gsd_summary_save`, `gsd_save_gate_result`
-   - Prefer `uatType: runtime-executable` (also bypasses browser-evidence trap).
-3. **Capture source revision** (engine aggregate hash, **not** `git rev-parse`):
-   ```js
-   // gsd_exec runtime=node
-   const path = await import('path');
-   const gsd = '/usr/lib/node_modules/@opengsd/gsd-pi/dist/resources/extensions/gsd';
-   const { openWorkflowDatabase } = await import(path.join(gsd, 'db-workspace.js'));
-   const { captureMilestoneVerificationSourceRevision } =
-     await import(path.join(gsd, 'verification-source-integrity.js'));
-   const { loadEffectiveGSDPreferences } = await import(path.join(gsd, 'preferences.js'));
-   const base = '/root/daily-archive/.gsd';
-   openWorkflowDatabase(base);
-   const prefs = loadEffectiveGSDPreferences(base)?.preferences;
-   console.log(JSON.stringify(captureMilestoneVerificationSourceRevision(base, prefs)));
-   // → { ok: true, sourceRevision: "sha256:…" }
-   ```
-4. **`gsd_validate_milestone`** with that exact `testedSourceRevision` on every
-   `verificationEvidence[]` row. Include Contract / Integration / Operational / UAT
-   classes as applicable (Operational often N/A for library-only).
-5. **Close pending quality gates** via **engine** API (not agent tool after skip):
-   ```js
-   // gsd_exec runtime=node — openWorkflowDatabase first
-   const { getPendingGates, saveGateResult } = await import(path.join(gsd, 'gsd-db.js'));
-   // getPendingGates(milestoneId, sliceId)  — BOTH args required
-   // task-scope Q5/Q6/Q7: taskId MUST be "T01" (etc.)
-   // slice-scope Q3/Q4/Q8/UAT: taskId ""
-   saveGateResult({ milestoneId, sliceId, gateId, taskId, verdict, rationale, findings });
-   ```
-   Gates already complete from earlier `gsd_save_gate_result` can be left alone;
-   re-check `getPendingGates(mid, sid)` → `[]`.
-6. **`checkCloseoutConsistencyGate`** must return `{ ok: true }`:
-   ```js
-   const { checkCloseoutConsistencyGate } =
-     await import(path.join(gsd, 'closeout-consistency-gate.js'));
-   openWorkflowDatabase(base);
-   console.log(JSON.stringify(checkCloseoutConsistencyGate(mid, {
-     allowOpenMilestone: true,
-     artifactBasePath: base,
-   })));
-   ```
-7. **`gsd_complete_milestone`** → **`gsd_checkpoint_db`** (WAL flush before any
-   commit that stages `.gsd/gsd.db`).
-
-#### Subjective UAT (only when human judgment is required)
-
-Most backend contract milestones can use **runtime-executable UAT only**.
-If subjective criteria exist:
-
-1. `gsd_prepare_milestone_subjective_uat` with **one stable** `criterionKey`
-   and the **same** `testedSourceRevision` (`sha256:…` from step 3).
-2. Answer with `gsd_answer_milestone_subjective_uat` using the exact IDs from
-   the prepare result / engine events.
-3. **Batch rule:** prepare ALL criteria first, then answer ALL, then validate.
-   Any prepare **after** an answer invalidates prior acceptances.
-
-#### What does **not** work
-
-| Approach | Why it fails |
-|----------|--------------|
-| `/gsd auto` as only advice after free-form green code | Auto may not be available; Attempt claim is auto-internal |
-| Agent `gsd_save_gate_result` after skip | `renderPlanFromDb` → no tasks found for skipped slice |
-| `gsd_save_gate_result` without `taskId` for Q5/Q6/Q7 | Misses task-scoped rows |
-| `testedSourceRevision = git SHA` | Engine wants aggregate `sha256:…` |
-| Direct `sqlite3` / python write to `.gsd/gsd.db` | Blocked; corrupts WAL / races engine |
-| Standalone node without `openWorkflowDatabase("<repo>/.gsd")` | `gsd-db: No database open` |
-| `gsd_complete_milestone` without current validate | closeout: validation authorization not current |
-| Pending gates = 0 without re-validate after new commits | Authorization still stale vs new sourceRevision |
-
-#### Package closeout for a debt wave
-
-If several delivered milestones are still `active` with terminal/skipped slices:
-re-validate + close pending gates + complete **each** with a **fresh**
-`captureMilestoneVerificationSourceRevision` after the last commit that
-touches that milestone's tree. Pending gates = 0 does **not** skip re-validate.
-
-#### Related GSD gotchas (keep in mind)
-
-- **Duplicate milestone IDs** (bare `M###` + suffixed `M###-xxxxxx`): auto stuck
-  on plan-slice. Prefer `unique_milestone_ids: true`; restart auto with
-  **suffixed** id (`/gsd auto M###-xxxxxx`).
-- **Browser-evidence gate:** word `snapshot` in slice goal/successCriteria
-  downgrades validate to needs-attention. Bypass with runtime-executable UAT
-  ASSESSMENT (see section above).
-- **Long cargo:** always async + progress; never two cargo on one `target/`;
-  per-crate only (rocksdb trap).
-- Governor rule `gsd_lifecycle_attempt_desync_in_summary` flags SUMMARY text
-  about blocked Attempt — update SUMMARY after seal so trajectory stays clean.
-
-Proven end-to-end on **M306-417kcl** (skip-delivered + UAT + sha256 validate +
-complete). Memory: MEM567 / D144.
+Free-form sessions cannot mint a running Attempt, so `gsd_task_complete` fails there. Use engine calls, never a hand-written row: `testedSourceRevision` is the engine aggregate `sha256:…` from `captureMilestoneVerificationSourceRevision`, not a git SHA; `gsd_save_gate_result` after `gsd_skip_slice` finds no tasks; Q5/Q6/Q7 need a real taskId; never write `.gsd/gsd.db` with sqlite3 or python (engine owns the WAL). The worked sequence that sealed M306-417kcl (MEM567 / D144) is in `git log -p -- AGENTS.md`.
 
 ### Governor CLI (trajectory enforcement)
 
@@ -268,73 +149,9 @@ Reindex after structural changes (new crates, renamed symbols):
 Use `impact({target, direction:"upstream"})` before editing any symbol —
 warn the user on HIGH/CRITICAL risk. Use `detect_changes()` before commit.
 
-### Memory store (auto-learned gotchas)
-
-GSD auto-loads memories from the memory store. Key entries for this project:
-- **MEM468**: per-crate tests avoid rocksdb rebuild (see Compile rules above).
-- **MEM499**: four per-test mocks drift from real SamyamaGraphStore
-  (`get_nodes_by_label` returns `Vec::new()`). Shared `common/mock_graph_store.rs`
-  filters by label — prefer it.
-- **MEM507**: validator surfaces fixture bugs when first wired into a suite
-  (expect 2-3 per node type).
-- **MEM514**: don't run `cargo check --workspace` on every edit — per-crate only.
-
-Query memories: `memory_query({category: "gotcha", query: "..."})`.
-
 ### Testing strategy (ADR-051)
 
 **Two axes:** hexagonal layers (7 contours) × test types (8 categories).
-
-#### 7 contours (hexagonal layers)
-
-1. **Determinism Infrastructure** — Clock, ID, RNG, Sleeper ports (inject in tests, never real clock/sleep/UUID)
-2. **Domain Semantic** — unit + property (proptest) + serde roundtrip + metamorphic relations
-3. **Application Functional** — use cases via driving port, state-based fakes, Fixture builder
-4. **Port Contract Suite** — shared suite per trait (GraphStore, Embedder), runs vs ALL impls
-5. **Adapter Integration** — real Samyama, wiremock HTTP, Testcontainers (future PostgreSQL)
-6. **System Journey E2E** — use-case specs (UC1-5), lifecycle (snapshot export/import),
-   **semantic graph task suite** (Samyama case-study DoD: pin `.sgsnap` → tasks →
-   same-process query → PASS/EMPTY/ERROR; see ADR-051 §8.1)
-7. **Architecture Invariant** — governor + cargo metadata + trybuild + cargo-hack
-
-#### 8 test types
-
-| Type | What | Tool |
-|------|------|------|
-| Unit | Single function/struct | `#[test]` inline |
-| Property | Invariant over random inputs | `proptest!` |
-| Serde roundtrip | Wire-format stability | `roundtrip<T>()` |
-| Contract | Trait semantics across all impls | `contract_*.rs` |
-| Integration | Real external system | `cargo test` + real deps |
-| Business logic | Domain policy enforcement | use-case test |
-| Mutation | Tests catch code mutations | `cargo-mutants` |
-| E2E journey | Full business scenario | CLI/HTTP test |
-
-#### Domain-specific semantic suites
-
-- **Temporal graph:** no-future-knowledge, valid≠transaction time, reproducible projection, [from,to) intervals, correction≠overwrite, idempotent canonicalisation
-- **Vector retrieval:** hard invariants (tenant/temporal/provenance/no-NaN) vs quality relations (recall@k, ties, tolerance, paraphrase)
-- **Event sourcing:** fold determinism, snapshot+tail≡full replay, idempotent processing, checkpoint atomicity
-- **Candidate→verify→promote:** candidate≠authoritative, no self-confirm, no double promotion, atomic promotion+evidence
-- **Agent/LLM:** action validity, tool schema match, evidence existence, budget/policy gates, paraphrase invariance
-- **Semantic graph tasks (Contour 6 §8.1):** durable `.sgsnap` + `data/graph_tasks/*` +
-  same-process runner; per-task PASS/EMPTY/ERROR; suite fails on EMPTY/ERROR.
-  **Not** the same as extraction `eval_batch` (gold entities). Both required for readiness.
-  Disk→query: `da query|graph-stats --snapshot <file.sgsnap>` — never load-snapshot then a second process.
-
-#### Concurrency testing
-
-- **Loom:** exhaustive interleavings (lock-free, atomics, channels)
-- **Shuttle:** randomized scheduling (workers, queues, races)
-- **Turmoil:** distributed simulation (crashes, partitions, torn writes)
-
-#### Additional tools
-
-- `cargo-fuzz` (parsers, deserialization)
-- `cargo-llvm-cov` (coverage as gap map, not gate)
-- `cargo-mutants` (mutation testing, nightly)
-- Miri (unsafe/FFI), Kani (model checking)
-- `insta` (snapshots, selective), `trybuild` (compile-fail)
 
 #### Key rules
 
@@ -365,19 +182,7 @@ PYTHONPATH=scripts python3 -m governor --check-flaky 5
 PYTHONPATH=scripts python3 -m governor --test-matrix
 ```
 
-#### Implementation priorities
-
-- **P0:** workspace split ✅, dependency rules ✅, Clock/ID/RNG ports, contract suites, serde roundtrip ✅ (M340–M343, 40 types, 53 tests)
-- **P1:** property tests ✅ started (M344/M353–M355, M387 post-close: 38 proptest: TemporalEdge, EntityType/RelationType, VID, confidence, graph_tasks parser, PromptCandidate FSM transitions);
-  **semantic graph task suite** (ADR-051 §8.1) ✅ (M336–M338);
-  state-machine model ✅ (PromptCandidate FSM transition invariants, M387 post-close), temporal invariants ✅ (8 properties), replay equivalence, mutation (domain) — not yet
-- **P2:** Loom, Shuttle, Turmoil, fuzzing, Miri/Kani, release recovery, remote task suite when daemon real
-
 See `doc/adr/ADR-051-testing-strategy-overlapping-verification-contours.md` for full details.
-
-#### Anti-patterns (avoid)
-
-Mock every trait · Fake without contract · Functional=HTTP E2E · Shared DB · sleep · Retry hides flaky · 100% coverage gate · Snapshot everything · Same code in SUT and oracle · Exact assertions for approximate output · Happy path only · Architecture only in docs · load-snapshot process A + query process B as E2E · Extraction F1 as sole KG readiness metric
 
 ### Data-driven ontology (ADR-050 Phase D+F)
 
@@ -420,14 +225,19 @@ re-orient in <1 min.
 | Human overview + architecture | `README.md` |
 | Project state (GSD) | `.gsd/PROJECT.md`, `.gsd/STATE.md` |
 | Binding ADRs | `doc/adr/ADR-INDEX.md` |
+| Documented solutions (module / problem area) | `.compound-engineering/artifacts/solutions/` — YAML frontmatter (`module`, `tags`, `problem_type`); relevant when implementing or debugging in an area that already has an entry |
 | Graph schema | `doc/GRAPH-SCHEMA.md` |
 | Ontology alignment | `doc/ONTOLOGY-ALIGNMENT.md` |
 | Healing scenarios | `doc/GRAPH-HEALING-SCENARIOS.md` |
 | Persistence model | `doc/PERSISTENCE-ANALYSIS.md` |
 | Extraction evaluation | `data/gold_standard/`, `crates/da-cli/examples/eval_batch.rs` |
 | Corpus metrics (corpus) | `crates/da-cli/examples/eval_batch.rs` output |
-| Garbage / truth paths | `doc/REPO-HYGIENE.md` |
+| GROBID semantic correctness (active) | `doc/adr/ADR-076-grobid-cascade-three-automata-graph-freeze.md`, `doc/review/grobid-absorption-followup.json`, `.gsd/STATE.md` |
 | GSD state (local) | `.gsd/continue.md`, `.gsd/STATE.md` |
+
+After a solved, verified problem, offer once to invoke the `ce-compound` skill at the completion checkpoint only when the work produced durable project reasoning that is not readily recoverable from the final code, tests, types, comments, or existing documentation, and losing it would plausibly cause recurrence, material risk, or substantial rediscovery. Apply this counterfactual: if the learning document disappeared, would a future engineer reading the final implementation still be likely to repeat the mistake or redo substantial investigation? If not, do not offer. Completion, effort, and diff size alone are not enough. Offer at the checkpoint so a qualifying learning can ship in the PR that produced it, and only where the repository treats captured learnings as tracked, committed knowledge.
+
+Write every report, summary, or handoff to the user through the `ce-noslop` skill. This applies when you are the top-level agent writing to the user, not when you are a subagent reporting to its caller. Do not apply it to code, config, verbatim quotes, or text the user asked to post as written.
 
 ## Package map (Rust workspace)
 
@@ -436,9 +246,10 @@ re-orient in <1 min.
 | Domain | `crates/da-domain/` | Paper/Entity/Evidence/Relation/Healing/Scheduler/Eval types |
 | Ports | `crates/da-ports/` | GraphStore/DirectGraphStore (HOT path), ParserPort, Embedder, Extractor, OpenAlexClient |
 | Application | `crates/da-application/` | Ingest/BatchIngest/Extraction/Healing/Enrich/Scheduler use-cases |
-| Parse | `crates/da-parse/` | Scholarly PDF fulltext: Java GROBID HTTP, TEI IR, ParserPort projector |
+| Parse | `crates/da-parse/` | Scholarly PDF fulltext: Java GROBID HTTP (production route), native cascade shadow (M506–M511, ADR-076), TEI IR, ParserPort projector |
 | Adapters | `crates/da-adapters/` | HTML parse, pdf-classifier, XY-Cut, fd_api embedder (bge-m3), SamyamaGraphStore, RuleBasedExtractor, OpenAlexHttpAdapter, GrobidParseStage |
 | CLI | `crates/da-cli/` | `da` binary: health/version/ingest/batch-ingest/extract/schema-init/heal/enrich/scheduler-run |
+| MCP | `crates/da-mcp/` | MCP server for knowledge-base external access (ADR-054) |
 | **kg-ontology** | `crates/kg-ontology/` | Universal types: Violation/Severity/PropertySnapshot/TemporalEdge (ADR-050, no da-* deps) |
 | **kg-storage** | `crates/kg-storage/` | Universal storage traits: GraphStore/DirectGraphStore/MockGraphStore (ADR-050) |
 | **kg-embeddings** | `crates/kg-embeddings/` | Universal embeddings: Embedder/FdApiEmbedder (ADR-050) |
@@ -518,32 +329,6 @@ cargo run -p da-cli --example grobid_stage_tape -- \
 # recorded failure, no sections). A tape nothing verifies is not evidence.
 cargo run -p da-cli --example grobid_stage_tape -- --verify /tmp/tape/tape.json
 
-# Sweep cache materialization (M440; offline, no services needed)
-# 1) Coverage audit (read-only): bindability per paper via ADR-065 fallback
-cargo run -p da-cli --example catalog_materialize_runner -- --audit-only
-# 2) Materialize replay -> .sgsnap + per-paper FSM report (canary: --limit 25;
-#    full run: no limit; env knobs DA_MATERIALIZE_{LIMIT,SNAPSHOT,RUN_REPORT})
-cargo run -p da-cli --example catalog_materialize_runner -- --run --limit 25
-cargo run -p da-cli -- graph-stats --snapshot artifacts/catalog_sweep/catalog_materialized.sgsnap
-# Version recovery for no_tei_revision papers (M441; offline, pdf stamps):
-cargo run -p da-cli --features pdf-classifier --example catalog_materialize_runner -- --recover
-DA_MATERIALIZE_RECOVERY=artifacts/catalog_sweep/materialization_recovery.json \
-  cargo run -p da-cli --features pdf-classifier --example catalog_materialize_runner -- --run
-# Post-rebuild regression check (M444; runs over ALL articles, no gold):
-cargo run -p da-cli --example corpus_regression_check -- \
-  --before artifacts/catalog_sweep/materialization_run_report.json \
-  --after /tmp/new_run_report.json
-# Drift stats (per-category mentions density, zero-mention alarms):
-#   artifacts/catalog_sweep/catalog_drift_stats.json (regenerate from run report)
-# Hot-path lookup benchmark at full-store scale (M443):
-cargo run -p da-cli --example materialize_index_bench -- \
-  --snapshot artifacts/catalog_sweep/catalog_materialized.sgsnap
-# Full catalog-wide run (589 papers; ~2h offline) — already executed,
-# snapshot committed: artifacts/catalog_sweep/catalog_materialized.sgsnap.
-# Resume an interrupted full run (crash-safe; skips completed, merges reports):
-DA_MATERIALIZE_RESUME=1 DA_MATERIALIZE_RECOVERY=artifacts/catalog_sweep/materialization_recovery.json \
-  cargo run -p da-cli --features pdf-classifier --example catalog_materialize_runner -- --run
-
 # Extraction evaluation on gold-standard corpus (12 modern papers)
 cargo run -p da-cli --example eval_batch
 
@@ -560,40 +345,30 @@ da extract --id <paper_id>
 
 # Wave 3 multi-process RESP health (in-memory, no RocksDB; M307–M312)
 # Port 16379 — not Redis 6379, not vendor SAMYAMA_RESP_PORT 6380
-da health                              # reports DA_GRAPH_MODE; remote is honest NotConfigured
+da health                              # reports DA_GRAPH_MODE; remote is a RESP read plane
 da serve-graph --port 16379            # terminal A (optional: --snapshot file.sgsnap)
 da graph-ping --port 16379             # terminal B → PONG
-# DA_GRAPH_MODE=remote still does NOT open a full GraphStore (open_for_mode NotConfigured)
+# DA_GRAPH_MODE=remote opens a read plane (RemoteGraphStore); Samyama HOT writes return GraphModeError::RemoteWritesUnsupported
 ```
 
 Historical `legacy/scripts/verify_m0xx_*.py` — frozen Python milestone pins, not runtime ops. `legacy/` is gitignored (untracked frozen Python stack).
 
 ## Current snapshot (extraction eval)
 
-Re-measured **2026-08-05** after M315/M316 gold promote (`cargo run -p da-cli --example eval_batch`):
+Latest committed complete-denominator numbers are **2026-08-09** (README; the 2026-08-05 measurement below is historical): **P=0.766, R=1.000, micro-F1=0.8677** on 200/200 fixtures, 1,439 gold entities (`archive/artifacts-legacy/gold_corpus/eval_aggregate_all_sources.json`). No newer committed corpus F1 exists as of 2026-09-22.
 
-| Metric | Value | vs M314 pre-promote |
-|--------|--------|---------------------|
-| Corpus | **193 papers** (200 fixtures; 7 missing PDF/HTML skipped) | same |
-| Gold entities | **1399** | was 1326 (+73) |
-| Precision (Micro) | **0.769** | was 0.729 |
-| Recall (Micro) | **1.000** | same |
-| F1 (Micro) | **0.869** | was 0.843 |
-| F1 (Macro) | **0.859** | was 0.838 |
-| TP / FP / FN | **1399 / 421 / 0** | FP was 494 (−73) |
-| import | **false** (D127) | locked |
-
-Weak F1&lt;0.7 remaining: mostly tiny gold (2–3 ents) or gnn-html chapters; promoted arxiv weak papers now typically F1≥0.95.
+Historical measurement **2026-08-05** after M315/M316 gold promote (`cargo run -p da-cli --example eval_batch`): 193 papers (200 fixtures, 7 missing PDF/HTML skipped), 1,399 gold entities, Micro P/R/F1 0.769/1.000/0.869, Macro F1 0.859, TP/FP/FN 1399/421/0.
 
 ## Problem backlog (open)
 
 | ID | Problem | Where |
 |----|---------|--------|
-| E1 | Multi-word method extraction | **Closed M313** — data-driven `methods.phrases` + Method section arm parity |
-| E2 | Incomplete gold → FP inflation | **Process M315 + batch M316** — `inventory_fp` + `batch_promote_gold`; multi-paper gold only. 2603 +8; batch **13 weak papers +65** entities. Remaining FP = noise/singleton |
-| E3 | Weak-paper precision (was F1 0.35–0.67) | Evidence promote lifts many to F1 **0.95–1.0** (e.g. 2510.26094=1.0, 2507.19457≈0.96); re-run full `eval_batch` for corpus Micro |
-| P1 | Full remote GraphStore not wired (`DA_GRAPH_MODE=remote` → NotConfigured); health path is serve-graph+graph-ping | Multi-process health done (M307–M312); full remote store later |
-| L1 | Import locked by policy | D127 — need user go |
+| G1 | GROBID semantic correctness under graph freeze: bibliography id/target integrity (S02/H15), then H16–H21 | **Active M511-j7wz2f**, slice S02, phase refining (`.gsd/STATE.md`); ADR-076 §14. Owner stop 2026-09-22 — execution only on explicit permission |
+| E1 | Multi-word method extraction | **Closed M313** |
+| E2 | Incomplete gold → FP inflation | **Closed M315 + M316** — remaining FP is noise/singleton |
+| E3 | Weak-paper precision | **Closed as a corpus problem** — 2026-08-09 numbers above supersede the per-paper F1 chase |
+| P1 | Remote graph is a read plane, not a full store: `DA_GRAPH_MODE=remote` opens `RemoteGraphStore`; Samyama HOT writes return `GraphModeError::RemoteWritesUnsupported` | `crates/kg-storage/src/graph_mode.rs`; health path is serve-graph + graph-ping (M307–M312) |
+| L1 | Import locked by policy | D127 — need user go. ADR-076 §14 adds `deployed=false`, `auto_promote=forbidden`, `graph_write=forbidden`; authorizing M511 does not lift D127 |
 
 ## Code navigation
 
@@ -608,7 +383,7 @@ Weak F1&lt;0.7 remaining: mostly tiny gold (2–3 ents) or gnn-html chapters; pr
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **daily-archive** (80373 symbols, 127562 relationships, 639 execution flows).
+This project is indexed by GitNexus as **daily-archive** (81541 nodes, 130372 edges, 639 execution flows — .gitnexus/meta.json, indexed 2026-09-22).
 
 > Index stale? Run `node .gitnexus/run.cjs analyze --index-only` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? Bootstrap with `npx`, `bunx`, or `pnpm dlx` — e.g. `bunx gitnexus@latest analyze` (npm 11 npx crash; #1939).
 
