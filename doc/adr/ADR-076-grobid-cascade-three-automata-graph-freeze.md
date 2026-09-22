@@ -408,3 +408,51 @@ Planning registry проверяется существующим `horizon-json-
   `graph_write=forbidden`, `this_wave_promotes=none`, D127/D321 закрыты.
   H14 остаётся planning-записью с `implementation_pass=false`: замеренная
   область зелёная, но закрытие этапа не фабрикуется.
+
+## 15. Корректировка 2026-09-21 (продолжение): T04–T06 и актуальный замер
+
+Разделы §14 остаются записью своих ревизий и не переписываются: счётчики
+«17 contract-тестов / 1359 passed» описывают ревизию S01/T03. Ниже — что
+изменилось дальше и что измерено сейчас.
+
+- S01/T04 (WF-проход отдельно от сканера): эмиссия больше не считается
+  корректной по самоудостоверению. `validate_well_formed` — отдельный проход по
+  конкретным WFC-классам (ровно один корневой элемент, легальность `Name`/`QName`,
+  список атрибутов в форме `Name S? Eq S? AttValue` с кавычками и без дублей,
+  ссылки `&`/`&#…;`, `]]>` в CharData, `--` в комментарии, CDATA только внутри
+  документа, лимит глубины, легальные XML-символы, привязка префиксов), а
+  инвариант «`Accepted` ⇒ эмиссия разбирается независимым парсером» закреплён
+  property-тестом. Исторический RED этого класса (потеря объявления
+  `xmlns:ext = "urn:x"`) снят в T04.
+- S01/T05 (структурная консервация): обёртки консервируются байтовыми
+  интервалами минус исключённые ПРЯМЫЕ дети — комментарии, processing instruction
+  и текст/whitespace между детьми не теряются, а поиск wrapper'а ограничен прямыми
+  детьми, поэтому вложенный `titleStmt` не дублируется.
+- S01/T06 (два измеренных остатка закрыты, лимиты запиннены): (1) `xml:id` с
+  одиночными кавычками или пробелами вокруг `=` обходил uniqueness-гейт, и
+  эмиссия публиковалась как `Accepted` с двумя `xml:id="author-0"`
+  (gsd_exec `b9a3be53-e685-41c7-ba48-f66674baad41`) — атрибуты читаются
+  XML-грамматикой, нечитаемый список даёт `MalformedXml` (fail-closed); (2)
+  `<!DOCTYPE`/`<!ENTITY` искались подстрокой по всему документу, поэтому
+  упоминание строки в комментарии или CDATA отвергалось как
+  `ForbiddenExternalEntity` — детекция стала markup-aware без ослабления гейта
+  (реальный `<!DOCTYPE` запрещён, `<!doctype` отклоняется как нелегальная
+  разметка, `<!DOCTYPE` в значении атрибута — по правилу `AttValue`); (3) лимиты
+  4 MiB (фрагмент) и 128 (глубина XML) воспроизведённого дефекта не имели и
+  запиннены регрессией как уже корректные (типизированный отказ,
+  байт-идентичный Java-envelope, без частичного вывода).
+- Актуальный замер: `cargo test -p da-parse --test
+  native_fulltext_composition_contract` — 28 passed / 0 ignored;
+  `native_fulltext_composition_properties` — 8 passed; `cargo test -p da-parse
+  --tests` — 100 suites / 1374 passed / 0 failed / 0 ignored; `cargo clippy -p
+  da-parse --all-targets --no-deps -- -D warnings` и `cargo fmt -p da-parse --
+  --check` — exit=0; `governor review --registry
+  doc/review/grobid-absorption-roadmap-2026-09-21.yaml` — exit=0.
+- H14 не закрывается и этой записью: `implementation_pass=false`,
+  `verification_pass=false`, `status: pending` в planning-реестре сохраняются,
+  закрытие этапа требует отдельной source-bound записи вне planning-scope.
+  Замки не менялись: `deployed=false`, `import_eligible=false`,
+  `auto_promote=forbidden`, `graph_write=forbidden`,
+  `this_wave_promotes=none`, D127/D321 закрыты. Остатки, названные в §14 и
+  реестре (не-namespace атрибуты синтезируемых обёрток — поле H16), остаются
+  остатками поля, а не well-formedness, и по-прежнему не замалчиваются.

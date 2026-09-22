@@ -29,13 +29,13 @@
       "implementation_evidence": [
         {
           "path": "crates/da-parse/src/native_fulltext_composition.rs",
-          "note": "поверхность эмиссии заголовка: синтез <titleStmt> и вставка сохранённых детей. S01/T02 спарил открывающие и закрывающие теги одним стеком и переразместил детей заголовка по родителю, S01/T03 переносит xmlns/xmlns:* с синтезируемых обёрток fileDesc/titleStmt. Остаётся partial: не-namespace атрибуты обёрток (например собственный xml:lang) по-прежнему не копируются — семантический остаток поля (H16), не well-formedness.",
+          "note": "поверхность эмиссии заголовка: синтез <titleStmt> и вставка сохранённых детей. S01/T02 спарил открывающие и закрывающие теги одним стеком и переразместил детей заголовка по родителю, S01/T03 переносит xmlns/xmlns:* с синтезируемых обёрток fileDesc/titleStmt, S01/T04 добавил отдельный WF-проход (validate_well_formed: WFC-классы, атрибуты по XML-грамматике Name S? Eq S? AttValue, привязка префиксов) и типизированные отказы, S01/T05 консервирует неэлементных детей обёрток байтовыми интервалами и ищет wrapper только среди ПРЯМЫХ детей, S01/T06 читает id/xml:id через XML-грамматику (правописание больше не обходит uniqueness-гейт) и распознаёт <!DOCTYPE/<!ENTITY только там, где начинается разметка. Остаётся partial: не-namespace атрибуты обёрток (например собственный xml:lang) по-прежнему не копируются — семантический остаток поля (H16), не well-formedness.",
           "state": "partial",
           "symbol": "header_xml"
         },
         {
           "path": "crates/da-parse/tests/native_fulltext_composition_contract.rs",
-          "note": "контракт композиции: эмиссия перечитывается независимым XML-парсером (roxmltree, dev-dependency) на трёх sha256-пиннутых сохранённых TEI. Гейт preserved_tei_composition_is_independently_well_formed больше не #[ignore] и зелёный (S01/T02); RED-пин T01 заменён независимой консервацией preserved_tei_emissions_conserve_every_source_header_subtree; S01/T03 добавил регрессию wrapper_namespace_declarations_are_carried_so_no_prefix_is_unbound на замеренный остаточный дефект (до правки: Accepted при Err(an unknown namespace prefix 'ext' at 1:202), gsd_exec c9cbe8d7) и расширил malformed-набор. Замер: 17 passed / 0 ignored.",
+          "note": "контракт композиции: эмиссия перечитывается независимым XML-парсером (roxmltree, dev-dependency) на трёх sha256-пиннутых сохранённых TEI. Гейт preserved_tei_composition_is_independently_well_formed больше не #[ignore] и зелёный (S01/T02); RED-пин T01 заменён независимой консервацией preserved_tei_emissions_conserve_every_source_header_subtree; S01/T03 добавил регрессию wrapper_namespace_declarations_are_carried_so_no_prefix_is_unbound на замеренный остаточный дефект (до правки: Accepted при Err(an unknown namespace prefix 'ext' at 1:202), gsd_exec c9cbe8d7) и расширил malformed-набор; S01/T05 добавил nested_unique_titleStmt_under_seriesStmt_is_not_duplicated и wrapper_direct_comments_pis_and_text_are_conserved; S01/T06 добавил xml_id_spelling_never_escapes_the_duplicate_id_gate (до правки: Accepted с двумя xml:id=\"author-0\" при xml:id='author-0', gsd_exec b9a3be53), doctype_string_inside_comment_or_cdata_is_not_a_declaration (до правки: ForbiddenExternalEntity на строку в комментарии, там же), markup_declaration_detection_is_markup_aware_not_a_substring_scan и native_fragment_and_depth_ceilings_refuse_without_partial_output. Замер: 28 passed / 0 ignored.",
           "state": "present",
           "symbol": "preserved_tei_composition_is_independently_well_formed"
         },
@@ -66,13 +66,13 @@
         {
           "mode": "command",
           "ref": "cargo test -p da-parse --test native_fulltext_composition_contract",
-          "expected": "17 passed; 0 failed; 0 ignored, включая A-XML гейт, namespace-регрессию на синтезируемые обёртки и расширенный malformed-набор (лишний закрывающий тег, незавершённый комментарий, незавершённая CDATA)",
+          "expected": "28 passed; 0 failed; 0 ignored, включая A-XML гейт, namespace-регрессию на синтезируемые обёртки, вложенный titleStmt, неэлементных детей обёрток, правописание xml:id, markup-aware DOCTYPE и лимиты 4 MiB/128. Замерено на S01/T06 после ревизии 9484210e0 (gsd_exec 340ff4f1-c4d7-4255-879b-2dc2b9e005a5); предыдущие счётчики 17 (T03) и 24 (T05) относятся к своим ревизиям",
           "status": "pending"
         },
         {
           "mode": "command",
           "ref": "gsd_exec 412df4be-f747-4457-9c3b-a6eff4bf779e: cargo test -p da-parse --tests (1359 passed, 0 failed, 0 ignored, 100 suites) и 796cf21e-8a88-4502-a915-fd2a6a60b99d: cargo test -p da-parse --test native_fulltext_composition_contract (17 passed, 0 ignored)",
-          "expected": "после S01/T02+T03 эмиссия well-formed на трёх сохранённых TEI и на namespace-обёртках; исторический RED S01/T01 (Accepted при невалидном XML, ignored-гейт rc=101) снят и сохранён в corrections C07; H14 остаётся planning-записью с implementation_pass=false",
+          "expected": "после S01/T02+T03 эмиссия well-formed на трёх сохранённых TEI и на namespace-обёртках; исторический RED S01/T01 (Accepted при невалидном XML, ignored-гейт rc=101) снят и сохранён в corrections C07; актуальный замер S01/T06 — 100 suites / 1374 passed / 0 failed / 0 ignored (gsd_exec 19803fcd-9b09-4b7e-ae0f-a1d4eda0ed60), контракт 28 passed, properties 8 passed; строка 1359/17 относится к ревизии T03. H14 остаётся planning-записью с implementation_pass=false",
           "status": "pending"
         },
         {
@@ -356,7 +356,7 @@
         {
           "id": "H16-N3",
           "scenario": "Атрибут синтезируемой обёртки (например xml:lang на fileDesc/titleStmt) теряется молча при композиции",
-          "expected": "fail-closed: сохранение атрибута либо типизированная потеря; измеренный остаток S01/T03 назван, а не замалчивается как отсутствовавший"
+          "expected": "fail-closed: сохранение атрибута либо типизированная потеря; измеренный остаток S01/T03 назван, а не замалчивается как отсутствовавший; на S01/T06 остаток перепроверен и не изменялся — переносятся только xmlns/xmlns:*"
         }
       ],
       "test_matrix": [

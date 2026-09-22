@@ -1134,6 +1134,12 @@ fn parse_attributes(body: &str) -> Result<Vec<(&str, &str)>, NativeFulltextCompo
 /// byte-exact spans.  That is also why this scanner is not the arbiter of the
 /// emission: `validate_well_formed` is a separate pass, and the offline
 /// independent oracle (`roxmltree`) is the judge beyond it.
+///
+/// Two markup-aware readings sit here rather than in a byte scan of the whole
+/// document: `<!DOCTYPE`/`<!ENTITY` are refused at the `<` that actually starts
+/// the declaration (so a comment, CDATA section or attribute value that merely
+/// mentions the string declares nothing), and `id`/`xml:id` are read through the
+/// XML attribute grammar (so no legal spelling escapes the uniqueness gate).
 #[derive(Debug)]
 struct XmlDocument {
     elements: Vec<XmlElement>,
@@ -1161,9 +1167,6 @@ struct XmlElement {
 
 impl XmlDocument {
     fn parse(s: &str) -> Result<Self, NativeFulltextCompositionError> {
-        if s.contains("<!DOCTYPE") || s.contains("<!ENTITY") {
-            return Err(NativeFulltextCompositionError::ForbiddenExternalEntity);
-        }
         let mut elements: Vec<XmlElement> = Vec::new();
         let mut stack: Vec<usize> = Vec::new();
         let mut seen_ids: Vec<String> = Vec::new();
@@ -1174,8 +1177,19 @@ impl XmlDocument {
                 // Markup declaration: a comment or a CDATA section.  Both may
                 // legally contain `<` and `>`, so the terminator is searched
                 // for instead of stopping at the first `>`.
+                // `<!DOCTYPE`/`<!ENTITY` are refused here, where XML markup
+                // actually starts, not by scanning the raw bytes of the whole
+                // document: a document that merely *mentions* the string — in a
+                // comment, in a CDATA section or inside an attribute value — is
+                // not declaring anything, and the previous substring scan refused
+                // the first two classes even though an independent parser accepts
+                // them (measured S01/T06).  Attribute values stay covered by the
+                // well-formedness pass, which rejects a raw `<` in an `AttValue`.
                 Some('!') => {
                     let rest = &s[start + 1..];
+                    if rest.starts_with("!DOCTYPE") || rest.starts_with("!ENTITY") {
+                        return Err(NativeFulltextCompositionError::ForbiddenExternalEntity);
+                    }
                     let terminator = if rest.starts_with("!--") {
                         "-->"
                     } else if rest.starts_with("![CDATA[") {
@@ -1225,18 +1239,26 @@ impl XmlDocument {
                 elements[index].end = open_end;
                 elements[index].close_start = start;
             } else {
-                if let Some(attribute) = body.split_whitespace().find(|attribute| {
-                    attribute.starts_with("id=\"") || attribute.starts_with("xml:id=\"")
-                }) {
-                    let id = attribute
-                        .split("=\"")
-                        .nth(1)
-                        .and_then(|x| x.split('"').next())
-                        .ok_or(NativeFulltextCompositionError::MalformedXml)?;
-                    if seen_ids.iter().any(|seen| seen == id) {
-                        return Err(NativeFulltextCompositionError::DuplicateId);
+                // `id`/`xml:id` are read through the XML attribute grammar
+                // (`Name S? Eq S? AttValue`), not by splitting the open tag on
+                // unquoted whitespace.  `xml:id = 'author-0'` is the same
+                // attribute as `xml:id="author-0"`, and the tokenizer only
+                // recognised the compact double-quoted spelling, so a preserved
+                // subtree written the other way slipped past the uniqueness gate
+                // and an `Accepted` emission carried two elements with the same
+                // `xml:id` (measured S01/T06).  A list that cannot be read is not
+                // a list whose ids may be guessed at, so it is `MalformedXml`
+                // here — the well-formedness pass would reject it as well, and
+                // this scanner never vouches for what it cannot read.
+                let tag = tag_attributes(body);
+                let name_end = tag.find(char::is_whitespace).unwrap_or(tag.len());
+                for (attribute, value) in parse_attributes(&tag[name_end..])? {
+                    if attribute == "id" || attribute == "xml:id" {
+                        if seen_ids.iter().any(|seen| seen == value) {
+                            return Err(NativeFulltextCompositionError::DuplicateId);
+                        }
+                        seen_ids.push(value.to_owned());
                     }
-                    seen_ids.push(id.to_owned());
                 }
                 let empty = is_self_closing(body);
                 if !empty && stack.len() >= NATIVE_FULLTEXT_MAX_XML_DEPTH {

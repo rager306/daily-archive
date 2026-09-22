@@ -1326,3 +1326,297 @@ fn legal_markup_is_not_rejected_by_the_well_formedness_pass() {
         tei_element_bytes(candidate.envelope.raw_tei(), "body").unwrap()
     );
 }
+
+/// S01/T06: the `id`/`xml:id` uniqueness gate must not depend on spelling.
+///
+/// `xml:id = 'author-0'` is the same attribute as `xml:id="author-0"`, but the
+/// uniqueness scan tokenized the open tag on whitespace and only recognised the
+/// compact double-quoted form, so a preserved subtree carrying the spaced or
+/// single-quoted spelling slipped past the gate while the composer had already
+/// synthesized `author-0` — an `Accepted` emission carrying two elements with the
+/// same `xml:id` (measured S01/T06).  Every legal spelling has to reach the same
+/// typed refusal, and a distinct id written the same way must still compose.
+#[test]
+fn xml_id_spelling_never_escapes_the_duplicate_id_gate() {
+    let java_tail = "<text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>";
+    let colliding = [
+        ("compact double quotes", "xml:id=\"author-0\""),
+        ("single quotes", "xml:id='author-0'"),
+        ("spaced equals", "xml:id = \"author-0\""),
+        ("spaced equals with single quotes", "xml:id = 'author-0'"),
+        ("space before the value", "xml:id =\"author-0\""),
+        ("space before the equals", "xml:id= 'author-0'"),
+    ];
+    for (label, attribute) in colliding {
+        let xml = format!(
+            "<TEI><teiHeader xml:lang=\"en\"><fileDesc><titleStmt><title>Java</title><note {attribute}>collides with the synthesized author id</note></titleStmt></fileDesc></teiHeader>{java_tail}"
+        );
+        match compose_native_fulltext(input(
+            &xml,
+            AdmissionDisposition::Passed,
+            AdmissionDisposition::Unsupported,
+        )) {
+            NativeFulltextCompositionOutcome::Rejected { fallback, error } => {
+                assert!(
+                    matches!(
+                        error,
+                        NativeFulltextCompositionError::ComposedOutputNotWellFormed(_)
+                    ),
+                    "{label}: a duplicate xml:id must be a typed refusal, got {error:?}"
+                );
+                assert_eq!(fallback.raw_tei(), xml.as_bytes(), "{label}");
+            }
+            NativeFulltextCompositionOutcome::Accepted(candidate) => {
+                let output = String::from_utf8_lossy(candidate.envelope.raw_tei()).to_string();
+                panic!(
+                    "{label}: an emission with a duplicate xml:id must not be published: {output}"
+                )
+            }
+        }
+    }
+    for (label, attribute) in [
+        ("compact double quotes", "xml:id=\"author-9\""),
+        ("single quotes", "xml:id='author-9'"),
+        ("spaced equals", "xml:id = \"author-9\""),
+        ("spaced equals with single quotes", "xml:id = 'author-9'"),
+    ] {
+        let xml = format!(
+            "<TEI><teiHeader xml:lang=\"en\"><fileDesc><titleStmt><title>Java</title><note {attribute}>distinct id</note></titleStmt></fileDesc></teiHeader>{java_tail}"
+        );
+        let NativeFulltextCompositionOutcome::Accepted(candidate) = compose_native_fulltext(input(
+            &xml,
+            AdmissionDisposition::Passed,
+            AdmissionDisposition::Unsupported,
+        )) else {
+            panic!("{label}: a distinct xml:id must not be refused")
+        };
+        let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+        assert_eq!(
+            independent_xml_verdict(&output),
+            Ok(()),
+            "{label}: {output}"
+        );
+        assert!(
+            output.contains("author-9"),
+            "{label}: the preserved id was lost: {output}"
+        );
+    }
+}
+
+/// S01/T06: `<!DOCTYPE`/`<!ENTITY` is a declaration only where XML markup
+/// starts.  Comments and CDATA sections are opaque character data, so a
+/// preserved TEI that merely mentions the string stays composable — and the
+/// emission must still parse for an independent parser.
+#[test]
+fn doctype_string_inside_comment_or_cdata_is_not_a_declaration() {
+    let comment = "<!-- archived from <!DOCTYPE TEI SYSTEM \"tei.dtd\"> and <!ENTITY ext SYSTEM \"ext.ent\"> -->";
+    let cdata = "<![CDATA[<!DOCTYPE TEI SYSTEM \"tei.dtd\"> & <!ENTITY x \"y\">]]>";
+    let xml = format!(
+        "<TEI><teiHeader xml:lang=\"en\"><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc>{comment}{cdata}</teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>"
+    );
+    assert_eq!(
+        independent_xml_verdict(&xml),
+        Ok(()),
+        "the source itself must be well-formed, else the case proves nothing"
+    );
+    let outcome = compose_native_fulltext(input(
+        &xml,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
+    ));
+    let NativeFulltextCompositionOutcome::Accepted(candidate) = outcome else {
+        panic!("a `<!DOCTYPE` string inside a comment or CDATA is not a declaration: {outcome:?}")
+    };
+    let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+    assert_eq!(independent_xml_verdict(&output), Ok(()), "{output}");
+    assert!(output.contains(comment), "the comment was lost: {output}");
+    assert!(
+        output.contains(cdata),
+        "the CDATA section was lost: {output}"
+    );
+}
+
+/// S01/T06: the markup-aware reading must not weaken the gate it replaces.
+///
+/// XML is case-sensitive, so `<!doctype` is not a declaration — it is illegal
+/// markup and a typed well-formedness refusal, never `Accepted`.  A real
+/// `<!DOCTYPE` stays the forbidden-external-entity refusal, and a `<!DOCTYPE`
+/// string inside an attribute value is still rejected (a raw `<` in `AttValue`),
+/// which is what keeps the removal of the raw substring scan from opening a hole.
+#[test]
+fn markup_declaration_detection_is_markup_aware_not_a_substring_scan() {
+    const HEAD: &str = "<TEI><teiHeader xml:lang=\"en\"><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body>";
+    const TAIL: &str =
+        "</body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>";
+    let cases = [
+        (
+            "uppercase declaration",
+            "<!DOCTYPE TEI SYSTEM \"tei.dtd\">",
+            true,
+        ),
+        ("lowercase declaration", "<!doctype TEI>", false),
+        (
+            "declaration string inside an attribute value",
+            "<p note=\"<!DOCTYPE TEI>\">x</p>",
+            false,
+        ),
+    ];
+    for (label, payload, forbidden) in cases {
+        let xml = format!("{HEAD}{payload}{TAIL}");
+        assert!(
+            independent_xml_verdict(&xml).is_err(),
+            "{label}: the source must itself be ill-formed"
+        );
+        match compose_native_fulltext(input(
+            &xml,
+            AdmissionDisposition::Passed,
+            AdmissionDisposition::Passed,
+        )) {
+            NativeFulltextCompositionOutcome::Rejected { fallback, error } => {
+                if forbidden {
+                    assert!(
+                        matches!(
+                            error,
+                            NativeFulltextCompositionError::ForbiddenExternalEntity
+                        ),
+                        "{label}: a real declaration stays the forbidden-entity refusal, got {error:?}"
+                    );
+                } else {
+                    let message = format!("{error:?}");
+                    assert!(
+                        matches!(
+                            error,
+                            NativeFulltextCompositionError::ComposedOutputNotWellFormed(_)
+                        ),
+                        "{label}: illegal markup must be a typed refusal, got {error:?}"
+                    );
+                    assert!(
+                        message.contains("unsupported") || message.contains("attribute value"),
+                        "{label}: the refusal must name the class: {message}"
+                    );
+                }
+                assert_eq!(fallback.raw_tei(), xml.as_bytes(), "{label}");
+            }
+            NativeFulltextCompositionOutcome::Accepted(candidate) => {
+                let output = String::from_utf8_lossy(candidate.envelope.raw_tei()).to_string();
+                panic!("{label}: ill-formed markup must not be published: {output}")
+            }
+        }
+    }
+}
+
+/// S01/T06: the native fragment byte ceiling and the XML depth ceiling refuse
+/// with the byte-identical Java envelope — a composed prefix must never escape.
+///
+/// The byte ceiling is exercised with a header fragment one byte over
+/// `NATIVE_FULLTEXT_MAX_COMPONENT_BYTES`, and the depth ceiling with a chain whose
+/// element depth is exactly at the limit (accepted) and one over it (refused).
+/// The observed depths come from an independent parser, not from the composer's
+/// own constants, so the boundary is measured rather than asserted by fiat.
+#[test]
+fn native_fragment_and_depth_ceilings_refuse_without_partial_output() {
+    let padding = "x".repeat(NATIVE_FULLTEXT_MAX_COMPONENT_BYTES + 1);
+    let over_ceiling_fragment = format!(
+        "<TEI><teiHeader xml:lang=\"en\"><fileDesc><titleStmt><title>Java</title><note>{padding}</note></titleStmt></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>"
+    );
+    match compose_native_fulltext(input(
+        &over_ceiling_fragment,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
+    )) {
+        NativeFulltextCompositionOutcome::Rejected { fallback, error } => {
+            assert!(
+                matches!(
+                    error,
+                    NativeFulltextCompositionError::Oversized {
+                        component: "native",
+                        ..
+                    }
+                ),
+                "a fragment over the component byte ceiling must be an Oversized refusal, got {error:?}"
+            );
+            assert_eq!(
+                fallback.raw_tei(),
+                over_ceiling_fragment.as_bytes(),
+                "no partial output may escape an over-ceiling fragment"
+            );
+        }
+        NativeFulltextCompositionOutcome::Accepted(_) => {
+            panic!("a fragment over the component byte ceiling must not be published")
+        }
+    }
+
+    let chain = |depth: usize| {
+        let mut nested = String::new();
+        for index in 0..depth {
+            nested.push_str(&format!("<n{index}>"));
+        }
+        for index in (0..depth).rev() {
+            nested.push_str(&format!("</n{index}>"));
+        }
+        nested
+    };
+    let element_depth = |xml: &str| {
+        roxmltree::Document::parse(xml)
+            .expect("independent parser accepts")
+            .descendants()
+            .filter(|node| node.is_element())
+            .map(|node| {
+                node.ancestors()
+                    .filter(|ancestor| ancestor.is_element())
+                    .count()
+            })
+            .max()
+            .expect("at least one element")
+    };
+    let document = |depth: usize| {
+        format!(
+            "<TEI><teiHeader xml:lang=\"en\"><fileDesc><titleStmt><title>Java</title>{}</titleStmt></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>",
+            chain(depth)
+        )
+    };
+    // The chain sits inside TEI > teiHeader > fileDesc > titleStmt, so `depth`
+    // nested elements put the deepest one at element level `depth + 4`.
+    let at_ceiling = document(NATIVE_FULLTEXT_MAX_XML_DEPTH - 4);
+    assert_eq!(
+        element_depth(&at_ceiling),
+        NATIVE_FULLTEXT_MAX_XML_DEPTH,
+        "the at-ceiling document must measure exactly at the limit"
+    );
+    let NativeFulltextCompositionOutcome::Accepted(candidate) = compose_native_fulltext(input(
+        &at_ceiling,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
+    )) else {
+        panic!("a document exactly at the depth ceiling must still compose")
+    };
+    let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+    assert_eq!(element_depth(&output), NATIVE_FULLTEXT_MAX_XML_DEPTH);
+    assert_eq!(independent_xml_verdict(&output), Ok(()), "{output}");
+
+    let over_ceiling_depth = document(NATIVE_FULLTEXT_MAX_XML_DEPTH - 3);
+    assert_eq!(
+        element_depth(&over_ceiling_depth),
+        NATIVE_FULLTEXT_MAX_XML_DEPTH + 1
+    );
+    match compose_native_fulltext(input(
+        &over_ceiling_depth,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
+    )) {
+        NativeFulltextCompositionOutcome::Rejected { fallback, error } => {
+            assert!(
+                matches!(error, NativeFulltextCompositionError::MalformedXml),
+                "a document over the depth ceiling must be a typed refusal, got {error:?}"
+            );
+            assert_eq!(
+                fallback.raw_tei(),
+                over_ceiling_depth.as_bytes(),
+                "no partial output may escape a document over the depth ceiling"
+            );
+        }
+        NativeFulltextCompositionOutcome::Accepted(_) => {
+            panic!("a document over the depth ceiling must not be published")
+        }
+    }
+}

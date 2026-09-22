@@ -135,13 +135,18 @@ measured_state:
     # S01/T01 (2026-09-21) дал базовые 1352 passed / 1 ignored, где ignored —
     # целевой гейт preserved_tei_composition_is_independently_well_formed (RED).
     # S01/T02 снял #[ignore] и заменил RED-пин независимой консервацией, S01/T03
-    # добавил регрессию на namespace-обёртки и расширил malformed-набор; ниже —
-    # свежий замер после этих правок (исторический счёт относится к S01/T01 и
-    # сохранён в C07).
-    passed: 1359
+    # добавил регрессию на namespace-обёртки и расширил malformed-набор, S01/T04
+    # добавил WF-проход и типизированные отказы, S01/T05 — консервацию
+    # неэлементных детей и вложенный titleStmt, S01/T06 — правописание xml:id,
+    # markup-aware DOCTYPE и pinned лимиты 4 MiB/128; ниже — свежий замер после
+    # этих правок (исторические счётчики относятся к S01/T01 и S01/T03 и
+    # сохранены в C07/C08).
+    passed: 1374
     ignored: 0
     failed: 0
     test_files_in_crates_da_parse_tests: 99
+    composition_contract_passed: 28
+    composition_properties_passed: 8
     # ИСПРАВЛЕНИЕ: теги имён файлов ПЕРЕКРЫВАЮТСЯ и не являются разбиением.
     # 14 файлов несут более одного тега, сумма тегов (108) больше числа файлов (99).
     file_tags_are_overlapping_not_exclusive: true
@@ -185,9 +190,10 @@ index_freshness:
     CLI context не показывает callers композитора, CBM показывает 13.
     CBM реиндексирован: 499260 узлов / 644211 рёбер. Свежесть не означает
     полноту связей; результаты сверены с исходниками и Rust probe.
-    S01/T02 и S01/T03 правили тела композитора после этого снимка: символов не
-    добавлялось и не переименовывалось, но соответствие тел индексу не
-    пересобиралось — это названное ограничение, а не свежесть.
+    S01/T02, S01/T03, S01/T04, S01/T05 и S01/T06 правили тела композитора после
+    этого снимка: символов не добавлялось и не переименовывалось, но
+    соответствие тел индексу не пересобиралось — это названное ограничение, а
+    не свежесть.
 
 # ---------------------------------------------------------------------------
 # corrections — что именно исправлено относительно предыдущей редакции.
@@ -266,6 +272,39 @@ corrections:
       1359 passed, 0 failed, 0 ignored (gsd_exec 412df4be). H14 не закрывается
       этой записью: implementation_pass=false и planning-семантика сохраняются.
     evidence: .gsd/exec/412df4be-f747-4457-9c3b-a6eff4bf779e.stdout
+  - id: C08
+    previous: >
+      Счётчики C07 (1359 passed / 0 ignored на `cargo test -p da-parse --tests`,
+      17 passed на контракте композитора) и открытые остатки после S01/T03:
+      правописание `xml:id`, подстроковая проверка `<!DOCTYPE`, лимиты 4 MiB/128.
+    corrected: >
+      S01/T04 развёл роли: `validate_well_formed` — отдельный проход по
+      WFC-классам (ровно один корень, легальность Name/QName, атрибуты в форме
+      `Name S? Eq S? AttValue`, ссылки, `]]>`, `--` в комментарии, CDATA только
+      внутри документа, лимит глубины, легальные Char, привязка префиксов), а
+      `XmlDocument::parse` больше не называется доказательством. S01/T05
+      консервирует обёртки байтовыми интервалами (комментарии, PI, текст между
+      детьми) и ищет wrapper только среди ПРЯМЫХ детей, поэтому вложенный
+      titleStmt не дублируется. S01/T06 измерил три остатка: (1) `xml:id` с
+      одиночными кавычками или пробелами вокруг `=` обходил uniqueness-гейт —
+      Accepted с двумя `xml:id="author-0"` (gsd_exec b9a3be53-e685-41c7-ba48-f66674baad41),
+      закрыто чтением атрибутов через XML-грамматику; (2) `<!DOCTYPE`/`<!ENTITY`
+      искались подстрокой по всему документу, поэтому упоминание строки в
+      комментарии или CDATA отвергалось как ForbiddenExternalEntity (там же),
+      закрыто markup-aware детекцией без ослабления гейта (реальный `<!DOCTYPE`
+      остаётся запретом, `<!doctype` отклоняется как нелегальная разметка,
+      `<!DOCTYPE` в значении атрибута — по правилу AttValue); (3) лимиты 4 MiB и
+      глубины 128 воспроизведённого дефекта НЕ имели — они запиннены регрессией
+      как уже корректные (типизированный Oversized/MalformedXml, байт-идентичный
+      Java-envelope, без частичного вывода). Актуальный замер: contract 28 passed
+      / 0 ignored (gsd_exec 340ff4f1-c4d7-4255-879b-2dc2b9e005a5), properties
+      8 passed (5f5e83ef-881d-434f-b366-3b6363d0119f), da-parse --tests 100 suites /
+      1374 passed / 0 failed / 0 ignored (19803fcd-9b09-4b7e-ae0f-a1d4eda0ed60),
+      clippy exit=0 (2d7bdcc9-dc10-47e9-a154-0cf743c8cc05), fmt --check exit=0
+      (da2c8832-5a9f-4c95-8377-0265625dcf98). RED T06 замерен отдельно:
+      25 passed / 3 failed и 7 passed / 1 failed. Замки не менялись; H14 не
+      закрывается — planning-семантика и implementation_pass=false сохраняются.
+    evidence: doc/review/grobid-absorption-audit-2026-09-21.md
 
 # ---------------------------------------------------------------------------
 # validation_commands — как воспроизвести проверку (read-only).
@@ -273,18 +312,20 @@ corrections:
 validation_commands:
   - command: "PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml"
     expected: "exit=0; только grobid_horizon_review_scope_warning и grobid_horizon_review_status (medium)"
-  # S01/T01 (2026-09-21) добавил отслеживаемую A-XML регрессию (независимый
-  # парсер roxmltree как dev-dependency). S01/T02 починил эмиттер (RED→GREEN) и
-  # снял #[ignore] с целевого гейта, S01/T03 добавил namespace-регрессию и
-  # malformed-случаи, поэтому исторический счётчик 1352 passed / 1 ignored
-  # относится к S01/T01 и заменён свежим замером (см. C07).
+  # S01/T04–T06 (2026-09-21) довели замер до текущего состояния: контракт
+  # композитора 28 passed (было 24 после T05 и 17 после T03), properties 8,
+  # полный набор 1374 passed, и два остаточных класса закрыты (см. C08).
   - command: "cargo test -p da-parse --tests"
-    expected: "1359 passed; 0 failed; 0 ignored; 100 suites"
+    expected: "1374 passed; 0 failed; 0 ignored; 100 suites"
   # Исторический RED S01/T01, снятый починкой S01/T02: гейт
   # preserved_tei_composition_is_independently_well_formed больше не #[ignore] и
   # входит в зелёный прогон выше; namespace на синтезируемых обёртках закрыт
-  # регрессией wrapper_namespace_declarations_are_carried_so_no_prefix_is_unbound.
+  # регрессией wrapper_namespace_declarations_are_carried_so_no_prefix_is_unbound,
+  # вложенный titleStmt — nested_unique_titleStmt_under_seriesStmt_is_not_duplicated,
+  # правописание xml:id — xml_id_spelling_never_escapes_the_duplicate_id_gate.
   - command: "cargo test -p da-parse --test native_fulltext_composition_contract"
-    expected: "17 passed; 0 failed; 0 ignored (A-XML гейт, namespace-регрессия, malformed-набор)"
+    expected: "28 passed; 0 failed; 0 ignored (A-XML гейт, namespace-регрессия, malformed-набор, правописание xml:id, markup-aware DOCTYPE, лимиты 4 MiB/128)"
+  - command: "cargo test -p da-parse --test native_fulltext_composition_properties"
+    expected: "8 passed; 0 failed; 0 ignored (well-formed инвариант, правописание xml:id)"
   - command: "python3 -c \"import json,sys,jsonschema;d=json.load(open('doc/review/grobid-absorption-followup.json'));s=json.load(open('doc/review/grobid-rust-horizon-review.schema.json'));jsonschema.Draft202012Validator(s).validate(d);print('schema-ok')\""
     expected: "schema-ok"

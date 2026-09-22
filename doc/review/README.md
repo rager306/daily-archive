@@ -9,7 +9,7 @@ This directory contains a compact, source-bound review of the daily-archive Rust
 исторические закрытые GAR-записи не означают отсутствия этих новых дефектов.
 [Roadmap governor](grobid-absorption-roadmap-2026-09-21.yaml) и
 [H14–H21](grobid-absorption-followup.json) — план, не доказательство реализации.
-GSD S01–S09 задают исполнение; ADR-076 §14 фиксирует границы.
+GSD S01–S09 задают исполнение; ADR-076 §14–§15 фиксируют границы.
 Production promotion и снятие D127 не разрешены. Human release — только
 настоящим ответом владельца; GAR-015 автоматически не закрывается.
 
@@ -76,6 +76,54 @@ Malformed-набор расширен лишним закрывающим тег
 exit=0 (`replay.semantic_equal=true`, `conservation.no_silent_loss=true`,
 9 terminal из 9 admitted). Замки не менялись; H14 остаётся planning-записью с
 `implementation_pass=false`.
+
+### M511-j7wz2f/S01/T04 — Accepted требует WF-прохода, отдельного от сканера
+
+Эмиттер получил отдельный проход `validate_well_formed` по конкретным
+WFC-классам, а не самоудостоверение через `XmlDocument::parse`: ровно один
+корневой элемент, легальность `Name`/`QName`, список атрибутов в форме
+`Name S? Eq S? AttValue` (кавычки, отсутствие дублей), ссылки `&`/`&#…;`, `]]>` в
+CharData, `--` в комментарии, CDATA только внутри документа, лимит глубины,
+легальные XML-символы и привязка префиксов. Сырой `&`, `]]>`, дублированный
+атрибут и `--` в комментарии дают типизированный `Rejected` с байт-идентичным
+Java-конвертом. Исторический RED этого класса (объявление `xmlns:ext = "urn:x"`
+на синтезируемой обёртке терялось) снят здесь. Замки не менялись.
+
+### M511-j7wz2f/S01/T05 — консервация обёрток байтовыми интервалами
+
+Обёртки (в том числе неэлементные дети — комментарии, PI и текст/whitespace
+между детьми) консервируются байтовыми интервалами, а поиск wrapper'а ограничен
+ПРЯМЫМИ детьми, поэтому вложенный `titleStmt` больше не дублируется. Три новые
+регрессии RED→GREEN; `cargo test -p da-parse --tests` — 1369 passed / 0 ignored
+на той ревизии.
+
+### M511-j7wz2f/S01/T06 — правописание `xml:id`, `<!DOCTYPE`-подстрока, лимиты
+
+Счётчики в разделах T01–T03 выше — снимки тех ревизий (17 contract-тестов,
+1359 passed). Актуальный замер — ниже.
+
+- Правописание `xml:id` больше не обходит uniqueness-гейт: `xml:id = 'author-0'` —
+  то же, что `xml:id="author-0"`, и раньше эмиссия публиковалась как `Accepted`
+  с двумя одинаковыми `xml:id` (gsd_exec
+  `b9a3be53-e685-41c7-ba48-f66674baad41`). Атрибуты читаются XML-грамматикой;
+  нечитаемый список — типизированный отказ.
+- `<!DOCTYPE`/`<!ENTITY` распознаётся там, где начинается разметка: упоминание
+  строки в комментарии или CDATA больше не отвергается как декларация. Гейт не
+  ослаблен — реальный `<!DOCTYPE` остаётся `ForbiddenExternalEntity`, `<!doctype`
+  отклоняется как нелегальная разметка, а `<!DOCTYPE` в значении атрибута — по
+  правилу `AttValue`.
+- Лимиты 4 MiB (фрагмент) и 128 (глубина XML) замерены как уже корректные
+  (типизированный отказ, байт-идентичный Java-envelope, без частичного вывода) —
+  это pinned regression, не исправление.
+
+Актуальный замер: `cargo test -p da-parse --test
+native_fulltext_composition_contract` — 28 passed / 0 ignored;
+`native_fulltext_composition_properties` — 8 passed; `cargo test -p da-parse
+--tests` — 100 suites / 1374 passed / 0 failed / 0 ignored; clippy и fmt —
+exit=0; `governor review --registry
+…/grobid-absorption-roadmap-2026-09-21.yaml` — exit=0. H14 не закрывается:
+`implementation_pass=false` и planning-семантика сохраняются; замки не
+менялись.
 
 ## Current baseline
 

@@ -38,7 +38,15 @@ Rust-реализация существенно продвинулась, но 
 | A-REF | P0 | `native_fulltext_composition.rs:493–520`: проверяются только переданные anchors, а не фактические body targets; emit меняет id на bibl-ordinal | При исходном body target=#b0 и пустых supplied anchors Rust возвращает Accepted; b0 отсутствует в выходном множестве xml:id | Есть тест чужого переданного anchor, но нет проверки полноты anchors относительно исходного body |
 | A-FIELDS | P1 | `native_fulltext_composition.rs:460–520`: header emitter читает authors/date, references emitter только source | Статическое чтение: структурированные header fields, author affiliations и citation fields не сериализуются этими функциями | Сохранение строки не проверяет семантическую эквивалентность title/email/id/affiliation/citation roles |
 
-Статус после корректирующей волны: A-XML закрыт на замеренной области — S01/T02 починил эмиттер (RED→GREEN), S01/T03 закрыл найденный остаточный namespace-случай (разделы ниже). A-REF и A-FIELDS остаются открытыми и принадлежат S02/S03.
+Статус после корректирующей волны: A-XML закрыт на замеренной области — S01/T02
+починил эмиттер (RED→GREEN), S01/T03 закрыл найденный остаточный
+namespace-случай, S01/T04 развёл WF-проход и сканер и сделал нелегальную
+эмиссию типизированной, S01/T05 консервирует неэлементных детей и вложенные
+обёртки, S01/T06 закрыл два остаточных класса (правописание `xml:id` и
+`<!DOCTYPE`-подстрока в комментарии/CDATA) и запинил лимиты 4 MiB/128 как уже
+корректные. Подробности и актуальные счётчики — в разделе T04–T06 ниже. H14 при
+этом НЕ закрывается: planning-запись с `implementation_pass=false` сохраняется.
+A-REF и A-FIELDS остаются открытыми и принадлежат S02/S03.
 
 Воспроизведение: `doc/review/grobid-composition-repro.rs`. Оно использует те же синтетические admissions/candidates, что штатные контракты, но реальный Java TEI как документ. Это тест публичного композитора, НЕ end-to-end доказательство достижимости через production admission.
 
@@ -134,6 +142,10 @@ PY
 | shadow-пример | план-команда без фичи даёт rc=101 (`target … requires the features: pdf-layout`); с `--features pdf-layout` check exit=0 и реальный прогон exit=0 (`replay.semantic_equal=true`, `conservation.no_silent_loss=true`, 9 terminal из 9 admitted, три лейна) |
 | `governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml` | exit=0 |
 
+Счётчики этой таблицы — снимок ревизии S01/T03 (`native_fulltext_composition_contract`
+17 passed, `da-parse --tests` 1359 passed). Они не переписываются; актуальный
+замер — в разделе T04–T06 ниже.
+
 Негативы проверены явно: malformed (усечённый документ, лишний закрывающий тег,
 незавершённый комментарий, незавершённая CDATA), внешняя сущность
 (`<!DOCTYPE … <!ENTITY …>`), дублированный `xml:id` во входе и в эмиссии,
@@ -144,6 +156,64 @@ namespace (объявление на `teiHeader`, внутри переноси�
 `graph_write=forbidden`, `this_wave_promotes=none`, D127/D321 закрыты. H14 не
 означает полной миграции: три сохранённых TEI и shadow-пример не доказывают
 production-достижимость.
+
+### Остаточные классы M511-j7wz2f/S01/T04–T06 (актуальный GREEN)
+
+Таблица T03 выше — снимок той ревизии; она не переписывается. Ниже — что
+изменилось дальше и что измерено сейчас.
+
+- **S01/T04 (WF-проход отдельно от сканера).** `validate_well_formed` стал
+  отдельным проходом по конкретным WFC-классам (ровно один корневой элемент;
+  легальность `Name`/`QName`; список атрибутов в форме `Name S? Eq S? AttValue`
+  с кавычками и без дублей; ссылки `&`/`&#…;`; `]]>` в CharData; `--` в
+  комментарии; CDATA только внутри документа; лимит глубины; легальные
+  XML-символы; привязка префиксов), а инвариант «`Accepted` ⇒ эмиссия
+  разбирается независимым парсером» закреплён property-тестом. Исторический RED
+  этого класса — потеря объявления `xmlns:ext`, записанного как
+  `xmlns:ext = "urn:x"` — снят в T04.
+- **S01/T05 (структурная консервация).** Обёртки консервируются байтовыми
+  интервалами (`content_segments` по `open_end..close_start` минус исключённые
+  ПРЯМЫЕ дети), поэтому комментарии, processing instruction и текст/whitespace
+  между детьми не теряются, а поиск обёртки ограничен прямыми детьми — вложенный
+  `titleStmt` больше не дублируется. Три новые регрессии RED→GREEN.
+- **S01/T06 (два измеренных остатка закрыты здесь, лимиты — запиннены).**
+  1. `xml:id` с одиночными кавычками или с пробелами вокруг `=` обходил
+     uniqueness-гейт: сканер резал открывающий тег по некавычечному whitespace и
+     узнавал только компактное `xml:id="…"`, поэтому эмиссия публиковалась как
+     `Accepted` с двумя `xml:id="author-0"` (gsd_exec
+     `b9a3be53-e685-41c7-ba48-f66674baad41`: `single quotes: an emission with a
+     duplicate xml:id must not be published: …<author xml:id="author-0">…<note
+     xml:id='author-0'>…`). Закрыто: атрибуты читаются XML-грамматикой
+     (`parse_attributes`), нечитаемый список — `MalformedXml`, то есть fail-closed.
+  2. `<!DOCTYPE`/`<!ENTITY` искались подстрокой по всему документу, поэтому
+     сохранённый TEI, который лишь упоминает строку в комментарии или CDATA,
+     отвергался как `ForbiddenExternalEntity` (там же: `Rejected { … error:
+     ForbiddenExternalEntity }`). Закрыто: декларация распознаётся там, где
+     начинается разметка. Гейт не ослаблен — реальный `<!DOCTYPE` остаётся
+     `ForbiddenExternalEntity`, `<!doctype` отклоняется как нелегальная разметка,
+     а `<!DOCTYPE` внутри значения атрибута отклоняется по правилу `AttValue`.
+  3. Лимиты 4 MiB (фрагмент) и 128 (глубина XML) замерены как **уже корректные**:
+     отказ типизирован (`Oversized { component: "native" }` и `MalformedXml`),
+     возвращается байт-идентичный Java-envelope, частичного вывода нет. Это
+     pinned regression по замеру, а не «исправление»: дефект не воспроизведён.
+
+| Проверка (актуальная ревизия) | Результат |
+|---|---|
+| `cargo test -p da-parse --test native_fulltext_composition_contract` | 28 passed, 0 failed, 0 ignored (было 24 до T06) |
+| `cargo test -p da-parse --test native_fulltext_composition_properties` | 8 passed, 0 failed (было 7) |
+| `cargo test -p da-parse --tests` | 100 suites, 1374 passed, 0 failed, 0 ignored (было 1369) |
+| `cargo clippy -p da-parse --all-targets --no-deps -- -D warnings` | exit=0 |
+| `cargo fmt -p da-parse -- --check` | exit=0 |
+| `governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml` | exit=0 (stages=8 unresolved=8 claims=0) |
+
+RED→GREEN T06 измерен двумя отдельными прогонами до правки — `25 passed;
+3 failed` (gsd_exec `b9a3be53-e685-41c7-ba48-f66674baad41`) и `7 passed;
+1 failed` (`1646c34e-5ac1-4476-8254-9bd62c5a41b2`) — и двумя после неё:
+`28 passed` (`340ff4f1-c4d7-4255-879b-2dc2b9e005a5`) и `8 passed`
+(`5f5e83ef-881d-434f-b366-3b6363d0119f`). Полный набор —
+`19803fcd-9b09-4b7e-ae0f-a1d4eda0ed60`, clippy —
+`2d7bdcc9-dc10-47e9-a154-0cf743c8cc05`, fmt —
+`da2c8832-5a9f-4c95-8377-0265625dcf98`. Замки не менялись.
 
 ## Риски, не выдаваемые за воспроизведённые дефекты
 
@@ -166,7 +236,7 @@ production-достижимость.
 | governor review: horizon, GAR | exit=0; H05/GAR-015 остаются открытыми |
 | Публичный Rust composition probe + независимый XML parser | 2 класса дефектов воспроизведены |
 
-99 файлов `da-parse/tests/*.rs`; непересекающееся разбиение по именам не строилось. Подстроки встречаются: contract 55, properties 16, oracle 15, data_contract 13, same_n 8, metamorphic 1. Категории перекрываются. Процент line/branch/mutation coverage не измерялся. Полная архитектурная проверка, все adapter/application suites и живой Java-vs-Rust corpus-run в этом аудите не выполнялись. Утверждать «всё покрыто» нельзя.
+99 файлов `da-parse/tests/*.rs`; непересекающееся разбиение по именам не строилось. Подстроки встречаются: contract 55, properties 16, oracle 15, data_contract 13, same_n 8, metamorphic 1. Категории перекрываются. Процент line/branch/mutation coverage не измерялся. Полная архитектурная проверка, все adapter/application suites и живой Java-vs-Rust corpus-run в этом аудите не выполнялись. Утверждать «всё покрыто» нельзя. Строка `1351 passed` в таблице — замер ревизии аудита `bcdd0cfc5`; после S01/T06 тот же набор даёт 100 suites / 1374 passed / 0 failed / 0 ignored (раздел T04–T06).
 
 Доказательства GSD exec: `6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f` (Rust probe), `73a4222b-035b-4439-955e-96d36c068534` (test totals и валидность исходного XML), `c0d5f8f1-490c-4fe0-87c3-4f6e495c9a5b` (scope и test tags), `98f91300-d06b-4d67-8917-19d64e7b8d18` (реестры).
 

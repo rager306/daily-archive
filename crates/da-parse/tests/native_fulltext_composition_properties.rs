@@ -299,6 +299,63 @@ proptest! {
             tei_element_bytes(candidate.envelope.raw_tei(), "body").unwrap()
         );
     }
+
+    /// M511-j7wz2f/S01/T06: the `xml:id` uniqueness gate reads the XML attribute
+    /// grammar (`Name S? Eq S? AttValue`), so no legal spelling — either quote
+    /// character, any whitespace around `=` — may slip a colliding id past it,
+    /// and a distinct id written the same way must still compose.
+    #[test]
+    fn any_legal_xml_id_spelling_hits_the_same_duplicate_id_gate(
+        quote in prop::sample::select(vec!['"', '\'']),
+        left in "[ \t]{0,2}",
+        right in "[ \t]{0,2}",
+    ) {
+        let attribute = |id: &str| format!("xml:id{left}={right}{quote}{id}{quote}");
+        let document = |id: &str| {
+            format!(
+                "<TEI><teiHeader><fileDesc><titleStmt><title>Java</title><note {}>an id</note></titleStmt></fileDesc></teiHeader>{XML_BODY}",
+                attribute(id)
+            )
+        };
+        let colliding = document("author-0");
+        match compose_native_fulltext(input(colliding.clone(), AdmissionDisposition::Passed)) {
+            NativeFulltextCompositionOutcome::Rejected { fallback, error } => {
+                prop_assert!(
+                    matches!(
+                        error,
+                        NativeFulltextCompositionError::ComposedOutputNotWellFormed(_)
+                    ),
+                    "a colliding id written as {} must be a typed refusal: {error:?}",
+                    attribute("author-0")
+                );
+                prop_assert_eq!(fallback.raw_tei(), colliding.as_bytes());
+            }
+            NativeFulltextCompositionOutcome::Accepted(candidate) => {
+                let output = String::from_utf8_lossy(candidate.envelope.raw_tei()).to_string();
+                prop_assert!(
+                    false,
+                    "a colliding id written as {} was published: {output}",
+                    attribute("author-0")
+                );
+            }
+        }
+        let distinct = document("author-7");
+        let NativeFulltextCompositionOutcome::Accepted(candidate) =
+            compose_native_fulltext(input(distinct.clone(), AdmissionDisposition::Passed))
+        else {
+            prop_assert!(false, "a distinct id was refused: {distinct}");
+            unreachable!()
+        };
+        let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+        prop_assert!(
+            roxmltree::Document::parse(&output).is_ok(),
+            "emission is not well-formed: {output}"
+        );
+        prop_assert!(
+            output.contains("author-7"),
+            "the preserved distinct id was lost: {output}"
+        );
+    }
 }
 
 #[test]
