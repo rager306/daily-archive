@@ -553,6 +553,36 @@ fn independent_count(xml: &str, tag: &str) -> usize {
         .count()
 }
 
+/// Concatenated bytes of every *direct* child of the first element whose local
+/// name is `parent`, minus the children whose local name is excluded, plus the
+/// number of non-element children seen.
+///
+/// Unlike `independent_children`, this is deliberately **not** filtered by
+/// `is_element()`: a text node, comment or processing instruction between
+/// children is conservation content too, and an element-only view is blind to it
+/// disappearing (measured S01/T05).  The count is returned so a caller can
+/// assert the check was not vacuous for that class.
+fn independent_child_stream(xml: &str, parent: &str, excluded: &[&str]) -> (String, usize) {
+    let document = roxmltree::Document::parse(xml).expect("independent parser accepts");
+    let node = document
+        .descendants()
+        .find(|node| node.is_element() && node.tag_name().name() == parent)
+        .unwrap_or_else(|| panic!("{parent} present"));
+    let mut stream = String::new();
+    let mut non_elements = 0usize;
+    for child in node.children() {
+        if child.is_element() {
+            if excluded.contains(&child.tag_name().name()) {
+                continue;
+            }
+        } else {
+            non_elements += 1;
+        }
+        stream.push_str(&xml[child.range()]);
+    }
+    (stream, non_elements)
+}
+
 /// A-XML regression gate: an `Accepted` emission of a real preserved TEI must be
 /// well-formed for an independent parser.
 ///
@@ -633,8 +663,134 @@ fn preserved_tei_emissions_conserve_every_source_header_subtree() {
                 conserved > 0,
                 "{name}: {parent} exercised no preserved child, so the assertion proved nothing"
             );
+            // Element-only conservation cannot see a dropped comment,
+            // processing instruction or text node, so the same direct children
+            // are also compared as a byte stream that includes those nodes.  The
+            // preserved TEI roots carry `xml:space="preserve"` and whitespace
+            // between children, so the class is exercised by construction.
+            let (source_stream, source_non_elements) =
+                independent_child_stream(&source, parent, excluded);
+            let (emitted_stream, _) = independent_child_stream(&emitted, parent, excluded);
+            assert!(
+                emitted_stream.contains(&source_stream),
+                "{name}: {parent} lost or rewrote its non-element children"
+            );
+            assert!(
+                source_non_elements > 0,
+                "{name}: {parent} has no non-element child, so the conservation check was blind to that class"
+            );
         }
     }
+}
+
+/// S01/T05: a `titleStmt` that is *not* a direct child of the file description is
+/// not the wrapper the composer replaces.
+///
+/// `element_index_opt` matched by name anywhere in the document, so the only
+/// `<titleStmt>` — one nested under `fileDesc/seriesStmt` — was taken as the
+/// wrapper: its `<title>` was moved into the composed title statement *and* the
+/// enclosing `<seriesStmt>` travelled over as a file-description child, which
+/// measured two opening `<title>` tags in an `Accepted` emission.
+#[test]
+// The name is prescribed by the S01/T05 contract (and the audit it closes), so the
+// camel-cased `titleStmt` is kept rather than renamed to satisfy the lint.
+#[allow(non_snake_case)]
+fn nested_unique_titleStmt_under_seriesStmt_is_not_duplicated() {
+    let xml = "<TEI><teiHeader xml:lang=\"en\"><fileDesc><seriesStmt><titleStmt><title>Series</title></titleStmt></seriesStmt><publicationStmt><publisher>Example</publisher></publicationStmt><sourceDesc><p>source</p></sourceDesc></fileDesc></teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>";
+    let NativeFulltextCompositionOutcome::Accepted(candidate) = compose_native_fulltext(input(
+        xml,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
+    )) else {
+        panic!("a nested titleStmt must neither reject nor damage the splice")
+    };
+    let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+    assert_eq!(independent_xml_verdict(&output), Ok(()), "{output}");
+    assert_eq!(
+        independent_count(&output, "title"),
+        independent_count(xml, "title"),
+        "the nested <title> must survive exactly once: {output}"
+    );
+    assert_eq!(
+        output.matches("<title>Series</title>").count(),
+        1,
+        "the nested title must not be duplicated: {output}"
+    );
+    assert_eq!(
+        independent_count(&output, "titleStmt"),
+        2,
+        "the composed skeleton adds one title statement and the nested one stays in its parent: {output}"
+    );
+    // The nested subtree stays where it was: under seriesStmt, inside fileDesc.
+    let file_desc_children = independent_children(&output, "fileDesc");
+    assert!(
+        file_desc_children
+            .iter()
+            .any(|(name, bytes)| name == "seriesStmt"
+                && bytes.contains("<titleStmt><title>Series</title></titleStmt>")),
+        "seriesStmt must stay a fileDesc child with its nested titleStmt: {file_desc_children:?}"
+    );
+    assert!(
+        output.contains("<publisher>Example</publisher>"),
+        "{output}"
+    );
+    assert!(output.contains("<p>source</p>"), "{output}");
+}
+
+/// S01/T05: the wrappers the composer synthesizes must conserve the source
+/// wrapper's *non-element* children — a direct comment, a processing instruction
+/// and the text between children — not only its element subtrees.
+#[test]
+fn wrapper_direct_comments_pis_and_text_are_conserved() {
+    let xml = "<TEI><teiHeader xml:lang=\"en\">\n<!-- header direct comment --><?header-pi keep?>\n<fileDesc>\n<!-- fileDesc direct comment -->\n<titleStmt><title>Java title</title><!-- titleStmt direct comment --></titleStmt>\n<publicationStmt><publisher>Example</publisher></publicationStmt>\n</fileDesc>\nheader level text\n<profileDesc><abstract><p>abstract</p></abstract></profileDesc>\n</teiHeader><text><body><p>body bytes</p></body><listBibl><biblStruct xml:id=\"b0\">Java ref</biblStruct></listBibl></text></TEI>";
+    let NativeFulltextCompositionOutcome::Accepted(candidate) = compose_native_fulltext(input(
+        xml,
+        AdmissionDisposition::Passed,
+        AdmissionDisposition::Unsupported,
+    )) else {
+        panic!("direct comments, processing instructions and text must not reject the splice")
+    };
+    let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+    assert_eq!(independent_xml_verdict(&output), Ok(()), "{output}");
+    for fragment in [
+        "<!-- header direct comment -->",
+        "<?header-pi keep?>",
+        "<!-- fileDesc direct comment -->",
+        "<!-- titleStmt direct comment -->",
+        "\nheader level text\n",
+    ] {
+        assert!(output.contains(fragment), "{fragment} lost: {output}");
+    }
+    // Structural, judged by the independent parser: each conserved node is still
+    // a direct child of the wrapper it came from, not merely present somewhere.
+    let document = roxmltree::Document::parse(&output).expect("independent parser accepts");
+    let children_stream = |parent: &str| -> String {
+        document
+            .descendants()
+            .find(|node| node.is_element() && node.tag_name().name() == parent)
+            .unwrap_or_else(|| panic!("{parent} present"))
+            .children()
+            .map(|child| &output[child.range()])
+            .collect()
+    };
+    let header = children_stream("teiHeader");
+    assert!(
+        header.contains("<!-- header direct comment -->"),
+        "{header}"
+    );
+    assert!(header.contains("<?header-pi keep?>"), "{header}");
+    assert!(header.contains("\nheader level text\n"), "{header}");
+    let file_desc = children_stream("fileDesc");
+    assert!(
+        file_desc.contains("<!-- fileDesc direct comment -->"),
+        "{file_desc}"
+    );
+    let title_stmt = children_stream("titleStmt");
+    assert!(
+        title_stmt.contains("<!-- titleStmt direct comment -->"),
+        "{title_stmt}"
+    );
+    assert!(output.contains("<p>abstract</p>"), "{output}");
 }
 
 /// Structural requirements: repeated and nested same-name tags, an attribute

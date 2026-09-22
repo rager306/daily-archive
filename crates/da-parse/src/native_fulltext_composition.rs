@@ -865,28 +865,71 @@ fn header_xml(
     // declaration on `fileDesc` and `1:153` for one on `titleStmt`).  Only
     // `xmlns`/`xmlns:*` are reproduced, so no other wrapper attribute — for
     // example an `xml:id` that could collide with a synthesized id — is copied.
-    let file_desc_declarations = document.namespace_declarations(existing, "fileDesc")?;
-    let title_stmt_declarations = document.namespace_declarations(existing, "titleStmt")?;
+    // Where the source wrappers are, if they exist at all.  Only a *direct*
+    // child can be the wrapper the composer synthesizes: a same-named element
+    // nested deeper belongs to its own parent and must travel with it.  Matching
+    // by name anywhere in the document instead let the only `titleStmt` — one
+    // under `fileDesc/seriesStmt` — be taken as the wrapper, so its children were
+    // moved into the composed title statement *and* the enclosing `seriesStmt`
+    // was carried over as a `fileDesc` child, duplicating the nested `<title>`
+    // (measured S01/T05).
+    let file_desc_index = document.direct_child_index_opt("teiHeader", "fileDesc")?;
+    let title_stmt_index = match file_desc_index {
+        Some(_) => {
+            // A `titleStmt` at the header level while a `fileDesc` exists cannot
+            // be placed: the composer synthesizes one title statement inside the
+            // synthesized file description, and re-parenting the header-level one
+            // would be a guess.
+            if document
+                .direct_child_index_opt("teiHeader", "titleStmt")?
+                .is_some()
+            {
+                return Err(NativeFulltextCompositionError::AmbiguousSplice(
+                    "teiHeader/titleStmt".into(),
+                ));
+            }
+            document.direct_child_index_opt("fileDesc", "titleStmt")?
+        }
+        None => document.direct_child_index_opt("teiHeader", "titleStmt")?,
+    };
+    // The composer synthesizes `fileDesc` and `titleStmt`, so a namespace
+    // declaration carried by the *source* wrapper would be dropped with the
+    // wrapper while its children are moved into the composed one: the preserved
+    // `ext:` descendants would then hold an unbound prefix and an independent
+    // parser would reject the emission even though this module accepted it
+    // (measured for S01/T03: `an unknown namespace prefix 'ext' at 1:202` for a
+    // declaration on `fileDesc` and `1:153` for one on `titleStmt`).  Only
+    // `xmlns`/`xmlns:*` are reproduced, so no other wrapper attribute — for
+    // example an `xml:id` that could collide with a synthesized id — is copied.
+    // The declaration is read from the *located* wrapper, not from a same-named
+    // element nested elsewhere.
+    let file_desc_declarations = document.namespace_declarations_at(existing, file_desc_index)?;
+    let title_stmt_declarations = document.namespace_declarations_at(existing, title_stmt_index)?;
     // Placement is structural, never name-guessed.  The synthesized skeleton is
     // `teiHeader > fileDesc > titleStmt`, so a source subtree is re-inserted
     // under the wrapper it actually came from:
     //
-    //   A = children of the source `titleStmt`   -> inside the composed titleStmt
-    //   B = children of the source `fileDesc`    -> siblings of the composed
-    //       minus `titleStmt`                       titleStmt, inside the composed
-    //                                               fileDesc
-    //   C = children of the source `teiHeader`   -> siblings of the composed
-    //       minus `fileDesc` and `titleStmt`        fileDesc
+    //   A = content of the source `titleStmt`  -> inside the composed titleStmt
+    //   B = content of the source `fileDesc`   -> after the composed titleStmt,
+    //       minus `titleStmt`                      inside the composed fileDesc
+    //   C = content of the source `teiHeader`  -> after the composed fileDesc
+    //       minus `fileDesc` and `titleStmt`
     //
     // A, B and C are pairwise disjoint (each element has exactly one parent) and
-    // together they cover every descendant of the source `teiHeader` except the
-    // two wrappers the composer synthesizes, so no element subtree is duplicated
-    // and none is dropped.  A missing `fileDesc`/`titleStmt` just leaves its set
-    // empty; an *ambiguous* wrapper cannot be placed without guessing, so it is a
-    // typed rejection rather than a silent re-parenting.
-    let title_stmt = document.child_spans("titleStmt")?;
-    let file_desc = document.child_spans_excluding("fileDesc", &["titleStmt"])?;
-    let header = document.child_spans_excluding("teiHeader", &["fileDesc", "titleStmt"])?;
+    // together they cover every byte of the source `teiHeader` except the two
+    // wrappers the composer synthesizes, so no subtree and no non-element child
+    // is duplicated and none is dropped.  Segments are byte intervals, not just
+    // element spans, so direct comments, processing instructions and the
+    // significant text/whitespace between children are conserved too.  A missing
+    // `fileDesc`/`titleStmt` just leaves its set empty; an *ambiguous* wrapper
+    // cannot be placed without guessing, so it is a typed rejection rather than a
+    // silent re-parenting.
+    let title_stmt = document.content_segments(title_stmt_index, &[]);
+    let file_desc = document.content_segments(file_desc_index, &["titleStmt"]);
+    let header = document.content_segments(
+        document.element_index_opt("teiHeader")?,
+        &["fileDesc", "titleStmt"],
+    );
     let mut out = String::from("<teiHeader");
     out.push_str(attributes);
     out.push_str("><fileDesc");
@@ -1105,6 +1148,13 @@ struct XmlElement {
     end: usize,
     /// Exclusive index just past the element's open tag.
     open_end: usize,
+    /// Index of the `<` that opens the element's closing tag; equal to
+    /// `open_end` for a self-closing element.
+    ///
+    /// Content bytes live in `open_end..close_start`, which is what lets the
+    /// composer carry the wrapper's comments, processing instructions and text,
+    /// not only its element subtrees.
+    close_start: usize,
     /// Index of the enclosing element, `None` at the document root.
     parent: Option<usize>,
 }
@@ -1173,6 +1223,7 @@ impl XmlDocument {
                     return Err(NativeFulltextCompositionError::UnbalancedXml);
                 }
                 elements[index].end = open_end;
+                elements[index].close_start = start;
             } else {
                 if let Some(attribute) = body.split_whitespace().find(|attribute| {
                     attribute.starts_with("id=\"") || attribute.starts_with("xml:id=\"")
@@ -1196,6 +1247,7 @@ impl XmlDocument {
                     start,
                     end: open_end,
                     open_end,
+                    close_start: open_end,
                     parent: stack.last().copied(),
                 });
                 if !empty {
@@ -1255,41 +1307,81 @@ impl XmlDocument {
         Ok(found)
     }
 
-    /// Whole-subtree spans of the direct children of the single element named
-    /// `parent`, in source order.
+    /// The single *direct* child of `parent` named `name`, or `None` when that
+    /// parent has no such child.
     ///
-    /// A missing `parent` yields no children instead of an error: the composer
-    /// synthesizes `fileDesc` and `titleStmt` itself, so their absence removes no
-    /// source subtree.  An *ambiguous* `parent` is a typed failure, because the
-    /// composer cannot place the source content without guessing.
-    fn child_spans(
+    /// Direct-child scoping is load-bearing, not a convenience.  The composer
+    /// replaces the source `fileDesc`/`titleStmt` wrappers with synthesized ones,
+    /// and only an element that sits at that level *is* that wrapper.  Matching by
+    /// name anywhere in the document instead made a nested `titleStmt` — for
+    /// example one under `fileDesc/seriesStmt` — be treated as the wrapper: its
+    /// content was moved into the composed title statement *and* the enclosing
+    /// `seriesStmt` travelled over as a `fileDesc` child, so the nested `<title>`
+    /// appeared twice in an `Accepted` emission (measured S01/T05).
+    ///
+    /// Two direct children with that name cannot be placed without guessing and
+    /// are a typed rejection; a missing `parent` yields `None`, because the
+    /// composer synthesizes the skeleton and an absent wrapper removes nothing.
+    fn direct_child_index_opt(
         &self,
         parent: &str,
-    ) -> Result<Vec<(usize, usize)>, NativeFulltextCompositionError> {
-        let Some(index) = self.element_index_opt(parent)? else {
-            return Ok(Vec::new());
+        name: &str,
+    ) -> Result<Option<usize>, NativeFulltextCompositionError> {
+        let Some(parent_index) = self.element_index_opt(parent)? else {
+            return Ok(None);
         };
-        Ok(self
-            .children_of(index)
-            .map(|element| (element.start, element.end))
-            .collect())
+        let mut found = None;
+        for (index, element) in self.elements.iter().enumerate() {
+            if element.parent == Some(parent_index) && element.name == name {
+                if found.is_some() {
+                    return Err(NativeFulltextCompositionError::AmbiguousSplice(format!(
+                        "{parent}/{name}"
+                    )));
+                }
+                found = Some(index);
+            }
+        }
+        Ok(found)
     }
 
-    /// Direct child spans of `parent` minus children whose name is excluded.
-    /// Every span is a whole subtree, so preserved children can never overlap.
-    fn child_spans_excluding(
-        &self,
-        parent: &str,
-        excluded: &[&str],
-    ) -> Result<Vec<(usize, usize)>, NativeFulltextCompositionError> {
-        let Some(index) = self.element_index_opt(parent)? else {
-            return Ok(Vec::new());
+    /// Byte intervals covering the *content* of the element at `index` minus the
+    /// excluded direct-child subtrees, in source order.
+    ///
+    /// This is the conservation primitive.  It carries the wrapper's comments,
+    /// processing instructions and the significant text/whitespace between its
+    /// children, not only its element subtrees: element-only copying silently
+    /// dropped them, and the preserved TEI roots carry `xml:space="preserve"`
+    /// with whitespace between `</fileDesc>` and `<encodingDesc>` (measured
+    /// S01/T05).  Every interval is copied verbatim from the source, so the
+    /// conservation stays byte-exact.
+    ///
+    /// A missing element (`None`) yields no intervals, so a wrapper the composer
+    /// synthesizes can be absent without an error.  Excluded direct children are
+    /// siblings and therefore non-overlapping, which is what keeps the intervals
+    /// disjoint and unambiguous.
+    fn content_segments(&self, index: Option<usize>, excluded: &[&str]) -> Vec<(usize, usize)> {
+        let Some(index) = index else {
+            return Vec::new();
         };
-        Ok(self
+        let element = &self.elements[index];
+        let mut cut_points: Vec<(usize, usize)> = self
             .children_of(index)
-            .filter(|element| !excluded.contains(&element.name.as_str()))
-            .map(|element| (element.start, element.end))
-            .collect())
+            .filter(|child| excluded.contains(&child.name.as_str()))
+            .map(|child| (child.start, child.end))
+            .collect();
+        cut_points.sort_unstable();
+        let mut segments = Vec::new();
+        let mut cursor = element.open_end;
+        for (start, end) in cut_points {
+            if cursor < start {
+                segments.push((cursor, start));
+            }
+            cursor = cursor.max(end);
+        }
+        if cursor < element.close_start {
+            segments.push((cursor, element.close_start));
+        }
+        segments
     }
 
     fn children_of(&self, index: usize) -> impl Iterator<Item = &XmlElement> {
@@ -1318,9 +1410,9 @@ impl XmlDocument {
         Ok(tag_attributes(&tag[name.len()..]))
     }
 
-    /// Namespace declarations (`xmlns`, `xmlns:*`) carried by `name`'s open tag,
-    /// each re-emitted as ` name="value"` (`""` when the element is absent or
-    /// declares none).
+    /// Namespace declarations (`xmlns`, `xmlns:*`) carried by the open tag of the
+    /// element at `index`, each re-emitted as ` name="value"` (`""` when the
+    /// element is absent or declares none).
     ///
     /// The composer synthesizes `fileDesc` and `titleStmt` instead of preserving
     /// the source wrappers, so their own attributes are not otherwise reproduced.
@@ -1329,26 +1421,30 @@ impl XmlDocument {
     /// it deliberately does not interpret namespaces, and which only the separate
     /// `validate_well_formed` pass (and the independent oracle) can catch.
     ///
+    /// Reading through the *located* element, not through a global name lookup, is
+    /// what keeps a nested same-named element from donating a declaration that
+    /// belongs to a subtree which travels over whole.
+    ///
     /// The pair is read through `parse_attributes`, so `xmlns:ext = "urn:x"` and
     /// `xmlns:ext ="urn:x"` are carried like the compact spelling; the earlier
     /// whitespace tokenizer saw three tokens (`xmlns:ext`, `=`, `"urn:x"`) and
     /// silently dropped the declaration.  A declaration that cannot be read is a
     /// typed rejection, never a silent omission.  A missing element is not an
-    /// error: the absence paths are owned by `child_spans*`, and there is no
+    /// error: the absence paths are owned by `content_segments`, and there is no
     /// declaration to reproduce for an element that is not there.
-    fn namespace_declarations(
+    fn namespace_declarations_at(
         &self,
         source: &str,
-        name: &str,
+        index: Option<usize>,
     ) -> Result<String, NativeFulltextCompositionError> {
-        let Some(index) = self.element_index_opt(name)? else {
+        let Some(index) = index else {
             return Ok(String::new());
         };
         let element = &self.elements[index];
         // The parser requires the open tag to start with the element name, so the
         // name length is an exact char boundary after `<`.
         let tag = &source[element.start + 1..element.open_end - 1];
-        let body = tag_attributes(&tag[name.len()..]);
+        let body = tag_attributes(&tag[element.name.len()..]);
         let mut declarations = String::new();
         for (attribute, value) in parse_attributes(body)? {
             if attribute == "xmlns" || attribute.starts_with("xmlns:") {

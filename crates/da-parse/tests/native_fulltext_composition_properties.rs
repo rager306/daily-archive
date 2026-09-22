@@ -246,6 +246,59 @@ proptest! {
             }
         }
     }
+
+    /// M511-j7wz2f/S01/T05: the wrappers the composer synthesizes conserve their
+    /// source *non-element* children too.  Element-only copying silently dropped a
+    /// direct comment, processing instruction or text node while still returning
+    /// `Accepted`, so each generated marker must still be a direct child of the
+    /// wrapper it came from.
+    #[test]
+    fn wrapper_non_element_children_survive_the_splice(marker in "[A-Za-z0-9 ]{1,24}") {
+        let xml = format!(
+            "<TEI><teiHeader xml:lang=\"en\"><!-- c {marker} --><?p {marker}?><fileDesc><titleStmt><title>Java</title><!-- t {marker} --></titleStmt><publicationStmt><publisher>Example</publisher></publicationStmt></fileDesc>h {marker} <profileDesc><abstract><p>abstract</p></abstract></profileDesc></teiHeader>{XML_BODY}"
+        );
+        let outcome = compose_native_fulltext(input(xml.clone(), AdmissionDisposition::Passed));
+        let NativeFulltextCompositionOutcome::Accepted(candidate) = outcome else {
+            prop_assert!(
+                false,
+                "well-formed source with non-element children was not accepted: {xml}"
+            );
+            unreachable!()
+        };
+        let output = String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap();
+        let parsed = roxmltree::Document::parse(&output);
+        prop_assert!(parsed.is_ok(), "emission is not well-formed: {output}");
+        let document = parsed.unwrap();
+        let direct_children_stream = |parent: &str| -> String {
+            document
+                .descendants()
+                .find(|node| node.is_element() && node.tag_name().name() == parent)
+                .unwrap_or_else(|| panic!("{parent} present"))
+                .children()
+                .map(|child| &output[child.range()])
+                .collect()
+        };
+        let header_stream = direct_children_stream("teiHeader");
+        for fragment in [
+            format!("<!-- c {marker} -->"),
+            format!("<?p {marker}?>"),
+            format!("h {marker} "),
+        ] {
+            prop_assert!(
+                header_stream.contains(&fragment),
+                "direct teiHeader child {fragment} was lost: {header_stream}"
+            );
+        }
+        let title_stmt_stream = direct_children_stream("titleStmt");
+        prop_assert!(
+            title_stmt_stream.contains(&format!("<!-- t {marker} -->")),
+            "direct titleStmt child was lost: {title_stmt_stream}"
+        );
+        prop_assert_eq!(
+            tei_element_bytes(xml.as_bytes(), "body").unwrap(),
+            tei_element_bytes(candidate.envelope.raw_tei(), "body").unwrap()
+        );
+    }
 }
 
 #[test]
