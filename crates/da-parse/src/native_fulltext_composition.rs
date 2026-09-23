@@ -131,13 +131,48 @@ pub struct S17LineageReceipt {
     pub output_affecting: bool,
 }
 
+/// What a [`FulltextComponentManifest::byte_count`] measures.
+///
+/// S04/T04 (H17, "byte accounting"): `manifest_entry` records the length of the
+/// native fragment it spliced into the emission, while `fallback_entry` repeated
+/// the *whole* preserved Java document (`java.len()`) as the byte count of every
+/// component that deferred to Java. Without a scope a consumer could not tell the
+/// two apart, so the naive `sum(byte_count)` over the manifest counted the
+/// document once per fallback component instead of partitioning anything.
+///
+/// The invariant this scope makes machine-checkable: only `NativeFragment`
+/// lengths partition the emitted document. A `WholeDocumentReference` repeats
+/// stored Java evidence and MUST NOT be summed as a partition member. The field
+/// is additive (`#[serde(default)]`), so manifests serialized before S04 stay
+/// decodable.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ByteCountScope {
+    /// `byte_count` is the length of the native fragment this component spliced
+    /// into the emission. Only these lengths partition the emitted document.
+    #[default]
+    NativeFragment,
+    /// `byte_count` is the length of the preserved whole Java document this
+    /// component defers to — a reference to stored evidence, never a partition
+    /// member.
+    WholeDocumentReference,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FulltextComponentManifest {
     pub component: FulltextComponent,
     pub producer: String,
     pub disposition: AdmissionDisposition,
     pub evidence_digest: String,
+    /// Observed bytes for this component, qualified by `byte_scope`: a native
+    /// fragment length or the whole preserved Java document, never an
+    /// unqualified number.
     pub byte_count: usize,
+    /// What `byte_count` measures (S04/T04). `#[serde(default)]` keeps manifests
+    /// serialized before S04 decodable — the same device `reference_links` and
+    /// `semantic_fields` use — and an absent scope degrades to `NativeFragment`.
+    #[serde(default)]
+    pub byte_scope: ByteCountScope,
     pub sha256: String,
     pub truncated: bool,
     pub fallback_target: String,
@@ -326,6 +361,57 @@ impl fmt::Display for SemanticFieldLoss {
     }
 }
 
+/// The manifest-level byte accounting, so the scope of every counter is
+/// observable in the record instead of living only in a doc comment.
+///
+/// S04/T04: the composer is the only place that knows which byte counts are
+/// native fragments and which repeat the whole preserved Java document. This
+/// ledger records that decision once, and
+/// [`NativeFulltextManifest::native_byte_partition`] re-derives the partition
+/// from the components; the two must agree, and that agreement is what makes a
+/// substituted `byte_scope` detectable instead of silently inflating the
+/// partition.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ByteAccountingLedger {
+    /// Sum of `byte_count` over `NativeFragment` components: the only lengths
+    /// that partition the emitted document's spliced region.
+    pub native_fragment_bytes: usize,
+    /// The preserved Java document length every `WholeDocumentReference`
+    /// component repeats. Equal to `java_fallback_bytes` by construction.
+    pub java_document_bytes: usize,
+    /// Always `true`: a `WholeDocumentReference` is a reference to stored Java
+    /// evidence, never a partition member. Carried as DATA so the distinction
+    /// survives serialization rather than living only in a comment.
+    pub fallback_is_reference_not_partition: bool,
+}
+
+/// A component whose declared byte scope contradicts the record it carries.
+///
+/// S04/T04: the scope is the honest attribution H17 was missing, so
+/// mis-declaring it must be visible rather than trusted. Every class is decided
+/// from the manifest alone; a `Rejected` composition carries no manifest at all.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ByteAccountingViolation {
+    /// A `NativeFragment` component that is not an admitted (`Passed`) splice.
+    /// Its `byte_count` would enter the native partition while actually
+    /// repeating the whole preserved document — exactly the non-additive
+    /// mis-attribution H17 measured.
+    NativeFragmentWithoutAdmittedSplice { component: FulltextComponent },
+    /// A `WholeDocumentReference` component whose `byte_count`/`sha256` does not
+    /// repeat the preserved Java document, so the reference no longer points at
+    /// the evidence it claims.
+    ReferenceDoesNotRepeatDocument { component: FulltextComponent },
+    /// The re-derived partition and the recorded ledger disagree: a component's
+    /// scope was changed after the composer attested the partition.
+    NativePartitionDisagreesWithLedger { derived: usize, recorded: usize },
+    /// The ledger repeats a Java document length other than
+    /// `java_fallback_bytes`.
+    JavaDocumentLengthDisagreesWithManifest { derived: usize, recorded: usize },
+    /// The ledger claims the whole-document fallback *is* a partition member,
+    /// which is the defect this scope exists to rule out.
+    FallbackDeclaredAsPartition,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NativeFulltextManifest {
     pub schema_version: String,
@@ -343,11 +429,87 @@ pub struct NativeFulltextManifest {
     /// `large_enum_variant` bound against the byte-identical Java fallback.
     #[serde(default)]
     pub semantic_fields: Box<SemanticFieldLedger>,
+    /// `#[serde(default)]`: manifests serialized before S04/T04 stay decodable
+    /// (all-zero ledger), the same backward-compatibility device
+    /// `reference_links`/`semantic_fields` use.
+    #[serde(default)]
+    pub byte_accounting: ByteAccountingLedger,
     pub native_components: usize,
     pub fallback_components: usize,
     pub java_fallback_bytes: usize,
     pub java_fallback_sha256: String,
     pub s17_output_affecting: bool,
+}
+
+impl NativeFulltextManifest {
+    /// Sum of `byte_count` over `NativeFragment` components — the only lengths
+    /// that partition the emitted document.
+    ///
+    /// Re-derived from the component list rather than trusted from
+    /// `byte_accounting`, so a substituted `byte_scope` changes this value and is
+    /// caught by [`Self::byte_accounting_violations`]. A
+    /// `WholeDocumentReference` is deliberately excluded: summing it would count
+    /// the whole Java document once per fallback component.
+    pub fn native_byte_partition(&self) -> usize {
+        self.components
+            .iter()
+            .filter(|component| component.byte_scope == ByteCountScope::NativeFragment)
+            .map(|component| component.byte_count)
+            .sum()
+    }
+
+    /// Every way this manifest's byte attribution is internally inconsistent.
+    ///
+    /// Empty is the only honest state: the composer produces it, while a mutant
+    /// that flips a fallback component's `byte_scope` to `NativeFragment` cannot
+    /// satisfy it — the component would be a non-admitted splice *and* the
+    /// re-derived partition would no longer match the recorded ledger.
+    pub fn byte_accounting_violations(&self) -> Vec<ByteAccountingViolation> {
+        let mut violations = Vec::new();
+        for component in &self.components {
+            match component.byte_scope {
+                ByteCountScope::NativeFragment => {
+                    if component.disposition != AdmissionDisposition::Passed {
+                        violations.push(
+                            ByteAccountingViolation::NativeFragmentWithoutAdmittedSplice {
+                                component: component.component,
+                            },
+                        );
+                    }
+                }
+                ByteCountScope::WholeDocumentReference => {
+                    if component.byte_count != self.java_fallback_bytes
+                        || component.sha256 != self.java_fallback_sha256
+                    {
+                        violations.push(ByteAccountingViolation::ReferenceDoesNotRepeatDocument {
+                            component: component.component,
+                        });
+                    }
+                }
+            }
+        }
+        let derived = self.native_byte_partition();
+        if self.byte_accounting.native_fragment_bytes != derived {
+            violations.push(
+                ByteAccountingViolation::NativePartitionDisagreesWithLedger {
+                    derived,
+                    recorded: self.byte_accounting.native_fragment_bytes,
+                },
+            );
+        }
+        if self.byte_accounting.java_document_bytes != self.java_fallback_bytes {
+            violations.push(
+                ByteAccountingViolation::JavaDocumentLengthDisagreesWithManifest {
+                    derived: self.java_fallback_bytes,
+                    recorded: self.byte_accounting.java_document_bytes,
+                },
+            );
+        }
+        if !self.byte_accounting.fallback_is_reference_not_partition {
+            violations.push(ByteAccountingViolation::FallbackDeclaredAsPartition);
+        }
+        violations
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -627,6 +789,19 @@ fn compose_inner(
         .filter(|m| matches!(m.disposition, AdmissionDisposition::Passed))
         .count();
     let fallback_components = components.len() - native_components;
+    // S04/T04: record, once, which byte counts partition the emission and which
+    // repeat the whole preserved Java document. `native_byte_partition`
+    // re-derives the first set from the components, so a substituted scope
+    // disagrees with this ledger instead of silently inflating the partition.
+    let byte_accounting = ByteAccountingLedger {
+        native_fragment_bytes: components
+            .iter()
+            .filter(|component| component.byte_scope == ByteCountScope::NativeFragment)
+            .map(|component| component.byte_count)
+            .sum(),
+        java_document_bytes: java.len(),
+        fallback_is_reference_not_partition: true,
+    };
     let java_fallback_sha256 = digest(java);
     let identity = input.identity;
     let candidate_identity = TeiIdentity::new(
@@ -641,6 +816,7 @@ fn compose_inner(
             components,
             reference_links,
             semantic_fields: Box::new(semantic_fields),
+            byte_accounting,
             native_components,
             fallback_components,
             java_fallback_bytes: java.len(),
@@ -707,6 +883,7 @@ fn manifest_entry(
         disposition: AdmissionDisposition::Passed,
         evidence_digest: digest(bytes),
         byte_count: bytes.len(),
+        byte_scope: ByteCountScope::NativeFragment,
         sha256: digest(bytes),
         truncated: false,
         fallback_target: r.fallback_target.clone(),
@@ -727,6 +904,7 @@ fn fallback_entry(
         },
         evidence_digest: digest(bytes),
         byte_count: bytes.len(),
+        byte_scope: ByteCountScope::WholeDocumentReference,
         sha256: digest(bytes),
         truncated: false,
         fallback_target: r.fallback_target.clone(),

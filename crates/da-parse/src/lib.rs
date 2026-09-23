@@ -286,7 +286,8 @@ pub use native_fulltext_blocks::{
     NativeFulltextBlocksOutcome, NoteDisposition, account_full_regions, run_native_fulltext_blocks,
 };
 pub use native_fulltext_composition::{
-    AdmissionDisposition, FulltextAdmissionReceipt, FulltextComponent, FulltextComponentManifest,
+    AdmissionDisposition, ByteAccountingLedger, ByteAccountingViolation, ByteCountScope,
+    FulltextAdmissionReceipt, FulltextComponent, FulltextComponentManifest,
     FulltextCompositionIdentity, NATIVE_FULLTEXT_COMPOSITION_SCHEMA_VERSION,
     NATIVE_FULLTEXT_FALLBACK_TARGET, NATIVE_FULLTEXT_LANE_FALLBACK_ADR_REF,
     NATIVE_FULLTEXT_LANE_FALLBACK_CONTRACT_ID, NATIVE_FULLTEXT_LANE_FALLBACK_LANE_CLOSURE,
