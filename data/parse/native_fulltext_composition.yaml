@@ -490,3 +490,57 @@ reference_link_integrity:
   - the rule is measured on the three sha256-pinned preserved TEI and is not yet a corpus regression; S05 owns the independent corpus check
   - an emission whose source declares no `xml:id` falls back to positional keys by construction, never to a synthesized domain
   used_by: [S02-T04, S02-T05]
+
+# M511-j7wz2f/S03/T03: lane fallback policy contract (D377: one more sibling
+# block inside this already sanctioned DATA file, never a new `data/parse/*.yaml`).
+#
+# The per-lane right to fall back to Java used to live only as prose spread over
+# several DATA carriers (`comparison_contract.yaml` both :348 and :584,
+# `grobid_compatibility.yaml`, `document_segmentation.yaml`,
+# `native_visual_families.yaml`), so a disagreement between two carriers was
+# invisible and a Rust run could silently substitute a lane's semantics or cancel
+# that lane's fallback right (H16-N2). The tokens below are mirrored one-for-one
+# by the composer's code constants (`NATIVE_FULLTEXT_LANE_FALLBACK_*` plus
+# `SemanticFieldLoss::ALL`) and the DATA contract test refuses drift in either
+# direction, both against the code and against every already-published carrier.
+#
+# This block owns the policy and nothing else: it is not a route,
+# `production_route`/`auto_promote`/`graph_mutation` stay `forbidden`,
+# `import_eligible` stays false and Java stays the rollback authority.
+lane_fallback_policy:
+  contract_id: native-fulltext-lane-fallback-policy.v1
+  adr_ref: ADR-076
+  # The lanes that may be independently selected for native substitution. These
+  # are exactly the lanes `admission.independently_selectable` and every other
+  # carrier already publish: an added lane here is a fabricated admission, and a
+  # dropped lane would withdraw a lane's fallback right by omission.
+  independently_selectable_lanes: [header, references]
+  # Where an unadmitted or refused lane goes: the frozen Java envelope.
+  fallback_target: java-grobid-http@0.9.0-crf
+  # A lane closes only on its own receipt. An aggregate `passed` never closes a
+  # lane, so no lane's fallback right may be cancelled by a sibling's success.
+  lane_closure: own_receipt_only
+  # Lanes are never pooled into a winner: one lane's disposition is never
+  # computed from another lane's result.
+  pooling: forbidden
+  # A terminal receipt is never a pass (the `admission` block above says the
+  # same; this block is the lane-scoped restatement).
+  terminal_receipt_is_pass: false
+  # The Rust shadow run may refuse typed and keep the byte-identical Java
+  # envelope, but it may never cancel, consume or override a lane's fallback.
+  rust_run_may_not_cancel_fallback: true
+  # The typed refusal classes a Rust run may emit for an admitted semantic field
+  # it cannot conserve. Exactly the composer's `SemanticFieldLoss` vocabulary in
+  # report order; a second copy of the vocabulary is not a contract.
+  refusal_classes:
+  - SemanticFieldLoss::HeaderTitle
+  - SemanticFieldLoss::HeaderEmail
+  - SemanticFieldLoss::HeaderIds
+  - SemanticFieldLoss::AuthorAffiliation
+  - SemanticFieldLoss::CitationRole
+  named_limitations:
+  - the policy is measured against the three sha256-pinned preserved TEI and is not yet a corpus regression; S05 owns the independent corpus check
+  - lane admission stays shadow/candidate, so this block grants no production route and does not lift D127
+  - the refusal vocabulary is the composer's SemanticFieldLoss tokens, never a second dictionary
+  - an unadmitted lane keeps Java as the authority and a fallback is never reclassified as recoverable
+  used_by: [S03-T03, S03-T04]

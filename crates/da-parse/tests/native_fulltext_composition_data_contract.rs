@@ -7,10 +7,15 @@
 //! serialized ledger shape, because a contract that carries a second copy of the
 //! vocabulary is not a contract. The pre-existing gates stay code-independent.
 use da_parse::{
+    NATIVE_FULLTEXT_FALLBACK_TARGET, NATIVE_FULLTEXT_LANE_FALLBACK_ADR_REF,
+    NATIVE_FULLTEXT_LANE_FALLBACK_CONTRACT_ID, NATIVE_FULLTEXT_LANE_FALLBACK_LANE_CLOSURE,
+    NATIVE_FULLTEXT_LANE_FALLBACK_LANES, NATIVE_FULLTEXT_LANE_FALLBACK_POOLING,
+    NATIVE_FULLTEXT_LANE_FALLBACK_RUST_RUN_MAY_NOT_CANCEL,
+    NATIVE_FULLTEXT_LANE_FALLBACK_TERMINAL_RECEIPT_IS_PASS,
     NATIVE_FULLTEXT_REFERENCE_LINK_DERIVATION, NATIVE_FULLTEXT_REFERENCE_LINK_ID_SPACE,
     NATIVE_FULLTEXT_REFERENCE_LINK_POSITIONAL_FALLBACK,
     NATIVE_FULLTEXT_REFERENCE_LINK_REQUIRED_TARGETS, NATIVE_FULLTEXT_REFERENCE_LINK_RESOLVE_GATE,
-    ReferenceLinkLedger,
+    ReferenceLinkLedger, SemanticFieldLoss,
 };
 use da_ports::citation_link::positional_entry_key;
 use serde_yaml::{Mapping, Value};
@@ -826,5 +831,464 @@ fn reference_link_integrity_mutations_fail_closed() {
     rejects_reference_link(
         mutate(a, &["reference_link_integrity"], Value::Null),
         "reference-link-integrity:contract_id",
+    );
+}
+
+// ───────── S03/T03: lane fallback policy DATA contract ─────────
+
+/// A sequence read that degrades to empty rather than panicking, so a missing
+/// carrier field is reported by name instead of aborting the whole gate.
+fn opt_seq(v: &Value, path: &[&str]) -> Vec<String> {
+    let mut cur = v;
+    for key in path {
+        let Some(next) = cur.get(*key) else {
+            return Vec::new();
+        };
+        cur = next;
+    }
+    cur.as_sequence()
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(Value::as_str)
+                .map(str::to_owned)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Every reason the `lane_fallback_policy` DATA block is unacceptable.
+///
+/// The scalar tokens are compared against the composer's own constants
+/// (`NATIVE_FULLTEXT_LANE_FALLBACK_*`) and the refusal classes against
+/// [`SemanticFieldLoss::ALL`], never against a re-typed literal, so a rename on
+/// either side fails this gate instead of silently drifting.
+fn lane_fallback_policy_errors(v: &Value) -> Vec<String> {
+    let mut e = Vec::new();
+    let Some(block) = v.get("lane_fallback_policy") else {
+        e.push("lane-fallback-policy:missing".into());
+        return e;
+    };
+    for (field, expected) in [
+        ("contract_id", NATIVE_FULLTEXT_LANE_FALLBACK_CONTRACT_ID),
+        ("adr_ref", NATIVE_FULLTEXT_LANE_FALLBACK_ADR_REF),
+        ("fallback_target", NATIVE_FULLTEXT_FALLBACK_TARGET),
+        ("lane_closure", NATIVE_FULLTEXT_LANE_FALLBACK_LANE_CLOSURE),
+        ("pooling", NATIVE_FULLTEXT_LANE_FALLBACK_POOLING),
+    ] {
+        if block.get(field).and_then(Value::as_str) != Some(expected) {
+            e.push(format!("lane-fallback-policy:{field}"));
+        }
+    }
+    let lanes: Vec<&str> = block
+        .get("independently_selectable_lanes")
+        .and_then(Value::as_sequence)
+        .map(|items| items.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
+    if lanes != NATIVE_FULLTEXT_LANE_FALLBACK_LANES {
+        e.push("lane-fallback-policy:independently_selectable_lanes".into());
+    }
+    if block
+        .get("terminal_receipt_is_pass")
+        .and_then(Value::as_bool)
+        != Some(NATIVE_FULLTEXT_LANE_FALLBACK_TERMINAL_RECEIPT_IS_PASS)
+    {
+        e.push("lane-fallback-policy:terminal_receipt_is_pass".into());
+    }
+    if block
+        .get("rust_run_may_not_cancel_fallback")
+        .and_then(Value::as_bool)
+        != Some(NATIVE_FULLTEXT_LANE_FALLBACK_RUST_RUN_MAY_NOT_CANCEL)
+    {
+        e.push("lane-fallback-policy:rust_run_may_not_cancel_fallback".into());
+    }
+    let expected_classes: Vec<&str> = SemanticFieldLoss::ALL.iter().map(|c| c.token()).collect();
+    let classes: Vec<&str> = block
+        .get("refusal_classes")
+        .and_then(Value::as_sequence)
+        .map(|items| items.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
+    if classes != expected_classes {
+        e.push("lane-fallback-policy:refusal_classes".into());
+    }
+    let limitations: Vec<&str> = block
+        .get("named_limitations")
+        .and_then(Value::as_sequence)
+        .map(|items| items.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
+    if limitations.is_empty() || limitations.iter().any(|line| line.trim().is_empty()) {
+        e.push("lane-fallback-policy:named_limitations".into());
+    }
+    if opt_seq(block, &["used_by"]) != ["S03-T03", "S03-T04"] {
+        e.push("lane-fallback-policy:used_by".into());
+    }
+    e
+}
+
+fn rejects_lane_fallback(v: Value, marker: &str) {
+    let errors = lane_fallback_policy_errors(&v);
+    assert!(
+        errors.iter().any(|x| x.contains(marker)),
+        "lane-fallback mutation `{marker}` was accepted: {errors:?}"
+    );
+}
+
+/// Every lane declaration published by one parsed carrier, as
+/// `declaration-path -> lanes`, found structurally so a declaration nested
+/// anywhere in the carrier is checked.
+fn lane_declarations(v: &Value) -> Vec<(String, Vec<String>)> {
+    fn walk(value: &Value, path: &mut Vec<String>, out: &mut Vec<(String, Vec<String>)>) {
+        match value {
+            Value::Mapping(map) => {
+                for (key, child) in map {
+                    let Some(key) = key.as_str() else {
+                        continue;
+                    };
+                    path.push(key.to_string());
+                    if key == "independently_selectable" || key == "independently_selectable_lanes"
+                    {
+                        out.push((path.join("."), opt_seq(child, &[])));
+                    }
+                    walk(child, path, out);
+                    path.pop();
+                }
+            }
+            Value::Sequence(items) => {
+                for (index, child) in items.iter().enumerate() {
+                    path.push(index.to_string());
+                    walk(child, path, out);
+                    path.pop();
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut out = Vec::new();
+    walk(v, &mut Vec::new(), &mut out);
+    out
+}
+
+/// DATA↔DATA: the new block must agree with every already-published carrier of
+/// the same lane vocabulary. The policy used to live only as prose spread over
+/// several DATA carriers, so a disagreement between two carriers was invisible;
+/// here every declaration in the sanctioned `data/parse` tree is compared and a
+/// divergence fails the gate by carrier and declaration path.
+fn lane_fallback_carrier_errors(authority: &Value, carriers: &[(&str, &Value)]) -> Vec<String> {
+    let Some(block) = authority.get("lane_fallback_policy") else {
+        return vec!["lane-fallback-policy:missing".into()];
+    };
+    let lanes = opt_seq(block, &["independently_selectable_lanes"]);
+    let mut e = Vec::new();
+    for (name, carrier) in carriers {
+        // A carrier that declares no lane vocabulary is not part of the
+        // contract; `LANE_VOCABULARY_CARRIERS` guards the carriers that must
+        // keep declaring, so a withdrawn declaration is still a failure.
+        for (declaration, observed) in lane_declarations(carrier) {
+            if observed != lanes {
+                e.push(format!("lane-fallback-policy:carrier:{name}#{declaration}"));
+            }
+        }
+    }
+    e
+}
+
+#[test]
+fn lane_fallback_policy_matches_the_composer_vocabulary() {
+    let a = yaml(AUTHORITY);
+    let errors = lane_fallback_policy_errors(&a);
+    assert!(errors.is_empty(), "lane fallback policy errors: {errors:?}");
+    // A whole-block absence must be reported as an absence, not as drift.
+    let missing = lane_fallback_policy_errors(&Value::Null);
+    assert!(
+        missing
+            .iter()
+            .any(|x| x.contains("lane-fallback-policy:missing")),
+        "a missing lane fallback policy must be reported as missing: {missing:?}"
+    );
+
+    // The refusal vocabulary is the composer enum in declaration order, so a
+    // renamed or added class cannot leave the DATA block stale.
+    assert_eq!(
+        NATIVE_FULLTEXT_LANE_FALLBACK_LANES,
+        ["header", "references"],
+        "the composer's independently selectable lane set changed shape"
+    );
+    let expected_classes: Vec<String> = SemanticFieldLoss::ALL
+        .iter()
+        .map(|class| class.token().to_string())
+        .collect();
+    assert_eq!(
+        expected_classes,
+        seq(&a, &["lane_fallback_policy", "refusal_classes"]),
+        "if the SemanticFieldLoss enum gains a class the DATA block must carry it"
+    );
+}
+
+#[test]
+fn lane_fallback_policy_is_registered_only_through_the_sanctioned_block() {
+    // No parallel carrier: the contract lives inside an already sanctioned DATA
+    // file, never in a new `data/parse/*.yaml` (D377).
+    for entry in std::fs::read_dir(root().join("data/parse")).expect("data/parse is readable") {
+        let name = entry
+            .expect("entry")
+            .file_name()
+            .to_string_lossy()
+            .to_string();
+        assert!(
+            !name.contains("lane_fallback") && !name.contains("lane-fallback"),
+            "the lane fallback policy must not create a parallel data/parse carrier: {name}"
+        );
+    }
+
+    // Exactly one governor registry binding, and it must be current.
+    let registry = yaml(REGISTRY);
+    let mut bindings: Vec<(String, String)> = Vec::new();
+    for section in ["source_data", "canonical_artifacts"] {
+        let items = registry
+            .get("bindings")
+            .and_then(|b| b.get(section))
+            .and_then(Value::as_sequence)
+            .cloned()
+            .unwrap_or_default();
+        for item in items {
+            bindings.push((
+                item.get("path")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned(),
+                item.get("sha256")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned(),
+            ));
+        }
+    }
+    let ours: Vec<&(String, String)> = bindings
+        .iter()
+        .filter(|(path, _)| path == AUTHORITY)
+        .collect();
+    assert_eq!(
+        ours.len(),
+        1,
+        "the composition DATA must carry exactly one governor registry binding"
+    );
+    let on_disk = std::fs::read(root().join(AUTHORITY)).expect("the composition DATA is readable");
+    assert_eq!(
+        ours[0].1,
+        sha256_hex(&on_disk),
+        "the registry digest must be re-pinned to the current composition DATA"
+    );
+    assert!(
+        !bindings
+            .iter()
+            .any(|(path, _)| path.contains("lane_fallback") || path.contains("lane-fallback")),
+        "the lane fallback policy must not add a second registry entry"
+    );
+}
+
+/// The carriers the Why names as already publishing the lane vocabulary. Each
+/// must keep a declaration: a vanished declaration is a withdrawn policy, not a
+/// sanctioned DATA file that simply never had one.
+const LANE_VOCABULARY_CARRIERS: [&str; 5] = [
+    AUTHORITY,
+    COMPARISON,
+    "data/parse/grobid_compatibility.yaml",
+    "data/parse/document_segmentation.yaml",
+    "data/parse/native_visual_families.yaml",
+];
+
+/// Every YAML carrier in the sanctioned `data/parse` tree, discovered from the
+/// tree rather than from a hardcoded list, so a new carrier that publishes a
+/// lane vocabulary is compared instead of ignored.
+fn declared_lane_carriers() -> Vec<(String, Value)> {
+    let dir = root().join("data/parse");
+    let mut carriers = Vec::new();
+    for entry in std::fs::read_dir(&dir).expect("data/parse is readable") {
+        let path = entry.expect("entry").path();
+        if path.extension().and_then(|x| x.to_str()) != Some("yaml") {
+            continue;
+        }
+        let name = path
+            .strip_prefix(root())
+            .expect("carrier under the repository root")
+            .to_string_lossy()
+            .to_string();
+        carriers.push((name.clone(), yaml(&name)));
+    }
+    carriers
+}
+
+#[test]
+fn lane_fallback_policy_agrees_with_every_sanctioned_carrier() {
+    let authority = yaml(AUTHORITY);
+    let carriers = declared_lane_carriers();
+    let borrowed: Vec<(&str, &Value)> = carriers
+        .iter()
+        .map(|(name, value)| (name.as_str(), value))
+        .collect();
+    let errors = lane_fallback_carrier_errors(&authority, &borrowed);
+    assert!(
+        errors.is_empty(),
+        "lane fallback carriers disagree: {errors:?}"
+    );
+
+    // The scan must not be vacuous: the carriers the Why names keep a lane
+    // declaration, so a silently removed carrier is a failure, not a blind spot.
+    for required in LANE_VOCABULARY_CARRIERS {
+        assert!(
+            carriers
+                .iter()
+                .any(|(name, value)| name == required && !lane_declarations(value).is_empty()),
+            "carrier {required} lost its lane declaration — the comparison would be blind to it"
+        );
+    }
+
+    // A sanctioned DATA file outside the lane vocabulary is skipped, never
+    // fabricated into an error: most of the tree declares no lane selection.
+    assert!(
+        lane_fallback_carrier_errors(&authority, &[("synthetic.yaml", &Value::Null)]).is_empty(),
+        "a carrier with no lane declaration is not a divergence"
+    );
+
+    // A carrier divergence must fail by name, not be silently accepted.
+    let weakened = mutate(
+        yaml(COMPARISON),
+        &[
+            "native_header_reference_composition_shadow",
+            "independently_selectable_lanes",
+        ],
+        Value::Sequence(vec![Value::String("header".into())]),
+    );
+    let errors = lane_fallback_carrier_errors(&authority, &[(COMPARISON, &weakened)]);
+    assert!(
+        errors.iter().any(|x| x.contains(
+            "lane-fallback-policy:carrier:data/parse/comparison_contract.yaml#native_header_reference_composition_shadow.independently_selectable_lanes"
+        )),
+        "a divergent carrier must fail the gate by name: {errors:?}"
+    );
+}
+
+#[test]
+fn lane_fallback_policy_mutations_fail_closed() {
+    let a = yaml(AUTHORITY);
+    // Each independently selectable lane is load-bearing: dropping one by
+    // omission must be a refusal, not a silently withdrawn fallback right.
+    rejects_lane_fallback(
+        mutate(
+            a.clone(),
+            &["lane_fallback_policy", "independently_selectable_lanes"],
+            Value::Sequence(vec![Value::String("references".into())]),
+        ),
+        "lane-fallback-policy:independently_selectable_lanes",
+    );
+    rejects_lane_fallback(
+        mutate(
+            a.clone(),
+            &["lane_fallback_policy", "independently_selectable_lanes"],
+            Value::Sequence(vec![Value::String("header".into())]),
+        ),
+        "lane-fallback-policy:independently_selectable_lanes",
+    );
+    // A fabricated lane is a fabricated admission.
+    rejects_lane_fallback(
+        mutate(
+            a.clone(),
+            &["lane_fallback_policy", "independently_selectable_lanes"],
+            Value::Sequence(vec![
+                Value::String("header".into()),
+                Value::String("references".into()),
+                Value::String("body".into()),
+            ]),
+        ),
+        "lane-fallback-policy:independently_selectable_lanes",
+    );
+    rejects_lane_fallback(
+        mutate(
+            a.clone(),
+            &["lane_fallback_policy", "fallback_target"],
+            Value::String("native-rust".into()),
+        ),
+        "lane-fallback-policy:fallback_target",
+    );
+    rejects_lane_fallback(
+        mutate(
+            a.clone(),
+            &["lane_fallback_policy", "lane_closure"],
+            Value::String("aggregate_receipt".into()),
+        ),
+        "lane-fallback-policy:lane_closure",
+    );
+    rejects_lane_fallback(
+        mutate(
+            a.clone(),
+            &["lane_fallback_policy", "pooling"],
+            Value::String("allowed".into()),
+        ),
+        "lane-fallback-policy:pooling",
+    );
+    rejects_lane_fallback(
+        mutate(
+            a.clone(),
+            &["lane_fallback_policy", "terminal_receipt_is_pass"],
+            Value::Bool(true),
+        ),
+        "lane-fallback-policy:terminal_receipt_is_pass",
+    );
+    rejects_lane_fallback(
+        mutate(
+            a.clone(),
+            &["lane_fallback_policy", "rust_run_may_not_cancel_fallback"],
+            Value::Bool(false),
+        ),
+        "lane-fallback-policy:rust_run_may_not_cancel_fallback",
+    );
+    rejects_lane_fallback(
+        mutate(
+            a.clone(),
+            &["lane_fallback_policy", "refusal_classes"],
+            Value::Sequence(
+                SemanticFieldLoss::ALL[..4]
+                    .iter()
+                    .map(|class| Value::String(class.token().into()))
+                    .collect(),
+            ),
+        ),
+        "lane-fallback-policy:refusal_classes",
+    );
+    rejects_lane_fallback(
+        mutate(
+            a.clone(),
+            &["lane_fallback_policy", "contract_id"],
+            Value::String("invented.contract".into()),
+        ),
+        "lane-fallback-policy:contract_id",
+    );
+    rejects_lane_fallback(
+        mutate(
+            a.clone(),
+            &["lane_fallback_policy", "adr_ref"],
+            Value::String("ADR-075".into()),
+        ),
+        "lane-fallback-policy:adr_ref",
+    );
+    rejects_lane_fallback(
+        mutate(
+            a.clone(),
+            &["lane_fallback_policy", "named_limitations"],
+            Value::Sequence(vec![]),
+        ),
+        "lane-fallback-policy:named_limitations",
+    );
+    rejects_lane_fallback(
+        mutate(
+            a.clone(),
+            &["lane_fallback_policy", "used_by"],
+            Value::Sequence(vec![Value::String("invented".into())]),
+        ),
+        "lane-fallback-policy:used_by",
+    );
+    rejects_lane_fallback(
+        mutate(a, &["lane_fallback_policy"], Value::Null),
+        "lane-fallback-policy:contract_id",
     );
 }

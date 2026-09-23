@@ -47,6 +47,39 @@ pub const NATIVE_FULLTEXT_REFERENCE_LINK_REQUIRED_TARGETS: &str =
     "source_ref_type_bibr_with_hash_target";
 pub const NATIVE_FULLTEXT_REFERENCE_LINK_RESOLVE_GATE: &str = "post_splice";
 
+/// The closed vocabulary of the lane fallback policy DATA (`lane_fallback_policy`
+/// block).
+///
+/// S03/T03: the per-lane right to fall back to Java used to live only as prose
+/// spread over several DATA carriers (`comparison_contract.yaml`,
+/// `grobid_compatibility.yaml`, `document_segmentation.yaml`,
+/// `native_visual_families.yaml`), so a disagreement between two carriers was
+/// invisible and a Rust run could silently substitute a lane's semantics or
+/// cancel that lane's fallback right (H16-N2). These constants are the code side
+/// of that contract and the DATA contract test refuses drift in either
+/// direction, both against these tokens and against every already-published
+/// carrier:
+///
+/// * `LANES` — the only lanes that may be independently selected for native
+///   substitution (`header`, `references`);
+/// * `FALLBACK_TARGET` — an unadmitted or refused lane keeps the frozen Java
+///   envelope (`NATIVE_FULLTEXT_FALLBACK_TARGET`);
+/// * `LANE_CLOSURE` — a lane closes only on its own receipt, never on an
+///   aggregate, so one lane's success cannot cancel a sibling's fallback;
+/// * `POOLING` — lanes are never pooled into a winner;
+/// * `RUST_RUN_MAY_NOT_CANCEL_FALLBACK` — the shadow run may refuse typed but
+///   may never cancel, consume or override a lane's fallback;
+/// * the refusal classes are the [`SemanticFieldLoss`] vocabulary
+///   (`SemanticFieldLoss::ALL`), never a second dictionary.
+pub const NATIVE_FULLTEXT_LANE_FALLBACK_CONTRACT_ID: &str =
+    "native-fulltext-lane-fallback-policy.v1";
+pub const NATIVE_FULLTEXT_LANE_FALLBACK_ADR_REF: &str = "ADR-076";
+pub const NATIVE_FULLTEXT_LANE_FALLBACK_LANES: [&str; 2] = ["header", "references"];
+pub const NATIVE_FULLTEXT_LANE_FALLBACK_LANE_CLOSURE: &str = "own_receipt_only";
+pub const NATIVE_FULLTEXT_LANE_FALLBACK_POOLING: &str = "forbidden";
+pub const NATIVE_FULLTEXT_LANE_FALLBACK_TERMINAL_RECEIPT_IS_PASS: bool = false;
+pub const NATIVE_FULLTEXT_LANE_FALLBACK_RUST_RUN_MAY_NOT_CANCEL: bool = true;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FulltextComponent {
@@ -263,6 +296,19 @@ pub enum SemanticFieldLoss {
     CitationRole,
 }
 impl SemanticFieldLoss {
+    /// Every class in refusal-report order.
+    ///
+    /// S03/T03: the lane fallback policy DATA declares this closed class
+    /// vocabulary in `refusal_classes`; the DATA contract test derives its
+    /// expected list from this slice, never from a second literal copy.
+    pub const ALL: [SemanticFieldLoss; 5] = [
+        Self::HeaderTitle,
+        Self::HeaderEmail,
+        Self::HeaderIds,
+        Self::AuthorAffiliation,
+        Self::CitationRole,
+    ];
+
     /// The class token shared with the independent oracle's `CLASS_*` constants.
     pub const fn token(self) -> &'static str {
         match self {
