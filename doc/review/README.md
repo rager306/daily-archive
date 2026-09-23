@@ -125,6 +125,44 @@ exit=0; `governor review --registry
 `implementation_pass=false` и planning-семантика сохраняются; замки не
 менялись.
 
+### M511-j7wz2f/S02/T01–T05 — целостность библиографических ссылок
+
+A-REF (принятый `Accepted` при висячем `body target="#b0"`) измерен и снят на
+той же замеренной области, что и A-XML: три sha256-пиннутых сохранённых TEI
+(`hub_2507.19457`, `rlm_2512.24601`, `reca_2605.26525v1`), публичный
+shadow-композитор, независимый оракул `roxmltree` — только dev-dependency.
+
+- **Исторический RED (S02/T01).** Композитор эмитировал синтетические
+  `xml:id="bibl-{ordinal}"`, тогда как сохранённое тело ссылалось на исходные
+  ключи `b0..`; гард резолва был ограничен `candidate.anchors` и при пустом
+  anchor-потоке гейт был вакуумным. Измерено: 207 записей (80/49/78), 217
+  вхождений `ref type="bibr"` (87/71/59) и **120 обязательных целей (55/41/24),
+  все 120 висели**. RED записан явным пином без `#[ignore]`.
+- **Текущий GREEN (S02/T02–T05).** Композитор публикует source-published keys
+  (declared `xml:id`, иначе `b{ordinal}`) и выполняет post-splice resolve gate:
+  обязательные targets выводятся из сохранённого документа, независимо от
+  `candidate.anchors`, и `Accepted` невозможен, если ссылка не резолвится в
+  id-пространстве эмиссии. На тех же фикстурах — те же 207 записей `biblStruct`
+  и **0 висячих**. Типизированные отказы: `BibliographyDomainMismatch`,
+  `BibliographyKeyCollision`, `UnresolvedBibliographyTarget`,
+  `InconservableBibliographyChild`.
+- **Невакуумность на реальном прогоне.** Shadow-пример печатает блок
+  `reference_links` (`required_targets=1`, `resolved_targets=1`, `id_space=3`) и
+  падает при `required_targets == 0`; замороженный артефакт перегенерирован и
+  запиннен (`5b125dcb…`). Правило живёт в sibling-блоке
+  `reference_link_integrity` уже санкционированного
+  `data/parse/native_fulltext_composition.yaml` (нового файла контракта нет), а
+  токены блока машинно сверяются с константами композитора.
+- Замер: `reference_integrity` 19 passed / 0 ignored, `data_contract` 5,
+  `oracle` 2, `properties` 8, `contract` 28, `cargo test -p da-parse --tests` —
+  101 suites / 1396 passed / 0 failed / 0 ignored; shadow-пример exit=0.
+
+**H15 не закрывается:** планирующая запись сохраняет `status: pending`,
+`implementation_pass=false`, `verification_pass=false`; измеренный GREEN
+относится к трём сохранённым фикстурам, а закрытие этапа требует независимой
+корпусной регрессии (S05). Замки не менялись: D127/D321 закрыты, production
+promotion и graph writes не разрешены.
+
 ## Current baseline
 
 Recomputed from `pipeline-integrity-review.jsonl` on **2026-08-19** after M401 S05 closed PIR-017 and PIR-021. Do **not** increment the printed M397 table (Resolved 7 / Open 15) — later waves already resolved PIR-006..PIR-016 and PIR-018..PIR-020 in the JSONL while this README stayed stale.

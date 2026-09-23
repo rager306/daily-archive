@@ -456,3 +456,67 @@ Planning registry проверяется существующим `horizon-json-
   `this_wave_promotes=none`, D127/D321 закрыты. Остатки, названные в §14 и
   реестре (не-namespace атрибуты синтезируемых обёрток — поле H16), остаются
   остатками поля, а не well-formedness, и по-прежнему не замалчиваются.
+
+## 16. Корректировка 2026-09-22: source-published keys и post-splice resolve gate (M511-j7wz2f/S02)
+
+Фиксируется решение контракта композитора по H15, принятое в S02/T02–T05 на
+измеренном RED T01. Это решение описывает публичный shadow-композитор; оно не
+расширяет допуск и не снимает замки.
+
+**Решение.** Композитор публикует **source-published citation keys**, а не
+синтетические `bibl-{ordinal}`: ключ — declared `xml:id` прямого ребёнка
+уникального `listBibl` исходного документа, иначе позиционный `b{ordinal}` по
+`da_ports::citation_link`. Причина — семантика: сохранённое тело ссылается на
+ключи исходника, поэтому переименование библиографии в другой домен делает эти
+ссылки висячими по построению. Не-`biblStruct` элементный ребёнок не теряется
+молча, а даёт типизированный `InconservableBibliographyChild`.
+
+**Решение.** Обязательные локальные цели выводятся из **сохранённого документа**
+(`ref type="bibr"` с `target="#…"` по XML-грамматике атрибутов), а не из
+`candidate.anchors`. Гейт резолва выполняется **после splice**: свойство
+`Accepted` — утверждение о байтах эмиссии, поэтому эмиссия перечитывается, её
+`xml:id`-пространство собирается и каждая обязательная цель обязана в нём
+резолвиться. Пустой anchor-поток не делает гейт вакуумным; нарушение даёт
+типизированный `UnresolvedBibliographyTarget`, неисполнимая эмиссия — байт-идентичный
+Java-конверт. Типизированные классы отказа: `BibliographyDomainMismatch`,
+`BibliographyKeyCollision`, `UnresolvedBibliographyTarget`,
+`InconservableBibliographyChild`.
+
+**Наблюдаемость.** `NativeFulltextManifest` несёт `reference_links`
+(`ReferenceLinkLedger`: `source_entries`, `admitted_references`,
+`target_occurrences`, `required_targets`, `resolved_targets`, `id_space`) с
+`#[serde(default)]`, поэтому до-S02 манифесты декодируются в нулевую запись.
+Правило зарегистрировано как sibling-блок `reference_link_integrity` в уже
+санкционированном `data/parse/native_fulltext_composition.yaml` (D377: нового
+файла контракта нет), а токены блока сверяются с константами композитора
+`NATIVE_FULLTEXT_REFERENCE_LINK_*`, ledger_fields — с сериализованной формой
+ledger'а. Прод-import-root композитора остаётся `{crate, serde, sha2, std}`:
+`roxmltree` — только dev-dependency.
+
+**Замер.** Исторический RED (S02/T01, ревизия до исправления): эмитировался
+домен `bibl-{ordinal}` против исходных `b0..`, гард был ограничен
+`candidate.anchors` и при пустом anchor-потоке вход принимался; на трёх
+sha256-пиннутых сохранённых TEI `hub_2507.19457`, `rlm_2512.24601`,
+`reca_2605.26525v1` — 207 записей (80/49/78), 217 вхождений `ref type="bibr"`
+(87/71/59), 120 уникальных обязательных целей (55/41/24) и **все 120 висели**.
+Текущий GREEN (S02/T02–T05) на тех же фикстурах: 207 записей `biblStruct`, 217
+вхождений, 55/41/24 обязательных целей, **0 висячих**; id-домен эмиссии равен
+исходному; `native_fulltext_composition_reference_integrity` — 19 passed / 0
+ignored, `data_contract` — 5, `oracle` — 2, `cargo test -p da-parse --tests` —
+101 suites / 1396 passed / 0 failed / 0 ignored; shadow-пример печатает
+невакуумный блок (`required_targets=1`, `resolved_targets=1`, `id_space=3`) и
+падает на `required_targets == 0`, а замороженный артефакт shadow-отчёта
+перегенерирован и запиннен (`5b125dcb…`).
+
+**Состояние реестра.** H15 остаётся planning-записью: `status: pending`,
+`implementation_pass=false`, `verification_pass=false`, `owner: unassigned`,
+`open_item.accepted=false`. Измеренный GREEN области **не** помечается PASS:
+закрытие этапа требует независимой корпусной регрессии вне трёх пиннутых
+фикстур (S05). H14 в §14/§15 и остальные этапы H16–H21 не переписываются.
+
+**Границы.** Замки не менялись: `deployed=false`, `import_eligible=false`,
+`auto_promote=forbidden`, `graph_write=forbidden`, `this_wave_promotes=none`,
+D127/D321 закрыты. Замеренная область — публичный shadow-композитор с
+реэкспортом и тестами; production-достижимость не заявляется и готовность к
+выпуску не утверждается.
+

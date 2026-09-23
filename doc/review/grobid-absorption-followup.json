@@ -150,7 +150,7 @@
     {
       "stage_id": "H15",
       "title": "P0: библиография — целостность ID и target в теле документа",
-      "scope": "P0. Измерено: references_xml эмитит <listBibl> с xml:id=\"bibl-{ordinal}\", тогда как сохранённое тело сохраняет ссылки вида target=\"#b0\" исходного <listBibl>; гард резолва ограничен списком c.candidate.anchors, поэтому при пустом списке anchors вход принимается (Accepted), но в документе остаются висячие ссылки (репро: gsd_exec 6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f — \"empty supplied anchors: Accepted\", \"dangling refs: {'b0'}\"). Требуется: единое ID-пространство либо перенос/перепривязка body-target, и проверка висячих ссылок не может быть вакуумной при пустых anchors.",
+      "scope": "P0. Исторически измерено на ревизии bcdd0cfc5: references_xml эмитил <listBibl> с xml:id=\"bibl-{ordinal}\", тогда как сохранённое тело ссылалось на исходные ключи target=\"#b0\"; гард резолва был ограничен списком c.candidate.anchors, поэтому при пустом списке anchors вход принимался (Accepted) с висячими ссылками (репро: gsd_exec 6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f — \"empty supplied anchors: Accepted\", \"dangling refs: {'b0'}\"). Замер S02/T01 на трёх sha256-пиннутых сохранённых TEI (hub_2507.19457, rlm_2512.24601, reca_2605.26525v1): 207 записей (80/49/78), 217 вхождений ref type=\"bibr\" (87/71/59) и 120 уникальных обязательных целей (55/41/24) — все 120 висели. Текущее измеренное состояние S02/T02-T05: композитор публикует source-published keys (declared xml:id, иначе позиционный b{ordinal}) среди прямых детей уникального listBibl, выводит обязательные targets из исходного документа независимо от candidate.anchors и выполняет post-splice resolve gate — Accepted только если каждая обязательная локальная ссылка резолвится в id-пространстве эмиссии, иначе типизированный отказ (BibliographyDomainMismatch, BibliographyKeyCollision, UnresolvedBibliographyTarget, InconservableBibliographyChild) с байт-идентичным Java-конвертом; на тех же трёх фикстурах 0 висячих из 120. Этап НЕ закрыт: planning-запись сохраняет pending/false и ждёт независимой корпусной регрессии S05.",
       "status": "pending",
       "depends_on": [],
       "owner": "unassigned",
@@ -162,20 +162,45 @@
       "implementation_evidence": [
         {
           "path": "crates/da-parse/src/native_fulltext_composition.rs",
-          "note": "эмиссия списка библиографии (xml:id=bibl-N) и гард резолва, ограниченный caller-supplied anchors",
-          "state": "partial",
+          "note": "S02/T02: эмиттеры публикуют source-published keys (declared xml:id, иначе позиционный b{ordinal} по da_ports::citation_link), а post-splice гейт validate_emitted собирает xml:id-пространство собственной эмиссии и требует резолва каждой обязательной локальной цели, иначе типизированный отказ с байт-идентичным Java-конвертом. Историческая поверхность (синтетический bibl-N и вакуумный гард по caller-supplied anchors) сохранена как измеренный RED S02/T01",
+          "state": "present",
           "symbol": "references_xml"
         },
         {
           "path": "crates/da-parse/src/native_composition.rs",
           "note": "композиция ссылок: anchors и adjacent pairs",
-          "state": "partial",
+          "state": "present",
           "symbol": "compose_references"
         },
         {
           "path": "crates/da-parse/src/native_bibliography_sequence.rs",
-          "note": "источник ordinal библиографии, от которого зависит ID-пространство",
-          "state": "partial"
+          "note": "источник ordinal библиографии, от которого зависит позиционный fallback ID-пространства",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/native_fulltext_composition_reference_integrity.rs",
+          "note": "S02/T01-T03: независимый roxmltree-оракул (dev-dependency, в src/ недостижим) на трёх sha256-пиннутых сохранённых TEI; source published keys и обязательные targets выводятся из исходного XML, RED-профиль запинен явно без #[ignore], негативная матрица и property-инварианты (воспроизводимость, байт-идентичный fallback, резолв каждой обязательной цели) закрывают классы целостности. Замер: 19 passed / 0 ignored",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/native_fulltext_composition_data_contract.rs",
+          "note": "S02/T04: code-bound assert'ы sibling-блока reference_link_integrity сверяют скалярные токены с константами композитора NATIVE_FULLTEXT_REFERENCE_LINK_*, а ledger_fields — с сериализованной формой ReferenceLinkLedger",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/native_fulltext_composition_oracle.rs",
+          "note": "S02/T05: невакуумность и резолв проверяются независимым оракулом по исходному XML и xml:id эмиссии; ledger композитора лишь кросс-проверяется",
+          "state": "present"
+        },
+        {
+          "path": "data/parse/native_fulltext_composition.yaml",
+          "note": "S02/T04: sibling-блок reference_link_integrity (contract_id, id_space, derivation, positional_fallback, required_targets, resolve_gate, ledger_fields) внутри уже санкционированного DATA-файла; новый файл контракта не создавался (D377)",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-cli/examples/native_fulltext_composition_shadow.rs",
+          "note": "S02/T05: shadow-пример печатает блок reference_links и падает при required_targets == 0, поэтому вакуумный блок больше не может выглядеть как доказательство",
+          "state": "present"
         },
         {
           "path": "crates/da-parse/tests/native_bibliography_same_n.rs",
@@ -187,7 +212,31 @@
         {
           "mode": "runtime",
           "ref": "резолв target=\"#...\" в эмитированном документе против множества xml:id",
-          "expected": "висячих ссылок нет; пустой список anchors не даёт Accepted при висячих body-ссылках",
+          "expected": "висячих ссылок нет; пустой список anchors не даёт Accepted при висячих body-ссылках. Замерено S02/T02-T03 на трёх sha256-пиннутых сохранённых TEI: 0 висячих из 120 обязательных целей (55/41/24), id-домен эмиссии равен исходному; эмиссия, не резолвящая собственную обязательную цель, отказывается типизированным UnresolvedBibliographyTarget с байт-идентичным Java-конвертом дважды подряд",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test native_fulltext_composition_reference_integrity",
+          "expected": "19 passed; 0 failed; 0 ignored: независимый оракул, негативная матрица (чужой anchor, пробелы и одинарные кавычки в атрибутах, ref без target, не-bibr ref, ref в комментарии или CDATA, коллизия ключей, доменное несовпадение, нелегальный xml:id) и property-инварианты (воспроизводимость, байт-идентичный fallback, резолв каждой обязательной цели)",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test native_fulltext_composition_data_contract",
+          "expected": "5 passed; 0 failed; 0 ignored: блок reference_link_integrity существует, совпадает с константами композитора и не дублируется вторым носителем",
+          "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q",
+          "expected": "sha256-биндинги source_data и canonical_artifacts валидны, включая перепиненный digest data/parse/native_fulltext_composition.yaml и sha256 артефакта shadow-отчёта",
+          "status": "pending"
+        },
+        {
+          "mode": "artifact",
+          "ref": "artifacts/parse_compat/native_fulltext_composition_shadow.json",
+          "expected": "замороженный shadow-отчёт несёт невакуумный блок reference_links (source_entries=1, admitted_references=1, target_occurrences=1, required_targets=1, resolved_targets=1, id_space=3) и запиннен sha256 5b125dcb60fc9f203675257b2ffbbea6f2b44ffceb4e12a597f7a3a8baf1feca",
           "status": "pending"
         },
         {
@@ -199,7 +248,7 @@
         {
           "mode": "governor_rule",
           "ref": "governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml",
-          "expected": "этап H15 не заявляет PASS до появления исполняемого доказательства",
+          "expected": "этап H15 не заявляет PASS до появления исполняемого доказательства: implementation_pass=false и verification_pass=false сохраняются, закрытие ждёт независимой корпусной регрессии S05",
           "status": "pending"
         }
       ],
@@ -260,10 +309,10 @@
       "implementation_pass": false,
       "verification_pass": false,
       "open_item": {
-        "reason": "H15 не закрыт: единое ID-пространство библиографии и тела не установлено; пустые anchors дают вакуумную проверку.",
+        "reason": "H15 не закрыт: planning-запись сохраняет implementation_pass=false и verification_pass=false, хотя на замеренной области S02/T02-T05 дефект снят (source-published keys + post-splice resolve gate, 0 висячих из 120 обязательных целей на трёх пиннутых сохранённых TEI, негативы и property-инварианты зелёные). Закрытие этапа требует независимой корпусной регрессии вне этих трёх фикстур (S05) и решения владельца — эта запись PASS не фабрикует.",
         "since": "2026-09-21",
         "accepted": false,
-        "closure_condition": "ID-пространство библиографии и body-target согласовано, проверка висячих ссылок не вакуумна, отрицательный тест зелёный."
+        "closure_condition": "Независимая корпусная регрессия S05 подтверждает отсутствие висячих библиографических ссылок за пределами трёх пиннутых фикстур; после этого этап закрывается evidence-scope записью с completion_evidence, а не прозой planning-реестра."
       }
     },
     {

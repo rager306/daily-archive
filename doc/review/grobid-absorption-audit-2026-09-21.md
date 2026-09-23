@@ -35,7 +35,7 @@ Rust-реализация существенно продвинулась, но 
 | ID | Приоритет | Дефект и место | Доказательство | Почему текущие тесты пропускают |
 |---|---|---|---|---|
 | A-XML | P0 | `native_fulltext_composition.rs:402–434,602–613`: сохранение диапазонов по имени смешивает открывающие/закрывающие теги, создаёт пересечения; output не перепарсивается | Настоящий Rust `compose_native_fulltext` возвращает Accepted для трёх валидных сохранённых TEI; независимый ElementTree отвергает все три результата | Проверяется наличие строк в простом синтетическом заголовке, не well-formedness реального результата |
-| A-REF | P0 | `native_fulltext_composition.rs:493–520`: проверяются только переданные anchors, а не фактические body targets; emit меняет id на bibl-ordinal | При исходном body target=#b0 и пустых supplied anchors Rust возвращает Accepted; b0 отсутствует в выходном множестве xml:id | Есть тест чужого переданного anchor, но нет проверки полноты anchors относительно исходного body |
+| A-REF | P0 | `native_fulltext_composition.rs:493–520` (ревизия `bcdd0cfc5`): проверяются только переданные anchors, а не фактические body targets; emit меняет id на bibl-ordinal. Текущее состояние — раздел S02 ниже | При исходном body target=#b0 и пустых supplied anchors Rust возвращает Accepted; b0 отсутствует в выходном множестве xml:id | Есть тест чужого переданного anchor, но нет проверки полноты anchors относительно исходного body |
 | A-FIELDS | P1 | `native_fulltext_composition.rs:460–520`: header emitter читает authors/date, references emitter только source | Статическое чтение: структурированные header fields, author affiliations и citation fields не сериализуются этими функциями | Сохранение строки не проверяет семантическую эквивалентность title/email/id/affiliation/citation roles |
 
 Статус после корректирующей волны: A-XML закрыт на замеренной области — S01/T02
@@ -46,7 +46,10 @@ namespace-случай, S01/T04 развёл WF-проход и сканер и 
 `<!DOCTYPE`-подстрока в комментарии/CDATA) и запинил лимиты 4 MiB/128 как уже
 корректные. Подробности и актуальные счётчики — в разделе T04–T06 ниже. H14 при
 этом НЕ закрывается: planning-запись с `implementation_pass=false` сохраняется.
-A-REF и A-FIELDS остаются открытыми и принадлежат S02/S03.
+A-REF закрыт на замеренной области S02 — композитор публикует исходные
+published keys и отказывает `Accepted`, если обязательная локальная ссылка не
+резолвится в id-пространстве эмиссии; измерение и снятие RED — в разделе S02
+ниже. A-FIELDS остаётся открытым и принадлежит S03.
 
 Воспроизведение: `doc/review/grobid-composition-repro.rs`. Оно использует те же синтетические admissions/candidates, что штатные контракты, но реальный Java TEI как документ. Это тест публичного композитора, НЕ end-to-end доказательство достижимости через production admission.
 
@@ -215,6 +218,75 @@ RED→GREEN T06 измерен двумя отдельными прогонам�
 `2d7bdcc9-dc10-47e9-a154-0cf743c8cc05`, fmt —
 `da2c8832-5a9f-4c95-8377-0265625dcf98`. Замки не менялись.
 
+### Свидетельства среза M511-j7wz2f/S02 (целостность ссылок: исторический RED и текущий GREEN)
+
+A-REF закрыт на замеренной области, и это измерено независимым оракулом на тех
+же трёх sha256-пиннутых сохранённых TEI (`hub_2507.19457` `98546123…`,
+`rlm_2512.24601` `e6aa41f5…`, `reca_2605.26525v1` `dac18882…`), а не пересказом.
+
+Оракул независим от тестируемого кода: только `roxmltree` (**dev-dependency**, в
+`src/` недостижим) читает исходный XML; source published keys считаются как
+прямые дети уникального `listBibl` (declared `xml:id`, иначе позиционный
+`b{ordinal}`), обязательные targets — из `ref type="bibr"` с `target="#…"` по
+XML-грамматике атрибутов. Каждый прогон сверяет sha256 фикстур до измерения,
+поэтому знаменатель не может тихо измениться.
+
+- **Исторический RED (S02/T01, до исправления).** `references_xml` эмитировал
+  `<listBibl>` с `xml:id="bibl-{ordinal}"`, тогда как сохранённое тело
+  ссылалось на исходные ключи `b0..`; гард резолва был ограничен
+  `candidate.anchors`, поэтому при пустом списке anchors вход принимался
+  (`Accepted`), а висячие ссылки оставались. Измерено: 207 записей (hub 80 /
+  rlm 49 / reca 78), 217 вхождений `ref type="bibr"` (87 / 71 / 59) и **120
+  уникальных обязательных целей (55 / 41 / 24), и все 120 висят** (знаменатель —
+  сумма пер-фикстурных значений: имена `b0..` повторяются между документами).
+  RED зафиксирован явным пином без `#[ignore]`, который падает при отклонении
+  от замера в любую сторону.
+- **Текущий GREEN (S02/T02–T05).** Композитор публикует исходные ключи
+  (declared `xml:id`, иначе `b{ordinal}` по `da_ports::citation_link`) и
+  отвергает `Accepted`, если после splice хоть одна обязательная локальная
+  ссылка не резолвится в id-пространстве эмиссии: обязательные targets выводятся
+  из сохранённого документа, а не из `candidate.anchors`, поэтому пустой
+  anchor-поток больше не делает гейт вакуумным. Типизированные классы отказа —
+  `BibliographyDomainMismatch`, `BibliographyKeyCollision`,
+  `UnresolvedBibliographyTarget`, `InconservableBibliographyChild` — идут с
+  байт-идентичным Java-envelope. На тех же трёх фикстурах: те же 207 записей
+  `biblStruct` (80 / 49 / 78), 217 вхождений, 55 / 41 / 24 обязательных целей и
+  **0 висячих**; id-домен эмиссии равен исходному. `NativeFulltextManifest`
+  несёт блок `reference_links` (`ReferenceLinkLedger`, `#[serde(default)]`):
+  `source_entries`, `admitted_references`, `target_occurrences`,
+  `required_targets`, `resolved_targets`, `id_space`.
+- **Невакуумное доказательство на реальном прогоне (S02/T05).** Shadow-пример на
+  фикстуре с одной body-ссылкой печатает блок `reference_links`
+  (`required_targets=1`, `resolved_targets=1`, `id_space=3`) и падает, если
+  `required_targets == 0`, поэтому пустой блок больше не выглядит как
+  доказательство. Замороженный артефакт
+  `artifacts/parse_compat/native_fulltext_composition_shadow.json`
+  перегенерирован и запиннен
+  (`5b125dcb60fc9f203675257b2ffbbea6f2b44ffceb4e12a597f7a3a8baf1feca`), заодно
+  сняв его до-T02 расхождение с композитором (в артефакте оставался
+  синтетический `bibl-0`). Контракт
+  `data/parse/native_fulltext_composition.yaml#reference_link_integrity`
+  машинно сверяется с константами композитора
+  (`NATIVE_FULLTEXT_REFERENCE_LINK_*`) и с сериализованной формой ledger'а, а не
+  дублирует словарь прозой.
+
+| Проверка (актуальная ревизия) | Результат |
+|---|---|
+| `cargo test -p da-parse --test native_fulltext_composition_reference_integrity` | 19 passed, 0 failed, 0 ignored |
+| `cargo test -p da-parse --test native_fulltext_composition_data_contract` | 5 passed, 0 failed, 0 ignored |
+| `cargo test -p da-parse --test native_fulltext_composition_oracle` | 2 passed, 0 failed, 0 ignored |
+| `cargo test -p da-parse --tests` | 101 suites, 1396 passed, 0 failed, 0 ignored |
+| shadow-пример (`--features pdf-layout`) | exit=0; `reference_links.required_targets=1`, `resolved_targets=1`, `id_space=3` |
+| `PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml` | exit=0 (stages=8 unresolved=8 claims=0) |
+
+H15 при этом **не помечается PASS**: planning-запись сохраняет
+`implementation_pass=false`, `verification_pass=false`, `status: pending`, и
+закрытие этапа требует независимой корпусной регрессии S05 — трёх сохранённых
+TEI для этого недостаточно. Замеренная область — публичный shadow-композитор;
+production-достижимость не доказана. Замки не менялись: `deployed=false`,
+`import_eligible=false`, `auto_promote=forbidden`, `graph_write=forbidden`,
+`this_wave_promotes=none`, D127/D321 закрыты.
+
 ## Риски, не выдаваемые за воспроизведённые дефекты
 
 | Область | Наблюдение | Требуемая проверка |
@@ -236,7 +308,7 @@ RED→GREEN T06 измерен двумя отдельными прогонам�
 | governor review: horizon, GAR | exit=0; H05/GAR-015 остаются открытыми |
 | Публичный Rust composition probe + независимый XML parser | 2 класса дефектов воспроизведены |
 
-99 файлов `da-parse/tests/*.rs`; непересекающееся разбиение по именам не строилось. Подстроки встречаются: contract 55, properties 16, oracle 15, data_contract 13, same_n 8, metamorphic 1. Категории перекрываются. Процент line/branch/mutation coverage не измерялся. Полная архитектурная проверка, все adapter/application suites и живой Java-vs-Rust corpus-run в этом аудите не выполнялись. Утверждать «всё покрыто» нельзя. Строка `1351 passed` в таблице — замер ревизии аудита `bcdd0cfc5`; после S01/T06 тот же набор даёт 100 suites / 1374 passed / 0 failed / 0 ignored (раздел T04–T06).
+99 файлов `da-parse/tests/*.rs`; непересекающееся разбиение по именам не строилось. Подстроки встречаются: contract 55, properties 16, oracle 15, data_contract 13, same_n 8, metamorphic 1. Категории перекрываются. Процент line/branch/mutation coverage не измерялся. Полная архитектурная проверка, все adapter/application suites и живой Java-vs-Rust corpus-run в этом аудите не выполнялись. Утверждать «всё покрыто» нельзя. Строка `1351 passed` в таблице — замер ревизии аудита `bcdd0cfc5`; после S01/T06 тот же набор даёт 100 suites / 1374 passed / 0 failed / 0 ignored (раздел T04–T06), а после S02/T01–T05 — 101 suites / 1396 passed / 0 failed / 0 ignored (раздел S02).
 
 Доказательства GSD exec: `6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f` (Rust probe), `73a4222b-035b-4439-955e-96d36c068534` (test totals и валидность исходного XML), `c0d5f8f1-490c-4fe0-87c3-4f6e495c9a5b` (scope и test tags), `98f91300-d06b-4d67-8917-19d64e7b8d18` (реестры).
 
@@ -248,6 +320,8 @@ GitNexus MCP context завершился Connection closed. Первая инд
 
 ## Остаток и политика
 
-Исторический аудит задач: терминальные 1179/1179; это не доказательство полного перевода. Отложенный незапланированный объём вообще не входит в этот знаменатель. Пять parked milestone имеют 13 skipped срезов без задач. H05 и GAR-015 не закрыты. Новые A-XML/A-REF требуют новой корректирующей работы, а не переписывания исторических PASS.
+Исторический аудит задач: терминальные 1179/1179; это не доказательство полного перевода. Отложенный незапланированный объём вообще не входит в этот знаменатель. Пять parked milestone имеют 13 skipped срезов без задач. H05 и GAR-015 не закрыты. A-XML закрыт на замеренной области S01, A-REF — на
+трёх пиннутых сохранённых TEI в S02; A-FIELDS остаётся открытым. Исторические
+PASS задним числом не переписываются.
 
 Следующий план: `doc/review/grobid-absorption-roadmap-2026-09-21.yaml` и `doc/review/grobid-absorption-followup.json`. Проверять командой `PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml`. Прохождение означает целостность planning registry, не выполнение будущих стадий. Новая волна auto не запускается; production promotion, import и graph writes не разрешены.
