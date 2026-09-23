@@ -34,6 +34,17 @@
 //! has nothing to check, so any obligation the kept document carries must be
 //! derived from the document itself, not from the caller.
 //!
+//! T03 closes the rest of the A-REF surface as negatives inside this same file.
+//! The gate above is one positive scenario; the audit classes that must *not*
+//! reach `Accepted` are measured here explicitly: attribute grammar variants
+//! (`target = '#b0'`), refs without a target, non-`bibr` refs, refs hidden in
+//! comments/CDATA, a foreign supplied anchor, a bibliography key collision, an
+//! admitted band whose domain does not match the source `listBibl`, and an
+//! illegal declared `xml:id`. Each is a typed refusal that hands back the
+//! byte-identical Java envelope and repeats identically. The positive case is
+//! also a property: over a corpus of preserved and inline documents, `Accepted`
+//! is byte-reproducible and never leaves a mandatory target unresolved.
+//!
 //! Measured on the three sha256-pinned preserved TEI
 //! (`tests/fixtures/preserved/`, re-verified on every run):
 //!
@@ -71,9 +82,7 @@ const XML_NAMESPACE: &str = "http://www.w3.org/XML/1998/namespace";
 /// spelling.
 const CLASS_DOMAIN_MISMATCH: &str = "BibliographyDomainMismatch";
 const CLASS_UNRESOLVED_TARGET: &str = "UnresolvedBibliographyTarget";
-#[allow(dead_code)]
 const CLASS_KEY_COLLISION: &str = "BibliographyKeyCollision";
-#[allow(dead_code)]
 const CLASS_INCONSERVABLE_CHILD: &str = "InconservableBibliographyChild";
 
 /// The three sha256-pinned preserved TEI, in `provenance.yaml` order, with the
@@ -897,4 +906,559 @@ fn emitted_documents_are_well_formed_before_the_reference_oracle_judges_them() {
             )
         });
     }
+}
+
+// ---------------------------------------------------------------------------
+// S02/T03 — negatives and property invariants.
+//
+// T02 made the composer republish the source's own citation keys and refuse
+// `Accepted` when a mandatory local target does not resolve.  The gate above is
+// one positive scenario; T03 closes the rest of the A-REF surface with the
+// classes the audit and S01 named, so the reference-integrity claim does not
+// rest on that single case:
+//
+// * the audit case is itself a positive here (a source-declared key `b0` + a
+//   kept `target="#b0"` + `anchors = Empty` => `Accepted`, resolved);
+// * every other measured class is a typed refusal that hands back the
+//   byte-identical Java envelope and repeats identically;
+// * `Accepted` is a property: over a corpus of preserved and inline documents,
+//   the same input composes to the same bytes and no mandatory target is ever
+//   left unresolved.
+// ---------------------------------------------------------------------------
+
+/// The minimal reproduction of the audit case as a real document: the kept body
+/// carries `target="#b0"` and the source `listBibl` declares exactly that key,
+/// while the supplied anchors are `Empty`.  This is the configuration that used
+/// to leave A-REF: the pre-splice guard had nothing supplied to check, and the
+/// composer renamed the key to `bibl-0`, so the link dangled in an accepted
+/// emission.
+const AUDIT_DOC: &str = r##"<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>body <ref type="bibr" target="#b0">[1]</ref></p></body><listBibl><biblStruct xml:id="b0">Entry one</biblStruct></listBibl></text></TEI>"##;
+
+/// The same requirement written through the XML attribute grammar: whitespace
+/// (including a newline) around `=` and single-quoted values.  `target = '#b0'`
+/// and `xml:id = 'b0'` are the same attributes as the compact double-quoted
+/// spelling, so the composer must see the obligation *and* republish the key.
+const GRAMMAR_DOC: &str = r##"<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>body <ref
+  type = 'bibr'
+  target = '#b0'>[1]</ref></p></body><listBibl><biblStruct xml:id = 'b0'>Entry one</biblStruct></listBibl></text></TEI>"##;
+
+/// A `ref type="bibr"` with no `target` demands nothing: only a local
+/// `#`-fragment target is a compulsory bibliography link.
+const NO_TARGET_DOC: &str = r##"<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>body <ref type="bibr">[1]</ref></p></body><listBibl><biblStruct xml:id="b0">Entry one</biblStruct></listBibl></text></TEI>"##;
+
+/// Only `type="bibr"` references are bibliography obligations.  A figure link and
+/// a typeless `ref` may point anywhere: the figure/table bands own those targets,
+/// so this document must stay `Accepted` even though `#fig-1` is published
+/// nowhere.  The `#b0` typeless link is not a `bibr` obligation either.
+const NON_BIBR_DOC: &str = r##"<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>see <ref type="figure" target="#fig-1">Figure 1</ref> and <ref target="#b0">bare</ref></p></body><listBibl><biblStruct xml:id="b0">Entry one</biblStruct></listBibl></text></TEI>"##;
+
+/// `ref` markup inside a comment or a CDATA section is not an element of the
+/// document and therefore creates no obligation.  The one real `#b0` link keeps
+/// the measurement non-vacuous: the ledger must count exactly one occurrence and
+/// demand exactly `b0`, not `ghost`/`ghost2`.
+const COMMENT_CDATA_DOC: &str = r##"<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>body <!-- <ref type="bibr" target="#ghost"/> --> <![CDATA[<ref type="bibr" target="#ghost2"/>]]> <ref type="bibr" target="#b0">[1]</ref></p></body><listBibl><biblStruct xml:id="b0">Entry one</biblStruct></listBibl></text></TEI>"##;
+
+/// A kept `#b0` the source `listBibl` does not publish: the post-splice resolve
+/// gate's own refusal case with the reference band admitted.
+const DANGLING_ADMITTED_DOC: &str = r##"<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>body <ref type="bibr" target="#b0">[1]</ref></p></body><listBibl><biblStruct xml:id="java-ref">Java ref</biblStruct></listBibl></text></TEI>"##;
+
+/// Two declared source children, so an admitted band can be measured against a
+/// two-entry key domain.
+const TWO_ENTRY_DOC: &str = r##"<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>body</p></body><listBibl><biblStruct xml:id="b0">Entry one</biblStruct><biblStruct xml:id="b1">Entry two</biblStruct></listBibl></text></TEI>"##;
+
+/// The first child declares `b1`, the second has no declaration and therefore
+/// falls back to the positional `b1`: two children publish one key.  This is the
+/// collision shape the source-level `DuplicateId` gate cannot see, because only
+/// one element declares `xml:id`.
+const COLLISION_DOC: &str = r##"<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>body</p></body><listBibl><biblStruct xml:id="b1">Entry one</biblStruct><biblStruct>Entry two</biblStruct></listBibl></text></TEI>"##;
+
+/// Two children declare the same `xml:id`.  The structural scanner's uniqueness
+/// gate refuses this before any key domain is read; the source document is not
+/// even parsed by the independent oracle, because it is intentionally malformed.
+const DUPLICATE_DECLARED_ID_DOC: &str = r##"<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>body</p></body><listBibl><biblStruct xml:id="b0">Entry one</biblStruct><biblStruct xml:id="b0">Entry two</biblStruct></listBibl></text></TEI>"##;
+
+/// A declared `xml:id` that is not a legal `NCName` cannot be re-emitted as an
+/// attribute value; dropping the entry would silently lose a bibliography
+/// child, so it is a typed `InconservableBibliographyChild`.
+const ILLEGAL_DECLARED_ID_DOC: &str = r##"<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>body</p></body><listBibl><biblStruct xml:id="1b0">Entry one</biblStruct></listBibl></text></TEI>"##;
+
+/// Compose one document with an arbitrary reference-band outcome and admission.
+fn compose_with_references(
+    xml: &str,
+    references: ReferenceCompositionOutcome,
+    reference_admission: AdmissionDisposition,
+) -> NativeFulltextCompositionOutcome {
+    compose_native_fulltext(composition_input_with_reference_admission(
+        xml,
+        references,
+        reference_admission,
+    ))
+}
+
+/// The audit configuration for one document: the reference band is admitted and
+/// its candidate is built from the document's own `listBibl`, with `Empty`
+/// supplied anchors.
+fn compose_source_backed(
+    xml: &str,
+    profile: &SourceReferenceProfile,
+    reference_admission: AdmissionDisposition,
+) -> NativeFulltextCompositionOutcome {
+    compose_with_references(xml, source_backed_references(profile), reference_admission)
+}
+
+/// A reference band from explicit `(ordinal, source text)` pairs, for the domain
+/// mismatches a source-backed candidate cannot express.
+fn references_from_pairs(pairs: &[(usize, String)]) -> ReferenceCompositionOutcome {
+    let references = pairs
+        .iter()
+        .map(|(ordinal, source)| NativeReference {
+            ordinal: *ordinal,
+            source: source.clone(),
+            span: CitationSpan {
+                start: 0,
+                end: source.len(),
+            },
+            provenance: "fixture".into(),
+        })
+        .collect();
+    compose_references(ReferenceCompositionInput {
+        references: NativeReferenceListOutcome::Recognized { references },
+        fields: Vec::new(),
+        anchors: NativeCitationAnchorOutcome::Empty,
+    })
+}
+
+/// Compose twice with the same input and require a typed refusal both times: the
+/// class is reproducible and the fallback is the byte-identical Java envelope.
+/// Returns the error, so the caller can assert the exact class and message.
+fn expect_typed_refusal(
+    label: &str,
+    xml: &str,
+    references: ReferenceCompositionOutcome,
+) -> NativeFulltextCompositionError {
+    let mut errors = Vec::new();
+    for attempt in 1..=2 {
+        match compose_with_references(xml, references.clone(), AdmissionDisposition::Passed) {
+            NativeFulltextCompositionOutcome::Rejected { fallback, error } => {
+                assert_eq!(
+                    fallback.raw_tei(),
+                    xml.as_bytes(),
+                    "{label} attempt {attempt}: a typed rejection must return the byte-identical Java envelope"
+                );
+                errors.push(error);
+            }
+            NativeFulltextCompositionOutcome::Accepted(_) => panic!(
+                "{label} attempt {attempt}: this input must be a typed refusal, never Accepted"
+            ),
+        }
+    }
+    assert_eq!(
+        errors[0], errors[1],
+        "{label}: the same refusal input must produce the same typed error"
+    );
+    errors
+        .pop()
+        .unwrap_or_else(|| unreachable!("two attempts were recorded"))
+}
+
+/// S02/T03 positive: the audit case resolves.
+///
+/// A body `target="#b0"` against a `listBibl` that declares `xml:id="b0"`, with
+/// no supplied anchors, must be `Accepted` — and the emission must carry that
+/// same `xml:id`, re-confirmed by the independent oracle rather than by the
+/// composer's own report.
+#[test]
+fn audit_case_body_target_resolves_against_a_source_declared_entry() {
+    let profile = oracle_source_reference_profile(AUDIT_DOC);
+    assert_eq!(
+        profile.published_keys,
+        vec![String::from("b0")],
+        "the audit document must publish exactly the demanded key"
+    );
+    assert_eq!(
+        profile.mandatory_targets,
+        BTreeSet::from([String::from("b0")]),
+        "the audit document must demand exactly one local target"
+    );
+
+    let (emitted_document, ledger) =
+        emit_preserved_references("inline-audit-b0", AUDIT_DOC, &profile);
+    let emitted = oracle_emitted_reference_profile(&emitted_document);
+
+    assert!(
+        emitted_document.contains("xml:id=\"b0\""),
+        "the emission must carry the source's own xml:id, got {emitted_document}"
+    );
+    assert!(
+        emitted_document.contains("target=\"#b0\""),
+        "the kept body link must survive the splice verbatim, got {emitted_document}"
+    );
+    assert_eq!(emitted.published_keys, vec![String::from("b0")]);
+    assert_eq!(emitted.undeclared_entries, 0);
+    assert!(
+        emitted.id_space.contains("b0"),
+        "the independent oracle must resolve the kept target in the emitted id space"
+    );
+    assert_eq!(
+        reference_integrity_findings("inline-audit-b0", &profile, &emitted),
+        Vec::<String>::new()
+    );
+    assert_eq!(ledger.source_entries, 1);
+    assert_eq!(ledger.admitted_references, 1);
+    assert_eq!(ledger.target_occurrences, 1);
+    assert_eq!(ledger.required_targets, 1);
+    assert_eq!(ledger.resolved_targets, 1);
+}
+
+/// S02/T03 negative: the attribute grammar is not the compact spelling.
+///
+/// `type = 'bibr'` / `target = '#b0'` with whitespace and single quotes must be
+/// read as the same obligation as `type="bibr" target="#b0"`, and `xml:id = 'b0'`
+/// as the same published key.  A composer that tokenizes on unquoted whitespace
+/// sees no obligation and would not even attempt the resolve.
+#[test]
+fn attribute_grammar_whitespace_and_single_quotes_are_the_same_obligation() {
+    let profile = oracle_source_reference_profile(GRAMMAR_DOC);
+    assert_eq!(
+        profile.mandatory_targets,
+        BTreeSet::from([String::from("b0")]),
+        "the oracle must read the spaced single-quoted target as the b0 obligation"
+    );
+    assert_eq!(profile.published_keys, vec![String::from("b0")]);
+
+    let (emitted_document, ledger) =
+        emit_preserved_references("inline-grammar", GRAMMAR_DOC, &profile);
+    let emitted = oracle_emitted_reference_profile(&emitted_document);
+    assert!(
+        emitted.id_space.contains("b0"),
+        "the spaced single-quoted xml:id must enter the emitted id space"
+    );
+    assert_eq!(ledger.target_occurrences, 1);
+    assert_eq!(ledger.required_targets, 1);
+    assert_eq!(ledger.resolved_targets, 1);
+}
+
+/// S02/T03 negative: a `bibr` ref without a `target`, and non-`bibr` refs,
+/// demand nothing — so a document that publishes no matching key is still
+/// `Accepted` and the ledger is a real zero rather than a vacuous count.
+#[test]
+fn ref_without_target_and_non_bibr_refs_create_no_obligation() {
+    for (label, xml) in [("no-target", NO_TARGET_DOC), ("non-bibr", NON_BIBR_DOC)] {
+        let profile = oracle_source_reference_profile(xml);
+        assert!(
+            profile.mandatory_targets.is_empty(),
+            "{label}: the oracle must read no mandatory target, got {:?}",
+            profile.mandatory_targets
+        );
+        assert_eq!(profile.target_occurrences, 0, "{label}: occurrences");
+
+        let (emitted_document, ledger) = emit_preserved_references(label, xml, &profile);
+        let emitted = oracle_emitted_reference_profile(&emitted_document);
+        assert_eq!(
+            emitted.published_keys, profile.published_keys,
+            "{label}: the key domain must still be republished"
+        );
+        assert_eq!(ledger.target_occurrences, 0, "{label}: ledger occurrences");
+        assert_eq!(ledger.required_targets, 0, "{label}: ledger required");
+        assert_eq!(ledger.resolved_targets, 0, "{label}: ledger resolved");
+    }
+}
+
+/// S02/T03 negative: `ref` markup hidden in a comment or a CDATA section is not
+/// an element and must not create an obligation, while the one real `#b0` link
+/// keeps the measurement non-vacuous.  A scanner that reads raw text would see
+/// three obligations and refuse this document.
+#[test]
+fn refs_inside_comments_and_cdata_create_no_obligation() {
+    let profile = oracle_source_reference_profile(COMMENT_CDATA_DOC);
+    assert_eq!(
+        profile.mandatory_targets,
+        BTreeSet::from([String::from("b0")]),
+        "only the real b0 link is a mandatory target, got {:?}",
+        profile.mandatory_targets
+    );
+    assert_eq!(
+        profile.target_occurrences, 1,
+        "the comment and CDATA ghosts must not be counted as occurrences"
+    );
+
+    let (emitted_document, ledger) =
+        emit_preserved_references("inline-comment-cdata", COMMENT_CDATA_DOC, &profile);
+    let emitted = oracle_emitted_reference_profile(&emitted_document);
+    assert!(emitted.id_space.contains("b0"));
+    assert_eq!(ledger.target_occurrences, 1);
+    assert_eq!(ledger.required_targets, 1);
+    assert_eq!(ledger.resolved_targets, 1);
+}
+
+/// S02/T03 negative: a foreign supplied anchor does not resolve a link.
+///
+/// The supplied anchor stream targets `#bibl-9`, which the source `listBibl`
+/// never publishes.  A foreign target is not a link this band can honour, so the
+/// refusal names the supplied-anchor path — not the post-splice path — and the
+/// byte-identical Java envelope comes back twice.
+#[test]
+fn foreign_supplied_anchor_target_is_a_typed_refusal() {
+    let xml = r##"<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>body <ref type="bibr" target="#bibl-9">[1]</ref></p></body><listBibl><biblStruct xml:id="b0">Entry one</biblStruct></listBibl></text></TEI>"##;
+    let references = compose_references(ReferenceCompositionInput {
+        references: NativeReferenceListOutcome::Recognized {
+            references: vec![NativeReference {
+                ordinal: 0,
+                source: "Entry one".into(),
+                span: CitationSpan { start: 0, end: 9 },
+                provenance: "fixture".into(),
+            }],
+        },
+        fields: Vec::new(),
+        anchors: NativeCitationAnchorScanner::new()
+            .scan("<ref type=\"bibr\" target=\"#bibl-9\">[1]</ref>"),
+    });
+    assert!(
+        matches!(&references, ReferenceCompositionOutcome::Accepted { .. }),
+        "the foreign-anchor candidate must compose so the composer's own gate is what refuses"
+    );
+
+    let error = expect_typed_refusal("foreign-anchor", xml, references);
+    match error {
+        NativeFulltextCompositionError::UnresolvedBibliographyTarget(message) => assert!(
+            message.contains("supplied anchor target"),
+            "{CLASS_UNRESOLVED_TARGET}: the foreign anchor must be refused on the supplied-anchor path, got {message}"
+        ),
+        other => panic!(
+            "{CLASS_UNRESOLVED_TARGET}: a foreign supplied anchor must be an UnresolvedBibliographyTarget, got {other:?}"
+        ),
+    }
+}
+
+/// S02/T03 negative: two source children publishing one key.
+///
+/// The first child declares `b1`; the second has no declaration and falls back
+/// to the positional `b1`.  One key is one identity, so republishing both would
+/// make `#b1` ambiguous: the composer refuses with `BibliographyKeyCollision` and
+/// keeps the Java envelope.
+#[test]
+fn bibliography_key_collision_between_declared_and_positional_keys_is_a_typed_refusal() {
+    let profile = oracle_source_reference_profile(COLLISION_DOC);
+    assert_eq!(
+        profile.published_keys,
+        vec![String::from("b1"), String::from("b1")],
+        "the source-level oracle must show two children publishing the key b1"
+    );
+    assert_eq!(
+        profile.positional_fallbacks, 1,
+        "the collision must be declared-against-positional, or the scanner's uniqueness gate preempts it"
+    );
+
+    let error = expect_typed_refusal(
+        "key-collision",
+        COLLISION_DOC,
+        source_backed_references(&profile),
+    );
+    assert!(
+        matches!(
+            error,
+            NativeFulltextCompositionError::BibliographyKeyCollision(_)
+        ),
+        "{CLASS_KEY_COLLISION}: two children publishing one key must be a typed key collision, got {error:?}"
+    );
+}
+
+/// S02/T03 negative: two children declaring the same `xml:id`.
+///
+/// The structural scanner's uniqueness gate refuses the document before any key
+/// domain is read.  This is a typed refusal too (`DuplicateId`), and it is the
+/// reason the *class* named by the reference-integrity contract for a key
+/// collision has to be the declared-against-positional shape: two identical
+/// declarations never reach the key domain at all.
+#[test]
+fn duplicate_declared_xml_id_is_refused_before_the_key_domain_is_read() {
+    let references = references_from_pairs(&[(0, String::from("Entry one"))]);
+    let error = expect_typed_refusal(
+        "duplicate-declared-id",
+        DUPLICATE_DECLARED_ID_DOC,
+        references,
+    );
+    assert!(
+        matches!(error, NativeFulltextCompositionError::DuplicateId),
+        "two identical declared xml:id values must be a typed DuplicateId refusal, got {error:?}"
+    );
+}
+
+/// S02/T03 negative: the admitted band's domain must be the source's own key
+/// domain, in count and in ordinal identity.  Both shapes are typed
+/// `BibliographyDomainMismatch` refusals with the byte-identical Java envelope.
+#[test]
+fn reference_domain_mismatch_in_count_and_ordinal_is_a_typed_refusal() {
+    let profile = oracle_source_reference_profile(TWO_ENTRY_DOC);
+    assert_eq!(profile.published_entries(), 2);
+
+    // One admitted reference against two source children: a renumbering would
+    // rename the second key, so the count must match exactly.
+    let short = references_from_pairs(&[(0, profile.entry_texts[0].clone())]);
+    let error = expect_typed_refusal("domain-count", TWO_ENTRY_DOC, short);
+    assert!(
+        matches!(
+            error,
+            NativeFulltextCompositionError::BibliographyDomainMismatch(_)
+        ),
+        "{CLASS_DOMAIN_MISMATCH}: an admitted count the source does not declare must be refused, got {error:?}"
+    );
+
+    // Same count, but the ordinals are not 0..n: the second admitted reference
+    // claims ordinal 2 while it sits at position 1, so its key would be the wrong
+    // source entry.  `compose_references` accepts ascending ordinals, so this
+    // shape reaches the composer's own domain check.
+    let gapped = references_from_pairs(&[
+        (0, profile.entry_texts[0].clone()),
+        (2, profile.entry_texts[1].clone()),
+    ]);
+    assert!(
+        matches!(&gapped, ReferenceCompositionOutcome::Accepted { .. }),
+        "the gapped-ordinal candidate must compose so the domain check is what refuses"
+    );
+    let error = expect_typed_refusal("domain-ordinal", TWO_ENTRY_DOC, gapped);
+    assert!(
+        matches!(
+            error,
+            NativeFulltextCompositionError::BibliographyDomainMismatch(_)
+        ),
+        "{CLASS_DOMAIN_MISMATCH}: an ordinal that does not match the source order must be refused, got {error:?}"
+    );
+}
+
+/// S02/T03 negative: a declared `xml:id` that is not a legal `NCName` cannot be
+/// republished as an attribute value.  Dropping the child would silently lose a
+/// bibliography entry, so the composer refuses with
+/// `InconservableBibliographyChild` instead of emitting a partial bibliography.
+#[test]
+fn illegal_declared_xml_id_is_a_typed_refusal() {
+    let references = references_from_pairs(&[(0, String::from("Entry one"))]);
+    let error = expect_typed_refusal("illegal-declared-id", ILLEGAL_DECLARED_ID_DOC, references);
+    match error {
+        NativeFulltextCompositionError::InconservableBibliographyChild(message) => assert!(
+            message.contains("1b0"),
+            "{CLASS_INCONSERVABLE_CHILD}: the refusal must name the illegal declaration, got {message}"
+        ),
+        other => panic!(
+            "{CLASS_INCONSERVABLE_CHILD}: an illegal declared xml:id must be an InconservableBibliographyChild, got {other:?}"
+        ),
+    }
+}
+
+/// S02/T03 negative: the post-splice resolve gate with the reference band
+/// admitted.
+///
+/// `source_backed_references` supplies `Empty` anchors, so the pre-splice
+/// supplied-anchor guard is vacuous; the admitted band's domain matches the
+/// single source child (one reference, ordinal 0, published key `java-ref`), so
+/// the pre-splice domain check passes too.  Only the post-splice comparison of
+/// the kept `#b0` against the emitted id space can refuse this document — which
+/// is the configuration the T02 gate exists for, and which the T02 contract test
+/// exercises only with the reference band `Unsupported`.
+#[test]
+fn admitted_band_whose_key_domain_misses_a_kept_target_is_a_typed_refusal() {
+    let profile = oracle_source_reference_profile(DANGLING_ADMITTED_DOC);
+    assert_eq!(profile.published_keys, vec![String::from("java-ref")]);
+    assert_eq!(
+        profile.mandatory_targets,
+        BTreeSet::from([String::from("b0")]),
+        "the document must demand a target its own listBibl does not publish"
+    );
+
+    let error = expect_typed_refusal(
+        "dangling-admitted",
+        DANGLING_ADMITTED_DOC,
+        source_backed_references(&profile),
+    );
+    assert!(
+        matches!(
+            error,
+            NativeFulltextCompositionError::UnresolvedBibliographyTarget(_)
+        ),
+        "{CLASS_UNRESOLVED_TARGET}: an admitted band that misses a kept target must be refused after the splice, got {error:?}"
+    );
+}
+
+/// S02/T03 property: every document that reaches `Accepted` in the audit
+/// configuration is byte-reproducible, republishes the source's key domain, and
+/// leaves no mandatory target unresolved.
+///
+/// The corpus is the three sha256-pinned preserved TEI plus the inline documents
+/// the negatives above establish as accepted.  The independent oracle judges each
+/// emission, so this is a property of the returned bytes rather than of the
+/// composer's report; the ledger is checked against the same oracle counts, so it
+/// cannot be vacuous.
+#[test]
+fn accepted_compositions_are_byte_reproducible_and_resolve_every_mandatory_target() {
+    let inline: [(&str, &str); 5] = [
+        ("inline-audit-b0", AUDIT_DOC),
+        ("inline-grammar", GRAMMAR_DOC),
+        ("inline-no-target", NO_TARGET_DOC),
+        ("inline-non-bibr", NON_BIBR_DOC),
+        ("inline-comment-cdata", COMMENT_CDATA_DOC),
+    ];
+    let mut corpus: Vec<(String, String)> = inline
+        .iter()
+        .map(|(label, doc)| ((*label).to_owned(), (*doc).to_owned()))
+        .collect();
+    for (name, sha256, _, _, _) in PRESERVED_TEI {
+        corpus.push((name.to_owned(), preserved_tei_source(name, sha256)));
+    }
+
+    let mut accepted = 0usize;
+    for (label, xml) in &corpus {
+        let profile = oracle_source_reference_profile(xml);
+        let first = compose_source_backed(xml, &profile, AdmissionDisposition::Passed);
+        let second = compose_source_backed(xml, &profile, AdmissionDisposition::Passed);
+        assert_eq!(
+            first, second,
+            "{label}: the same input must compose to the same outcome (bytes and manifest)"
+        );
+        let NativeFulltextCompositionOutcome::Accepted(candidate) = first else {
+            panic!("{label}: the audit configuration must be Accepted for this property");
+        };
+        accepted += 1;
+
+        let emitted_document = String::from_utf8(candidate.envelope.raw_tei().to_vec())
+            .unwrap_or_else(|error| panic!("{label}: emitted document is not UTF-8 ({error})"));
+        let emitted = oracle_emitted_reference_profile(&emitted_document);
+        assert_eq!(
+            emitted.published_keys, profile.published_keys,
+            "{label}: {CLASS_DOMAIN_MISMATCH}: an Accepted emission republishes the source keys"
+        );
+        let unresolved: Vec<&str> = profile
+            .mandatory_targets
+            .difference(&emitted.id_space)
+            .map(String::as_str)
+            .collect();
+        assert!(
+            unresolved.is_empty(),
+            "{label}: {CLASS_UNRESOLVED_TARGET}: an Accepted emission has no dangling mandatory target, got {unresolved:?}"
+        );
+
+        let ledger = candidate.manifest.reference_links;
+        assert_eq!(
+            ledger.target_occurrences, profile.target_occurrences,
+            "{label}: the ledger's occurrence count equals the oracle's"
+        );
+        assert_eq!(
+            ledger.required_targets,
+            profile.mandatory_targets.len(),
+            "{label}: the ledger's required count equals the oracle's"
+        );
+        assert_eq!(
+            ledger.resolved_targets,
+            profile.mandatory_targets.len(),
+            "{label}: every required target is resolved when Accepted"
+        );
+    }
+    assert_eq!(
+        accepted,
+        corpus.len(),
+        "every corpus document must be Accepted under the audit configuration"
+    );
+    assert!(
+        accepted >= 8,
+        "the corpus must span inline and preserved inputs"
+    );
 }
