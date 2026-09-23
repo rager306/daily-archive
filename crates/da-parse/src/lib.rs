@@ -393,13 +393,21 @@ pub use native_table_sequence::{
 };
 pub use native_visual::{
     FigureHeadReceipt, FormulaHeadReceipt, MAX_DIGEST_BYTES, MAX_PRIMITIVES, MAX_RECEIPTS,
-    NATIVE_VISUAL_SCHEMA_VERSION, NATIVE_VISUAL_SEQUENCE_SCHEMA_VERSION, NativeTableCellReceipt,
-    NativeVisualAbsence, NativeVisualConfig, NativeVisualDigestReceipt, NativeVisualError,
-    NativeVisualHead, NativeVisualHeadOutcome, NativeVisualJavaFallback, NativeVisualKind,
-    NativeVisualMetrics, NativeVisualObservation, NativeVisualPrimitive, NativeVisualProvider,
-    NativeVisualSequenceIdentity, NativeVisualSequenceReceipt, NativeVisualSequenceStep,
-    TableHeadReceipt, detect_figure_heads, detect_formula_heads, detect_table_heads,
-    run_visual_heads_sequence,
+    NATIVE_VISUAL_SCHEMA_VERSION, NATIVE_VISUAL_SEQUENCE_SCHEMA_VERSION,
+    NATIVE_VISUAL_TYPED_ABSENCE_ADR_REF, NATIVE_VISUAL_TYPED_ABSENCE_CONTRACT_ID,
+    NATIVE_VISUAL_TYPED_ABSENCE_DECLARED_DENOMINATOR,
+    NATIVE_VISUAL_TYPED_ABSENCE_DENOMINATOR_FIELD, NATIVE_VISUAL_TYPED_ABSENCE_EMPTY_POPULATION,
+    NATIVE_VISUAL_TYPED_ABSENCE_MISSING_DENOMINATOR,
+    NATIVE_VISUAL_TYPED_ABSENCE_OBSERVED_POPULATION, NATIVE_VISUAL_TYPED_ABSENCE_POOLING,
+    NATIVE_VISUAL_TYPED_ABSENCE_REASON_FIELD, NATIVE_VISUAL_TYPED_ABSENCE_TERMINAL_IS_PASS,
+    NATIVE_VISUAL_TYPED_ABSENCE_UNITY_DENOMINATOR, NATIVE_VISUAL_TYPED_ABSENCE_UNTYPED_EMPTY_SHAPE,
+    NATIVE_VISUAL_TYPED_ABSENCE_USED_BY, NATIVE_VISUAL_TYPED_ABSENCE_VOCABULARY,
+    NativeTableCellReceipt, NativeVisualAbsence, NativeVisualConfig, NativeVisualDigestReceipt,
+    NativeVisualError, NativeVisualHead, NativeVisualHeadOutcome, NativeVisualJavaFallback,
+    NativeVisualKind, NativeVisualMetrics, NativeVisualObservation, NativeVisualPrimitive,
+    NativeVisualProvider, NativeVisualSequenceIdentity, NativeVisualSequenceReceipt,
+    NativeVisualSequenceStep, TYPED_ABSENCE_TAXONOMY, TableHeadReceipt, detect_figure_heads,
+    detect_formula_heads, detect_table_heads, run_visual_heads_sequence,
 };
 pub use native_visual_family_cluster::{
     FamilyLabelCluster, MAX_NATIVE_VISUAL_FAMILY_ROWS, NATIVE_VISUAL_FAMILY_NAME_PREFIX,

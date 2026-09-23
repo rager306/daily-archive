@@ -4,6 +4,33 @@
 //! filesystem, network, process, clock, tracing, adapter, or fulltext
 //! dependencies. Each head is callable independently and reports its own
 //! conservation counters.
+//!
+//! # Typed absence (H17)
+//!
+//! Every head has exactly three shapes:
+//!
+//! * a **head outcome** (`Figure`/`Table`/`Formula`) when at least one candidate
+//!   is admitted. Unadmitted candidates stay in the denominator only, as
+//!   `metrics.terminal == items.len() - receipts.len()`; a mixed
+//!   admitted/declared-absent population is therefore a *partial head*, never a
+//!   typed absence;
+//! * a **typed terminal** when the candidate population is non-empty but nothing
+//!   is admitted: `reason` carries the first declared reason in
+//!   `(page_ordinal, source_ordinal)` order and `metrics.terminal` is the full
+//!   declared denominator, not the constant `1`. A declared absence is never
+//!   flattened to [`NativeVisualAbsence::NotObserved`] (H17);
+//! * a **true absence** — `Terminal { reason: NotObserved, .. }` — only for an
+//!   empty candidate population ([`not_observed`]) or a lane-level absence
+//!   ([`terminal_if_absent`]).
+//!
+//! A candidate that is neither observed nor declared absent is rejected by
+//! [`NativeVisualObservation::validate`] with
+//! [`NativeVisualError::InvalidGeometry`], so a zero count can never be
+//! manufactured without a type.
+//!
+//! The reason vocabulary is code-side DATA: [`TYPED_ABSENCE_TAXONOMY`] mirrors
+//! the `failure_taxonomy.values` block of `data/parse/native_visual_heads.yaml`
+//! and `native_visual_data_contract` refuses drift in either direction.
 
 use crate::LayoutBBox;
 use serde::{Deserialize, Serialize};
@@ -25,6 +52,20 @@ pub enum NativeVisualKind {
     Rect,
 }
 
+/// The closed vocabulary of *declared* visual absence (ADR-076 / H17).
+///
+/// A primitive either carries geometry plus a content digest, or declares *why*
+/// it does not. This enum is that "why": the adapter
+/// (`crates/da-cli/src/visual_adapter.rs`) maps a donor failure into one of
+/// these variants and the head detectors must carry the reason through instead
+/// of collapsing it into a bare [`NativeVisualAbsence::NotObserved`].
+///
+/// The variant set is code-side DATA: [`NativeVisualAbsence::ALL`] (re-exported
+/// as [`TYPED_ABSENCE_TAXONOMY`]) is compared against the
+/// `failure_taxonomy.values` vocabulary in `data/parse/native_visual_heads.yaml`
+/// by `native_visual_data_contract`, so a rename or an added variant cannot
+/// leave either side stale. Adding a variant is a serde-contract change for
+/// every consumer; the DATA block and both tests must change with it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum NativeVisualAbsence {
@@ -39,6 +80,69 @@ pub enum NativeVisualAbsence {
     Oversize,
     Interrupted,
 }
+
+impl NativeVisualAbsence {
+    /// Every variant, in declaration order.
+    pub const ALL: &'static [Self] = &[
+        Self::Unsupported,
+        Self::NotObserved,
+        Self::MissingIdentity,
+        Self::ChecksumMismatch,
+        Self::MalformedBbox,
+        Self::InvalidDigest,
+        Self::DuplicateReceipt,
+        Self::MissingReceipt,
+        Self::Oversize,
+        Self::Interrupted,
+    ];
+
+    /// The stable `snake_case` token this variant serializes to.
+    ///
+    /// Kept in lockstep with the `serde(rename_all = "snake_case")` attribute by
+    /// `native_visual_typed_absence`, so DATA that names a token cannot drift
+    /// from the wire form.
+    pub const fn token(self) -> &'static str {
+        match self {
+            Self::Unsupported => "unsupported",
+            Self::NotObserved => "not_observed",
+            Self::MissingIdentity => "missing_identity",
+            Self::ChecksumMismatch => "checksum_mismatch",
+            Self::MalformedBbox => "malformed_bbox",
+            Self::InvalidDigest => "invalid_digest",
+            Self::DuplicateReceipt => "duplicate_receipt",
+            Self::MissingReceipt => "missing_receipt",
+            Self::Oversize => "oversize",
+            Self::Interrupted => "interrupted",
+        }
+    }
+}
+
+/// The closed absence taxonomy as a value (H17).
+///
+/// Re-exported from the crate root so the DATA contract and the typed-absence
+/// test can enumerate the vocabulary without re-typing it.
+pub const TYPED_ABSENCE_TAXONOMY: &[NativeVisualAbsence] = NativeVisualAbsence::ALL;
+
+/// DATA-contract tokens for the `typed_absence_semantics` block in
+/// `data/parse/native_visual_heads.yaml` (S03 `lane_fallback_policy` pattern).
+///
+/// The block is the single sanctioned carrier of the declared-absence
+/// semantics; the data contract compares these scalars one-for-one, so a rename
+/// on either side fails the gate by name instead of drifting silently.
+pub const NATIVE_VISUAL_TYPED_ABSENCE_CONTRACT_ID: &str = "native-visual-typed-absence.v1";
+pub const NATIVE_VISUAL_TYPED_ABSENCE_ADR_REF: &str = "ADR-076";
+pub const NATIVE_VISUAL_TYPED_ABSENCE_VOCABULARY: &str = "failure_taxonomy.values";
+pub const NATIVE_VISUAL_TYPED_ABSENCE_REASON_FIELD: &str = "reason";
+pub const NATIVE_VISUAL_TYPED_ABSENCE_DENOMINATOR_FIELD: &str = "terminal";
+pub const NATIVE_VISUAL_TYPED_ABSENCE_DECLARED_DENOMINATOR: &str = "declared_count";
+pub const NATIVE_VISUAL_TYPED_ABSENCE_POOLING: &str = "forbidden";
+pub const NATIVE_VISUAL_TYPED_ABSENCE_MISSING_DENOMINATOR: &str = "hard_failure";
+pub const NATIVE_VISUAL_TYPED_ABSENCE_UNITY_DENOMINATOR: &str = "forbidden";
+pub const NATIVE_VISUAL_TYPED_ABSENCE_EMPTY_POPULATION: &str = "not_observed";
+pub const NATIVE_VISUAL_TYPED_ABSENCE_OBSERVED_POPULATION: &str = "head_outcome";
+pub const NATIVE_VISUAL_TYPED_ABSENCE_UNTYPED_EMPTY_SHAPE: &str = "hard_failure";
+pub const NATIVE_VISUAL_TYPED_ABSENCE_TERMINAL_IS_PASS: bool = false;
+pub const NATIVE_VISUAL_TYPED_ABSENCE_USED_BY: [&str; 2] = ["S04-T02", "S04-T05"];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NativeVisualProvider {
@@ -125,9 +229,17 @@ pub enum NativeVisualHead {
     Formula,
 }
 
+/// Conservation counters for one head.
+///
+/// `terminal` is a *denominator*, not a flag: for a head outcome it counts the
+/// candidates that were not admitted, and for a typed terminal it counts every
+/// declared-absent candidate. It is `1` only when exactly one candidate was
+/// declared absent — never as a stand-in for "something went wrong".
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NativeVisualMetrics {
+    /// Admitted heads; `geometry_conservation` mirrors this count.
     pub admitted: u32,
+    /// Declared-but-not-admitted candidates (the denominator), never pooled.
     pub terminal: u32,
     pub caption_conservation: u32,
     pub content_conservation: u32,
@@ -181,6 +293,12 @@ pub enum NativeVisualHeadOutcome {
         receipts: Vec<FormulaHeadReceipt>,
         metrics: NativeVisualMetrics,
     },
+    /// A typed absence: nothing was admitted; `reason` says why.
+    ///
+    /// `metrics.terminal` is the declared denominator (the number of candidates
+    /// that declared this absence), never a pooled `1`. Only an empty candidate
+    /// population yields [`NativeVisualAbsence::NotObserved`] as a *true*
+    /// absence; a non-empty declared population keeps its own typed reason.
     Terminal {
         reason: NativeVisualAbsence,
         metrics: NativeVisualMetrics,
@@ -375,6 +493,35 @@ fn not_observed() -> NativeVisualHeadOutcome {
         metrics: metrics(0, 1, 0, 0, 0),
     }
 }
+
+/// Deterministic reason of a declared-absence population.
+///
+/// `head_items` returns the population sorted by `(page_ordinal,
+/// source_ordinal)`, and [`NativeVisualObservation::validate`] admits a
+/// candidate without geometry and digest only when it declares its absence, so
+/// the first declared reason is the first element's reason. When every declared
+/// reason is identical this returns that shared reason; it never pools, counts,
+/// or fabricates one.
+fn declared_absence_reason(items: &[&NativeVisualPrimitive]) -> NativeVisualAbsence {
+    items
+        .iter()
+        .find_map(|item| item.absence)
+        .expect("validate() admitted a candidate that is neither observed nor declared absent")
+}
+
+/// Typed terminal for a non-empty population in which **every** candidate
+/// declared its absence instead of carrying geometry and a digest.
+///
+/// The typed reason travels in `reason`; `metrics.terminal` is the declared
+/// denominator (every declared candidate), never the constant `1` and never a
+/// pooled singleton. This is the detector-side half of GAR-003: the adapter
+/// already preserves the donor reason into `NativeVisualPrimitive.absence`.
+fn typed_absence(items: &[&NativeVisualPrimitive]) -> NativeVisualHeadOutcome {
+    NativeVisualHeadOutcome::Terminal {
+        reason: declared_absence_reason(items),
+        metrics: metrics(0, items.len(), 0, 0, 0),
+    }
+}
 fn terminal_if_absent(
     input: &NativeVisualObservation,
     no_items: bool,
@@ -432,7 +579,7 @@ pub fn detect_figure_heads(
         });
     }
     if receipts.is_empty() {
-        return Ok(not_observed());
+        return Ok(typed_absence(&items));
     }
     let captions = receipts
         .iter()
@@ -490,7 +637,7 @@ pub fn detect_table_heads(
         });
     }
     if receipts.is_empty() {
-        return Ok(not_observed());
+        return Ok(typed_absence(&items));
     }
     let captions = receipts
         .iter()
@@ -535,7 +682,7 @@ pub fn detect_formula_heads(
         });
     }
     if receipts.is_empty() {
-        return Ok(not_observed());
+        return Ok(typed_absence(&items));
     }
     let labels = receipts
         .iter()

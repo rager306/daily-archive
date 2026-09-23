@@ -98,6 +98,41 @@ thresholds:
 failure_taxonomy:
   closed: true
   values: [unsupported, not_observed, missing_identity, checksum_mismatch, malformed_bbox, invalid_digest, duplicate_receipt, missing_receipt, oversize, interrupted]
+
+# S04/T02 additive typed-absence semantics. A non-empty population of declared
+# absences is a typed Terminal carrying its own reason, and its denominator is
+# the number of declared elements — never pooled to one. The vocabulary is the
+# `failure_taxonomy.values` block above, which is exactly the detector's
+# `NativeVisualAbsence::ALL` taxonomy, and every scalar below is mirrored
+# one-for-one by the `NATIVE_VISUAL_TYPED_ABSENCE_*` constants in
+# `crates/da-parse/src/native_visual.rs`, so the DATA contract refuses drift in
+# either direction. This block owns semantics only: it is not a route, and the
+# promotion/import/route locks above stay untouched.
+typed_absence_semantics:
+  contract_id: native-visual-typed-absence.v1
+  adr_ref: ADR-076
+  # The single vocabulary authority: never a second absence dictionary.
+  vocabulary: failure_taxonomy.values
+  # Where the typed reason and the declared denominator travel in a Terminal.
+  reason_field: reason
+  denominator_field: terminal
+  # `metrics.terminal` counts every declared element, never the constant one.
+  declared_denominator: declared_count
+  # A declared denominator is never collapsed to one, heads are never pooled
+  # into a winner, and a missing head denominator is a hard failure.
+  pooling: forbidden
+  missing_head_denominator: hard_failure
+  unity_denominator: forbidden
+  # A Terminal receipt is never a pass.
+  terminal_is_pass: false
+  # An empty candidate population is a legitimate true absence; a non-empty
+  # declared population is a typed Terminal; an admitted population is a head
+  # outcome. The untyped-empty shape (no bbox, no digest, no absence) is rejected
+  # fail-closed, so a zero count cannot be manufactured without a type.
+  empty_population: not_observed
+  observed_population: head_outcome
+  untyped_empty_shape: hard_failure
+  used_by: [S04-T02, S04-T05]
 gates:
   state: shadow
   promotion_state: candidate

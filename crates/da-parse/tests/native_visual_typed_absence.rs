@@ -1,33 +1,38 @@
-//! H17 / S04-T01 — RED measurement: a declared, typed visual absence is
-//! flattened to a bare `NotObserved`.
+//! H17 / S04-T02 — GREEN contract: a declared visual absence keeps its typed
+//! reason and its full declared denominator.
 //!
-//! This target is a MEASUREMENT, not a fix. It pins the profile observed on
-//! 2026-09-23 for `detect_figure_heads` / `detect_table_heads` /
-//! `detect_formula_heads`: a non-empty population whose primitives declare a
-//! typed absence (`NativeVisualPrimitive.absence = Some(reason)`, `bbox = None`,
-//! `content_digest = None`) is dropped by the detector and, when nothing else is
-//! admitted, reported as `Terminal { reason: NotObserved, metrics.terminal: 1 }`.
-//! The typed reason is lost and the denominator collapses to 1.
+//! T01 (`S04-T01-SUMMARY.md`) measured the defect: a non-empty population whose
+//! primitives all declare a typed absence (`NativeVisualPrimitive.absence =
+//! Some(reason)`, `bbox = None`, `content_digest = None`) was flattened to
+//! `Terminal { reason: NotObserved, metrics.terminal: 1 }`, losing both the
+//! reason and the denominator. T02 fixes the detector half of GAR-003 and this
+//! target replaces the T01 RED pins with the GREEN contract:
 //!
-//! The adapter half of GAR-003 (`crates/da-cli/src/visual_adapter.rs`) already
-//! preserves the typed reason into `NativeVisualPrimitive.absence`; the detector
-//! half does not.
+//! * a declared absence is reported with its own typed reason, never
+//!   `NotObserved` (`H17` / `H17-N1`);
+//! * `metrics.terminal` equals the number of declared candidates — three
+//!   declared absences on three pages report `3`, never a pooled `1`
+//!   (`H17-N2`);
+//! * a mixed admitted/declared-absent population stays a **partial head** with
+//!   `metrics.terminal == items.len() - receipts.len()`; it is not a typed
+//!   absence, and its per-element reasons remain unobservable (documented
+//!   residual, tracked in T05 / ADR-076);
+//! * an empty population is still a legitimate true absence
+//!   (`Terminal { reason: NotObserved, metrics.terminal: 1 }`);
+//! * a candidate that is neither observed nor declared absent stays fail-closed
+//!   (`NativeVisualError::InvalidGeometry`), so a zero count cannot be produced
+//!   without a type.
 //!
-//! Every probe asserts the measured profile EXACTLY, so this target fails in
-//! both directions: it fails if the profile regresses further, and it fails once
-//! T02 preserves the typed reason and the declared denominator — at which point
-//! T02 replaces these pins with the GREEN contract. Run with `-- --nocapture` to
-//! see the per-probe report.
-//!
-//! Vocabulary is the closed `NativeVisualAbsence` dictionary, so T02 can reuse
-//! the same names. No `crates/da-parse/src` file is touched: this target uses
-//! only the crate's public API.
+//! The vocabulary is the closed [`da_parse::NativeVisualAbsence`] taxonomy and
+//! the truth is asserted through the public API only. The DATA half of the
+//! contract lives in `native_visual_data_contract`; the run with `--
+//! --nocapture` prints one line per probe.
 
 use da_parse::{
     LayoutBBox, NATIVE_VISUAL_SCHEMA_VERSION, NativeVisualAbsence, NativeVisualConfig,
-    NativeVisualError, NativeVisualHeadOutcome, NativeVisualKind, NativeVisualObservation,
-    NativeVisualPrimitive, NativeVisualProvider, detect_figure_heads, detect_formula_heads,
-    detect_table_heads,
+    NativeVisualError, NativeVisualHeadOutcome, NativeVisualKind, NativeVisualMetrics,
+    NativeVisualObservation, NativeVisualPrimitive, NativeVisualProvider, TYPED_ABSENCE_TAXONOMY,
+    detect_figure_heads, detect_formula_heads, detect_table_heads,
 };
 
 const DOCUMENT_ID: &str = "h17-document";
@@ -139,6 +144,29 @@ fn observed_profile(outcome: &NativeVisualHeadOutcome) -> (Option<NativeVisualAb
     }
 }
 
+fn head_metrics(outcome: &NativeVisualHeadOutcome) -> &NativeVisualMetrics {
+    match outcome {
+        NativeVisualHeadOutcome::Figure { metrics, .. }
+        | NativeVisualHeadOutcome::Table { metrics, .. }
+        | NativeVisualHeadOutcome::Formula { metrics, .. }
+        | NativeVisualHeadOutcome::Terminal { metrics, .. } => metrics,
+    }
+}
+
+fn assert_no_admitted_conservation(metrics: &NativeVisualMetrics) {
+    assert_eq!(
+        (
+            metrics.admitted,
+            metrics.caption_conservation,
+            metrics.content_conservation,
+            metrics.callout_conservation,
+            metrics.geometry_conservation,
+        ),
+        (0, 0, 0, 0, 0),
+        "a typed absence admits nothing and conserves nothing"
+    );
+}
+
 fn report(
     probe: Probe,
     declared_reason: NativeVisualAbsence,
@@ -147,7 +175,7 @@ fn report(
     observed_terminal: u32,
 ) {
     println!(
-        "[H17-T01 RED] head={} declared_reason={:?} declared_count={} observed_reason={} observed_terminal={}",
+        "[H17-T02 GREEN] head={} declared_reason={:?} declared_count={} observed_reason={} observed_terminal={}",
         probe.label,
         declared_reason,
         declared_count,
@@ -170,11 +198,10 @@ fn assert_legal_shape(input: &NativeVisualObservation, label: &str) {
     }
 }
 
-/// Probe A (H17 core): one declared-absent primitive per kind is flattened to a
-/// bare `NotObserved` with `terminal = 1`, even though the declared reason is
-/// `MalformedBbox`.
+/// H17 core: one declared-absent candidate carries its own typed reason and the
+/// declared denominator (one), and never collapses to `NotObserved`.
 #[test]
-fn declared_malformed_absence_is_flattened_to_bare_not_observed() {
+fn declared_absence_keeps_its_typed_reason_and_declared_denominator() {
     for probe in probes() {
         let input = observation(vec![declared_absent_primitive(
             probe.primitive_kind,
@@ -195,18 +222,31 @@ fn declared_malformed_absence_is_flattened_to_bare_not_observed() {
         );
         assert_eq!(
             (observed_reason, observed_terminal),
-            (Some(NativeVisualAbsence::NotObserved), 1),
-            "H17-T01 RED pin ({}): 1 declared MalformedBbox primitive measured as reason/terminal drifted",
+            (Some(NativeVisualAbsence::MalformedBbox), 1),
+            "H17 ({}): a declared MalformedBbox must stay typed, not flatten to NotObserved",
+            probe.label
+        );
+        assert_no_admitted_conservation(head_metrics(&outcome));
+
+        // The typed reason and the denominator survive the serde roundtrip that
+        // every shadow report performs.
+        let replay: NativeVisualHeadOutcome =
+            serde_json::from_slice(&serde_json::to_vec(&outcome).unwrap()).unwrap();
+        assert_eq!(replay, outcome, "serde replay ({})", probe.label);
+        assert!(
+            serde_json::to_string(&outcome)
+                .unwrap()
+                .contains("malformed_bbox"),
+            "the typed reason must be observable in the serialized terminal ({})",
             probe.label
         );
     }
 }
 
-/// Probe B (H17-N2 seed): three declared-absent primitives on three different
-/// pages collapse into the same `terminal = 1` as a single declared absence —
-/// the denominator is pooled to one instead of counting the declared elements.
+/// H17-N2: the denominator is the number of declared candidates, never pooled to
+/// one. Three declared absences on three pages report `3`.
 #[test]
-fn declared_absence_denominator_collapses_across_pages() {
+fn declared_denominator_counts_every_declared_element_and_is_not_pooled() {
     for probe in probes() {
         let primitives = (1..=3u32)
             .map(|page| {
@@ -218,6 +258,7 @@ fn declared_absence_denominator_collapses_across_pages() {
                 )
             })
             .collect::<Vec<_>>();
+        let declared_count = primitives.len();
         let input = observation(primitives);
         assert_legal_shape(&input, probe.label);
         let outcome = (probe.detector)(&input, NativeVisualConfig::default())
@@ -226,24 +267,96 @@ fn declared_absence_denominator_collapses_across_pages() {
         report(
             probe,
             NativeVisualAbsence::MalformedBbox,
-            3,
+            declared_count,
             observed_reason,
             observed_terminal,
         );
         assert_eq!(
-            (observed_reason, observed_terminal),
-            (Some(NativeVisualAbsence::NotObserved), 1),
-            "H17-T01 RED pin ({}): 3 declared absences on distinct pages must measure terminal=1 (pooled) and reason=NotObserved today; drift detected",
+            observed_terminal as usize, declared_count,
+            "H17-N2 ({}): the declared denominator must count every declared element",
+            probe.label
+        );
+        assert_ne!(
+            observed_terminal, 1,
+            "H17-N2 ({}): three declared elements on three pages must not be pooled into terminal=1",
+            probe.label
+        );
+        assert_eq!(
+            observed_reason,
+            Some(NativeVisualAbsence::MalformedBbox),
+            "H17-N2 ({}): the shared declared reason must be carried",
+            probe.label
+        );
+        assert_no_admitted_conservation(head_metrics(&outcome));
+    }
+}
+
+/// H17-N2 (determinism): a population with two different declared reasons keeps
+/// the first reason in `(page_ordinal, source_ordinal)` order, independently of
+/// the order the primitives were supplied in, and repeated calls agree.
+#[test]
+fn first_declared_reason_is_deterministic_and_input_order_independent() {
+    for probe in probes() {
+        let ordered = vec![
+            declared_absent_primitive(
+                probe.primitive_kind,
+                1,
+                0,
+                NativeVisualAbsence::MalformedBbox,
+            ),
+            declared_absent_primitive(
+                probe.primitive_kind,
+                2,
+                0,
+                NativeVisualAbsence::ChecksumMismatch,
+            ),
+        ];
+        // Same population, supplied in the reverse order: the detector must
+        // re-order by (page_ordinal, source_ordinal) and pick the same reason.
+        let mut shuffled = ordered.clone();
+        shuffled.reverse();
+
+        let first = (probe.detector)(&observation(ordered.clone()), NativeVisualConfig::default())
+            .expect("detector admits a mixed-reason declared population");
+        let second = (probe.detector)(&observation(shuffled), NativeVisualConfig::default())
+            .expect("detector admits the reversed declared population");
+        let repeat = (probe.detector)(&observation(ordered.clone()), NativeVisualConfig::default())
+            .expect("detector is callable more than once");
+
+        let (reason, terminal) = observed_profile(&first);
+        report(
+            probe,
+            NativeVisualAbsence::MalformedBbox,
+            ordered.len(),
+            reason,
+            terminal,
+        );
+        assert_eq!(
+            (reason, terminal),
+            (Some(NativeVisualAbsence::MalformedBbox), 2),
+            "H17-N2 ({}): the first declared reason in page order must win with the full denominator",
+            probe.label
+        );
+        assert_eq!(
+            first, second,
+            "H17-N2 ({}): input order must not change the typed outcome",
+            probe.label
+        );
+        assert_eq!(
+            first, repeat,
+            "H17-N2 ({}): repeated calls must be byte-stable",
             probe.label
         );
     }
 }
 
-/// Probe C (reason loss in a partial head): a valid primitive plus one
-/// declared-absent primitive yields a head outcome that carries receipts, so the
-/// typed reason of the absent element is nowhere observable.
+/// Documented residual (T05 / ADR-076): a mixed admitted/declared-absent
+/// population is a **partial head**, not a typed absence. Its unadmitted element
+/// stays in the denominator only, and its per-element reason is not observable
+/// here. This pin exists so a future fix that starts carrying per-element
+/// reasons must update this contract deliberately.
 #[test]
-fn mixed_valid_and_absent_hides_typed_reason_behind_receipts() {
+fn mixed_valid_and_absent_stays_a_partial_head_not_a_typed_absence() {
     let input = observation(vec![
         declared_absent_primitive(
             NativeVisualKind::Image,
@@ -258,7 +371,7 @@ fn mixed_valid_and_absent_hides_typed_reason_behind_receipts() {
         .expect("detector admits a mixed valid plus declared-absent population");
     let (observed_reason, observed_terminal) = observed_profile(&outcome);
     println!(
-        "[H17-T01 RED] head=figure declared_reason={:?} declared_count=1 observed_reason={} observed_terminal={}",
+        "[H17-T02 GREEN] head=figure declared_reason={:?} declared_count=1 observed_reason={} observed_terminal={} (partial head residual)",
         NativeVisualAbsence::MalformedBbox,
         match observed_reason {
             Some(reason) => format!("{reason:?}"),
@@ -273,54 +386,57 @@ fn mixed_valid_and_absent_hides_typed_reason_behind_receipts() {
     assert_eq!(
         (receipts.len(), metrics.admitted, metrics.terminal),
         (1, 1, 1),
-        "H17-T01 RED pin: the absent element must count only in the terminal denominator today"
+        "the absent element counts only in the terminal denominator of the partial head"
     );
     assert_eq!(
         observed_reason, None,
-        "H17-T01 RED pin: a partial head outcome must carry no typed reason today"
+        "a partial head outcome carries no typed reason: the residual is per-element reasons"
     );
     let serialized = serde_json::to_string(&outcome).expect("outcome serializes");
     assert!(
         !serialized.contains("malformed_bbox"),
-        "H17-T01 RED pin: the declared MalformedBbox reason must not be observable in a partial head outcome today; if it is, the defect is already fixed"
+        "residual pin: the declared MalformedBbox reason is not observable inside a partial head outcome"
     );
 }
 
-/// Probe D (non-vacuity oracle): the detector must distinguish an admitted
-/// population from a genuinely empty one. An admitted primitive yields a head
-/// outcome with receipts; an empty population still yields a legitimate
-/// `NotObserved`. T02 must preserve both.
+/// H17-N1: a candidate that is neither observed nor declared absent is not a
+/// legal shape. It stays fail-closed with `InvalidGeometry` and can never be
+/// reported as a zero count or as `NotObserved`.
 #[test]
-fn detector_distinguishes_admitted_population_from_true_absence() {
+fn untyped_empty_shape_fails_closed_and_never_becomes_not_observed() {
     for probe in probes() {
-        let valid_input = observation(vec![observed_primitive(probe.primitive_kind, 1, 0)]);
-        assert_legal_shape(&valid_input, probe.label);
-        let valid_outcome = (probe.detector)(&valid_input, NativeVisualConfig::default())
-            .expect("detector admits a valid primitive");
-        let (valid_reason, valid_terminal) = observed_profile(&valid_outcome);
-        report(
-            probe,
-            NativeVisualAbsence::NotObserved,
-            0,
-            valid_reason,
-            valid_terminal,
-        );
-        assert_eq!(
-            (valid_reason, valid_terminal),
-            (None, 0),
-            "oracle ({0}): an admitted primitive must yield a head outcome with no terminal reason",
-            probe.label
-        );
-        assert_eq!(
-            head_metrics(&valid_outcome).admitted,
-            1,
-            "oracle ({0}): the admitted count must be 1",
-            probe.label
+        let mut untyped = observation(vec![observed_primitive(probe.primitive_kind, 1, 0)]);
+        untyped.primitives[0].bbox = None;
+        untyped.primitives[0].content_digest = None;
+        assert!(
+            untyped.primitives[0].absence.is_none(),
+            "the untyped fixture must carry no declared absence"
         );
 
-        let empty_input = observation(Vec::new());
-        assert_legal_shape(&empty_input, probe.label);
-        let empty_outcome = (probe.detector)(&empty_input, NativeVisualConfig::default())
+        assert_eq!(
+            untyped.validate(NativeVisualConfig::default()),
+            Err(NativeVisualError::InvalidGeometry),
+            "H17-N1 ({}): bbox/digest/absence all empty is not a legal primitive form",
+            probe.label
+        );
+        assert_eq!(
+            (probe.detector)(&untyped, NativeVisualConfig::default()),
+            Err(NativeVisualError::InvalidGeometry),
+            "H17-N1 ({}): the detector must reject the untyped shape, never report NotObserved for it",
+            probe.label
+        );
+    }
+}
+
+/// Boundary pin: an empty population is a legitimate *true* absence, while a
+/// non-empty declared population is a *typed* terminal. The two are not
+/// interchangeable — the reason differs and so does the denominator.
+#[test]
+fn empty_population_stays_a_true_absence_while_declared_population_does_not() {
+    for probe in probes() {
+        let empty = observation(Vec::new());
+        assert_legal_shape(&empty, probe.label);
+        let empty_outcome = (probe.detector)(&empty, NativeVisualConfig::default())
             .expect("detector admits an empty population");
         let (empty_reason, empty_terminal) = observed_profile(&empty_outcome);
         report(
@@ -333,48 +449,90 @@ fn detector_distinguishes_admitted_population_from_true_absence() {
         assert_eq!(
             (empty_reason, empty_terminal),
             (Some(NativeVisualAbsence::NotObserved), 1),
-            "oracle ({0}): an empty population is a legitimate true absence and must stay NotObserved",
+            "oracle ({}): an empty population is a legitimate true absence and must stay NotObserved",
+            probe.label
+        );
+
+        let declared = observation(vec![
+            declared_absent_primitive(
+                probe.primitive_kind,
+                1,
+                0,
+                NativeVisualAbsence::MalformedBbox,
+            ),
+            declared_absent_primitive(
+                probe.primitive_kind,
+                2,
+                0,
+                NativeVisualAbsence::MalformedBbox,
+            ),
+        ]);
+        assert_legal_shape(&declared, probe.label);
+        let declared_outcome = (probe.detector)(&declared, NativeVisualConfig::default())
+            .expect("detector admits the declared population");
+        let (declared_reason, declared_terminal) = observed_profile(&declared_outcome);
+        assert_eq!(
+            (declared_reason, declared_terminal),
+            (Some(NativeVisualAbsence::MalformedBbox), 2),
+            "boundary ({}): a declared population must not be reported as a true absence",
+            probe.label
+        );
+        assert_ne!(
+            empty_reason, declared_reason,
+            "boundary ({}): true absence and declared absence must be distinguishable by reason",
             probe.label
         );
     }
 }
 
-/// Probe E (input-shape guard + fail-closed negative): the declared-absence form
-/// is legal, while a primitive that is neither observed nor declared absent must
-/// stay fail-closed and must never be reported as `NotObserved`.
+/// `lane_absence` is a lane-level typed absence and is intentionally unchanged:
+/// it is already typed through `terminal_if_absent` and reports the lane-level
+/// denominator `1` (there is no per-candidate population to count).
 #[test]
-fn declared_absence_shape_is_legal_and_untyped_empty_shape_fails_closed() {
+fn lane_absence_stays_typed_and_unchanged() {
     for probe in probes() {
-        let input = observation(vec![declared_absent_primitive(
-            probe.primitive_kind,
-            1,
-            0,
+        for reason in [
+            NativeVisualAbsence::Unsupported,
             NativeVisualAbsence::MalformedBbox,
-        )]);
-        assert_legal_shape(&input, probe.label);
+        ] {
+            let mut input = observation(Vec::new());
+            input.lane_absence = Some(reason);
+            assert_legal_shape(&input, probe.label);
+            let outcome = (probe.detector)(&input, NativeVisualConfig::default())
+                .expect("detector admits a lane-level absence");
+            let (observed_reason, observed_terminal) = observed_profile(&outcome);
+            report(probe, reason, 0, observed_reason, observed_terminal);
+            assert_eq!(
+                (observed_reason, observed_terminal),
+                (Some(reason), 1),
+                "lane absence ({}/{reason:?}) is already typed and must stay unchanged",
+                probe.label
+            );
+        }
     }
-
-    let mut untyped = observation(vec![observed_primitive(NativeVisualKind::Image, 1, 0)]);
-    untyped.primitives[0].bbox = None;
-    untyped.primitives[0].content_digest = None;
-    assert!(untyped.primitives[0].absence.is_none());
-    assert_eq!(
-        untyped.validate(NativeVisualConfig::default()),
-        Err(NativeVisualError::InvalidGeometry),
-        "H17-N1 guard: a primitive with no bbox, no digest and no typed absence is not a legal form"
-    );
-    assert_eq!(
-        detect_figure_heads(&untyped, NativeVisualConfig::default()),
-        Err(NativeVisualError::InvalidGeometry),
-        "H17-N1 guard: the detector must not turn an untyped malformed primitive into NotObserved"
-    );
 }
 
-fn head_metrics(outcome: &NativeVisualHeadOutcome) -> &da_parse::NativeVisualMetrics {
-    match outcome {
-        NativeVisualHeadOutcome::Figure { metrics, .. }
-        | NativeVisualHeadOutcome::Table { metrics, .. }
-        | NativeVisualHeadOutcome::Formula { metrics, .. } => metrics,
-        NativeVisualHeadOutcome::Terminal { metrics, .. } => metrics,
+/// The taxonomy is a closed value, and its `token()` must agree with the serde
+/// wire form the shadow reports use. The DATA half is checked in
+/// `native_visual_data_contract`.
+#[test]
+fn typed_absence_taxonomy_is_closed_and_matches_its_serde_tokens() {
+    assert_eq!(
+        TYPED_ABSENCE_TAXONOMY.len(),
+        10,
+        "the absence vocabulary must carry exactly ten variants"
+    );
+    let tokens: Vec<&str> = TYPED_ABSENCE_TAXONOMY
+        .iter()
+        .map(|reason| reason.token())
+        .collect();
+    let unique: std::collections::BTreeSet<&str> = tokens.iter().copied().collect();
+    assert_eq!(unique.len(), tokens.len(), "tokens must be unique");
+    for reason in TYPED_ABSENCE_TAXONOMY {
+        assert_eq!(
+            serde_json::to_string(reason).expect("taxonomy serializes"),
+            format!("\"{}\"", reason.token()),
+            "token() must match the serde snake_case form for {reason:?}"
+        );
     }
 }

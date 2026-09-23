@@ -6,6 +6,19 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::PathBuf;
 
+use da_parse::{
+    NATIVE_VISUAL_SCHEMA_VERSION, NATIVE_VISUAL_TYPED_ABSENCE_ADR_REF,
+    NATIVE_VISUAL_TYPED_ABSENCE_CONTRACT_ID, NATIVE_VISUAL_TYPED_ABSENCE_DECLARED_DENOMINATOR,
+    NATIVE_VISUAL_TYPED_ABSENCE_DENOMINATOR_FIELD, NATIVE_VISUAL_TYPED_ABSENCE_EMPTY_POPULATION,
+    NATIVE_VISUAL_TYPED_ABSENCE_MISSING_DENOMINATOR,
+    NATIVE_VISUAL_TYPED_ABSENCE_OBSERVED_POPULATION, NATIVE_VISUAL_TYPED_ABSENCE_POOLING,
+    NATIVE_VISUAL_TYPED_ABSENCE_REASON_FIELD, NATIVE_VISUAL_TYPED_ABSENCE_TERMINAL_IS_PASS,
+    NATIVE_VISUAL_TYPED_ABSENCE_UNITY_DENOMINATOR, NATIVE_VISUAL_TYPED_ABSENCE_UNTYPED_EMPTY_SHAPE,
+    NATIVE_VISUAL_TYPED_ABSENCE_USED_BY, NATIVE_VISUAL_TYPED_ABSENCE_VOCABULARY,
+    NativeVisualAbsence, NativeVisualConfig, NativeVisualHeadOutcome, NativeVisualKind,
+    NativeVisualObservation, NativeVisualPrimitive, NativeVisualProvider, TYPED_ABSENCE_TAXONOMY,
+    detect_figure_heads, detect_formula_heads, detect_table_heads,
+};
 use serde_yaml::Value;
 
 const MANIFEST: &str = "data/parse/native_visual_heads.yaml";
@@ -46,18 +59,21 @@ const FORBIDDEN: [&str; 10] = [
     "hostname",
     "executable",
 ];
-const ABSENCES: [&str; 10] = [
-    "unsupported",
-    "not_observed",
-    "missing_identity",
-    "checksum_mismatch",
-    "malformed_bbox",
-    "invalid_digest",
-    "duplicate_receipt",
-    "missing_receipt",
-    "oversize",
-    "interrupted",
-];
+/// The closed absence vocabulary, taken from the detector's own taxonomy rather
+/// than re-typed here: renaming or adding a variant fails
+/// `native_visual_typed_absence` and this DATA gate together.
+fn absence_tokens() -> Vec<String> {
+    TYPED_ABSENCE_TAXONOMY
+        .iter()
+        .map(|reason| reason.token().to_owned())
+        .collect()
+}
+
+fn is_absence(status: &str) -> bool {
+    TYPED_ABSENCE_TAXONOMY
+        .iter()
+        .any(|reason| reason.token() == status)
+}
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -175,6 +191,8 @@ fn validate(manifest: &Value, oracle: &Value) -> Vec<String> {
         }
     }
     validate_oracle(oracle, &mut errors);
+    errors.extend(typed_absence_semantics_errors(manifest));
+    errors.extend(typed_absence_rule_errors());
     errors
 }
 
@@ -251,7 +269,7 @@ fn validate_oracle(oracle: &Value, errors: &mut Vec<String>) {
                 errors.push(format!("[ordinal] invalid head ordinal in {key}"));
             }
             let status = head["status"].as_str().unwrap_or("");
-            if !ABSENCES.contains(&status) {
+            if !is_absence(status) {
                 errors.push(format!("[absence] status is not closed for {key}/{label}"));
             }
             if head["head_ordinal"].as_i64() != Some(0) {
@@ -272,7 +290,7 @@ fn validate_oracle(oracle: &Value, errors: &mut Vec<String>) {
                         "[digest] {field} is not lowercase SHA-256 for {key}/{label}"
                     ));
                 }
-                if !absent && ABSENCES.contains(&status) {
+                if !absent && is_absence(status) {
                     errors.push(format!(
                         "[typed-absence] {field} must be absent for {key}/{label}"
                     ));
@@ -296,6 +314,324 @@ fn validate_oracle(oracle: &Value, errors: &mut Vec<String>) {
             }
         }
     }
+}
+
+/// Every reason the `typed_absence_semantics` DATA block is unacceptable.
+///
+/// The scalar tokens are compared against the detector's own constants
+/// (`NATIVE_VISUAL_TYPED_ABSENCE_*`) and the vocabulary against
+/// [`TYPED_ABSENCE_TAXONOMY`], never against a re-typed literal, so a rename on
+/// either side fails this gate instead of silently drifting. A whole-block
+/// absence is reported as `typed-absence-semantics:missing`, not as drift.
+fn typed_absence_semantics_errors(v: &Value) -> Vec<String> {
+    let mut errors = Vec::new();
+    let Some(block) = v.get("typed_absence_semantics") else {
+        errors.push("typed-absence-semantics:missing".into());
+        return errors;
+    };
+    for (field, expected) in [
+        ("contract_id", NATIVE_VISUAL_TYPED_ABSENCE_CONTRACT_ID),
+        ("adr_ref", NATIVE_VISUAL_TYPED_ABSENCE_ADR_REF),
+        ("vocabulary", NATIVE_VISUAL_TYPED_ABSENCE_VOCABULARY),
+        ("reason_field", NATIVE_VISUAL_TYPED_ABSENCE_REASON_FIELD),
+        (
+            "denominator_field",
+            NATIVE_VISUAL_TYPED_ABSENCE_DENOMINATOR_FIELD,
+        ),
+        (
+            "declared_denominator",
+            NATIVE_VISUAL_TYPED_ABSENCE_DECLARED_DENOMINATOR,
+        ),
+        ("pooling", NATIVE_VISUAL_TYPED_ABSENCE_POOLING),
+        (
+            "missing_head_denominator",
+            NATIVE_VISUAL_TYPED_ABSENCE_MISSING_DENOMINATOR,
+        ),
+        (
+            "unity_denominator",
+            NATIVE_VISUAL_TYPED_ABSENCE_UNITY_DENOMINATOR,
+        ),
+        (
+            "empty_population",
+            NATIVE_VISUAL_TYPED_ABSENCE_EMPTY_POPULATION,
+        ),
+        (
+            "observed_population",
+            NATIVE_VISUAL_TYPED_ABSENCE_OBSERVED_POPULATION,
+        ),
+        (
+            "untyped_empty_shape",
+            NATIVE_VISUAL_TYPED_ABSENCE_UNTYPED_EMPTY_SHAPE,
+        ),
+    ] {
+        if block.get(field).and_then(Value::as_str) != Some(expected) {
+            errors.push(format!("typed-absence-semantics:{field}"));
+        }
+    }
+    if block.get("terminal_is_pass").and_then(Value::as_bool)
+        != Some(NATIVE_VISUAL_TYPED_ABSENCE_TERMINAL_IS_PASS)
+    {
+        errors.push("typed-absence-semantics:terminal_is_pass".into());
+    }
+    let used_by: Vec<&str> = block
+        .get("used_by")
+        .and_then(Value::as_sequence)
+        .map(|items| items.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
+    if used_by != NATIVE_VISUAL_TYPED_ABSENCE_USED_BY {
+        errors.push("typed-absence-semantics:used_by".into());
+    }
+    // Closed dictionary: the sanctioned vocabulary is `failure_taxonomy.values`
+    // and it must be exactly the Rust taxonomy in declaration order.
+    if dictionary_tokens(v) != absence_tokens() {
+        errors.push("typed-absence-semantics:failure_taxonomy".into());
+    }
+    errors
+}
+
+/// The `failure_taxonomy.values` vocabulary as tokens, or empty when absent or
+/// not a sequence.
+fn dictionary_tokens(v: &Value) -> Vec<String> {
+    v.get("failure_taxonomy")
+        .and_then(|taxonomy| taxonomy.get("values"))
+        .and_then(Value::as_sequence)
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(Value::as_str)
+                .map(str::to_owned)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+const DECLARED_DOCUMENT_ID: &str = "typed-absence-document";
+const DECLARED_SOURCE_SHA: &str =
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+
+/// A schema-legal observation whose `count` candidates all declare the same
+/// typed absence on distinct pages.
+fn declared_absence_observation(kind: NativeVisualKind, count: u32) -> NativeVisualObservation {
+    let provider = NativeVisualProvider {
+        id: "typed-absence-provider".to_owned(),
+        version: "1.0".to_owned(),
+    };
+    let primitives = (1..=count)
+        .map(|page| NativeVisualPrimitive {
+            document_id: DECLARED_DOCUMENT_ID.to_owned(),
+            source_sha256: DECLARED_SOURCE_SHA.to_owned(),
+            provider: provider.clone(),
+            page_ordinal: page,
+            source_ordinal: 0,
+            kind,
+            bbox: None,
+            content_digest: None,
+            absence: Some(NativeVisualAbsence::MalformedBbox),
+        })
+        .collect();
+    NativeVisualObservation {
+        schema_version: NATIVE_VISUAL_SCHEMA_VERSION.to_owned(),
+        document_id: DECLARED_DOCUMENT_ID.to_owned(),
+        source_sha256: DECLARED_SOURCE_SHA.to_owned(),
+        provider,
+        primitives,
+        figure_captions: Vec::new(),
+        figure_callouts: Vec::new(),
+        table_captions: Vec::new(),
+        table_callouts: Vec::new(),
+        table_cells: Vec::new(),
+        formula_labels: Vec::new(),
+        formula_callouts: Vec::new(),
+        lane_absence: None,
+    }
+}
+
+/// The DATA-declared semantics, executed against the detector: a non-empty
+/// declared population must report a typed terminal whose `terminal`
+/// denominator equals the declared count and never a pooled `1`; an empty
+/// population stays a legitimate `NotObserved`. This is the behavioural half of
+/// the DATA block and is independent of `native_visual_typed_absence`.
+fn typed_absence_rule_errors() -> Vec<String> {
+    let mut errors = Vec::new();
+    let declared_count = 3u32;
+    for (label, kind, detector) in [
+        (
+            "figure",
+            NativeVisualKind::Image,
+            detect_figure_heads as fn(&NativeVisualObservation, NativeVisualConfig) -> _,
+        ),
+        ("table", NativeVisualKind::Table, detect_table_heads),
+        ("formula", NativeVisualKind::Formula, detect_formula_heads),
+    ] {
+        let declared = declared_absence_observation(kind, declared_count);
+        let declared_outcome = detector(&declared, NativeVisualConfig::default());
+        // `declared_count == 3` also proves the denominator was not pooled into
+        // the constant `1` (H17-N2).
+        let typed_and_counted = matches!(
+            &declared_outcome,
+            Ok(NativeVisualHeadOutcome::Terminal { reason, metrics })
+                if *reason == NativeVisualAbsence::MalformedBbox
+                    && metrics.terminal == declared_count
+        );
+        if !typed_and_counted {
+            errors.push(format!(
+                "typed-absence-semantics:declared-population:{label}:{declared_outcome:?}"
+            ));
+        }
+
+        let empty = declared_absence_observation(kind, 0);
+        let empty_outcome = detector(&empty, NativeVisualConfig::default());
+        let true_absence = matches!(
+            &empty_outcome,
+            Ok(NativeVisualHeadOutcome::Terminal {
+                reason: NativeVisualAbsence::NotObserved,
+                metrics,
+            }) if metrics.terminal == 1
+        );
+        if !true_absence {
+            errors.push(format!(
+                "typed-absence-semantics:empty-population:{label}:{empty_outcome:?}"
+            ));
+        }
+    }
+    errors
+}
+
+/// Assert one mutation of the `typed_absence_semantics` block (or of the
+/// vocabulary it sanctions) is reported by name.
+fn rejects_typed_absence(mutate: impl FnOnce(&mut Value), marker: &str) {
+    let mut manifest = yaml(MANIFEST);
+    mutate(&mut manifest);
+    let errors = typed_absence_semantics_errors(&manifest);
+    assert!(
+        errors.iter().any(|error| error.contains(marker)),
+        "typed absence mutation `{marker}` was accepted: {errors:?}"
+    );
+}
+
+#[test]
+fn typed_absence_semantics_is_bound_to_the_rust_taxonomy() {
+    let manifest = yaml(MANIFEST);
+    let errors = typed_absence_semantics_errors(&manifest);
+    assert!(
+        errors.is_empty(),
+        "typed absence semantics violations:\n{}",
+        errors.join("\n")
+    );
+    // The dictionary has exactly one authority: the Rust taxonomy.
+    assert_eq!(
+        dictionary_tokens(&manifest),
+        absence_tokens(),
+        "failure_taxonomy.values must be exactly the NativeVisualAbsence taxonomy"
+    );
+    assert_eq!(
+        TYPED_ABSENCE_TAXONOMY.len(),
+        10,
+        "the closed absence vocabulary changed size"
+    );
+    // A whole-block absence is an absence, not scalar drift.
+    let missing = typed_absence_semantics_errors(&Value::Null);
+    assert!(
+        missing
+            .iter()
+            .any(|error| error.contains("typed-absence-semantics:missing")),
+        "a missing typed absence block must be reported as missing: {missing:?}"
+    );
+    assert_eq!(
+        missing.len(),
+        1,
+        "a missing block must not also be reported as scalar drift: {missing:?}"
+    );
+    // The DATA-declared semantics hold in the code.
+    assert!(
+        typed_absence_rule_errors().is_empty(),
+        "declared-absence semantics do not hold in the detector: {:?}",
+        typed_absence_rule_errors()
+    );
+}
+
+#[test]
+fn typed_absence_mutations_fail_closed() {
+    rejects_typed_absence(
+        |m| m["typed_absence_semantics"]["contract_id"] = Value::String("other.v1".into()),
+        "typed-absence-semantics:contract_id",
+    );
+    rejects_typed_absence(
+        |m| m["typed_absence_semantics"]["adr_ref"] = Value::String("ADR-999".into()),
+        "typed-absence-semantics:adr_ref",
+    );
+    rejects_typed_absence(
+        |m| m["typed_absence_semantics"]["vocabulary"] = Value::String("other.values".into()),
+        "typed-absence-semantics:vocabulary",
+    );
+    rejects_typed_absence(
+        |m| m["typed_absence_semantics"]["reason_field"] = Value::String("status".into()),
+        "typed-absence-semantics:reason_field",
+    );
+    rejects_typed_absence(
+        |m| m["typed_absence_semantics"]["denominator_field"] = Value::String("na".into()),
+        "typed-absence-semantics:denominator_field",
+    );
+    rejects_typed_absence(
+        |m| m["typed_absence_semantics"]["declared_denominator"] = Value::String("one".into()),
+        "typed-absence-semantics:declared_denominator",
+    );
+    rejects_typed_absence(
+        |m| m["typed_absence_semantics"]["pooling"] = Value::String("allowed".into()),
+        "typed-absence-semantics:pooling",
+    );
+    rejects_typed_absence(
+        |m| {
+            m["typed_absence_semantics"]["missing_head_denominator"] =
+                Value::String("tolerated".into())
+        },
+        "typed-absence-semantics:missing_head_denominator",
+    );
+    rejects_typed_absence(
+        |m| m["typed_absence_semantics"]["unity_denominator"] = Value::String("allowed".into()),
+        "typed-absence-semantics:unity_denominator",
+    );
+    rejects_typed_absence(
+        |m| m["typed_absence_semantics"]["terminal_is_pass"] = Value::Bool(true),
+        "typed-absence-semantics:terminal_is_pass",
+    );
+    rejects_typed_absence(
+        |m| m["typed_absence_semantics"]["untyped_empty_shape"] = Value::Null,
+        "typed-absence-semantics:untyped_empty_shape",
+    );
+    rejects_typed_absence(
+        |m| {
+            m["typed_absence_semantics"]["used_by"] =
+                Value::Sequence(vec![Value::String("S04-T01".into())])
+        },
+        "typed-absence-semantics:used_by",
+    );
+    // Dictionary drift in either direction is reported by the same marker.
+    rejects_typed_absence(
+        |m| {
+            m["failure_taxonomy"]["values"]
+                .as_sequence_mut()
+                .unwrap()
+                .push(Value::String("fabricated".into()))
+        },
+        "typed-absence-semantics:failure_taxonomy",
+    );
+    rejects_typed_absence(
+        |m| {
+            m["failure_taxonomy"]["values"] =
+                Value::Sequence(vec![Value::String("not_observed".into())])
+        },
+        "typed-absence-semantics:failure_taxonomy",
+    );
+    rejects_typed_absence(
+        |m| {
+            m["failure_taxonomy"]
+                .as_mapping_mut()
+                .unwrap()
+                .remove("values");
+        },
+        "typed-absence-semantics:failure_taxonomy",
+    );
 }
 
 #[test]
@@ -362,4 +698,34 @@ fn preserves_s14_authority_and_all_three_head_denominators() {
         manifest["gates"]["s14_durable_evidence_mutation"].as_str(),
         Some("forbidden")
     );
+}
+
+#[test]
+fn typed_absence_rule_pin_distinguishes_declared_absence_from_true_absence() {
+    // The behavioural rule is non-vacuous: a declared population and an empty
+    // population must not be reported as the same thing.
+    let declared = declared_absence_observation(NativeVisualKind::Image, 2);
+    let empty = declared_absence_observation(NativeVisualKind::Image, 0);
+    let declared_outcome = detect_figure_heads(&declared, NativeVisualConfig::default())
+        .expect("declared population is schema-legal");
+    let empty_outcome = detect_figure_heads(&empty, NativeVisualConfig::default())
+        .expect("empty population is schema-legal");
+    assert_ne!(
+        declared_outcome, empty_outcome,
+        "a declared absence must not be flattened into a true absence"
+    );
+    assert!(matches!(
+        declared_outcome,
+        NativeVisualHeadOutcome::Terminal {
+            reason: NativeVisualAbsence::MalformedBbox,
+            metrics,
+        } if metrics.terminal == 2
+    ));
+    assert!(matches!(
+        empty_outcome,
+        NativeVisualHeadOutcome::Terminal {
+            reason: NativeVisualAbsence::NotObserved,
+            metrics,
+        } if metrics.terminal == 1
+    ));
 }
