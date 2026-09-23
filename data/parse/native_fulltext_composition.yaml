@@ -427,3 +427,66 @@ route_recovery:
   h05_closure: not_claimed
   h05_reason: per-stage Java CPU wall-clock and RSS ceilings stay typed not_observed; only Java model invocations are measured and no byte, CPU or memory ceiling is claimed
   used_by: [S08-T04, S08-T05]
+
+# M511-j7wz2f/S02/T04: reference-link integrity contract (D377: one more sibling
+# block inside this already sanctioned DATA file, never a new `data/parse/*.yaml`).
+#
+# The file's existing sha256 binding in
+# `scripts/governor/checks/scholarly_parse_plane.yaml#bindings.source_data` is the
+# only registration surface: no second registry entry and no second file.
+#
+# What this fixes: the composer used to publish a synthesized `bibl-{ordinal}`
+# domain while copying the source body verbatim, so every kept `target="#b0"`
+# dangled in an emission still reported as `Accepted` (measured 217 occurrences /
+# 120 unique dangling targets across the three sha256-pinned preserved TEI).
+# The tokens below are mirrored one-for-one by the composer's code constants
+# (`NATIVE_FULLTEXT_REFERENCE_LINK_*`) and the DATA contract test refuses drift
+# in either direction.
+#
+# This block owns the id-space and the resolve rule only. It is not a route:
+# `production_route`/`auto_promote`/`graph_mutation` stay `forbidden`,
+# `import_eligible` stays false and Java stays the rollback authority.
+reference_link_integrity:
+  contract_id: native-fulltext-reference-link-integrity.v1
+  adr_ref: ADR-076
+  # The emitted document's `#fragment` address space is the *source's* published
+  # keys — declared `xml:id`, else the positional fallback — never a synthesized
+  # `bibl-{ordinal}` domain (which is exactly how the links came to dangle).
+  id_space: source_published_keys
+  # Those keys are the direct `biblStruct` children of the source's unique
+  # `listBibl`, in source order. A non-`biblStruct` direct child is a typed
+  # `InconservableBibliographyChild`, not a silent drop.
+  derivation: source_listbibl_direct_children
+  # The same text `da_ports::citation_link::positional_entry_key` publishes.
+  positional_fallback: "b{ordinal}"
+  # The obligations read from the *source* document: `ref type="bibr"` carrying a
+  # non-empty local `#`-fragment `target`, by the XML attribute grammar (so
+  # `target = '#b0'` counts exactly like the compact spelling, and a ref inside a
+  # comment or CDATA creates no obligation).
+  required_targets: source_ref_type_bibr_with_hash_target
+  # The gate runs after the splice, in the emitted document's id space: the
+  # pre-splice guard only saw the supplied anchor stream, so an empty stream
+  # beside a live body link left it vacuous.
+  resolve_gate: post_splice
+  # Typed refusals; never a generic failure and never a silent drop.
+  refusal_classes:
+  - BibliographyDomainMismatch
+  - BibliographyKeyCollision
+  - UnresolvedBibliographyTarget
+  - InconservableBibliographyChild
+  # The observable record `NativeFulltextManifest.reference_links` publishes for
+  # this rule (`#[serde(default)]`, so pre-S02 manifests decode to an all-zero
+  # record). Order is the composer's field order; the DATA contract test compares
+  # this exact set with the composer's serialized ledger shape.
+  ledger_fields:
+  - source_entries
+  - admitted_references
+  - target_occurrences
+  - required_targets
+  - resolved_targets
+  - id_space
+  pooling: forbidden
+  named_limitations:
+  - the rule is measured on the three sha256-pinned preserved TEI and is not yet a corpus regression; S05 owns the independent corpus check
+  - an emission whose source declares no `xml:id` falls back to positional keys by construction, never to a synthesized domain
+  used_by: [S02-T04, S02-T05]

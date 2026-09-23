@@ -21,6 +21,32 @@ pub const NATIVE_FULLTEXT_MAX_COMPONENT_BYTES: usize = 4 * 1024 * 1024;
 pub const NATIVE_FULLTEXT_MAX_XML_DEPTH: usize = 128;
 pub const NATIVE_FULLTEXT_FALLBACK_TARGET: &str = "java-grobid-http@0.9.0-crf";
 
+/// The closed vocabulary of the reference-link integrity contract owned by the
+/// composition policy DATA (`reference_link_integrity` block).
+///
+/// S02/T04: the rule that an accepted emission's local links resolve is
+/// machine-checkable DATA, not prose. These constants are the code side of that
+/// contract and the DATA contract test refuses drift in either direction:
+///
+/// * `ID_SPACE` — the emitted document's `#fragment` address space is the
+///   *source's* published keys, never a synthesized `bibl-{ordinal}` domain;
+/// * `DERIVATION` — those keys are the source `listBibl`'s direct children;
+/// * `POSITIONAL_FALLBACK` — an undeclared entry publishes the same text
+///   `da_ports::citation_link::positional_entry_key` renders (`b{ordinal}`);
+/// * `REQUIRED_TARGETS` — the obligations read from the source are
+///   `ref type="bibr"` elements with a local `#`-fragment `target`;
+/// * `RESOLVE_GATE` — the gate runs *after* the splice, so it sees the ids the
+///   emission actually carries (the pre-splice guard was vacuous on an empty
+///   supplied anchor stream, which is how the dangling links survived).
+///
+/// Behaviour is exercised by `native_fulltext_composition_reference_integrity.rs`.
+pub const NATIVE_FULLTEXT_REFERENCE_LINK_ID_SPACE: &str = "source_published_keys";
+pub const NATIVE_FULLTEXT_REFERENCE_LINK_DERIVATION: &str = "source_listbibl_direct_children";
+pub const NATIVE_FULLTEXT_REFERENCE_LINK_POSITIONAL_FALLBACK: &str = "b{ordinal}";
+pub const NATIVE_FULLTEXT_REFERENCE_LINK_REQUIRED_TARGETS: &str =
+    "source_ref_type_bibr_with_hash_target";
+pub const NATIVE_FULLTEXT_REFERENCE_LINK_RESOLVE_GATE: &str = "post_splice";
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FulltextComponent {

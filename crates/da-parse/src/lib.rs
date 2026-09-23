@@ -289,8 +289,11 @@ pub use native_fulltext_composition::{
     AdmissionDisposition, FulltextAdmissionReceipt, FulltextComponent, FulltextComponentManifest,
     FulltextCompositionIdentity, NATIVE_FULLTEXT_COMPOSITION_SCHEMA_VERSION,
     NATIVE_FULLTEXT_FALLBACK_TARGET, NATIVE_FULLTEXT_MAX_COMPONENT_BYTES,
-    NATIVE_FULLTEXT_MAX_JAVA_BYTES, NATIVE_FULLTEXT_MAX_XML_DEPTH, NativeFulltextCandidate,
-    NativeFulltextCompositionError, NativeFulltextCompositionInput,
+    NATIVE_FULLTEXT_MAX_JAVA_BYTES, NATIVE_FULLTEXT_MAX_XML_DEPTH,
+    NATIVE_FULLTEXT_REFERENCE_LINK_DERIVATION, NATIVE_FULLTEXT_REFERENCE_LINK_ID_SPACE,
+    NATIVE_FULLTEXT_REFERENCE_LINK_POSITIONAL_FALLBACK,
+    NATIVE_FULLTEXT_REFERENCE_LINK_REQUIRED_TARGETS, NATIVE_FULLTEXT_REFERENCE_LINK_RESOLVE_GATE,
+    NativeFulltextCandidate, NativeFulltextCompositionError, NativeFulltextCompositionInput,
     NativeFulltextCompositionOutcome, NativeFulltextManifest, ReferenceLinkLedger,
     S17LineageReceipt, compose_native_fulltext, tei_element_bytes,
 };

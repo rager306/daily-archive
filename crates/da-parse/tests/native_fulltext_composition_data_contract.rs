@@ -1,7 +1,21 @@
 //! S18/T01 DATA admission contract.
 //! The fixture is intentionally parsed as generic YAML so this gate remains
 //! independent from the future composer implementation.
+//!
+//! S02/T04 adds one *deliberately* code-bound block: the reference-link
+//! integrity rule is checked against the composer's own constants and its
+//! serialized ledger shape, because a contract that carries a second copy of the
+//! vocabulary is not a contract. The pre-existing gates stay code-independent.
+use da_parse::{
+    NATIVE_FULLTEXT_REFERENCE_LINK_DERIVATION, NATIVE_FULLTEXT_REFERENCE_LINK_ID_SPACE,
+    NATIVE_FULLTEXT_REFERENCE_LINK_POSITIONAL_FALLBACK,
+    NATIVE_FULLTEXT_REFERENCE_LINK_REQUIRED_TARGETS, NATIVE_FULLTEXT_REFERENCE_LINK_RESOLVE_GATE,
+    ReferenceLinkLedger,
+};
+use da_ports::citation_link::positional_entry_key;
 use serde_yaml::{Mapping, Value};
+use sha2::{Digest, Sha256};
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 const AUTHORITY: &str = "data/parse/native_fulltext_composition.yaml";
@@ -523,5 +537,294 @@ fn native_fulltext_mutations_fail_closed() {
     rejects(
         mutate(a, &["redaction", "forbidden"], Value::Sequence(vec![])),
         "redaction:raw_tei",
+    );
+}
+
+// ───────── S02/T04: reference-link integrity DATA contract ─────────
+
+/// The governor registry that binds shipped DATA and artifacts by digest.
+///
+/// The reference-link contract is registered only through this file's existing
+/// `data/parse/native_fulltext_composition.yaml` binding: never by adding a
+/// second registry entry and never by adding a second `data/parse/*.yaml`
+/// carrier (D377).
+const REGISTRY: &str = "scripts/governor/checks/scholarly_parse_plane.yaml";
+const REFERENCE_LINK_CONTRACT_ID: &str = "native-fulltext-reference-link-integrity.v1";
+const REFERENCE_LINK_REFUSAL_CLASSES: [&str; 4] = [
+    "BibliographyDomainMismatch",
+    "BibliographyKeyCollision",
+    "UnresolvedBibliographyTarget",
+    "InconservableBibliographyChild",
+];
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
+}
+
+/// The composer's serialized ledger shape. Comparing DATA against *this* rather
+/// than a second literal copy is what makes `ledger_fields` a contract: a field
+/// added to or dropped from `ReferenceLinkLedger` cannot leave the DATA block
+/// stale, and `#[serde(default)]` keeps pre-S02 manifests decodable.
+fn ledger_field_names() -> BTreeSet<String> {
+    serde_json::to_value(ReferenceLinkLedger::default())
+        .expect("the ledger serializes")
+        .as_object()
+        .expect("the ledger serializes to an object")
+        .keys()
+        .cloned()
+        .collect()
+}
+
+/// Every reason the `reference_link_integrity` DATA block is unacceptable.
+///
+/// The scalar tokens are compared against the composer's own constants
+/// (`NATIVE_FULLTEXT_REFERENCE_LINK_*`), never against a re-typed literal, so a
+/// rename on either side fails this gate instead of silently drifting.
+fn reference_link_integrity_errors(v: &Value) -> Vec<String> {
+    let mut e = Vec::new();
+    let Some(block) = v.get("reference_link_integrity") else {
+        e.push("reference-link-integrity:missing".into());
+        return e;
+    };
+    for (field, expected) in [
+        ("contract_id", REFERENCE_LINK_CONTRACT_ID),
+        ("adr_ref", "ADR-076"),
+        ("id_space", NATIVE_FULLTEXT_REFERENCE_LINK_ID_SPACE),
+        ("derivation", NATIVE_FULLTEXT_REFERENCE_LINK_DERIVATION),
+        (
+            "positional_fallback",
+            NATIVE_FULLTEXT_REFERENCE_LINK_POSITIONAL_FALLBACK,
+        ),
+        (
+            "required_targets",
+            NATIVE_FULLTEXT_REFERENCE_LINK_REQUIRED_TARGETS,
+        ),
+        ("resolve_gate", NATIVE_FULLTEXT_REFERENCE_LINK_RESOLVE_GATE),
+    ] {
+        if block.get(field).and_then(Value::as_str) != Some(expected) {
+            e.push(format!("reference-link-integrity:{field}"));
+        }
+    }
+    let classes: Vec<&str> = block
+        .get("refusal_classes")
+        .and_then(Value::as_sequence)
+        .map(|seq| seq.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
+    if classes != REFERENCE_LINK_REFUSAL_CLASSES {
+        e.push("reference-link-integrity:refusal_classes".into());
+    }
+    let declared: BTreeSet<String> = block
+        .get("ledger_fields")
+        .and_then(Value::as_sequence)
+        .map(|seq| {
+            seq.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_owned)
+                .collect()
+        })
+        .unwrap_or_default();
+    if declared.is_empty() || declared != ledger_field_names() {
+        e.push("reference-link-integrity:ledger_fields".into());
+    }
+    if block.get("pooling").and_then(Value::as_str) != Some("forbidden") {
+        e.push("reference-link-integrity:pooling".into());
+    }
+    e
+}
+
+fn rejects_reference_link(v: Value, marker: &str) {
+    let errors = reference_link_integrity_errors(&v);
+    assert!(
+        errors.iter().any(|x| x.contains(marker)),
+        "reference-link mutation `{marker}` was accepted: {errors:?}"
+    );
+}
+
+#[test]
+fn reference_link_integrity_matches_the_composer_vocabulary() {
+    let a = yaml(AUTHORITY);
+    let errors = reference_link_integrity_errors(&a);
+    assert!(
+        errors.is_empty(),
+        "reference-link integrity errors: {errors:?}"
+    );
+    // A whole-block absence must be reported as an absence, not as drift.
+    assert!(
+        reference_link_integrity_errors(&Value::Null)
+            .iter()
+            .any(|x| x.contains("reference-link-integrity:missing"))
+    );
+
+    // The positional fallback is not a second copy of the literal: it renders
+    // exactly the text the composer's citation-link entry key publishes.
+    let template = text(&a, &["reference_link_integrity", "positional_fallback"])
+        .expect("the fallback template is declared");
+    for (ordinal, expected) in [(0_u32, "b0"), (7, "b7"), (42, "b42")] {
+        assert_eq!(
+            positional_entry_key(ordinal),
+            expected,
+            "the composer's positional fallback changed shape"
+        );
+        assert_eq!(
+            template.replace("{ordinal}", &ordinal.to_string()),
+            positional_entry_key(ordinal),
+            "the DATA fallback template must render like positional_entry_key"
+        );
+    }
+}
+
+#[test]
+fn reference_link_integrity_is_registered_only_through_the_sanctioned_block() {
+    // No parallel carrier: the contract lives inside an already sanctioned DATA
+    // file, never in a new `data/parse/*.yaml` (D377).
+    for entry in std::fs::read_dir(root().join("data/parse")).expect("data/parse is readable") {
+        let name = entry
+            .expect("entry")
+            .file_name()
+            .to_string_lossy()
+            .to_string();
+        assert!(
+            !name.contains("reference_link"),
+            "the reference-link contract must not create a parallel data/parse carrier: {name}"
+        );
+    }
+
+    // Exactly one registry binding, and it must be current.
+    let registry = yaml(REGISTRY);
+    let mut bindings: Vec<(String, String)> = Vec::new();
+    for section in ["source_data", "canonical_artifacts"] {
+        let items = registry
+            .get("bindings")
+            .and_then(|b| b.get(section))
+            .and_then(Value::as_sequence)
+            .cloned()
+            .unwrap_or_default();
+        for item in items {
+            bindings.push((
+                item.get("path")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned(),
+                item.get("sha256")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned(),
+            ));
+        }
+    }
+    let ours: Vec<&(String, String)> = bindings
+        .iter()
+        .filter(|(path, _)| path == AUTHORITY)
+        .collect();
+    assert_eq!(
+        ours.len(),
+        1,
+        "the composition DATA must carry exactly one governor registry binding"
+    );
+    let on_disk = std::fs::read(root().join(AUTHORITY)).expect("the composition DATA is readable");
+    assert_eq!(
+        ours[0].1,
+        sha256_hex(&on_disk),
+        "the registry digest must be re-pinned to the current composition DATA"
+    );
+    assert!(
+        !bindings
+            .iter()
+            .any(|(path, _)| path.contains("reference_link_integrity")),
+        "the reference-link contract must not add a second registry entry"
+    );
+}
+
+#[test]
+fn reference_link_integrity_mutations_fail_closed() {
+    let a = yaml(AUTHORITY);
+    rejects_reference_link(
+        mutate(
+            a.clone(),
+            &["reference_link_integrity", "id_space"],
+            Value::String("bibl-3".into()),
+        ),
+        "reference-link-integrity:id_space",
+    );
+    rejects_reference_link(
+        mutate(
+            a.clone(),
+            &["reference_link_integrity", "derivation"],
+            Value::String("synthesized_bibl_domain".into()),
+        ),
+        "reference-link-integrity:derivation",
+    );
+    rejects_reference_link(
+        mutate(
+            a.clone(),
+            &["reference_link_integrity", "positional_fallback"],
+            Value::String("b{index}".into()),
+        ),
+        "reference-link-integrity:positional_fallback",
+    );
+    rejects_reference_link(
+        mutate(
+            a.clone(),
+            &["reference_link_integrity", "required_targets"],
+            Value::String("all_ref_elements".into()),
+        ),
+        "reference-link-integrity:required_targets",
+    );
+    rejects_reference_link(
+        mutate(
+            a.clone(),
+            &["reference_link_integrity", "resolve_gate"],
+            Value::String("pre_splice".into()),
+        ),
+        "reference-link-integrity:resolve_gate",
+    );
+    rejects_reference_link(
+        mutate(
+            a.clone(),
+            &["reference_link_integrity", "contract_id"],
+            Value::String("invented.contract".into()),
+        ),
+        "reference-link-integrity:contract_id",
+    );
+    rejects_reference_link(
+        mutate(
+            a.clone(),
+            &["reference_link_integrity", "adr_ref"],
+            Value::String("ADR-075".into()),
+        ),
+        "reference-link-integrity:adr_ref",
+    );
+    rejects_reference_link(
+        mutate(
+            a.clone(),
+            &["reference_link_integrity", "refusal_classes"],
+            Value::Sequence(
+                REFERENCE_LINK_REFUSAL_CLASSES[..3]
+                    .iter()
+                    .map(|x| Value::String((*x).into()))
+                    .collect(),
+            ),
+        ),
+        "reference-link-integrity:refusal_classes",
+    );
+    rejects_reference_link(
+        mutate(
+            a.clone(),
+            &["reference_link_integrity", "ledger_fields"],
+            Value::Sequence(vec![Value::String("source_entries".into())]),
+        ),
+        "reference-link-integrity:ledger_fields",
+    );
+    rejects_reference_link(
+        mutate(
+            a.clone(),
+            &["reference_link_integrity", "pooling"],
+            Value::String("allowed".into()),
+        ),
+        "reference-link-integrity:pooling",
+    );
+    rejects_reference_link(
+        mutate(a, &["reference_link_integrity"], Value::Null),
+        "reference-link-integrity:contract_id",
     );
 }
