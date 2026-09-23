@@ -37,6 +37,8 @@ Rust-реализация существенно продвинулась, но 
 | A-XML | P0 | `native_fulltext_composition.rs:402–434,602–613`: сохранение диапазонов по имени смешивает открывающие/закрывающие теги, создаёт пересечения; output не перепарсивается | Настоящий Rust `compose_native_fulltext` возвращает Accepted для трёх валидных сохранённых TEI; независимый ElementTree отвергает все три результата | Проверяется наличие строк в простом синтетическом заголовке, не well-formedness реального результата |
 | A-REF | P0 | `native_fulltext_composition.rs:493–520` (ревизия `bcdd0cfc5`): проверяются только переданные anchors, а не фактические body targets; emit меняет id на bibl-ordinal. Текущее состояние — раздел S02 ниже | При исходном body target=#b0 и пустых supplied anchors Rust возвращает Accepted; b0 отсутствует в выходном множестве xml:id | Есть тест чужого переданного anchor, но нет проверки полноты anchors относительно исходного body |
 | A-FIELDS | P1 | `native_fulltext_composition.rs:460–520` (ревизия `bcdd0cfc5`): header emitter читает authors/date, references emitter только source. Текущее состояние и снятие RED/GREEN — раздел S03 ниже | Статическое чтение: структурированные header fields, author affiliations и citation fields не сериализуются этими функциями | Сохранение строки не проверяло семантическую эквивалентность title/email/id/affiliation/citation roles |
+| A-ABSENCE | P1 | Визуальные head-детекторы (`native_visual.rs`) пропускали primitives без bbox/digest и теряли уже объявленную адаптером типизированную причину: объявленное отсутствие уплощалось до `NotObserved`, знаменатель — до 1. Текущее состояние и снятие RED/GREEN — раздел S04 ниже | Измеренный RED-пин: malformed primitive с `NativeVisualAbsence::MalformedBbox` давал `Terminal{reason: NotObserved, terminal: 1}` при N объявленных | `malformed_observation_inputs_fail_closed_before_detection` проверял только `matches!(outcome, Terminal{..})`, не причину и не знаменатель |
+| A-BYTES | P1 | `native_fulltext_composition.rs`: `fallback_entry` присваивал каждому fallback-компоненту `byte_count = java.len()` и `sha256` всего Java-документа без scope, поэтому сумма `byte_count` учитывала документ `fallback_components` раз, а не разбивала байты. Текущее состояние и снятие RED/GREEN — раздел S04 ниже | Измеренный RED-пин: при документе 307B шесть fallback несли `byte_count=307` (сумма 1842), `sum_all=2129` при `native_sum=287` | Не было поля, различающего длину native-фрагмента и размер всего документа как ссылки на сохранённое Java-доказательство |
 
 Статус после корректирующей волны: A-XML закрыт на замеренной области — S01/T02
 починил эмиттер (RED→GREEN), S01/T03 закрыл найденный остаточный
@@ -53,7 +55,7 @@ published keys и отказывает `Accepted`, если обязательн
 author→affiliation и citation role/value сериализуются, а независимый
 post-serialization оракул и production-гейт отказывают типизированно при потере;
 измерение и RED→GREEN — в разделе S03 ниже. H16 при этом НЕ помечается PASS:
-planning-запись сохраняет `implementation_pass=false`.
+planning-запись сохраняет `implementation_pass=false`. A-ABSENCE и A-BYTES закрыты на замеренной области S04 — malformed primitive сохраняет типизированную причину и полный знаменатель, а байтовые счётчики компонентов несут явный scope; измерение и RED→GREEN — в разделе S04 ниже. H17 при этом не помечается PASS: planning-запись сохраняет `implementation_pass=false`.
 
 Воспроизведение: `doc/review/grobid-composition-repro.rs`. Оно использует те же синтетические admissions/candidates, что штатные контракты, но реальный Java TEI как документ. Это тест публичного композитора, НЕ end-to-end доказательство достижимости через production admission.
 
@@ -364,13 +366,108 @@ H16-N3 назван, а не замалчивается: не-namespace атри
 менялись: `deployed=false`, `import_eligible=false`, `auto_promote=forbidden`,
 `graph_write=forbidden`, `this_wave_promotes=none`, D127/D321 закрыты.
 
+### Свидетельства среза M511-j7wz2f/S04 (visual absence и byte accounting: исторический RED и текущий GREEN)
+
+A-ABSENCE и A-BYTES закрыты на замеренной области. Оба дефекта воспроизведены
+как данные до правки — тот же паттерн, что S01/T01, S02/T01 и S03/T01: RED-пин
+падает при отклонении в любую сторону и печатал измеренный дефектный профиль,
+а не желаемое поведение.
+
+- **A-ABSENCE, исторический RED (S04/T01).** Malformed primitive, который
+  адаптер `crates/da-cli/src/visual_adapter.rs` уже несёт с типизированной
+  причиной (`NativeVisualAbsence::MalformedBbox`), терял её в детекторах
+  `detect_figure_heads`/`detect_table_heads`/`detect_formula_heads`: результат
+  уплощался до `Terminal { reason: NotObserved }` со знаменателем `terminal=1`
+  при одном объявленном элементе и при N объявленных на разных страницах.
+  Существующий `malformed_observation_inputs_fail_closed_before_detection`
+  маскировал дефект: проверял только `matches!(outcome, Terminal{..})`, не
+  причину и не знаменатель.
+- **A-ABSENCE, текущий GREEN (S04/T02).** Детекторы отделяют валидные
+  primitives (bbox+digest) от объявленно-отсутствующих и возвращают
+  `Terminal { reason, metrics.terminal = items.len() }`: `reason` —
+  детерминированно первая объявленная причина в порядке (page_ordinal,
+  source_ordinal) (популяция уже отсортирована), `terminal` — знаменатель
+  объявленных, но не допущенных элементов, не константа 1. Истинное пустое
+  множество того же kind по-прежнему даёт законный `NotObserved`, а нелегальная
+  форма (bbox/digest/absence все пусты) отвергается fail-closed
+  `NativeVisualError::InvalidGeometry` — «0 без типа» невозможно. Новых
+  вариантов enum не добавлено, serde-контракт потребителей не ломается.
+  DATA-блок `typed_absence_semantics` в `data/parse/native_visual_heads.yaml`
+  связывает словарь отсутствий с Rust-константами: `pooling`,
+  `missing_head_denominator` и `unity_denominator` запрещены,
+  `terminal_is_pass=false`, отсутствие блока докладывается как
+  `typed-absence-semantics:missing`, а не как drift.
+- **A-BYTES, исторический RED (S04/T03).** `fallback_entry` в
+  `crates/da-parse/src/native_fulltext_composition.rs` присваивал каждому
+  fallback-компоненту `byte_count = java.len()` и `sha256`/`evidence_digest`
+  всего Java-документа без scope, поэтому наивная сумма `byte_count` учитывала
+  документ `fallback_components` раз. Измерено в фикстуре теста: при документе
+  307B шесть fallback несли `byte_count=307` (сумма 1842), и `sum_all=2129`
+  при `native_sum=287` — не разбиение байтов.
+- **A-BYTES, текущий GREEN (S04/T04).** `ByteCountScope { NativeFragment,
+  WholeDocumentReference }` на `FulltextComponentManifest` (`#[serde(default)]`,
+  по умолчанию `NativeFragment` сохраняет декодируемость старых манифестов),
+  манифестный `ByteAccountingLedger` (`native_fragment_bytes`,
+  `java_document_bytes`, `fallback_is_reference_not_partition`) и
+  `native_byte_partition()`, пере-выводящий разбиение из компонентов: только
+  native-фрагменты разбивают эмиссию, whole-document fallback — ссылка на
+  сохранённое Java-доказательство. `byte_accounting_violations()` ловит
+  `NativeFragmentWithoutAdmittedSplice`, `ReferenceDoesNotRepeatDocument`,
+  `NativePartitionDisagreesWithLedger`,
+  `JavaDocumentLengthDisagreesWithManifest` и `FallbackDeclaredAsPartition`.
+  `byte_count`/`java_fallback_bytes` не переименованы (R123, обратная
+  совместимость).
+- **Невакуумное runtime-доказательство (S04/T05).** Shadow-пример печатает
+  `byte_scope` в каждом компоненте и верхнеуровневый `byte_accounting`; на
+  замороженной фикстуре: `native_fragment_bytes=517` (header 370 + references
+  147), `java_document_bytes=490`, `whole_document_reference_components=5`,
+  `naive_byte_count_sum=2967` = 517 + 5×490, то есть наивная сумма не разбиение.
+  Пример падает, если scope не сериализуется или native-разбиение пусто (тот же
+  урок `required_targets == 0` из S02/T05 и `admitted == 0` из S03/T04).
+  Визуальный runtime печатает
+  `malformed_probe … mapped_lane_absence=malformed_bbox is_not_observed=false`.
+  Замороженный артефакт
+  `artifacts/parse_compat/native_fulltext_composition_shadow.json`
+  перегенерирован и запиннен
+  (`a96cab8ff36b3bfe54b620445d767e54d161ee8671b0c277a546992ac8f2f252`) в обеих
+  governor-поверхностях (`bindings.canonical_artifacts` и
+  `governor/fixtures/scholarly_parse_plane/contract.positive.json`);
+  `data/parse/native_visual_heads.yaml` — `d4b15517…` (перепинен T02), а
+  визуальный артефакт `visual_positive_fixture_run.json` byte-идентичен
+  (`50391d75…`), поэтому перепин не требуется.
+
+| Проверка (актуальная ревизия) | Результат |
+|---|---|
+| `cargo test -p da-parse --test native_visual_typed_absence` | exit=0, 8 passed (GREEN-контракт, H17-N1/N2) |
+| `cargo test -p da-parse --test native_fulltext_composition_byte_accounting` | exit=0, 6 passed (scope, неаддитивность, serde roundtrip) |
+| `cargo test -p da-parse --tests` | 104 suites, 1430 passed, 0 failed, 0 ignored |
+| `cargo test -p da-cli --tests` | 37 suites, 584 passed, 0 failed, 0 ignored |
+| `cargo test -p da-cli --features pdf-layout --tests` | 37 suites, 612 passed, 0 failed, 0 ignored |
+| `cargo clippy -p da-parse --all-targets --no-deps -- -D warnings` | exit=0 |
+| `cargo fmt -p da-parse -- --check` / `cargo fmt -p da-cli -- --check` | exit=0 / exit=0 |
+| shadow-пример (`--features pdf-layout`) | exit=0; `byte_accounting` native=517 java=490 naive=2967, `byte_scope` у всех 7 компонентов |
+| `native_visual_heads_shadow` (`--features pdf-layout`) | exit=0; malformed_probe mapped_lane_absence=malformed_bbox is_not_observed=false |
+| `visual_positive_fixture_run` (`--features pdf-layout`) | exit=0; артефакт byte-идентичен (`50391d75…`) |
+| `PYTHONPATH=scripts python3 -m pytest scripts/tests/test_governor.py -q` | 368 passed |
+| `PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q` | 437 passed |
+| `governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml` | exit=0 (stages=8 unresolved=8 complete=0 claims=0) |
+| `PYTHONPATH=scripts python3 -m governor architecture` (полный гейт, внешний прогон вне in-band `verification_timeout_ms=600000`) | `GATE_RC=0`, `ARCHITECTURE GATE: PASS` (fmt + clippy lib/tests + feature-matrix + per-crate tests + feature-gated example runners/contracts; ~1135s) |
+
+H17 при этом **не помечается PASS**: planning-запись сохраняет
+`implementation_pass=false`, `verification_pass=false`, `status: pending`,
+`owner: unassigned`, `open_item.accepted=false`, а закрытие этапа требует
+независимой корпусной регрессии S05. Измеренный остаток назван, а не замолчан:
+при смеси valid+absent head-outcome несёт receipts, а поштучные причины
+отсутствующих элементов в нём не публикуются. Замеренная область — публичный
+shadow-композитор; production-достижимость не доказана. Замки не менялись:
+`deployed=false`, `import_eligible=false`, `auto_promote=forbidden`,
+`graph_write=forbidden`, `this_wave_promotes=none`, D127 не снят.
+
 ## Риски, не выдаваемые за воспроизведённые дефекты
 
 | Область | Наблюдение | Требуемая проверка |
 |---|---|---|
 | Изоляция полос | Любая ошибка compose_inner возвращает общий Java fallback; независимость допуска не равна независимости восстановления после ошибки | Согласовать fail-closed policy и тест header-success/reference-failure |
-| Visual absence | `native_visual.rs` пропускает primitives без bbox/digest; пустой результат становится NotObserved | Runtime тест malformed primitive: сохранение причины и знаменателя |
-| Byte accounting | fallback-компонентам приписывается размер всего Java-документа | Явно указать scope счётчика; не суммировать как разбиение байтов |
 | budget_waits | available_permits проверяется до acquire | Зафиксировать семантику observation, либо измерять действительное ожидание |
 | Java parity | Большое число oracle-тестов не задаёт полного множества исходных Java-методов | Инвентарь источников, ветвей и исключений, независимые gold/holdout и tolerance |
 
@@ -386,9 +483,10 @@ H16-N3 назван, а не замалчивается: не-namespace атри
 | Публичный Rust composition probe + независимый XML parser | 2 класса дефектов воспроизведены |
 
 99 файлов `da-parse/tests/*.rs`; непересекающееся разбиение по именам не строилось. Подстроки встречаются: contract 55, properties 16, oracle 15, data_contract 13, same_n 8, metamorphic 1. Категории перекрываются. Процент line/branch/mutation coverage не измерялся. Полная архитектурная проверка, все adapter/application suites и живой Java-vs-Rust corpus-run в этом аудите не выполнялись. Утверждать «всё покрыто» нельзя. Строка `1351 passed` в таблице — замер ревизии аудита `bcdd0cfc5`; после S01/T06 тот же набор даёт 100 suites / 1374 passed / 0 failed / 0 ignored (раздел T04–T06), а после S02/T01–T05 — 101 suites / 1396 passed / 0 failed / 0 ignored (раздел S02),
-а после S03/T01–T04 — 102 suites / 1413 passed / 0 failed / 0 ignored (раздел S03).
+а после S03/T01–T04 — 102 suites / 1413 passed / 0 failed / 0 ignored (раздел S03),
+а после S04/T01–T05 — 104 suites / 1430 passed / 0 failed / 0 ignored (раздел S04).
 
-Доказательства GSD exec: `6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f` (Rust probe), `73a4222b-035b-4439-955e-96d36c068534` (test totals и валидность исходного XML), `c0d5f8f1-490c-4fe0-87c3-4f6e495c9a5b` (scope и test tags), `98f91300-d06b-4d67-8917-19d64e7b8d18` (реестры).
+Доказательства GSD exec: `6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f` (Rust probe), `73a4222b-035b-4439-955e-96d36c068534` (test totals и валидность исходного XML), `c0d5f8f1-490c-4fe0-87c3-4f6e495c9a5b` (scope и test tags), `98f91300-d06b-4d67-8917-19d64e7b8d18` (реестры). S04: `53726af5-9f84-4682-998c-bbaeb79778cd` (перегенерация замороженного shadow-артефакта), `25049e11-e663-41df-bdd6-d81173c818e0` (визуальный runtime), `e680048f-b40b-4479-bd61-bd78156b3dd1` (fmt/clippy/da-parse suites/pytest/governor review), `64050636-4a3d-4630-87c7-7773177b0f31` (целевые H17-таргеты), `e6b2dff5` (полный `governor architecture`, `GATE_RC=0`).
 
 ## Индексация
 
@@ -400,7 +498,8 @@ GitNexus MCP context завершился Connection closed. Первая инд
 
 Исторический аудит задач: терминальные 1179/1179; это не доказательство полного перевода. Отложенный незапланированный объём вообще не входит в этот знаменатель. Пять parked milestone имеют 13 skipped срезов без задач. H05 и GAR-015 не закрыты. A-XML закрыт на замеренной области S01, A-REF — на
 трёх пиннутых сохранённых TEI в S02; A-FIELDS закрыт на замеренной области S03
-(невакуумный runtime-прогон shadow-примера). Исторические PASS задним числом не
+(невакуумный runtime-прогон shadow-примера); A-ABSENCE и A-BYTES закрыты на
+замеренной области S04. Исторические PASS задним числом не
 переписываются.
 
 Следующий план: `doc/review/grobid-absorption-roadmap-2026-09-21.yaml` и `doc/review/grobid-absorption-followup.json`. Проверять командой `PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml`. Прохождение означает целостность planning registry, не выполнение будущих стадий. Новая волна auto не запускается; production promotion, import и graph writes не разрешены.

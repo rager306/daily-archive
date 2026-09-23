@@ -66,6 +66,12 @@ struct Report {
     /// ledger is the composer manifest's post-serialization record; the
     /// observation does not consult it.
     semantic_fields: SemanticFields,
+    /// S04/T05 (H17, "byte accounting"): the report-level statement of what
+    /// every component `byte_count` measures.  A naive `sum(byte_count)` over
+    /// the dispositions counts the preserved Java document once per fallback
+    /// component, so the report names the scope instead of publishing an
+    /// unqualified number.
+    byte_accounting: ByteAccounting,
     outcomes: Vec<Outcome>,
     replay: Replay,
     conservation: Conservation,
@@ -125,6 +131,11 @@ struct Outcome {
     java_fallback_sha256: String,
     reference_links: ReferenceLinkLedger,
     semantic_fields: SemanticFields,
+    /// S04/T05: the composer's own manifest-level ledger
+    /// (`native_fragment_bytes` / `java_document_bytes` /
+    /// `fallback_is_reference_not_partition`), carried through the outcome so
+    /// the report can state the scope rather than re-derive it silently.
+    byte_accounting: ByteAccountingLedger,
     dispositions: Vec<Disposition>,
 }
 
@@ -196,8 +207,36 @@ struct Disposition {
     disposition: String,
     evidence_digest: String,
     byte_count: usize,
+    /// S04/T05 (H17): what `byte_count` measures (`native_fragment` or
+    /// `whole_document_reference`), copied from the manifest component.  Only a
+    /// `native_fragment` length partitions the emission; a
+    /// `whole_document_reference` repeats the preserved Java document and MUST
+    /// NOT be summed as a partition member.
+    byte_scope: ByteCountScope,
     truncated: bool,
     fallback_target: String,
+}
+/// S04/T05 (H17): the runtime statement that every byte counter carries an
+/// explicit scope and that the whole-document fallback is a reference, not a
+/// partition member.
+///
+/// `native_partition_bytes` is re-derived by this example from the emitted
+/// component scopes (not read from the ledger), so a substituted scope shows up
+/// as a mismatch instead of silently inflating the partition.
+#[derive(Debug, Serialize, Clone, PartialEq, Eq)]
+struct ByteAccounting {
+    native_fragment_bytes: usize,
+    java_document_bytes: usize,
+    fallback_is_reference_not_partition: bool,
+    /// Re-derived here from the dispositions; MUST equal
+    /// `native_fragment_bytes`.
+    native_partition_bytes: usize,
+    native_fragment_components: usize,
+    whole_document_reference_components: usize,
+    /// The naive `sum(byte_count)` over every component — published only to
+    /// show it is NOT the partition (it repeats the Java document once per
+    /// fallback component).
+    naive_byte_count_sum: usize,
 }
 #[derive(Debug, Serialize)]
 struct Replay {
@@ -468,6 +507,7 @@ fn run(jobs: Vec<Job>, workers: usize, capacity: usize) -> (Vec<Outcome>, Execut
                     disposition: disposition_wire_name(m.disposition).into(),
                     evidence_digest: m.evidence_digest.clone(),
                     byte_count: m.byte_count,
+                    byte_scope: m.byte_scope,
                     truncated: m.truncated,
                     fallback_target: m.fallback_target.clone(),
                 })
@@ -487,6 +527,7 @@ fn run(jobs: Vec<Job>, workers: usize, capacity: usize) -> (Vec<Outcome>, Execut
                 java_fallback_sha256: candidate.manifest.java_fallback_sha256,
                 reference_links: candidate.manifest.reference_links,
                 semantic_fields,
+                byte_accounting: candidate.manifest.byte_accounting,
                 dispositions,
             })
         },
@@ -620,6 +661,89 @@ fn main() {
             .all(|outcome| outcome.semantic_fields == semantic_fields),
         "every deterministic shadow row must agree on the semantic-field observation"
     );
+    // S04/T05 (H17, "byte accounting"): every component byte counter must carry
+    // an explicit scope in the *serialized* record, and the whole-document
+    // fallback must be observable as a reference rather than a partition member.
+    // The scope is read back from the example's own JSON, so a manifest field
+    // that silently stops serializing fails here instead of passing on the
+    // strength of the in-memory struct.
+    let dispositions_json =
+        serde_json::to_value(&outcomes[0].dispositions).expect("dispositions JSON");
+    let disposition_rows = dispositions_json.as_array().expect("dispositions array");
+    assert!(
+        disposition_rows
+            .iter()
+            .all(|row| row.get("byte_scope").is_some()),
+        "every component byte counter must carry an explicit scope: {dispositions_json}"
+    );
+    let mut native_scope_components = 0usize;
+    let mut reference_scope_components = 0usize;
+    for row in disposition_rows {
+        match row.get("byte_scope").and_then(|value| value.as_str()) {
+            Some("native_fragment") => native_scope_components += 1,
+            Some("whole_document_reference") => reference_scope_components += 1,
+            other => panic!("unknown byte scope in shadow report: {other:?}"),
+        }
+    }
+    let observed_byte_accounting = outcomes[0].byte_accounting;
+    let derived_native_partition: usize = outcomes[0]
+        .dispositions
+        .iter()
+        .filter(|item| item.byte_scope == ByteCountScope::NativeFragment)
+        .map(|item| item.byte_count)
+        .sum();
+    let naive_byte_count_sum: usize = outcomes[0]
+        .dispositions
+        .iter()
+        .map(|item| item.byte_count)
+        .sum();
+    // A vacuous block would prove nothing (the S02/T05 `required_targets == 0`
+    // and S03/T04 `admitted == 0` lesson): the frozen fixture must exercise both
+    // a native fragment boundary and a whole-document fallback reference.
+    assert!(
+        native_scope_components > 0 && reference_scope_components > 0,
+        "frozen fixture must exercise both byte scopes, got native={native_scope_components} reference={reference_scope_components}"
+    );
+    assert_eq!(
+        reference_scope_components, outcomes[0].fallback_components,
+        "every fallback component must be a whole-document reference"
+    );
+    assert_eq!(
+        observed_byte_accounting.native_fragment_bytes, derived_native_partition,
+        "the recorded ledger must agree with the partition re-derived from the scopes"
+    );
+    assert_eq!(
+        observed_byte_accounting.java_document_bytes, outcomes[0].java_fallback_bytes,
+        "the ledger must name the preserved Java document it references"
+    );
+    assert!(
+        observed_byte_accounting.fallback_is_reference_not_partition,
+        "the whole-document fallback must be declared a reference, not a partition member"
+    );
+    assert!(
+        derived_native_partition > 0,
+        "the native byte partition must be non-vacuous"
+    );
+    assert_eq!(
+        naive_byte_count_sum,
+        derived_native_partition
+            + reference_scope_components * observed_byte_accounting.java_document_bytes,
+        "a naive sum must be shown to repeat the preserved document once per fallback component"
+    );
+    assert!(
+        naive_byte_count_sum > derived_native_partition,
+        "the naive byte-count sum must not be a byte partition"
+    );
+    let byte_accounting = ByteAccounting {
+        native_fragment_bytes: observed_byte_accounting.native_fragment_bytes,
+        java_document_bytes: observed_byte_accounting.java_document_bytes,
+        fallback_is_reference_not_partition: observed_byte_accounting
+            .fallback_is_reference_not_partition,
+        native_partition_bytes: derived_native_partition,
+        native_fragment_components: native_scope_components,
+        whole_document_reference_components: reference_scope_components,
+        naive_byte_count_sum,
+    };
     let report = Report {
         schema_version: REPORT_SCHEMA,
         data_schema: DATA
@@ -681,6 +805,7 @@ fn main() {
         execution,
         reference_links,
         semantic_fields,
+        byte_accounting,
         outcomes,
         replay: Replay {
             semantic_replays: 2,

@@ -236,6 +236,52 @@ fn source_bound_shadow_report_is_terminal_replayed_and_quarantined() {
         dispositions,
         HashSet::from(["passed", "invalid_evidence", "unsupported", "not_observed"])
     );
+    // S04/T05 (H17): every component byte counter must carry an explicit scope
+    // in the serialized report, and the whole-document fallback must be
+    // observable as a reference rather than a partition member.
+    let component_rows = outcomes[0]["dispositions"]
+        .as_array()
+        .expect("component dispositions");
+    assert!(
+        component_rows
+            .iter()
+            .all(|item| item["byte_scope"].is_string()),
+        "every component must publish a byte scope: {}",
+        outcomes[0]["dispositions"]
+    );
+    let native_partition = component_rows
+        .iter()
+        .filter(|item| item["byte_scope"] == "native_fragment")
+        .map(|item| item["byte_count"].as_u64().expect("byte_count"))
+        .sum::<u64>();
+    assert!(
+        native_partition > 0,
+        "the native byte partition must be non-vacuous"
+    );
+    assert!(
+        component_rows
+            .iter()
+            .any(|item| item["byte_scope"] == "whole_document_reference"),
+        "the frozen fixture must exercise the whole-document fallback reference"
+    );
+    let byte_accounting = &value["byte_accounting"];
+    assert_eq!(
+        byte_accounting["native_partition_bytes"].as_u64(),
+        Some(native_partition),
+        "the re-derived native partition must match the component scopes"
+    );
+    assert_eq!(
+        byte_accounting["native_fragment_bytes"], byte_accounting["native_partition_bytes"],
+        "the recorded ledger must agree with the partition re-derived from the scopes"
+    );
+    assert_eq!(byte_accounting["fallback_is_reference_not_partition"], true);
+    assert!(
+        byte_accounting["naive_byte_count_sum"]
+            .as_u64()
+            .unwrap_or(0)
+            > native_partition,
+        "a naive sum over every component must not be a byte partition: {byte_accounting}"
+    );
     assert!(!text.contains("documentsegmentation"));
     assert!(!text.contains("invalidevidence"));
     assert!(!text.contains("notobserved"));

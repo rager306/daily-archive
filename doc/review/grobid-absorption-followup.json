@@ -497,44 +497,101 @@
       "implementation_evidence": [
         {
           "path": "crates/da-parse/src/native_visual.rs",
-          "note": "типизированные отсутствия визуальных семейств (NativeFigureAbsence/NativeTableAbsence/NativeFormulaAbsence)",
-          "state": "partial"
-        },
-        {
-          "path": "crates/da-parse/tests/native_visual_family_same_n.rs",
-          "note": "независимый same-n оракул визуальных семейств",
+          "note": "детекторная половина GAR-003: detect_figure_heads/detect_table_heads/detect_formula_heads отделяют валидные primitives от объявленно-отсутствующих и несут типизированную причину (Terminal{reason}) вместе с полным знаменателем metrics.terminal = число объявленных; истинное пустое множество и lane_absence не меняются, mixed valid+absent остаётся head-outcome",
           "state": "present"
         },
         {
-          "path": "data/parse/native_visual_families.yaml",
-          "note": "emitted/referenced columns и правила группировки визуальных семейств",
+          "path": "crates/da-parse/tests/native_visual_typed_absence.rs",
+          "note": "измеренный RED→GREEN H17: malformed primitive (MalformedBbox) больше не уплощается до NotObserved, знаменатель не сводится к 1; негатив H17-N1 (bbox/digest/absence пусты → InvalidGeometry), негатив H17-N2 (несколько причин/страниц не пулятся, terminal == число объявленных) зелёные",
+          "state": "present"
+        },
+        {
+          "path": "data/parse/native_visual_heads.yaml",
+          "note": "DATA-блок typed_absence_semantics: словарь отсутствий сверяется с Rust-константами, pooling/missing_head_denominator/unity_denominator запрещены, terminal_is_pass=false; отсутствие блока докладывается как typed-absence-semantics:missing, а не drift",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/src/native_fulltext_composition.rs",
+          "note": "byte scope для честного учёта ресурсов: ByteCountScope{NativeFragment, WholeDocumentReference} на FulltextComponentManifest, ByteAccountingLedger и native_byte_partition()/byte_accounting_violations(); только native-фрагменты разбивают эмиссию, whole-document fallback — ссылка на сохранённое Java-доказательство",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/native_fulltext_composition_byte_accounting.rs",
+          "note": "измеренный RED→GREEN H17: fallback-компоненты несли byte_count/sha256 всего Java-документа без scope (в фикстуре теста naive sum 6*307+287=2129 при документе 307B — не разбиение); GREEN: fallback byte_scope=WholeDocumentReference, native_byte_partition() == сумма вставленных фрагментов, негатив на подмену scope падает, serde roundtrip и декодирование манифеста без byte_scope доказаны",
+          "state": "present"
+        },
+        {
+          "path": "artifacts/parse_compat/native_fulltext_composition_shadow.json",
+          "note": "перегенерированный замороженный runtime-артефакт несёт byte_scope по всем 7 компонентам и невакуумный byte_accounting (native_fragment_bytes=517, java_document_bytes=490, whole_document_reference_components=5, naive_byte_count_sum=2967 ≠ разбиение); digest перепинен в обеих governor-поверхностях",
           "state": "present"
         }
       ],
       "verification_evidence": [
         {
-          "mode": "runtime",
-          "ref": "сверка типизированных отсутствий и деноминаторов на сохранённых TEI",
-          "expected": "отсутствие типизировано, деноминатор сохранён, пулинг компонентов не допускается",
-          "status": "pending"
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test native_visual_typed_absence",
+          "expected": "exit=0: Terminal{reason: MalformedBbox} с terminal == declared_count, пустой набор того же kind даёт законный NotObserved, H17-N1/H17-N2 зелёные",
+          "status": "pass"
         },
         {
           "mode": "command",
-          "ref": "cargo test -p da-parse --test native_visual_family_same_n",
-          "expected": "независимый оракул визуальных семейств зелёный",
-          "status": "pending"
+          "ref": "cargo test -p da-parse --test native_fulltext_composition_byte_accounting",
+          "expected": "exit=0: byte_scope на каждом компоненте, native-разбиение == сумма вставленных фрагментов, негатив на подмену scope падает",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo run -p da-cli --features pdf-layout --example native_fulltext_composition_shadow -- --report artifacts/parse_compat/native_fulltext_composition_shadow.json",
+          "expected": "exit=0: отчёт несёт byte_scope по всем компонентам и невакуумный byte_accounting с явной неаддитивностью whole-document fallback",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --tests",
+          "expected": "104 suites, 1430 passed, 0 failed, 0 ignored",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-cli --tests",
+          "expected": "37 suites, 584 passed, 0 failed, 0 ignored",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo run -p da-cli --features pdf-layout --example native_visual_heads_shadow -- --report /tmp/s04_visual.json",
+          "expected": "exit=0: malformed_probe mapped_lane_absence=malformed_bbox is_not_observed=false — malformed primitive не становится NotObserved",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo run -p da-cli --features pdf-layout --example visual_positive_fixture_run",
+          "expected": "exit=0: визуальный артефакт byte-идентичен (50391d75…), перепин не требуется",
+          "status": "pass"
         },
         {
           "mode": "governor_rule",
-          "ref": "governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml",
-          "expected": "этап H17 не заявляет PASS до появления исполняемого доказательства",
+          "ref": "PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml",
+          "expected": "exit=0; stages=8 unresolved=8 complete=0 claims=0 — H17 не заявляет PASS без независимой корпусной регрессии",
+          "status": "pass"
+        },
+        {
+          "mode": "runtime",
+          "ref": "независимая корпусная регрессия на реальном корпусе (S05) вне синтетической фикстуры и трёх пиннутых сохранённых TEI",
+          "expected": "типизированное отсутствие и scope байтовых счётчиков подтверждены на корпусе, а не только на синтетическом shadow-прогоне",
+          "status": "pending"
+        },
+        {
+          "mode": "runtime",
+          "ref": "названный остаток: mixed valid+absent не несёт поштучных причин в head-outcome",
+          "expected": "текущее поведение измерено (объявленные причины видны только когда receipts пуст); остаток закрывается отдельно, а не выдаётся за отсутствие",
           "status": "pending"
         }
       ],
       "tested_source": {
-        "revision": "bcdd0cfc5e34f64821798463fe23b2f3845efe56",
+        "revision": "9ce1d7540",
         "verified": false,
-        "note": "Запись планирования: команды на этой ревизии не исполнялись в рамках этого реестра. verified=false."
+        "note": "Замер S04/T05 исполнен на рабочем дереве поверх HEAD 9ce1d7540 (коммит T04; короткий sha). Команды и их RC записаны в audit-раздел S04 и в task-саммари S04/T05. tested_source остаётся verified=false: заявленный этап не закрывается — детекторная половина и byte scope закрыты лишь на замеренной области, а независимая корпусная регрессия вынесена в S05."
       },
       "index_freshness": {
         "state": "fresh",
@@ -557,12 +614,14 @@
         {
           "id": "H17-N1",
           "scenario": "Отсутствие figure/table/formula записано как 0 без типа",
-          "expected": "fail-closed: требуется типизированное отсутствие"
+          "expected": "fail-closed: нелегальная форма (bbox/digest/absence пусты) отвергается NativeVisualError::InvalidGeometry; типизированный набор объявленных отсутствий даёт Terminal с причиной (MalformedBbox), а не NotObserved; закрыто на замеренной области",
+          "ref": "crates/da-parse/tests/native_visual_typed_absence.rs"
         },
         {
           "id": "H17-N2",
           "scenario": "Референсный и исполненный деноминаторы смешаны (пулинг)",
-          "expected": "детектор пулинга/размытия деноминаторов срабатывает"
+          "expected": "fail-closed: N объявленных отсутствий на разных страницах дают terminal == N и детерминированную первую причину вместо terminal=1; смесь причин не пулится; byte scope запрещает суммировать whole-document fallback (детектор неаддитивности); закрыто на замеренной области",
+          "ref": "crates/da-parse/tests/native_fulltext_composition_byte_accounting.rs"
         }
       ],
       "test_matrix": [
@@ -570,28 +629,34 @@
           "contour": "2 Domain Semantic",
           "type": "Contract",
           "applicability": "applicable",
-          "reason": "типизированные отсутствия визуальных семейств"
+          "reason": "типизированные отсутствия визуальных семейств и явный byte_scope компонентов"
         },
         {
           "contour": "2 Domain Semantic",
           "type": "Property",
           "applicability": "applicable",
-          "reason": "сохранение деноминатора без пулинга"
+          "reason": "сохранение знаменателя без пулинга и неаддитивность whole-document fallback"
         },
         {
           "contour": "1 Determinism Infrastructure",
           "type": "Contract",
           "applicability": "not_applicable",
-          "reason": "деноминаторы не зависят от портов Clock/ID/RNG"
+          "reason": "типизированные причины и байтовые счётчики не зависят от портов Clock/ID/RNG"
+        },
+        {
+          "contour": "3 Application Functional",
+          "type": "Integration",
+          "applicability": "applicable",
+          "reason": "runtime shadow-отчёт несёт byte_scope и невакуумный byte_accounting"
         }
       ],
       "implementation_pass": false,
       "verification_pass": false,
       "open_item": {
-        "reason": "H17 не закрыт: типизированные визуальные отсутствия и сохранение деноминаторов независимо не подтверждены.",
+        "reason": "H17 не закрыт: типизированные визуальные отсутствия и явный scope байтовых счётчиков закрыты на замеренной области (RED→GREEN, негативы H17-N1/H17-N2, runtime shadow-отчёт с byte_accounting), но остаются названные остатки — mixed valid+absent не несёт поштучных причин в head-outcome — и независимая корпусная регрессия вне синтетической фикстуры (S05).",
         "since": "2026-09-21",
         "accepted": false,
-        "closure_condition": "Отсутствия типизированы, деноминаторы сохранены без пулинга, отрицательные тесты на смешение и 0-без-типа зелёные."
+        "closure_condition": "Отсутствия типизированы, знаменатели сохранены без пулинга, негативы на смешение и 0-без-типа зелёные, и измерение подтверждено на независимой корпусной регрессии (S05)."
       }
     },
     {

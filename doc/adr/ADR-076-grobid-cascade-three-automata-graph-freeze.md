@@ -606,3 +606,102 @@ DATA-файла `266b68b4…` перепинен T03.
 D127/D321 закрыты. Замеренная область — публичный shadow-композитор с
 реэкспортом и тестами; production-достижимость не заявляется.
 
+## 18. Корректировка 2026-09-23: типизированное отсутствие визуальных голов и scope байтовых счётчиков (M511-j7wz2f/S04)
+
+Фиксируется решение по H17, принятое в S04/T01–T05 на измеренных RED T01/T03.
+Решение описывает публичный shadow-композитор и детекторы визуальных голов; оно
+не расширяет допуск, не объявляет production-достижимость и не снимает замки.
+
+**Решение (детекторная половина GAR-003).** `Terminal` — утверждение об
+**объявленном отсутствии**, а не о пустоте, поэтому причина и знаменатель
+переносятся, а не уплощаются. Адаптерная половина (`visual_adapter.rs`) уже
+клала `NativeVisualAbsence::MalformedBbox` в `NativeVisualPrimitive.absence`;
+детекторная половина теперь её сохраняет:
+
+- `Terminal.reason` — типизированная причина объявленного отсутствия;
+  `metrics.terminal` — знаменатель объявленных, но не допущенных элементов, а не
+  константа 1.
+- `reason` выбирается детерминированно — первая объявленная причина в порядке
+  (page_ordinal, source_ordinal) (популяция уже отсортирована `head_items`), без
+  пулинга и без выдумывания агрегата.
+- Истинное пустое множество того же kind остаётся законным `NotObserved`;
+  поведение `lane_absence` не меняется (уже типизировано через
+  `terminal_if_absent`).
+- Нелегальная форма (bbox/digest/absence все пусты) отвергается fail-closed
+  `NativeVisualError::InvalidGeometry`: «ноль без типа» невозможен.
+- Mixed valid+absent остаётся head-outcome с receipts и
+  `terminal = items.len() - receipts.len()`. **Названный остаток:** поштучные
+  причины отсутствующих элементов в head-outcome не публикуются.
+- Новых вариантов enum не добавлено, поэтому serde-контракт потребителей
+  сохранён.
+
+**Решение (byte accounting).** Байтовый счётчик компонента обязан нести явный
+scope, потому что `Accepted` — утверждение о **байтах эмиссии**, а не о размере
+сохранённого Java-доказательства:
+
+- `ByteCountScope { NativeFragment, WholeDocumentReference }` с
+  `#[serde(default)]` = `NativeFragment`, поэтому до-S04 манифесты остаются
+  декодируемыми.
+- Только `NativeFragment.byte_count` разбивает эмиссию.
+  `WholeDocumentReference.byte_count` повторяет сохранённое Java-доказательство и
+  MUST NOT суммироваться: наивная сумма учитывает весь документ
+  `fallback_components` раз.
+- `ByteAccountingLedger` фиксирует решение один раз, а
+  `native_byte_partition()` пере-выводит разбиение из компонентов; расхождение
+  выведенного и записанного — это и есть детектор подмены scope, а не тихий
+  прирост разбиения. `byte_accounting_violations()` именует каждую нечестность
+  (`NativeFragmentWithoutAdmittedSplice`, `ReferenceDoesNotRepeatDocument`,
+  `NativePartitionDisagreesWithLedger`,
+  `JavaDocumentLengthDisagreesWithManifest`, `FallbackDeclaredAsPartition`).
+- `byte_count`/`java_fallback_bytes` не переименованы (R123, обратная
+  совместимость).
+
+**Замер.** Исторический RED (S04/T01): malformed primitive с объявленной
+причиной `MalformedBbox` давал `Terminal { reason: NotObserved, terminal: 1 }` —
+причина потеряна, знаменатель сведён к 1; при N объявленных на разных страницах
+измеренный `terminal` тоже был 1. Исторический RED (S04/T03): все
+fallback-компоненты несли `byte_count = java.len()` и `sha256` всего документа, и
+на фикстуре теста при документе 307B шесть fallback несли `byte_count=307`
+(сумма 1842) при `native_sum=287`, то есть `sum_all=2129` — не разбиение.
+Текущий GREEN (S04/T02, S04/T04): `Terminal{reason: MalformedBbox,
+terminal: declared_count}`, негативы H17-N1 («0 без типа» отвергается) и H17-N2
+(несколько причин и страниц не пулятся) зелёные; `byte_scope` на каждом
+компоненте, `native_byte_partition()` равен сумме вставленных фрагментов, негатив
+на подмену scope падает, serde roundtrip и декодирование манифеста без
+`byte_scope` доказаны.
+
+**Наблюдаемость.** Runtime-доказательство (S04/T05): shadow-пример печатает
+`byte_scope` в каждом компоненте и верхнеуровневый `byte_accounting`; на
+замороженной фикстуре `native_fragment_bytes=517` (header 370 + references 147),
+`java_document_bytes=490`, `whole_document_reference_components=5`,
+`naive_byte_count_sum=2967` = 517 + 5×490. Пример падает, если scope не
+сериализуется или native-разбиение пусто. Визуальный runtime печатает
+`malformed_probe … mapped_lane_absence=malformed_bbox is_not_observed=false`, а
+DATA-блок `typed_absence_semantics` в `data/parse/native_visual_heads.yaml`
+связывает словарь отсутствий с Rust-константами (`pooling`,
+`missing_head_denominator` и `unity_denominator` запрещены, `terminal_is_pass=false`).
+
+**Перепин.** Изменение схемы манифеста устаревает замороженный артефакт молча,
+поэтому в том же юните `artifacts/parse_compat/native_fulltext_composition_shadow.json`
+перегенерирован и запиннен
+(`a96cab8ff36b3bfe54b620445d767e54d161ee8671b0c277a546992ac8f2f252`) в обеих
+governor-поверхностях (`bindings.canonical_artifacts` и
+`governor/fixtures/scholarly_parse_plane/contract.positive.json`);
+`data/parse/native_visual_heads.yaml` — `d4b15517…` (перепинен T02), визуальный
+артефакт `visual_positive_fixture_run.json` byte-идентичен (`50391d75…`), перепин
+не требуется.
+
+**Состояние реестра.** H17 остаётся planning-записью: `status: pending`,
+`implementation_pass=false`, `verification_pass=false`, `owner: unassigned`,
+`open_item.accepted=false`. Измеренный GREEN области **не** помечается PASS:
+закрытие этапа требует независимой корпусной регрессии вне синтетической
+фикстуры (S05), а `tested_source.verified` сохраняется `false`. `governor review`
+даёт `stages=8 unresolved=8 complete=0 claims=0` (exit=0). История S01–S03 не
+переписывается: §14/§15 (H14), §16 (H15), §17 (H16) остаются как были.
+
+**Границы.** Замки не менялись: `deployed=false`, `import_eligible=false`,
+`auto_promote=forbidden`, `graph_write=forbidden` `production_route=forbidden`,
+`this_wave_promotes=none`, D127/D321 закрыты. Замеренная область — публичный
+shadow-композитор и детекторы визуальных голов с реэкспортом и тестами;
+production-достижимость не заявляется.
+
