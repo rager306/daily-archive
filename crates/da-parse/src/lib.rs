@@ -295,7 +295,8 @@ pub use native_fulltext_composition::{
     NATIVE_FULLTEXT_REFERENCE_LINK_REQUIRED_TARGETS, NATIVE_FULLTEXT_REFERENCE_LINK_RESOLVE_GATE,
     NativeFulltextCandidate, NativeFulltextCompositionError, NativeFulltextCompositionInput,
     NativeFulltextCompositionOutcome, NativeFulltextManifest, ReferenceLinkLedger,
-    S17LineageReceipt, compose_native_fulltext, tei_element_bytes,
+    S17LineageReceipt, SemanticFieldLedger, SemanticFieldLoss, citation_field_role_token,
+    compose_native_fulltext, tei_element_bytes,
 };
 pub use native_fulltext_features::{
     FulltextAlignment, FulltextCalloutType, FulltextFeatureRow, FulltextFeatureToken,

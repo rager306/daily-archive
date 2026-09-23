@@ -9,8 +9,9 @@
 //! those functions at all.  Conserving *text* is not semantic equivalence, so
 //! neither S01 (well-formedness) nor S02 (link resolve) could see the defect.
 //!
-//! This file is the measurement, deliberately built before the repair, exactly
-//! as S02/T01 built the A-REF oracle before S02/T02 repaired the composer:
+//! T01 measured the A-FIELDS RED (0 of every admitted header/reference field in
+//! the emission).  T02 repaired the emitter and turned that measurement into the
+//! GREEN contract this file now asserts:
 //!
 //! * the source-side facts come from a real XML parser (`roxmltree`, a
 //!   dev-dependency only — the composer's production import root set stays
@@ -18,37 +19,39 @@
 //! * the judge of emitted output is the same independent parser, so `Accepted`
 //!   and "the emitted document still carries the admitted semantics" stay
 //!   separate facts;
-//! * the oracle reads **only bytes**: it takes the emitted document and frozen
-//!   expectation constants.  It never inspects `candidate`, its manifest, or the
-//!   ledger — a composer cannot be the judge of its own emission.
+//! * the oracle reads **only bytes**: profiling takes the emitted document and
+//!   frozen expectation constants, never `candidate`.  The composer's manifest
+//!   ledger is cross-checked *against* the oracle, never used as its input.
 //!
-//! ## What T01 measures (the RED pin)
+//! ## What the GREEN contract asserts
 //!
 //! Every admitted semantic field is injected with a distinctive frozen sentinel
 //! so the measurement cannot be confused with the semantics the *preserved
 //! source* already carries in its own header subtrees (which the composer
 //! conserves, and which include real `<title>`, `<email>`, `<idno>` and
-//! `<affiliation>` elements).  Measured on the three sha256-pinned preserved TEI
-//! (re-verified on every run):
+//! `<affiliation>` elements).  After the T02 repair, on the three sha256-pinned
+//! preserved TEI (re-verified on every run):
 //!
-//! | fixture | admitted header title/email/ids | admitted affiliation link | admitted citation role | author line | reference texts |
+//! | fixture | admitted header title/email/ids | admitted affiliation binding | admitted citation role | author line | reference texts |
 //! |---|---|---|---|---|---|
-//! | hub_2507.19457 | 0 / 0 / 0 | 0 | 0 | present | 80 |
-//! | rlm_2512.24601 | 0 / 0 / 0 | 0 | 0 | present | 49 |
-//! | reca_2605.26525v1 | 0 / 0 / 0 | 0 | 0 | present | 78 |
+//! | hub_2507.19457 | 1 / 1 / 1 | 1 | 1 | present | 80 |
+//! | rlm_2512.24601 | 1 / 1 / 1 | 1 | 1 | present | 49 |
+//! | reca_2605.26525v1 | 1 / 1 / 1 | 1 | 1 | present | 78 |
 //!
-//! The RED is asserted as *data*, never as a failing or `#[ignore]`d test (the
-//! auto-mode gate has no expected-failure mechanism: `passed = checks.every(exit
-//! Code === 0)`), so the pin fails on deviation in **either** direction — a
-//! regression that loses an author line or a reference text, and the T02 repair
-//! that starts carrying the fields.  T02 replaces the pin with the GREEN
-//! contract and consumes the same vocabulary.
+//! The affiliation *text* is not part of the composer's typed input
+//! (`RecognizedAffiliationComponent` carries a span, not its text), so the
+//! binding — the key the independent oracle reads — is what is conserved; the
+//! `affiliations` counter stays informational.  The contract is asserted as
+//! data (`exit 0`, never `#[ignore]`), exactly like the RED pin it replaces, so
+//! it fails on deviation in either direction.
 //!
 //! ## Class vocabulary (shared with the T02 production gate)
 //!
-//! The `Class*` constants below name the typed semantic-loss class and the
-//! denominator names the fixture, so T02's composer gate and this oracle cannot
-//! drift into near-miss spellings.
+//! The `Class*` constants below name the typed semantic-loss class and
+//! [`SemanticFieldLoss::token`] produces exactly them, so the oracle and the
+//! composer gate cannot drift into near-miss spellings.  The negative matrix at
+//! the end of this file drives the production gate through each class and asserts
+//! the byte-identical Java fallback.
 
 use da_parse::*;
 use serde::Deserialize;
@@ -530,43 +533,57 @@ fn admissions() -> Vec<FulltextAdmissionReceipt> {
     .into()
 }
 
-/// The admitted header band: one author carrying an affiliation link, plus the
-/// projected native title/email/ids fields.  Everything is built from the frozen
-/// admitted constants, never from the source document.
-fn admitted_header() -> HeaderCompositionOutcome {
+/// The admitted header input: one author carrying an affiliation link.  Built
+/// from the frozen admitted constants, never from the source document.
+fn header_input_with_links(links: Vec<NativeAffiliationLink>) -> HeaderCompositionInput {
     let name = NativePersonalNameParser::new().parse(PersonalNameContext::Header, "O. Oracle");
-    compose_header_with_fields(
-        HeaderCompositionInput {
-            date: NativeDateParser::new().parse("2026-09-23"),
-            authors: vec![HeaderAuthorInput {
-                ordinal: 0,
-                span: CompositionSpan { start: 1, end: 9 },
-                name,
-                affiliations: NativeAffiliationLinkOutcome::Linked {
-                    author: NativeAffiliationAuthorEvidence {
-                        ordinal: 0,
-                        span: AffiliationSpan { start: 0, end: 1 },
-                    },
-                    links: vec![NativeAffiliationLink {
-                        key: ADMITTED_AUTHOR_KEY.into(),
-                        affiliation_ordinal: 0,
-                        affiliation_span: AffiliationSpan {
-                            start: 0,
-                            end: ADMITTED_AFFILIATION.len(),
-                        },
-                    }],
+    HeaderCompositionInput {
+        date: NativeDateParser::new().parse("2026-09-23"),
+        authors: vec![HeaderAuthorInput {
+            ordinal: 0,
+            span: CompositionSpan { start: 1, end: 9 },
+            name,
+            affiliations: NativeAffiliationLinkOutcome::Linked {
+                author: NativeAffiliationAuthorEvidence {
+                    ordinal: 0,
+                    span: AffiliationSpan { start: 0, end: 1 },
                 },
-            }],
-            affiliation_components: vec![
-                NativeAffiliationParser::new().parse(ADMITTED_AFFILIATION),
-            ],
+                links,
+            },
+        }],
+        affiliation_components: vec![NativeAffiliationParser::new().parse(ADMITTED_AFFILIATION)],
+    }
+}
+
+/// The admitted affiliation link: the binding the independent oracle reads.
+fn admitted_link() -> NativeAffiliationLink {
+    NativeAffiliationLink {
+        key: ADMITTED_AUTHOR_KEY.into(),
+        affiliation_ordinal: 0,
+        affiliation_span: AffiliationSpan {
+            start: 0,
+            end: ADMITTED_AFFILIATION.len(),
         },
-        NativeHeaderFields {
-            title: vec![ADMITTED_TITLE.into()],
-            email: vec![ADMITTED_EMAIL.into()],
-            ids: vec![ADMITTED_ID.into()],
-        },
-    )
+    }
+}
+
+fn admitted_header_input() -> HeaderCompositionInput {
+    header_input_with_links(vec![admitted_link()])
+}
+
+/// The admitted projected header fields.
+fn admitted_fields() -> NativeHeaderFields {
+    NativeHeaderFields {
+        title: vec![ADMITTED_TITLE.into()],
+        email: vec![ADMITTED_EMAIL.into()],
+        ids: vec![ADMITTED_ID.into()],
+    }
+}
+
+/// The admitted header band: one author carrying an affiliation link, plus the
+/// projected native title/email/ids fields.
+fn admitted_header() -> HeaderCompositionOutcome {
+    compose_header_with_fields(admitted_header_input(), admitted_fields())
 }
 
 /// The source's own direct `listBibl` child texts, read with the independent
@@ -582,9 +599,12 @@ fn source_reference_texts(fixture: &str, xml: &str) -> Vec<String> {
         .collect()
 }
 
-fn admitted_references(expected: &AdmittedSemantics) -> ReferenceCompositionOutcome {
-    let references = expected
-        .reference_texts
+/// A reference band for the given source texts and admitted citation fields.
+fn reference_outcome(
+    reference_texts: &[String],
+    fields: Vec<NativeCitationOutcome>,
+) -> ReferenceCompositionOutcome {
+    let references = reference_texts
         .iter()
         .enumerate()
         .map(|(ordinal, text)| NativeReference {
@@ -597,6 +617,14 @@ fn admitted_references(expected: &AdmittedSemantics) -> ReferenceCompositionOutc
             provenance: "preserved-tei-semantics-oracle".into(),
         })
         .collect();
+    compose_references(ReferenceCompositionInput {
+        references: NativeReferenceListOutcome::Recognized { references },
+        fields,
+        anchors: NativeCitationAnchorOutcome::Empty,
+    })
+}
+
+fn admitted_references(expected: &AdmittedSemantics) -> ReferenceCompositionOutcome {
     let fields = expected
         .citation_fields
         .iter()
@@ -611,21 +639,12 @@ fn admitted_references(expected: &AdmittedSemantics) -> ReferenceCompositionOutc
             }],
         })
         .collect();
-    compose_references(ReferenceCompositionInput {
-        references: NativeReferenceListOutcome::Recognized { references },
-        fields,
-        anchors: NativeCitationAnchorOutcome::Empty,
-    })
+    reference_outcome(&expected.reference_texts, fields)
 }
 
-/// Compose one preserved TEI with both bands admitted and return the emitted
-/// document text — the bytes the oracle judges.
-///
-/// A rejection is a measurement failure, not a pass: the audit configuration is
-/// "the admitted band is in the emission", which is the only configuration in
-/// which the admitted semantics can be observed at all.
-fn emit_admitted_semantics(fixture: &str, xml: &str, expected: &AdmittedSemantics) -> String {
-    let input = NativeFulltextCompositionInput {
+/// The admitted-semantics composition input for one preserved fixture.
+fn admitted_input(xml: &str, expected: &AdmittedSemantics) -> NativeFulltextCompositionInput {
+    NativeFulltextCompositionInput {
         java_fulltext: TeiEnvelope::new(
             xml.as_bytes(),
             TeiIdentity::new(GROBID_HTTP_BACKEND_ID, "profile=fixture"),
@@ -648,13 +667,21 @@ fn emit_admitted_semantics(fixture: &str, xml: &str, expected: &AdmittedSemantic
             live_ruvllm_receipt: false,
             output_affecting: false,
         }),
-    };
-    match compose_native_fulltext(input) {
-        NativeFulltextCompositionOutcome::Accepted(candidate) => {
-            String::from_utf8(candidate.envelope.raw_tei().to_vec()).unwrap_or_else(|error| {
-                panic!("{fixture}: the emitted document is not UTF-8 ({error})")
-            })
-        }
+    }
+}
+
+/// Compose the admitted-semantics configuration and return the candidate.
+///
+/// A rejection is a measurement failure, not a pass: the audit configuration is
+/// "the admitted band is in the emission", the only configuration in which the
+/// admitted semantics can be observed at all.
+fn compose_admitted_semantics(
+    fixture: &str,
+    xml: &str,
+    expected: &AdmittedSemantics,
+) -> NativeFulltextCandidate {
+    match compose_native_fulltext(admitted_input(xml, expected)) {
+        NativeFulltextCompositionOutcome::Accepted(candidate) => candidate,
         NativeFulltextCompositionOutcome::Rejected { error, .. } => panic!(
             "{fixture}: the admitted-semantics configuration must be Accepted so the emission can be measured; got {error:?}"
         ),
@@ -674,14 +701,54 @@ fn preserved_fixture_bytes_are_sha256_pinned() {
     }
 }
 
-/// The measurement.  Every admitted semantic field is absent from the emission
-/// while the properties the old behaviour *did* conserve (the author line of the
-/// admitted header band and every admitted reference text) are present.
-///
-/// Frozen as data, not as an expected failure: `--nocapture` prints the profile
-/// per fixture, and any deviation in either direction fails the pin.
+/// The class vocabulary the oracle reports and the production refusal emits are
+/// the same tokens, and the emission role token is the serde wire form.  Neither
+/// can drift without this test failing.
 #[test]
-fn admitted_semantic_fields_are_absent_from_the_emission_today() {
+fn production_loss_classes_match_the_oracle_vocabulary() {
+    assert_eq!(SemanticFieldLoss::HeaderTitle.token(), CLASS_HEADER_TITLE);
+    assert_eq!(SemanticFieldLoss::HeaderEmail.token(), CLASS_HEADER_EMAIL);
+    assert_eq!(SemanticFieldLoss::HeaderIds.token(), CLASS_HEADER_IDS);
+    assert_eq!(
+        SemanticFieldLoss::AuthorAffiliation.token(),
+        CLASS_AUTHOR_AFFILIATION
+    );
+    assert_eq!(SemanticFieldLoss::CitationRole.token(), CLASS_CITATION_ROLE);
+    let serde_token = |role: CitationFieldRole| {
+        serde_json::to_value(role)
+            .expect("CitationFieldRole serializes")
+            .as_str()
+            .expect("CitationFieldRole serializes as a string")
+            .to_owned()
+    };
+    for role in [
+        CitationFieldRole::Authors,
+        CitationFieldRole::PublicationDate,
+        CitationFieldRole::ArticleTitle,
+        CitationFieldRole::ContainerTitle,
+        CitationFieldRole::Volume,
+        CitationFieldRole::Issue,
+        CitationFieldRole::Pages,
+        CitationFieldRole::ArticleNumber,
+        CitationFieldRole::Publisher,
+        CitationFieldRole::Place,
+        CitationFieldRole::Doi,
+        CitationFieldRole::ArxivId,
+        CitationFieldRole::Url,
+    ] {
+        assert_eq!(
+            citation_field_role_token(role),
+            serde_token(role),
+            "the emitted role token must equal the serde wire form for {role:?}"
+        );
+    }
+}
+
+/// The repaired contract: every admitted semantic field reaches the emitted
+/// bytes, the pre-existing controls survive, and the composer's own ledger agrees
+/// with the independent extraction.
+#[test]
+fn admitted_semantic_fields_are_conserved_in_the_emission() {
     for (name, sha256, references) in PRESERVED_TEI {
         let xml = preserved_tei_source(name, sha256);
         let expected = admitted_semantics(name, source_reference_texts(name, &xml));
@@ -690,11 +757,13 @@ fn admitted_semantic_fields_are_absent_from_the_emission_today() {
             references,
             "{name}: the source listBibl entry denominator drifted"
         );
-        let emission = emit_admitted_semantics(name, &xml, &expected);
+        let candidate = compose_admitted_semantics(name, &xml, &expected);
+        let emission = String::from_utf8(candidate.envelope.raw_tei().to_vec())
+            .unwrap_or_else(|error| panic!("{name}: emitted document is not UTF-8 ({error})"));
         let profile = oracle_semantic_field_profile(name, &emission, &expected);
 
         eprintln!(
-            "A-FIELDS RED {name}: titles={} emails={} ids={} affiliations={} author_links={} citation_values={} citation_roles={} | controls: author_line={} reference_texts={}/{} | source-carried: titles={} emails={} affiliations={}",
+            "A-FIELDS GREEN {name}: titles={} emails={} ids={} affiliations={} author_links={} citation_values={} citation_roles={} | controls: author_line={} reference_texts={}/{} | source-carried: titles={} emails={} affiliations={}",
             profile.admitted_header_titles,
             profile.admitted_header_emails,
             profile.admitted_header_ids,
@@ -710,22 +779,39 @@ fn admitted_semantic_fields_are_absent_from_the_emission_today() {
             profile.source_carried_affiliation_elements,
         );
 
-        // The measured RED: not one admitted semantic class reaches the bytes.
-        assert_eq!(profile.admitted_header_titles, 0, "{name}: header title");
-        assert_eq!(profile.admitted_header_emails, 0, "{name}: header email");
-        assert_eq!(profile.admitted_header_ids, 0, "{name}: header ids");
+        // The GREEN contract: every admitted class is in the bytes.
         assert_eq!(
-            profile.admitted_affiliations, 0,
-            "{name}: affiliation value"
+            profile.admitted_header_titles,
+            expected.header_titles.len(),
+            "{name}: header title"
         );
-        assert_eq!(profile.admitted_author_links, 0, "{name}: author link");
         assert_eq!(
-            profile.admitted_citation_values, 0,
+            profile.admitted_header_emails,
+            expected.header_emails.len(),
+            "{name}: header email"
+        );
+        assert_eq!(
+            profile.admitted_header_ids,
+            expected.header_ids.len(),
+            "{name}: header ids"
+        );
+        assert_eq!(
+            profile.admitted_author_links, 1,
+            "{name}: author affiliation binding"
+        );
+        assert_eq!(
+            profile.admitted_citation_values,
+            expected.citation_fields.len(),
             "{name}: citation value"
         );
-        assert_eq!(profile.admitted_citation_roles, 0, "{name}: citation role");
+        assert_eq!(
+            profile.admitted_citation_roles,
+            expected.citation_fields.len(),
+            "{name}: citation role"
+        );
 
-        // The controls: the measurement is not "the emitter produces nothing".
+        // The controls: the repair did not trade a field for the pre-existing
+        // behaviour.
         assert!(
             profile.author_line_present,
             "{name}: the admitted author line must survive the header splice"
@@ -734,30 +820,216 @@ fn admitted_semantic_fields_are_absent_from_the_emission_today() {
             profile.reference_texts_present, references,
             "{name}: every admitted reference text must survive the bibliography splice"
         );
-        // The same element kinds are visible in the emission where the source
-        // carries them, so the zero above is about the admitted band.
         assert!(
             profile.source_carried_title_elements >= 1,
             "{name}: the emission must still expose the source's <title> elements"
         );
 
-        let expected_findings: Vec<String> = SEMANTIC_FIELD_CLASSES
-            .iter()
-            .map(|class| format!("{name}: {class}:"))
-            .collect();
-        let findings = semantic_field_findings(name, &expected, &profile);
         assert_eq!(
-            findings.len(),
-            SEMANTIC_FIELD_CLASSES.len(),
-            "{name}: the measured RED must name every semantic-loss class exactly once: {findings:?}"
+            semantic_field_findings(name, &expected, &profile),
+            Vec::<String>::new(),
+            "{name}: the emission must conserve every admitted semantic field"
         );
-        for (finding, expected_prefix) in findings.iter().zip(&expected_findings) {
-            assert!(
-                finding.starts_with(expected_prefix),
-                "{name}: finding {finding:?} must name the fixture and the typed class {expected_prefix:?}"
+
+        // The composer's ledger agrees with the independent extraction.  The
+        // oracle is the judge; the ledger is checked against it, never the other
+        // way round.
+        let ledger = candidate.manifest.semantic_fields;
+        assert_eq!(
+            ledger.admitted_header_titles,
+            expected.header_titles.len(),
+            "{name}: ledger admitted titles"
+        );
+        assert_eq!(
+            ledger.admitted_header_emails,
+            expected.header_emails.len(),
+            "{name}: ledger admitted emails"
+        );
+        assert_eq!(
+            ledger.admitted_header_ids,
+            expected.header_ids.len(),
+            "{name}: ledger admitted ids"
+        );
+        assert_eq!(
+            ledger.admitted_author_affiliations, 1,
+            "{name}: ledger admitted affiliations"
+        );
+        assert_eq!(
+            ledger.admitted_citation_fields,
+            expected.citation_fields.len(),
+            "{name}: ledger admitted citation fields"
+        );
+        assert_eq!(
+            ledger.conserved_header_titles, profile.admitted_header_titles,
+            "{name}: ledger conserved titles vs oracle"
+        );
+        assert_eq!(
+            ledger.conserved_header_emails, profile.admitted_header_emails,
+            "{name}: ledger conserved emails vs oracle"
+        );
+        assert_eq!(
+            ledger.conserved_header_ids, profile.admitted_header_ids,
+            "{name}: ledger conserved ids vs oracle"
+        );
+        assert_eq!(
+            ledger.conserved_author_affiliations, profile.admitted_author_links,
+            "{name}: ledger conserved affiliations vs oracle"
+        );
+        assert_eq!(
+            ledger.conserved_citation_fields, profile.admitted_citation_roles,
+            "{name}: ledger conserved citation roles vs oracle"
+        );
+    }
+}
+
+/// Backward compatibility: a manifest serialized before S03/T02 (no
+/// `semantic_fields` key) decodes to the all-zero ledger instead of failing —
+/// the same device `reference_links` uses.
+#[test]
+fn pre_s03_manifests_decode_with_an_all_zero_semantic_ledger() {
+    let (xml, expected) = harness_fixture();
+    let candidate = compose_admitted_semantics("pre-s03", &xml, &expected);
+    let mut value = serde_json::to_value(&candidate.manifest).expect("manifest serializes");
+    let object = value.as_object_mut().expect("manifest is a JSON object");
+    assert!(
+        object.remove("semantic_fields").is_some(),
+        "the manifest must serialize the semantic ledger"
+    );
+    let decoded: NativeFulltextManifest =
+        serde_json::from_value(value).expect("a pre-S03 manifest still decodes");
+    assert_eq!(
+        decoded.semantic_fields,
+        Box::new(SemanticFieldLedger::default()),
+        "a missing semantic ledger must degrade to the all-zero record"
+    );
+}
+
+// ───────────────────────── negative matrix (T02) ───────────────────────────
+
+/// The first preserved fixture with its frozen expectation.
+fn harness_fixture() -> (String, AdmittedSemantics) {
+    let (name, sha256, _) = PRESERVED_TEI[0];
+    let xml = preserved_tei_source(name, sha256);
+    let expected = admitted_semantics(name, source_reference_texts(name, &xml));
+    (xml, expected)
+}
+
+/// Compose an adversarial input that must be refused, asserting the fallback is
+/// the byte-identical Java envelope, and return the typed error.
+fn expect_typed_refusal(input: &NativeFulltextCompositionInput) -> NativeFulltextCompositionError {
+    let fallback = input.java_fulltext.raw_tei().to_vec();
+    match compose_native_fulltext(input.clone()) {
+        NativeFulltextCompositionOutcome::Accepted(candidate) => panic!(
+            "the adversarial semantic configuration must be Rejected; got Accepted with {} bytes",
+            candidate.envelope.raw_tei().len()
+        ),
+        NativeFulltextCompositionOutcome::Rejected {
+            fallback: envelope,
+            error,
+        } => {
+            assert_eq!(
+                envelope.raw_tei(),
+                fallback.as_slice(),
+                "a semantic refusal must return the byte-identical Java envelope"
             );
+            error
         }
     }
+}
+
+/// The typed class token of a refusal, failing loudly on any other error shape.
+fn refusal_class(error: &NativeFulltextCompositionError) -> &'static str {
+    match error {
+        NativeFulltextCompositionError::SemanticFieldLoss { class, .. } => class.token(),
+        other => panic!("expected a typed SemanticFieldLoss refusal, got {other:?}"),
+    }
+}
+
+/// (a) An admitted header title that cannot be carried into XML character data is
+/// a typed refusal, not a silently dropped `<title>`.
+#[test]
+fn loss_of_an_admitted_title_is_a_typed_refusal() {
+    let (xml, expected) = harness_fixture();
+    let mut input = admitted_input(&xml, &expected);
+    let mut fields = admitted_fields();
+    fields.title = vec!["illegal-\u{1}-title".into()];
+    input.header = compose_header_with_fields(admitted_header_input(), fields);
+
+    let error = expect_typed_refusal(&input);
+    assert_eq!(refusal_class(&error), CLASS_HEADER_TITLE);
+}
+
+/// (b) A bibliography field whose role cannot be conserved (an invalid span)
+/// while every reference text is preserved is a typed refusal.
+#[test]
+fn loss_of_a_citation_role_beside_preserved_reference_text_is_a_typed_refusal() {
+    let (xml, expected) = harness_fixture();
+    let mut input = admitted_input(&xml, &expected);
+    input.references = reference_outcome(
+        &expected.reference_texts,
+        vec![NativeCitationOutcome::Recognized {
+            fields: vec![CitationField {
+                role: ADMITTED_CITATION_ROLE,
+                value: ADMITTED_CITATION_VALUE.into(),
+                span: CitationSpan { start: 5, end: 5 },
+            }],
+        }],
+    );
+
+    let error = expect_typed_refusal(&input);
+    assert_eq!(refusal_class(&error), CLASS_CITATION_ROLE);
+}
+
+/// (c) An affiliation link whose span is not valid is a typed refusal.
+#[test]
+fn invalid_affiliation_span_is_a_typed_refusal() {
+    let (xml, expected) = harness_fixture();
+    let mut input = admitted_input(&xml, &expected);
+    input.header = compose_header_with_fields(
+        header_input_with_links(vec![NativeAffiliationLink {
+            key: ADMITTED_AUTHOR_KEY.into(),
+            affiliation_ordinal: 0,
+            affiliation_span: AffiliationSpan { start: 5, end: 5 },
+        }]),
+        admitted_fields(),
+    );
+
+    let error = expect_typed_refusal(&input);
+    assert_eq!(refusal_class(&error), CLASS_AUTHOR_AFFILIATION);
+}
+
+/// (d) The same adversarial input twice yields the same typed error and the same
+/// byte-identical fallback: the refusal is deterministic, not timing-dependent.
+#[test]
+fn semantic_refusals_are_deterministic() {
+    let (xml, expected) = harness_fixture();
+    let mut input = admitted_input(&xml, &expected);
+    let mut fields = admitted_fields();
+    fields.title = vec!["illegal-\u{1}-title".into()];
+    input.header = compose_header_with_fields(admitted_header_input(), fields);
+
+    let fallback = input.java_fulltext.raw_tei().to_vec();
+    let first = expect_typed_refusal(&input);
+    let second = expect_typed_refusal(&input);
+    assert_eq!(first, second, "the typed refusal must be deterministic");
+
+    let fallback_once =
+        |input: &NativeFulltextCompositionInput| match compose_native_fulltext(input.clone()) {
+            NativeFulltextCompositionOutcome::Rejected {
+                fallback: envelope, ..
+            } => envelope.raw_tei().to_vec(),
+            NativeFulltextCompositionOutcome::Accepted(_) => panic!("must be rejected"),
+        };
+    assert_eq!(
+        fallback_once(&input),
+        fallback,
+        "the fallback is the source Java envelope"
+    );
+    assert_eq!(
+        fallback_once(&input),
+        fallback_once(&input),
+        "the fallback bytes must be identical across runs"
+    );
 }
 
 /// Non-vacuity on the emission side: the oracle is a discriminating function, not

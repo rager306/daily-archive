@@ -6,8 +6,8 @@
 //! replace their corresponding TEI subtrees; every other family remains byte
 //! accounted Java fallback.
 use crate::{
-    HeaderCompositionOutcome, NativeVisualHeadOutcome, ReferenceCompositionOutcome,
-    SegmentationOutcome, TeiEnvelope, TeiIdentity,
+    CitationFieldRole, HeaderCandidate, HeaderCompositionOutcome, NativeVisualHeadOutcome,
+    ReferenceCandidate, ReferenceCompositionOutcome, SegmentationOutcome, TeiEnvelope, TeiIdentity,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -145,6 +145,141 @@ pub struct ReferenceLinkLedger {
     pub id_space: usize,
 }
 
+/// What the admitted header and reference bands carried semantically and what
+/// the emitted document conserved.
+///
+/// S03/T02: the emitters used to carry only `authors`/`date` and each
+/// reference's `source` text, so an `Accepted` emission was a claim about
+/// structure and links and never about the fields the admitted bands had already
+/// produced (`NativeHeaderFields{title,email,ids}`, `HeaderAuthor.affiliations`,
+/// `ReferenceCandidate.fields`).  The audit (A-FIELDS/H16) measured that loss.
+/// This ledger is the observable record of the repair: the admitted side is
+/// counted from the admitted candidate the composer was handed, the conserved
+/// side is counted from the *emitted bytes*, and the post-serialization gate
+/// refuses whenever a conserved count is below its admitted count.
+///
+/// All counts are recomputed from the admitted values and the emission, never
+/// trusted as an input: the gate reads the bytes it just produced, so a ledger
+/// can never vouch for a field the emission does not carry.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SemanticFieldLedger {
+    /// Admitted header `<title>` values (`NativeHeaderFields::title`).
+    pub admitted_header_titles: usize,
+    /// Admitted header `<email>` values (`NativeHeaderFields::email`).
+    pub admitted_header_emails: usize,
+    /// Admitted header id values (`NativeHeaderFields::ids`, GROBID `<pubnum>`).
+    pub admitted_header_ids: usize,
+    /// Admitted `author -> affiliation` bindings (`HeaderAuthor.affiliations`).
+    pub admitted_author_affiliations: usize,
+    /// Admitted bibliography fields (`ReferenceCandidate.fields`).
+    pub admitted_citation_fields: usize,
+    /// Admitted header titles the emitted document carries.
+    pub conserved_header_titles: usize,
+    /// Admitted header emails the emitted document carries.
+    pub conserved_header_emails: usize,
+    /// Admitted header ids the emitted document carries.
+    pub conserved_header_ids: usize,
+    /// Admitted author-affiliation bindings the emitted document carries.
+    pub conserved_author_affiliations: usize,
+    /// Admitted bibliography fields the emitted document carries with their role.
+    pub conserved_citation_fields: usize,
+}
+impl SemanticFieldLedger {
+    /// Human-readable list of every admitted class the emission did not conserve,
+    /// used as the typed-refusal detail.  Empty means the emission carried every
+    /// admitted semantic field.
+    fn losses(&self) -> Vec<String> {
+        let mut losses = Vec::new();
+        let mut class = |class: SemanticFieldLoss, admitted: usize, conserved: usize| {
+            if conserved < admitted {
+                losses.push(format!(
+                    "{}: {conserved}/{admitted} admitted fields conserved in the emission",
+                    class.token()
+                ));
+            }
+        };
+        class(
+            SemanticFieldLoss::HeaderTitle,
+            self.admitted_header_titles,
+            self.conserved_header_titles,
+        );
+        class(
+            SemanticFieldLoss::HeaderEmail,
+            self.admitted_header_emails,
+            self.conserved_header_emails,
+        );
+        class(
+            SemanticFieldLoss::HeaderIds,
+            self.admitted_header_ids,
+            self.conserved_header_ids,
+        );
+        class(
+            SemanticFieldLoss::AuthorAffiliation,
+            self.admitted_author_affiliations,
+            self.conserved_author_affiliations,
+        );
+        class(
+            SemanticFieldLoss::CitationRole,
+            self.admitted_citation_fields,
+            self.conserved_citation_fields,
+        );
+        losses
+    }
+
+    /// The first admitted class the emission failed to conserve, in report order.
+    fn first_loss(&self) -> Option<SemanticFieldLoss> {
+        if self.conserved_header_titles < self.admitted_header_titles {
+            return Some(SemanticFieldLoss::HeaderTitle);
+        }
+        if self.conserved_header_emails < self.admitted_header_emails {
+            return Some(SemanticFieldLoss::HeaderEmail);
+        }
+        if self.conserved_header_ids < self.admitted_header_ids {
+            return Some(SemanticFieldLoss::HeaderIds);
+        }
+        if self.conserved_author_affiliations < self.admitted_author_affiliations {
+            return Some(SemanticFieldLoss::AuthorAffiliation);
+        }
+        if self.conserved_citation_fields < self.admitted_citation_fields {
+            return Some(SemanticFieldLoss::CitationRole);
+        }
+        None
+    }
+}
+
+/// The closed class vocabulary for an admitted semantic field the emitter cannot
+/// conserve in the emitted bytes.
+///
+/// S03/T02: the same tokens are reported by the independent post-serialization
+/// oracle (`native_fulltext_composition_semantics.rs`), so the production refusal
+/// and the measurement cannot drift into near-miss spellings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SemanticFieldLoss {
+    HeaderTitle,
+    HeaderEmail,
+    HeaderIds,
+    AuthorAffiliation,
+    CitationRole,
+}
+impl SemanticFieldLoss {
+    /// The class token shared with the independent oracle's `CLASS_*` constants.
+    pub const fn token(self) -> &'static str {
+        match self {
+            Self::HeaderTitle => "SemanticFieldLoss::HeaderTitle",
+            Self::HeaderEmail => "SemanticFieldLoss::HeaderEmail",
+            Self::HeaderIds => "SemanticFieldLoss::HeaderIds",
+            Self::AuthorAffiliation => "SemanticFieldLoss::AuthorAffiliation",
+            Self::CitationRole => "SemanticFieldLoss::CitationRole",
+        }
+    }
+}
+impl fmt::Display for SemanticFieldLoss {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.token())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NativeFulltextManifest {
     pub schema_version: String,
@@ -155,6 +290,13 @@ pub struct NativeFulltextManifest {
     /// all-zero record rather than an error.
     #[serde(default)]
     pub reference_links: ReferenceLinkLedger,
+    /// `#[serde(default)]`: manifests serialized before S03/T02 stay decodable
+    /// (all-zero ledger), the same backward-compatibility device
+    /// `reference_links` uses.  Boxed because the ledger's ten counters would
+    /// otherwise grow `NativeFulltextCompositionOutcome::Accepted` past clippy's
+    /// `large_enum_variant` bound against the byte-identical Java fallback.
+    #[serde(default)]
+    pub semantic_fields: Box<SemanticFieldLedger>,
     pub native_components: usize,
     pub fallback_components: usize,
     pub java_fallback_bytes: usize,
@@ -214,6 +356,20 @@ pub enum NativeFulltextCompositionError {
     /// therefore not be re-emitted as an attribute value.  Dropping such a child
     /// would silently lose a bibliography entry, so it is named here instead.
     InconservableBibliographyChild(String),
+    /// An admitted semantic field cannot be conserved in the emitted bytes.
+    ///
+    /// S03/T02: the emitters used to carry only `authors`/`date` and each
+    /// reference's `source` text, so an `Accepted` emission was a claim about
+    /// structure and links and never about the fields the admitted bands already
+    /// produced (`NativeHeaderFields{title,email,ids}`,
+    /// `HeaderAuthor.affiliations`, `ReferenceCandidate.fields`).  A field whose
+    /// value or role cannot be represented, an affiliation link whose component
+    /// or span is not admitted, and a field the post-serialization gate cannot
+    /// find in the emission are all this class — never a silent omission.
+    SemanticFieldLoss {
+        class: SemanticFieldLoss,
+        detail: String,
+    },
     /// The splice produced a document the module's own structural parser or its
     /// well-formedness checker rejects.  Composed bytes are never accepted on
     /// trust: the emitter re-reads its own output before `Accepted`, and the
@@ -282,9 +438,15 @@ fn compose_inner(
     let mut components = Vec::with_capacity(7);
     let header_receipt = admission(&input, FulltextComponent::Header)?;
     let refs_receipt = admission(&input, FulltextComponent::References)?;
+    let header_admitted = is_admitted(&header_receipt, &input.identity);
+    let refs_admitted = is_admitted(&refs_receipt, &input.identity);
+    // S03/T02: the admitted semantic fields are validated before anything is
+    // spliced, so an unrepresentable value or an invalid affiliation link is a
+    // typed refusal instead of a silently omitted element.
+    let admitted = admitted_semantics(&input, header_admitted, refs_admitted)?;
     let mut reference_links = ReferenceLinkLedger::default();
     let mut replacements = Vec::new();
-    if is_admitted(&header_receipt, &input.identity) {
+    if header_admitted {
         let HeaderCompositionOutcome::Accepted { composition } = &input.header else {
             return Err(NativeFulltextCompositionError::InvalidAdmission(
                 FulltextComponent::Header,
@@ -300,7 +462,7 @@ fn compose_inner(
             header_receipt.clone(),
         ));
     }
-    if is_admitted(&refs_receipt, &input.identity) {
+    if refs_admitted {
         let ReferenceCompositionOutcome::Accepted { composition } = &input.references else {
             return Err(NativeFulltextCompositionError::InvalidAdmission(
                 FulltextComponent::References,
@@ -381,23 +543,18 @@ fn compose_inner(
     reference_links.required_targets = required_targets.len();
     reference_links.resolved_targets = required_targets.len();
     reference_links.id_space = emitted_ids.len();
+    // Post-serialization semantic gate (S03/T02).  `Accepted` is a claim about
+    // the bytes returned, so the emitter re-reads its own emission and checks
+    // that every admitted semantic field actually reached it.  The A-FIELDS
+    // audit measured that header title/email/ids, author->affiliation bindings
+    // and bibliography citation roles never did; a class the emission does not
+    // conserve is a typed refusal with the byte-identical Java envelope.
+    let emitted_text =
+        std::str::from_utf8(&bytes).map_err(|_| NativeFulltextCompositionError::InvalidUtf8)?;
+    let semantic_fields = audit_semantic_fields(&emitted, emitted_text, &admitted)?;
     for (component, receipt, outcome) in [
-        (
-            FulltextComponent::Header,
-            header_receipt,
-            is_admitted(
-                &admission(&input, FulltextComponent::Header)?,
-                &input.identity,
-            ),
-        ),
-        (
-            FulltextComponent::References,
-            refs_receipt,
-            is_admitted(
-                &admission(&input, FulltextComponent::References)?,
-                &input.identity,
-            ),
-        ),
+        (FulltextComponent::Header, header_receipt, header_admitted),
+        (FulltextComponent::References, refs_receipt, refs_admitted),
     ] {
         if !outcome {
             components.push(fallback_entry(component, &receipt, java));
@@ -437,6 +594,7 @@ fn compose_inner(
             identity,
             components,
             reference_links,
+            semantic_fields: Box::new(semantic_fields),
             native_components,
             fallback_components,
             java_fallback_bytes: java.len(),
@@ -534,6 +692,439 @@ fn fallback_entry(
 /// stay unchanged while the message names the class that failed.
 fn wfc(detail: impl Into<String>) -> NativeFulltextCompositionError {
     NativeFulltextCompositionError::ComposedOutputNotWellFormed(detail.into())
+}
+
+/// The typed refusal for an admitted semantic field the emitter cannot conserve.
+fn semantic_loss(
+    class: SemanticFieldLoss,
+    detail: impl Into<String>,
+) -> NativeFulltextCompositionError {
+    NativeFulltextCompositionError::SemanticFieldLoss {
+        class,
+        detail: detail.into(),
+    }
+}
+
+/// Whether a value survives a byte-exact round trip through XML character data.
+///
+/// `esc` escapes `&<>"`, so every legal XML character is representable; an empty
+/// value and an illegal character are not, and a literal `\r` would be
+/// normalized to `\n` by the XML end-of-line rules.  Such a value is a typed
+/// semantic loss, never a silently omitted element.
+fn representable_text(value: &str) -> bool {
+    !value.is_empty() && value.chars().all(|c| is_legal_xml_char(c) && c != '\r')
+}
+
+/// Whether a value survives a byte-exact round trip through an XML attribute.
+///
+/// Attribute values additionally normalize tab, newline and carriage return to a
+/// single space, so a key carrying any of them cannot be re-emitted verbatim.
+fn representable_attribute(value: &str) -> bool {
+    !value.is_empty()
+        && value
+            .chars()
+            .all(|c| is_legal_xml_char(c) && !matches!(c, '\t' | '\n' | '\r'))
+}
+
+/// The XML attribute token of a citation role.
+///
+/// Mirrors `CitationFieldRole`'s `#[serde(rename_all = "snake_case")]` wire form
+/// (the same token the independent oracle derives through serde); a `match`
+/// without a wildcard keeps a newly added variant a compile error instead of a
+/// silently unserializable role.  The contract test
+/// `native_fulltext_composition_semantics` asserts every arm against the serde
+/// token.
+pub const fn citation_field_role_token(role: CitationFieldRole) -> &'static str {
+    match role {
+        CitationFieldRole::Authors => "authors",
+        CitationFieldRole::PublicationDate => "publication_date",
+        CitationFieldRole::ArticleTitle => "article_title",
+        CitationFieldRole::ContainerTitle => "container_title",
+        CitationFieldRole::Volume => "volume",
+        CitationFieldRole::Issue => "issue",
+        CitationFieldRole::Pages => "pages",
+        CitationFieldRole::ArticleNumber => "article_number",
+        CitationFieldRole::Publisher => "publisher",
+        CitationFieldRole::Place => "place",
+        CitationFieldRole::Doi => "doi",
+        CitationFieldRole::ArxivId => "arxiv_id",
+        CitationFieldRole::Url => "url",
+    }
+}
+
+/// The admitted header semantics one admitted header band carries.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+struct AdmittedHeaderSemantics {
+    titles: Vec<String>,
+    emails: Vec<String>,
+    ids: Vec<String>,
+    /// `(author ordinal, affiliation key)` bindings, in admitted order.
+    author_affiliations: Vec<(usize, String)>,
+}
+
+/// One admitted bibliography field: its role wire token and its value.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct AdmittedCitationSemantic {
+    role: &'static str,
+    value: String,
+}
+
+/// Every admitted semantic field the emission is obligated to conserve.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+struct AdmittedSemantics {
+    header: AdmittedHeaderSemantics,
+    citations: Vec<AdmittedCitationSemantic>,
+}
+
+/// Validate and extract the semantic fields of an admitted header band.
+///
+/// Values are taken verbatim and in candidate order — never deduplicated, merged
+/// or reordered — and an admitted value that cannot be carried into the emission
+/// is a typed [`SemanticFieldLoss`] instead of a silently dropped element.
+///
+/// The affiliation component *text* is not reachable here: the fulltext input
+/// retains only the typed `HeaderCompositionOutcome`, and
+/// `RecognizedAffiliationComponent` carries a span, not its text.  Component
+/// existence and span legality are therefore owned upstream by `compose_header`
+/// (which refuses a non-`Recognized` component or an invalid component span
+/// before a header outcome exists at all); this layer conserves and validates the
+/// binding the outcome actually carries — a representable key and a valid link
+/// span — and a missing component can never be silently replaced by an empty
+/// string because no string is invented here.
+fn header_semantics(
+    candidate: &HeaderCandidate,
+) -> Result<AdmittedHeaderSemantics, NativeFulltextCompositionError> {
+    for (class, label, values) in [
+        (
+            SemanticFieldLoss::HeaderTitle,
+            "title",
+            candidate.fields.title.as_slice(),
+        ),
+        (
+            SemanticFieldLoss::HeaderEmail,
+            "email",
+            candidate.fields.email.as_slice(),
+        ),
+        (
+            SemanticFieldLoss::HeaderIds,
+            "id",
+            candidate.fields.ids.as_slice(),
+        ),
+    ] {
+        for value in values {
+            if !representable_text(value) {
+                return Err(semantic_loss(
+                    class,
+                    format!(
+                        "admitted header {label} value ({} chars) cannot be carried into XML character data",
+                        value.chars().count()
+                    ),
+                ));
+            }
+        }
+    }
+    let mut semantics = AdmittedHeaderSemantics {
+        titles: candidate.fields.title.clone(),
+        emails: candidate.fields.email.clone(),
+        ids: candidate.fields.ids.clone(),
+        author_affiliations: Vec::new(),
+    };
+    for author in &candidate.authors {
+        for link in &author.affiliations {
+            if !representable_attribute(&link.key) {
+                return Err(semantic_loss(
+                    SemanticFieldLoss::AuthorAffiliation,
+                    format!(
+                        "author {} affiliation key cannot be carried into an XML attribute",
+                        author.ordinal
+                    ),
+                ));
+            }
+            if link.affiliation_span.start >= link.affiliation_span.end {
+                return Err(semantic_loss(
+                    SemanticFieldLoss::AuthorAffiliation,
+                    format!(
+                        "author {} affiliation link span {}..{} is invalid",
+                        author.ordinal, link.affiliation_span.start, link.affiliation_span.end
+                    ),
+                ));
+            }
+            semantics
+                .author_affiliations
+                .push((author.ordinal, link.key.clone()));
+        }
+    }
+    Ok(semantics)
+}
+
+/// Validate and extract the bibliography fields of an admitted reference band.
+///
+/// The candidate's field pool is flat (no record ordinal), so every admitted
+/// field must be conserved at the bibliography level; a field whose span is
+/// invalid or whose value cannot be represented is a typed refusal rather than a
+/// silently dropped role.
+fn citation_semantics(
+    candidate: &ReferenceCandidate,
+) -> Result<Vec<AdmittedCitationSemantic>, NativeFulltextCompositionError> {
+    let mut semantics = Vec::with_capacity(candidate.fields.len());
+    for field in &candidate.fields {
+        let role = citation_field_role_token(field.role);
+        if field.span.start >= field.span.end {
+            return Err(semantic_loss(
+                SemanticFieldLoss::CitationRole,
+                format!(
+                    "admitted bibliography field ({role}) span {}..{} is invalid",
+                    field.span.start, field.span.end
+                ),
+            ));
+        }
+        if !representable_text(&field.value) {
+            return Err(semantic_loss(
+                SemanticFieldLoss::CitationRole,
+                format!(
+                    "admitted bibliography field ({role}) value cannot be carried into XML character data"
+                ),
+            ));
+        }
+        semantics.push(AdmittedCitationSemantic {
+            role,
+            value: field.value.clone(),
+        });
+    }
+    Ok(semantics)
+}
+
+/// Extract the admitted semantics of every admitted lane, validating that each
+/// field is representable before anything is spliced.
+fn admitted_semantics(
+    input: &NativeFulltextCompositionInput,
+    header_admitted: bool,
+    references_admitted: bool,
+) -> Result<AdmittedSemantics, NativeFulltextCompositionError> {
+    let mut semantics = AdmittedSemantics::default();
+    if header_admitted {
+        let HeaderCompositionOutcome::Accepted { composition } = &input.header else {
+            return Err(NativeFulltextCompositionError::InvalidAdmission(
+                FulltextComponent::Header,
+            ));
+        };
+        semantics.header = header_semantics(&composition.candidate)?;
+    }
+    if references_admitted {
+        let ReferenceCompositionOutcome::Accepted { composition } = &input.references else {
+            return Err(NativeFulltextCompositionError::InvalidAdmission(
+                FulltextComponent::References,
+            ));
+        };
+        semantics.citations = citation_semantics(&composition.candidate)?;
+    }
+    Ok(semantics)
+}
+
+/// Raw open-to-close content of the element at `index`, markup included.
+///
+/// The semantic gate compares this against an escaped *single* value, so a
+/// nested subtree (whose content contains markup) can never masquerade as a
+/// serialized field.
+fn element_content<'a>(source: &'a str, document: &XmlDocument, index: usize) -> &'a str {
+    let element = &document.elements[index];
+    &source[element.open_end..element.close_start]
+}
+
+/// Whether `index` is `ancestor` or one of its descendants, by parent links.
+fn is_within(document: &XmlDocument, index: usize, ancestor: usize) -> bool {
+    let mut current = Some(index);
+    while let Some(node) = current {
+        if node == ancestor {
+            return true;
+        }
+        current = document.elements[node].parent;
+    }
+    false
+}
+
+/// Whether the emitted document carries an element named `names` whose whole
+/// escaped content is exactly `value` inside `ancestor`.
+///
+/// Raw-content equality, not element-kind presence: the emission conserves the
+/// preserved source's own `<title>`/`<email>`/`<idno>` subtrees, so a
+/// kind-presence check could be satisfied by source text the admitted band never
+/// produced.  Comparing the escaped content also refuses a value that only
+/// appears inside an attribute.
+fn emission_has_element_text(
+    document: &XmlDocument,
+    source: &str,
+    ancestor: usize,
+    names: &[&str],
+    value: &str,
+) -> bool {
+    let escaped = esc(value);
+    document
+        .elements
+        .iter()
+        .enumerate()
+        .any(|(index, element)| {
+            is_within(document, index, ancestor)
+                && names.contains(&element.name.as_str())
+                && element_content(source, document, index).trim() == escaped
+        })
+}
+
+/// Whether the emitted document binds `author-{ordinal}` to `key` inside the
+/// author element — the same attribute forms the independent oracle reads
+/// (`key`/`ref`/`target`/`href`).
+fn emission_has_author_affiliation(
+    document: &XmlDocument,
+    source: &str,
+    ordinal: usize,
+    key: &str,
+) -> bool {
+    let author_id = format!("author-{ordinal}");
+    let escaped = esc(key);
+    document
+        .elements
+        .iter()
+        .enumerate()
+        .any(|(index, element)| {
+            if element.name != "author"
+                || document.xml_id_at(source, index).ok().flatten() != Some(author_id.as_str())
+            {
+                return false;
+            }
+            document.elements.iter().enumerate().any(|(child, _)| {
+                is_within(document, child, index)
+                    && document
+                        .attributes_at(source, child)
+                        .map(|attributes| {
+                            attributes.iter().any(|(name, value)| {
+                                matches!(*name, "key" | "ref" | "target" | "href")
+                                    && *value == escaped
+                            })
+                        })
+                        .unwrap_or(false)
+            })
+        })
+}
+
+/// Whether the emitted bibliography carries `field`'s value with its role bound:
+/// the element whose whole escaped content equals the value, or one of its three
+/// nearest ancestors, declares an attribute whose name or value is the role's
+/// wire token.  This is the independent oracle's rule, evaluated in production so
+/// the gate judges the bytes rather than the fragment it meant to write.
+fn emission_has_citation_role(
+    document: &XmlDocument,
+    source: &str,
+    list: usize,
+    field: &AdmittedCitationSemantic,
+) -> bool {
+    let escaped = esc(&field.value);
+    document.elements.iter().enumerate().any(|(index, _)| {
+        if index == list || !is_within(document, index, list) {
+            return false;
+        }
+        if element_content(source, document, index).trim() != escaped {
+            return false;
+        }
+        let mut current = Some(index);
+        for _ in 0..4 {
+            let Some(node) = current else {
+                return false;
+            };
+            let bound = document
+                .attributes_at(source, node)
+                .map(|attributes| {
+                    attributes
+                        .iter()
+                        .any(|(name, value)| *name == field.role || *value == field.role)
+                })
+                .unwrap_or(false);
+            if bound {
+                return true;
+            }
+            current = document.elements[node].parent;
+        }
+        false
+    })
+}
+
+/// Re-read the emitted document and verify that every admitted semantic field is
+/// present in its bytes.
+///
+/// S03/T02: this is the third post-serialization gate, beside S01's
+/// well-formedness pass and S02's post-splice reference resolve gate.  `Accepted`
+/// is a claim about the bytes returned, so the emitter asks the bytes — not its
+/// own intention — whether each admitted header title/email/id, each
+/// author -> affiliation binding, and each bibliography field with its role
+/// reached the emission.  A missing class is a typed refusal and the composer
+/// returns the byte-identical Java envelope.  The counts are recomputed from the
+/// admitted values and the re-parsed emission; the returned ledger is the
+/// observable record, never an input.
+fn audit_semantic_fields(
+    document: &XmlDocument,
+    source: &str,
+    admitted: &AdmittedSemantics,
+) -> Result<SemanticFieldLedger, NativeFulltextCompositionError> {
+    let mut ledger = SemanticFieldLedger {
+        admitted_header_titles: admitted.header.titles.len(),
+        admitted_header_emails: admitted.header.emails.len(),
+        admitted_header_ids: admitted.header.ids.len(),
+        admitted_author_affiliations: admitted.header.author_affiliations.len(),
+        admitted_citation_fields: admitted.citations.len(),
+        ..SemanticFieldLedger::default()
+    };
+    if ledger.admitted_header_titles > 0
+        || ledger.admitted_header_emails > 0
+        || ledger.admitted_header_ids > 0
+        || ledger.admitted_author_affiliations > 0
+    {
+        let header = document.element_index("teiHeader")?;
+        ledger.conserved_header_titles = admitted
+            .header
+            .titles
+            .iter()
+            .filter(|value| emission_has_element_text(document, source, header, &["title"], value))
+            .count();
+        ledger.conserved_header_emails = admitted
+            .header
+            .emails
+            .iter()
+            .filter(|value| emission_has_element_text(document, source, header, &["email"], value))
+            .count();
+        ledger.conserved_header_ids = admitted
+            .header
+            .ids
+            .iter()
+            .filter(|value| {
+                emission_has_element_text(document, source, header, &["idno", "pubnum"], value)
+            })
+            .count();
+        ledger.conserved_author_affiliations = admitted
+            .header
+            .author_affiliations
+            .iter()
+            .filter(|(ordinal, key)| {
+                emission_has_author_affiliation(document, source, *ordinal, key)
+            })
+            .count();
+    }
+    if ledger.admitted_citation_fields > 0 {
+        let list = document.element_index("listBibl")?;
+        ledger.conserved_citation_fields = admitted
+            .citations
+            .iter()
+            .filter(|field| emission_has_citation_role(document, source, list, field))
+            .count();
+    }
+    if let Some(class) = ledger.first_loss() {
+        return Err(semantic_loss(
+            class,
+            format!(
+                "post-serialization semantic gate: {}",
+                ledger.losses().join("; ")
+            ),
+        ));
+    }
+    Ok(ledger)
 }
 
 /// XML 1.0 `Char`.
@@ -1076,7 +1667,39 @@ fn header_xml(
         }
         out.push_str("<surname>");
         out.push_str(&esc(&a.name.surname));
-        out.push_str("</surname></author>");
+        out.push_str("</surname>");
+        // S03/T02: the admitted author->affiliation binding is carried, not
+        // just the author line.  The link's key/ordinal/span is all the
+        // composer's typed input holds (the affiliation component text is not
+        // retained by `RecognizedAffiliationComponent`), and the key is the
+        // binding the independent oracle reads.  `header_semantics` already
+        // validated the key's representability, the span and the component.
+        for link in &a.affiliations {
+            out.push_str("<affiliation key=\"");
+            out.push_str(&esc(&link.key));
+            out.push_str("\"/>");
+        }
+        out.push_str("</author>");
+    }
+    // S03/T02: admitted header fields are serialized verbatim, in candidate
+    // order, one element per value — never deduplicated, merged or reordered.
+    // The A-FIELDS audit measured that these were the fields `header_xml` never
+    // carried at all: an `Accepted` emission claimed structure and links, not
+    // the semantics the admitted band produced.
+    for title in &c.candidate.fields.title {
+        out.push_str("<title>");
+        out.push_str(&esc(title));
+        out.push_str("</title>");
+    }
+    for email in &c.candidate.fields.email {
+        out.push_str("<email>");
+        out.push_str(&esc(email));
+        out.push_str("</email>");
+    }
+    for id in &c.candidate.fields.ids {
+        out.push_str("<idno type=\"pubnum\">");
+        out.push_str(&esc(id));
+        out.push_str("</idno>");
     }
     for (start, end) in title_stmt {
         out.push_str(&existing[start..end]);
@@ -1264,6 +1887,24 @@ fn references_xml(
         out.push_str("\">");
         out.push_str(&esc(&reference.source));
         out.push_str("</biblStruct>");
+    }
+    // S03/T02: admitted bibliography fields (role + value) are serialized so the
+    // emission carries the citation roles the admitted band produced, not only
+    // the reference text.  `ReferenceCandidate.fields` is a flat pool without a
+    // record ordinal, so a field cannot be attributed to one `biblStruct`; the
+    // fields are conserved at the bibliography level and the post-serialization
+    // gate checks each one independently.  `citation_semantics` already refused
+    // an unrepresentable value or an invalid span.
+    if !c.candidate.fields.is_empty() {
+        out.push_str("<noteGrp>");
+        for field in &c.candidate.fields {
+            out.push_str("<note role=\"");
+            out.push_str(citation_field_role_token(field.role));
+            out.push_str("\">");
+            out.push_str(&esc(&field.value));
+            out.push_str("</note>");
+        }
+        out.push_str("</noteGrp>");
     }
     out.push_str("</listBibl>");
     Ok((
