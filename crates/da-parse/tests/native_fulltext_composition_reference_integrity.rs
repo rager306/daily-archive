@@ -372,6 +372,17 @@ fn composition_input(
     xml: &str,
     references: ReferenceCompositionOutcome,
 ) -> NativeFulltextCompositionInput {
+    composition_input_with_reference_admission(xml, references, AdmissionDisposition::Passed)
+}
+
+/// The same input with the reference band's admission chosen by the caller.  An
+/// `Unsupported` admission splices nothing, which is the configuration that
+/// isolates the post-splice resolve gate from the pre-splice key-domain check.
+fn composition_input_with_reference_admission(
+    xml: &str,
+    references: ReferenceCompositionOutcome,
+    reference_admission: AdmissionDisposition,
+) -> NativeFulltextCompositionInput {
     NativeFulltextCompositionInput {
         java_fulltext: TeiEnvelope::new(
             xml.as_bytes(),
@@ -388,10 +399,7 @@ fn composition_input(
         figure: None,
         table: None,
         formula: None,
-        admissions: admissions(
-            AdmissionDisposition::Unsupported,
-            AdmissionDisposition::Passed,
-        ),
+        admissions: admissions(AdmissionDisposition::Unsupported, reference_admission),
         s17_lineage: Some(S17LineageReceipt {
             source: "immutable-s17".into(),
             artifact_sha256: ARTIFACT.into(),
@@ -789,6 +797,89 @@ fn manifest_without_the_ledger_still_decodes_to_the_all_zero_record() {
         decoded.components, candidate.manifest.components,
         "{name}: dropping the ledger must not disturb the component records"
     );
+}
+
+/// S02/T02 gate liveness: the post-splice resolve gate refuses `Accepted` for a
+/// kept document whose own mandatory target is published nowhere — and it hands
+/// back the byte-identical Java envelope.
+///
+/// This is the configuration only the *post-splice* gate can catch: the reference
+/// band is `Unsupported`, so nothing is spliced and the pre-splice key-domain
+/// check never runs, while the supplied anchors are `Empty`, so the pre-S02 guard
+/// had nothing to check either. The body still carries a live `target="#b0"` and
+/// the emitted id space publishes only `java-ref`, so `Accepted` would have been a
+/// false claim about the bytes returned.
+///
+/// No other test in the crate reaches that refusal: the pre-splice guard is
+/// exercised by the foreign-anchor case in `native_fulltext_composition_contract`,
+/// but the emitted-id comparison could have been unreachable code. The full
+/// negative matrix (key collision, domain mismatch, inconservable child,
+/// whitespace attribute spellings, refs inside comments/CDATA) is the S02/T03
+/// deliverable; this case only proves the T02 gate is live.
+#[test]
+fn dangling_source_target_is_refused_with_the_byte_identical_java_envelope() {
+    let xml = "<TEI><teiHeader><fileDesc><titleStmt><title>Java</title></titleStmt></fileDesc></teiHeader><text><body><p>body <ref type=\"bibr\" target=\"#b0\">[1]</ref></p></body><listBibl><biblStruct xml:id=\"java-ref\">Java ref</biblStruct></listBibl></text></TEI>";
+    let source = oracle_source_reference_profile(xml);
+    assert_eq!(
+        source.mandatory_targets,
+        BTreeSet::from([String::from("b0")]),
+        "the inline document must demand exactly one local target"
+    );
+    assert!(
+        !source.published_keys.iter().any(|key| key.as_str() == "b0"),
+        "the source listBibl must not publish the demanded target, or the gate has nothing to refuse"
+    );
+
+    // The independent oracle judges the bytes as they are: dangling. A future
+    // refactor cannot satisfy this test by making the composer lenient, because
+    // the demand is measured from the document, not from the composer.
+    let emitted = oracle_emitted_reference_profile(xml);
+    let findings = reference_integrity_findings("inline-dangling", &source, &emitted);
+    assert_eq!(
+        findings.len(),
+        1,
+        "the oracle must find exactly the unresolved-target defect: {findings:?}"
+    );
+    assert!(
+        findings[0].contains(CLASS_UNRESOLVED_TARGET),
+        "the oracle finding must name the unresolved-target class: {}",
+        findings[0]
+    );
+
+    // The refusal is typed, returns the byte-identical Java envelope, and is
+    // reproducible: `Accepted` is a claim about the bytes, so it may never be
+    // made for a document that does not resolve its own mandatory target.
+    let mut refusals = 0usize;
+    for attempt in 1..=2 {
+        let references = source_backed_references(&source);
+        let outcome = compose_native_fulltext(composition_input_with_reference_admission(
+            xml,
+            references,
+            AdmissionDisposition::Unsupported,
+        ));
+        match outcome {
+            NativeFulltextCompositionOutcome::Rejected { fallback, error } => {
+                assert!(
+                    matches!(
+                        error,
+                        NativeFulltextCompositionError::UnresolvedBibliographyTarget(_)
+                    ),
+                    "attempt {attempt}: a dangling mandatory target must be a typed \
+                     UnresolvedBibliographyTarget, got {error:?}"
+                );
+                assert_eq!(
+                    fallback.raw_tei(),
+                    xml.as_bytes(),
+                    "attempt {attempt}: a typed rejection must return the byte-identical Java envelope"
+                );
+                refusals += 1;
+            }
+            NativeFulltextCompositionOutcome::Accepted(_) => panic!(
+                "attempt {attempt}: a document that does not resolve its own mandatory target may never be Accepted"
+            ),
+        }
+    }
+    assert_eq!(refusals, 2, "the same dangling input must refuse twice");
 }
 
 /// The gate is about ids, not about damaged XML: the emitted document must be
