@@ -130,6 +130,41 @@ fn source_bound_shadow_report_is_terminal_replayed_and_quarantined() {
     // population and from the evaluated population, so a 3-document / 27-head
     // reference cannot be read as this synthetic run's execution scope.
     assert_eq!(value["reference_population"]["role"], "identity_only");
+    // S03/T04: the semantic-field block must be non-vacuous and independently
+    // observed in the emitted bytes; a zero admitted count would make the block
+    // an empty proof (the S02/T05 `required_targets == 0` lesson).
+    let semantic = &value["semantic_fields"];
+    for class in [
+        "header_titles",
+        "header_emails",
+        "header_ids",
+        "author_affiliations",
+        "citation_fields",
+    ] {
+        assert_eq!(
+            semantic["ledger"][format!("admitted_{class}")],
+            1,
+            "admitted_{class} must be non-vacuous"
+        );
+        assert_eq!(
+            semantic["ledger"][format!("conserved_{class}")],
+            1,
+            "conserved_{class} must match the admitted count"
+        );
+    }
+    for observed in [
+        "header_title",
+        "header_email",
+        "header_id",
+        "author_affiliation",
+        "citation_role_value",
+    ] {
+        assert_eq!(
+            semantic["observed"][observed], true,
+            "the emitted bytes must carry the {observed} sentinel"
+        );
+    }
+    assert_eq!(semantic["observed"]["observed_fields"], 5);
     assert_eq!(value["reference_population"]["documents"], 3);
     assert_eq!(value["reference_population"]["lanes"], 3);
     assert_eq!(value["reference_population"]["referent_rows"], 9);
@@ -171,6 +206,7 @@ fn source_bound_shadow_report_is_terminal_replayed_and_quarantined() {
             && row["dispositions"]
                 .as_array()
                 .is_some_and(|items| items.len() == 7)
+            && row["semantic_fields"] == *semantic
     }));
     let components: HashSet<&str> = outcomes[0]["dispositions"]
         .as_array()

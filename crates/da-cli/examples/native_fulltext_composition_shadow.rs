@@ -16,6 +16,19 @@ const REPORT_SCHEMA: &str = "native-fulltext-composition-shadow.v1";
 const ARTIFACT: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 const LANES: [&str; 3] = ["header", "references", "document_segmentation"];
 
+// S03/T04: admitted semantic sentinels.  Deliberately unlike anything the
+// preserved fixture's own `<teiHeader>` carries, so "the admitted field reached
+// the emission" is decided by the admitted band and never by conserved source
+// text.  Nothing below is ever written to the report as a raw value — the
+// report carries only the ledger counters and the per-class observed booleans.
+const ADMITTED_TITLE: &str = "S03 shadow admitted title";
+const ADMITTED_EMAIL: &str = "s03-shadow-admitted@example.invalid";
+const ADMITTED_ID: &str = "S03-SHADOW-ID-0001";
+const ADMITTED_AFFILIATION_KEY: &str = "s03-shadow-aff-0";
+const ADMITTED_AFFILIATION: &str = "S03 Shadow Admitted University";
+const ADMITTED_CITATION_VALUE: &str = "S03-SHADOW-CITATION-VALUE-0001";
+const ADMITTED_CITATION_ROLE: CitationFieldRole = CitationFieldRole::Doi;
+
 #[derive(Parser, Debug)]
 struct Args {
     #[arg(long)]
@@ -48,6 +61,11 @@ struct Report {
     /// report states on every run what the emission did to the source's links
     /// instead of leaving integer traces inside the composer.
     reference_links: ReferenceLinkLedger,
+    /// S03/T04: the composed document's semantic-field ledger plus this
+    /// example's own byte-level observation of the admitted sentinels.  The
+    /// ledger is the composer manifest's post-serialization record; the
+    /// observation does not consult it.
+    semantic_fields: SemanticFields,
     outcomes: Vec<Outcome>,
     replay: Replay,
     conservation: Conservation,
@@ -106,7 +124,70 @@ struct Outcome {
     java_fallback_bytes: usize,
     java_fallback_sha256: String,
     reference_links: ReferenceLinkLedger,
+    semantic_fields: SemanticFields,
     dispositions: Vec<Disposition>,
+}
+
+/// The S03 semantic-field observable: the composer's admitted/conserved ledger
+/// beside this example's independent byte-level observation of the same
+/// emission.
+#[derive(Debug, Serialize, Clone, PartialEq, Eq)]
+struct SemanticFields {
+    /// `NativeFulltextManifest::semantic_fields`: admitted counts come from the
+    /// admitted candidate the composer was handed, conserved counts are
+    /// recomputed from the emitted bytes by the production post-serialization
+    /// gate.
+    ledger: SemanticFieldLedger,
+    observed: IndependentSemanticObservation,
+}
+
+/// Whether each admitted semantic sentinel is present in the emitted bytes,
+/// decided by this example's own substring scan instead of the composer's
+/// ledger.
+///
+/// Limitation: a substring scan cannot see XML structure, so it proves the
+/// admitted values reached the bytes but not that they sit in the right band.
+/// The structural oracle is `native_fulltext_composition_semantics.rs`
+/// (roxmltree, dev-only, unreachable from this example); this observation makes
+/// the runtime run non-vacuous and catches the empty-ledger case the ledger
+/// alone could publish as zero.
+#[derive(Debug, Serialize, Clone, Copy, PartialEq, Eq, Default)]
+struct IndependentSemanticObservation {
+    header_title: bool,
+    header_email: bool,
+    header_id: bool,
+    author_affiliation: bool,
+    citation_role_value: bool,
+    observed_fields: usize,
+}
+
+/// Scan the emitted candidate bytes for this example's admitted sentinels.
+fn observe_semantics(bytes: &[u8]) -> IndependentSemanticObservation {
+    let has = |needle: &str| {
+        bytes
+            .windows(needle.len())
+            .any(|window| window == needle.as_bytes())
+    };
+    let affiliation_attribute = format!("key=\"{ADMITTED_AFFILIATION_KEY}\"");
+    let citation_role_attribute = format!(
+        "role=\"{}\"",
+        citation_field_role_token(ADMITTED_CITATION_ROLE)
+    );
+    let mut observed_fields = 0usize;
+    let mut mark = |present: bool| {
+        if present {
+            observed_fields += 1;
+        }
+        present
+    };
+    IndependentSemanticObservation {
+        header_title: mark(has(ADMITTED_TITLE)),
+        header_email: mark(has(ADMITTED_EMAIL)),
+        header_id: mark(has(ADMITTED_ID)),
+        author_affiliation: mark(has(&affiliation_attribute)),
+        citation_role_value: mark(has(ADMITTED_CITATION_VALUE) && has(&citation_role_attribute)),
+        observed_fields,
+    }
 }
 #[derive(Debug, Serialize, Clone, PartialEq, Eq)]
 struct Disposition {
@@ -219,22 +300,46 @@ fn receipt(
     }
 }
 fn input(f: &Fixture) -> NativeFulltextCompositionInput {
-    let header = compose_header(HeaderCompositionInput {
-        date: NativeDateParser::new().parse("2024-02-29"),
-        authors: vec![HeaderAuthorInput {
-            ordinal: 0,
-            span: CompositionSpan { start: 1, end: 8 },
-            name: NativePersonalNameParser::new().parse(PersonalNameContext::Header, "J. Smith"),
-            affiliations: NativeAffiliationLinkOutcome::Linked {
-                author: NativeAffiliationAuthorEvidence {
-                    ordinal: 0,
-                    span: AffiliationSpan { start: 0, end: 1 },
+    // S03/T04: the admitted header band carries the projected native fields
+    // (title/email/ids) and a real author -> affiliation binding, so the
+    // emission is measured on semantics the admitted band produced rather than
+    // on the source's conserved `<title>Java title</title>`.
+    let header = compose_header_with_fields(
+        HeaderCompositionInput {
+            date: NativeDateParser::new().parse("2024-02-29"),
+            authors: vec![HeaderAuthorInput {
+                ordinal: 0,
+                span: CompositionSpan { start: 1, end: 8 },
+                name: NativePersonalNameParser::new()
+                    .parse(PersonalNameContext::Header, "J. Smith"),
+                affiliations: NativeAffiliationLinkOutcome::Linked {
+                    author: NativeAffiliationAuthorEvidence {
+                        ordinal: 0,
+                        span: AffiliationSpan { start: 0, end: 1 },
+                    },
+                    links: vec![NativeAffiliationLink {
+                        key: ADMITTED_AFFILIATION_KEY.into(),
+                        affiliation_ordinal: 0,
+                        affiliation_span: AffiliationSpan {
+                            start: 0,
+                            end: ADMITTED_AFFILIATION.len(),
+                        },
+                    }],
                 },
-                links: vec![],
-            },
-        }],
-        affiliation_components: vec![NativeAffiliationParser::new().parse("Example University")],
-    });
+            }],
+            affiliation_components: vec![
+                NativeAffiliationParser::new().parse(ADMITTED_AFFILIATION),
+            ],
+        },
+        NativeHeaderFields {
+            title: vec![ADMITTED_TITLE.into()],
+            email: vec![ADMITTED_EMAIL.into()],
+            ids: vec![ADMITTED_ID.into()],
+        },
+    );
+    // S03/T04: the admitted reference band carries one citation field with its
+    // role, so the emission is measured on a bibliography semantic that the
+    // pre-T02 emitter never serialized.
     let references = compose_references(ReferenceCompositionInput {
         references: NativeReferenceListOutcome::Recognized {
             references: vec![NativeReference {
@@ -244,7 +349,16 @@ fn input(f: &Fixture) -> NativeFulltextCompositionInput {
                 provenance: "S12".into(),
             }],
         },
-        fields: vec![],
+        fields: vec![NativeCitationOutcome::Recognized {
+            fields: vec![CitationField {
+                role: ADMITTED_CITATION_ROLE,
+                value: ADMITTED_CITATION_VALUE.into(),
+                span: CitationSpan {
+                    start: 0,
+                    end: ADMITTED_CITATION_VALUE.len(),
+                },
+            }],
+        }],
         anchors: NativeCitationAnchorOutcome::Empty,
     });
     NativeFulltextCompositionInput {
@@ -340,6 +454,10 @@ fn run(jobs: Vec<Job>, workers: usize, capacity: usize) -> (Vec<Outcome>, Execut
                 }
             };
             let bytes = candidate.envelope.raw_tei();
+            let semantic_fields = SemanticFields {
+                ledger: *candidate.manifest.semantic_fields,
+                observed: observe_semantics(bytes),
+            };
             let dispositions = candidate
                 .manifest
                 .components
@@ -368,6 +486,7 @@ fn run(jobs: Vec<Job>, workers: usize, capacity: usize) -> (Vec<Outcome>, Execut
                 java_fallback_bytes: candidate.manifest.java_fallback_bytes,
                 java_fallback_sha256: candidate.manifest.java_fallback_sha256,
                 reference_links: candidate.manifest.reference_links,
+                semantic_fields,
                 dispositions,
             })
         },
@@ -449,6 +568,58 @@ fn main() {
         reference_links.resolved_targets, reference_links.required_targets,
         "accepted emission must resolve every mandatory source target: {reference_links:?}"
     );
+    // S03/T04: the semantic-field block must be non-vacuous on this fixture and
+    // must be independently observed in the emitted bytes.  A zero admitted
+    // count would make the block an empty proof (the S02/T05 lesson for
+    // `required_targets == 0`), and a conserved count below its admitted count
+    // means the composer would have refused — so the example states both plus
+    // the byte-level observation it made itself.
+    let semantic_fields = outcomes[0].semantic_fields.clone();
+    let ledger = semantic_fields.ledger;
+    assert!(
+        ledger.admitted_header_titles > 0
+            && ledger.admitted_header_emails > 0
+            && ledger.admitted_header_ids > 0
+            && ledger.admitted_author_affiliations > 0
+            && ledger.admitted_citation_fields > 0,
+        "frozen fixture must admit at least one semantic field per class, got {ledger:?}"
+    );
+    assert_eq!(
+        ledger.conserved_header_titles, ledger.admitted_header_titles,
+        "admitted header titles must be conserved: {ledger:?}"
+    );
+    assert_eq!(
+        ledger.conserved_header_emails, ledger.admitted_header_emails,
+        "admitted header emails must be conserved: {ledger:?}"
+    );
+    assert_eq!(
+        ledger.conserved_header_ids, ledger.admitted_header_ids,
+        "admitted header ids must be conserved: {ledger:?}"
+    );
+    assert_eq!(
+        ledger.conserved_author_affiliations, ledger.admitted_author_affiliations,
+        "admitted author affiliations must be conserved: {ledger:?}"
+    );
+    assert_eq!(
+        ledger.conserved_citation_fields, ledger.admitted_citation_fields,
+        "admitted citation fields must be conserved: {ledger:?}"
+    );
+    let observed = semantic_fields.observed;
+    assert!(
+        observed.header_title
+            && observed.header_email
+            && observed.header_id
+            && observed.author_affiliation
+            && observed.citation_role_value
+            && observed.observed_fields == 5,
+        "the emitted bytes must carry every admitted semantic sentinel, got {observed:?}"
+    );
+    assert!(
+        outcomes
+            .iter()
+            .all(|outcome| outcome.semantic_fields == semantic_fields),
+        "every deterministic shadow row must agree on the semantic-field observation"
+    );
     let report = Report {
         schema_version: REPORT_SCHEMA,
         data_schema: DATA
@@ -509,6 +680,7 @@ fn main() {
         },
         execution,
         reference_links,
+        semantic_fields,
         outcomes,
         replay: Replay {
             semantic_replays: 2,

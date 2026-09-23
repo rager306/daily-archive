@@ -520,3 +520,89 @@ D127/D321 закрыты. Замеренная область — публичн
 реэкспортом и тестами; production-достижимость не заявляется и готовность к
 выпуску не утверждается.
 
+## 17. Корректировка 2026-09-23: семантические поля и политика fallback по лейнам (M511-j7wz2f/S03)
+
+Фиксируется решение контракта композитора по H16 (A-FIELDS), принятое в
+S03/T01–T04 на измеренном RED T01. Это решение описывает публичный
+shadow-композитор; оно не расширяет допуск и не снимает замки.
+
+**Решение.** `Accepted` — утверждение о **байтах эмиссии**, поэтому семантические
+поля полосы проверяются независимым оракулом **после сериализации**, а не по
+candidate-структуре. Admitted header `title`/`email`/`ids`, каждая привязка
+`author -> affiliation` и каждое bibliography-поле с его ролью обязаны
+присутствовать в выданных байтах; иначе отказ — типизированный
+`SemanticFieldLoss` с байт-идентичным Java-конвертом. Оракул ищет
+**sentinel-значения admitted-полосы**, а не наличие элементов: сохранённый
+источник несёт собственные `<title>`/`<email>`/`<affiliation>`, поэтому проверка
+по виду элемента объявила бы conserved-текст источника admitted-полем.
+
+**Решение.** Словарь отказов — публичный enum `SemanticFieldLoss`, и его `token()`
+эмитит ровно `CLASS_*`-строки независимого оракула, а `citation_field_role_token`
+— serde snake_case wire-форму `CitationFieldRole`; два drift-теста пинят эти
+соответствия, чтобы production-отказ и измерение не разъехались в near-miss
+написаниях.
+
+**Решение.** Политика lane fallback — DATA, а не проза: машинно-проверяемый
+sibling-блок `lane_fallback_policy` живёт внутри **уже санкционированного**
+`data/parse/native_fulltext_composition.yaml` (D377; нового файла контракта нет,
+sanctioned-set из 24 имён остаётся закрытым). Скалярные токены и флаги связаны с
+константами композера `NATIVE_FULLTEXT_LANE_FALLBACK_*`, классы отказов — с
+`SemanticFieldLoss::ALL`, а декларации полос сверены **DATA<->DATA** по всему
+`data/parse`; расхождение, подмена или отмена права полосы на Java-fallback
+падают fail-closed по имени.
+
+**Наблюдаемость.** `NativeFulltextManifest` несёт `semantic_fields`
+(`SemanticFieldLedger`: `admitted_*`/`conserved_*` по пяти классам) с
+`#[serde(default)]`, поэтому до-S03 манифесты декодируются в нулевую запись.
+Ledger — **выход, не вход**: admitted-счётчики берутся из admitted-кандидата,
+conserved-счётчики пересчитываются из байтов эмиссии, и гейт не читает ledger
+как доказательство. Прод-import-root композитора остаётся `{crate, serde, sha2,
+std}`: `roxmltree` — только dev-dependency.
+
+**Замер.** Исторический RED (S03/T01): на трёх sha256-пиннутых сохранённых TEI
+(`hub_2507.19457` `98546123…`, `rlm_2512.24601` `e6aa41f5…`,
+`reca_2605.26525v1` `dac18882…`) из admitted header/reference полей в эмиссии не
+присутствовало **ни одного** — conserve/admit = 0 по каждому классу, при том что
+сам источник несёт `title` (2/2/2 элемента), `email` (0/3/0) и `affiliation`
+(0/0/13); RED запиннен как данные (точное равенство, exit 0), а не как
+`#[ignore]`-тест, потому что у auto-гейта нет механизма ожидаемого отказа.
+Текущий GREEN (S03/T02–T04): эмиттер сериализует эти поля, пост-сериализационный
+гейт перечитывает байты своим структурным сканером, а shadow-пример наполняет
+кандидат реальной семантикой (`NativeHeaderFields{title,email,ids}`,
+`NativeAffiliationLink`, `CitationField` с ролью) и печатает на замороженной
+фикстуре `semantic_fields.ledger` admitted=conserved=`1` по каждому из пяти
+классов и собственное независимое наблюдение `observed_fields=5` (подстрочный
+скан sentinel-значений в эмитированных байтах, не по ledger композитора);
+пример падает на нулевом admitted-счётчике — иначе блок был бы вакуумным.
+Ограничение названо честно: подстрочный скан не видит XML-структуру, поэтому
+структурный оракул — `native_fulltext_composition_semantics.rs` (13 passed),
+контракт DATA `lane_fallback_policy` — `native_fulltext_composition_data_contract`
+(9 passed), регрессия ссылок S02 — `native_fulltext_composition_reference_integrity`
+(19 passed); `cargo test -p da-parse --tests` — 102 suites / 1413 passed / 0
+failed / 0 ignored, `cargo test -p da-cli --tests` — 584 passed,
+`cargo test -p da-cli --features pdf-layout --tests` — 612 passed, clippy и fmt —
+exit=0. Замороженный артефакт shadow-отчёта перегенерирован и запиннен
+(`3a58566a26410331768327a7f90db8dd484bc2f4f7c247dcc7067d71b7ba256b`) в обеих
+governor-поверхностях (`bindings.canonical_artifacts` и
+`governor/fixtures/scholarly_parse_plane/contract.positive.json`); дайджест
+DATA-файла `266b68b4…` перепинен T03.
+
+**Измеренный остаток (назван, не замолчан).** H16-N3 не закрыт: с синтезируемых
+обёрток `fileDesc`/`titleStmt` по-прежнему переносятся только `xmlns`/`xmlns:*`,
+прочие их атрибуты (например собственный `xml:lang`) не копируются. Это
+семантический остаток поля, а не well-formedness; S01/T06 перепроверил и не
+изменил его.
+
+**Состояние реестра.** H16 остаётся planning-записью: `status: pending`,
+`implementation_pass=false`, `verification_pass=false`, `owner: unassigned`,
+`open_item.accepted=false`. Измеренный GREEN области **не** помечается PASS:
+закрытие этапа требует независимой корпусной регрессии вне трёх пиннутых
+фикстур (S05), а `tested_source.verified` сохраняется `false`. `governor review`
+даёт `stages=8 unresolved=8 complete=0 claims=0` (exit=0). H14 в §14/§15, H15 в
+§16 и остальные этапы H17–H21 не переписываются.
+
+**Границы.** Замки не менялись: `deployed=false`, `import_eligible=false`,
+`auto_promote=forbidden`, `graph_write=forbidden`, `this_wave_promotes=none`,
+D127/D321 закрыты. Замеренная область — публичный shadow-композитор с
+реэкспортом и тестами; production-достижимость не заявляется.
+

@@ -318,7 +318,7 @@
     {
       "stage_id": "H16",
       "title": "P1: верность семантических полей и политика fallback по лейнам",
-      "scope": "P1. Проверить верность семантических полей (заголовок/тело/лейны gazetteer) на сохранённых реальных TEI и зафиксировать политику fallback по лейнам: каждый лейн остаётся selectable для Java-fallback, а Rust-прогон не может молча подменять семантику. Расхождение обязано быть типизированным (тип отсутствия/тип отказа), а не пустым значением или прозой.",
+      "scope": "P1. Проверить верность семантических полей (заголовок/тело/лейны gazetteer) на сохранённых реальных TEI и зафиксировать политику fallback по лейнам: каждый лейн остаётся selectable для Java-fallback, а Rust-прогон не может молча подменять семантику. Расхождение обязано быть типизированным (тип отсутствия/тип отказа), а не пустым значением или прозой. Замеренная область S03: собственные header title/email/ids, author->affiliation bindings и bibliography citation role/value сериализуются, production post-serialization гейт отказывает типизированно (SemanticFieldLoss) при потере, политика lane fallback объявлена DATA-блоком. Остаток, названный и не закрытый: не-namespace атрибуты синтезируемых обёрток fileDesc/titleStmt (H16-N3) и независимая корпусная регрессия (S05).",
       "status": "pending",
       "depends_on": [],
       "owner": "unassigned",
@@ -330,8 +330,14 @@
       "implementation_evidence": [
         {
           "path": "crates/da-parse/src/native_header_fields.rs",
-          "note": "проекция полей заголовка (семантическая поверхность)",
-          "state": "partial"
+          "note": "проекция полей заголовка (семантическая поверхность): title/email/<pubnum> из декодированных CRF-рядов; вход admitted-семантики композитора",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/src/native_fulltext_composition.rs",
+          "symbol": "SemanticFieldLedger",
+          "note": "эмиттер сериализует admitted title/email/ids, author->affiliation и citation role/value; audit_semantic_fields перечитывает эмитированные байты и отказывает типизированным SemanticFieldLoss; манифест несёт ledger",
+          "state": "present"
         },
         {
           "path": "crates/da-parse/src/native_body.rs",
@@ -347,32 +353,68 @@
           "path": "data/parse/native_visual_families.yaml",
           "note": "gazetteer_lanes и caller_supplied typed spans как источник политики лейнов",
           "state": "present"
+        },
+        {
+          "path": "data/parse/native_fulltext_composition.yaml",
+          "symbol": "lane_fallback_policy",
+          "note": "машинно-проверяемый sibling-блок политики lane fallback внутри уже санкционированного DATA-файла (D377): скаляры связаны с константами композера, классы отказов — с SemanticFieldLoss::ALL, декларации полос сверены DATA<->DATA",
+          "state": "present"
         }
       ],
       "verification_evidence": [
         {
-          "mode": "runtime",
-          "ref": "сверка семантических полей на сохранённых реальных TEI и политики lane fallback",
-          "expected": "расхождение видно как тип; право лейна на Java-fallback сохраняется",
-          "status": "pending"
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test native_fulltext_composition_semantics (независимый roxmltree-оракул ПОСЛЕ сериализации; RED-пин заменён GREEN контрактом и негативной матрицей типизированных отказов)",
+          "expected": "13 passed, 0 failed, 0 ignored: admitted семантика консервируется, потеря типизирована",
+          "status": "pass"
         },
         {
           "mode": "command",
-          "ref": "cargo test -p da-parse --test native_header_same_n",
-          "expected": "независимый same-n оракул заголовка зелёный",
-          "status": "pending"
+          "ref": "cargo test -p da-parse --test native_fulltext_composition_data_contract (DATA-контракт lane_fallback_policy: скаляры/флаги/классы/носители)",
+          "expected": "9 passed, 0 failed, 0 ignored: подмена или отмена права полосы на Java-fallback падает по имени",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test native_fulltext_composition_reference_integrity (A-REF область S02 остаётся зелёной в той же ревизии)",
+          "expected": "19 passed, 0 failed, 0 ignored: обязательные локальные цели резолвятся",
+          "status": "pass"
+        },
+        {
+          "mode": "runtime",
+          "ref": "cargo run -p da-cli --features pdf-layout --example native_fulltext_composition_shadow -- --report artifacts/parse_compat/native_fulltext_composition_shadow.json",
+          "expected": "exit=0; semantic_fields.ledger admitted=conserved=1 по каждому из пяти классов; независимое наблюдение примера observed_fields=5; пример падает на нулевом admitted-счётчике",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-cli --features pdf-layout --tests (пин невакуумного semantic_fields в отчёте)",
+          "expected": "37 suites, 612 passed, 0 failed, 0 ignored",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --tests",
+          "expected": "102 suites, 1413 passed, 0 failed, 0 ignored",
+          "status": "pass"
         },
         {
           "mode": "governor_rule",
-          "ref": "governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml",
-          "expected": "этап H16 не заявляет PASS до появления исполняемого доказательства",
+          "ref": "PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml",
+          "expected": "exit=0; claims=0 — этап H16 не заявляет PASS без независимой корпусной регрессии",
+          "status": "pass"
+        },
+        {
+          "mode": "runtime",
+          "ref": "сверка семантических полей и политики lane fallback на независимой корпусной регрессии (S05) вне трёх пиннутых фикстур",
+          "expected": "расхождение видно как тип на корпусе; право лейна на Java-fallback сохраняется",
           "status": "pending"
         }
       ],
       "tested_source": {
-        "revision": "bcdd0cfc5e34f64821798463fe23b2f3845efe56",
+        "revision": "7544aa0698519519bf6bf1466f5f8cad42ae79ef",
         "verified": false,
-        "note": "Запись планирования: команды на этой ревизии не исполнялись в рамках этого реестра. verified=false."
+        "note": "Замер S03 исполнен на ревизии T03 HEAD 7544aa0698519519bf6bf1466f5f8cad42ae79ef. Команды и их RC записаны в audit-разделе S03 и в task-саммари S03/T04. tested_source остаётся verified=false: заявленный этап не закрывается, закрытие требует независимой корпусной регрессии S05."
       },
       "index_freshness": {
         "state": "fresh",
@@ -395,17 +437,20 @@
         {
           "id": "H16-N1",
           "scenario": "Семантическое поле теряется молча при Rust-прогоне",
-          "expected": "fail-closed: типизированное отсутствие вместо пустого значения"
+          "expected": "fail-closed: admitted title/email/ids, author->affiliation или citation role/value, не консервированный в эмиссии, даёт типизированный SemanticFieldLoss и байт-идентичный Java-envelope; закрыто на замеренной области",
+          "ref": "crates/da-parse/tests/native_fulltext_composition_semantics.rs"
         },
         {
           "id": "H16-N2",
           "scenario": "Лейн помечается закрытым Rust-прогоном с отменой права fallback",
-          "expected": "fail-closed: нарушение политики lane fallback обнаружено"
+          "expected": "fail-closed: расхождение DATA<->DATA, подмена скаляра или отмена права полосы на Java-fallback обнаружены по имени; закрыто на замеренной области",
+          "ref": "crates/da-parse/tests/native_fulltext_composition_data_contract.rs"
         },
         {
           "id": "H16-N3",
           "scenario": "Атрибут синтезируемой обёртки (например xml:lang на fileDesc/titleStmt) теряется молча при композиции",
-          "expected": "fail-closed: сохранение атрибута либо типизированная потеря; измеренный остаток S01/T03 назван, а не замалчивается как отсутствовавший; на S01/T06 остаток перепроверен и не изменялся — переносятся только xmlns/xmlns:*"
+          "expected": "ОСТАТОК НЕ ЗАКРЫТ: переносятся только xmlns/xmlns:*, прочие атрибуты обёрток по-прежнему не копируются. Остаток назван, а не замалчивается; на S01/T06 перепроверен и не изменялся",
+          "ref": "crates/da-parse/tests/native_fulltext_composition_contract.rs"
         }
       ],
       "test_matrix": [
@@ -431,10 +476,10 @@
       "implementation_pass": false,
       "verification_pass": false,
       "open_item": {
-        "reason": "H16 не закрыт: верность семантических полей и политика lane fallback не подтверждены независимой проверкой.",
+        "reason": "H16 не закрыт: измеренная область (семантические поля в эмиссии на сохранённых TEI и машинно-проверяемая политика lane fallback) зелёная, но остаются названные остатки — не-namespace атрибуты синтезируемых обёрток (H16-N3) — и независимая корпусная регрессия вне трёх пиннутых фикстур.",
         "since": "2026-09-21",
         "accepted": false,
-        "closure_condition": "Семантические поля сверены с независимым оракулом на сохранённых TEI, политика fallback по лейнам зафиксирована и проверяема, отрицательные тесты зелёные."
+        "closure_condition": "Семантические поля сверены с независимым оракулом на сохранённых TEI, политика fallback по лейнам зафиксирована и проверяема, отрицательные тесты зелёные, и измерение подтверждено на независимой корпусной регрессии (S05)."
       }
     },
     {

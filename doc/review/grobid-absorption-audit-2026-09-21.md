@@ -36,7 +36,7 @@ Rust-реализация существенно продвинулась, но 
 |---|---|---|---|---|
 | A-XML | P0 | `native_fulltext_composition.rs:402–434,602–613`: сохранение диапазонов по имени смешивает открывающие/закрывающие теги, создаёт пересечения; output не перепарсивается | Настоящий Rust `compose_native_fulltext` возвращает Accepted для трёх валидных сохранённых TEI; независимый ElementTree отвергает все три результата | Проверяется наличие строк в простом синтетическом заголовке, не well-formedness реального результата |
 | A-REF | P0 | `native_fulltext_composition.rs:493–520` (ревизия `bcdd0cfc5`): проверяются только переданные anchors, а не фактические body targets; emit меняет id на bibl-ordinal. Текущее состояние — раздел S02 ниже | При исходном body target=#b0 и пустых supplied anchors Rust возвращает Accepted; b0 отсутствует в выходном множестве xml:id | Есть тест чужого переданного anchor, но нет проверки полноты anchors относительно исходного body |
-| A-FIELDS | P1 | `native_fulltext_composition.rs:460–520`: header emitter читает authors/date, references emitter только source | Статическое чтение: структурированные header fields, author affiliations и citation fields не сериализуются этими функциями | Сохранение строки не проверяет семантическую эквивалентность title/email/id/affiliation/citation roles |
+| A-FIELDS | P1 | `native_fulltext_composition.rs:460–520` (ревизия `bcdd0cfc5`): header emitter читает authors/date, references emitter только source. Текущее состояние и снятие RED/GREEN — раздел S03 ниже | Статическое чтение: структурированные header fields, author affiliations и citation fields не сериализуются этими функциями | Сохранение строки не проверяло семантическую эквивалентность title/email/id/affiliation/citation roles |
 
 Статус после корректирующей волны: A-XML закрыт на замеренной области — S01/T02
 починил эмиттер (RED→GREEN), S01/T03 закрыл найденный остаточный
@@ -49,7 +49,11 @@ namespace-случай, S01/T04 развёл WF-проход и сканер и 
 A-REF закрыт на замеренной области S02 — композитор публикует исходные
 published keys и отказывает `Accepted`, если обязательная локальная ссылка не
 резолвится в id-пространстве эмиссии; измерение и снятие RED — в разделе S02
-ниже. A-FIELDS остаётся открытым и принадлежит S03.
+ниже. A-FIELDS закрыт на замеренной области S03 — admitted title/email/ids,
+author→affiliation и citation role/value сериализуются, а независимый
+post-serialization оракул и production-гейт отказывают типизированно при потере;
+измерение и RED→GREEN — в разделе S03 ниже. H16 при этом НЕ помечается PASS:
+planning-запись сохраняет `implementation_pass=false`.
 
 Воспроизведение: `doc/review/grobid-composition-repro.rs`. Оно использует те же синтетические admissions/candidates, что штатные контракты, но реальный Java TEI как документ. Это тест публичного композитора, НЕ end-to-end доказательство достижимости через production admission.
 
@@ -287,6 +291,79 @@ production-достижимость не доказана. Замки не ме�
 `import_eligible=false`, `auto_promote=forbidden`, `graph_write=forbidden`,
 `this_wave_promotes=none`, D127/D321 закрыты.
 
+### Свидетельства среза M511-j7wz2f/S03 (семантические поля: исторический RED и текущий GREEN)
+
+A-FIELDS закрыт на замеренной области, и это измерено независимым оракулом
+(`roxmltree`, **dev-dependency**, в `src/` недостижим), который читает эмиссию
+ПОСЛЕ сериализации, а не candidate-структуру. Оракул ищет sentinel-значения
+admitted-полосы, а не наличие элементов: источник консервирует собственные
+`<title>`/`<email>`/`<affiliation>`, поэтому проверка по виду элемента объявила
+бы conserved-текст источника admitted-полем.
+
+- **Исторический RED (S03/T01).** Измерено на трёх sha256-пиннутых сохранённых
+  TEI (`hub_2507.19457`, `rlm_2512.24601`, `reca_2605.26525v1`): из admitted
+  header/reference полей в эмиссии не присутствовало НИ ОДНО — счёт admit →
+  conserve был `0` по каждому классу, тогда как сам источник несёт
+  `title` (2/2/2 элемента), `email` (0/3/0) и `affiliation` (0/0/13). RED
+  запиннен как данные (точное равенство, exit 0), а не как `#[ignore]`-тест.
+- **Текущий GREEN (S03/T02).** Эмиттер сериализует admitted header
+  title/email/ids, author→affiliation bindings и bibliography citation
+  roles; production post-serialization semantic gate перечитывает выданные
+  байты своим структурным сканером и отказывает типизированно
+  (`SemanticFieldLoss`) с байт-идентичным Java-envelope при любом классе,
+  который emission не консервирует. `NativeFulltextManifest` несёт
+  `semantic_fields` (`SemanticFieldLedger`, `#[serde(default)]`): admitted и
+  conserved счётчики по пяти классам. Словарь отказов — `SemanticFieldLoss`,
+  и его `token()`/`citation_field_role_token` сверяются с словарём оракула и
+  serde-wire-формой отдельными drift-тестами.
+- **Политика lane fallback (S03/T03).** Машинно-проверяемый sibling-блок
+  `lane_fallback_policy` живёт внутри уже санкционированного
+  `data/parse/native_fulltext_composition.yaml` (D377, нового файла нет):
+  скаляры связаны с константами композера `NATIVE_FULLTEXT_LANE_FALLBACK_*`,
+  классы отказов — с `SemanticFieldLoss::ALL`, а декларации полос сверены
+  DATA↔DATA по всему `data/parse`; расхождение/подмена/отмена права полосы на
+  Java-fallback падают fail-closed по имени.
+- **Невакуумное доказательство на реальном прогоне (S03/T04).** Shadow-пример
+  наполняет header-candidate `NativeHeaderFields{title,email,ids}` и
+  `NativeAffiliationLink`, а reference band — `CitationField` с ролью;
+  отчёт печатает блок `semantic_fields` на верхнем уровне и в каждой строке
+  исхода. На замороженной фикстуре: admitted=conserved=`1` по каждому из пяти
+  классов, независимое наблюдение примера (подстрокный скан собственных
+  sentinel-значений в эмитированных байтах, не по ledger композитора) —
+  `observed_fields=5`, все пять классов `true`, и пример падает на любом нулевом
+  admitted-счётчике. Ограничение названо честно: подстрокный скан не видит
+  XML-структуру, поэтому структурный оракул — `native_fulltext_composition_semantics.rs`,
+  а пример доказывает, что admitted-семантика невакуумна и присутствует в байтах.
+  Замороженный артефакт
+  `artifacts/parse_compat/native_fulltext_composition_shadow.json` перегенерирован
+  и запиннен (`3a58566a26410331768327a7f90db8dd484bc2f4f7c247dcc7067d71b7ba256b`)
+  в обеих governor-поверхностях (`bindings.canonical_artifacts` и
+  `governor/fixtures/scholarly_parse_plane/contract.positive.json`); DATA-дайджест
+  `data/parse/native_fulltext_composition.yaml` — `266b68b4…`, уже перепинен T03.
+
+| Проверка (актуальная ревизия) | Результат |
+|---|---|
+| `cargo test -p da-parse --tests` | 102 suites, 1413 passed, 0 failed, 0 ignored |
+| `cargo test -p da-cli --tests` | 37 suites, 584 passed, 0 failed, 0 ignored |
+| `cargo test -p da-cli --features pdf-layout --tests` | 37 suites, 612 passed, 0 failed, 0 ignored |
+| `cargo clippy -p da-parse --all-targets --no-deps -- -D warnings` | exit=0 |
+| `cargo fmt -p da-parse -- --check` / `cargo fmt -p da-cli -- --check` | exit=0 / exit=0 |
+| shadow-пример (`--features pdf-layout`) | exit=0; `semantic_fields.ledger` admitted=conserved=1 по 5 классам, `observed_fields=5` |
+| `PYTHONPATH=scripts python3 -m pytest scripts/tests/test_governor.py -q` | 368 passed |
+| `PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q` | 437 passed |
+| `governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml` | exit=0 (stages=8 unresolved=8 complete=0 claims=0) |
+| `PYTHONPATH=scripts python3 -m governor architecture` (полный гейт, внешний прогон вне in-band `verification_timeout_ms=600000`) | `GATE_RC=0`, `ARCHITECTURE GATE: PASS` (fmt + clippy lib/tests + hexagonal + per-crate tests + feature-gated example runners/contracts; ~1329s) |
+
+H16 при этом **не помечается PASS**: planning-запись сохраняет
+`implementation_pass=false`, `verification_pass=false`, `status: pending`, и
+закрытие этапа требует независимой корпусной регрессии S05. Измеренный остаток
+H16-N3 назван, а не замалчивается: не-namespace атрибуты синтезируемых обёрток
+`fileDesc`/`titleStmt` (например собственный `xml:lang`) по-прежнему не
+копируются — это остаток поля, а не well-formedness. Замеренная область —
+публичный shadow-композитор; production-достижимость не доказана. Замки не
+менялись: `deployed=false`, `import_eligible=false`, `auto_promote=forbidden`,
+`graph_write=forbidden`, `this_wave_promotes=none`, D127/D321 закрыты.
+
 ## Риски, не выдаваемые за воспроизведённые дефекты
 
 | Область | Наблюдение | Требуемая проверка |
@@ -308,7 +385,8 @@ production-достижимость не доказана. Замки не ме�
 | governor review: horizon, GAR | exit=0; H05/GAR-015 остаются открытыми |
 | Публичный Rust composition probe + независимый XML parser | 2 класса дефектов воспроизведены |
 
-99 файлов `da-parse/tests/*.rs`; непересекающееся разбиение по именам не строилось. Подстроки встречаются: contract 55, properties 16, oracle 15, data_contract 13, same_n 8, metamorphic 1. Категории перекрываются. Процент line/branch/mutation coverage не измерялся. Полная архитектурная проверка, все adapter/application suites и живой Java-vs-Rust corpus-run в этом аудите не выполнялись. Утверждать «всё покрыто» нельзя. Строка `1351 passed` в таблице — замер ревизии аудита `bcdd0cfc5`; после S01/T06 тот же набор даёт 100 suites / 1374 passed / 0 failed / 0 ignored (раздел T04–T06), а после S02/T01–T05 — 101 suites / 1396 passed / 0 failed / 0 ignored (раздел S02).
+99 файлов `da-parse/tests/*.rs`; непересекающееся разбиение по именам не строилось. Подстроки встречаются: contract 55, properties 16, oracle 15, data_contract 13, same_n 8, metamorphic 1. Категории перекрываются. Процент line/branch/mutation coverage не измерялся. Полная архитектурная проверка, все adapter/application suites и живой Java-vs-Rust corpus-run в этом аудите не выполнялись. Утверждать «всё покрыто» нельзя. Строка `1351 passed` в таблице — замер ревизии аудита `bcdd0cfc5`; после S01/T06 тот же набор даёт 100 suites / 1374 passed / 0 failed / 0 ignored (раздел T04–T06), а после S02/T01–T05 — 101 suites / 1396 passed / 0 failed / 0 ignored (раздел S02),
+а после S03/T01–T04 — 102 suites / 1413 passed / 0 failed / 0 ignored (раздел S03).
 
 Доказательства GSD exec: `6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f` (Rust probe), `73a4222b-035b-4439-955e-96d36c068534` (test totals и валидность исходного XML), `c0d5f8f1-490c-4fe0-87c3-4f6e495c9a5b` (scope и test tags), `98f91300-d06b-4d67-8917-19d64e7b8d18` (реестры).
 
@@ -321,7 +399,8 @@ GitNexus MCP context завершился Connection closed. Первая инд
 ## Остаток и политика
 
 Исторический аудит задач: терминальные 1179/1179; это не доказательство полного перевода. Отложенный незапланированный объём вообще не входит в этот знаменатель. Пять parked milestone имеют 13 skipped срезов без задач. H05 и GAR-015 не закрыты. A-XML закрыт на замеренной области S01, A-REF — на
-трёх пиннутых сохранённых TEI в S02; A-FIELDS остаётся открытым. Исторические
-PASS задним числом не переписываются.
+трёх пиннутых сохранённых TEI в S02; A-FIELDS закрыт на замеренной области S03
+(невакуумный runtime-прогон shadow-примера). Исторические PASS задним числом не
+переписываются.
 
 Следующий план: `doc/review/grobid-absorption-roadmap-2026-09-21.yaml` и `doc/review/grobid-absorption-followup.json`. Проверять командой `PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml`. Прохождение означает целостность planning registry, не выполнение будущих стадий. Новая волна auto не запускается; production promotion, import и graph writes не разрешены.
