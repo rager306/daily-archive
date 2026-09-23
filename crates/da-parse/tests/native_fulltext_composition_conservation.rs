@@ -49,7 +49,12 @@ fn frozen_source_and_lifted_candidate_have_explicit_family_conservation() {
     assert_eq!(inventory.count(ConservationFamily::Coordinate), 1);
     assert_eq!(inventory.count(ConservationFamily::CitationEntry), 1);
     assert_eq!(inventory.count(ConservationFamily::CrossReference), 1);
-    assert_eq!(inventory.total(), 7);
+    // M511-j7wz2f/S02/T05: the frozen fixture's body now carries exactly one
+    // `ref type="bibr" target="#ref-1"` so the shadow report's reference-link
+    // ledger cannot be vacuous. A targeted body bibr is a `CitationAnchor`
+    // (not a `CrossReference`), so the pinned inventory grows by one.
+    assert_eq!(inventory.count(ConservationFamily::CitationAnchor), 1);
+    assert_eq!(inventory.total(), 8);
     let delta = engine.compare(&source, &ir);
     assert_eq!(delta.identity.raw_tei_sha256, f.source_sha256);
     assert!(matches!(
@@ -91,7 +96,7 @@ fn replay_is_byte_stable_and_missing_bibliography_is_typed() {
 fn reordered_sections_and_damaged_coordinate_are_visible_not_silent() {
     let f = fixture();
     let engine = ConservationEngine::new();
-    let reordered_xml = f.source_xml.replace("First section</head><p>body bytes <ref type=\"figure\" target=\"#fig-1\">Fig. 1</ref></p></div><div><head>Second section", "Second section</head><p>body bytes <ref type=\"figure\" target=\"#fig-1\">Fig. 1</ref></p></div><div><head>First section");
+    let reordered_xml = f.source_xml.replace("First section</head><p>body bytes <ref type=\"figure\" target=\"#fig-1\">Fig. 1</ref> and <ref type=\"bibr\" target=\"#ref-1\">[1]</ref></p></div><div><head>Second section", "Second section</head><p>body bytes <ref type=\"figure\" target=\"#fig-1\">Fig. 1</ref> and <ref type=\"bibr\" target=\"#ref-1\">[1]</ref></p></div><div><head>First section");
     let reordered = envelope(&f, &reordered_xml);
     let reordered_ir = TeiLifter::new().lift(&reordered, "oracle-paper", "reordered");
     let reordered_delta = engine.compare(&reordered, &reordered_ir);

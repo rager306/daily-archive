@@ -43,6 +43,11 @@ struct Report {
     evaluated_population: serde_json::Value,
     policy: Policy,
     execution: Execution,
+    /// S02/T05: the composed document's citation-link ledger. Non-vacuous on the
+    /// frozen fixture's single `ref type="bibr" target="#ref-1"`, so the shadow
+    /// report states on every run what the emission did to the source's links
+    /// instead of leaving integer traces inside the composer.
+    reference_links: ReferenceLinkLedger,
     outcomes: Vec<Outcome>,
     replay: Replay,
     conservation: Conservation,
@@ -100,6 +105,7 @@ struct Outcome {
     fallback_components: usize,
     java_fallback_bytes: usize,
     java_fallback_sha256: String,
+    reference_links: ReferenceLinkLedger,
     dispositions: Vec<Disposition>,
 }
 #[derive(Debug, Serialize, Clone, PartialEq, Eq)]
@@ -361,6 +367,7 @@ fn run(jobs: Vec<Job>, workers: usize, capacity: usize) -> (Vec<Outcome>, Execut
                 fallback_components: candidate.manifest.fallback_components,
                 java_fallback_bytes: candidate.manifest.java_fallback_bytes,
                 java_fallback_sha256: candidate.manifest.java_fallback_sha256,
+                reference_links: candidate.manifest.reference_links,
                 dispositions,
             })
         },
@@ -429,6 +436,19 @@ fn main() {
     let replay_rows = canonical(replay_rows);
     assert_eq!(outcomes, replay_rows);
     let fallback_families = outcomes[0].fallback_components;
+    // S02/T05: the reference-link block must be non-vacuous on this fixture.
+    // A zero `required_targets` means the shadow run proves nothing about link
+    // integrity (the old fixture carried no body `bibr` reference at all), so
+    // the example fails loudly instead of publishing an empty proof.
+    let reference_links = outcomes[0].reference_links;
+    assert!(
+        reference_links.required_targets > 0,
+        "frozen fixture must carry at least one body bibr target, got {reference_links:?}"
+    );
+    assert_eq!(
+        reference_links.resolved_targets, reference_links.required_targets,
+        "accepted emission must resolve every mandatory source target: {reference_links:?}"
+    );
     let report = Report {
         schema_version: REPORT_SCHEMA,
         data_schema: DATA
@@ -488,6 +508,7 @@ fn main() {
             output_affecting_learning_selection: 0,
         },
         execution,
+        reference_links,
         outcomes,
         replay: Replay {
             semantic_replays: 2,

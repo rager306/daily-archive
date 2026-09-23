@@ -72,6 +72,39 @@ fn text(block: &str, tag: &str) -> String {
         .map(|(x, _)| x.to_owned())
         .unwrap_or_default()
 }
+/// M511-j7wz2f/S02/T05: mandatory local targets read from the *source* with a
+/// real XML parser (`roxmltree`, dev-dependency only), never from the composer's
+/// own tag scanner and never from the caller's anchor stream.  One `ref` counts
+/// when `type="bibr"` and `target` is a non-empty `#fragment`.
+fn independent_required_targets(xml: &str) -> Vec<String> {
+    let doc = roxmltree::Document::parse(xml).expect("source XML parses");
+    let mut targets = std::collections::BTreeSet::new();
+    for node in doc.descendants().filter(|node| node.has_tag_name("ref")) {
+        if node.attribute("type") != Some("bibr") {
+            continue;
+        }
+        let Some(fragment) = node.attribute("target").and_then(|t| t.strip_prefix('#')) else {
+            continue;
+        };
+        if !fragment.is_empty() {
+            targets.insert(fragment.to_owned());
+        }
+    }
+    targets.into_iter().collect()
+}
+
+/// Distinct `xml:id` values of a document, again through the real parser.
+/// `xml:id` is the only attribute whose ID-ness needs no DTD or schema, so it is
+/// exactly the address space a `#fragment` target can resolve against.
+fn independent_xml_ids(xml: &str) -> std::collections::BTreeSet<String> {
+    const XML_NAMESPACE: &str = "http://www.w3.org/XML/1998/namespace";
+    let doc = roxmltree::Document::parse(xml).expect("document parses");
+    doc.descendants()
+        .filter_map(|node| node.attribute((XML_NAMESPACE, "id")))
+        .map(str::to_owned)
+        .collect()
+}
+
 fn opening_tags<'a>(xml: &'a str, tag: &str) -> Vec<&'a str> {
     let needle = format!("<{tag}");
     let mut out = Vec::new();
@@ -295,6 +328,40 @@ fn independent_oracle_matches_hybrid_candidate_and_all_fallback_families() {
     assert!(output.contains(
         "<figure xml:id=\"fig-1\"><figDesc>Caption</figDesc><graphic coords=\"1,2,3,4\"/>"
     ));
+    // S02/T05: the reference-link witness must be non-vacuous and resolved by
+    // the independent parser, not by the composer's ledger.  The frozen body
+    // carries exactly one `ref type="bibr" target="#ref-1"`, so an empty
+    // obligation set here would mean the shadow report proves nothing.
+    let required = independent_required_targets(&f.source_xml);
+    assert_eq!(
+        required,
+        vec!["ref-1"],
+        "frozen fixture must carry exactly one mandatory body bibr target"
+    );
+    assert!(
+        !required.is_empty(),
+        "mandatory target set must be non-vacuous on the frozen fixture"
+    );
+    let emitted_ids = independent_xml_ids(&output);
+    for target in &required {
+        assert!(
+            emitted_ids.contains(target),
+            "mandatory source target #{target} does not resolve in the emitted id space {emitted_ids:?}"
+        );
+    }
+    // Cross-check the published ledger against the independent counts, so the
+    // record cannot be non-vacuous while the emission dangles.
+    assert_eq!(
+        candidate.manifest.reference_links.required_targets,
+        required.len()
+    );
+    assert_eq!(
+        candidate.manifest.reference_links.resolved_targets,
+        required.len()
+    );
+    assert_eq!(candidate.manifest.reference_links.source_entries, 1);
+    assert_eq!(candidate.manifest.reference_links.admitted_references, 1);
+    assert_eq!(candidate.manifest.reference_links.target_occurrences, 1);
     assert_eq!(candidate.manifest.native_components, 2);
     assert_eq!(candidate.manifest.fallback_components, 5);
     assert_eq!(candidate.manifest.java_fallback_bytes, f.source_xml.len());
