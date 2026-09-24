@@ -360,6 +360,47 @@ fn batch_limits_reject_zero_bounds_and_foreign_knobs() {
         }),
         "limits wire shape drifted (only the four bounds + schema version may exist)"
     );
+    // S06/T03: the byte ceiling is additive. An undeclared ceiling serializes
+    // EXACTLY as before (asserted above), a declared one adds exactly one
+    // field, and a zero ceiling is a type-level rejection like any bound.
+    let mut zero_ceiling = serde_json::to_value(limits()).unwrap();
+    zero_ceiling["max_retained_bytes"] = json!(0);
+    let ceiling_error = serde_json::from_value::<ParseBatchLimits>(zero_ceiling)
+        .unwrap_err()
+        .to_string();
+    assert!(
+        ceiling_error.contains("nonzero") || ceiling_error.contains("non-zero"),
+        "`max_retained_bytes`=0 must be a type-level rejection, got: {ceiling_error}"
+    );
+    let declared = limits().with_max_retained_bytes(nz(4096));
+    assert_eq!(
+        serde_json::to_value(declared).unwrap(),
+        json!({
+            "schema_version": PARSE_BATCH_SCHEMA_VERSION,
+            "workers": 2,
+            "queue_capacity": 4,
+            "max_in_flight": 2,
+            "max_documents": 16,
+            "max_retained_bytes": 4096,
+        }),
+        "a declared byte ceiling must add exactly one additive field"
+    );
+    assert_eq!(declared.max_retained_bytes(), Some(nz(4096)));
+    // A legacy manifest without the field decodes as `None` (the field is
+    // additive, so the limits schema version does NOT rotate).
+    let legacy: ParseBatchLimits = serde_json::from_value(json!({
+        "schema_version": PARSE_BATCH_SCHEMA_VERSION,
+        "workers": 2,
+        "queue_capacity": 4,
+        "max_in_flight": 2,
+        "max_documents": 16,
+    }))
+    .expect("a legacy manifest without the byte ceiling still decodes");
+    assert_eq!(legacy.max_retained_bytes(), None);
+    assert_eq!(
+        serde_json::to_value(legacy).unwrap(),
+        serde_json::to_value(limits()).unwrap()
+    );
     // Foreign schema versions fail closed.
     let mut foreign_version = serde_json::to_value(limits()).unwrap();
     foreign_version["schema_version"] = json!(PARSE_BATCH_SCHEMA_VERSION + 1);
@@ -405,6 +446,23 @@ fn bounds_and_modes_are_excluded_from_content_identity() {
     // The cache mode is cost strategy, not content: same identity.
     let c = ParseBatch::admit(CacheMode::Refresh, tight, requests(), None).unwrap();
     assert_eq!(a.input_fingerprint(), c.input_fingerprint());
+    // S06/T03: the additive byte ceiling is a bound too. Declaring one must
+    // not move the input fingerprint, and a cursor from the unbounded run must
+    // still validate against the byte-bounded run.
+    let byte_bounded =
+        ParseBatchLimits::new(nz(1), nz(1), nz(1), nz(2)).with_max_retained_bytes(nz(4096));
+    let d = ParseBatch::admit(CacheMode::WriteThrough, byte_bounded, requests(), None).unwrap();
+    assert_eq!(
+        a.input_fingerprint(),
+        d.input_fingerprint(),
+        "the byte ceiling must never enter the input fingerprint"
+    );
+    assert!(
+        cursor
+            .validate_for(d.input_fingerprint(), d.total_documents())
+            .is_ok(),
+        "a cursor lineage must survive a byte-bounded replay"
+    );
 }
 
 // ─────────────── ordered input fingerprint: content bound ─────────────

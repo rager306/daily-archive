@@ -40,8 +40,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 use std::num::NonZeroUsize;
 use std::sync::Arc;
+use std::sync::Mutex as StdMutex;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
-use std::time::Instant;
 
 use async_trait::async_trait;
 use da_ports::parser::ParsedArticle;
@@ -51,8 +51,17 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tokio::sync::{Mutex, Notify, Semaphore, mpsc};
 use tokio::task::JoinHandle;
+// The runtime clock, not `std::time::Instant`: every latency this module
+// measures (queue wait, backend, projection, per-document terminal latency,
+// run duration) is a logical duration under a paused test clock, so the
+// measurement contract can observe it deterministically.
+use tokio::time::Instant;
 
 use crate::backend::{ParseBackend, ParseBackendRequest};
+use crate::batch_budget::{
+    BATCH_BUDGET_NO_LATENCY_OBSERVATION_REASON, BATCH_BUDGET_NO_RETENTION_CEILING_REASON,
+    BatchObservation, ParseBatchBudgetObservation,
+};
 use crate::cache::{
     CacheMode, CacheStageDisposition, PROJECT_ARTICLE_SCHEMA_FINGERPRINT, ParseArtifactCache,
     ParseCacheDispositions, ParseCacheFailure, ProjectArticlePayload, RawTeiEnvelopePayload,
@@ -62,7 +71,7 @@ use crate::cache::{
 use crate::envelope::{TeiEnvelope, TeiResultIdentity};
 use crate::lift::TeiLifter;
 use crate::parser::lift_and_project_envelope;
-use crate::transport::{ParseBackendFailure, ParseEndpoint};
+use crate::transport::{LimitKind, ParseBackendFailure, ParseEndpoint};
 
 /// Stable schema version of the batch limits / outcome vocabulary.
 pub const PARSE_BATCH_SCHEMA_VERSION: u32 = 1;
@@ -80,11 +89,17 @@ const FINGERPRINT_DOMAIN: &[u8] = b"da-parse/parse-batch-input/v1";
 
 /// NonZero bounded-execution limits of one batch run.
 ///
-/// Every bound is nonzero at the type level — a zero wire value is a
-/// deserialization error, so `admit` never sees degenerate concurrency.
-/// These bounds are excluded from content identity: two runs over the same
-/// ordered inputs share one input fingerprint (and therefore one cursor
-/// lineage) no matter how they were bounded.
+/// Every REQUIRED bound is nonzero at the type level — a zero wire value is a
+/// deserialization error, so `admit` never sees degenerate concurrency. These
+/// bounds are excluded from content identity: two runs over the same ordered
+/// inputs share one input fingerprint (and therefore one cursor lineage) no
+/// matter how they were bounded.
+///
+/// `max_retained_bytes` (S06/T03) is the OPTIONAL byte ceiling on retained
+/// results. It is additive: an admitted manifest without the field decodes as
+/// `None`, the limits schema version does not rotate, and `None` keeps the wire
+/// byte-identical (a count limit is NOT a byte ceiling, H05-N2). Like the slot
+/// bounds it is tuning, never content identity.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ParseBatchLimits {
     schema_version: u32,
@@ -92,10 +107,12 @@ pub struct ParseBatchLimits {
     queue_capacity: NonZeroUsize,
     max_in_flight: NonZeroUsize,
     max_documents: NonZeroUsize,
+    max_retained_bytes: Option<NonZeroUsize>,
 }
 
 impl ParseBatchLimits {
-    /// Stamp the four bounds with the current schema version.
+    /// Stamp the four slot bounds with the current schema version. The byte
+    /// ceiling is unset; use [`Self::with_max_retained_bytes`] to declare one.
     pub const fn new(
         workers: NonZeroUsize,
         queue_capacity: NonZeroUsize,
@@ -108,7 +125,15 @@ impl ParseBatchLimits {
             queue_capacity,
             max_in_flight,
             max_documents,
+            max_retained_bytes: None,
         }
+    }
+
+    /// Declare the byte ceiling on retained results (additive builder; the
+    /// slot bounds and the schema version are untouched).
+    pub const fn with_max_retained_bytes(mut self, bytes: NonZeroUsize) -> Self {
+        self.max_retained_bytes = Some(bytes);
+        self
     }
 
     /// Stable schema version of this instance.
@@ -136,16 +161,33 @@ impl ParseBatchLimits {
     pub const fn max_documents(&self) -> NonZeroUsize {
         self.max_documents
     }
+
+    /// Declared byte ceiling on retained results, if the batch declared one.
+    /// `None` means no byte ceiling is claimed — never a fabricated zero
+    /// (a document-count limit does not bound bytes, H05-N2).
+    pub const fn max_retained_bytes(&self) -> Option<NonZeroUsize> {
+        self.max_retained_bytes
+    }
 }
 
 impl Serialize for ParseBatchLimits {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut state = serializer.serialize_struct("ParseBatchLimits", 5)?;
+        // The byte ceiling is additive and skipped when undeclared, so a
+        // `None` ceiling serializes exactly as it did before S06/T03.
+        let fields = if self.max_retained_bytes.is_some() {
+            6
+        } else {
+            5
+        };
+        let mut state = serializer.serialize_struct("ParseBatchLimits", fields)?;
         state.serialize_field("schema_version", &self.schema_version)?;
         state.serialize_field("workers", &self.workers)?;
         state.serialize_field("queue_capacity", &self.queue_capacity)?;
         state.serialize_field("max_in_flight", &self.max_in_flight)?;
         state.serialize_field("max_documents", &self.max_documents)?;
+        if let Some(bytes) = &self.max_retained_bytes {
+            state.serialize_field("max_retained_bytes", bytes)?;
+        }
         state.end()
     }
 }
@@ -160,6 +202,10 @@ impl<'de> Deserialize<'de> for ParseBatchLimits {
             queue_capacity: NonZeroUsize,
             max_in_flight: NonZeroUsize,
             max_documents: NonZeroUsize,
+            /// Additive byte ceiling: a legacy manifest without the field
+            /// decodes as `None`.
+            #[serde(default)]
+            max_retained_bytes: Option<NonZeroUsize>,
         }
         let repr = Repr::deserialize(deserializer)?;
         if repr.schema_version != PARSE_BATCH_SCHEMA_VERSION {
@@ -174,6 +220,7 @@ impl<'de> Deserialize<'de> for ParseBatchLimits {
             queue_capacity: repr.queue_capacity,
             max_in_flight: repr.max_in_flight,
             max_documents: repr.max_documents,
+            max_retained_bytes: repr.max_retained_bytes,
         })
     }
 }
@@ -1408,6 +1455,18 @@ struct RunCounters {
     budget_waits: AtomicU64,
     in_flight: AtomicUsize,
     max_in_flight: AtomicUsize,
+    /// Current retained serialized bytes (materialized but not yet durably
+    /// recorded).
+    retained_bytes: AtomicUsize,
+    /// Peak of `retained_bytes` — a genuine window peak, never a cumulative
+    /// sink total.
+    peak_retained_bytes: AtomicUsize,
+    /// Documents refused because their own size exceeded the whole retention
+    /// ceiling, or because the ceiling had no room left (fail closed).
+    retention_refusals: AtomicU64,
+    /// Per-document terminal latencies (document start → terminal outcome) in
+    /// whole milliseconds. Recorded only for an observed run.
+    latencies_ms: StdMutex<Vec<u64>>,
 }
 
 impl RunCounters {
@@ -1430,11 +1489,42 @@ impl RunCounters {
                 .fetch_sub(delta.unsigned_abs(), Ordering::SeqCst);
         }
     }
+
+    /// Record one terminal per-document latency (milliseconds).
+    fn note_latency_ms(&self, millis: u64) {
+        if let Ok(mut latencies) = self.latencies_ms.lock() {
+            latencies.push(millis);
+        }
+    }
+
+    /// Deterministic integer latency tails (nearest-rank percentiles) over the
+    /// recorded terminal latencies. `None` when nothing terminated, so a tail
+    /// is never a fabricated zero.
+    fn latency_tails_ms(&self) -> Option<(u64, u64, u64)> {
+        let mut values = self.latencies_ms.lock().ok()?.clone();
+        if values.is_empty() {
+            return None;
+        }
+        values.sort_unstable();
+        let n = values.len();
+        let pick = |percent: usize| -> u64 {
+            // Nearest-rank: the 1-based rank ceil(percent * n / 100), clamped
+            // into range. Integer-only, so the tail is deterministic.
+            let rank = (percent * n).div_ceil(100);
+            let index = rank.saturating_sub(1).min(n - 1);
+            values[index]
+        };
+        Some((pick(50), pick(95), pick(99)))
+    }
 }
 
 struct PublicationState {
     next_ordinal: u32,
     pending: BTreeMap<u32, ParseDocumentOutcome>,
+    /// Reserved retained bytes per parked ordinal (S06/T03). Present only for
+    /// outcomes that reserved byte capacity; released when their durable sink
+    /// record completes.
+    pending_sizes: BTreeMap<u32, usize>,
 }
 
 struct RunShared {
@@ -1442,6 +1532,67 @@ struct RunShared {
     tracker: Mutex<CursorTracker>,
     publication: Mutex<PublicationState>,
     counters: RunCounters,
+    /// Declared byte ceiling on retained results, if the admitted batch
+    /// declared one. `None` means no byte ceiling is claimed.
+    retention_ceiling: Option<usize>,
+    /// Whether this run was asked to produce budget observations. When false
+    /// and no ceiling is declared, no per-document size is computed and the
+    /// run is behaviourally identical to the pre-T03 executor.
+    observe: bool,
+}
+
+/// Reserve `size` retained bytes against the run ceiling.
+///
+/// Fails closed (returns `false`) when the reservation would push the retained
+/// window above the declared ceiling, or when integer overflow is possible.
+/// The reservation happens BEFORE the outcome is parked, so the observed peak
+/// can never exceed the ceiling — no blocking acquisition, no deadlock under a
+/// slow ordinal-0 document. `None` means no ceiling: the reservation only
+/// feeds the observation gauge.
+fn try_reserve_retained_bytes(shared: &RunShared, size: usize) -> bool {
+    let ceiling = shared.retention_ceiling.unwrap_or(usize::MAX);
+    let counters = &shared.counters;
+    let mut current = counters.retained_bytes.load(Ordering::SeqCst);
+    loop {
+        let Some(next) = current.checked_add(size) else {
+            return false;
+        };
+        if next > ceiling {
+            return false;
+        }
+        match counters.retained_bytes.compare_exchange_weak(
+            current,
+            next,
+            Ordering::SeqCst,
+            Ordering::SeqCst,
+        ) {
+            Ok(_) => {
+                counters
+                    .peak_retained_bytes
+                    .fetch_max(next, Ordering::SeqCst);
+                return true;
+            }
+            Err(actual) => current = actual,
+        }
+    }
+}
+
+/// Release a previously reserved retained-byte amount.
+fn release_retained_bytes(shared: &RunShared, size: usize) {
+    if size > 0 {
+        shared
+            .counters
+            .retained_bytes
+            .fetch_sub(size, Ordering::SeqCst);
+    }
+}
+
+/// Honest serde length of one terminal outcome — the byte quantity the
+/// retained-byte ceiling bounds. Serialization of the closed outcome type is
+/// total, so a failure yields `0` (an unaccounted outcome) rather than a panic
+/// inside a worker task.
+fn outcome_wire_len(outcome: &ParseDocumentOutcome) -> usize {
+    serde_json::to_vec(outcome).map_or(0, |encoded| encoded.len())
 }
 
 /// Durable-prefix advancement.
@@ -1569,6 +1720,29 @@ fn failure_outcome(
         ),
         stats,
     }
+}
+
+/// Fail-closed refusal when a document cannot be retained within the declared
+/// byte ceiling (S06/T03): its own serialized size exceeded the WHOLE ceiling,
+/// or the ceiling had no room left. It reuses the existing closed limit
+/// vocabulary ([`LimitKind::ResponseBytes`]) rather than growing a new failure
+/// code, and it preserves the original stage dispositions so durability
+/// reporting stays honest. The success payload is dropped, never truncated.
+fn retention_refusal_outcome(outcome: ParseDocumentOutcome) -> ParseDocumentOutcome {
+    let ordinal = outcome.ordinal();
+    let paper_id = outcome.paper_id().to_string();
+    let cache_mode = outcome.cache_mode();
+    let dispositions = *outcome.dispositions();
+    ParseDocumentOutcome::new(
+        ordinal,
+        paper_id,
+        cache_mode,
+        dispositions,
+        Err(ParseDocumentFailure::Backend(ParseBackendFailure::limit(
+            LimitKind::ResponseBytes,
+            None,
+        ))),
+    )
 }
 
 async fn fetch_timed<B: ParseBackend>(
@@ -2075,6 +2249,7 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
         execution_permit: tokio::sync::OwnedSemaphorePermit,
         shared_execution_permit: tokio::sync::OwnedSemaphorePermit,
     ) {
+        let document_started = Instant::now();
         let execution = execute_document(
             self.backend.as_ref(),
             self.cache.as_ref(),
@@ -2084,8 +2259,38 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
             &queued.item,
         )
         .await;
-        let outcome = execution.outcome;
+        let mut outcome = execution.outcome;
         let stats = execution.stats;
+        if self.shared.observe {
+            self.shared
+                .counters
+                .note_latency_ms(elapsed_millis(document_started));
+        }
+        // Retention accounting (S06/T03). The byte quantity is the honest
+        // serde length of the terminal outcome. It is computed only when a
+        // byte ceiling is declared or an observation was requested, so a plain
+        // `run`/`run_managed` without a ceiling stays behaviourally identical.
+        let mut reserved_bytes = 0usize;
+        if self.shared.observe || self.shared.retention_ceiling.is_some() {
+            let size = outcome_wire_len(&outcome);
+            if outcome.is_success() {
+                // Reserve BEFORE parking: the observed window peak can then
+                // never exceed the declared ceiling, and no worker ever blocks
+                // on a byte permit (a blocking acquire under a slow ordinal-0
+                // document would deadlock the strict-ordinal publication
+                // window). Over-ceiling and no-room cases both fail closed
+                // through the existing typed limit refusal.
+                if try_reserve_retained_bytes(&self.shared, size) {
+                    reserved_bytes = size;
+                } else {
+                    self.shared
+                        .counters
+                        .retention_refusals
+                        .fetch_add(1, Ordering::SeqCst);
+                    outcome = retention_refusal_outcome(outcome);
+                }
+            }
+        }
         // Execution capacity is independent from the ordinal publication
         // window. Once computation is terminal, release it before waiting for
         // a publication gap; the queued item's permit remains held until the
@@ -2138,6 +2343,9 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
         let ordinal = queued.item.ordinal();
         let mut publication = self.shared.publication.lock().await;
         publication.pending.insert(ordinal, outcome);
+        if reserved_bytes > 0 {
+            publication.pending_sizes.insert(ordinal, reserved_bytes);
+        }
         let pending = publication.pending.len();
         self.shared
             .counters
@@ -2166,6 +2374,7 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
             // Read before the sink takes ownership.
             let recoverable =
                 !next_outcome.is_success() || next_outcome.dispositions().is_durably_recoverable();
+            let reserved = publication.pending_sizes.remove(&next_ordinal).unwrap_or(0);
             match self.sink.record(next_outcome).await {
                 Ok(()) => {
                     acknowledge(&self.shared, &*self.checkpoint, next_ordinal, recoverable).await;
@@ -2174,6 +2383,9 @@ impl<B: ParseBackend, C: ParseArtifactCache> WorkerContext<B, C> {
                     counters.sink_errors.fetch_add(1, Ordering::SeqCst);
                 }
             }
+            // The outcome has been consumed by the sink (recorded or refused),
+            // so its retained bytes are released and the window peak is final.
+            release_retained_bytes(&self.shared, reserved);
             publication.next_ordinal += 1;
             let pending = publication.pending.len();
             self.shared
@@ -2317,7 +2529,28 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
         sink: Arc<dyn ParseBatchResultSink>,
         checkpoint: Arc<dyn BatchCheckpoint>,
     ) -> ParseBatchRunSummary {
-        self.run_managed_inner(batch, sink, checkpoint, None).await
+        self.run_managed_inner(batch, sink, checkpoint, None, false)
+            .await
+            .0
+    }
+
+    /// Run the admitted batch and return the additive budget observation
+    /// (S06/T03): the retained-byte window peak, the per-document latency
+    /// tails and the declared retention ceiling. `ParseBatchRunSummary` is
+    /// unchanged; this seam only adds an observation carrier.
+    pub async fn run_observed(
+        &self,
+        batch: ParseBatch,
+        sink: Arc<dyn ParseBatchResultSink>,
+        checkpoint: Arc<dyn BatchCheckpoint>,
+    ) -> (ParseBatchRunSummary, ParseBatchBudgetObservation) {
+        let (summary, observation) = self
+            .run_managed_inner(batch, sink, checkpoint, None, true)
+            .await;
+        (
+            summary,
+            observation.expect("an observed run always builds its observation"),
+        )
     }
 
     /// Run an admitted batch under an opt-in cooperative cancellation handle.
@@ -2332,8 +2565,9 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
         checkpoint: Arc<dyn BatchCheckpoint>,
         cancellation: ParseBatchCancellation,
     ) -> ParseBatchRunSummary {
-        self.run_managed_inner(batch, sink, checkpoint, Some(cancellation))
+        self.run_managed_inner(batch, sink, checkpoint, Some(cancellation), false)
             .await
+            .0
     }
 
     async fn run_managed_inner(
@@ -2342,7 +2576,8 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
         sink: Arc<dyn ParseBatchResultSink>,
         checkpoint: Arc<dyn BatchCheckpoint>,
         cancellation: Option<ParseBatchCancellation>,
-    ) -> ParseBatchRunSummary {
+        observe: bool,
+    ) -> (ParseBatchRunSummary, Option<ParseBatchBudgetObservation>) {
         let started = Instant::now();
         let limits = *batch.limits();
         let mode = batch.mode();
@@ -2353,6 +2588,7 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
         let skipped_on_resume = resumed_from.min(admitted);
         let queue_capacity = limits.queue_capacity().get();
         let max_in_flight = limits.max_in_flight().get();
+        let retention_ceiling = limits.max_retained_bytes().map(NonZeroUsize::get);
 
         tracing::info!(
             mode = %mode.as_str(),
@@ -2377,8 +2613,11 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
             publication: Mutex::new(PublicationState {
                 next_ordinal: resumed_from,
                 pending: BTreeMap::new(),
+                pending_sizes: BTreeMap::new(),
             }),
             counters: RunCounters::default(),
+            retention_ceiling,
+            observe,
         });
 
         // Independent bounds: the bounded admission queue caps how much
@@ -2549,6 +2788,50 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
                 .as_ref()
                 .is_some_and(ParseBatchCancellation::is_cancelled),
         };
+        // Additive budget observation (S06/T03). Built only when requested, so
+        // `run`/`run_managed` keep their exact pre-T03 return value.
+        let observation = observe.then(|| {
+            let ceiling = limits.max_retained_bytes().map(NonZeroUsize::get);
+            let peak = shared.counters.peak_retained_bytes.load(Ordering::SeqCst);
+            let retention_ceiling = match ceiling {
+                Some(bytes) => BatchObservation::observed(u64::try_from(bytes).unwrap_or(u64::MAX)),
+                None => BatchObservation::not_observed(BATCH_BUDGET_NO_RETENTION_CEILING_REASON),
+            };
+            let latency_observation = |value: Option<u64>| match value {
+                Some(millis) => BatchObservation::observed(millis),
+                None => BatchObservation::not_observed(BATCH_BUDGET_NO_LATENCY_OBSERVATION_REASON),
+            };
+            let (p50, p95, p99) = match shared.counters.latency_tails_ms() {
+                Some((p50, p95, p99)) => (
+                    latency_observation(Some(p50)),
+                    latency_observation(Some(p95)),
+                    latency_observation(Some(p99)),
+                ),
+                None => (
+                    latency_observation(None),
+                    latency_observation(None),
+                    latency_observation(None),
+                ),
+            };
+            ParseBatchBudgetObservation::new(
+                BatchObservation::observed(u64::try_from(peak).unwrap_or(u64::MAX)),
+                p50,
+                p95,
+                p99,
+                retention_ceiling,
+                BatchObservation::observed(
+                    u64::try_from(summary.max_reorder_depth_observed()).unwrap_or(u64::MAX),
+                ),
+                BatchObservation::observed(
+                    u64::try_from(summary.max_publication_outstanding_observed())
+                        .unwrap_or(u64::MAX),
+                ),
+                BatchObservation::observed(
+                    u64::try_from(summary.max_in_flight_observed()).unwrap_or(u64::MAX),
+                ),
+                BatchObservation::observed(summary.budget_waits()),
+            )
+        });
         tracing::info!(
             mode = %summary.mode.as_str(),
             input_fingerprint = %summary.input_fingerprint,
@@ -2564,6 +2847,17 @@ impl<B: ParseBackend + 'static, C: ParseArtifactCache + 'static> ParseBatchExecu
             duration_ms = elapsed_millis(started),
             "parse batch run complete"
         );
-        summary
+        if let Some(observation) = &observation {
+            tracing::info!(
+                verdict = %observation.verdict(),
+                peak_retained_bytes = ?observation.peak_retained_bytes(),
+                retention_ceiling = ?observation.retention_ceiling(),
+                latency_p50_ms = ?observation.latency_p50_ms(),
+                latency_p95_ms = ?observation.latency_p95_ms(),
+                latency_p99_ms = ?observation.latency_p99_ms(),
+                "parse batch budget observation"
+            );
+        }
+        (summary, observation)
     }
 }
