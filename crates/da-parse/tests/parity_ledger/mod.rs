@@ -33,7 +33,7 @@
 //! (g) no absent row claims parity, and no `required` capability is absent;
 //! (h) the frozen denominators match what the rows actually contain.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::path::{Component, Path, PathBuf};
@@ -57,13 +57,13 @@ pub const PARITY_NOT_CLAIMED: &str = "not_claimed_absent";
 // Data model
 // --------------------------------------------------------------------------
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CompatibilityDocument {
     pub capabilities: Vec<Capability>,
     pub parity_ledger: ParityLedger,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Capability {
     pub id: String,
     pub state: String,
@@ -71,7 +71,7 @@ pub struct Capability {
     pub license: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ParityLedger {
     pub contract_id: String,
     pub authority: String,
@@ -92,9 +92,21 @@ pub struct ParityLedger {
     pub named_gaps: Vec<NamedGap>,
     pub denominators: Denominators,
     pub locks: Locks,
+    /// DATA-declared negative fixtures for the mutation matrix (S07/T03).
+    /// Each entry names a stable mutation id and the exact validator error
+    /// token that must detect it; `grobid_parity_ledger_mutations.rs` owns the
+    /// appliers and fails when the applied registry diverges from this list.
+    #[serde(default)]
+    pub mutations: Vec<Mutation>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Mutation {
+    pub id: String,
+    pub expected_detection: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct JavaSource {
     pub id: String,
     pub logical_path: String,
@@ -104,13 +116,13 @@ pub struct JavaSource {
     pub capture: Option<Capture>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Capture {
     pub artifact: String,
     pub pointer: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Row {
     pub capability: String,
     pub scope: String,
@@ -131,38 +143,38 @@ pub struct Row {
     pub license: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct JavaLink {
     pub source_id: String,
     pub site: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RustLink {
     pub path: String,
     pub symbol: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct TestLink {
     pub path: String,
     pub name: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ErrorSemantics {
     pub source: String,
     pub vocabulary: Vec<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct NamedGap {
     pub capability: String,
     pub reason: String,
     pub next: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Denominators {
     pub capabilities: u64,
     pub scope: BTreeMap<String, u64>,
@@ -172,7 +184,7 @@ pub struct Denominators {
     pub named_gaps: u64,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Locks {
     pub import_eligible: bool,
     pub production_route: String,
@@ -911,7 +923,18 @@ pub struct Outcome {
 }
 
 pub fn evaluate(root: &Path) -> Outcome {
-    let doc = load(root);
+    evaluate_document(root, load(root))
+}
+
+/// Run every invariant against an already-loaded document. This is what
+/// `evaluate` uses for the carrier on disk and what the mutation matrix
+/// (`grobid_parity_ledger_mutations.rs`) uses for an in-memory mutated clone:
+/// the mutation target must judge a tampered document through exactly the same
+/// checks, never through a parallel reimplementation that could drift.
+///
+/// Additive only: the running order and the set of checks are byte-identical to
+/// the previous `evaluate`, so no rule is weakened.
+pub fn evaluate_document(root: &Path, doc: CompatibilityDocument) -> Outcome {
     let schema = load_schema(root);
     let license = load_license(root);
     let mut errors = Vec::new();

@@ -2762,3 +2762,54 @@ parity_ledger:
     graph_write: forbidden
     auto_promote: forbidden
     deployed: false
+  # ------------------------------------------------------------------------
+  # Negative fixtures for the mutation matrix (S07/T03, H21). These are DATA,
+  # not a second copy in the test: `id` is stable and `expected_detection` is
+  # the exact validator error token that must catch the tampered ledger. The
+  # mutation target (crates/da-parse/tests/grobid_parity_ledger_mutations.rs)
+  # owns the appliers; it fails when the applied registry diverges from this
+  # list, when any mutation is a no-op, or when any mutation survives.
+  # H21-N1 = incomplete link (missing_test_link et al.); H21-N2 = scope
+  # substitution (scope_substitution_*).
+  # ------------------------------------------------------------------------
+  mutations:
+  - id: missing_java_source_id
+    expected_detection: has no java link
+  - id: missing_rust_entry
+    expected_detection: has no rust link
+  - id: missing_test_link
+    expected_detection: has no test link
+  - id: scope_substitution_supporting_to_required
+    expected_detection: "!= product_scope"
+  - id: scope_substitution_required_to_supporting
+    expected_detection: "!= product_scope"
+  - id: absent_row_claims_parity
+    expected_detection: disagree on absence
+  - id: absent_row_missing_reason
+    expected_detection: has no absent reason
+  - id: unknown_capability_id
+    expected_detection: has no capability
+  - id: missing_row
+    expected_detection: has no parity row
+  - id: duplicate_row
+    expected_detection: appears 2 times
+  - id: java_sha256_mismatch_vs_capture
+    expected_detection: "!= capture"
+  - id: java_sha256_not_hex
+    expected_detection: is not 64 lowercase hex
+  - id: rust_symbol_not_found_in_file
+    expected_detection: rust symbol
+  - id: test_fn_not_found_in_target
+    expected_detection: test fn
+  - id: test_path_not_a_tests_target
+    expected_detection: is not a crates/**/tests/ target
+  - id: license_identity_unresolved
+    expected_detection: does not resolve in
+  - id: full_without_links
+    expected_detection: claims full parity
+  - id: denominators_drift
+    expected_detection: denominators.capabilities
+  - id: rust_path_escape
+    expected_detection: escapes the repository root
+  - id: test_path_absolute
+    expected_detection: escapes the repository root
