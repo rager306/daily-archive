@@ -2177,3 +2177,584 @@ license_provenance_inventory:
     no_new_external_component_is_distributed: true
     subprocess_and_http_are_the_only_external_runtime_boundaries: true
     model_weights_are_not_distributed: true
+
+# --------------------------------------------------------------------------
+# Java -> Rust parity ledger (M511-j7wz2f/S07, H21).
+#
+# Additive top-level block inside the same sanctioned carrier (D377): no new
+# file under data/parse/ is created and capabilities[] is not restated. Each
+# row is keyed by capabilities[].id and never re-declares product_scope; the
+# contract test (crates/da-parse/tests/grobid_parity_ledger_contract.rs) holds
+# the mapping fail-closed. Locks are unchanged: import_eligible=false,
+# production_route/graph_write/auto_promote=forbidden, deployed=false.
+# --------------------------------------------------------------------------
+parity_ledger:
+  contract_id: grobid-java-rust-parity-ledger.v1
+  authority: >-
+    capabilities[] in this same file is the sole capability denominator; the
+    parity rows below are a per-capability binding projection over it. Java
+    content is pinned in java_sources (logical path + sha256 + how it was
+    pinned); Rust surfaces and independent tests are named per row.
+  requirement_ids: [R113, R117]
+  observed_checkout_revision: 523bb8e97f357e93682dc4eaa6d22faa8b5b93de
+  capture_declared_revision: 0b0ab53b159b32792a01fca1d9d04fd02cf8b24b
+  revision_discrepancy_note: >-
+    The baseline identity java-grobid-http@0.9.0-crf and the existing capture
+    artifacts under artifacts/parse_compat/ declare revision
+    0b0ab53b159b32792a01fca1d9d04fd02cf8b24b, while the live vendor checkout at
+    /root/vendor-source/grobid reports 523bb8e97f357e93682dc4eaa6d22faa8b5b93de.
+    Every pinned Java file re-hashes to the value recorded in its capture or to
+    a fresh sha256sum of the observed checkout, so the ledger binds content,
+    not a revision label. Hash-vs-vendor recomputation is S07/T06.
+  scope_vocabulary: [required, supporting, deferred, not_compatibility_requirement]
+  parity_level_vocabulary:
+  - full
+  - partial
+  - not_applicable_no_java_donor
+  - not_claimed_absent
+  absent_reason_vocabulary:
+    deferred: patent_family_deferred
+    not_compatibility_requirement: out_of_compatibility_scope
+    supporting: supporting_not_implemented
+  error_semantics_policy: >-
+    Every full row names the typed failure vocabulary that carries its
+    failures. A row whose module defines a public error enum binds that enum; a
+    row whose module defines none binds the shared parse-plane failure
+    vocabulary in crates/da-parse/src/transport.rs, because that is the
+    vocabulary through which the shadow/native implementation reports failure
+    to the parse plane. The contract asserts each named identifier occurs as a
+    separate identifier in the named source file.
+  java_sources:
+  - id: java-grobid-paths
+    logical_path: grobid-service/src/main/java/org/grobid/service/GrobidPaths.java
+    sha256: 91a518ae7cf088906b9d0c15be1168214c79002d2a909f413af93199dbc9db76
+    pinned_by: sha256sum /root/vendor-source/grobid/grobid-service/src/main/java/org/grobid/service/GrobidPaths.java
+  - id: java-grobid-rest-service
+    logical_path: grobid-service/src/main/java/org/grobid/service/GrobidRestService.java
+    sha256: 7a66753d48f4d961c7ff55adfb8639b9d3764b0567fc7b830e1e7e5183dcca00
+    pinned_by: sha256sum /root/vendor-source/grobid/grobid-service/src/main/java/org/grobid/service/GrobidRestService.java
+  - id: java-grobid-health-resource
+    logical_path: grobid-service/src/main/java/org/grobid/service/resources/HealthResource.java
+    sha256: 2a23857e5071ccdc37a05b2c9b521a9df48e60907426a8585d7a3bcc9d8248d1
+    pinned_by: sha256sum /root/vendor-source/grobid/grobid-service/src/main/java/org/grobid/service/resources/HealthResource.java
+  - id: java-grobid-fulltext-parser
+    logical_path: grobid-core/src/main/java/org/grobid/core/engines/FullTextParser.java
+    sha256: f8780d55c25f17f53e2be2b286e9f68c0e674f09c4b88e3e1f2c7bb800228796
+    pinned_by: artifacts/parse_compat/java_grobid_fulltext_semantics_source.json
+    capture:
+      artifact: artifacts/parse_compat/java_grobid_fulltext_semantics_source.json
+      pointer: source_files/fulltext_parser/sha256
+  - id: java-grobid-header-parser
+    logical_path: grobid-core/src/main/java/org/grobid/core/engines/HeaderParser.java
+    sha256: ddfe5a7d46b15e02e9ac04b94e86c1773bbc3efbc0581c15d2d3289b5dda4e29
+    pinned_by: sha256sum /root/vendor-source/grobid/grobid-core/src/main/java/org/grobid/core/engines/HeaderParser.java
+  - id: java-grobid-reference-segmenter
+    logical_path: grobid-core/src/main/java/org/grobid/core/engines/ReferenceSegmenterParser.java
+    sha256: b89dce3865611d8ab47da5f65bd8bbff047908442dc8b098d96fa8f0acaf0a48
+    pinned_by: sha256sum /root/vendor-source/grobid/grobid-core/src/main/java/org/grobid/core/engines/ReferenceSegmenterParser.java
+  - id: java-grobid-figure-parser
+    logical_path: grobid-core/src/main/java/org/grobid/core/engines/FigureParser.java
+    sha256: 27d96fd4348e98e618e75a6a2eab904992f7a8d98d41fb02196f7c68e8115554
+    pinned_by: sha256sum /root/vendor-source/grobid/grobid-core/src/main/java/org/grobid/core/engines/FigureParser.java
+  - id: java-grobid-table-parser
+    logical_path: grobid-core/src/main/java/org/grobid/core/engines/TableParser.java
+    sha256: 374c2a5bb55f144b89531145a6ff072ed5e3b47bb4e35c5ed8dbca950d75e239
+    pinned_by: sha256sum /root/vendor-source/grobid/grobid-core/src/main/java/org/grobid/core/engines/TableParser.java
+  - id: java-grobid-consolidation
+    logical_path: grobid-core/src/main/java/org/grobid/core/utilities/Consolidation.java
+    sha256: b4eda48f33d0a2fccebd0dd040acb104804731a2f713bd5e5051bd781817de36
+    pinned_by: sha256sum /root/vendor-source/grobid/grobid-core/src/main/java/org/grobid/core/utilities/Consolidation.java
+  - id: java-grobid-date-parser
+    logical_path: grobid-core/src/main/java/org/grobid/core/engines/DateParser.java
+    sha256: 29cece6c022b42ae71bde93d69246f8f4545ac168408d0bb8525f9400a99e556
+    pinned_by: sha256sum /root/vendor-source/grobid/grobid-core/src/main/java/org/grobid/core/engines/DateParser.java
+  - id: java-grobid-author-parser
+    logical_path: grobid-core/src/main/java/org/grobid/core/engines/AuthorParser.java
+    sha256: 06aaddf98684f09bd071ceeecb18c9886a3533c83ad2bb5dd9036a7070ac4da4
+    pinned_by: sha256sum /root/vendor-source/grobid/grobid-core/src/main/java/org/grobid/core/engines/AuthorParser.java
+  - id: java-grobid-affiliation-parser
+    logical_path: grobid-core/src/main/java/org/grobid/core/engines/AffiliationAddressParser.java
+    sha256: 1257e5b6ece3443a5eeca0576d03e66f5d81ceca7ecb41fd25023caf75ba31e2
+    pinned_by: sha256sum /root/vendor-source/grobid/grobid-core/src/main/java/org/grobid/core/engines/AffiliationAddressParser.java
+  - id: java-grobid-citation-parser
+    logical_path: grobid-core/src/main/java/org/grobid/core/engines/CitationParser.java
+    sha256: 69de5ec4ba1a5a13fb48931c96ce5ac0e02b8840587386dabdec841944fced53
+    pinned_by: sha256sum /root/vendor-source/grobid/grobid-core/src/main/java/org/grobid/core/engines/CitationParser.java
+  - id: java-grobid-segmentation
+    logical_path: grobid-core/src/main/java/org/grobid/core/engines/Segmentation.java
+    sha256: 6575cabc8fb9b27b7eaf7e57ce711dc0b0441e2befaa6df5f70adc5bd85de0a3
+    pinned_by: sha256sum /root/vendor-source/grobid/grobid-core/src/main/java/org/grobid/core/engines/Segmentation.java
+  - id: java-grobid-pdfalto-sax
+    logical_path: grobid-core/src/main/java/org/grobid/core/sax/PDFALTOSaxHandler.java
+    sha256: cc502102be58a5145b18aa81292023f72105dde7e94158eae670e0e7ffff5bb4
+    pinned_by: artifacts/parse_compat/java_grobid_layout_source.json
+    capture:
+      artifact: artifacts/parse_compat/java_grobid_layout_source.json
+      pointer: source_files/pdfalto_sax_handler/sha256
+  - id: java-grobid-document-source
+    logical_path: grobid-core/src/main/java/org/grobid/core/document/DocumentSource.java
+    sha256: 969db636abd435b632f720ad159f7526cd53aafacfbb9c2609bbb3f14287f13a
+    pinned_by: artifacts/parse_compat/java_grobid_layout_source.json
+    capture:
+      artifact: artifacts/parse_compat/java_grobid_layout_source.json
+      pointer: source_files/document_source/sha256
+  rows:
+  # --- implemented rows (state != absent) ---------------------------------
+  - capability: rest.isalive
+    scope: required
+    state: proxy
+    parity: partial
+    reason: no_behavioral_test_target
+    java: {source_id: java-grobid-paths, site: PATH_IS_ALIVE}
+    rust:
+    - {path: crates/da-parse/src/http.rs, symbol: GrobidParser}
+    test: null
+    error_semantics: null
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: rest.health
+    scope: required
+    state: proxy
+    parity: full
+    java: {source_id: java-grobid-health-resource, site: HealthResource}
+    rust:
+    - {path: crates/da-parse/src/http.rs, symbol: GrobidHttpBackend}
+    test: {path: crates/da-parse/tests/backend_contract.rs, name: http_backend_health_probe_accepts_json_object}
+    error_semantics:
+      source: crates/da-parse/src/http.rs
+      vocabulary: [ProbeFailure]
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: rest.version
+    scope: required
+    state: proxy
+    parity: full
+    java: {source_id: java-grobid-paths, site: PATH_GET_VERSION}
+    rust:
+    - {path: crates/da-parse/src/http.rs, symbol: VersionProbe}
+    test: {path: crates/da-parse/tests/backend_contract.rs, name: http_backend_version_probe_accepts_json_and_plain}
+    error_semantics:
+      source: crates/da-parse/src/http.rs
+      vocabulary: [ProbeFailure]
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: rest.processFulltextDocument
+    scope: required
+    state: proxy
+    parity: full
+    java: {source_id: java-grobid-paths, site: PATH_FULL_TEXT}
+    rust:
+    - {path: crates/da-parse/src/http.rs, symbol: GrobidHttpBackend}
+    test: {path: crates/da-parse/tests/backend_contract.rs, name: http_backend_sends_exactly_one_profile_tuned_multipart_invocation}
+    error_semantics:
+      source: crates/da-parse/src/http.rs
+      vocabulary: [ParseBackendFailure, FailurePhase, LimitKind]
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: rest.processHeaderDocument
+    scope: required
+    state: proxy
+    parity: full
+    java: {source_id: java-grobid-paths, site: PATH_HEADER}
+    rust:
+    - {path: crates/da-parse/src/http.rs, symbol: process_header}
+    - {path: crates/da-parse/src/transport.rs, symbol: HeaderRequestVersioned}
+    test: {path: crates/da-parse/tests/endpoint_proxy_contract.rs, name: header_endpoint_posts_exact_java_path_and_allowlist}
+    error_semantics:
+      source: crates/da-parse/src/http.rs
+      vocabulary: [ParseBackendFailure, FailurePhase]
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: rest.processReferences
+    scope: required
+    state: proxy
+    parity: full
+    java: {source_id: java-grobid-paths, site: PATH_REFERENCES}
+    rust:
+    - {path: crates/da-parse/src/http.rs, symbol: process_references}
+    - {path: crates/da-parse/src/transport.rs, symbol: ReferencesRequestVersioned}
+    test: {path: crates/da-parse/tests/endpoint_proxy_contract.rs, name: references_endpoint_posts_exact_java_path_and_allowlist}
+    error_semantics:
+      source: crates/da-parse/src/http.rs
+      vocabulary: [ParseBackendFailure, FailurePhase]
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: dialect.teiCoordinates
+    scope: required
+    state: proxy
+    parity: full
+    java: {source_id: java-grobid-rest-service, site: collectCoordinates}
+    rust:
+    - {path: crates/da-parse/src/transport.rs, symbol: CoordinateSet}
+    - {path: crates/da-parse/src/profile.rs, symbol: GrobidProfile}
+    test: {path: crates/da-parse/tests/transport_contract.rs, name: coordinate_sets_dedupe_into_canonical_wire_order}
+    error_semantics:
+      source: crates/da-parse/src/transport.rs
+      vocabulary: [ParseBackendFailure, FailurePhase, LimitKind]
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: rest.processDate
+    scope: supporting
+    state: shadow
+    parity: full
+    java: {source_id: java-grobid-date-parser, site: process}
+    rust:
+    - {path: crates/da-parse/src/native_date.rs, symbol: NativeDateParser}
+    test: {path: crates/da-parse/tests/native_date_contract.rs, name: oracle_corpus_display_form_classes_normalize_with_exact_precision}
+    error_semantics:
+      source: crates/da-parse/src/transport.rs
+      vocabulary: [ParseBackendFailure, FailurePhase]
+    license: inventory:feature-tagger-training-corpus-and-models
+  - capability: rest.processHeaderNames
+    scope: supporting
+    state: shadow
+    parity: full
+    java: {source_id: java-grobid-author-parser, site: processingHeader}
+    rust:
+    - {path: crates/da-parse/src/native_personal_name.rs, symbol: PersonalNameContext}
+    test: {path: crates/da-parse/tests/native_personal_name_contract.rs, name: header_and_citation_dialects_keep_roles_explicit}
+    error_semantics:
+      source: crates/da-parse/src/transport.rs
+      vocabulary: [ParseBackendFailure, FailurePhase]
+    license: inventory:feature-tagger-training-corpus-and-models
+  - capability: rest.processCitationNames
+    scope: supporting
+    state: shadow
+    parity: full
+    java: {source_id: java-grobid-author-parser, site: processingCitation}
+    rust:
+    - {path: crates/da-parse/src/native_personal_name.rs, symbol: PersonalNameContext}
+    test: {path: crates/da-parse/tests/native_personal_name_contract.rs, name: header_and_citation_dialects_keep_roles_explicit}
+    error_semantics:
+      source: crates/da-parse/src/transport.rs
+      vocabulary: [ParseBackendFailure, FailurePhase]
+    license: inventory:feature-tagger-training-corpus-and-models
+  - capability: rest.processAffiliations
+    scope: supporting
+    state: shadow
+    parity: full
+    java: {source_id: java-grobid-affiliation-parser, site: processing}
+    rust:
+    - {path: crates/da-parse/src/native_affiliation.rs, symbol: AffiliationComponentKind}
+    test: {path: crates/da-parse/tests/native_affiliation_contract.rs, name: recognized_components_are_literal_spans_and_keep_order}
+    error_semantics:
+      source: crates/da-parse/src/native_affiliation.rs
+      vocabulary: [NativeAffiliationLinkError]
+    license: inventory:feature-tagger-training-corpus-and-models
+  - capability: rest.processCitation
+    scope: supporting
+    state: shadow
+    parity: full
+    java: {source_id: java-grobid-citation-parser, site: processingString}
+    rust:
+    - {path: crates/da-parse/src/native_citation.rs, symbol: CitationFieldRole}
+    test: {path: crates/da-parse/tests/native_citation_contract.rs, name: parses_explicit_identifier_and_preserves_literal_span}
+    error_semantics:
+      source: crates/da-parse/src/native_citation.rs
+      vocabulary: [NativeReferenceListError, NativeCitationAnchorError]
+    license: inventory:feature-tagger-training-corpus-and-models
+  - capability: rest.processCitationListTEI
+    scope: supporting
+    state: shadow
+    parity: full
+    java: {source_id: java-grobid-citation-parser, site: processingReferenceSection}
+    rust:
+    - {path: crates/da-parse/src/native_citation.rs, symbol: NativeReferenceSegmenter}
+    test: {path: crates/da-parse/tests/native_citation_list_contract.rs, name: preserves_each_ordered_entry_and_literal_span}
+    error_semantics:
+      source: crates/da-parse/src/native_citation.rs
+      vocabulary: [NativeReferenceListError]
+    license: inventory:feature-tagger-training-corpus-and-models
+  - capability: learning.ruvllm_ablation
+    scope: supporting
+    state: candidate
+    parity: not_applicable_no_java_donor
+    reason: no_java_donor
+    java: null
+    rust:
+    - {path: crates/da-application/src/parse_learning_evaluation.rs, symbol: aggregate_same_n_ablation}
+    test: {path: crates/da-application/tests/parse_learning_evaluation.rs, name: two_independent_offline_aggregations_are_byte_equal}
+    error_semantics: null
+    license: inventory:project-owned-da-parse
+  - capability: stage.pdfalto_layout
+    scope: required
+    state: shadow
+    parity: full
+    java: {source_id: java-grobid-pdfalto-sax, site: PDFALTOSaxHandler}
+    rust:
+    - {path: crates/da-parse/src/layout.rs, symbol: LayoutDocument}
+    test: {path: crates/da-parse/tests/layout_contract.rs, name: coordinate_round_trip_is_top_left_and_finite}
+    error_semantics:
+      source: crates/da-parse/src/transport.rs
+      vocabulary: [ParseBackendFailure, FailurePhase]
+    license: inventory:pdfalto_runtime
+  - capability: stage.document_segmentation
+    scope: required
+    state: shadow
+    parity: full
+    java: {source_id: java-grobid-segmentation, site: processing}
+    rust:
+    - {path: crates/da-parse/src/native_segmentation.rs, symbol: NativeSegmenter}
+    test: {path: crates/da-parse/tests/native_segmentation_contract.rs, name: mixed_word_formula_image_assigns_exactly_one_region_per_token}
+    error_semantics:
+      source: crates/da-parse/src/native_segmentation.rs
+      vocabulary: [SegmentationError, FullSegmentationError]
+    license: inventory:feature-tagger-training-corpus-and-models
+  - capability: stage.header_composition
+    scope: required
+    state: shadow
+    parity: full
+    java: {source_id: java-grobid-header-parser, site: processingHeaderSection}
+    rust:
+    - {path: crates/da-parse/src/native_composition.rs, symbol: HeaderCompositionInput}
+    test: {path: crates/da-parse/tests/native_composition_contract.rs, name: header_composes_typed_leaf_values_and_keeps_zero_link_author}
+    error_semantics:
+      source: crates/da-parse/src/native_composition.rs
+      vocabulary: [CompositionError]
+    license: inventory:feature-tagger-training-corpus-and-models
+  - capability: stage.reference_segmentation
+    scope: required
+    state: shadow
+    parity: full
+    java: {source_id: java-grobid-reference-segmenter, site: extract}
+    rust:
+    - {path: crates/da-parse/src/native_composition.rs, symbol: ReferenceCompositionInput}
+    test: {path: crates/da-parse/tests/native_bibliography_same_n.rs, name: anchor_topology_stays_two_denominators}
+    error_semantics:
+      source: crates/da-parse/src/native_composition.rs
+      vocabulary: [CompositionError]
+    license: inventory:feature-tagger-training-corpus-and-models
+  - capability: stage.figure_table_formula
+    scope: required
+    state: shadow
+    parity: full
+    java: {source_id: java-grobid-figure-parser, site: processing}
+    java_secondary:
+    - {source_id: java-grobid-table-parser, site: processing}
+    rust:
+    - {path: crates/da-parse/src/native_visual.rs, symbol: NativeVisualKind}
+    test: {path: crates/da-parse/tests/native_visual_contract.rs, name: three_heads_are_independent_and_preserve_source_bound_receipts}
+    error_semantics:
+      source: crates/da-parse/src/native_visual.rs
+      vocabulary: [NativeVisualError]
+    license: inventory:pdffigures2
+  - capability: stage.bibliographic_consolidation
+    scope: required
+    state: fallback
+    parity: full
+    java: {source_id: java-grobid-consolidation, site: consolidate}
+    rust:
+    - {path: crates/da-parse/src/profile.rs, symbol: GrobidProfile}
+    test: {path: crates/da-parse/tests/transport_contract.rs, name: every_sanctioned_consolidation_mode_is_accepted_and_out_of_range_rejected}
+    error_semantics:
+      source: crates/da-parse/src/transport.rs
+      vocabulary: [ParseBackendFailure, FailurePhase]
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: stage.tei_lift
+    scope: required
+    state: candidate
+    parity: full
+    java: {source_id: java-grobid-fulltext-parser, site: toTEI}
+    rust:
+    - {path: crates/da-parse/src/lift.rs, symbol: TeiLifter}
+    test: {path: crates/da-parse/tests/p0_lift_contract.rs, name: t02_lifter_lifts_declared_id_and_header_authors_exactly_on_all_fixtures}
+    error_semantics:
+      source: crates/da-parse/src/transport.rs
+      vocabulary: [ParseBackendFailure, FailurePhase]
+    license: inventory:project-owned-da-parse
+  - capability: parse.component.native_fulltext_composition_shadow
+    scope: required
+    state: shadow
+    parity: full
+    java: {source_id: java-grobid-fulltext-parser, site: processing}
+    rust:
+    - {path: crates/da-parse/src/native_fulltext_composition.rs, symbol: FulltextComponent}
+    test: {path: crates/da-parse/tests/native_fulltext_composition_contract.rs, name: header_splice_conserves_title_affiliation_and_unknown_subtree}
+    error_semantics:
+      source: crates/da-parse/src/native_fulltext_composition.rs
+      vocabulary: [NativeFulltextCompositionError, SemanticFieldLoss]
+    license: inventory:project-owned-da-parse
+  # --- named-not-claimed rows (state == absent) ---------------------------
+  - capability: rest.processFulltextAssetDocument
+    scope: supporting
+    state: absent
+    parity: not_claimed_absent
+    reason: supporting_not_implemented
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: rest.processFulltextDocumentHTML
+    scope: supporting
+    state: absent
+    parity: not_claimed_absent
+    reason: supporting_not_implemented
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: rest.processHeaderFundingDocument
+    scope: supporting
+    state: absent
+    parity: not_claimed_absent
+    reason: supporting_not_implemented
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: rest.referenceAnnotations
+    scope: supporting
+    state: absent
+    parity: not_claimed_absent
+    reason: supporting_not_implemented
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: rest.annotatePDF
+    scope: supporting
+    state: absent
+    parity: not_claimed_absent
+    reason: supporting_not_implemented
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: learning.sona_trajectory
+    scope: supporting
+    state: absent
+    parity: not_claimed_absent
+    reason: supporting_not_implemented
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:project-owned-da-parse
+  - capability: learning.microlora_ewc
+    scope: supporting
+    state: absent
+    parity: not_claimed_absent
+    reason: supporting_not_implemented
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:project-owned-da-parse
+  - capability: rest.createTraining
+    scope: not_compatibility_requirement
+    state: absent
+    parity: not_claimed_absent
+    reason: out_of_compatibility_scope
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:feature-tagger-training-corpus-and-models
+  - capability: rest.trainingResult
+    scope: not_compatibility_requirement
+    state: absent
+    parity: not_claimed_absent
+    reason: out_of_compatibility_scope
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:feature-tagger-training-corpus-and-models
+  - capability: rest.allTraining
+    scope: not_compatibility_requirement
+    state: absent
+    parity: not_claimed_absent
+    reason: out_of_compatibility_scope
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:feature-tagger-training-corpus-and-models
+  - capability: rest.killTraining
+    scope: not_compatibility_requirement
+    state: absent
+    parity: not_claimed_absent
+    reason: out_of_compatibility_scope
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:feature-tagger-training-corpus-and-models
+  - capability: rest.model
+    scope: not_compatibility_requirement
+    state: absent
+    parity: not_claimed_absent
+    reason: out_of_compatibility_scope
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:feature-tagger-training-corpus-and-models
+  - capability: rest.processCitationPatentTEI
+    scope: deferred
+    state: absent
+    parity: not_claimed_absent
+    reason: patent_family_deferred
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: rest.processCitationPatentST36
+    scope: deferred
+    state: absent
+    parity: not_claimed_absent
+    reason: patent_family_deferred
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: rest.processCitationPatentPDF
+    scope: deferred
+    state: absent
+    parity: not_claimed_absent
+    reason: patent_family_deferred
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:java-grobid-0.9.0-crf
+  - capability: rest.processCitationPatentTXT
+    scope: deferred
+    state: absent
+    parity: not_claimed_absent
+    reason: patent_family_deferred
+    java: null
+    rust: []
+    test: null
+    error_semantics: null
+    license: inventory:java-grobid-0.9.0-crf
+  named_gaps:
+  - capability: rest.isalive
+    reason: no_behavioral_test_target
+    next: S07/T02 adds an independent behavioral tests/ target for the isalive probe
+  - capability: learning.ruvllm_ablation
+    reason: no_java_donor
+    next: >-
+      none in this milestone; internal learning surface, already covered by the
+      da-application offline same-n aggregation test
+  denominators:
+    capabilities: 38
+    scope:
+      required: 15
+      supporting: 14
+      not_compatibility_requirement: 5
+      deferred: 4
+    implemented: 22
+    absent: 16
+    parity:
+      full: 20
+      partial: 1
+      not_applicable_no_java_donor: 1
+      not_claimed_absent: 16
+    named_gaps: 2
+  locks:
+    import_eligible: false
+    production_route: forbidden
+    graph_write: forbidden
+    auto_promote: forbidden
+    deployed: false
