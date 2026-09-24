@@ -732,7 +732,7 @@
         },
         {
           "path": "scripts/governor/checks/scholarly_parse_plane.yaml",
-          "note": "Governor-поверхность (S05/T05): артефакт native_fulltext_corpus_shadow.json (efc1984c…) добавлен в bindings.canonical_artifacts и bindings.integration_evidence с identity native-fulltext-corpus-shadow.v1; DATA-digest comparison_contract.yaml перепинен. Проверка composition-identity итерирует ОБА composition-артефакта с сохранением всех трёх предикатов, поэтому схлопнутая (3 sha → 1) или переименованная corpus-identity падает ПО ИМЕНИ артефакта.",
+          "note": "Governor-поверхность (S05/T05): артефакт native_fulltext_corpus_shadow.json (1f2a2495…) добавлен в bindings.canonical_artifacts и bindings.integration_evidence с identity native-fulltext-corpus-shadow.v1; DATA-digest comparison_contract.yaml перепинен. Проверка composition-identity итерирует ОБА composition-артефакта с сохранением всех трёх предикатов, поэтому схлопнутая (3 sha → 1) или переименованная corpus-identity падает ПО ИМЕНИ артефакта.",
           "state": "present"
         },
         {
@@ -773,7 +773,7 @@
         {
           "mode": "command",
           "ref": "cargo run -p da-cli --features pdf-layout --example native_fulltext_corpus_shadow -- --report artifacts/parse_compat/native_fulltext_corpus_shadow.json",
-          "expected": "exit=0: corpus documents=3 accepted=3 TP=573 FP=0 FN=0 P=1.000000 R=1.000000 F1=1.000000 admission_coverage=0.993068; артефакт byte-идентичен между двумя прогонами (sha256 efc1984c…)",
+          "expected": "exit=0: corpus documents=3 accepted=3 TP=573 FP=0 FN=0 P=1.000000 R=1.000000 F1=1.000000 admission_coverage=0.993068; артефакт byte-идентичен между двумя прогонами (sha256 1f2a2495…)",
           "status": "pass"
         },
         {
@@ -926,7 +926,7 @@
       "implementation_pass": false,
       "verification_pass": false,
       "open_item": {
-        "reason": "H18 не закрыт: независимая семантическая регрессия на реальном корпусе ПОСТРОЕНА и ИЗМЕРЕНА (3 sha256-пиннутых preserved TEI, 10 классов, TP=573 FN=0 FP=0 P=R=F1=1.000000, admission_coverage=0.993068, 12/12 мутаций обнаружены, 0 выживших, runtime-артефакт sha256 efc1984c…, независимость оракула доказана), но этап остаётся pending по трём названным причинам: (1) измеренная область — ровно 3 документа, это не статистический корпус; (2) только 4 варианта CitationFieldRole (doi, arxiv_id, url, article_title) имеют реальную biblStruct-форму в корпусе — остальные 9 вариантов не измерены и не должны читаться как покрытые; (3) собственный набор среза `cargo test -p da-parse --tests` RED: data_contracts::population_contract_enumerates_every_shadow_report падает, потому что форма артефакта, предписанная S05/T04 (denominators/corpus, без reference/executed/evaluated), не может быть объявлена в GAR-006 population_contract (измерено: 3 отсутствующих блока + 2 запрещённых legacy-блока).",
+        "reason": "H18 не закрыт: независимая семантическая регрессия на реальном корпусе ПОСТРОЕНА и ИЗМЕРЕНА (3 sha256-пиннутых preserved TEI, 10 классов, TP=573 FN=0 FP=0 P=R=F1=1.000000, admission_coverage=0.993068, 12/12 мутаций обнаружены, 0 выживших, runtime-артефакт sha256 1f2a2495…, независимость оракула доказана), но этап остаётся pending по трём названным причинам: (1) измеренная область — ровно 3 документа, это не статистический корпус; (2) только 4 варианта CitationFieldRole (doi, arxiv_id, url, article_title) имеют реальную biblStruct-форму в корпусе — остальные 9 вариантов не измерены и не должны читаться как покрытые; (3) собственный набор среза `cargo test -p da-parse --tests` RED: data_contracts::population_contract_enumerates_every_shadow_report падает, потому что форма артефакта, предписанная S05/T04 (denominators/corpus, без reference/executed/evaluated), не может быть объявлена в GAR-006 population_contract (измерено: 3 отсутствующих блока + 2 запрещённых legacy-блока).",
         "since": "2026-09-21",
         "accepted": false,
         "closure_condition": "Регрессия воспроизводима на зафиксированном реальном корпусе, независима от SUT и выражена числом с зафиксированным деноминатором; измеренная область и непокрытые роли названы; и дерево зелёное на собственных проверках среза (`cargo test -p da-parse --tests`), то есть corpus-артефакт либо приведён к GAR-006-разбиению reference/executed/evaluated, либо корректно классифицирован вне перечисления population_contract — решением, принятым явно, а не молчанием."
