@@ -2789,3 +2789,96 @@ def test_s12_checker_live_root_stays_clean_and_isolated(tmp_path: Path):
         "rollback.header",
     ]
     assert not [item for item in flags if any(needle in item.evidence for needle in s12_evidence)], flags
+
+
+# ───── S07/T04: the parity ledger's denominators are held on the governor surface ─────
+# The carrier `data/parse/grobid_compatibility.yaml` is the only place these numbers
+# live, and its digest is pinned on three declared surfaces: the policy's
+# `rest_batch_asset_quarantine.source_bindings`, the policy's `bindings.source_data`,
+# and the positive fixture's `source_data`. The Rust contract owns the per-row
+# three-link binding (java sha256 + rust symbol + independent test); the governor
+# surface owns the counter block, so a substituted denominator is a named flag
+# rather than a cleaner-looking report.
+
+PARITY_LEDGER_CONTRACT = "grobid-java-rust-parity-ledger.v1"
+
+
+def _parity_ledger_flags(flags):
+    return [
+        item
+        for item in flags
+        if item.flag.startswith("scholarly_parse_plane_parity_ledger")
+    ]
+
+
+def _pinned_digests(node, relative: str) -> list:
+    """Every `{path, sha256}` record for `relative`, wherever it is nested."""
+    found = []
+    if isinstance(node, dict):
+        if node.get("path") == relative and "sha256" in node:
+            found.append(str(node["sha256"]))
+        for value in node.values():
+            found.extend(_pinned_digests(value, relative))
+    elif isinstance(node, list):
+        for item in node:
+            found.extend(_pinned_digests(item, relative))
+    return found
+
+
+def test_parity_carrier_is_pinned_to_its_disk_digest_on_every_declared_surface():
+    carrier = "data/parse/grobid_compatibility.yaml"
+    disk = _sha256(ROOT / carrier)
+    policy_pins = _pinned_digests(_load(POLICY_PATH), carrier)
+    # Both policy surfaces pin the carrier: the rest-batch source bindings and the
+    # source_data list the positive fixture mirrors. One pin alone is a partial
+    # binding, so the floor is asserted rather than a single occurrence.
+    assert len(policy_pins) >= 2, policy_pins
+    assert set(policy_pins) == {disk}, policy_pins
+    fixture_pins = _pinned_digests(_load(POSITIVE_PATH), carrier)
+    assert set(fixture_pins) == {disk}, fixture_pins
+
+
+def test_parity_ledger_scope_denominators_equal_the_carrier_product_scope_census():
+    carrier = _load(ROOT / "data/parse/grobid_compatibility.yaml")
+    ledger = carrier["parity_ledger"]
+    assert ledger["contract_id"] == PARITY_LEDGER_CONTRACT
+    census: dict[str, int] = {}
+    for cap in carrier["capabilities"]:
+        scope = str(cap.get("product_scope") or "")
+        census[scope] = census.get(scope, 0) + 1
+    # `capabilities[]` is the sole capability denominator, so the declared scope
+    # counters must be exactly its census — not merely a total that happens to fit.
+    assert ledger["denominators"]["scope"] == census
+    assert ledger["denominators"]["capabilities"] == len(carrier["capabilities"])
+    # Positive polarity at report level: the live root carries no parity flag.
+    assert _parity_ledger_flags(_check_scholarly_parse_plane(ROOT)) == []
+
+
+@pytest.mark.parametrize(
+    "scope_key", ["required", "supporting", "not_compatibility_requirement", "deferred"]
+)
+def test_checker_flags_any_substituted_parity_scope_counter(tmp_path: Path, scope_key: str):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/parse/grobid_compatibility.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    payload["parity_ledger"]["denominators"]["scope"][scope_key] += 1
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    flags = _parity_ledger_flags(_check_scholarly_parse_plane(tmp_path))
+    assert any(
+        item.flag == "scholarly_parse_plane_parity_ledger_denominator"
+        and "parity_ledger.denominators.scope" in item.evidence
+        for item in flags
+    ), (scope_key, flags)
+
+
+def test_checker_reports_an_absent_parity_ledger_as_a_named_flag(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "data/parse/grobid_compatibility.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert payload.pop("parity_ledger"), "the removal anchor did not land"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    flags = _parity_ledger_flags(_check_scholarly_parse_plane(tmp_path))
+    assert [item.flag for item in flags] == [
+        "scholarly_parse_plane_parity_ledger_missing"
+    ], flags
+    assert "data/parse/grobid_compatibility.yaml#parity_ledger" in flags[0].evidence

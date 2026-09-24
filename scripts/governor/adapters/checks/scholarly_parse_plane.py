@@ -1207,6 +1207,80 @@ def _check_rest_batch_asset_quarantine(root: Path, contract: dict[str, Any], fla
                     flag("rest_batch_asset_quarantine", "promotion_quarantine", f"{file_path.relative_to(root)}#rest_batch_asset_quarantine", "no forbidden asset/training/arbitrary-route symbol", token)
 
 
+def _parity_ledger_census(rows: list[dict[str, Any]], key: str) -> dict[str, int]:
+    """Census of one parity-ledger numerator column, keyed by its observed value.
+
+    `key` is the column name (`product_scope` for `capabilities[]`, `parity` for
+    `parity_ledger.rows[]`). A row whose column is absent or empty is counted
+    under the empty string rather than folded into a named bucket, so a dropped
+    field widens a whole numerator row instead of hiding inside one.
+    """
+    counts: dict[str, int] = {}
+    for row in rows:
+        value = str(row.get(key) or "").strip()
+        counts[value] = counts.get(value, 0) + 1
+    return counts
+
+
+def _check_parity_ledger_denominators(
+    registry: dict[str, Any], caps: list[dict[str, Any]], flag: Any
+) -> None:
+    """Hold the parity ledger's declared denominators against the carrier that owns them.
+
+    `capabilities[]` is the sole capability denominator (the ledger says so in
+    its own `authority` text, and `parity_ledger.rows[]` is a per-capability
+    projection over it). So every counter under `parity_ledger.denominators`
+    must be reproducible from the same file: a `scope` counter that no longer
+    equals the `product_scope` census of `capabilities[]`, a drifted
+    capability / state / parity / named-gap count, or a denominator block
+    removed outright is a named flag. An absent block reports
+    `parity_ledger_missing` rather than passing as a clean run — the carrier is
+    the only place these numbers are held, so silence would be a claim, not an
+    absence.
+    """
+    ledger = registry.get("parity_ledger")
+    if not isinstance(ledger, dict):
+        flag(
+            "parity_ledger_missing",
+            "integration",
+            "data/parse/grobid_compatibility.yaml#parity_ledger",
+            "declared parity_ledger block",
+            None if ledger is None else type(ledger).__name__,
+        )
+        return
+    denominators = ledger.get("denominators")
+    if not isinstance(denominators, dict):
+        flag(
+            "parity_ledger_missing",
+            "integration",
+            "data/parse/grobid_compatibility.yaml#parity_ledger.denominators",
+            "declared denominators mapping",
+            None if denominators is None else type(denominators).__name__,
+        )
+        return
+
+    rows = [row for row in (ledger.get("rows") or []) if isinstance(row, dict)]
+    named_gaps = [gap for gap in (ledger.get("named_gaps") or []) if isinstance(gap, dict)]
+    observed: dict[str, Any] = {
+        "capabilities": len(caps),
+        "scope": _parity_ledger_census(caps, "product_scope"),
+        "implemented": sum(1 for row in rows if str(row.get("state") or "") != "absent"),
+        "absent": sum(1 for row in rows if str(row.get("state") or "") == "absent"),
+        "parity": _parity_ledger_census(rows, "parity"),
+        "named_gaps": len(named_gaps),
+    }
+    for key in ("capabilities", "scope", "implemented", "absent", "parity", "named_gaps"):
+        declared = denominators.get(key)
+        if declared != observed[key]:
+            flag(
+                "parity_ledger_denominator",
+                "integration",
+                f"data/parse/grobid_compatibility.yaml#parity_ledger.denominators.{key}",
+                observed[key],
+                declared,
+            )
+
+
 def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     """Validate the source-bound scholarly parse policy and its fixtures.
 
@@ -1310,6 +1384,9 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             flag("ledger_surface", "integration", f"data/parse/grobid_compatibility.yaml#{cap.get('id')}", {"state": state, "surface": "crate path"}, {"state": state, "surface": surface})
     if isinstance(registry, dict) and registry_path.is_file():
         _check_java_absent_endpoints(registry, caps, by_id, flag)
+    _check_parity_ledger_denominators(
+        registry if isinstance(registry, dict) else {}, caps, flag
+    )
     _check_header_quarantine(root, registry, registry_path, flag)
     _check_bibliography_quarantine(root, registry, registry_path, flag)
     _check_bibliography_sequence_quarantine(root, registry, registry_path, flag)
