@@ -735,6 +735,188 @@ native_fulltext_composition_shadow:
       evidence_state: not_observed
       output_affecting: false
       fallback_target: java-grobid-http@0.9.0-crf
+  # S05/T02: independent corpus semantic regression over the three sha256-pinned
+  # preserved TEI. Additive sibling block: no key above is mutated and no new
+  # `data/parse/*` file is created (D377 closed sanctioned-set; the doc-tree gate
+  # `data_contracts.rs::data_parse_tree_errs` stays green). Identity, denominators
+  # and metric are frozen DATA so a corpus regression is a NUMBER, not prose.
+  # The class tokens, the refusal vocabulary and the fallback target are bound to
+  # the composer's LIVE constants by
+  # `crates/da-parse/tests/native_fulltext_corpus_data_contract.rs`; the block is
+  # not a second copy of the vocabulary. Shadow/offline only: D127 stays closed.
+  corpus_semantic_regression:
+    contract_id: native-fulltext-corpus-semantic-regression.v1
+    schema_version: native-fulltext-corpus-regression.v1
+    adr_ref: ADR-076
+    corpus_id: preserved_three_sha
+    identity_kind: preserved_three_sha
+    unique_source_sha256: 3
+    fallback_target: java-grobid-http@0.9.0-crf
+    pooling: forbidden
+    class_order:
+    - AdmittedAuthorLine
+    - SemanticFieldLoss::HeaderTitle
+    - SemanticFieldLoss::HeaderEmail
+    - SemanticFieldLoss::HeaderIds
+    - SemanticFieldLoss::AuthorAffiliation
+    - source_listbibl_direct_children
+    - CitationFieldRole::doi
+    - CitationFieldRole::arxiv_id
+    - CitationFieldRole::url
+    - CitationFieldRole::article_title
+    classes:
+      AdmittedAuthorLine:
+        source_population: 36
+        admitted: 35
+        conserved: 35
+        fabricated: 0
+        precision: 1.0
+        recall: 1.0
+        f1: 1.0
+      SemanticFieldLoss::HeaderTitle:
+        source_population: 6
+        admitted: 3
+        conserved: 3
+        fabricated: 0
+        precision: 1.0
+        recall: 1.0
+        f1: 1.0
+      SemanticFieldLoss::HeaderEmail:
+        source_population: 3
+        admitted: 3
+        conserved: 3
+        fabricated: 0
+        precision: 1.0
+        recall: 1.0
+        f1: 1.0
+      SemanticFieldLoss::HeaderIds:
+        source_population: 3
+        admitted: 3
+        conserved: 3
+        fabricated: 0
+        precision: 1.0
+        recall: 1.0
+        f1: 1.0
+      SemanticFieldLoss::AuthorAffiliation:
+        source_population: 13
+        admitted: 13
+        conserved: 13
+        fabricated: 0
+        precision: 1.0
+        recall: 1.0
+        f1: 1.0
+      source_listbibl_direct_children:
+        source_population: 207
+        admitted: 207
+        conserved: 207
+        fabricated: 0
+        precision: 1.0
+        recall: 1.0
+        f1: 1.0
+      CitationFieldRole::doi:
+        source_population: 60
+        admitted: 60
+        conserved: 60
+        fabricated: 0
+        precision: 1.0
+        recall: 1.0
+        f1: 1.0
+      CitationFieldRole::arxiv_id:
+        source_population: 35
+        admitted: 35
+        conserved: 35
+        fabricated: 0
+        precision: 1.0
+        recall: 1.0
+        f1: 1.0
+      CitationFieldRole::url:
+        source_population: 148
+        admitted: 148
+        conserved: 148
+        fabricated: 0
+        precision: 1.0
+        recall: 1.0
+        f1: 1.0
+      CitationFieldRole::article_title:
+        source_population: 66
+        admitted: 66
+        conserved: 66
+        fabricated: 0
+        precision: 1.0
+        recall: 1.0
+        f1: 1.0
+    aggregate:
+      tp: 573
+      fp: 0
+      fn: 0
+      precision: 1.0
+      recall: 1.0
+      f1: 1.0
+    metric:
+      aggregation: micro_occurrence
+      tp: conserved
+      fp: fabricated
+      fn: admitted_minus_conserved
+      precision: tp_over_tp_plus_fp
+      recall: tp_over_tp_plus_fn
+      f1: harmonic_mean_of_precision_and_recall
+      admission_coverage: admitted_over_source_population
+      zero_zero_denominator: coverage_is_one_at_fully_admitted_empty_population
+      measured_at: '2026-09-23'
+    refusal_classes:
+    - SemanticFieldLoss::HeaderTitle
+    - SemanticFieldLoss::HeaderEmail
+    - SemanticFieldLoss::HeaderIds
+    - SemanticFieldLoss::AuthorAffiliation
+    - SemanticFieldLoss::CitationRole
+    denominators:
+      documents: 3
+      unique_source_sha256: 3
+      references_total: 207
+      header_raw_total: 36
+      header_title_elements_total: 6
+      header_emails_total: 3
+      header_pubnum_elements_total: 3
+      affiliation_linking_total: 13
+      bibl_struct_hub_total: 80
+      bibl_struct_rlm_total: 49
+      bibl_struct_reca_total: 78
+    documents:
+    - id: hub_2507.19457
+      path: crates/da-parse/tests/fixtures/preserved/hub_2507.19457.tei.xml
+      sha256: 985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b79e7ec4
+      source_population: {AdmittedAuthorLine: 21, 'SemanticFieldLoss::HeaderTitle': 2, 'SemanticFieldLoss::HeaderEmail': 0, 'SemanticFieldLoss::HeaderIds': 1, 'SemanticFieldLoss::AuthorAffiliation': 0, source_listbibl_direct_children: 80, 'CitationFieldRole::doi': 6, 'CitationFieldRole::arxiv_id': 23, 'CitationFieldRole::url': 66, 'CitationFieldRole::article_title': 21}
+      admitted: {AdmittedAuthorLine: 20, 'SemanticFieldLoss::HeaderTitle': 1, 'SemanticFieldLoss::HeaderEmail': 0, 'SemanticFieldLoss::HeaderIds': 1, 'SemanticFieldLoss::AuthorAffiliation': 0, source_listbibl_direct_children: 80, 'CitationFieldRole::doi': 6, 'CitationFieldRole::arxiv_id': 23, 'CitationFieldRole::url': 66, 'CitationFieldRole::article_title': 21}
+    - id: rlm_2512.24601
+      path: crates/da-parse/tests/fixtures/preserved/rlm_2512.24601.tei.xml
+      sha256: e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3
+      source_population: {AdmittedAuthorLine: 4, 'SemanticFieldLoss::HeaderTitle': 2, 'SemanticFieldLoss::HeaderEmail': 3, 'SemanticFieldLoss::HeaderIds': 1, 'SemanticFieldLoss::AuthorAffiliation': 0, source_listbibl_direct_children: 49, 'CitationFieldRole::doi': 1, 'CitationFieldRole::arxiv_id': 1, 'CitationFieldRole::url': 45, 'CitationFieldRole::article_title': 6}
+      admitted: {AdmittedAuthorLine: 4, 'SemanticFieldLoss::HeaderTitle': 1, 'SemanticFieldLoss::HeaderEmail': 3, 'SemanticFieldLoss::HeaderIds': 1, 'SemanticFieldLoss::AuthorAffiliation': 0, source_listbibl_direct_children: 49, 'CitationFieldRole::doi': 1, 'CitationFieldRole::arxiv_id': 1, 'CitationFieldRole::url': 45, 'CitationFieldRole::article_title': 6}
+    - id: reca_2605.26525v1
+      path: crates/da-parse/tests/fixtures/preserved/reca_2605.26525v1.tei.xml
+      sha256: dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040
+      source_population: {AdmittedAuthorLine: 11, 'SemanticFieldLoss::HeaderTitle': 2, 'SemanticFieldLoss::HeaderEmail': 0, 'SemanticFieldLoss::HeaderIds': 1, 'SemanticFieldLoss::AuthorAffiliation': 13, source_listbibl_direct_children: 78, 'CitationFieldRole::doi': 53, 'CitationFieldRole::arxiv_id': 11, 'CitationFieldRole::url': 37, 'CitationFieldRole::article_title': 39}
+      admitted: {AdmittedAuthorLine: 11, 'SemanticFieldLoss::HeaderTitle': 1, 'SemanticFieldLoss::HeaderEmail': 0, 'SemanticFieldLoss::HeaderIds': 1, 'SemanticFieldLoss::AuthorAffiliation': 13, source_listbibl_direct_children: 78, 'CitationFieldRole::doi': 53, 'CitationFieldRole::arxiv_id': 11, 'CitationFieldRole::url': 37, 'CitationFieldRole::article_title': 39}
+    mutation_matrix:
+    - {id: drop_admitted_header_title, detection: typed_refusal, refusal_class: 'SemanticFieldLoss::HeaderTitle'}
+    - {id: drop_admitted_header_email, detection: typed_refusal, refusal_class: 'SemanticFieldLoss::HeaderEmail'}
+    - {id: drop_admitted_header_ids, detection: typed_refusal, refusal_class: 'SemanticFieldLoss::HeaderIds'}
+    - {id: drop_admitted_author_affiliation, detection: typed_refusal, refusal_class: 'SemanticFieldLoss::AuthorAffiliation'}
+    - {id: substitute_citation_field_role, detection: typed_refusal, refusal_class: 'SemanticFieldLoss::CitationRole'}
+    - {id: truncate_admitted_references, detection: typed_refusal, refusal_class: BibliographyDomainMismatch}
+    - {id: inject_fabricated_band_note_group, detection: metric_deviation, metric: precision, expectation: below_one}
+    - {id: inject_fabricated_header_title, detection: metric_deviation, metric: precision, expectation: below_one}
+    - {id: unbalanced_xml, detection: typed_refusal, refusal_class: UnbalancedXml}
+    - {id: raw_ampersand_xml, detection: typed_refusal, refusal_class: MalformedXml}
+    - {id: substitute_byte_scope, detection: byte_accounting, refusal_class: 'ByteAccountingViolation::NativePartitionDisagreesWithLedger'}
+    - {id: collapse_identity_to_one_sha, detection: identity_failure, expectation: unique_source_sha256_not_three}
+    locks:
+      import_eligible: false
+      production_route: forbidden
+      graph_write: forbidden
+      auto_promote: forbidden
+      deployed: false
+    used_by: [S05-T01, S05-T03, S05-T04]
   hard_regressions: [terminal_receipt_as_pass, denominator_erosion, unknown_stratum, checksum_drift, schema_drift, stale_evidence, pooled_winner, missing_rollback, promotion, import, raw_payload, physical_path]
   redaction:
     allowed: [component_id, producer, disposition, lane, domain, genre, source_hash, artifact_sha256, evidence_digest, byte_count, truncated, fallback_target]
