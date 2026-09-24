@@ -221,7 +221,7 @@ fn parity_ledger_is_fail_closed_and_prints_its_report() {
     assert_eq!(doc.capabilities.len(), 38, "capability denominator");
     assert_eq!(
         doc.parity_ledger.named_gaps.len(),
-        2,
+        1,
         "named gap denominator"
     );
     assert!(

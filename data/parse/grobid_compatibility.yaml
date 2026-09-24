@@ -2310,13 +2310,14 @@ parity_ledger:
   - capability: rest.isalive
     scope: required
     state: proxy
-    parity: partial
-    reason: no_behavioral_test_target
+    parity: full
     java: {source_id: java-grobid-paths, site: PATH_IS_ALIVE}
     rust:
     - {path: crates/da-parse/src/http.rs, symbol: GrobidParser}
-    test: null
-    error_semantics: null
+    test: {path: crates/da-parse/tests/backend_contract.rs, name: is_alive_is_true_on_success_and_false_on_5xx_and_transport_outage}
+    error_semantics:
+      source: crates/da-parse/src/http.rs
+      vocabulary: [ProbeFailure]
     license: inventory:java-grobid-0.9.0-crf
   - capability: rest.health
     scope: required
@@ -2736,9 +2737,6 @@ parity_ledger:
     error_semantics: null
     license: inventory:java-grobid-0.9.0-crf
   named_gaps:
-  - capability: rest.isalive
-    reason: no_behavioral_test_target
-    next: S07/T02 adds an independent behavioral tests/ target for the isalive probe
   - capability: learning.ruvllm_ablation
     reason: no_java_donor
     next: >-
@@ -2754,11 +2752,10 @@ parity_ledger:
     implemented: 22
     absent: 16
     parity:
-      full: 20
-      partial: 1
+      full: 21
       not_applicable_no_java_donor: 1
       not_claimed_absent: 16
-    named_gaps: 2
+    named_gaps: 1
   locks:
     import_eligible: false
     production_route: forbidden

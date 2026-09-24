@@ -807,6 +807,41 @@ async fn http_backend_health_probe_rejects_non_object_and_outage() {
     );
 }
 
+/// Behavioral probe for the liveness predicate (S07/T02).
+///
+/// `GrobidParser::is_alive` is the one parity capability whose failure is a
+/// plain `bool`, so the test names each outcome by cause rather than asserting
+/// a single happy path: a 2xx is alive, a 5xx is not, and a transport outage
+/// (a bound-then-dropped localhost port) is not. The old `partial` row had no
+/// behavioral `tests/` target at all; this is that target, and it fails if the
+/// 5xx or outage branch is changed to answer `true`.
+#[tokio::test]
+async fn is_alive_is_true_on_success_and_false_on_5xx_and_transport_outage() {
+    // 2xx with any body -> alive, and the request goes to the Java route.
+    let (addr, log) = spawn_grobid_stub(ResponsePlan::Json(br#"{"status":"UP"}"#.to_vec())).await;
+    let parser = GrobidParser::new(Some(&format!("http://{addr}")));
+    assert!(parser.is_alive().await, "2xx must be alive");
+    assert_eq!(
+        log.lock().expect("request log lock").last().unwrap().path,
+        "/api/isalive"
+    );
+
+    // 5xx -> not alive (same availability class as a transport outage).
+    let (addr, _) = spawn_grobid_stub(ResponsePlan::Status(503, "Service Unavailable")).await;
+    let parser = GrobidParser::new(Some(&format!("http://{addr}")));
+    assert!(!parser.is_alive().await, "5xx must not be alive");
+
+    // Transport outage -> not alive.
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
+    let addr = listener.local_addr().expect("addr");
+    drop(listener);
+    let parser = GrobidParser::new(Some(&format!("http://{addr}")));
+    assert!(
+        !parser.is_alive().await,
+        "a connection-refused port must not be alive"
+    );
+}
+
 #[tokio::test]
 async fn http_backend_version_probe_accepts_json_and_plain() {
     let json = br#"{"name":"grobid","version":"0.9.0-crf","revision":"abc"}"#;
