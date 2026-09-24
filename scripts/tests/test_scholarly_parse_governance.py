@@ -972,6 +972,81 @@ def test_corpus_shadow_binding_is_mirrored_and_identity_clean():
     assert corpus_flags == [], [str(item) for item in corpus_flags]
 
 
+BATCH_BUDGET_SHADOW_RELATIVE = "artifacts/parse_compat/parse_batch_budget_shadow.json"
+
+
+def test_checker_flags_missing_batch_budget_shadow_artifact(tmp_path: Path):
+    """S06/T06: the batch-budget shadow is byte-pinned, so its absence fails closed.
+
+    `parse_batch_budget_shadow.json` is declared in both
+    `bindings.canonical_artifacts` and `bindings.integration_evidence`; a tree
+    that does not carry the artifact must answer `evidence_missing` naming that
+    exact path instead of silently dropping the H05/H19 measurement surface."""
+    _copy_checker_surface(tmp_path)
+    (tmp_path / BATCH_BUDGET_SHADOW_RELATIVE).unlink()
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _scholarly_flags(flags, "evidence_missing")
+    assert matching, flags
+    assert any(BATCH_BUDGET_SHADOW_RELATIVE in item.evidence for item in matching), flags
+
+
+def test_checker_flags_truncated_batch_budget_shadow_artifact(tmp_path: Path):
+    """S06/T06: a truncated budget artifact is a byte substitution, not a pass.
+
+    The digest pin is the byte-level control; truncation must raise
+    `evidence_substitution` naming the budget path before any measurement
+    inference is attempted."""
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / BATCH_BUDGET_SHADOW_RELATIVE
+    text = path.read_text(encoding="utf-8")
+    path.write_text(text[: len(text) // 2], encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _scholarly_flags(flags, "evidence_substitution")
+    assert matching, flags
+    assert any(BATCH_BUDGET_SHADOW_RELATIVE in item.evidence for item in matching), flags
+
+
+def test_batch_budget_shadow_binding_is_mirrored_and_identity_clean():
+    """S06/T06: both governor surfaces bind the budget artifact and it is clean.
+
+    The policy `canonical_artifacts`/`integration_evidence` entries, the fixture
+    mirror and the on-disk digest must agree; and the live root must produce no
+    scholarly-parse flag naming the budget artifact. The selectable-set is not
+    widened: the artifact carries a measurement identity, not a new decision
+    point (R125 `independently_selectable` stays [header, references])."""
+    policy = _load(POLICY_PATH)
+    fixture = _load(POSITIVE_PATH)
+    canonical = next(
+        item
+        for item in policy["bindings"]["canonical_artifacts"]
+        if item["path"] == BATCH_BUDGET_SHADOW_RELATIVE
+    )
+    assert canonical["sha256"] == _sha256(ROOT / BATCH_BUDGET_SHADOW_RELATIVE)
+    mirrored = next(
+        item
+        for item in fixture["canonical_artifacts"]
+        if item["path"] == BATCH_BUDGET_SHADOW_RELATIVE
+    )
+    assert mirrored["sha256"] == canonical["sha256"]
+    assert mirrored["identity"] == "parse-batch-budget-shadow.v1"
+    evidence = next(
+        item
+        for item in policy["bindings"]["integration_evidence"]
+        if item["path"] == BATCH_BUDGET_SHADOW_RELATIVE
+    )
+    assert evidence["identity"] == "parse-batch-budget-shadow.v1"
+    assert any(
+        item["path"] == BATCH_BUDGET_SHADOW_RELATIVE
+        and item["identity"] == "parse-batch-budget-shadow.v1"
+        for item in fixture["integration_evidence"]
+    )
+    selectable = policy["rest_batch_asset_quarantine"]["policy"]["independently_selectable"]
+    assert selectable == ["header", "references"]
+    flags = _check_scholarly_parse_plane(ROOT)
+    budget_flags = [item for item in flags if BATCH_BUDGET_SHADOW_RELATIVE in item.evidence]
+    assert budget_flags == [], [str(item) for item in budget_flags]
+
+
 def test_checker_flags_bare_from_env_pdf_parse_constructor(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     target = tmp_path / "crates/da-cli/src/bare_from_env.rs"

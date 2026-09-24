@@ -24,7 +24,7 @@ Rust-реализация существенно продвинулась, но 
 | Feature ABI и CRF | Native feature/sequence-family pipeline | Реализованы Rust ABI, scalar CRF и семейства с contract/oracle/same-n тестами | Нужен проверяемый Java method → Rust symbol → независимый oracle реестр; общего процента parity нет |
 | Header/reference composition | Независимые native полосы с Java fallback | Композитор существует и проходит штатные тесты | Воспроизведены повреждение XML и нарушение ссылочной целостности; синтетических фикстур оказалось недостаточно |
 | Body/visual | Консервация текста, порядка и структур | Есть shadow-family модули, manifests и ограничения допуска | Потенциальная потеря типизированных причин absence; требуется отдельный runtime regression |
-| Ресурсы | Global budgets и bounded reorder | Есть process-local ограничения, publication window | H05 явно не закрыт; это не отсутствие всех budget-механизмов |
+| Ресурсы | Global budgets и bounded reorder | Измерено 2026-09-24 (S06): два конкурентных батча с медленным ordinal-0 на локальном детерминированном loopback-стабе — RSS 21114880 B, хвосты p50 5 / p95 93 / p99 93 мс, bounded reorder 2, пик удержанных байт 61146 B внутри введённого потолка 262144 B, timeout ≠ закрытый peer по типу (`BackendTerminationClass`), `budget_waits` observed=2 | Java-CPU остаётся типизированным `not_observed` (субстрат без Java-процесса); H05 поэтому `in_progress` с суженным open item, а не закрыт |
 | Внешняя оценка | Независимый frozen probe и release decision | Есть пятистатейный пилот и package contract | Требуемый isolated probe not_executed, reviewer=null, decision=pending; пилот не заменяет этот допуск |
 | Governor | Исполнимая проверка правил и честность статусов | 368 тестов проходят; оба исторических review-реестра валидируются | Это не доказательство корректности XML или качества парсинга |
 
@@ -602,12 +602,71 @@ url, article_title) имеют реальную biblStruct-форму в кор�
 `import_eligible=false`, `auto_promote=forbidden`, `graph_write=forbidden`,
 `production_route=forbidden`, D127 не снят. История S01–S04 не переписывается.
 
+### Свидетельства среза M511-j7wz2f/S06 (глобальные бюджеты и bounded reorder: замер и остаток)
+
+Замер S06/T05 исполнен 2026-09-24 на ревизии рабочего дерева `04ffddac…`
+(замер — рабочее дерево, а не закоммиченная ревизия). Субстрат — локальный
+детерминированный loopback-стаб (`kind: local_deterministic_loopback_stub`,
+`live_grobid_participated=false`, `deterministic_substrate=true`), поэтому
+production-достижимость не заявляется.
+
+**Нагрузка и бюджет.** Два конкурентных батча по 3 документа (6 документов),
+общий process-local бюджет `execution_capacity=4`, `publication_capacity=6`;
+медленный ordinal-0 удерживается детерминированным gate `sibling_responses_answered`
+(settle 80 мс). Все 6 терминальных исходов — succeeded, failed=0,
+`budget_waits` observed=2, `max_in_flight` observed=3,
+`max_publication_outstanding` observed=3, `max_reorder_depth` observed=2.
+
+**Измеренные потолки.** `peak_rss_bytes` observed = 21114880 B (21.1 MB);
+`latency_p50_ms`=5, `latency_p95_ms`=93, `latency_p99_ms`=93;
+`peak_retained_bytes` observed = 61146 B внутри введённого потолка `262144 B`
+(256 KiB), `verdict: within_ceiling` в обоих батчах. Байтовый потолок введён
+аддитивно (существующий типизированный `ResponseBytes`-отказ, fail-closed) и не
+меняет замороженный summary v2.
+
+**Java-CPU — типизированный остаток.** `java_cpu_wall_clock_ns` остаётся
+`not_observed` с названной причиной: «measured substrate is the local
+deterministic stub; no Java process participated». Ноль как измерение не
+публикуется.
+
+**Классификация отказа.** Закрытый `BackendTerminationClass`
+(`transport_timeout` / `peer_closed_connection` / `connection_refused` /
+`unattributable`) с чистой `classify_backend_termination` доказан на реальном
+локальном сокете: транспортный timeout и закрытый peer различаются типом, а не
+предположением (H19-N2). Это снимает риск «timeout = убийство Java-процесса» как
+типовой, но не доказывает убийство реального Java-процесса.
+
+**Артефакт и его удержание.** `artifacts/parse_compat/parse_batch_budget_shadow.json`
+(sha256 `015a2cca82fc7983d5c93b65af1bc85ef721ddb69e592cfe3e216087e84db12b`)
+объявлен в `data/parse/acceptance_manifest.yaml#population_contract.report_paths`
+и байтово запиннен в ОБЕИХ governor-поверхностях
+(`scripts/governor/checks/scholarly_parse_plane.yaml#bindings.canonical_artifacts`
++ `bindings.integration_evidence`, identity `parse-batch-budget-shadow.v1`, и
+`governor/fixtures/scholarly_parse_plane/contract.positive.json`). Артефакт,
+который никто машинно не удерживает, — не доказательство; здесь удержание
+проверяется `--self-check` (9 fail-closed guard'ов) и governance-пробами
+`test_checker_flags_missing_batch_budget_shadow_artifact`,
+`test_checker_flags_truncated_batch_budget_shadow_artifact`,
+`test_batch_budget_shadow_binding_is_mirrored_and_identity_clean`.
+
+**Состояние реестров.** H05 остаётся `in_progress` в horizon-реестре с суженным
+accepted open item (остаток — только Java-CPU); H19 в
+`doc/review/grobid-absorption-followup.json` переведён в `in_progress` с суженным
+open item и `implementation_pass=false`/`verification_pass=false`
+(planning-запись PASS не заявляет). Governor review: horizon `stages=13
+unresolved=1 complete=12 claims=12`; absorption `stages=8 unresolved=8 complete=0
+claims=0`.
+
+**Границы.** Замеренная область — детерминированный стаб, а не живой GROBID;
+RSS — process high-water mark, включающий сам харнесс; Java-CPU не измерен.
+Потолок удержанных байт ограничивает удержанные исходы, но не RSS.
+
 ## Риски, не выдаваемые за воспроизведённые дефекты
 
 | Область | Наблюдение | Требуемая проверка |
 |---|---|---|
 | Изоляция полос | Любая ошибка compose_inner возвращает общий Java fallback; независимость допуска не равна независимости восстановления после ошибки | Согласовать fail-closed policy и тест header-success/reference-failure |
-| budget_waits | available_permits проверяется до acquire | Зафиксировать семантику observation, либо измерять действительное ожидание |
+| budget_waits | Измерено 2026-09-24 (S06): два конкурентных батча дали `budget_waits` observed=2, т.е. действительные ожидания под contention наблюдаются, а не только предварительная проверка permits | Зафиксировать семантику в DATA-контракте потолков (`data/parse/comparison_contract.yaml#batch_budget_ceilings`) |
 | Java parity | Большое число oracle-тестов не задаёт полного множества исходных Java-методов | Инвентарь источников, ветвей и исключений, независимые gold/holdout и tolerance |
 
 ## Проверки и границы покрытия
@@ -618,6 +677,8 @@ url, article_title) имеют реальную biblStruct-форму в кор�
 | cargo test -p da-domain --lib | 771 passed |
 | cargo test -p da-cli --lib | 295 passed |
 | PYTHONPATH=scripts python3 -m pytest scripts/tests/test_governor.py -q | 368 passed |
+| PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q | 446 passed (S06/T06; +3 новых пробы на batch-budget артефакт) |
+| cargo test -p da-parse --tests (S06/T06) | 110 suites / 1470 passed / 0 failed / 0 ignored; `population_contract_enumerates_every_shadow_report` ok |
 | governor review: horizon, GAR | exit=0; H05/GAR-015 остаются открытыми |
 | Публичный Rust composition probe + независимый XML parser | 2 класса дефектов воспроизведены |
 
@@ -627,7 +688,10 @@ url, article_title) имеют реальную biblStruct-форму в кор�
 а после S05/T01–T05 тот же набор `cargo test -p da-parse --tests` валится на
 `data_contracts::population_contract_enumerates_every_shadow_report` (exit 101) —
 названный RED раздела S05 выше; без `--no-fail-fast` Cargo останавливается на
-упавшей цели.
+упавшей цели. После S06/T05–T06 тот же набор снова зелёный: 110 suites /
+1470 passed / 0 failed / 0 ignored, `population_contract_enumerates_every_shadow_report
+... ok` — целевой гейт снят GAR-006-разбиением reference/executed/evaluated, а не
+замазан.
 
 Доказательства GSD exec: `6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f` (Rust probe), `73a4222b-035b-4439-955e-96d36c068534` (test totals и валидность исходного XML), `c0d5f8f1-490c-4fe0-87c3-4f6e495c9a5b` (scope и test tags), `98f91300-d06b-4d67-8917-19d64e7b8d18` (реестры). S04: `53726af5-9f84-4682-998c-bbaeb79778cd` (перегенерация замороженного shadow-артефакта), `25049e11-e663-41df-bdd6-d81173c818e0` (визуальный runtime), `e680048f-b40b-4479-bd61-bd78156b3dd1` (fmt/clippy/da-parse suites/pytest/governor review), `64050636-4a3d-4630-87c7-7773177b0f31` (целевые H17-таргеты), `e6b2dff5` (полный `governor architecture`, `GATE_RC=0`).
 
@@ -639,7 +703,11 @@ GitNexus MCP context завершился Connection closed. Первая инд
 
 ## Остаток и политика
 
-Исторический аудит задач: терминальные 1179/1179; это не доказательство полного перевода. Отложенный незапланированный объём вообще не входит в этот знаменатель. Пять parked milestone имеют 13 skipped срезов без задач. H05 и GAR-015 не закрыты. A-XML закрыт на замеренной области S01, A-REF — на
+Исторический аудит задач: терминальные 1179/1179; это не доказательство полного перевода. Отложенный незапланированный объём вообще не входит в этот знаменатель. Пять parked milestone имеют 13 skipped срезов без задач. H05 не закрыт, но сужен: измерены RSS (21114880 B) и хвосты латентности
+(p50 5 / p95 93 / p99 93 мс) на двух конкурентных батчах с медленным ordinal-0,
+введён потолок удержанных байт (пик 61146 B внутри 262144 B) и типизированная
+классификация отказа; остаток — только Java-CPU (субстрат без Java-процесса).
+GAR-015 не закрыт. A-XML закрыт на замеренной области S01, A-REF — на
 трёх пиннутых сохранённых TEI в S02; A-FIELDS закрыт на замеренной области S03
 (невакуумный runtime-прогон shadow-примера); A-ABSENCE и A-BYTES закрыты на
 замеренной области S04. H18 (независимая корпусная регрессия) построен и

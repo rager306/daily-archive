@@ -23,7 +23,9 @@
 # ГРАНИЦЫ (planning-only, без фабрикации человеческого принятия)
 #   `claim_scope: planning` в реестре: ни один этап H14..H21 не заявляет PASS
 #   (implementation_pass=false, verification_pass=false), статусы только из
-#   unresolved-набора (`pending`), владельцы `unassigned`.
+#   unresolved-набора (`pending`; с 2026-09-24 H19 переведён в `in_progress`
+#   решением M511-j7wz2f/S06 — изменился только статус, PASS-клеймов по-прежнему
+#   нет), владельцы `unassigned`.
 #   `open_item_required_for_unresolved: false` — обёртка НЕ требует принятия
 #   открытого пункта, поэтому `open_item.accepted` нигде не выставлен в true.
 #   Единственный фактически существующий accepted open item — H05 в
@@ -130,8 +132,8 @@ measured_state:
       unknown_rights: blocked
   tests:
     command: "cargo test -p da-parse --tests"
-    measured_at: "2026-09-21"
-    suites: 100
+    measured_at: "2026-09-24"
+    suites: 110
     # S01/T01 (2026-09-21) дал базовые 1352 passed / 1 ignored, где ignored —
     # целевой гейт preserved_tei_composition_is_independently_well_formed (RED).
     # S01/T02 снял #[ignore] и заменил RED-пин независимой консервацией, S01/T03
@@ -141,10 +143,15 @@ measured_state:
     # markup-aware DOCTYPE и pinned лимиты 4 MiB/128; ниже — свежий замер после
     # этих правок (исторические счётчики относятся к S01/T01 и S01/T03 и
     # сохранены в C07/C08).
-    passed: 1374
+    passed: 1470
     ignored: 0
     failed: 0
-    test_files_in_crates_da_parse_tests: 99
+    test_files_in_crates_da_parse_tests: 109
+    # S06/T06 (2026-09-24) переизмерил полный набор после S05: 110 suites /
+    # 1470 passed / 0 failed / 0 ignored, и целевой гейт
+    # population_contract_enumerates_every_shadow_report снова зелёный (RED
+    # S05/T06 снят GAR-006-разбиением reference/executed/evaluated). Счётчики
+    # C07/C08 не переписываются — это новый замер, см. C09.
     composition_contract_passed: 28
     composition_properties_passed: 8
     # ИСПРАВЛЕНИЕ: теги имён файлов ПЕРЕКРЫВАЮТСЯ и не являются разбиением.
@@ -305,6 +312,27 @@ corrections:
       25 passed / 3 failed и 7 passed / 1 failed. Замки не менялись; H14 не
       закрывается — planning-семантика и implementation_pass=false сохраняются.
     evidence: doc/review/grobid-absorption-audit-2026-09-21.md
+  - id: C09
+    previous: >
+      H19 числился `pending` с open_item «глобальные потолки ресурсов не
+      измерены», а measured_state.tests держал счётчики S01/T06
+      (100 suites / 1374 passed).
+    corrected: >
+      S06/T05 (2026-09-24) измерил глобальный бюджет батча на конкурентных
+      батчах с медленным ordinal-0: артефакт
+      artifacts/parse_compat/parse_batch_budget_shadow.json (sha256 015a2cca…)
+      фиксирует peak_rss_bytes 21114880 B, latency tails p50 5 / p95 93 /
+      p99 93 мс, bounded reorder 2, budget_waits=2, пик удержанных байт
+      61146 B внутри введённого потолка 262144 B и типизированную
+      классификацию отказа (BackendTerminationClass). Артефакт байтово запиннен
+      в обеих governor-поверхностях. Java-CPU остался типизированным
+      not_observed (субстрат — локальный детерминированный стаб без
+      Java-процесса), поэтому H05 остаётся in_progress с суженным accepted open
+      item, а H19 здесь переведён из `pending` в `in_progress` с суженным open
+      item; implementation_pass=false и verification_pass=false не меняются
+      (planning-запись PASS не заявляет). measured_state.tests переизмерен на
+      2026-09-24: 110 suites / 1470 passed / 0 failed / 0 ignored.
+    evidence: artifacts/parse_compat/parse_batch_budget_shadow.json
 
 # ---------------------------------------------------------------------------
 # validation_commands — как воспроизвести проверку (read-only).
@@ -316,7 +344,7 @@ validation_commands:
   # композитора 28 passed (было 24 после T05 и 17 после T03), properties 8,
   # полный набор 1374 passed, и два остаточных класса закрыты (см. C08).
   - command: "cargo test -p da-parse --tests"
-    expected: "1374 passed; 0 failed; 0 ignored; 100 suites"
+    expected: "1470 passed; 0 failed; 0 ignored; 110 suites (замер S06/T06, 2026-09-24)"
   # Исторический RED S01/T01, снятый починкой S01/T02: гейт
   # preserved_tei_composition_is_independently_well_formed больше не #[ignore] и
   # входит в зелёный прогон выше; namespace на синтезируемых обёртках закрыт

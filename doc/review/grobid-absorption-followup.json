@@ -935,8 +935,8 @@
     {
       "stage_id": "H19",
       "title": "P1: H05 — глобальные потолки ресурсов и bounded reorder",
-      "scope": "P1. H05 (Global budgets and bounded reorder) — единственный незакрытый этап горизонта; в doc/review/grobid-rust-horizon-review.json он записан как accepted open item с owner unassigned, потолки RSS/Java-CPU/latency tails остаются not_observed. Требуется: измерить потолки при конкурентных батчах со медленным ordinal-0 и отличать транспортный timeout от убитого Java-процесса.",
-      "status": "pending",
+      "scope": "P1. H05 (Global budgets and bounded reorder) — единственный незакрытый этап горизонта; в doc/review/grobid-rust-horizon-review.json он записан как accepted open item с owner unassigned. После S06/T05 измерены RSS и хвосты латентности, введён потолок удержанных байт и типизированная классификация отказа (artifacts/parse_compat/parse_batch_budget_shadow.json); Java-CPU остаётся not_observed. Требуется закрыть именно остаток: Java-CPU при участии реального Java-процесса.",
+      "status": "in_progress",
       "depends_on": [],
       "owner": "unassigned",
       "adr_refs": [
@@ -947,8 +947,13 @@
       "implementation_evidence": [
         {
           "path": "crates/da-parse/src/batch.rs",
-          "note": "batch-бюджеты и bounded-поля (workers/queue/in-flight/max_documents)",
-          "state": "partial"
+          "note": "batch-бюджеты и bounded-поля (workers/queue/in-flight/max_documents) плюс опциональный потолок удержанных байт, fail-closed через существующий типизированный ResponseBytes, и аддитивный run_observed-шов",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/src/batch_budget.rs",
+          "note": "типизированные BatchObservation (observed/not_observed с названной причиной) и закрытый BackendTerminationClass с чистой classify_backend_termination",
+          "state": "present"
         },
         {
           "path": "crates/da-adapters/src/parse_cursor.rs",
@@ -959,32 +964,81 @@
           "path": "crates/da-parse/tests/batch_budget_contract.rs",
           "note": "контракт бюджетов батча",
           "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/batch_budget_measurement_contract.rs",
+          "note": "T02 RED-пробы, ставшие GREEN после введения потолка удержанных байт",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/backend_termination_classification.rs",
+          "note": "реальный локальный сокет: транспортный timeout и закрытый peer различаются типом (H19-N2)",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-cli/examples/parse_batch_budget_shadow.rs",
+          "note": "харнесс замера: два конкурентных батча с медленным ordinal-0 на loopback-стабе; --self-check поднимает 9 fail-closed guard'ов",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-cli/tests/parse_batch_budget_shadow_test.rs",
+          "note": "инварианты формы shadow-отчёта",
+          "state": "present"
+        },
+        {
+          "path": "artifacts/parse_compat/parse_batch_budget_shadow.json",
+          "note": "измеренный артефакт (sha256 015a2cca…), пиннится байтово в обеих governor-поверхностях",
+          "state": "present"
         }
       ],
       "verification_evidence": [
         {
-          "mode": "runtime",
-          "ref": "измерение RSS/Java-CPU/latency tails при конкурентных батчах со медленным ordinal-0",
-          "expected": "потолки измерены; транспортный timeout отличается от убитого Java-процесса",
+          "mode": "governor_rule",
+          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
+          "expected": "H05 остаётся in_progress с суженным accepted open item; PASS-клеймов нет",
           "status": "pending"
         },
         {
           "mode": "command",
           "ref": "cargo test -p da-parse --test batch_budget_contract",
           "expected": "контракт бюджетов батча зелёный",
-          "status": "pending"
+          "status": "pass"
         },
         {
-          "mode": "governor_rule",
-          "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
-          "expected": "H05 остаётся accepted open item до появления измеренных потолков",
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test batch_budget_measurement_contract",
+          "expected": "RED-пробы удержанных байт GREEN под введённым потолком",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test backend_termination_classification",
+          "expected": "транспортный timeout, закрытый peer и неатрибутируемый отказ различаются типом",
+          "status": "pass"
+        },
+        {
+          "mode": "runtime",
+          "ref": "parse_batch_budget_shadow.json#observations.peak_rss_bytes",
+          "expected": "пик RSS observed при двух конкурентных батчах с медленным ordinal-0: 21114880 B",
+          "status": "pass"
+        },
+        {
+          "mode": "runtime",
+          "ref": "parse_batch_budget_shadow.json#observations.latency_p95_ms",
+          "expected": "хвосты латентности observed (p50 5 мс, p95 93 мс, p99 93 мс); пик удержанных байт 61146 B внутри потолка 262144 B; bounded reorder 2",
+          "status": "pass"
+        },
+        {
+          "mode": "runtime",
+          "ref": "parse_batch_budget_shadow.json#observations.java_cpu_wall_clock_ns",
+          "expected": "Java CPU остаётся типизированным not_observed с названной причиной: детерминированный стаб-субстрат не запускает Java-процесс",
           "status": "pending"
         }
       ],
       "tested_source": {
-        "revision": "bcdd0cfc5e34f64821798463fe23b2f3845efe56",
-        "verified": false,
-        "note": "Запись планирования: команды на этой ревизии не исполнялись в рамках этого реестра. verified=false."
+        "revision": "04ffddac04344d4368ea6a18180e862d2bcc7843",
+        "verified": true,
+        "note": "Замер на конкурентных батчах со медленным ordinal-0 исполнен 2026-09-24 на этой ревизии рабочего дерева поверх локального детерминированного loopback-стаба; RSS/latency/reorder-строки реальны, Java-CPU сознательно оставлен not_observed."
       },
       "index_freshness": {
         "state": "fresh",
@@ -1007,12 +1061,14 @@
         {
           "id": "H19-N1",
           "scenario": "Потолки RSS/Java-CPU/latency помечены observed без измерения",
-          "expected": "fail-closed: состояние not_observed сохраняется"
+          "expected": "fail-closed: состояние not_observed сохраняется с названной причиной (DATA-контракт + типизированные observations)",
+          "ref": "crates/da-parse/tests/batch_budget_data_contract.rs"
         },
         {
           "id": "H19-N2",
           "scenario": "Транспортный timeout записан как убийство Java-процесса",
-          "expected": "классификация отказа зафиксирована типом, а не предположением"
+          "expected": "классификация отказа зафиксирована типом BackendTerminationClass, а не предположением",
+          "ref": "crates/da-parse/tests/backend_termination_classification.rs"
         }
       ],
       "test_matrix": [
@@ -1038,10 +1094,10 @@
       "implementation_pass": false,
       "verification_pass": false,
       "open_item": {
-        "reason": "H19 не закрыт: глобальные потолки ресурсов не измерены; H05 остаётся accepted open item в horizon-реестре.",
+        "reason": "H19 не закрыт: измеренная часть реальна (артефакт parse_batch_budget_shadow.json — RSS 21114880 B, хвосты p50 5 / p95 93 / p99 93 мс, bounded reorder 2, пик удержанных байт 61146 B внутри потолка 262144 B, timeout ≠ закрытый peer по типу), но Java-CPU остаётся типизированным not_observed, потому что субстрат — локальный детерминированный стаб без Java-процесса, и H05 поэтому остаётся in_progress в horizon-реестре.",
         "since": "2026-09-21",
         "accepted": false,
-        "closure_condition": "Потолки RSS/Java-CPU/latency измерены на конкурентных батчах со медленным ordinal-0, классификация отказа зафиксирована, и H05 закрывается в horizon-реестре с completion evidence."
+        "closure_condition": "Java CPU (java_cpu_wall_clock_ns против grobid_sidecar_cgroup_cpuacct) измерен при участии реального Java GROBID под той же конкурентной нагрузкой с медленным ordinal-0, и H05 закрывается в horizon-реестре с completion evidence."
       }
     },
     {

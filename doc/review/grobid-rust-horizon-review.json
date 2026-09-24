@@ -510,8 +510,13 @@
       "implementation_evidence": [
         {
           "path": "crates/da-parse/src/batch.rs",
-          "note": "Batch scheduling where global budgets and reorder apply.",
-          "state": "partial"
+          "note": "Batch scheduling plus the optional retained-byte ceiling, enforced fail-closed through the existing typed ResponseBytes refusal, and the additive run_observed seam that publishes the budget observation without touching the frozen summary v2 wire.",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/src/batch_budget.rs",
+          "note": "Typed BatchObservation observations (observed/not_observed with a named reason, never a fabricated number), the closed BackendTerminationClass and the pure classify_backend_termination over the existing failure code/phase.",
+          "state": "present"
         },
         {
           "path": "crates/da-adapters/src/parse_cursor.rs",
@@ -522,13 +527,38 @@
           "path": "crates/da-parse/tests/batch_budget_contract.rs",
           "note": "Deterministic budget matrix plus separate retained-payload byte accounting.",
           "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/batch_budget_measurement_contract.rs",
+          "note": "The T02 RED probes turned GREEN by the enforced retained-byte ceiling: true retained-byte window peak and deterministic latency tails.",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/backend_termination_classification.rs",
+          "note": "Real local socket proves a transport timeout and a closed peer are distinguishable by type (H19-N2).",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-cli/examples/parse_batch_budget_shadow.rs",
+          "note": "Measurement harness: two concurrent batches with a deterministic slow ordinal-0 over a loopback stub; emits the shadow report and a --self-check that fires nine fail-closed guards on corrupted copies.",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-cli/tests/parse_batch_budget_shadow_test.rs",
+          "note": "Shape invariants of the emitted shadow report.",
+          "state": "present"
+        },
+        {
+          "path": "artifacts/parse_compat/parse_batch_budget_shadow.json",
+          "note": "The measured artifact (sha256 015a2cca82fc7983d5c93b65af1bc85ef721ddb69e592cfe3e216087e84db12b), byte-pinned in both governor surfaces.",
+          "state": "present"
         }
       ],
       "verification_evidence": [
         {
           "mode": "governor_rule",
           "ref": "governor review --registry scripts/governor/checks/grobid_rust_horizon_review.yaml",
-          "expected": "H05 stays unresolved with no PASS claim.",
+          "expected": "H05 stays unresolved (in_progress) with no PASS claim and a narrowed accepted open item.",
           "status": "pending"
         },
         {
@@ -544,16 +574,46 @@
           "status": "pass"
         },
         {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test batch_budget_measurement_contract",
+          "expected": "T02's RED byte-window probes are GREEN under the enforced retained-byte ceiling; the pre-fix profile is recorded, not asserted.",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test backend_termination_classification",
+          "expected": "Over a real local socket a transport timeout, a closed peer and an unattributable failure are distinct types (H19-N2).",
+          "status": "pass"
+        },
+        {
           "mode": "runtime",
-          "ref": "concurrent batch budget probe with a slow ordinal-0 document",
-          "expected": "Bounded resources, no deadlock, timeout reported as timeout not Java death.",
+          "ref": "parse_batch_budget_shadow.json#observations.peak_rss_bytes",
+          "expected": "Peak RSS observed under two concurrent batches with a slow ordinal-0: 21114880 B (21.1 MB), substrate local deterministic loopback stub.",
+          "status": "pass"
+        },
+        {
+          "mode": "runtime",
+          "ref": "parse_batch_budget_shadow.json#observations.latency_p95_ms",
+          "expected": "Latency tails observed (p50 5 ms, p95 93 ms, p99 93 ms); retained-byte peak 61146 B inside the enforced 262144 B ceiling; bounded reorder depth 2.",
+          "status": "pass"
+        },
+        {
+          "mode": "runtime",
+          "ref": "parse_batch_budget_shadow.json#observations.java_cpu_wall_clock_ns",
+          "expected": "Java CPU remains a typed not_observed with a named reason: the deterministic stub substrate runs no Java process.",
           "status": "pending"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo run -p da-cli --example parse_batch_budget_shadow -- --self-check",
+          "expected": "SELF-CHECK OK: 9 fail-closed guards fired on corrupted copies; no report written.",
+          "status": "pass"
         }
       ],
       "tested_source": {
-        "revision": "fbd708052a6983113feeeed16dcdb6d478a1e835",
+        "revision": "04ffddac04344d4368ea6a18180e862d2bcc7843",
         "verified": true,
-        "note": "Verified on 2026-09-18 by executing this stage's recorded verification commands against the current working tree; working tree carried two non-code modifications (.gitignore, AGENTS.md)."
+        "note": "The concurrent slow-ordinal-0 measurement was executed on 2026-09-24 against this working-tree revision over a local deterministic loopback stub (live_grobid_participated=false in the artifact), so the RSS/latency/reorder rows are real while the Java-CPU row is deliberately left not_observed. The earlier rows on this stage were verified on 2026-09-18 against fbd7080."
       },
       "index_freshness": {
         "state": "fresh",
@@ -578,14 +638,15 @@
       "negative_tests": [
         {
           "id": "H05-N1",
-          "scenario": "Treat an HTTP timeout as proof the Java process was killed.",
-          "expected": "Outcome distinguishes transport timeout from process termination; resources are reclaimed deterministically."
+          "scenario": "Treat an HTTP transport timeout as proof the Java process was killed.",
+          "expected": "The outcome is a typed BackendTerminationClass (transport_timeout vs peer_closed_connection vs connection_refused vs unattributable), not a guess, and resources are reclaimed deterministically.",
+          "ref": "crates/da-parse/tests/backend_termination_classification.rs"
         },
         {
           "id": "H05-N2",
-          "scenario": "Treat document-count limits as proof of a byte/RSS ceiling.",
-          "expected": "Retained serialized payload bytes are measured separately; byte/RSS and Java CPU ceilings remain no-claim.",
-          "ref": "crates/da-parse/tests/batch_budget_contract.rs::measured_payload_bytes_are_separate_from_bounded_document_slots"
+          "scenario": "Treat a document-count limit as proof of a byte/RSS ceiling.",
+          "expected": "Retained serialized payload bytes are measured and bounded separately from document slots; an unmeasured Java-CPU value stays a typed not_observed, never a fabricated number.",
+          "ref": "crates/da-parse/tests/batch_budget_measurement_contract.rs"
         }
       ],
       "test_matrix": [
@@ -611,10 +672,10 @@
       "implementation_pass": false,
       "verification_pass": false,
       "open_item": {
-        "reason": "Global budget and bounded-reorder closure is not delivered: RSS, Java-CPU and latency-tail ceilings remain typed not_observed, the concurrent slow-ordinal-0 probe is still pending, and no live slice owns the ceiling work; native_route_recovery reports h05_closure=not_claimed.",
+        "reason": "H05 stays in_progress: the concurrent slow-ordinal-0 measurement is now real. Under two concurrent batches (3 documents each, shared process-local budget execution=4/publication=6) over a local deterministic loopback stub the artifact records peak RSS 21114880 B, latency tails p50 5 ms / p95 93 ms / p99 93 ms, a bounded reorder depth of 2, a retained-byte peak of 61146 B inside the enforced 262144 B ceiling, and a transport timeout distinguishable by type from a closed peer. The one unmeasured closure requirement left is Java CPU (java_cpu_wall_clock_ns), a typed not_observed because the deterministic substrate ran no Java process; no live slice owns that remainder.",
         "since": "2026-09-14",
         "accepted": true,
-        "closure_condition": "A performance wave measures RSS, Java CPU and latency tails under concurrent batches with a slow ordinal-0 document, distinguishes a transport timeout from a killed Java process, and registers completion evidence against H05."
+        "closure_condition": "A wave measures Java CPU (java_cpu_wall_clock_ns against grobid_sidecar_cgroup_cpuacct) with a real Java GROBID process participating under the same concurrent slow-ordinal-0 load, then registers completion evidence against H05."
       }
     },
     {

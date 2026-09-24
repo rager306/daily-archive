@@ -782,3 +782,78 @@ composition-артефакта.
 `cargo test -p da-parse --lib` (не `--tests`), поэтому RED `data_contracts` в него
 не входит; RC записан измеренным, а не выведенным из «успеха запуска».
 
+## 20. Корректировка 2026-09-24: глобальные бюджеты батча и bounded reorder измерены; Java-CPU остаётся типизированным остатком (M511-j7wz2f/S06)
+
+Фиксируется замер S06/T01–T05 (H05/H19) и НЕ закрывается H05. Решение описывает
+только shadow/offline-замер: оно не расширяет допуск, не объявляет
+production-достижимость и не снимает ни одного замка. История S01–S05 не
+переписывается: §14/§15 (H14), §16 (H15), §17 (H16), §18 (H17), §19 (H18)
+остаются как были.
+
+**Решение (бюджеты — DATA, а потом замер).** Потолки объявлены словарём в уже
+санкционированном носителе `data/parse/comparison_contract.yaml`
+(`batch_budget_ceilings` — sibling-блок `parse_comparison_contract`), а не новым
+файлом (D377 держит санкционированное множество имён). Неизмеренное значение
+остаётся типизированным `not_observed` с названной причиной; ноль как измерение
+не публикуется. Потолок удержанных байт введён аддитивно поверх существующего
+типизированного `ResponseBytes`-отказа (fail-closed) и не меняет замороженный
+summary v2; истинное окно удержания и хвосты латентности публикует аддитивный
+`run_observed`-шов.
+
+**Замер (2026-09-24, S06/T05; субстрат — локальный детерминированный стаб).**
+Два конкурентных батча по 3 документа (6 документов), общий process-local
+бюджет `execution_capacity=4`, `publication_capacity=6`, медленный ordinal-0 под
+детерминированным gate `sibling_responses_answered` (settle 80 мс). Измерено:
+`peak_rss_bytes` = 21114880 B (21.1 MB); `latency_p50_ms`=5, `latency_p95_ms`=93,
+`latency_p99_ms`=93; `peak_retained_bytes` = 61146 B внутри введённого потолка
+`262144 B` (256 KiB, `verdict: within_ceiling`); `max_reorder_depth`=2;
+`max_in_flight`=3; `max_publication_outstanding`=3; `budget_waits`=2; 6/6
+терминальных исходов succeeded, failed=0. Субстрат назван в артефакте
+(`kind: local_deterministic_loopback_stub`, `live_grobid_participated=false`,
+`deterministic_substrate=true`); production-достижимость НЕ заявляется, RSS —
+process high-water mark, включающий сам харнесс.
+
+**Остаток — Java-CPU.** `java_cpu_wall_clock_ns` остаётся `not_observed`:
+детерминированный стаб не запускает Java-процесс. Поэтому H05 НЕ закрывается:
+в `doc/review/grobid-rust-horizon-review.json` он остаётся `in_progress` с
+`open_item.accepted=true`, суженным reason (остаток — только Java-CPU) и
+narrowed closure_condition (`java_cpu_wall_clock_ns` против
+`grobid_sidecar_cgroup_cpuacct` с реальным Java-процессом). H19 в
+`doc/review/grobid-absorption-followup.json` переведён из `pending` в
+`in_progress` с суженным open item; `implementation_pass=false`,
+`verification_pass=false` (planning-запись PASS не заявляет).
+`native_core_qualification.h05_closure` не трогается.
+
+**Классификация отказа.** Закрытый `BackendTerminationClass`
+(`transport_timeout` / `peer_closed_connection` / `connection_refused` /
+`unattributable`) с чистой `classify_backend_termination` доказан на реальном
+локальном сокете: транспортный timeout и закрытый peer различаются типом
+(H19-N2), но убийство реального Java-процесса этим не доказано.
+
+**Удержание артефакта.** `artifacts/parse_compat/parse_batch_budget_shadow.json`
+(sha256 `015a2cca82fc7983d5c93b65af1bc85ef721ddb69e592cfe3e216087e84db12b`)
+объявлен в `data/parse/acceptance_manifest.yaml#population_contract.report_paths`
+и байтово запиннен в ОБЕИХ governor-поверхностях —
+`scripts/governor/checks/scholarly_parse_plane.yaml` (`bindings.canonical_artifacts`
++ `bindings.integration_evidence`, identity `parse-batch-budget-shadow.v1`) и
+`governor/fixtures/scholarly_parse_plane/contract.positive.json` — тем же
+изменением, без устаревания молча. Governor review: horizon `stages=13
+unresolved=1 complete=12 claims=12`; absorption `stages=8 unresolved=8 complete=0
+claims=0`; scholarly_parse_plane governance-набор 446 passed.
+
+**Границы.** Замки не менялись: `deployed=false`, `import_eligible=false`,
+`auto_promote=forbidden`, `graph_write=forbidden`, `production_route=forbidden`,
+D127 закрыт. R125 `independently_selectable` не расширялся — артефакт несёт
+identity замера, а не новую точку решения. GROBID-семантика (H16–H21) не
+переписывалась: затронуты только записи H05/H19 и их удержание.
+
+**Полный гейт.** `PYTHONPATH=scripts python3 -m governor architecture` —
+**`GATE_RC=0`, `ARCHITECTURE GATE: PASS`** (16 шагов OK: fmt, clippy lib/tests,
+feature-matrix build, kg-* и da-* тесты, da-cli feature-gated runners/contracts),
+измеренная длительность 1285 с (~21.4 мин; старт 18:56:30, финиш 19:17:55 —
+внешний прогон, RC записан измеренным, а не выведенным из «успеха запуска»).
+Гейт исполняет `cargo test -p da-parse --lib`, поэтому `--tests`-набор с
+GAR-006-перечислением проверяется отдельно (см. аудит): `cargo test -p da-parse
+--tests` — RC=0, 110 suites / 1470 passed / 0 failed / 0 ignored,
+`population_contract_enumerates_every_shadow_report ... ok`.
+
