@@ -838,6 +838,140 @@ def test_checker_flags_preserved_names_without_preserved_kind(tmp_path: Path):
     assert matching, flags
 
 
+CORPUS_SHADOW_RELATIVE = "artifacts/parse_compat/native_fulltext_corpus_shadow.json"
+
+
+def _scholarly_flags(flags, name: str):
+    return [item for item in flags if item.flag == f"scholarly_parse_plane_{name}"]
+
+
+def test_checker_flags_missing_corpus_shadow_artifact(tmp_path: Path):
+    """S05/T05: the corpus shadow is byte-pinned, so its absence fails closed.
+
+    `native_fulltext_corpus_shadow.json` is declared in both
+    `bindings.canonical_artifacts` and `bindings.integration_evidence`; a tree
+    that does not carry the artifact must answer `evidence_missing` naming that
+    exact path instead of silently dropping the corpus identity surface."""
+    _copy_checker_surface(tmp_path)
+    (tmp_path / CORPUS_SHADOW_RELATIVE).unlink()
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _scholarly_flags(flags, "evidence_missing")
+    assert matching, flags
+    assert any(CORPUS_SHADOW_RELATIVE in item.evidence for item in matching), flags
+
+
+def test_checker_flags_truncated_corpus_shadow_artifact(tmp_path: Path):
+    """S05/T05: a truncated corpus artifact is a byte substitution, not a pass.
+
+    The digest pin is the byte-level control; truncation must raise
+    `evidence_substitution` naming the corpus path before any identity
+    inference is attempted."""
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / CORPUS_SHADOW_RELATIVE
+    text = path.read_text(encoding="utf-8")
+    path.write_text(text[: len(text) // 2], encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _scholarly_flags(flags, "evidence_substitution")
+    assert matching, flags
+    assert any(CORPUS_SHADOW_RELATIVE in item.evidence for item in matching), flags
+
+
+def test_checker_flags_corpus_identity_collapse_to_one_sha(tmp_path: Path):
+    """S05/T05: preserved_three_sha with unique_source_sha256=1 is drift.
+
+    The predicate that guards the synthetic artifact now also runs over the
+    corpus artifact: a three-sha corpus that declares one unique source is
+    `acceptance_same_n_drift` with the corpus path in the evidence."""
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / CORPUS_SHADOW_RELATIVE
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert payload["source_identity"]["identity_kind"] == "preserved_three_sha"
+    payload["source_identity"]["unique_source_sha256"] = 1
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _scholarly_flags(flags, "acceptance_same_n_drift")
+    assert matching, flags
+    assert any(CORPUS_SHADOW_RELATIVE in item.evidence for item in matching), flags
+
+
+def test_checker_flags_preserved_corpus_relabelled_synthetic_clone(tmp_path: Path):
+    """S05/T05: preserved sha256 in outcomes forbid identity_kind=synthetic_clone.
+
+    `looks_preserved` is data-driven (pinned sha256 set or known corpus document
+    ids), so re-labelling the corpus artifact as a synthetic clone is
+    `acceptance_same_n_drift` naming the corpus path."""
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / CORPUS_SHADOW_RELATIVE
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["source_identity"]["identity_kind"] = "synthetic_clone"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _scholarly_flags(flags, "acceptance_same_n_drift")
+    assert matching, flags
+    assert any(CORPUS_SHADOW_RELATIVE in item.evidence for item in matching), flags
+
+
+def test_checker_flags_corpus_data_digest_shift(tmp_path: Path):
+    """S05/T05: the comparison-contract DATA digest is pinned, not assumed.
+
+    Shifting `bindings.source_data` sha256 for
+    `data/parse/comparison_contract.yaml` in the policy must raise
+    `evidence_substitution` naming that DATA path, so the corpus binding cannot
+    survive a DATA edit without a re-pin."""
+    _copy_checker_surface(tmp_path)
+    policy_path = tmp_path / "scripts/governor/checks/scholarly_parse_plane.yaml"
+    payload = yaml.safe_load(policy_path.read_text(encoding="utf-8"))
+    entry = next(
+        item
+        for item in payload["bindings"]["source_data"]
+        if item["path"] == "data/parse/comparison_contract.yaml"
+    )
+    entry["sha256"] = "0" * 64
+    policy_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    matching = _scholarly_flags(flags, "evidence_substitution")
+    assert matching, flags
+    assert any("data/parse/comparison_contract.yaml" in item.evidence for item in matching), flags
+
+
+def test_corpus_shadow_binding_is_mirrored_and_identity_clean():
+    """S05/T05: both governor surfaces bind the corpus artifact and it is clean.
+
+    The policy `canonical_artifacts`/`integration_evidence` entries, the fixture
+    mirror and the on-disk digest must agree; and the live root must produce no
+    scholarly-parse flag naming the corpus artifact. That the new loop does not
+    weaken the synthetic artifact is covered by
+    test_checker_flags_preserved_names_without_preserved_kind and
+    test_checker_flags_undeclared_shadow_sha_clone."""
+    policy = _load(POLICY_PATH)
+    fixture = _load(POSITIVE_PATH)
+    canonical = next(
+        item
+        for item in policy["bindings"]["canonical_artifacts"]
+        if item["path"] == CORPUS_SHADOW_RELATIVE
+    )
+    assert canonical["sha256"] == _sha256(ROOT / CORPUS_SHADOW_RELATIVE)
+    mirrored = next(
+        item for item in fixture["canonical_artifacts"] if item["path"] == CORPUS_SHADOW_RELATIVE
+    )
+    assert mirrored["sha256"] == canonical["sha256"]
+    assert mirrored["identity"] == "native-fulltext-corpus-shadow.v1"
+    evidence = next(
+        item
+        for item in policy["bindings"]["integration_evidence"]
+        if item["path"] == CORPUS_SHADOW_RELATIVE
+    )
+    assert evidence["identity"] == "native-fulltext-corpus-shadow.v1"
+    assert any(
+        item["path"] == CORPUS_SHADOW_RELATIVE
+        and item["identity"] == "native-fulltext-corpus-shadow.v1"
+        for item in fixture["integration_evidence"]
+    )
+    flags = _check_scholarly_parse_plane(ROOT)
+    corpus_flags = [item for item in flags if CORPUS_SHADOW_RELATIVE in item.evidence]
+    assert corpus_flags == [], [str(item) for item in corpus_flags]
+
+
 def test_checker_flags_bare_from_env_pdf_parse_constructor(tmp_path: Path):
     _copy_checker_surface(tmp_path)
     target = tmp_path / "crates/da-cli/src/bare_from_env.rs"

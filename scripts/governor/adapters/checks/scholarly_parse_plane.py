@@ -1652,41 +1652,61 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                     lane_rollback.get(lane),
                 )
 
-    composition_shadow_path = root / "artifacts/parse_compat/native_fulltext_composition_shadow.json"
-    try:
-        composition_shadow = json.loads(composition_shadow_path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        composition_shadow = {}
-    if composition_shadow:
+    # M511/S05: the composition identity surface now has two live artifacts —
+    # the synthetic clone (fixture population) and the preserved-three-sha
+    # corpus shadow (S05/T04). Both are byte-pinned above, so a rewritten
+    # artifact is already `evidence_substitution`; these predicates catch a
+    # semantically collapsed identity that keeps self-consistent-looking bytes
+    # (three-sha corpus collapsing to one, or a preserved corpus re-labelled
+    # synthetic_clone). The flag label always names the concrete artifact.
+    preserved = {
+        "985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b79e7ec4",
+        "e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3",
+        "dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040",
+    }
+    for composition_relative in (
+        "artifacts/parse_compat/native_fulltext_composition_shadow.json",
+        "artifacts/parse_compat/native_fulltext_corpus_shadow.json",
+    ):
+        try:
+            composition_shadow = json.loads((root / composition_relative).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if not composition_shadow:
+            continue
         identity = composition_shadow.get("source_identity") or {}
         outcomes = [row for row in (composition_shadow.get("outcomes") or []) if isinstance(row, dict)]
         shas = {str(row.get("source_sha256") or "") for row in outcomes}
         shas.discard("")
         if not shas and identity.get("source_sha256"):
-            shas = {str(identity.get("source_sha256"))}
+            declared_shas = identity.get("source_sha256")
+            if isinstance(declared_shas, (list, tuple)):
+                shas = {str(item) for item in declared_shas if str(item)}
+            else:
+                shas = {str(declared_shas)}
         documents = int((composition_shadow.get("denominators") or {}).get("documents") or 0)
-        unique = len(shas)
+        # The declared count is the artifact's own identity claim and is part of
+        # the surface this check guards: a claim that disagrees with the measured
+        # outcomes (three sha collapsing to one) is the drift shape, so the claim
+        # is authoritative over the measured fallback when it is present.
+        declared_unique = identity.get("unique_source_sha256")
+        unique = declared_unique if isinstance(declared_unique, int) and not isinstance(declared_unique, bool) else len(shas)
         kind = identity.get("identity_kind")
         if documents > 1 and unique == 1 and kind != "synthetic_clone":
             flag(
                 "acceptance_same_n_drift",
                 "integration",
-                "artifacts/parse_compat/native_fulltext_composition_shadow.json#source_identity",
+                f"{composition_relative}#source_identity",
                 {"identity_kind": "synthetic_clone", "unique_source_sha256": 1},
                 {"identity_kind": kind, "unique_source_sha256": unique, "documents": documents},
             )
-        preserved = {
-            "985461235406db21e1c0f4d16f7c161afe817d1bd23909ae51ddade2b79e7ec4",
-            "e6aa41f580d36f4996d993a64b51e132fc31938ad6562a9fe5c03b0548b285b3",
-            "dac1888221aac5852654ead7f6a751f9cc5e48862a1579fe92cfeb57d0c6e040",
-        }
         ids = " ".join(str(row.get("document_id") or "") for row in outcomes).lower()
         looks_preserved = bool(shas & preserved) or any(token in ids for token in ("hub", "rlm", "reca", "2507.19457", "2512.24601", "2605.26525"))
         if looks_preserved and kind != "preserved_three_sha":
             flag(
                 "acceptance_same_n_drift",
                 "integration",
-                "artifacts/parse_compat/native_fulltext_composition_shadow.json#identity_kind",
+                f"{composition_relative}#identity_kind",
                 "preserved_three_sha",
                 kind,
             )
@@ -1694,7 +1714,7 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
             flag(
                 "acceptance_same_n_drift",
                 "integration",
-                "artifacts/parse_compat/native_fulltext_composition_shadow.json#unique_source_sha256",
+                f"{composition_relative}#unique_source_sha256",
                 3,
                 unique,
             )
