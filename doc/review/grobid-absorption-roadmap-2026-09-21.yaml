@@ -118,6 +118,26 @@ measured_state:
     license_identity_label_present_on_all_rows: true
     blanket_legal_clearance_established: false
     absent_scope_breakdown: {deferred: 4, not_compatibility_requirement: 5, supporting: 7}
+  parity_ledger:
+    carrier: data/parse/grobid_compatibility.yaml
+    contract_id: grobid-java-rust-parity-ledger.v1
+    rows: 38
+    rows_are_the_capability_denominator: true
+    parity: {full: 21, not_applicable_no_java_donor: 1, not_claimed_absent: 16}
+    partial_is_a_declared_level_with_zero_rows: true
+    implemented: 22
+    absent: 16
+    named_gaps: 1
+    named_gap_ids: [learning.ruvllm_ablation]
+    java_sources: 16
+    mutations: {declared: 20, detected: 20, survived: 0}
+    observed_checkout_revision: 523bb8e97f357e93682dc4eaa6d22faa8b5b93de
+    capture_declared_revision: 0b0ab53b159b32792a01fca1d9d04fd02cf8b24b
+    revision_label_discrepancy_resolved: false
+    denominators_recomputed_by_governor: true
+    # Замер S07/T01–T05 (2026-09-24). Счётчики сверяются governor-проверкой
+    # с носителем, а не с этой записью; absent_scope_breakdown берётся из
+    # capability_ledger выше, чтобы не заводить вторую копию.
   license_inventory:
     canonical: data/parse/license_inventory.yaml
     components: 22
@@ -133,7 +153,7 @@ measured_state:
   tests:
     command: "cargo test -p da-parse --tests"
     measured_at: "2026-09-24"
-    suites: 110
+    suites: 112
     # S01/T01 (2026-09-21) дал базовые 1352 passed / 1 ignored, где ignored —
     # целевой гейт preserved_tei_composition_is_independently_well_formed (RED).
     # S01/T02 снял #[ignore] и заменил RED-пин независимой консервацией, S01/T03
@@ -143,21 +163,31 @@ measured_state:
     # markup-aware DOCTYPE и pinned лимиты 4 MiB/128; ниже — свежий замер после
     # этих правок (исторические счётчики относятся к S01/T01 и S01/T03 и
     # сохранены в C07/C08).
-    passed: 1470
+    passed: 1489
     ignored: 0
     failed: 0
-    test_files_in_crates_da_parse_tests: 109
+    test_files_in_crates_da_parse_tests: 111
     # S06/T06 (2026-09-24) переизмерил полный набор после S05: 110 suites /
     # 1470 passed / 0 failed / 0 ignored, и целевой гейт
     # population_contract_enumerates_every_shadow_report снова зелёный (RED
     # S05/T06 снят GAR-006-разбиением reference/executed/evaluated). Счётчики
     # C07/C08 не переписываются — это новый замер, см. C09.
+    # S07/T05 (2026-09-24) переизмерил тот же набор после S07/T01–T04:
+    # 112 suites / 1489 passed / 0 failed / 0 ignored (+2 таргета и +19 тестов:
+    # grobid_parity_ledger_contract — 14, grobid_parity_ledger_mutations — 4,
+    # плюс пробы rest.isalive в backend_contract). См. C10.
     composition_contract_passed: 28
     composition_properties_passed: 8
     # ИСПРАВЛЕНИЕ: теги имён файлов ПЕРЕКРЫВАЮТСЯ и не являются разбиением.
     # 14 файлов несут более одного тега, сумма тегов (108) больше числа файлов (99).
     file_tags_are_overlapping_not_exclusive: true
     file_tag_counts: {contract: 55, properties: 16, oracle: 15, data_contract: 13, same_n: 8, metamorphic: 1}
+    # Замер 2026-09-21 (см. C04). S07/T05 файловый tag-census НЕ переизмерял:
+    # определение подсчёта не машинно-закреплено, поэтому число не выдаётся за
+    # свежее. Свежие прямые счётчики S07/T05 — 111 top-level тестовых файлов
+    # (112 suites = lib + 111 таргетов).
+    file_tag_counts_measured_at: "2026-09-21"
+    file_tag_counts_not_remeasured_in_s07: true
   horizon:
     stages_total: 13
     complete: 12
@@ -333,6 +363,43 @@ corrections:
       (planning-запись PASS не заявляет). measured_state.tests переизмерен на
       2026-09-24: 110 suites / 1470 passed / 0 failed / 0 ignored.
     evidence: artifacts/parse_compat/parse_batch_budget_shadow.json
+  - id: C10
+    previous: >
+      H21 (ledger паритета Java-источник → Rust → независимый тест) числился
+      `pending` с open_item «ledger не построен, scope не зафиксирован
+      построчно», а measured_state.capability_ledger нёс только by_state 38
+      строк — паритетного среза (сколько строк full / not claimed / без донора)
+      в измерениях не было.
+    corrected: >
+      S07/T01–T04 построили ledger внутри того же санкционированного носителя
+      data/parse/grobid_compatibility.yaml. Измерено (parity_ledger):
+      38 rows == 38 capabilities (тот же единственный знаменатель);
+      scope required 15 / supporting 14 / not_compatibility_requirement 5 /
+      deferred 4; паритет full 21 / not_applicable_no_java_donor 1 /
+      not_claimed_absent 16 (уровень partial объявлен в словаре, но его не несёт
+      ни одна строка — счётчик отсутствует, потому что контракт сравнивает
+      словарь точно); implemented 22 / absent 16; named_gaps 1 —
+      learning.ruvllm_ablation (no_java_donor); java_sources 16 (logical path +
+      sha256; 14 через sha256sum относительно документированного
+      $GROBID_VENDOR_ROOT, 2 через capture-артефакты
+      java_grobid_fulltext_semantics_source.json и
+      java_grobid_layout_source.json). Держится машинно: DATA-словарь
+      20 негативных фикстур (измерено 20 declared / 20 detected / 0 survived),
+      общий валидатор crates/da-parse/tests/parity_ledger/mod.rs, контракт
+      grobid_parity_ledger_contract (14 тестов), а знаменатели пересчитываются
+      governor-поверхностью двумя fail-closed флагами (parity_ledger_missing /
+      parity_ledger_denominator). Остаток назван, а не замолчан:
+      (1) расхождение revision label — authority java-grobid-http@0.9.0-crf,
+      capture_declared_revision 0b0ab53b…, observed checkout 523bb8e9…;
+      ledger связывает контент хэшем, а не ярлыком, поэтому пере-вычисление
+      hash-vs-vendor — S07/T06, а согласование ярлыка — предмет S09/владельца;
+      (2) 16 absent-строк остаются без Rust-реализации по product_scope
+      (7 supporting, 5 not_compatibility_requirement, 4 deferred);
+      (3) у learning.ruvllm_ablation нет GROBID-донора. H21 остаётся `pending`,
+      implementation_pass=false и verification_pass=false не меняются. Полный
+      набор tests переизмерен на 2026-09-24: 112 suites / 1489 passed / 0 failed
+      / 0 ignored (см. measured_state.tests).
+    evidence: data/parse/grobid_compatibility.yaml
 
 # ---------------------------------------------------------------------------
 # validation_commands — как воспроизвести проверку (read-only).
@@ -342,9 +409,14 @@ validation_commands:
     expected: "exit=0; только grobid_horizon_review_scope_warning и grobid_horizon_review_status (medium)"
   # S01/T04–T06 (2026-09-21) довели замер до текущего состояния: контракт
   # композитора 28 passed (было 24 после T05 и 17 после T03), properties 8,
-  # полный набор 1374 passed, и два остаточных класса закрыты (см. C08).
+  # полный набор 1374 passed, и два остаточных класса закрыты (см. C08);
+  # S07/T05 (2026-09-24) переизмерил тот же набор после S07/T01–T04 (см. C10).
   - command: "cargo test -p da-parse --tests"
-    expected: "1470 passed; 0 failed; 0 ignored; 110 suites (замер S06/T06, 2026-09-24)"
+    expected: "1489 passed; 0 failed; 0 ignored; 112 suites (замер S07/T05, 2026-09-24)"
+  - command: "cargo test -p da-parse --test grobid_parity_ledger_contract"
+    expected: "14 passed; 0 failed; 0 ignored (три звена на full-строку, scope == product_scope, absent-строки названы, подмена scope ловится)"
+  - command: "cargo test -p da-parse --test grobid_parity_ledger_mutations -- --nocapture"
+    expected: "4 passed; печатает «20 declared mutations, 20 detected, 0 survived»"
   # Исторический RED S01/T01, снятый починкой S01/T02: гейт
   # preserved_tei_composition_is_independently_well_formed больше не #[ignore] и
   # входит в зелёный прогон выше; namespace на синтезируемых обёртках закрыт

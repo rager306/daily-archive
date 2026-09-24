@@ -857,3 +857,54 @@ GAR-006-перечислением проверяется отдельно (см
 --tests` — RC=0, 110 suites / 1470 passed / 0 failed / 0 ignored,
 `population_contract_enumerates_every_shadow_report ... ok`.
 
+## 21. Корректировка 2026-09-24: ledger паритета Java→Rust→тест построен и измерен; revision label остаётся открытым (M511-j7wz2f/S07)
+
+Фиксируется замер S07/T01–T05 и НЕ закрывается H21. Решение описывает только
+planning/offline-носитель: оно не расширяет допуск, не объявляет
+production-достижимость, не снимает ни одного замка (`import_eligible=false`,
+`production_route`/`graph_write`/`auto_promote=forbidden`, `deployed=false`) и не
+даёт права на промоушен или графовую запись. История S01–S06 не переписывается:
+§14–§20 остаются как были.
+
+**Решение (ledger — DATA в уже санкционированном носителе).** Паритет
+Java-источник → Rust-поверхность → независимый тест объявлен блоком `parity_ledger`
+внутри `data/parse/grobid_compatibility.yaml`, а не новым файлом (D377 держит
+санкционированное множество имён). Единственный знаменатель — `capabilities[]`
+того же файла; `parity_ledger.rows[]` — построчная проекция: 38 строк ==
+38 capabilities, `scope` строки равен её `product_scope` (required 15 /
+supporting 14 / not_compatibility_requirement 5 / deferred 4). Паритет: `full` 21,
+`not_applicable_no_java_donor` 1, `not_claimed_absent` 16; уровень `partial`
+объявлен в словаре, но не несёт ни одной строки (контракт сравнивает словарь
+точно, поэтому нулевой ключ не объявляется). Строка без донора или без
+реализации несёт названную причину и НЕ заявляет паритет; единственный
+`named_gaps` — `learning.ruvllm_ablation` (`no_java_donor`).
+
+**Привязка к контенту, а не к ярлыку.** 16 `java_sources` пинятся логическим
+путём + sha256 (14 — `sha256sum` относительно документированного
+`$GROBID_VENDOR_ROOT`, записанного в носителе один раз; 2 — capture-артефактами
+`java_grobid_fulltext_semantics_source.json` и `java_grobid_layout_source.json`).
+Из-за этого расхождение ревизионных ярлыков (`java-grobid-http@0.9.0-crf` /
+`capture_declared_revision` 0b0ab53b… / observed checkout 523bb8e9…) не блокирует
+привязку, но и НЕ разрешается здесь: пере-вычисление хэшей против vendor-дерева —
+S07/T06, согласование ярлыка — предмет S09/владельца.
+
+**Удержание.** Общий валидатор `crates/da-parse/tests/parity_ledger/mod.rs` судит и
+носитель, и подменённые in-memory копии одним чек-сетом, поэтому контракт и
+мутационная матрица не расходятся в правилах; контракт
+`grobid_parity_ledger_contract.rs` (14 тестов) fail-closed; 20 негативных фикстур
+объявлены в DATA и измерены как `20 detected / 0 survived`
+(`grobid_parity_ledger_mutations.rs`); измеренный разрыв `rest.isalive` закрыт
+поведенческой пробой `is_alive_is_true_on_success_and_false_on_5xx_and_transport_outage`
+в `backend_contract.rs`; знаменатели пересчитываются governor-поверхностью двумя
+fail-closed флагами (`scholarly_parse_plane_parity_ledger_missing` /
+`scholarly_parse_plane_parity_ledger_denominator`), а digest носителя перепинен в
+обеих поверхностях и в `artifacts/parse_compat/native_route_recovery.json`.
+
+**Что это НЕ значит.** Замер `cargo test -p da-parse --tests` (112 suites /
+1489 passed / 0 failed / 0 ignored, `--no-fail-fast`) и зелёный контракт ledger'а —
+не закрытие H21 и не доказательство production-паритета: 16 строк остаются
+`absent` по `product_scope` (7 supporting, 5 not_compatibility_requirement,
+4 deferred), расхождение revision label открыто, а H21 остаётся `pending` с
+`implementation_pass=false` и `verification_pass=false` в follow-up-реестре
+(`doc/review/grobid-absorption-followup.json`); ни один PASS не заявлен.
+

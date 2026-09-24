@@ -1226,55 +1226,105 @@
     {
       "stage_id": "H21",
       "title": "P2: ledger паритета Java-источник → Rust → независимый тест",
-      "scope": "P2. Каждый метод Java-источника (донор GROBID), перенесённый в Rust, должен быть сопоставлен в ledger с тремя звеньями: Java-источник, Rust-поверхность, независимый тест. Область (required/supporting/not_compatibility_requirement/deferred) должна быть явной: supporting-строка не может выдаваться за required, а отсутствие звена — за паритет. Замер: required 15, supporting 14, not_compatibility_requirement 5, deferred 4.",
+      "scope": "P2. Каждый метод Java-источника (донор GROBID), перенесённый в Rust, должен быть сопоставлен в ledger с тремя звеньями: Java-источник, Rust-поверхность, независимый тест. Область (required/supporting/not_compatibility_requirement/deferred) должна быть явной: supporting-строка не может выдаваться за required, а отсутствие звена — за паритет. Замер S07: 38 строк == 38 capabilities; scope required 15, supporting 14, not_compatibility_requirement 5, deferred 4; паритет full 21, not_applicable_no_java_donor 1, not_claimed_absent 16 (partial 0 строк, ключ не объявляется); named_gaps 1; 16 пиннутых java_sources.",
       "status": "pending",
       "depends_on": [],
       "owner": "unassigned",
       "adr_refs": [
         "ADR-075",
+        "ADR-076",
         "ADR-051"
       ],
       "implementation_evidence": [
         {
-          "path": "crates/da-parse/src/native_composition.rs",
-          "note": "Rust-поверхность композиции ссылок",
-          "state": "partial"
+          "path": "crates/da-parse/tests/parity_ledger/mod.rs",
+          "note": "Общий валидатор ledger: evaluate_document(root, doc) применяет к блоку parity_ledger санкционированного носителя data/parse/grobid_compatibility.yaml тот же набор правил, что и on-disk контракт, поэтому подменённый in-memory ledger судится ровно тем же чек-сетом; он же служит ядром мутационной матрицы",
+          "state": "present"
         },
         {
-          "path": "crates/da-parse/src/native_bibliography_features.rs",
-          "note": "Rust-поверхность feature-колонок библиографии (ABI)",
+          "path": "crates/da-parse/tests/grobid_parity_ledger_contract.rs",
+          "note": "Fail-closed контракт над блоком parity_ledger: множество id строк == множество capabilities, каждый id ровно один раз; scope == product_scope на всех 38; full ⇒ java.source_id резолвится в java_sources + непустой site + rust.path с symbol как отдельным идентификатором + test-таргет под crates/*/tests/ с fn <name>; sha256 = 64 hex и равен capture для capture-пиннутых источников; license резолвится в license_inventory; absent-строка несёт reason из словаря по product_scope и не имеет ни одного звена; знаменатели равны пересчитанным. 14 тестов",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/grobid_parity_ledger_mutations.rs",
+          "note": "Мутационная матрица: 20 негативных фикстур объявлены в DATA (parity_ledger.mutations) со стабильными id и ожидаемым валидаторным токеном, реестр приложений сверяется с DATA и падает при расхождении; каждая фикстура применяется к in-memory копии ledger и обязана быть поймана своим объявленным путём. Измерено: 20 declared, 20 detected, 0 survived",
+          "state": "present"
+        },
+        {
+          "path": "artifacts/parse_compat/java_grobid_fulltext_semantics_source.json",
+          "note": "Пиннутый capture Java-источника (полный парсер), на который ссылается запись java_sources как pinned_by; инвентарь из 16 java_sources держится либо sha256sum относительно документированного $GROBID_VENDOR_ROOT (14), либо capture-артефактом (fulltext semantics; второй — java_grobid_layout_source.json), то есть привязка идёт к сохранённым байтам, а не к ревизионному ярлыку",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/tests/backend_contract.rs",
+          "note": "Поведенческая проба единственного измеренного разрыва (rest.isalive): is_alive_is_true_on_success_and_false_on_5xx_and_transport_outage различает успех, 5xx и транспортный отказ тремя исходами; строка переведена в parity=full, знаменатели заморожены (full 21 / named_gaps 1)",
           "state": "present"
         },
         {
           "path": "crates/da-parse/tests/native_bibliography_same_n.rs",
-          "note": "независимый same-n тест как третье звено паритета",
+          "note": "Независимый same-n таргет как третье звено паритета для библиографических строк ledger (7 тестов)",
           "state": "present"
+        },
+        {
+          "path": "crates/da-parse/src/native_bibliography_features.rs",
+          "note": "Rust-поверхность feature-колонок библиографии (ABI), связанная строками ledger",
+          "state": "present"
+        },
+        {
+          "path": "crates/da-parse/src/native_composition.rs",
+          "note": "Rust-поверхность композиции ссылок: связана на уровне capability (stage.*-строки), а не по каждому Java-методу — отсюда partial, а не present",
+          "state": "partial"
         }
       ],
       "verification_evidence": [
         {
           "mode": "artifact",
           "ref": "data/parse/grobid_compatibility.yaml",
-          "expected": "каждая Rust-поверхность сопоставлена с Java-источником и независимым тестом, scope указан явно",
-          "status": "pending"
+          "expected": "parity_ledger: 38 строк == 38 capabilities (required 15 / supporting 14 / not_compatibility_requirement 5 / deferred 4); паритет full 21 / not_applicable_no_java_donor 1 / not_claimed_absent 16 (partial 0 строк, ключ не объявляется, потому что контракт сравнивает словарь точно); named_gaps 1 (learning.ruvllm_ablation, no_java_donor); 16 пиннутых java_sources (logical path + sha256); замки удержаны: import_eligible=false, deployed=false, production_route/graph_write/auto_promote=forbidden",
+          "status": "pass"
         },
         {
           "mode": "runtime",
-          "ref": "сверка цепочки Java-источник → Rust-поверхность → независимый тест",
-          "expected": "нет метода без одного из трёх звеньев; required и supporting различены",
-          "status": "pending"
+          "ref": "сверка цепочки Java-источник → Rust-поверхность → независимый тест на живом дереве (S07/T01–T04)",
+          "expected": "grobid_parity_ledger_contract: 14 passed — ни одна строка не остаётся без звена, required и supporting различены по product_scope, 16 absent-строк названы причиной и не заявляют паритет, подмена scope ловится (H21-N1/H21-N2)",
+          "status": "pass"
         },
         {
           "mode": "command",
           "ref": "cargo test -p da-parse --test native_bibliography_same_n",
-          "expected": "независимый тест звена паритета зелёный",
+          "expected": "независимый тест звена паритета зелёный: 7 passed; 0 failed; 0 ignored",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --test grobid_parity_ledger_mutations -- --nocapture",
+          "expected": "4 passed; печатает «20 declared mutations, 20 detected, 0 survived»",
+          "status": "pass"
+        },
+        {
+          "mode": "command",
+          "ref": "cargo test -p da-parse --tests",
+          "expected": "112 suites / 1489 passed / 0 failed / 0 ignored (замер S07/T05, 2026-09-24)",
+          "status": "pass"
+        },
+        {
+          "mode": "governor_rule",
+          "ref": "PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml",
+          "expected": "exit=0; stages=8 unresolved=8 complete=0 claims=0 — H21 не заявляет PASS",
+          "status": "pass"
+        },
+        {
+          "mode": "runtime",
+          "ref": "названный остаток: расхождение revision label и сверка хэшей с vendor-деревом",
+          "expected": "authority java-grobid-http@0.9.0-crf расходится с capture_declared_revision 0b0ab53b… и observed checkout 523bb8e9…; ledger связывает контент хэшем, а не ярлыком, поэтому пере-вычисление hash-vs-vendor вынесено в S07/T06, а согласование ярлыка — предмет S09/владельца",
           "status": "pending"
         }
       ],
       "tested_source": {
         "revision": "bcdd0cfc5e34f64821798463fe23b2f3845efe56",
         "verified": false,
-        "note": "Запись планирования: команды на этой ревизии не исполнялись в рамках этого реестра. verified=false."
+        "note": "Запись планирования остаётся на ревизии bcdd0cfc5, verified=false: команды S07 исполнены позже, на рабочем дереве, и их RC/счётчики записаны в audit-разделе S07 и в task-саммари S07/T01–T05, а не в эту planning-запись. H21 не закрывается: расхождение revision label остаётся открытым (S09/владелец)."
       },
       "index_freshness": {
         "state": "fresh",
@@ -1297,12 +1347,14 @@
         {
           "id": "H21-N1",
           "scenario": "Rust-метод без Java-источника и без независимого теста",
-          "expected": "fail-closed: строка ledger помечена неполной, паритет не заявлен"
+          "expected": "fail-closed: строка ledger помечена неполной, паритет не заявлен. Измерено мутациями missing_java_source_id, missing_rust_entry, missing_test_link, full_without_links, rust_symbol_not_found_in_file, test_fn_not_found_in_target, test_path_not_a_tests_target — каждая поймана своим путём, 0 выживших",
+          "ref": "crates/da-parse/tests/grobid_parity_ledger_mutations.rs; crates/da-parse/tests/grobid_parity_ledger_contract.rs"
         },
         {
           "id": "H21-N2",
           "scenario": "supporting-строка выдана за required",
-          "expected": "fail-closed: подмена области scope обнаружена"
+          "expected": "fail-closed: подмена области scope обнаружена. Измерено мутациями scope_substitution_supporting_to_required и scope_substitution_required_to_supporting — обе пойманы, 0 выживших",
+          "ref": "crates/da-parse/tests/grobid_parity_ledger_mutations.rs; crates/da-parse/tests/parity_ledger/mod.rs"
         }
       ],
       "test_matrix": [
@@ -1323,15 +1375,21 @@
           "type": "Property",
           "applicability": "applicable",
           "reason": "инвариант паритета трёх звеньев"
+        },
+        {
+          "contour": "7 Architecture Invariant",
+          "type": "Mutation",
+          "applicability": "applicable",
+          "reason": "DATA-объявленные 20 негативных фикстур: каждая ловится своим валидатором, 0 выживших"
         }
       ],
       "implementation_pass": false,
       "verification_pass": false,
       "open_item": {
-        "reason": "H21 не закрыт: ledger паритета Java-источник → Rust → независимый тест не построен, scope не зафиксирован построчно.",
+        "reason": "H21 не закрыт, хотя ledger ПОСТРОЕН и ИЗМЕРЕН (38 строк == 38 capabilities, три звена у каждой full-строки, 16 пиннутых java_sources, контракт 14 тестов, мутационная матрица 20 обнаружено / 0 выживших, полный набор da-parse 112 suites / 1489 passed). Этап остаётся pending по трём названным причинам: (1) расхождение revision label не разрешено — authority java-grobid-http@0.9.0-crf, capture_declared_revision 0b0ab53b…, observed checkout 523bb8e9…; ledger связывает контент хэшем, а не ярлыком, поэтому сверка хэшей с vendor-деревом вынесена в S07/T06, а согласование ярлыка — предмет S09/владельца; (2) 16 строк остаются absent по product_scope (7 supporting, 5 not_compatibility_requirement, 4 deferred) и названы, а не выданы за паритет; (3) learning.ruvllm_ablation не имеет GROBID-донора (named_gaps 1), и паритет по нему не заявляется.",
         "since": "2026-09-21",
         "accepted": false,
-        "closure_condition": "Ledger содержит все три звена для каждой перенесённой поверхности, scope строк явный, отрицательные тесты на неполное звено и подмену scope зелёные."
+        "closure_condition": "Ledger содержит все три звена для каждой перенесённой поверхности, scope строк явный, отрицательные тесты на неполное звено и подмену scope зелёные, И расхождение revision label разрешено с пере-вычислением хэшей против vendor-дерева (S07/T06 + согласование владельцем в S09); до этого остаётся открытым."
       }
     }
   ]

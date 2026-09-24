@@ -661,6 +661,72 @@ claims=0`.
 RSS — process high-water mark, включающий сам харнесс; Java-CPU не измерен.
 Потолок удержанных байт ограничивает удержанные исходы, но не RSS.
 
+### Свидетельства среза M511-j7wz2f/S07 (ledger паритета Java→Rust→тест: замер и названные остатки)
+
+Ledger'а не было бы достаточно без машинной привязки: S07/T01 построил его внутри
+уже санкционированного носителя `data/parse/grobid_compatibility.yaml` (блок
+`parity_ledger`), а не в новом файле. Замер исполнен 2026-09-24 на рабочем дереве
+(замер S07/T05); команды и RC приведены ниже.
+
+**Полнота и scope.** 38 строк ledger'а == 38 capabilities того же носителя
+(единственный знаменатель, `capabilities[]`); `scope` каждой строки равен её
+`product_scope`: required 15 / supporting 14 / not_compatibility_requirement 5 /
+deferred 4. `implemented` 22 / `absent` 16. Паритет: `full` 21,
+`not_applicable_no_java_donor` 1, `not_claimed_absent` 16; уровень `partial`
+объявлен в словаре, но его не несёт ни одна строка (ключ не объявляется, потому
+что контракт сравнивает словарь точно). Единственный `named_gaps` —
+`learning.ruvllm_ablation` (`no_java_donor`). Замки носителя не менялись:
+`import_eligible=false`, `production_route`/`graph_write`/`auto_promote=forbidden`,
+`deployed=false`.
+
+**Три звена и их привязка.** 16 `java_sources` пинятся логическим путём + sha256:
+14 — командой `sha256sum` относительно документированного `$GROBID_VENDOR_ROOT`
+(физический корень записан в носителе ОДИН раз), 2 — capture-артефактами
+(`artifacts/parse_compat/java_grobid_fulltext_semantics_source.json`,
+`.../java_grobid_layout_source.json`), то есть привязка идёт к сохранённым байтам,
+а не к ревизионному ярлыку. Rust-поверхность и независимый тест названы построчно:
+`rust.path` + `symbol`, `test.path` под `crates/*/tests/` + `fn <name>`; каждая
+`full`-строка несёт ещё и типизированный словарь отказов (`error_semantics`).
+
+**Машинное удержание.** Общий валидатор `crates/da-parse/tests/parity_ledger/mod.rs`
+(`evaluate_document`) судит и on-disk носитель, и подменённые in-memory копии одним
+чек-сетом, поэтому контракт и мутационная матрица не расходятся в правилах.
+Контракт `crates/da-parse/tests/grobid_parity_ledger_contract.rs` (14 тестов)
+fail-closed: множество id строк == множество capabilities, `scope == product_scope`,
+`full` ⇒ Java-источник + site + Rust-файл/symbol + test-таргет/fn, `absent` ⇒
+причина и ни одного звена. 20 негативных фикстур объявлены в DATA
+(`parity_ledger.mutations`) со стабильными id и ожидаемым валидаторным токеном;
+реестр приложений сверяется с DATA. Измерено: `20 declared mutations, 20 detected,
+0 survived` (`crates/da-parse/tests/grobid_parity_ledger_mutations.rs`). Один
+измеренный разрыв закрыт поведенческой пробой
+`is_alive_is_true_on_success_and_false_on_5xx_and_transport_outage` в
+`crates/da-parse/tests/backend_contract.rs` (23 passed): строка `rest.isalive`
+переведена в `parity=full`, знаменатели заморожены. На governor-поверхности
+знаменатели пересчитываются двумя fail-closed флагами —
+`scholarly_parse_plane_parity_ledger_missing` и
+`scholarly_parse_plane_parity_ledger_denominator`; digest носителя перепинен в
+обеих поверхностях и в `artifacts/parse_compat/native_route_recovery.json`.
+
+**Замер.** `cargo test -p da-parse --test grobid_parity_ledger_contract` → 14
+passed; `... --test grobid_parity_ledger_mutations -- --nocapture` → 4 passed,
+20/20 обнаружено, 0 выживших; `... --test native_bibliography_same_n` → 7 passed;
+`... --test backend_contract` → 23 passed; `cargo test -p da-parse --tests` →
+112 suites / 1489 passed / 0 failed / 0 ignored (было 110/1470 после S06/T06).
+Governor review: `stages=8 unresolved=8 complete=0 claims=0`, exit=0.
+
+**Названные остатки (не выдаются за закрытие).**
+(1) *Расхождение revision label.* Authority `java-grobid-http@0.9.0-crf`,
+`capture_declared_revision` 0b0ab53b…, observed checkout 523bb8e9…. Ledger
+связывает контент хэшем, а не ярлыком, поэтому сверка хэшей против vendor-дерева
+вынесена в S07/T06, а согласование ярлыка — предмет S09/владельца; в этом срезе
+расхождение НЕ разрешается.
+(2) *16 absent-строк* остаются без Rust-реализации по `product_scope`
+(7 supporting, 5 not_compatibility_requirement, 4 deferred) — они названы
+причиной, а не выданы за паритет.
+(3) *`learning.ruvllm_ablation` без GROBID-донора* (`named_gaps` 1) — паритет по
+нему не заявляется. H21 остаётся `pending` с `implementation_pass=false` и
+`verification_pass=false`; ни один PASS не заявлен.
+
 ## Риски, не выдаваемые за воспроизведённые дефекты
 
 | Область | Наблюдение | Требуемая проверка |
@@ -679,6 +745,7 @@ RSS — process high-water mark, включающий сам харнесс; Jav
 | PYTHONPATH=scripts python3 -m pytest scripts/tests/test_governor.py -q | 368 passed |
 | PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q | 446 passed (S06/T06; +3 новых пробы на batch-budget артефакт) |
 | cargo test -p da-parse --tests (S06/T06) | 110 suites / 1470 passed / 0 failed / 0 ignored; `population_contract_enumerates_every_shadow_report` ok |
+| cargo test -p da-parse --tests (S07/T05) | 112 suites / 1489 passed / 0 failed / 0 ignored; ledger-контракт 14 passed, мутационная матрица 20/20 обнаружено, 0 выживших |
 | governor review: horizon, GAR | exit=0; H05/GAR-015 остаются открытыми |
 | Публичный Rust composition probe + независимый XML parser | 2 класса дефектов воспроизведены |
 
@@ -691,9 +758,12 @@ RSS — process high-water mark, включающий сам харнесс; Jav
 упавшей цели. После S06/T05–T06 тот же набор снова зелёный: 110 suites /
 1470 passed / 0 failed / 0 ignored, `population_contract_enumerates_every_shadow_report
 ... ok` — целевой гейт снят GAR-006-разбиением reference/executed/evaluated, а не
-замазан.
+замазан. После S07/T01–T04 тот же набор даёт 112 suites / 1489 passed / 0 failed /
+0 ignored (раздел S07), а top-level тестовых файлов стало 111 (112 suites =
+lib + 111 targets); файловый tag-census S07/T05 не переизмерял — числа ниже
+относятся к 2026-09-21 (см. C04/C10).
 
-Доказательства GSD exec: `6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f` (Rust probe), `73a4222b-035b-4439-955e-96d36c068534` (test totals и валидность исходного XML), `c0d5f8f1-490c-4fe0-87c3-4f6e495c9a5b` (scope и test tags), `98f91300-d06b-4d67-8917-19d64e7b8d18` (реестры). S04: `53726af5-9f84-4682-998c-bbaeb79778cd` (перегенерация замороженного shadow-артефакта), `25049e11-e663-41df-bdd6-d81173c818e0` (визуальный runtime), `e680048f-b40b-4479-bd61-bd78156b3dd1` (fmt/clippy/da-parse suites/pytest/governor review), `64050636-4a3d-4630-87c7-7773177b0f31` (целевые H17-таргеты), `e6b2dff5` (полный `governor architecture`, `GATE_RC=0`).
+Доказательства GSD exec: `6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f` (Rust probe), `73a4222b-035b-4439-955e-96d36c068534` (test totals и валидность исходного XML), `c0d5f8f1-490c-4fe0-87c3-4f6e495c9a5b` (scope и test tags), `98f91300-d06b-4d67-8917-19d64e7b8d18` (реестры). S04: `53726af5-9f84-4682-998c-bbaeb79778cd` (перегенерация замороженного shadow-артефакта), `25049e11-e663-41df-bdd6-d81173c818e0` (визуальный runtime), `e680048f-b40b-4479-bd61-bd78156b3dd1` (fmt/clippy/da-parse suites/pytest/governor review), `64050636-4a3d-4630-87c7-7773177b0f31` (целевые H17-таргеты), `e6b2dff5` (полный `governor architecture`, `GATE_RC=0`). S07: `63936932-af2a-4c70-b887-ecafd8333fc2` (полный набор `da-parse --tests`, 112/1489/0/0), `30912107-5712-413c-850c-b52c50fef637` (целевые ledger/same-n/backend таргеты: 14/4/7/23 и «20 declared, 20 detected, 0 survived»), `d816f9ef-1467-4f69-9b33-9a466c5c3751` (схема followup.json + инварианты H21: pending, оба false, unassigned, verified=false), `362e9417-c76f-4d0f-a7e4-98f4e81f41f0` (governor review до правок — базовый exit=0, claims=0).
 
 ## Индексация
 
@@ -715,6 +785,11 @@ GAR-015 не закрыт. A-XML закрыт на замеренной обла
 измеренная область — ровно 3 документа (не статистический корпус),
 9 `CitationFieldRole`-вариантов без реальной carrier-формы не измерены, и
 собственный набор среза RED по GAR-006-перечислению (раздел S05 выше).
+H21 (ledger паритета Java→Rust→тест) построен и измерен в S07 (раздел S07 выше),
+но остаётся `pending`: расхождение revision label не разрешено (сверка хэшей
+против vendor-дерева — S07/T06, согласование ярлыка — S09), 16 absent-строк без
+Rust-реализации и `learning.ruvllm_ablation` без GROBID-донора названы, а не
+выданы за паритет.
 Исторические PASS задним числом не
 переписываются.
 
