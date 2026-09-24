@@ -721,6 +721,57 @@ struct ExternalHoldoutReleaseProbe {
     cost: ExternalHoldoutReleaseProbeCost,
     citation_requires_recorded_human_release_decision: bool,
     citation_without_release_decision: String,
+    // S08/T02 frozen reference binding (plan-named keys).
+    declared_release: ExternalHoldoutDeclaredRelease,
+    reference_tei: Vec<ExternalHoldoutReferenceTei>,
+    source_manifest_sha256: String,
+    reference_endpoint: String,
+    reference_java_version: String,
+    reference_profile: String,
+    reference_consolidation_flags: ExternalHoldoutConsolidationFlags,
+    captured_at_revision: String,
+}
+
+/// The release the frozen reference is attributable to. `policy_locks.fallback_target`
+/// names the ROLLBACK label; the production release is declared here so the
+/// probe cannot silently measure an undeclared release, and the DATA-plane
+/// label divergence stays a named item (H21) instead of being papered over.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutDeclaredRelease {
+    backend: String,
+    version: String,
+    image_repository: String,
+    image_digest: String,
+    release_pin: String,
+    rollback_version: String,
+    rollback_ref: String,
+    data_plane_authority_label: String,
+    label_divergence_item: String,
+    label_divergence_ref: String,
+}
+
+/// One frozen reference document pin (byte-identity of a committed fixture).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutReferenceTei {
+    article_id: String,
+    path: String,
+    sha256: String,
+    size_bytes: u64,
+}
+
+/// D204 effective-input identity of the frozen reference (profile and
+/// consolidation flags are part of the reference identity, never a free knob).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutConsolidationFlags {
+    #[serde(rename = "consolidateHeader")]
+    consolidate_header: String,
+    #[serde(rename = "consolidateCitations")]
+    consolidate_citations: String,
+    #[serde(rename = "teiCoordinates")]
+    tei_coordinates: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -3723,6 +3774,86 @@ fn validate_external_holdout_release_probe(
         || p.citation_without_release_decision != "forbidden"
     {
         errs.push("[external-holdout-release-probe-citation] citation rule eroded".into());
+    }
+
+    // S08/T02: the frozen reference must stay attributable, byte-pinned and
+    // honest about the DATA-plane label it diverges from. This validator only
+    // refuses shape drift and missing bytes; the independent hermetic oracle in
+    // `external_holdout_probe_contract.rs` owns the semantic refusal-by-name.
+    let declared = &p.declared_release;
+    if declared.backend.is_empty()
+        || declared.version.is_empty()
+        || declared.image_repository.is_empty()
+        || !declared.image_digest.starts_with("sha256:")
+        || declared.rollback_version.is_empty()
+        || declared.rollback_ref != "policy_locks.fallback_target"
+        || declared.data_plane_authority_label.is_empty()
+        || declared.label_divergence_item.is_empty()
+        || declared.label_divergence_ref.is_empty()
+    {
+        errs.push("[external-holdout-reference-release] declared release eroded".into());
+    }
+    if declared.version == declared.rollback_version {
+        errs.push(
+            "[external-holdout-reference-release] declared release collapsed onto the rollback label"
+                .into(),
+        );
+    }
+    if declared.release_pin.is_empty() || !repo_root().join(&declared.release_pin).is_file() {
+        errs.push("[external-holdout-reference-release] release pin missing".into());
+    }
+    if !p.source_manifest_sha256.starts_with("sha256:")
+        || p.reference_endpoint.is_empty()
+        || p.reference_java_version.is_empty()
+        || p.reference_profile.is_empty()
+        || p.captured_at_revision.is_empty()
+    {
+        errs.push("[external-holdout-reference] reference binding eroded".into());
+    }
+    if p.reference_java_version != declared.version {
+        errs.push(
+            "[external-holdout-reference] reference release disagrees with the declared release"
+                .into(),
+        );
+    }
+    if p.reference_consolidation_flags
+        .consolidate_header
+        .is_empty()
+        || p.reference_consolidation_flags
+            .consolidate_citations
+            .is_empty()
+        || p.reference_consolidation_flags.tei_coordinates.is_empty()
+    {
+        errs.push("[external-holdout-reference] D204 consolidation declaration eroded".into());
+    }
+    if p.reference_tei.is_empty() {
+        errs.push("[external-holdout-reference] reference pins missing".into());
+    }
+    let mut reference_hashes: HashSet<String> = HashSet::new();
+    for row in &p.reference_tei {
+        check_fixture_path_shape(
+            &row.path,
+            &format!("release_probe.reference_tei[{}]", row.article_id),
+            &mut errs,
+        );
+        if !row.sha256.starts_with("sha256:") || row.sha256.len() != 71 || row.size_bytes == 0 {
+            errs.push(format!(
+                "[external-holdout-reference] pin `{}` is malformed",
+                row.article_id
+            ));
+        }
+        if !reference_hashes.insert(row.sha256.clone()) {
+            errs.push(format!(
+                "[external-holdout-reference] pin `{}` duplicates another reference sha256",
+                row.article_id
+            ));
+        }
+        if row.article_id.is_empty() || !repo_root().join(&row.path).is_file() {
+            errs.push(format!(
+                "[external-holdout-reference] pin `{}` names a missing fixture",
+                row.article_id
+            ));
+        }
     }
     errs
 }

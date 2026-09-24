@@ -42,12 +42,21 @@
 //!    probe result is not citable (`citation_without_release_decision`,
 //!    `prose_alone_authorizes_citation`). A cleared in-memory clone is citable,
 //!    which is the positive control.
+//! 5. **Frozen reference identity.** The reference byte pins (`reference_tei`),
+//!    their release binding (`declared_release`, `reference_java_version`,
+//!    `reference_profile`, `reference_consolidation_flags`) and their source
+//!    manifest hash are declared DATA, so a fixture can never drift from its
+//!    declaration silently. The declared release must stay distinct from the
+//!    rollback label, the DATA-plane authority-label divergence must stay named
+//!    (H21), and a pin may only name a repo-relative path inside the checkout:
+//!    an absolute pin is `release_probe_reference_path_absolute` and `..`
+//!    traversal is `release_probe_reference_path_escape`.
 
 use serde_yaml::Value as Yaml;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 const PREFIX: &str = "[external-holdout-release-probe]";
 const MANIFEST: &str = "data/parse/acceptance_manifest.yaml";
@@ -56,7 +65,7 @@ const SOURCE_MANIFEST: &str = "data/parse/holdout_manifests.yaml";
 /// The closed key set of the `release_probe` lane. A lane that gains an
 /// undeclared key is `probe_lane_unknown_key`: the declaration is closed DATA,
 /// not an extensible bag.
-const RELEASE_PROBE_KEYS: [&str; 17] = [
+const RELEASE_PROBE_KEYS: [&str; 25] = [
     "schema_version",
     "identity_input",
     "digest_is_byte_hash",
@@ -74,6 +83,42 @@ const RELEASE_PROBE_KEYS: [&str; 17] = [
     "cost",
     "citation_requires_recorded_human_release_decision",
     "citation_without_release_decision",
+    // S08/T02 frozen reference binding (plan-named keys).
+    "declared_release",
+    "reference_tei",
+    "source_manifest_sha256",
+    "reference_endpoint",
+    "reference_java_version",
+    "reference_profile",
+    "reference_consolidation_flags",
+    "captured_at_revision",
+];
+
+/// Closed keys of the release the frozen reference is attributable to.
+/// `policy_locks.fallback_target` names the ROLLBACK label; the production
+/// release is declared here and cross-checked against the real pin file by the
+/// capture tool, while the DATA-plane label divergence stays a named item.
+const RELEASE_PROBE_DECLARED_RELEASE_KEYS: [&str; 10] = [
+    "backend",
+    "version",
+    "image_repository",
+    "image_digest",
+    "release_pin",
+    "rollback_version",
+    "rollback_ref",
+    "data_plane_authority_label",
+    "label_divergence_item",
+    "label_divergence_ref",
+];
+
+/// Closed keys of one frozen reference document pin.
+const RELEASE_PROBE_REFERENCE_ROW_KEYS: [&str; 4] = ["article_id", "path", "sha256", "size_bytes"];
+
+/// Closed keys of the D204 consolidation declaration carried with the pins.
+const RELEASE_PROBE_CONSOLIDATION_KEYS: [&str; 3] = [
+    "consolidateHeader",
+    "consolidateCitations",
+    "teiCoordinates",
 ];
 
 const RELEASE_PROBE_METRIC_KEYS: [&str; 7] = [
@@ -247,6 +292,51 @@ fn put_metric_node(doc: &mut Yaml, index: usize, key: &str, value: Yaml) {
     row.insert(Yaml::String(key.to_string()), value);
 }
 
+fn put_reference_str(doc: &mut Yaml, index: usize, key: &str, value: &str) {
+    let rows = at_path_mut(
+        doc,
+        &[
+            "external_holdout_contract",
+            "release_probe",
+            "reference_tei",
+        ],
+    )
+    .and_then(Yaml::as_sequence_mut)
+    .expect("release_probe.reference_tei");
+    let row = rows
+        .get_mut(index)
+        .and_then(Yaml::as_mapping_mut)
+        .unwrap_or_else(|| panic!("{PREFIX} reference row {index}"));
+    row.insert(
+        Yaml::String(key.to_string()),
+        Yaml::String(value.to_string()),
+    );
+}
+
+/// Containment predicate for the frozen-reference pins: a pin may only name a
+/// repo-relative path staying inside the checkout that signs it. An absolute
+/// pin or `..` traversal is refused by name, so a reference can never point
+/// outside the tree whose hash it would be cited against.
+fn reference_path_violation(lane: &Yaml) -> Option<&'static str> {
+    for row in seq(lane, "reference_tei")? {
+        let Some(path) = str_at(row, "path") else {
+            return Some("release_probe_reference_path_missing");
+        };
+        if Path::new(path).is_absolute() {
+            return Some("release_probe_reference_path_absolute");
+        }
+        if Path::new(path).components().any(|component| {
+            matches!(
+                component,
+                Component::ParentDir | Component::RootDir | Component::Prefix(_)
+            )
+        }) {
+            return Some("release_probe_reference_path_escape");
+        }
+    }
+    None
+}
+
 /// External rows are `classes.<class>.rows`; a `local_proxy` block is never an
 /// external row. Returns `(class, id, state)`.
 fn external_rows(doc: &Yaml) -> Vec<(String, String, String)> {
@@ -364,6 +454,9 @@ fn cite_probe_result(doc: &Yaml, claim: ProbeClaim<'_>) -> Result<(), String> {
     }
     if str_at(lane, "schema_version") != Some("external-holdout-release-probe.v1") {
         return Err("probe_lane_schema_drift".into());
+    }
+    if let Some(label) = reference_path_violation(lane) {
+        return Err(label.to_string());
     }
 
     // ── frozen identity ──────────────────────────────────────────────────────
@@ -578,6 +671,126 @@ fn release_probe_lane_is_declared_with_a_closed_key_set() {
             .map(ToString::to_string)
             .collect::<BTreeSet<String>>()
     );
+
+    // S08/T02 frozen reference binding: the declared release, the byte pins and
+    // the D204 consolidation declaration are closed DATA too.
+    let declared = at(lane, "declared_release").expect("release_probe.declared_release");
+    assert_eq!(
+        keys_of(declared),
+        RELEASE_PROBE_DECLARED_RELEASE_KEYS
+            .iter()
+            .map(ToString::to_string)
+            .collect::<BTreeSet<String>>(),
+        "{PREFIX} declared_release must carry exactly the declared key set"
+    );
+    let reference_rows = seq(lane, "reference_tei").expect("release_probe.reference_tei");
+    assert!(!reference_rows.is_empty());
+    for row in reference_rows {
+        assert_eq!(
+            keys_of(row),
+            RELEASE_PROBE_REFERENCE_ROW_KEYS
+                .iter()
+                .map(ToString::to_string)
+                .collect::<BTreeSet<String>>(),
+            "{PREFIX} reference_tei rows must carry exactly the declared pin keys"
+        );
+    }
+    let flags = at(lane, "reference_consolidation_flags")
+        .expect("release_probe.reference_consolidation_flags");
+    assert_eq!(
+        keys_of(flags),
+        RELEASE_PROBE_CONSOLIDATION_KEYS
+            .iter()
+            .map(ToString::to_string)
+            .collect::<BTreeSet<String>>()
+    );
+}
+
+/// The frozen reference must stay attributable and honest about the DATA-plane
+/// label it diverges from. If the declared production release collapses onto
+/// the rollback label, or the divergence stops being named, the guard has been
+/// neutered and this test fails by name.
+#[test]
+fn frozen_reference_names_its_release_and_the_data_plane_label_divergence() {
+    let doc = manifest();
+    let lane = at_path(&doc, "external_holdout_contract.release_probe")
+        .unwrap_or_else(|| panic!("{PREFIX} the release_probe lane must be declared"));
+    let declared = at(lane, "declared_release").expect("release_probe.declared_release");
+
+    assert_eq!(str_at(declared, "backend"), Some("java-grobid-http"));
+    let version = str_at(declared, "version").expect("declared release version");
+    let rollback = str_at(declared, "rollback_version").expect("declared rollback version");
+    assert_ne!(
+        version, rollback,
+        "{PREFIX} the declared production release must not collapse onto the rollback release"
+    );
+    assert_eq!(
+        str_at(declared, "rollback_ref"),
+        Some("policy_locks.fallback_target")
+    );
+    assert_eq!(
+        str_at(declared, "data_plane_authority_label"),
+        Some("java-grobid-http@0.9.0-crf"),
+        "{PREFIX} the DATA-plane authority label the reference diverges from must stay named"
+    );
+    assert_eq!(
+        str_at(declared, "label_divergence_item"),
+        Some("H21"),
+        "{PREFIX} the label divergence is a named open item and must not be dropped"
+    );
+    assert!(str_at(declared, "image_repository").is_some_and(|value| !value.is_empty()));
+    assert!(str_at(declared, "image_digest").is_some_and(|value| value.starts_with("sha256:")));
+    let pin = str_at(declared, "release_pin").expect("release_pin");
+    assert!(
+        root().join(pin).is_file(),
+        "{PREFIX} the declared release pin `{pin}` must exist on disk"
+    );
+
+    // The captured release identity must agree with the declaration: two
+    // sources of one fact would be free to drift apart silently.
+    assert_eq!(
+        str_at(lane, "reference_java_version"),
+        Some(version),
+        "{PREFIX} reference_java_version must equal the declared release version"
+    );
+    assert_eq!(str_at(lane, "reference_profile"), Some("structural"));
+    let flags = at(lane, "reference_consolidation_flags").expect("consolidation flags");
+    assert_eq!(str_at(flags, "consolidateHeader"), Some("0"));
+    assert_eq!(str_at(flags, "consolidateCitations"), Some("0"));
+
+    // A pin without bytes is not a pin: every declared fixture must exist and
+    // declare a positive size. Byte equality against the pin is enforced by the
+    // capture tool's `--verify` mode, not duplicated here.
+    let rows = seq(lane, "reference_tei").expect("release_probe.reference_tei");
+    assert_eq!(
+        rows.len(),
+        5,
+        "{PREFIX} the frozen reference is five documents"
+    );
+    assert!(
+        str_at(lane, "source_manifest_sha256").is_some_and(|value| value.starts_with("sha256:"))
+    );
+    assert!(
+        str_at(lane, "captured_at_revision").is_some_and(|value| !value.is_empty()),
+        "{PREFIX} the capture revision must be recorded"
+    );
+    for row in rows {
+        let path = str_at(row, "path").expect("reference pin path");
+        assert!(
+            root().join(path).is_file(),
+            "{PREFIX} frozen reference `{path}` must exist on disk"
+        );
+        assert!(
+            str_at(row, "sha256").is_some_and(|value| value.starts_with("sha256:")),
+            "{PREFIX} frozen reference `{path}` must pin a sha256"
+        );
+        assert!(
+            row.get("size_bytes")
+                .and_then(Yaml::as_u64)
+                .is_some_and(|size| size > 0),
+            "{PREFIX} frozen reference `{path}` must declare a positive size"
+        );
+    }
 }
 
 #[test]
@@ -891,6 +1104,17 @@ fn negative_matrix_catches_every_named_lane_mutation() {
     let mut threshold_duplicated = doc.clone();
     put_metric_node(&mut threshold_duplicated, 1, "margin", Yaml::from(0.25_f64));
 
+    let mut reference_path_absolute = doc.clone();
+    put_reference_str(&mut reference_path_absolute, 0, "path", "/etc/passwd");
+
+    let mut reference_path_escape = doc.clone();
+    put_reference_str(
+        &mut reference_path_escape,
+        0,
+        "path",
+        "crates/da-parse/tests/fixtures/holdout/../../../../etc/passwd",
+    );
+
     let cases: Vec<(&str, Yaml, &str)> = vec![
         ("lane removal", no_lane, "probe_lane_missing"),
         ("unknown lane key", unknown_key, "probe_lane_unknown_key"),
@@ -939,6 +1163,16 @@ fn negative_matrix_catches_every_named_lane_mutation() {
             "duplicated threshold",
             threshold_duplicated,
             "probe_metric_threshold_duplicated",
+        ),
+        (
+            "absolute reference path",
+            reference_path_absolute,
+            "release_probe_reference_path_absolute",
+        ),
+        (
+            "escaping reference path",
+            reference_path_escape,
+            "release_probe_reference_path_escape",
         ),
     ];
     assert!(

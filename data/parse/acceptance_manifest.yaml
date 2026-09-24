@@ -260,6 +260,62 @@ external_holdout_contract:
       cost_status: bounded_not_measured
       unknown_is_not_zero: true
       pooled_cost_claim: forbidden
+    # S08/T02: the frozen reference identity. `reference_tei` carries the byte
+    # pins of the committed holdout TEI; it is filled by the same change that
+    # commits the fixtures, so a document can never be cited while the bytes it
+    # names are absent or drifting.
+    #
+    # `declared_release` is the release the reference must be attributable to.
+    # `policy_locks.fallback_target` names `java-grobid-http@0.9.0-crf`, but that
+    # is the ROLLBACK target (see `.docker/grobid-release.override.yml`, which
+    # documents itself as the explicit production pin, and M505 provenance:
+    # `production_live_version_probe=0.9.1`). Measuring the live service against
+    # the rollback label would block a correct environment, so the production
+    # release is declared here as DATA and cross-checked against the real pin
+    # file (drift => `java_release_pin_drift`). The DATA-plane authority-label
+    # divergence is a named open item (H21) reconciled in S09, recorded here
+    # instead of being papered over.
+    declared_release:
+      backend: java-grobid-http
+      version: '0.9.1'
+      image_repository: grobid/grobid
+      image_digest: sha256:223957791ac2bbe48609dcc58a689b16b60baeae13a8734ef440ae6bfb38f4cd
+      release_pin: .docker/grobid-release.override.yml
+      rollback_version: '0.9.0'
+      rollback_ref: policy_locks.fallback_target
+      data_plane_authority_label: java-grobid-http@0.9.0-crf
+      label_divergence_item: H21
+      label_divergence_ref: doc/review/grobid-absorption-audit-2026-09-21.md
+    reference_tei:
+    - article_id: '1203.2295'
+      path: crates/da-parse/tests/fixtures/holdout/1203.2295.tei.xml
+      sha256: sha256:a230094fff20d5434e1871ee9511ce61d71777b6ff0454faeaedc79cdfef6629
+      size_bytes: 46984
+    - article_id: '2401.17167'
+      path: crates/da-parse/tests/fixtures/holdout/2401.17167.tei.xml
+      sha256: sha256:7c9c42adc0ddbc22a9bf889c31dd3387b26d6dd8cd007909fb3127c29628c262
+      size_bytes: 191436
+    - article_id: '2411.07228'
+      path: crates/da-parse/tests/fixtures/holdout/2411.07228.tei.xml
+      sha256: sha256:97a3f9f0eab21f512a2fed28a7e98058d002c3a056297d86f7bc4e025b4ec0db
+      size_bytes: 142184
+    - article_id: '2505.16270'
+      path: crates/da-parse/tests/fixtures/holdout/2505.16270.tei.xml
+      sha256: sha256:2d09c727aa300bf8446efbdf55a94d7713b4d7d39e9fd3f84ee84b12453426bc
+      size_bytes: 264028
+    - article_id: '2608.22118'
+      path: crates/da-parse/tests/fixtures/holdout/2608.22118.tei.xml
+      sha256: sha256:635dc993492fbb3e83b9d8478fe85be56042bcacf435a627b8e254f1761a2714
+      size_bytes: 94186
+    source_manifest_sha256: sha256:9305aa0b6d96cfb7ef5d6a5d87b8098b725cef1d0f488154e599f7444d0d4ab8
+    reference_endpoint: http://127.0.0.1:8070
+    reference_java_version: '0.9.1'
+    reference_profile: structural
+    reference_consolidation_flags:
+      consolidateHeader: '0'
+      consolidateCitations: '0'
+      teiCoordinates: figure,table,note,formula
+    captured_at_revision: git:602fa8637480fb5b5cedf3115afbc1954cbf5619
     citation_requires_recorded_human_release_decision: true
     citation_without_release_decision: forbidden
 release_decision_package:
