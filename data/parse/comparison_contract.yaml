@@ -1146,3 +1146,68 @@ native_core_qualification:
     closed or claimed by S08. Those stay typed not_observed; this block only
     profiles the native scalar CRF core and records a closed SIMD/PGO
     disposition.
+
+# ────────────── S06: global batch budgets and bounded reorder ──────────────
+# Top-level SIBLING added by S06/T01: no existing block above is mutated and no
+# new file is created under data/parse/ (D377 keeps the sanctioned set at 24
+# names). Rationale — S06 must DESIGN its ceilings before any behaviour change.
+# The only batch budget today (`ParseBatchBudget`/`ParseBatchLimits` in
+# crates/da-parse/src/batch.rs) counts SLOTS: workers, queue capacity, in-flight
+# and document counts. It pins `budget_scope: process-local` and declares no
+# byte, RSS, Java-CPU or latency ceiling. H05-N2 forbids presenting a
+# document-count limit as a byte or RSS ceiling, so the ceiling dictionary, the
+# mandatory metric set and the prohibitions live here as DATA and are bound to
+# the LIVE `da_parse::batch_budget` constants by
+# crates/da-parse/tests/batch_budget_data_contract.rs before any behaviour
+# changes. This block does NOT close H05 and does not touch S08's
+# `native_core_qualification` block above.
+batch_budget_ceilings:
+  schema_version: batch-budget-ceilings.v1
+  adr_ref: ADR-076
+  requirement_ids: [R085, R087, R139]
+
+  # Closed observation grammar. `not_observed` is the ONLY honest carrier for an
+  # unmeasured value: it must name a reason and never a number, so a ceiling
+  # cannot be reported as observed without a measurement (H19-N1).
+  observation_states: [observed, not_observed]
+  absence_requires_reason: true
+
+  # Mandatory S06 metric set. Every ceiling observation carries exactly one of
+  # these names; a missing or invented name is a DATA failure.
+  metrics:
+    - latency_p50_ms
+    - latency_p95_ms
+    - latency_p99_ms
+    - peak_retained_bytes
+    - peak_rss_bytes
+    - java_cpu_wall_clock_ns
+    - max_reorder_depth
+    - max_publication_outstanding
+    - max_in_flight
+    - budget_waits
+
+  # Closed verdict vocabulary for a measured ceiling. `memory_pressure` is the
+  # honest verdict when an observed peak sits above the declared retention
+  # ceiling; `not_observed` is the verdict when no measurement exists.
+  verdicts: [within_ceiling, memory_pressure, not_observed]
+
+  # Invariants — prohibitions, not tuning knobs.
+  zero_is_not_a_measurement: true
+  silent_clamp: forbidden
+  count_limit_is_not_a_byte_ceiling: true
+  retention_ceiling_composes_with: response_bytes_transport_bound
+
+  # H05 stays unclaimed: this block declares ceilings, it measures none. H05
+  # closes only when RSS, Java CPU and latency tails are MEASURED under
+  # concurrent batches with a slow ordinal-0 document
+  # (doc/review/grobid-rust-horizon-review.json#H05).
+  h05_closure: not_claimed
+  h05_reason: >-
+    H05 stays explicitly unclaimed. Slot limits (workers, queue capacity,
+    in-flight and document counts) are bounded today, but no byte, RSS,
+    Java-CPU or latency-tail ceiling is measured or declared by S06/T01: this
+    block only freezes the ceiling dictionary, the mandatory metric set and the
+    prohibitions as DATA. H05 stays unclaimed until RSS, Java CPU and latency
+    tails are MEASURED under concurrent batches with a slow ordinal-0 document
+    (doc/review/grobid-rust-horizon-review.json#H05). An unmeasured value stays
+    a typed not_observed with a named reason, never a fabricated number.

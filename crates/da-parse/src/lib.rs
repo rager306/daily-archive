@@ -27,6 +27,7 @@
 
 mod backend;
 mod batch;
+mod batch_budget;
 mod cache;
 mod callout_markers;
 mod conservation;
@@ -90,6 +91,14 @@ pub use batch::{
     ParseBatchMemoryCheckpoint, ParseBatchResultSink, ParseBatchRunSummary, ParseBatchSinkError,
     ParseDocumentFailure, ParseDocumentOutcome, ParseDocumentSuccess, ordered_input_fingerprint,
     ordered_input_fingerprint_with_backend_version,
+};
+pub use batch_budget::{
+    BATCH_BUDGET_ABSENCE_REQUIRES_REASON, BATCH_BUDGET_CEILINGS_ADR_REF,
+    BATCH_BUDGET_CEILINGS_REQUIREMENT_IDS, BATCH_BUDGET_CEILINGS_SCHEMA_VERSION,
+    BATCH_BUDGET_COUNT_LIMIT_IS_NOT_A_BYTE_CEILING, BATCH_BUDGET_H05_CLOSURE,
+    BATCH_BUDGET_H05_REASON, BATCH_BUDGET_METRICS, BATCH_BUDGET_RETENTION_CEILING_COMPOSES_WITH,
+    BATCH_BUDGET_SILENT_CLAMP, BATCH_BUDGET_VERDICTS, BATCH_BUDGET_ZERO_IS_NOT_A_MEASUREMENT,
+    BATCH_OBSERVATION_STATES, BatchObservation,
 };
 pub use cache::{
     CacheIntegrityCode, CacheMode, CacheStageDisposition, MEMORY_TIER_DEFAULT_CAPACITY,
