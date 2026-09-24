@@ -696,6 +696,61 @@ struct ExternalHoldoutCostBounds {
     release_claim_allowed: bool,
 }
 
+/// S08/T01 frozen release-probe lane: identity canonicalization handles, metric
+/// DEFINITIONS and latency/cost accounting declared before any measurement. This
+/// is an additive child of the external holdout contract and carries no
+/// threshold value of its own (only a `margin_ref`), so a margin can never be
+/// fitted after seeing a result.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutReleaseProbe {
+    schema_version: String,
+    identity_input: String,
+    digest_is_byte_hash: bool,
+    digest_is_authority_binding: bool,
+    frozen_before_execution: bool,
+    source_manifest: String,
+    digest_input_fields: Vec<String>,
+    digest_input_order: String,
+    digest_field_separator: String,
+    digest_record_separator: String,
+    identity_digest: String,
+    margin_ref: String,
+    metrics: Vec<ExternalHoldoutReleaseProbeMetric>,
+    latency: ExternalHoldoutReleaseProbeLatency,
+    cost: ExternalHoldoutReleaseProbeCost,
+    citation_requires_recorded_human_release_decision: bool,
+    citation_without_release_decision: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutReleaseProbeMetric {
+    metric: String,
+    numerator_definition: String,
+    denominator_definition: String,
+    aggregation: String,
+    claim_scope: String,
+    zero_admitted_population_behavior: String,
+    margin_ref: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutReleaseProbeLatency {
+    unit: String,
+    measurement_source: String,
+    pooled_latency_claim: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutReleaseProbeCost {
+    cost_status: String,
+    unknown_is_not_zero: bool,
+    pooled_cost_claim: String,
+}
+
 /// Additive S20 external-holdout contract (advisory-only transferability
 /// probe; no external bytes, no release claim).
 #[derive(Debug, Clone, Deserialize)]
@@ -714,6 +769,7 @@ struct ExternalHoldoutContract {
     transfer_accounting: ExternalHoldoutTransferAccounting,
     result_invalidation: ExternalHoldoutResultInvalidation,
     citation_rule: ExternalHoldoutCitationRule,
+    release_probe: ExternalHoldoutReleaseProbe,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -3590,6 +3646,83 @@ fn validate_external_holdout_contract(e: &ExternalHoldoutContract) -> Vec<String
         || c.release_claim_allowed
     {
         errs.push("[external-holdout-cost] cost bounds eroded".into());
+    }
+    errs.extend(validate_external_holdout_release_probe(
+        &e.release_probe,
+        &e.acceptance_margins,
+    ));
+    errs
+}
+
+/// S08/T01 frozen release-probe lane: the lane's identity handles, metric
+/// definitions and transfer accounting are declared before measurement, its
+/// metric vocabulary is the `acceptance_margins` vocabulary (never a second
+/// dictionary) and its citation stays fail-closed. The independent hermetic
+/// oracle lives in `crates/da-parse/tests/external_holdout_probe_contract.rs`;
+/// this validator only refuses shape drift.
+fn validate_external_holdout_release_probe(
+    p: &ExternalHoldoutReleaseProbe,
+    margins: &ExternalHoldoutMargins,
+) -> Vec<String> {
+    let mut errs = Vec::new();
+    if p.schema_version != "external-holdout-release-probe.v1" {
+        errs.push("[external-holdout-release-probe] lane schema drifted".into());
+    }
+    if p.identity_input != "canonical_dataset_id_plus_identity"
+        || p.digest_is_byte_hash
+        || !p.digest_is_authority_binding
+        || !p.frozen_before_execution
+        || p.digest_input_fields != ["article_id", "sha256"]
+        || p.digest_input_order != "as_listed"
+        || p.digest_field_separator.is_empty()
+        || p.digest_record_separator.is_empty()
+    {
+        errs.push(
+            "[external-holdout-release-probe-identity] frozen identity handles eroded".into(),
+        );
+    }
+    if p.source_manifest.is_empty() || !repo_root().join(&p.source_manifest).is_file() {
+        errs.push("[external-holdout-release-probe-identity] source manifest missing".into());
+    }
+    if !p.identity_digest.starts_with("sha256:") || p.identity_digest.len() != 71 {
+        errs.push("[external-holdout-release-probe-identity] identity digest malformed".into());
+    }
+    if p.margin_ref != "external_holdout_contract.acceptance_margins" {
+        errs.push("[external-holdout-release-probe-metrics] margin ref drifted".into());
+    }
+    let margin_metrics: Vec<&str> = margins.margins.iter().map(|m| m.metric.as_str()).collect();
+    let declared: Vec<&str> = p.metrics.iter().map(|m| m.metric.as_str()).collect();
+    if declared.len() != margin_metrics.len()
+        || !margin_metrics
+            .iter()
+            .all(|metric| declared.contains(metric))
+    {
+        errs.push("[external-holdout-release-probe-metrics] metric vocabulary drifted".into());
+    }
+    for row in &p.metrics {
+        if row.numerator_definition.trim().is_empty()
+            || row.denominator_definition.trim().is_empty()
+            || row.aggregation != "per_document"
+            || row.claim_scope != "local_proxy_only"
+            || row.margin_ref != "external_holdout_contract.acceptance_margins"
+            || row.zero_admitted_population_behavior != "no_denominator"
+        {
+            errs.push("[external-holdout-release-probe-metrics] metric definition eroded".into());
+        }
+    }
+    if p.latency.unit.trim().is_empty()
+        || p.latency.measurement_source.trim().is_empty()
+        || p.latency.pooled_latency_claim != "forbidden"
+        || p.cost.cost_status != "bounded_not_measured"
+        || !p.cost.unknown_is_not_zero
+        || p.cost.pooled_cost_claim != "forbidden"
+    {
+        errs.push("[external-holdout-release-probe-accounting] accounting eroded".into());
+    }
+    if !p.citation_requires_recorded_human_release_decision
+        || p.citation_without_release_decision != "forbidden"
+    {
+        errs.push("[external-holdout-release-probe-citation] citation rule eroded".into());
     }
     errs
 }

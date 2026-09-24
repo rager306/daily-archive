@@ -210,6 +210,58 @@ external_holdout_contract:
     prose_alone_authorizes_citation: false
     citation_without_release_decision: forbidden
     citation_of_unexecuted_external_rows: forbidden
+  # S08/T01: the frozen release-probe lane. ADDITIVE child of the existing
+  # external holdout contract: it declares the frozen-identity canonicalization,
+  # the metric DEFINITIONS and the latency/cost accounting for the S08 external
+  # probe, and it never lifts the external `bytes_absent` band above. Threshold
+  # values are owned by `acceptance_margins`; this lane carries only definitions
+  # (a `margin_ref`, never a second numeric dictionary), so a margin can never be
+  # fitted after seeing a result. The probe's own executed/evaluated population
+  # belongs to the runtime artifact (GAR-006), not to this frozen declaration.
+  release_probe:
+    schema_version: external-holdout-release-probe.v1
+    identity_input: canonical_dataset_id_plus_identity
+    digest_is_byte_hash: false
+    digest_is_authority_binding: true
+    frozen_before_execution: true
+    source_manifest: data/parse/holdout_manifests.yaml
+    digest_input_fields:
+    - article_id
+    - sha256
+    digest_input_order: as_listed
+    digest_field_separator: "|"
+    digest_record_separator: "\n"
+    identity_digest: sha256:22df1b7e97b57304056637b8b02d6458e91b7e371b9d686fdc62414d422e810a
+    margin_ref: external_holdout_contract.acceptance_margins
+    metrics:
+    - metric: document_agreement_ratio
+      numerator_definition: documents whose frozen probe result agrees with the
+        live Java reference within the declared per-document tolerance
+      denominator_definition: documents with an admitted, non-zero evaluated
+        population
+      aggregation: per_document
+      claim_scope: local_proxy_only
+      zero_admitted_population_behavior: no_denominator
+      margin_ref: external_holdout_contract.acceptance_margins
+    - metric: document_uncertainty_interval_width
+      numerator_definition: per-document bounded uncertainty interval upper bound
+        minus its lower bound
+      denominator_definition: documents with an admitted, non-zero evaluated
+        population
+      aggregation: per_document
+      claim_scope: local_proxy_only
+      zero_admitted_population_behavior: no_denominator
+      margin_ref: external_holdout_contract.acceptance_margins
+    latency:
+      unit: seconds_per_document
+      measurement_source: recorded_wall_clock_per_document
+      pooled_latency_claim: forbidden
+    cost:
+      cost_status: bounded_not_measured
+      unknown_is_not_zero: true
+      pooled_cost_claim: forbidden
+    citation_requires_recorded_human_release_decision: true
+    citation_without_release_decision: forbidden
 release_decision_package:
   schema_version: release-decision-package.v1
   purpose: bounded_evaluation_and_release_review_only
