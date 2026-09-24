@@ -1684,11 +1684,27 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
                 shas = {str(item) for item in declared_shas if str(item)}
             else:
                 shas = {str(declared_shas)}
-        documents = int((composition_shadow.get("denominators") or {}).get("documents") or 0)
         # The declared count is the artifact's own identity claim and is part of
         # the surface this check guards: a claim that disagrees with the measured
         # outcomes (three sha collapsing to one) is the drift shape, so the claim
         # is authoritative over the measured fallback when it is present.
+        #
+        # M511/S05/T07: the corpus shadow carries the GAR-006 population split,
+        # so its declared document count lives in `reference_population`.  The
+        # legacy `denominators` location is still read as a fallback for the
+        # synthetic composition artifact (which has no denominators at all), and
+        # a non-integer value degrades to 0 rather than raising: predicates 2
+        # and 3 below stay the identity guards in that case.
+        reference_population = composition_shadow.get("reference_population") or {}
+        legacy_denominators = composition_shadow.get("denominators") or {}
+        declared_documents = reference_population.get("documents")
+        if not isinstance(declared_documents, int) or isinstance(declared_documents, bool):
+            declared_documents = legacy_denominators.get("documents")
+        documents = (
+            declared_documents
+            if isinstance(declared_documents, int) and not isinstance(declared_documents, bool)
+            else 0
+        )
         declared_unique = identity.get("unique_source_sha256")
         unique = declared_unique if isinstance(declared_unique, int) and not isinstance(declared_unique, bool) else len(shas)
         kind = identity.get("identity_kind")

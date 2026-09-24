@@ -22,10 +22,20 @@
 //!    admission_coverage`;
 //! 4. it emits `artifacts/parse_compat/native_fulltext_corpus_shadow.json` carrying
 //!    `source_identity.identity_kind = preserved_three_sha`,
-//!    `unique_source_sha256 = 3`, `denominators.documents = 3`, three rows with
+//!    `unique_source_sha256 = 3`, the GAR-006 population split
+//!    (`reference_population` identity-only with its own `documents` count,
+//!    `executed_population` with `corpus_execution`/`execution_evidence`, and
+//!    `evaluated_population` with the measured `status`), three rows with
 //!    three distinct sha256, the per-class counters and the corpus aggregate,
 //!    plus the T03 mutation dictionary and the policy locks — and no raw TEI, no
 //!    field values, no e-mail and no author names.
+//!
+//!    T07: the report must satisfy the GAR-006 shadow-population contract
+//!    (`data/parse/acceptance_manifest.yaml` -> `population_contract`), which
+//!    requires a distinguishable reference/executed/evaluated split and FORBIDS
+//!    the undifferentiated legacy blocks `denominators` and `corpus`.  Every
+//!    measured number is unchanged by that re-shaping: no field is re-derived,
+//!    only re-homed.
 //!
 //! The measurement rule is the one S05/T01 froze (occurrence-net conservation:
 //! `conserved = emitted_matches - source_matches` for the header classes, because
@@ -49,6 +59,18 @@ use std::path::{Path, PathBuf};
 
 const REPORT_SCHEMA: &str = "native-fulltext-corpus-shadow.v1";
 const CORPUS_ID: &str = "preserved_three_sha";
+
+// GAR-006 population split (T07).  The reference population is identity-only so
+// its numbers cannot be read as executed; the executed population names the
+// evidence that produced it; the evaluated population carries the measured
+// status.  The evidence token's kind must be a member of the governor's
+// declared `evidence_kinds` vocabulary
+// (`scripts/governor/checks/executed_population_binding.yaml#populations`).
+const REFERENCE_POPULATION_ROLE: &str = "identity_only";
+const REFERENCE_POPULATION_IDENTITY: &str = "reviewed_three_document_corpus_semantic_reference";
+const EXECUTION_EVIDENCE: &str = "tracked_offline_fixture:preserved_three_sha_tei";
+const EVALUATED_STATUS: &str = "evaluated";
+const EVALUATED_ORACLE: &str = "preserved_three_sha_semantic_oracle";
 const DATA: &str = include_str!("../../../data/parse/comparison_contract.yaml");
 const PROVENANCE: &str = include_str!("../../da-parse/tests/fixtures/preserved/provenance.yaml");
 
@@ -1444,8 +1466,13 @@ struct DenominatorRow {
     admitted: usize,
 }
 
+/// GAR-006 reference population: identity-only.  It names the referenced corpus
+/// and carries its own document count plus the per-class *source* population, so
+/// a referenced count cannot be consumed as an executed one.
 #[derive(Serialize)]
-struct Denominators {
+struct ReferencePopulation {
+    role: &'static str,
+    identity: &'static str,
     documents: usize,
     unique_source_sha256: usize,
     per_class: BTreeMap<String, DenominatorRow>,
@@ -1493,10 +1520,25 @@ struct Aggregate {
     admission_coverage: f64,
 }
 
+/// GAR-006 executed population: what actually ran.  `corpus_execution` is
+/// literally true because the runner composes the three sha256-pinned preserved
+/// TEI, and `execution_evidence` is the declared evidence kind that produced it.
 #[derive(Serialize)]
-struct Corpus {
+struct ExecutedPopulation {
+    corpus_execution: bool,
+    execution_evidence: &'static str,
     documents: usize,
     accepted: usize,
+}
+
+/// GAR-006 evaluated population: the measured quality claim, kept separate from
+/// what was executed so a corpus-scale number cannot be read as an outcome of a
+/// smaller run (and vice versa).
+#[derive(Serialize)]
+struct EvaluatedPopulation {
+    status: &'static str,
+    oracle: &'static str,
+    documents: usize,
     aggregate: Aggregate,
     per_class: BTreeMap<String, Aggregate>,
 }
@@ -1537,9 +1579,10 @@ struct Report {
     schema_version: &'static str,
     corpus_id: &'static str,
     source_identity: SourceIdentity,
-    denominators: Denominators,
+    reference_population: ReferencePopulation,
+    executed_population: ExecutedPopulation,
+    evaluated_population: EvaluatedPopulation,
     outcomes: Vec<Outcome>,
-    corpus: Corpus,
     mutation_summary: BTreeMap<String, String>,
     policy: PolicyLocks,
     redaction: Redaction,
@@ -1563,7 +1606,7 @@ fn guard_identity(shas: &BTreeSet<String>, expected: usize) -> Result<(), String
 fn guard_documents(rows: &[Outcome], expected: usize) -> Result<(), String> {
     if rows.len() != expected {
         return Err(format!(
-            "denominators.documents must be {expected}, measured {}",
+            "reference_population.documents must be {expected}, measured {}",
             rows.len()
         ));
     }
@@ -2126,7 +2169,9 @@ fn main() {
             config_fingerprint: rows[0].config_fingerprint.clone(),
             fallback_target: contract.fallback_target.clone(),
         },
-        denominators: Denominators {
+        reference_population: ReferencePopulation {
+            role: REFERENCE_POPULATION_ROLE,
+            identity: REFERENCE_POPULATION_IDENTITY,
             documents: rows.len(),
             unique_source_sha256: shas.len(),
             per_class: measured
@@ -2143,9 +2188,16 @@ fn main() {
                 .collect(),
         },
         outcomes: rows,
-        corpus: Corpus {
+        executed_population: ExecutedPopulation {
+            corpus_execution: true,
+            execution_evidence: EXECUTION_EVIDENCE,
             documents: PRESERVED_TEI.len(),
             accepted: accepted_rows,
+        },
+        evaluated_population: EvaluatedPopulation {
+            status: EVALUATED_STATUS,
+            oracle: EVALUATED_ORACLE,
+            documents: PRESERVED_TEI.len(),
             aggregate: recorded,
             per_class: measured
                 .iter()

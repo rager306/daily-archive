@@ -463,6 +463,145 @@ shadow-композитор; production-достижимость не доказ
 `deployed=false`, `import_eligible=false`, `auto_promote=forbidden`,
 `graph_write=forbidden`, `this_wave_promotes=none`, D127 не снят.
 
+### Свидетельства среза M511-j7wz2f/S05 (независимая семантическая регрессия реального корпуса: замер и названный RED)
+
+S05 закрывает требование H18 «регрессия на РЕАЛЬНОМ корпусе, а не на синтетических
+фикстурах» на **измеренной** области из трёх sha256-пиннутых preserved TEI
+(`hub_2507.19457`, `rlm_2512.24601`, `reca_2605.26525v1`). Природа RED здесь иная,
+чем в S01–S04: дефектного поведения композитора на этом корпусе **не найдено** —
+измерено `conserved == admitted` и `fabricated == 0` для всех классов. Поэтому
+«историческим RED» S05 является **отсутствие независимой корпусной регрессии**
+(H18 держался `pending`), а текущий замер — не «исправленный дефект», а впервые
+полученные числа. Ниже — и числа, и фактический RED собственного набора среза,
+названный в T06.
+
+- **Оракул (S05/T01).** `crates/da-parse/tests/native_fulltext_corpus_semantics.rs`
+  — test-only; `crates/da-parse/src` не тронут. admitted-полоса строится ИЗ
+  РЕАЛЬНОГО документа через публичные типизированные парсеры, единственный SUT —
+  `compose_native_fulltext`, а судья — перечитывание байтов эмиссии через
+  `roxmltree` (dev-dependency). Консервация для header-классов считается как
+  occurrence-net (`emitted_matches - source_matches`), потому что композитор
+  пере-вставляет исходные header-поддеревья дословно: membership-only оракул дал
+  бы вакуумную 1.0 даже для полосы, которая ничего не внесла. Самопроверяющийся
+  independence guard сканирует собственный исходник и запрещает call-формы
+  `compose_header`/`compose_references`/`run_header_sequence`/`run_reference_sequence`.
+
+- **Измеренный профиль 2026-09-23 (S05/T01); 30 per-class строк заморожены,
+  отклонение в любую сторону падает.** 10 классов:
+
+| класс | source_population | admitted | conserved | fabricated | admission_coverage |
+|---|---|---|---|---|---|
+| `AdmittedAuthorLine` | 36 | 35 | 35 | 0 | 0.972222 |
+| `SemanticFieldLoss::HeaderTitle` | 6 | 3 | 3 | 0 | 0.500000 |
+| `SemanticFieldLoss::HeaderEmail` | 3 | 3 | 3 | 0 | 1.000000 |
+| `SemanticFieldLoss::HeaderIds` | 3 | 3 | 3 | 0 | 1.000000 |
+| `SemanticFieldLoss::AuthorAffiliation` | 13 | 13 | 13 | 0 | 1.000000 |
+| `source_listbibl_direct_children` | 207 | 207 | 207 | 0 | 1.000000 |
+| `CitationFieldRole::doi` | 60 | 60 | 60 | 0 | 1.000000 |
+| `CitationFieldRole::arxiv_id` | 35 | 35 | 35 | 0 | 1.000000 |
+| `CitationFieldRole::url` | 148 | 148 | 148 | 0 | 1.000000 |
+| `CitationFieldRole::article_title` | 66 | 66 | 66 | 0 | 1.000000 |
+| **агрегат (micro-occurrence)** | **577** | **573** | **573** | **0** | **0.993068** |
+
+`TP=573 FN=0 FP=0 P=R=F1=1.000000`; `admission_coverage = 573/577 = 0.993068`.
+Все сужения допуска названы и типизированы, ни одно не молчит: полосная
+дефиниция title (1 из 2 header `<title>` — прямой `titleStmt/title`, второй
+source-conserved) ×3 документа и `hub` 20/21 author lines —
+`NativePersonalNameParser` отверг один реальный `<persName>` как
+`ambiguous:single_token`, что независимо подтверждает объявленный
+`hub_native_accepted_header=20`. Классы без реальной carrier-формы
+(`AuthorAffiliation` на hub/rlm, `HeaderEmail` на hub/reca) — типизированные
+нули с `coverage=1.0` при `0/0` и утверждением, что `coverage == 1.0` ровно
+тогда, когда `admitted == source_population`. Per-document `listBibl`-знаменатели:
+hub 80 / rlm 49 / reca 78 = 207 reference-текстов.
+
+- **DATA (S05/T02).** Блок `corpus_semantic_regression` вложен внутрь уже
+  санкционированного `native_fulltext_composition_shadow` в
+  `data/parse/comparison_contract.yaml` (D377: нового файла `data/parse` не
+  создано). Каждый скаляр связан с ЖИВЫМИ константами композитора
+  (`SemanticFieldLoss::ALL`, `citation_field_role_token`, serde wire form,
+  `NATIVE_FULLTEXT_FALLBACK_TARGET`, `NATIVE_FULLTEXT_REFERENCE_LINK_DERIVATION`),
+  а не со второй копией словаря. Валидатор `native_fulltext_corpus_data_contract.rs`
+  пере-выводит метрику, пере-хэширует sha256 каждого документа из tracked байтов
+  и держит DATA↔DATA согласие с `s12_named_denominators` (`references_total=207`,
+  `header_raw_total=36`, `header_title_elements_total=6`, `header_emails_total=3`,
+  `header_pubnum_elements_total=3`, `affiliation_linking_total=13`,
+  `bibl_struct_hub/rlm/reca=80/49/78`). Digest `776167fa…` перепинен в обеих
+  governor-поверхностях.
+
+- **Мутационная матрица (S05/T03).** `native_fulltext_corpus_mutations.rs` —
+  словарь из DATA, applier-реестр сверяется с DATA-множеством, EXPECTED-детекция
+  не пере-объявляется в тесте. **12 declared mutations, 12 detected, 0 survived:**
+  drop_admitted_header_title/email/ids/author_affiliation → `SemanticFieldLoss::{HeaderTitle,HeaderEmail,HeaderIds,AuthorAffiliation}`;
+  substitute_citation_field_role → `SemanticFieldLoss::CitationRole`;
+  truncate_admitted_references → `BibliographyDomainMismatch`;
+  inject_fabricated_band_note_group / inject_fabricated_header_title →
+  `metric_deviation:precision:below_one`; substitute_byte_scope →
+  `ByteAccountingViolation::NativePartitionDisagreesWithLedger`; unbalanced_xml →
+  `UnbalancedXml`; raw_ampersand_xml → `MalformedXml`; collapse_identity_to_one_sha →
+  `identity_failure:unique_source_sha256_not_three`.
+
+- **Runtime-артефакт (S05/T04).** `artifacts/parse_compat/native_fulltext_corpus_shadow.json`
+  — byte-детерминированный
+  (`efc1984c3ff778da3f2d8d4929cdf7dc5c46eddbb2d80d6b6d23c1837cbe467f`, два прогона
+  из разных рабочих каталогов byte-идентичны). `source_identity.identity_kind=preserved_three_sha`,
+  `unique_source_sha256=3`, `denominators.documents=3`, 3 строки с 3 различными
+  sha, `corpus.aggregate` TP=573/FP=0/FN=0/P=R=F1=1.0/admission_coverage=0.993068,
+  `mutation_summary` (12 id→detector), policy-замки и 15-флаговый redaction-блок.
+  `--self-check` доказывает 8 fail-closed guard-ов (включая дрейф checksum
+  фикстуры и не-UTF8); pin-набор `native_fulltext_corpus_shadow_test` — 6/6.
+
+- **Governor (S05/T05).** Артефакт запинен в ОБЕИХ governor-поверхностях
+  (`bindings.canonical_artifacts` + `governor/fixtures/scholarly_parse_plane/contract.positive.json`)
+  с identity `native-fulltext-corpus-shadow.v1`; composition-identity проверка
+  итерирует оба composition-артефакта со всеми тремя прежними предикатами, так
+  что схлопнутая (3 sha → 1) или переименованная corpus-identity падает ПО ИМЕНИ
+  артефакта. Набор `test_scholarly_parse_governance.py` 437 → 443 (≥441).
+
+#### Названный RED собственного набора среза (T06): corpus-артефакт vs GAR-006
+
+Финальный замер среза обнаружил **фактический RED**, а не PASS:
+`cargo test -p da-parse --tests` → **exit 101**,
+`data_contracts::population_contract_enumerates_every_shadow_report` падает с
+`shadow reports missing from population_contract.report_paths: ["artifacts/parse_compat/native_fulltext_corpus_shadow.json"]`.
+Причина измерена, а не предположена: артефакт попадает под glob
+`artifacts/parse_compat/*_shadow.json` (GAR-006), но объявить его в
+`population_contract` нельзя — форма, предписанная S05/T04 (`denominators` +
+`corpus`, без разбиения reference/executed/evaluated), даёт ровно пять
+контрактных ошибок: 3 отсутствующих блока (`reference_population`,
+`executed_population`, `evaluated_population`) и 2 запрещённых legacy-блока
+(`denominators`, `corpus`). Проверено эмпирически (артефакт объявлен → пять
+ошибок → откат). Это конфликт внутри самого плана S05: T04 предписывает форму
+артефакта, несовместимую с GAR-006-контрактом, который T06 обязан держать
+зелёным. Разрешение (привести артефакт к разбиению reference/executed/evaluated
+либо явно классифицировать его вне перечисления population_contract) лежит вне
+файловой поверхности T06 и требует решения на уровне среза. H18 поэтому остаётся
+`pending`; PASS не выдуман.
+
+| Проверка (актуальная ревизия `4af6a2dd3`) | Результат |
+|---|---|
+| `cargo test -p da-parse --test native_fulltext_corpus_semantics` | exit=0, 7 passed |
+| `cargo test -p da-parse --test native_fulltext_corpus_data_contract` | exit=0, 3 passed |
+| `cargo test -p da-parse --test native_fulltext_corpus_mutations -- --nocapture` | exit=0, 5 passed; 12 declared / 12 detected / 0 survived |
+| `cargo run -p da-cli --features pdf-layout --example native_fulltext_corpus_shadow -- --report artifacts/parse_compat/native_fulltext_corpus_shadow.json` | exit=0; documents=3 accepted=3 TP=573 FP=0 FN=0 P=R=F1=1.0 coverage=0.993068; sha256 `efc1984c…` |
+| `... native_fulltext_corpus_shadow --self-check` | exit=0, 8 guards |
+| `cargo test -p da-cli --features pdf-layout --test native_fulltext_corpus_shadow_test` | exit=0, 6 passed |
+| `cargo test -p da-cli --features pdf-layout --tests` | exit=0, 618 passed, 38 suites |
+| `cargo test -p da-parse --tests` | **exit=101, 1 failed** (`data_contracts::population_contract_enumerates_every_shadow_report`) — названный RED; fail-fast останавливается после 732 passed (20 targets) на цели `data_contracts` (102 passed / 1 failed); с `--no-fail-fast` полный итог **1444 passed / 1 failed** — единственный провал |
+| `PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q` | 443 passed |
+| `PYTHONPATH=scripts python3 -m pytest scripts/tests/test_governor.py -q` | 368 passed |
+| `governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml` | exit=0 (stages=8 unresolved=8 complete=0 claims=0) |
+| `PYTHONPATH=scripts python3 -m governor architecture` (внешний прогон вне in-band cap 600s) | `GATE_RC=0`, `ARCHITECTURE GATE: PASS` (~1266s) |
+
+H18 **не помечается PASS**: `status: pending`, `implementation_pass=false`,
+`verification_pass=false`, `owner: unassigned`, `open_item.accepted=false`,
+`tested_source.verified=false`. Измеренная область — ровно 3 документа, не
+статистический корпус; только 4 варианта `CitationFieldRole` (doi, arxiv_id,
+url, article_title) имеют реальную biblStruct-форму в корпусе, остальные 9 не
+измерены и не должны читаться как покрытые. Замки не менялись: `deployed=false`,
+`import_eligible=false`, `auto_promote=forbidden`, `graph_write=forbidden`,
+`production_route=forbidden`, D127 не снят. История S01–S04 не переписывается.
+
 ## Риски, не выдаваемые за воспроизведённые дефекты
 
 | Область | Наблюдение | Требуемая проверка |
@@ -484,7 +623,11 @@ shadow-композитор; production-достижимость не доказ
 
 99 файлов `da-parse/tests/*.rs`; непересекающееся разбиение по именам не строилось. Подстроки встречаются: contract 55, properties 16, oracle 15, data_contract 13, same_n 8, metamorphic 1. Категории перекрываются. Процент line/branch/mutation coverage не измерялся. Полная архитектурная проверка, все adapter/application suites и живой Java-vs-Rust corpus-run в этом аудите не выполнялись. Утверждать «всё покрыто» нельзя. Строка `1351 passed` в таблице — замер ревизии аудита `bcdd0cfc5`; после S01/T06 тот же набор даёт 100 suites / 1374 passed / 0 failed / 0 ignored (раздел T04–T06), а после S02/T01–T05 — 101 suites / 1396 passed / 0 failed / 0 ignored (раздел S02),
 а после S03/T01–T04 — 102 suites / 1413 passed / 0 failed / 0 ignored (раздел S03),
-а после S04/T01–T05 — 104 suites / 1430 passed / 0 failed / 0 ignored (раздел S04).
+а после S04/T01–T05 — 104 suites / 1430 passed / 0 failed / 0 ignored (раздел S04),
+а после S05/T01–T05 тот же набор `cargo test -p da-parse --tests` валится на
+`data_contracts::population_contract_enumerates_every_shadow_report` (exit 101) —
+названный RED раздела S05 выше; без `--no-fail-fast` Cargo останавливается на
+упавшей цели.
 
 Доказательства GSD exec: `6c9cbd4d-e9eb-4281-8da8-1fdc7d724f1f` (Rust probe), `73a4222b-035b-4439-955e-96d36c068534` (test totals и валидность исходного XML), `c0d5f8f1-490c-4fe0-87c3-4f6e495c9a5b` (scope и test tags), `98f91300-d06b-4d67-8917-19d64e7b8d18` (реестры). S04: `53726af5-9f84-4682-998c-bbaeb79778cd` (перегенерация замороженного shadow-артефакта), `25049e11-e663-41df-bdd6-d81173c818e0` (визуальный runtime), `e680048f-b40b-4479-bd61-bd78156b3dd1` (fmt/clippy/da-parse suites/pytest/governor review), `64050636-4a3d-4630-87c7-7773177b0f31` (целевые H17-таргеты), `e6b2dff5` (полный `governor architecture`, `GATE_RC=0`).
 
@@ -499,7 +642,12 @@ GitNexus MCP context завершился Connection closed. Первая инд
 Исторический аудит задач: терминальные 1179/1179; это не доказательство полного перевода. Отложенный незапланированный объём вообще не входит в этот знаменатель. Пять parked milestone имеют 13 skipped срезов без задач. H05 и GAR-015 не закрыты. A-XML закрыт на замеренной области S01, A-REF — на
 трёх пиннутых сохранённых TEI в S02; A-FIELDS закрыт на замеренной области S03
 (невакуумный runtime-прогон shadow-примера); A-ABSENCE и A-BYTES закрыты на
-замеренной области S04. Исторические PASS задним числом не
+замеренной области S04. H18 (независимая корпусная регрессия) построен и
+измерен на трёх пиннутых сохранённых TEI в S05, но остаётся `pending`:
+измеренная область — ровно 3 документа (не статистический корпус),
+9 `CitationFieldRole`-вариантов без реальной carrier-формы не измерены, и
+собственный набор среза RED по GAR-006-перечислению (раздел S05 выше).
+Исторические PASS задним числом не
 переписываются.
 
 Следующий план: `doc/review/grobid-absorption-roadmap-2026-09-21.yaml` и `doc/review/grobid-absorption-followup.json`. Проверять командой `PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml`. Прохождение означает целостность planning registry, не выполнение будущих стадий. Новая волна auto не запускается; production promotion, import и graph writes не разрешены.

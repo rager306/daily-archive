@@ -13,12 +13,15 @@
 //!
 //! The artifact is the same-n regression surface the governor and H18 need, so
 //! the audit below pins the identity (`preserved_three_sha`, three distinct
-//! sha256), the denominators (3 documents, per-class source_population/admitted),
-//! the non-vacuity of the metric (TP = 573, P/R/F1 = 1.0), the policy locks and
-//! the redaction.  Denominator erosion, identity collapse, a fabricated band, a
-//! disguised typed refusal, an unlocked policy or a leaked payload are all
-//! rejected by the same audit, which the negative test proves one mutation at a
-//! time.
+//! sha256), the GAR-006 population split (reference population identity-only
+//! with its own document count and per-class source_population/admitted, the
+//! executed population with `corpus_execution`/`execution_evidence`, the
+//! evaluated population with the measured `status`), the non-vacuity of the
+//! metric (TP = 573, P/R/F1 = 1.0), the policy locks and the redaction.
+//! Denominator erosion, identity collapse, a fabricated band, a disguised typed
+//! refusal, a collapsed population split, a reintroduced legacy `denominators`
+//! block, an unlocked policy or a leaked payload are all rejected by the same
+//! audit, which the negative test proves one mutation at a time.
 //!
 //! `cargo test --test NAME` does not build examples, so when the runner is
 //! missing this test builds it through cargo with the same target directory
@@ -36,6 +39,13 @@ const ARTIFACT: &str = "artifacts/parse_compat/native_fulltext_corpus_shadow.jso
 const SCHEMA_VERSION: &str = "native-fulltext-corpus-shadow.v1";
 const IDENTITY_KIND: &str = "preserved_three_sha";
 const FALLBACK_TARGET: &str = "java-grobid-http@0.9.0-crf";
+/// GAR-006 split literals the emitted report must carry (T07).  The evidence
+/// token's kind is a member of the governor's declared `evidence_kinds`
+/// vocabulary; the governor owns that vocabulary, so this pins the exact literal
+/// the runner emits rather than duplicating the list.
+const REFERENCE_POPULATION_ROLE: &str = "identity_only";
+const EXECUTION_EVIDENCE: &str = "tracked_offline_fixture:preserved_three_sha_tei";
+const EVALUATED_STATUS: &str = "evaluated";
 /// The preserved corpus is exactly three documents with three distinct sha256.
 const DOCUMENTS: usize = 3;
 /// Frozen per-class denominators: `(class, source_population, admitted)`,
@@ -250,15 +260,25 @@ fn corpus_shadow_artifact_errors(report: &Value) -> Vec<String> {
         errors.push("corpus-shadow:identity.source_sha256.distinct".into());
     }
 
-    // ── denominators: the same-n surface ────────────────────────────────────
-    let denominators = &report["denominators"];
-    if denominators["documents"].as_u64() != Some(DOCUMENTS as u64) {
-        errors.push("corpus-shadow:denominators.documents".into());
+    // ── reference population: the same-n surface (GAR-006 identity-only) ────
+    let reference = &report["reference_population"];
+    if reference["role"].as_str() != Some(REFERENCE_POPULATION_ROLE) {
+        errors.push("corpus-shadow:reference_population.role".into());
     }
-    if denominators["unique_source_sha256"].as_u64() != Some(DOCUMENTS as u64) {
-        errors.push("corpus-shadow:denominators.unique_source_sha256".into());
+    if reference["identity"]
+        .as_str()
+        .map(str::is_empty)
+        .unwrap_or(true)
+    {
+        errors.push("corpus-shadow:reference_population.identity".into());
     }
-    let per_class = &denominators["per_class"];
+    if reference["documents"].as_u64() != Some(DOCUMENTS as u64) {
+        errors.push("corpus-shadow:reference_population.documents".into());
+    }
+    if reference["unique_source_sha256"].as_u64() != Some(DOCUMENTS as u64) {
+        errors.push("corpus-shadow:reference_population.unique_source_sha256".into());
+    }
+    let per_class = &reference["per_class"];
     let declared_classes: BTreeSet<&str> = per_class
         .as_object()
         .map(|classes| classes.keys().map(String::as_str).collect())
@@ -268,7 +288,7 @@ fn corpus_shadow_artifact_errors(report: &Value) -> Vec<String> {
         .map(|(class, _, _)| *class)
         .collect();
     if declared_classes != expected_classes {
-        errors.push("corpus-shadow:denominators.per_class.scope".into());
+        errors.push("corpus-shadow:reference_population.per_class.scope".into());
     }
     for (class, source_population, admitted) in CLASS_DENOMINATORS {
         let row = &per_class[class];
@@ -276,17 +296,47 @@ fn corpus_shadow_artifact_errors(report: &Value) -> Vec<String> {
         let measured_admitted = row["admitted"].as_u64();
         if measured_population != Some(source_population as u64) {
             errors.push(format!(
-                "corpus-shadow:denominators.{class}.source_population"
+                "corpus-shadow:reference_population.{class}.source_population"
             ));
         }
         if measured_admitted != Some(admitted as u64) {
-            errors.push(format!("corpus-shadow:denominators.{class}.admitted"));
+            errors.push(format!(
+                "corpus-shadow:reference_population.{class}.admitted"
+            ));
         }
         if let (Some(population), Some(admitted)) = (measured_population, measured_admitted)
             && admitted > population
         {
-            errors.push(format!("corpus-shadow:denominators.{class}.erosion"));
+            errors.push(format!(
+                "corpus-shadow:reference_population.{class}.erosion"
+            ));
         }
+    }
+
+    // ── executed population: what ran, and the evidence that produced it ────
+    let executed = &report["executed_population"];
+    if executed["corpus_execution"].as_bool() != Some(true) {
+        errors.push("corpus-shadow:executed_population.corpus_execution".into());
+    }
+    if executed["execution_evidence"].as_str() != Some(EXECUTION_EVIDENCE) {
+        errors.push("corpus-shadow:executed_population.execution_evidence".into());
+    }
+    if executed["documents"].as_u64() != Some(DOCUMENTS as u64) {
+        errors.push("corpus-shadow:executed_population.documents".into());
+    }
+    if executed["accepted"].as_u64() != Some(DOCUMENTS as u64) {
+        errors.push("corpus-shadow:executed_population.accepted".into());
+    }
+
+    // ── GAR-006: the split is real, and the legacy blocks are gone ──────────
+    for legacy in ["denominators", "corpus"] {
+        if report.get(legacy).is_some() {
+            errors.push(format!("corpus-shadow:legacy_blocks.{legacy}"));
+        }
+    }
+    let evaluated = &report["evaluated_population"];
+    if reference == executed || reference == evaluated || executed == evaluated {
+        errors.push("corpus-shadow:populations.indistinguishable".into());
     }
 
     // ── per-document outcomes: all accepted, none refused ───────────────────
@@ -379,15 +429,14 @@ fn corpus_shadow_artifact_errors(report: &Value) -> Vec<String> {
         }
     }
 
-    // ── corpus aggregate: non-vacuous, no erosion, no fabrication ───────────
-    let corpus = &report["corpus"];
-    if corpus["documents"].as_u64() != Some(DOCUMENTS as u64) {
-        errors.push("corpus-shadow:corpus.documents".into());
+    // ── evaluated population: the measured quality claim, kept separate ─────
+    if evaluated["status"].as_str() != Some(EVALUATED_STATUS) {
+        errors.push("corpus-shadow:evaluated_population.status".into());
     }
-    if corpus["accepted"].as_u64() != Some(DOCUMENTS as u64) {
-        errors.push("corpus-shadow:corpus.accepted".into());
+    if evaluated["documents"].as_u64() != Some(DOCUMENTS as u64) {
+        errors.push("corpus-shadow:evaluated_population.documents".into());
     }
-    let aggregate = &corpus["aggregate"];
+    let aggregate = &evaluated["aggregate"];
     let tp = aggregate["tp"].as_u64();
     if tp != Some(AGGREGATE.0 as u64) {
         errors.push("corpus-shadow:aggregate.tp".into());
@@ -503,7 +552,10 @@ fn committed_artifact_is_a_frozen_preserved_three_sha_measurement() {
     // Non-vacuity, stated once outside the audit: a zero-TP artifact would make
     // every same-n claim above meaningless.
     assert!(
-        report["corpus"]["aggregate"]["tp"].as_u64().unwrap_or(0) > 0,
+        report["evaluated_population"]["aggregate"]["tp"]
+            .as_u64()
+            .unwrap_or(0)
+            > 0,
         "the corpus metric must be non-vacuous"
     );
 }
@@ -534,20 +586,55 @@ fn artifact_audit_rejects_every_declared_violation() {
     mutations.push(("outcome_sha_duplicated", duplicated));
 
     let mut eroded = valid.clone();
-    eroded["denominators"]["per_class"]["source_listbibl_direct_children"]["source_population"] =
+    eroded["reference_population"]["per_class"]["source_listbibl_direct_children"]["source_population"] =
         json!(100);
     mutations.push(("denominator_erosion", eroded));
 
     let mut lost_document = valid.clone();
-    lost_document["denominators"]["documents"] = json!(1);
+    lost_document["reference_population"]["documents"] = json!(1);
     mutations.push(("document_denominator_lost", lost_document));
 
+    let mut legacy_block = valid.clone();
+    legacy_block["denominators"] = json!({"documents": DOCUMENTS});
+    mutations.push(("legacy_denominators_block_reintroduced", legacy_block));
+
+    let mut legacy_corpus = valid.clone();
+    legacy_corpus["corpus"] = json!({"documents": DOCUMENTS});
+    mutations.push(("legacy_corpus_block_reintroduced", legacy_corpus));
+
+    let mut missing_split = valid.clone();
+    missing_split
+        .as_object_mut()
+        .expect("report object")
+        .remove("executed_population");
+    mutations.push(("executed_population_removed", missing_split));
+
+    let mut collapsed_split = valid.clone();
+    collapsed_split["executed_population"] = valid["reference_population"].clone();
+    mutations.push(("populations_collapsed_to_one_object", collapsed_split));
+
+    let mut unlabelled_reference = valid.clone();
+    unlabelled_reference["reference_population"]["role"] = json!("identity_and_execution");
+    mutations.push(("reference_population_role_rewritten", unlabelled_reference));
+
+    let mut denied_execution = valid.clone();
+    denied_execution["executed_population"]["corpus_execution"] = json!(false);
+    mutations.push(("corpus_execution_denied", denied_execution));
+
+    let mut unbound_evidence = valid.clone();
+    unbound_evidence["executed_population"]["execution_evidence"] = json!("n/a");
+    mutations.push(("execution_evidence_unbound", unbound_evidence));
+
+    let mut unstated_status = valid.clone();
+    unstated_status["evaluated_population"]["status"] = json!("");
+    mutations.push(("evaluated_status_removed", unstated_status));
+
     let mut vacuous = valid.clone();
-    vacuous["corpus"]["aggregate"]["tp"] = json!(0);
+    vacuous["evaluated_population"]["aggregate"]["tp"] = json!(0);
     mutations.push(("vacuous_metric", vacuous));
 
     let mut fabricated = valid.clone();
-    fabricated["corpus"]["aggregate"]["fp"] = json!(7);
+    fabricated["evaluated_population"]["aggregate"]["fp"] = json!(7);
     mutations.push(("fabricated_band_admitted", fabricated));
 
     let mut refused = valid.clone();
@@ -562,7 +649,7 @@ fn artifact_audit_rejects_every_declared_violation() {
     mutations.push(("outcome_class_row_dropped", dropped_class));
 
     let mut unknown_scope = valid.clone();
-    unknown_scope["denominators"]["per_class"]["UnknownScope"] =
+    unknown_scope["reference_population"]["per_class"]["UnknownScope"] =
         json!({"source_population": 1, "admitted": 1});
     mutations.push(("unknown_scope_admitted", unknown_scope));
 

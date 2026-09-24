@@ -705,3 +705,80 @@ governor-поверхностях (`bindings.canonical_artifacts` и
 shadow-композитор и детекторы визуальных голов с реэкспортом и тестами;
 production-достижимость не заявляется.
 
+## 19. Корректировка 2026-09-24: независимая семантическая регрессия реального корпуса (M511-j7wz2f/S05)
+
+Фиксируется замер S05/T01–T05 (H18) и названный RED, обнаруженный финальным
+замером S05/T06. Решение описывает только shadow/offline-регрессию: оно не
+расширяет допуск, не объявляет production-достижимость и не снимает замки.
+
+**Решение (оракул на реальном корпусе, не на синтетике).** H18 требует, чтобы
+падение регрессии было числом, а оракул не делил код с проверяемой реализацией.
+Поэтому:
+
+- admitted-полоса строится ИЗ РЕАЛЬНОГО сохранённого документа через публичные
+  типизированные парсеры, единственный SUT — `compose_native_fulltext`, а судья —
+  перечитывание БАЙТОВ ЭМИССИИ независимым XML-парсером (`roxmltree`,
+  dev-dependency). Оракул не вызывает `compose_header`/`compose_references`;
+  independence guard сканирует собственный исходник и требует нетривиального
+  размера сканируемого текста, чтобы ноль был настоящим нулём.
+- Консервация header-классов измеряется как occurrence-net
+  (`emitted_matches - source_matches`), потому что композитор пере-вставляет
+  исходные header-поддеревья дословно: membership-only оракул дал бы вакуумную
+  1.0 даже для полосы, которая ничего не внесла.
+- Identity корпуса — три sha256-пиннутых preserved TEI (`hub_2507.19457`,
+  `rlm_2512.24601`, `reca_2605.26525v1`); дрейф/отсутствие/не-UTF8 — FATAL на
+  чтении, без fallback и без частичного замера.
+- Знаменатели и метрика заморожены как DATA внутри уже санкционированного
+  `native_fulltext_composition_shadow` (`data/parse/comparison_contract.yaml`,
+  D377 — нового файла нет), каждый скаляр связан с живыми константами
+  композитора, а не со второй копией словаря.
+
+**Замер (2026-09-23, S05/T01; 30 per-class строк заморожены).** 10 классов,
+`source_population / admitted / conserved / fabricated`: `AdmittedAuthorLine
+36/35/35/0`, `SemanticFieldLoss::HeaderTitle 6/3/3/0`, `HeaderEmail 3/3/3/0`,
+`HeaderIds 3/3/3/0`, `AuthorAffiliation 13/13/13/0`,
+`source_listbibl_direct_children 207/207/207/0`, `CitationFieldRole::doi 60/60/60/0`,
+`arxiv_id 35/35/35/0`, `url 148/148/148/0`, `article_title 66/66/66/0`. Агрегат:
+`documents=3`, `TP=573`, `FN=0`, `FP=0`, `P=R=F1=1.000000`,
+`admission_coverage = 573/577 = 0.993068`. Дефекта консервации на этом корпусе не
+найдено; все сужения допуска (полосная дефиниция title ×3 и один реальный
+`<persName>`, отвергнутый `NativePersonalNameParser` как `ambiguous:single_token`)
+названы типизированно. Мутационная матрица S05/T03: 12 declared, 12 detected,
+0 survived. Runtime-артефакт S05/T04 byte-детерминирован (`efc1984c…`),
+`--self-check` доказывает 8 guard-ов; governor S05/T05 держит digest и identity
+`native-fulltext-corpus-shadow.v1` в обеих поверхностях и итерирует оба
+composition-артефакта.
+
+**Названный RED (S05/T06).** Собственный набор среза `cargo test -p da-parse --tests`
+— **exit 101**: `data_contracts::population_contract_enumerates_every_shadow_report`
+падает, потому что corpus-артефакт попадает под GAR-006 glob
+`artifacts/parse_compat/*_shadow.json`, но его форма (`denominators` + `corpus`,
+без reference/executed/evaluated-разбиения), предписанная S05/T04, не может быть
+объявлена в `population_contract`: измерено пять контрактных ошибок (3
+отсутствующих блока + 2 запрещённых legacy-блока). Это конфликт внутри плана S05,
+а не дефект композитора. PASS не выдуман: H18 остаётся `pending`.
+
+**Наблюдаемость.** `cargo test -p da-parse --test native_fulltext_corpus_semantics -- --nocapture`
+печатает per-fixture/per-class отчёт (только счётчики) и именованные admission-gap
+строки; `native_fulltext_corpus_mutations -- --nocapture` печатает все 12 строк
+`mutation_id -> detected_by`; `native_fulltext_corpus_shadow --self-check` печатает
+8 guard-ов; governor `review` — `stages=8 unresolved=8 complete=0 claims=0`.
+
+**Состояние реестра.** H18 остаётся planning-записью: `status: pending`,
+`implementation_pass=false`, `verification_pass=false`, `owner: unassigned`,
+`open_item.accepted=false`, `tested_source.verified=false`. История S01–S04 не
+переписывается: §14/§15 (H14), §16 (H15), §17 (H16), §18 (H17) остаются как были.
+
+**Границы.** Замеренная область — ровно 3 документа, не статистический корпус;
+только 4 варианта `CitationFieldRole` (doi, arxiv_id, url, article_title) имеют
+реальную biblStruct-форму в корпусе, остальные 9 вариантов не измерены и не
+должны читаться как покрытые. Замки не менялись: `deployed=false`,
+`import_eligible=false`, `auto_promote=forbidden`, `graph_write=forbidden`,
+`production_route=forbidden`, `this_wave_promotes=none`, D127/D321 закрыты.
+
+**Полный гейт.** `PYTHONPATH=scripts python3 -m governor architecture` (внешний
+прогон вне in-band cap 600s) — **`GATE_RC=0`, `ARCHITECTURE GATE: PASS`** (~1266s,
+измерено, а не выведено из «успеха запуска»). Гейт исполняет
+`cargo test -p da-parse --lib` (не `--tests`), поэтому RED `data_contracts` в него
+не входит; RC записан измеренным, а не выведенным из «успеха запуска».
+
