@@ -20,7 +20,12 @@
 //! (b) each row's `scope` equals that capability's `product_scope`;
 //! (c) every `full` row resolves a Java source + non-empty site, each Rust
 //!     path exists and contains the symbol as a separate identifier, and the
-//!     test path is a `crates/**/tests/` target containing `fn <name>`;
+//!     test path is a `crates/**/tests/` target containing `fn <name>`. Every
+//!     repo-relative path the ledger names (`rust.path`, `test.path`,
+//!     `error_semantics.source`, `capture.artifact`) is also contained: an
+//!     absolute path, a `..` component, or a resolved path outside the
+//!     workspace root is rejected by name instead of read (Q3/S07 gap 1,
+//!     matching the `acceptance-path-escape` precedent in data_contracts.rs);
 //! (d) every Java source sha256 is 64 lowercase hex; capture-pinned sources
 //!     equal the capture; both revisions are non-empty;
 //! (e) every row license resolves to a `component_id` in the inventory;
@@ -31,7 +36,12 @@
 use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
+
+/// Token a `pinned_by` command uses instead of repeating the physical vendor
+/// root on every row. The root itself is declared once as
+/// `parity_ledger.java_source_vendor_root` (Q3/S07 gap 2: redaction hygiene).
+pub const VENDOR_ROOT_TOKEN: &str = "$GROBID_VENDOR_ROOT";
 
 pub const CONTRACT_ID: &str = "grobid-java-rust-parity-ledger.v1";
 pub const COMPATIBILITY_DOC: &str = "data/parse/grobid_compatibility.yaml";
@@ -72,6 +82,11 @@ pub struct ParityLedger {
     pub parity_level_vocabulary: Vec<String>,
     pub absent_reason_vocabulary: BTreeMap<String, String>,
     pub error_semantics_policy: String,
+    /// Documented physical vendor root that `pinned_by` commands refer to via
+    /// [`VENDOR_ROOT_TOKEN`]. Declared once instead of repeating an absolute
+    /// path on every java source.
+    #[serde(default)]
+    pub java_source_vendor_root: Option<String>,
     pub java_sources: Vec<JavaSource>,
     pub rows: Vec<Row>,
     pub named_gaps: Vec<NamedGap>,
@@ -256,8 +271,44 @@ fn is_sha256_hex(value: &str) -> bool {
     value.len() == 64 && value.chars().all(|c| matches!(c, '0'..='9' | 'a'..='f'))
 }
 
+/// True when a ledger-declared path can leave the repository root before any
+/// resolution: it is absolute, or it carries a `..` component.
+fn escapes_repo_root(relative: &str) -> bool {
+    let path = Path::new(relative);
+    path.is_absolute()
+        || path.components().any(|component| {
+            matches!(
+                component,
+                Component::RootDir | Component::Prefix(_) | Component::ParentDir
+            )
+        })
+}
+
 fn read_required(root: &Path, relative: &str, errors: &mut Vec<String>) -> Option<String> {
-    match std::fs::read_to_string(root.join(relative)) {
+    if escapes_repo_root(relative) {
+        errors.push(format!(
+            "{relative}: absolute path or `..` component escapes the repository root"
+        ));
+        return None;
+    }
+    let joined = root.join(relative);
+    // A symlinked intermediate directory can still leave the root, so check
+    // the resolved path whenever both ends exist. A missing file falls through
+    // to the read below, which records the read failure instead.
+    let resolved_outside_root = root
+        .canonicalize()
+        .ok()
+        .zip(joined.canonicalize().ok())
+        .is_some_and(|(root_canonical, joined_canonical)| {
+            !joined_canonical.starts_with(root_canonical)
+        });
+    if resolved_outside_root {
+        errors.push(format!(
+            "{relative}: resolved path escapes the repository root"
+        ));
+        return None;
+    }
+    match std::fs::read_to_string(&joined) {
         Ok(text) => Some(text),
         Err(err) => {
             errors.push(format!("cannot read {relative}: {err}"));
@@ -523,6 +574,17 @@ pub fn check_java_sources(root: &Path, doc: &CompatibilityDocument) -> Vec<Strin
         if source.pinned_by.trim().is_empty() {
             errors.push(format!(
                 "java source `{}` has an empty pinned_by",
+                source.id
+            ));
+        }
+        if source.pinned_by.contains(VENDOR_ROOT_TOKEN)
+            && ledger
+                .java_source_vendor_root
+                .as_deref()
+                .is_none_or(|hint| hint.trim().is_empty())
+        {
+            errors.push(format!(
+                "java source `{}` pinned_by references {VENDOR_ROOT_TOKEN} but java_source_vendor_root is not declared",
                 source.id
             ));
         }

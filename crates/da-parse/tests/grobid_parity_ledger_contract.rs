@@ -76,6 +76,64 @@ fn full_rows_resolve_java_rust_and_test_links() {
     assert!(errors.is_empty(), "{}", report(&errors));
 }
 
+/// (c) containment: a `rust.path` or `test.path` that carries a `..`
+/// component (or is absolute) must be rejected by name, never followed, even
+/// when it still looks like a `crates/**/tests/` target. The carrier holds
+/// only repo-relative paths, so the guard is proven in memory — this is the
+/// negative proof for Q3/S07 threat-surface gap 1 and the prerequisite for
+/// the `rust_path_escape` / `test_path_absolute` mutations in T03.
+#[test]
+fn traversal_and_absolute_paths_are_rejected_by_name() {
+    let root = root();
+    // Passes both the `crates/` prefix and the `/tests/` substring checks, so
+    // only the containment guard can stop it.
+    let traversal = "crates/da-parse/tests/../../../../etc/hosts";
+
+    let mut doc = pl::load(&root);
+    let row = doc
+        .parity_ledger
+        .rows
+        .iter_mut()
+        .find(|row| row.parity == pl::PARITY_FULL && !row.rust.is_empty())
+        .expect("at least one full row carries a rust link");
+    row.rust[0].path = traversal.to_string();
+    let errors = pl::check_links(&root, &doc);
+    assert!(
+        errors
+            .iter()
+            .any(|error| error.contains("escapes the repository root")),
+        "traversal rust.path must be rejected by name: {}",
+        report(&errors)
+    );
+
+    let mut doc = pl::load(&root);
+    let row = doc
+        .parity_ledger
+        .rows
+        .iter_mut()
+        .find(|row| row.test.is_some())
+        .expect("at least one row carries a test link");
+    row.test.as_mut().expect("test link present").path = traversal.to_string();
+    let errors = pl::check_links(&root, &doc);
+    assert!(
+        errors
+            .iter()
+            .any(|error| error.contains("escapes the repository root")),
+        "traversal test.path must be rejected by name: {}",
+        report(&errors)
+    );
+
+    // Non-vacuity: the carrier as written trips no containment error.
+    let clean = pl::check_links(&root, &pl::load(&root));
+    assert!(
+        !clean
+            .iter()
+            .any(|error| error.contains("escapes the repository root")),
+        "clean ledger must not trip the containment guard: {}",
+        report(&clean)
+    );
+}
+
 /// (d) Pinned Java content: 64 lowercase hex, capture-pinned hashes equal to
 /// the capture they cite, and both revision fields populated. The observed
 /// checkout revision differs from the capture-declared revision by design and
