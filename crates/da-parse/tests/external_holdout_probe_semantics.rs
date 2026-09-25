@@ -1,8 +1,9 @@
 //! M511-j7wz2f / S08 / T03 — the independent per-document oracle of the FROZEN
 //! external holdout probe (H20 / GAR-015).
 //!
-//! S08/T02 froze a fresh live-Java `processFulltextDocument` reference for five
-//! sha256-pinned, non-gold arXiv documents and recorded its byte pins in the
+//! S08/T02 froze a fresh live-Java `processFulltextDocument` reference for the
+//! sha256-pinned, non-gold arXiv documents declared by the source manifest and
+//! recorded its byte pins in the
 //! `external_holdout_contract.release_probe` lane of
 //! `data/parse/acceptance_manifest.yaml`.  This file is the independent
 //! measurement over that frozen reference.  S05/T01 is the pattern donor: the
@@ -13,8 +14,9 @@
 //!
 //! ## Measured scope (read this before quoting any number)
 //!
-//! Five non-gold local holdout documents.  Five is NOT a statistical corpus:
-//! every number below is a COUNT over five documents, never a corpus rate, and
+//! A small, sha256-pinned, non-gold local holdout (five documents in the recorded
+//! measurement).  This is NOT a statistical corpus: every number below is a COUNT
+//! over the measured documents, never a corpus rate, and
 //! the probe makes no pooled claim (`claim_scope = local_proxy_only`).  The
 //! reported per-document quantities are the frozen probe result for that
 //! document, not an estimate of any population.
@@ -72,8 +74,12 @@ use std::path::{Component, Path, PathBuf};
 /// Every failure message carries this prefix so an inspection never guesses.
 const PROBE: &str = "[external-holdout-probe-semantics]";
 
-/// The probe population: five sha256-pinned non-gold documents.  Not a corpus.
-const EXPECTED_DOCUMENTS: usize = 5;
+// The probe population is NOT a literal here: it is the number of article
+// identities declared by `data/parse/holdout_manifests.yaml#articles`, carried on
+// `ProbeData::expected_documents`.  A lane whose `reference_tei` does not cover
+// exactly those identities is refused by name
+// (`probe_reference_population_size_drift` / `probe_reference_source_mismatch`)
+// before any measurement, never audited against a stale fixed-size table.
 
 /// The two metric names the lane declares, read from DATA at run time and bound
 /// to a computation here.  A declared metric with no binding is a refusal, so a
@@ -157,6 +163,10 @@ struct ProbeData {
     margins: Vec<Margin>,
     identity_digest: String,
     source_manifest: String,
+    /// The declared probe population, derived from
+    /// `data/parse/holdout_manifests.yaml#articles` (never a literal).  The frozen
+    /// reference must cover exactly this many identities.
+    expected_documents: usize,
     profile_fingerprint: String,
     config_fingerprint: String,
 }
@@ -387,9 +397,6 @@ fn read_probe_data(manifest: &Value) -> Result<ProbeData, String> {
         .get("reference_tei")
         .and_then(Value::as_sequence)
         .ok_or("probe_reference_tei_missing")?;
-    if reference_value.len() != EXPECTED_DOCUMENTS {
-        return Err("probe_reference_population_size_drift".into());
-    }
     let mut reference = Vec::with_capacity(reference_value.len());
     for row in reference_value {
         let article_id = row
@@ -447,6 +454,15 @@ fn read_probe_data(manifest: &Value) -> Result<ProbeData, String> {
     // while `holdout_manifests.yaml` pins the source PDF: the two hashes are
     // deliberately different objects, so the cross-check is on identity, and the
     // byte pins are re-verified against the files themselves before measurement.
+    // The population size is DATA, not a literal: the lane's frozen rows must
+    // cover exactly the article identities the source manifest declares, and the
+    // expected document count carried forward is that declared count.  A lane
+    // covering a different number of documents is refused by name here, before
+    // any measurement, rather than audited against a stale table.
+    if reference.len() != articles.len() {
+        return Err("probe_reference_population_size_drift".into());
+    }
+    let expected_documents = articles.len();
     let manifest_ids: BTreeSet<String> = articles
         .iter()
         .filter_map(|article| article.get("article_id").and_then(Value::as_str))
@@ -488,6 +504,7 @@ fn read_probe_data(manifest: &Value) -> Result<ProbeData, String> {
         margins,
         identity_digest,
         source_manifest,
+        expected_documents,
         profile_fingerprint: format!("profile={reference_profile}"),
         config_fingerprint: format!("consolidation={}", flag_pairs.join(",")),
     })
@@ -1718,7 +1735,7 @@ fn measure_all(data: &ProbeData) -> Vec<MeasuredDocument> {
         .collect()
 }
 
-/// Counts over the five documents.  No rate, no pooled corpus claim: every field
+/// Counts over the measured documents.  No rate, no pooled corpus claim: every field
 /// is a count and the document count is printed next to them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Aggregate {
@@ -1823,11 +1840,13 @@ struct FrozenDocument {
     classes: [(&'static str, usize, usize, usize, usize); CLASS_COUNT],
 }
 
-/// The measured profile of 2026-09-24 on the five sha256-pinned frozen holdout
-/// TEI.  The table is written out rather than derived so that a change in any
-/// counter is visible as a diff in the assertion, not as a silently recomputed
-/// baseline.
-static FROZEN_PROFILE: [FrozenDocument; EXPECTED_DOCUMENTS] = [
+/// The measured profile of 2026-09-24 on the sha256-pinned frozen holdout TEI.
+/// The table is written out rather than derived so that a change in any counter is
+/// visible as a diff in the assertion, not as a silently recomputed baseline.
+/// Its length is deliberately a slice length, not a type-level literal: the audit
+/// compares it to the measured population by name, so a manifest that declares a
+/// different number of documents cannot be silently truncated by `zip`.
+static FROZEN_PROFILE: &[FrozenDocument] = &[
     FrozenDocument {
         article_id: "1203.2295",
         classes: [
@@ -1918,7 +1937,7 @@ struct FrozenMetrics {
     width_micros: u64,
 }
 
-static FROZEN_METRICS: [FrozenMetrics; EXPECTED_DOCUMENTS] = [
+static FROZEN_METRICS: &[FrozenMetrics] = &[
     FrozenMetrics {
         article_id: "1203.2295",
         source_population: 57,
@@ -1971,20 +1990,27 @@ static FROZEN_METRICS: [FrozenMetrics; EXPECTED_DOCUMENTS] = [
     },
 ];
 
-/// The frozen corpus-wide aggregate: counts over the five documents, never a
-/// rate and never a pooled corpus claim.
-static FROZEN_AGGREGATE: Aggregate = Aggregate {
-    documents: EXPECTED_DOCUMENTS,
-    source_population: 731,
-    admitted: 705,
-    tp: 705,
-    fn_: 0,
-    fp: 0,
-    agreeing_documents: 5,
-    margin_pass: 10,
-    margin_fail: 0,
-    no_denominator_documents: 0,
-};
+/// The frozen corpus-wide aggregate: counts over the documents, never a rate and
+/// never a pooled corpus claim.  `documents` and `agreeing_documents` are derived
+/// from the frozen per-document tables rather than restated as literals, so a
+/// table/population drift cannot be hidden by a matching hardcoded count.
+fn frozen_aggregate() -> Aggregate {
+    Aggregate {
+        documents: FROZEN_PROFILE.len(),
+        source_population: 731,
+        admitted: 705,
+        tp: 705,
+        fn_: 0,
+        fp: 0,
+        agreeing_documents: FROZEN_METRICS
+            .iter()
+            .filter(|metrics| metrics.agreement_micros == 1_000_000)
+            .count(),
+        margin_pass: 10,
+        margin_fail: 0,
+        no_denominator_documents: 0,
+    }
+}
 
 /// The frozen, named admission narrowings: `(article_id, class,
 /// source_population, admitted)`.  Every class whose admitted band is smaller
@@ -2070,8 +2096,9 @@ fn frozen_lane_is_read_from_data_and_its_identity_recomputes() {
 
     assert_eq!(
         data.reference.len(),
-        EXPECTED_DOCUMENTS,
-        "the frozen reference population is five documents"
+        data.expected_documents,
+        "the frozen reference population must equal the declared article count \
+         (data/parse/holdout_manifests.yaml#articles)"
     );
     let unique: BTreeSet<&str> = data
         .reference
@@ -2080,8 +2107,8 @@ fn frozen_lane_is_read_from_data_and_its_identity_recomputes() {
         .collect();
     assert_eq!(
         unique.len(),
-        EXPECTED_DOCUMENTS,
-        "five distinct fixture digests"
+        data.expected_documents,
+        "one distinct fixture digest per declared document"
     );
 
     let metric_names: BTreeSet<&str> = data
@@ -2213,7 +2240,7 @@ fn real_holdout_probe_profile_is_measured_per_document() {
     let aggregate = Aggregate::of(&measured);
     eprintln!("{}", aggregate.render());
 
-    assert_eq!(aggregate.documents, EXPECTED_DOCUMENTS);
+    assert_eq!(aggregate.documents, data.expected_documents);
     for document in &measured {
         assert_eq!(
             document.profiles.len(),
@@ -2414,12 +2441,12 @@ fn real_holdout_probe_profile_is_measured_per_document() {
         }
     }
 
-    // The identity shas are five distinct digests.
+    // The identity shas are distinct digests, one per declared document.
     let shas: BTreeSet<&str> = measured
         .iter()
         .map(|document| document.identity_sha256.as_str())
         .collect();
-    assert_eq!(shas.len(), EXPECTED_DOCUMENTS);
+    assert_eq!(shas.len(), data.expected_documents);
 }
 
 /// The frozen aggregate: the measured numbers are asserted, so any drift in
@@ -2432,17 +2459,26 @@ fn measured_probe_aggregate_is_frozen() {
     let aggregate = Aggregate::of(&measured);
     eprintln!("{}", aggregate.render());
 
+    let frozen = frozen_aggregate();
     assert_eq!(
-        aggregate, FROZEN_AGGREGATE,
-        "the measured aggregate drifted from the frozen one"
+        aggregate, frozen,
+        "the measured aggregate drifted from the frozen one (the frozen table covers {} \
+         documents, the manifest declares {})",
+        frozen.documents, data.expected_documents,
     );
-    assert_eq!(aggregate.documents, EXPECTED_DOCUMENTS);
+    assert_eq!(
+        aggregate.documents, data.expected_documents,
+        "the measured population must equal the declared article count"
+    );
     assert!(aggregate.tp > 0, "the frozen aggregate must be non-vacuous");
     let rendered = aggregate.render();
-    assert!(rendered.contains("documents=5"));
+    assert!(
+        rendered.contains(&format!("documents={}", data.expected_documents)),
+        "the rendered aggregate must print the measured document count"
+    );
     assert!(
         !rendered.contains("ratio") && !rendered.contains("rate") && !rendered.contains('%'),
-        "the aggregate is counts over five documents, never a corpus rate"
+        "the aggregate is counts over the measured documents, never a corpus rate"
     );
 }
 
@@ -2979,7 +3015,15 @@ fn the_sut_refuses_a_corrupted_envelope_instead_of_accepting_it() {
 fn frozen_per_document_profile_metrics_and_narrowings_are_asserted() {
     let data = load_probe_data();
     let measured = measure_all(&data);
-    assert_eq!(measured.len(), FROZEN_PROFILE.len());
+    assert_eq!(
+        measured.len(),
+        FROZEN_PROFILE.len(),
+        "{PROBE} the frozen per-document profile covers {} documents but the lane measured {}; \
+         a population change requires a fresh measurement, not auditing a subset against a \
+         stale table (data/parse/holdout_manifests.yaml#articles)",
+        FROZEN_PROFILE.len(),
+        measured.len(),
+    );
 
     for (document, frozen) in measured.iter().zip(FROZEN_PROFILE.iter()) {
         assert_eq!(document.article_id, frozen.article_id);
@@ -3017,6 +3061,13 @@ fn frozen_per_document_profile_metrics_and_narrowings_are_asserted() {
         }
     }
 
+    assert_eq!(
+        measured.len(),
+        FROZEN_METRICS.len(),
+        "{PROBE} the frozen per-document metrics cover {} documents but the lane measured {}",
+        FROZEN_METRICS.len(),
+        measured.len(),
+    );
     for (document, frozen) in measured.iter().zip(FROZEN_METRICS.iter()) {
         assert_eq!(document.article_id, frozen.article_id);
         assert_eq!(
@@ -3089,8 +3140,9 @@ fn frozen_per_document_profile_metrics_and_narrowings_are_asserted() {
             document.article_id
         );
         eprintln!(
-            "PROBE FROZEN documents=5 {} source_population={} admitted={} conserved={} \
+            "PROBE FROZEN documents={} {} source_population={} admitted={} conserved={} \
              agreement_micros={} low_micros={} high_micros={} width_micros={}",
+            measured.len(),
             frozen.article_id,
             frozen.source_population,
             frozen.admitted,

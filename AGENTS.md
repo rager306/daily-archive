@@ -383,7 +383,7 @@ Historical measurement **2026-08-05** after M315/M316 gold promote (`cargo run -
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **daily-archive** (81541 nodes, 130372 edges, 639 execution flows — .gitnexus/meta.json, indexed 2026-09-22).
+This project is indexed by GitNexus as **daily-archive** (84110 symbols, 136655 relationships, 652 execution flows).
 
 > Index stale? Run `node .gitnexus/run.cjs analyze --index-only` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? Bootstrap with `npx`, `bunx`, or `pnpm dlx` — e.g. `bunx gitnexus@latest analyze` (npm 11 npx crash; #1939).
 

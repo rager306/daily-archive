@@ -1,8 +1,9 @@
 //! M511-j7wz2f / S08 / T04 — the runtime artifact of the frozen external
 //! holdout probe, in the GAR-006 shape, and its byte determinism (H20/GAR-015).
 //!
-//! S08/T02 froze a fresh live-Java `processFulltextDocument` reference for five
-//! sha256-pinned non-gold arXiv documents; S08/T03 measured it with an
+//! S08/T02 froze a fresh live-Java `processFulltextDocument` reference for the
+//! sha256-pinned non-gold arXiv documents the source manifest declares; S08/T03
+//! measured it with an
 //! independent, structurally validating oracle in a dev-only `da-parse` test
 //! target.  This example is the *runtime* half: it re-measures the same frozen
 //! reference, prints the per-document profile, and freezes the result as
@@ -26,9 +27,10 @@
 //!
 //! ## Measured scope (read before quoting any number)
 //!
-//! Five non-gold local holdout documents.  Five is NOT a statistical corpus:
-//! every number is a COUNT over five documents, never a corpus rate, and the
-//! probe makes no pooled claim (`claim_scope = local_proxy_only`).  The probe
+//! A small, non-gold local holdout (five documents in the recorded measurement).
+//! This is NOT a statistical corpus: every number is a COUNT over the measured
+//! documents, never a corpus rate, and the probe makes no pooled claim
+//! (`claim_scope = local_proxy_only`).  The probe
 //! does not claim independence from the production route: the reference was
 //! produced by the declared live Java release and the admitted band is a local
 //! proxy.
@@ -36,17 +38,17 @@
 //! ## What is frozen
 //!
 //! * `reference_population` — identity-only: the recomputed probe identity
-//!   digest, the source-manifest sha256, the five TEI byte pins, the declared
+//!   digest, the source-manifest sha256, the TEI byte pins, the declared
 //!   release and profile.
 //! * `executed_population` — `corpus_execution = true`, the named execution
 //!   evidence, the live route the reference came from, and the document counts.
 //! * `evaluated_population` — `status = evaluated` with the frozen counts-only
 //!   aggregate and the margin verdicts.
-//! * `outcomes[5]` — per document: identity, admitted band, agreement ratio,
+//! * `outcomes` — per document: identity, admitted band, agreement ratio,
 //!   bounded uncertainty interval, recorded latency (read from provenance, never
 //!   from a clock), the per-metric margin verdicts and every typed admission gap.
-//! * `production_catalog_overlap` — a counted census: where each of the five
-//!   identities is (and is not) present, so the non-gold claim is measured.
+//! * `production_catalog_overlap` — a counted census: where each holdout
+//!   identity is (and is not) present, so the non-gold claim is measured.
 //! * `cost_accounting` / `latency_accounting` — bounded, never measured; an
 //!   unknown value is never read as zero and neither may be pooled.
 //! * `policy_locks` / `redaction` — D127 and ADR-040 stay closed, no payload.
@@ -99,8 +101,12 @@ const EXECUTION_EVIDENCE: &str = "tracked_offline_fixture:external_holdout_relea
 const RELEASE_LABEL: &str = "java-grobid-http@0.9.1";
 const ROLLBACK_TARGET: &str = "java-grobid-http@0.9.0-crf";
 
-/// The probe population: five sha256-pinned non-gold documents.  Not a corpus.
-const EXPECTED_DOCUMENTS: usize = 5;
+// The probe population is NOT a literal here: it is the number of article
+// identities declared by `data/parse/holdout_manifests.yaml#articles`, read at
+// run time into `LaneData::expected_documents`.  A lane whose `reference_tei`
+// does not cover exactly those identities is refused by name
+// (`probe_reference_population_size_drift` / `probe_reference_source_mismatch`)
+// before any measurement, never audited against a stale fixed-size table.
 
 /// The two metric names the lane declares, read from DATA at run time and bound
 /// to a computation here.  A declared metric with no binding is a refusal, so a
@@ -274,6 +280,9 @@ struct LaneData {
     identity_digest: String,
     source_manifest: String,
     source_manifest_sha256: String,
+    /// The declared probe population, derived from
+    /// `data/parse/holdout_manifests.yaml#articles` (never a literal).
+    expected_documents: usize,
     profile_fingerprint: String,
     config_fingerprint: String,
     reference_profile: String,
@@ -518,9 +527,6 @@ fn read_lane(manifest: &Yaml) -> Result<LaneData, String> {
         .get("reference_tei")
         .and_then(Yaml::as_sequence)
         .ok_or("probe_reference_tei_missing")?;
-    if reference_value.len() != EXPECTED_DOCUMENTS {
-        return Err("probe_reference_population_size_drift".into());
-    }
     let mut reference = Vec::with_capacity(reference_value.len());
     for row in reference_value {
         let article_id = yaml_str(row, "article_id")
@@ -567,6 +573,14 @@ fn read_lane(manifest: &Yaml) -> Result<LaneData, String> {
     // while `holdout_manifests.yaml` pins the source PDF: the two hashes are
     // deliberately different objects, so the cross-check is on identity, and the
     // byte pins are re-verified against the files themselves before measurement.
+    // The population size is DATA, not a literal: the lane's frozen rows must
+    // cover exactly the article identities the source manifest declares.  A lane
+    // covering a different number of documents is refused by name here, before
+    // any measurement, rather than audited against a stale table.
+    if reference.len() != articles.len() {
+        return Err("probe_reference_population_size_drift".into());
+    }
+    let expected_documents = articles.len();
     let manifest_ids: BTreeSet<String> = articles
         .iter()
         .filter_map(|article| yaml_str(article, "article_id"))
@@ -659,6 +673,7 @@ fn read_lane(manifest: &Yaml) -> Result<LaneData, String> {
         identity_digest,
         source_manifest,
         source_manifest_sha256,
+        expected_documents,
         profile_fingerprint: format!("profile={reference_profile}"),
         config_fingerprint: format!("consolidation={}", flag_pairs.join(",")),
         reference_profile,
@@ -787,7 +802,7 @@ fn verify_provenance(lane: &LaneData, provenance: &Provenance) -> Result<(), Str
     {
         return Err("provenance_release_drift".into());
     }
-    if provenance.documents.len() != EXPECTED_DOCUMENTS {
+    if provenance.documents.len() != lane.expected_documents {
         return Err("provenance_document_population_drift".into());
     }
     for row in &provenance.documents {
@@ -2298,7 +2313,7 @@ fn measure_all(lane: &LaneData, provenance: &Provenance) -> Vec<MeasuredDocument
         .collect()
 }
 
-/// Counts over the five documents.  No rate, no pooled corpus claim: every field
+/// Counts over the measured documents.  No rate, no pooled corpus claim: every field
 /// is a count and the document count is printed next to them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Aggregate {
@@ -2404,7 +2419,7 @@ fn pdf_under(root: &str, category: &str, id: &str) -> bool {
         .is_file()
 }
 
-/// A counted presence census over the five holdout identities.  `found` is a
+/// A counted presence census over the holdout identities.  `found` is a
 /// measurement: a directory listing plus a `stat`, never an assertion, and the
 /// gold-standard column is the one that would invalidate the non-gold claim.
 fn catalog_census(lane: &LaneData, source_manifest: &Yaml) -> CatalogCensus {
@@ -2581,7 +2596,7 @@ fn report_errors(report: &Json, expected: &ExpectedProbe) -> Vec<String> {
         errors.insert("schema_version_drift".to_string());
     }
 
-    // ── reference population: identity-only, five distinct pinned bytes ─────
+    // ── reference population: identity-only, distinct pinned bytes ───────────
     let reference = &report["reference_population"];
     if reference.get("role").and_then(Json::as_str) != Some("identity_only") {
         errors.insert("reference_population_role".to_string());
@@ -2606,14 +2621,14 @@ fn report_errors(report: &Json, expected: &ExpectedProbe) -> Vec<String> {
     {
         errors.insert("source_manifest_sha_drift".to_string());
     }
-    if u64_of(&reference["documents"]) != Some(EXPECTED_DOCUMENTS as u64) {
+    if u64_of(&reference["documents"]) != Some(expected.documents.len() as u64) {
         errors.insert("reference_documents".to_string());
     }
     let pins = reference["byte_pins"]
         .as_array()
         .cloned()
         .unwrap_or_default();
-    if pins.len() != EXPECTED_DOCUMENTS {
+    if pins.len() != expected.documents.len() {
         errors.insert("reference_byte_pins_drift".to_string());
     } else {
         for expected_document in &expected.documents {
@@ -2642,8 +2657,8 @@ fn report_errors(report: &Json, expected: &ExpectedProbe) -> Vec<String> {
     if executed.get("execution_evidence").and_then(Json::as_str) != Some(EXECUTION_EVIDENCE) {
         errors.insert("execution_evidence_unbound".to_string());
     }
-    if u64_of(&executed["documents"]) != Some(EXPECTED_DOCUMENTS as u64)
-        || u64_of(&executed["accepted"]) != Some(EXPECTED_DOCUMENTS as u64)
+    if u64_of(&executed["documents"]) != Some(expected.documents.len() as u64)
+        || u64_of(&executed["accepted"]) != Some(expected.documents.len() as u64)
     {
         errors.insert("accepted_documents".to_string());
     }
@@ -2653,7 +2668,7 @@ fn report_errors(report: &Json, expected: &ExpectedProbe) -> Vec<String> {
     if evaluated.get("status").and_then(Json::as_str) != Some("evaluated") {
         errors.insert("evaluated_status".to_string());
     }
-    if u64_of(&evaluated["documents"]) != Some(EXPECTED_DOCUMENTS as u64) {
+    if u64_of(&evaluated["documents"]) != Some(expected.documents.len() as u64) {
         errors.insert("evaluated_status".to_string());
     }
     let aggregate = &evaluated["aggregate"];
@@ -2686,16 +2701,16 @@ fn report_errors(report: &Json, expected: &ExpectedProbe) -> Vec<String> {
         errors.insert("aggregate_conservation_mismatch".to_string());
     }
 
-    // ── outcomes: five distinct identities, per-document measurement ───────
+    // ── outcomes: distinct identities, per-document measurement ────────────
     let outcomes = report["outcomes"].as_array().cloned().unwrap_or_default();
-    if outcomes.len() != EXPECTED_DOCUMENTS {
+    if outcomes.len() != expected.documents.len() {
         errors.insert("outcome_count".to_string());
     }
     let outcome_shas: BTreeSet<&str> = outcomes
         .iter()
         .filter_map(|outcome| outcome.get("identity_sha256").and_then(Json::as_str))
         .collect();
-    if outcome_shas.len() != outcomes.len() || outcome_shas.len() != EXPECTED_DOCUMENTS {
+    if outcome_shas.len() != outcomes.len() || outcome_shas.len() != expected.documents.len() {
         errors.insert("identity_sha_collapse".to_string());
     }
     let expected_verdicts: BTreeSet<(String, String, String)> = expected
@@ -2879,7 +2894,7 @@ fn report_errors(report: &Json, expected: &ExpectedProbe) -> Vec<String> {
     let census = &report["production_catalog_overlap"];
     let census_ok = census.get("census_kind").and_then(Json::as_str)
         == Some("filesystem_presence_of_the_five_holdout_identities")
-        && u64_of(&census["documents"]) == Some(EXPECTED_DOCUMENTS as u64)
+        && u64_of(&census["documents"]) == Some(expected.documents.len() as u64)
         && u64_of(&census["canonical_catalog_present_count"])
             == Some(expected.canonical_catalog_present as u64)
         && u64_of(&census["sources_archive_present_count"])
@@ -2890,7 +2905,7 @@ fn report_errors(report: &Json, expected: &ExpectedProbe) -> Vec<String> {
             .get("locators")
             .and_then(Json::as_array)
             .map(Vec::len)
-            == Some(EXPECTED_DOCUMENTS);
+            == Some(expected.documents.len());
     if !census_ok {
         errors.insert("production_catalog_overlap_absent".to_string());
     }
@@ -3217,8 +3232,8 @@ fn expected_probe(
 /// A synthetic valid report plus its ledger.  Built in code on purpose: the
 /// self-check must prove the guard predicate, not the current repo state, so it
 /// reads no file, touches no network and writes nothing.
-fn synthetic_pair() -> (Json, ExpectedProbe) {
-    let documents: Vec<(String, String, u64, usize, usize)> = (0..EXPECTED_DOCUMENTS)
+fn synthetic_pair(document_count: usize) -> (Json, ExpectedProbe) {
+    let documents: Vec<(String, String, u64, usize, usize)> = (0..document_count)
         .map(|index| {
             (
                 format!("d{}", index + 1),
@@ -3276,7 +3291,7 @@ fn synthetic_pair() -> (Json, ExpectedProbe) {
         documents: expected_documents.clone(),
         verdicts,
         aggregate: Aggregate {
-            documents: EXPECTED_DOCUMENTS,
+            documents: document_count,
             source_population: expected_documents
                 .iter()
                 .map(|document| document.source_population)
@@ -3291,13 +3306,13 @@ fn synthetic_pair() -> (Json, ExpectedProbe) {
                 .sum(),
             fn_: 0,
             fp: 0,
-            agreeing_documents: EXPECTED_DOCUMENTS,
-            margin_pass: EXPECTED_DOCUMENTS * metrics.len(),
+            agreeing_documents: document_count,
+            margin_pass: document_count * metrics.len(),
             margin_fail: 0,
             no_denominator_documents: 0,
         },
         canonical_catalog_present: 0,
-        sources_archive_present: EXPECTED_DOCUMENTS,
+        sources_archive_present: document_count,
         gold_standard_present: 0,
     };
 
@@ -3339,7 +3354,7 @@ fn synthetic_pair() -> (Json, ExpectedProbe) {
             "identity": "canonical_dataset_id_plus_identity",
             "identity_sha256": expected.identity_digest,
             "source_manifest_sha256": expected.source_manifest_sha256,
-            "documents": EXPECTED_DOCUMENTS,
+            "documents": document_count,
             "reference_release": {
                 "label": expected.release_label,
                 "profile": expected.release_profile,
@@ -3355,12 +3370,12 @@ fn synthetic_pair() -> (Json, ExpectedProbe) {
         "executed_population": {
             "corpus_execution": true,
             "execution_evidence": EXECUTION_EVIDENCE,
-            "documents": EXPECTED_DOCUMENTS,
-            "accepted": EXPECTED_DOCUMENTS,
+            "documents": document_count,
+            "accepted": document_count,
         },
         "evaluated_population": {
             "status": "evaluated",
-            "documents": EXPECTED_DOCUMENTS,
+            "documents": document_count,
             "aggregate": {
                 "documents": expected.aggregate.documents,
                 "source_population": expected.aggregate.source_population,
@@ -3402,11 +3417,11 @@ fn synthetic_pair() -> (Json, ExpectedProbe) {
         ],
         "production_catalog_overlap": {
             "census_kind": "filesystem_presence_of_the_five_holdout_identities",
-            "documents": EXPECTED_DOCUMENTS,
+            "documents": document_count,
             "canonical_catalog_present_count": expected.canonical_catalog_present,
             "sources_archive_present_count": expected.sources_archive_present,
             "gold_standard_present_count": expected.gold_standard_present,
-            "locators": (0..EXPECTED_DOCUMENTS).map(|index| json!({"document_id": format!("d{}", index + 1)})).collect::<Vec<Json>>(),
+            "locators": (0..document_count).map(|index| json!({"document_id": format!("d{}", index + 1)})).collect::<Vec<Json>>(),
         },
         "cost_accounting": {
             "status": "bounded_not_measured",
@@ -3436,7 +3451,7 @@ fn synthetic_pair() -> (Json, ExpectedProbe) {
 }
 
 /// One mutant per declared guard, each violating exactly one declared rule.
-fn mutants(report: &Json) -> Vec<(&'static str, Json)> {
+fn mutants(report: &Json, document_count: usize) -> Vec<(&'static str, Json)> {
     let mut out: Vec<(&'static str, Json)> = Vec::new();
 
     let mut mutate = |label: &'static str, change: &dyn Fn(&mut Json)| {
@@ -3510,7 +3525,7 @@ fn mutants(report: &Json) -> Vec<(&'static str, Json)> {
         clone["outcomes"][0]["latency_ms"] = json!(0);
     });
     mutate("legacy_block_present", &|clone| {
-        clone["denominators"] = json!({"documents": EXPECTED_DOCUMENTS});
+        clone["denominators"] = json!({"documents": document_count});
     });
     mutate("external_lane_state_flipped", &|clone| {
         clone["external_holdout_band"]["execution_status"] = json!("executed");
@@ -3546,8 +3561,16 @@ fn mutants(report: &Json) -> Vec<(&'static str, Json)> {
 /// The hermetic guard matrix: the unmutated synthetic report must be clean, and
 /// each declared guard must fire on its own mutant.  No repo read, no network,
 /// no write, no log surface.
+/// The synthetic self-check population.  Deliberately independent of the repo:
+/// the self-check proves the guard predicate over code-built fixtures, so it
+/// reads no manifest.  The count flows through the `synthetic_pair` parameter, so
+/// the guard matrix can be exercised at any population size (the N=5/N=7
+/// scalability proof).
+const SYNTHETIC_DOCUMENT_COUNT: usize = 5;
+
 fn self_check() -> bool {
-    let (valid, expected) = synthetic_pair();
+    let document_count = SYNTHETIC_DOCUMENT_COUNT;
+    let (valid, expected) = synthetic_pair(document_count);
     let baseline = report_errors(&valid, &expected);
     if !baseline.is_empty() {
         println!("guard baseline: rejected {baseline:?}");
@@ -3555,7 +3578,7 @@ fn self_check() -> bool {
     }
     let mut ok = true;
     let mut fired: BTreeSet<&str> = BTreeSet::new();
-    for (label, mutant) in mutants(&valid) {
+    for (label, mutant) in mutants(&valid, document_count) {
         let errors = report_errors(&mutant, &expected);
         // A guard may suffix its label with the offending key (`label:key`), so a
         // mutant is caught when the exact label or a `label:`-prefixed refusal

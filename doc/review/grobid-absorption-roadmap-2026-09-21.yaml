@@ -211,6 +211,13 @@ measured_state:
     # плюс пробы rest.isalive в backend_contract). См. C10.
     composition_contract_passed: 28
     composition_properties_passed: 8
+    # S09/T04 (2026-09-25): свежие замеры финального прогона, не пере-выведенные.
+    governance_pytest_passed: 479
+    governance_pytest_measured_at: "2026-09-25"
+    da_cli_pdf_layout_suites: 41
+    da_cli_pdf_layout_passed: 635
+    architecture_gate_rc: 0
+    architecture_gate_steps: 16
     # ИСПРАВЛЕНИЕ: теги имён файлов ПЕРЕКРЫВАЮТСЯ и не являются разбиением.
     # 14 файлов несут более одного тега, сумма тегов (108) больше числа файлов (99).
     file_tags_are_overlapping_not_exclusive: true
@@ -516,10 +523,16 @@ corrections:
       остаётся единственной открытой записью; человеческое релизное решение
       pending (`reviewer=null`, `decision=pending`). Ревизия квалификации
       закреплена в `reviewed_source` и сверяется с audit-строкой `Ревизия
-      квалификации:` кросс-поверхностной пробой (T04). Полный `governor
-      architecture` измеряется финальным прогоном S09/T04 и фиксируется там,
-      а не выводится из прозы этой записи; `index_freshness` приведён к
-      измеренному GitNexus-состоянию, а не к заявленному `fresh`.
+      квалификации:` кросс-поверхностной пробой (T04). Финальный прогон S09/T04
+      исполнен на ревизии финального гейта `aa0de0c0…`, записанной в audit §S09
+      явно рядом с опорной ревизией квалификации `6a384227…` (S09/T01–T03
+      изменили только документы среза, поэтому HEAD сдвинулся, а Rust-исходники
+      — нет): governance pytest — 479 passed (10 новых кросс-поверхностных
+      census-проб), `governor architecture` — ARCHITECTURE GATE: PASS с
+      измеренным GATE_RC=0 (16 шагов, 1216 s), а `cargo test -p da-cli --features
+      pdf-layout --tests` — 41 suites / 635 passed. Числа только измеренные;
+      `index_freshness` приведён к измеренному GitNexus-состоянию, а не к
+      заявленному `fresh`.
     evidence: doc/review/grobid-absorption-audit-2026-09-21.md
 
 # ---------------------------------------------------------------------------
@@ -551,15 +564,19 @@ validation_commands:
   - command: "python3 -c \"import json,sys,jsonschema;d=json.load(open('doc/review/grobid-absorption-followup.json'));s=json.load(open('doc/review/grobid-rust-horizon-review.schema.json'));jsonschema.Draft202012Validator(s).validate(d);print('schema-ok')\""
     expected: "schema-ok"
   # S09/T02 (2026-09-25): governance pytest держит кросс-поверхностный census.
-  # 469 passed — измеренное значение на ревизии квалификации; S09/T04 добавляет
-  # >=8 новых проб и переизмеряет число (>=477), обновляя эту строку.
+  # S09/T04 (2026-09-25): добавлено 10 проб (>=8 census + 2 негативные),
+  # переизмерено на ревизии финального гейта — 479 passed.
   - command: "PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q"
-    expected: "exit=0; 469 passed (замер S09/T02, 2026-09-25; S09/T04 переизмеряет при >=477)"
+    expected: "exit=0; 479 passed (замер S09/T04, 2026-09-25; 469 на S09/T02 + 10 кросс-поверхностных census-проб)"
   - command: "PYTHONPATH=scripts python3 -m pytest scripts/tests/test_governor.py -q"
     expected: "exit=0; fail-closed поведение governor"
+  - command: "cargo test -p da-cli --features pdf-layout --tests"
+    expected: "635 passed; 0 failed; 0 ignored; 41 suites (замер S09/T04, 2026-09-25)"
+  - command: "cargo build -p da-cli --features pdf-layout --examples"
+    expected: "example-раннеры собраны перед feature-gated тестами (provisioning, см. AGENTS)"
   - command: "PYTHONPATH=scripts python3 -m governor --validate-yaml"
     expected: "PASS"
   - command: "PYTHONPATH=scripts python3 -m governor --phase preflight"
     expected: "exit=0"
   - command: "PYTHONPATH=scripts python3 -m governor architecture"
-    expected: "ARCHITECTURE GATE: PASS с измеренным GATE_RC=0 (полный прогон — финальная квалификация S09/T04, вне in-band cap)"
+    expected: "ARCHITECTURE GATE: PASS с измеренным GATE_RC=0 (16 шагов, 1216 s; полный прогон S09/T04, вне in-band cap)"

@@ -762,10 +762,19 @@ fn frozen_reference_names_its_release_and_the_data_plane_label_divergence() {
     // declare a positive size. Byte equality against the pin is enforced by the
     // capture tool's `--verify` mode, not duplicated here.
     let rows = seq(lane, "reference_tei").expect("release_probe.reference_tei");
+    // The population is DATA: the frozen reference must cover exactly the article
+    // identities the source manifest declares, never a hardcoded count.  The
+    // expected number is read from `holdout_manifests.yaml#articles`.
+    let source: Yaml = serde_yaml::from_str(&read(SOURCE_MANIFEST)).unwrap_or_else(|error| {
+        panic!("{PREFIX} the frozen source manifest `{SOURCE_MANIFEST}` is not valid YAML: {error}")
+    });
+    let source_articles = seq(&source, "articles")
+        .unwrap_or_else(|| panic!("{PREFIX} `{SOURCE_MANIFEST}#articles` must be a sequence"));
     assert_eq!(
         rows.len(),
-        5,
-        "{PREFIX} the frozen reference is five documents"
+        source_articles.len(),
+        "{PREFIX} the frozen reference population must equal the declared article count \
+         ({SOURCE_MANIFEST}#articles), not a hardcoded count"
     );
     assert!(
         str_at(lane, "source_manifest_sha256").is_some_and(|value| value.starts_with("sha256:"))

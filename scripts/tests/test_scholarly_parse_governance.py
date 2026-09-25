@@ -11,6 +11,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -3118,3 +3119,299 @@ def test_governor_validate_yaml_passes_for_the_probe_lane_surface():
     from governor.adapters.yaml_rule_repository import YAMLRuleRepository
 
     assert _validate_yaml(YAMLRuleRepository(ROOT / "scripts/governor/checks")) == 0
+
+
+# --- M511/S09/T04: independent cross-surface qualification census -------------
+#
+# The machine-held half of the S09 qualification. These probes do not re-read a
+# single artifact in isolation: they assert that every declared review surface of
+# the GROBID absorption wave agrees with disk and with the other surfaces on the
+# current revision. They reuse the S19 helpers (ROOT / _load / _sha256 /
+# _source_bindings) and never call git — cross-surface equality is proven by
+# reading the recorded literals, so a moved HEAD cannot make the census pass or
+# fail silently. Each helper is paired with a negative probe that injects the
+# drift the census claims to catch, so no probe is vacuous.
+
+ROADMAP_PATH = ROOT / "doc/review/grobid-absorption-roadmap-2026-09-21.yaml"
+AUDIT_PATH = ROOT / "doc/review/grobid-absorption-audit-2026-09-21.md"
+MANIFEST_PATH = ROOT / "data/parse/acceptance_manifest.yaml"
+CARRIER_PATH = ROOT / "data/parse/grobid_compatibility.yaml"
+LICENSE_INVENTORY_PATH = ROOT / "data/parse/license_inventory.yaml"
+FOLLOWUP_PATH = ROOT / "doc/review/grobid-absorption-followup.json"
+HORIZON_PATH = ROOT / "doc/review/grobid-rust-horizon-review.json"
+HORIZON_CONTRACT_PATH = ROOT / "scripts/governor/checks/grobid_rust_horizon_review.yaml"
+
+# The five locks the whole wave must hold simultaneously. `deployed` and
+# `graph_write` are not repeated verbatim on every surface: the acceptance
+# manifest expresses a graph write as
+# `release_decision_package.prohibited_authorizations.graph_write_or_import:
+# blocked` and carries no deployment flag at all. The census therefore asserts
+# that no surface contradicts a lock it declares and that the union of surfaces
+# covers all five, rather than demanding one identical block on every file.
+QUALIFICATION_LOCKS = {
+    "import_eligible": False,
+    "deployed": False,
+    "production_route": "forbidden",
+    "graph_write": "forbidden",
+    "auto_promote": "forbidden",
+}
+
+
+def _normalize_blocked(value):
+    """Map the manifest's `blocked` authorizations onto the lock vocabulary."""
+    return "forbidden" if value == "blocked" else value
+
+
+def _qualification_lock_faces() -> dict[str, dict]:
+    """Read the three declared lock surfaces into one normalized mapping."""
+    policy = _load(POLICY_PATH)
+    manifest = _load(MANIFEST_PATH)
+    roadmap = _load(ROADMAP_PATH)
+    manifest_face = {
+        key: value
+        for key, value in manifest["policy_locks"].items()
+        if key in QUALIFICATION_LOCKS
+    }
+    manifest_face["graph_write"] = manifest["release_decision_package"][
+        "prohibited_authorizations"
+    ]["graph_write_or_import"]
+    return {
+        "policy": {
+            key: value
+            for key, value in policy["locks"].items()
+            if key in QUALIFICATION_LOCKS
+        },
+        "manifest": {
+            key: _normalize_blocked(value) for key, value in manifest_face.items()
+        },
+        "roadmap": {
+            key: value
+            for key, value in roadmap["measured_state"]["locks"].items()
+            if key in QUALIFICATION_LOCKS
+        },
+    }
+
+
+def _lock_face_violations(faces: dict[str, dict]) -> list[str]:
+    """Return human-readable contradictions in a set of normalized lock faces."""
+    violations: list[str] = []
+    for surface, face in sorted(faces.items()):
+        for key, value in sorted(face.items()):
+            if value != QUALIFICATION_LOCKS[key]:
+                violations.append(f"{surface}:{key}={value!r}")
+    declared: set[str] = set()
+    for face in faces.values():
+        declared |= set(face)
+    for key in sorted(set(QUALIFICATION_LOCKS) - declared):
+        violations.append(f"undeclared:{key}")
+    return violations
+
+
+def _unresolved_pass_violations(registry: dict, review: dict) -> list[str]:
+    """Return `stage:flag` for every unresolved stage that claims a PASS."""
+    unresolved = set(registry["unresolved_status"])
+    violations: list[str] = []
+    for stage in review["stages"]:
+        if stage["status"] not in unresolved:
+            continue
+        if stage["implementation_pass"] is not False:
+            violations.append(f"{stage['stage_id']}:implementation_pass")
+        if stage["verification_pass"] is not False:
+            violations.append(f"{stage['stage_id']}:verification_pass")
+    return violations
+
+
+def test_s09_census_policy_bindings_resolve_and_hash_on_disk():
+    policy = _load(POLICY_PATH)
+    bindings = _source_bindings(policy)
+    assert len(bindings) == 18, [binding["path"] for binding in bindings]
+    paths = [binding["path"] for binding in bindings]
+    assert len(set(paths)) == len(paths), "duplicate binding path"
+    for binding in bindings:
+        assert len(binding["sha256"]) == 64, binding["path"]
+        path = ROOT / binding["path"]
+        assert path.is_file(), binding["path"]
+        assert _sha256(path) == binding["sha256"], binding["path"]
+
+
+def test_s09_census_positive_mirror_pins_equal_policy_and_disk():
+    policy = _load(POLICY_PATH)
+    fixture = _load(POSITIVE_PATH)
+    policy_pins = {
+        binding["path"]: binding["sha256"] for binding in _source_bindings(policy)
+    }
+    mirror = list(fixture["source_data"]) + list(fixture["canonical_artifacts"])
+    assert len(mirror) == len(policy_pins)
+    for item in mirror:
+        assert item["path"] in policy_pins, item["path"]
+        assert item["sha256"] == policy_pins[item["path"]], item["path"]
+        assert _sha256(ROOT / item["path"]) == item["sha256"], item["path"]
+
+
+def test_s09_census_lock_faces_agree_across_three_surfaces():
+    faces = _qualification_lock_faces()
+    assert _lock_face_violations(faces) == []
+    declared: set[str] = set()
+    for face in faces.values():
+        declared |= set(face)
+    assert declared == set(QUALIFICATION_LOCKS), sorted(declared)
+    core = {"import_eligible", "production_route", "auto_promote"}
+    assert all(core <= set(face) for face in faces.values()), faces
+
+
+def test_s09_census_lock_faces_reject_permissive_or_dropped_lock():
+    faces = _qualification_lock_faces()
+    permissive = copy.deepcopy(faces)
+    permissive["policy"]["import_eligible"] = True
+    assert "policy:import_eligible=True" in _lock_face_violations(permissive)
+    dropped = copy.deepcopy(faces)
+    for surface in dropped.values():
+        surface.pop("graph_write", None)
+    assert "undeclared:graph_write" in _lock_face_violations(dropped)
+
+
+def test_s09_census_unresolved_stages_never_claim_pass():
+    pairs = (
+        (_load(HORIZON_CONTRACT_PATH)["registry"], _load(HORIZON_PATH)),
+        (_load(ROADMAP_PATH)["registry"], _load(FOLLOWUP_PATH)),
+    )
+    unresolved_seen = 0
+    for registry, review in pairs:
+        assert registry["unresolved_status"], review["review_id"]
+        assert review["stages"]
+        allowed = set(registry["allow_status"])
+        for stage in review["stages"]:
+            assert stage["status"] in allowed, stage["stage_id"]
+        assert _unresolved_pass_violations(registry, review) == [], review["review_id"]
+        unresolved_seen += sum(
+            1
+            for stage in review["stages"]
+            if stage["status"] in set(registry["unresolved_status"])
+        )
+    assert unresolved_seen >= 8, unresolved_seen
+    resolved_claims = [
+        stage
+        for registry, review in pairs
+        for stage in review["stages"]
+        if stage["status"] not in set(registry["unresolved_status"])
+        and stage["implementation_pass"] is True
+    ]
+    assert resolved_claims, "the vocabulary must discriminate resolved from unresolved"
+
+
+def test_s09_census_unresolved_probe_rejects_pass_claim():
+    registry = {"unresolved_status": ["pending", "in_progress", "blocked"]}
+    review = {
+        "stages": [
+            {
+                "stage_id": "H99",
+                "status": "pending",
+                "implementation_pass": True,
+                "verification_pass": False,
+            },
+            {
+                "stage_id": "H98",
+                "status": "in_progress",
+                "implementation_pass": False,
+                "verification_pass": True,
+            },
+        ]
+    }
+    assert _unresolved_pass_violations(registry, review) == [
+        "H99:implementation_pass",
+        "H98:verification_pass",
+    ]
+
+
+def test_s09_census_release_decision_package_still_awaits_human_review():
+    manifest = _load(MANIFEST_PATH)
+    package = manifest["release_decision_package"]
+    assert package["package_status"] == "pending_human_review"
+    review = package["human_release_review"]
+    assert review["required"] is True
+    assert review["reviewer"] is None
+    assert review["decision"] == "pending"
+    assert review["prose_alone_authorizes_release"] is False
+    prohibited = package["prohibited_authorizations"]
+    assert len(prohibited) == 5, prohibited
+    assert set(prohibited.values()) == {"blocked"}, prohibited
+    # The governor probe lane must declare the same pending decision and the same
+    # blocked set, so a manifest-only edit cannot silently unlock a release.
+    lane = _load(POLICY_PATH)["release_probe_lane"]
+    assert (
+        lane["expected_values"][
+            "release_decision_package.human_release_review.decision"
+        ]
+        == "pending"
+    )
+    assert set(lane["blocked_authorizations"]) == set(prohibited)
+    assert set(lane["blocked_authorizations"].values()) == {"blocked"}
+
+
+def test_s09_census_measured_denominators_match_their_carriers():
+    measured = _load(ROADMAP_PATH)["measured_state"]
+    capabilities = _load(CARRIER_PATH)["capabilities"]
+    assert len(capabilities) == 38, len(capabilities)
+    assert len({row["id"] for row in capabilities}) == len(capabilities)
+    assert measured["parity_ledger"]["rows"] == len(capabilities)
+    assert measured["capability_ledger"]["total"] == len(capabilities)
+    inventory = _load(LICENSE_INVENTORY_PATH)
+    components = inventory["components"]
+    assert measured["license_inventory"]["canonical"] == (
+        "data/parse/license_inventory.yaml"
+    )
+    assert len(components) == measured["license_inventory"]["components"]
+    assert len({component["component_id"] for component in components}) == len(
+        components
+    ), "duplicate license identity"
+    observed_status = {}
+    for component in components:
+        observed_status[component["license_status"]] = (
+            observed_status.get(component["license_status"], 0) + 1
+        )
+    assert observed_status == measured["license_inventory"]["license_status"], (
+        observed_status
+    )
+
+
+def test_s09_census_audit_qualification_revision_is_bound_to_reviewed_source():
+    audit = AUDIT_PATH.read_text(encoding="utf-8")
+    revisions = re.findall(r"Ревизия квалификации:\s*([0-9a-f]{40})", audit)
+    assert len(revisions) == 1, revisions
+    qualification = revisions[0]
+    reviewed_source = _load(ROADMAP_PATH)["reviewed_source"]
+    assert qualification in reviewed_source, (qualification, reviewed_source)
+    # The final gate revision is recorded in the same section. When present it
+    # must be a complete 40-hex literal, never an abbreviated or prose label.
+    final_gate = re.findall(r"Ревизия финального гейта:\s*([0-9a-f]{40})", audit)
+    assert len(final_gate) <= 1, final_gate
+    if final_gate:
+        assert len(final_gate[0]) == 40
+
+
+def test_s09_census_revision_label_resolution_is_typed_and_content_bound():
+    ledger = _load(ROADMAP_PATH)["measured_state"]["parity_ledger"]
+    assert ledger["rows_are_the_capability_denominator"] is True
+    assert ledger["revision_label_discrepancy_resolved"] is True
+    resolution = ledger["revision_label_resolution"]
+    assert resolution["binding_authority"] == "content_sha256"
+    assert resolution["kinds_are_distinct"] is True
+    assert resolution["carrier_untouched"] is True
+    identities = resolution["identities"]
+    assert len(identities) == 3, identities
+    assert len({item["kind"] for item in identities}) == 3, identities
+    by_identity = {item["identity"]: item for item in identities}
+    assert set(by_identity) == {
+        "authority_label",
+        "capture_declared_revision",
+        "observed_checkout_revision",
+    }
+    assert (
+        by_identity["capture_declared_revision"]["value"]
+        == ledger["capture_declared_revision"]
+    )
+    assert (
+        by_identity["observed_checkout_revision"]["value"]
+        == ledger["observed_checkout_revision"]
+    )
+    assert ledger["observed_checkout_revision"] != ledger["capture_declared_revision"]

@@ -832,6 +832,52 @@ PASS по релизу не заявлен.
 `112/1489` (S07/T05) сохранены в разделе S05 как атрибутированный замер, а не
 пере-выведены.
 
+**Финальный независимый прогон S09/T04 (кросс-поверхностная проба и полный гейт).**
+
+Ревизия финального гейта: aa0de0c0b7880aa2af912dc1eb736c85c2db0b63 — измеренный
+`git rev-parse HEAD` на момент финального прогона. Она отличается от опорной
+ревизии квалификации намеренно: S09/T01–T03 изменили только документы среза, и
+системный коммит сдвинул HEAD после того, как замер квалификации был записан.
+Rust-исходники не менялись, поэтому числа квалификации остаются привязанными к
+`6a384227…` (шапка аудита), а финальный гейт записан отдельно на
+`aa0de0c0…`; обе ревизии названы явно, ни одна не выдаётся за другую.
+
+| # | Команда (исполнена в S09/T04 на ревизии финального гейта) | RC | Измерено |
+|---|---|---|---|
+| 1 | `cargo build -p da-cli --features pdf-layout --examples` | 0 | example-раннеры пересобраны после прибора `target/debug/examples` (88 s) |
+| 2 | `cargo test -p da-parse --tests` | 0 | 114 suites / 1508 passed / 0 failed / 0 ignored (111 s) |
+| 3 | `cargo test -p da-cli --features pdf-layout --tests` | 0 | 41 suites / 635 passed / 0 failed / 0 ignored (654 s) |
+| 4 | `cargo test -p da-parse --test native_fulltext_corpus_semantics` | 0 | 7 passed / 0 failed |
+| 5 | `PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q` | 0 | 479 passed (484.27 s); 469 + 10 новых census-проб |
+| 6 | `PYTHONPATH=scripts python3 -m pytest scripts/tests/test_governor.py -q` | 0 | 368 passed |
+| 7 | `PYTHONPATH=scripts python3 -m governor review --registry doc/review/grobid-absorption-roadmap-2026-09-21.yaml` | 0 | stages=8 unresolved=8 complete=0 claims=0 |
+| 8 | `PYTHONPATH=scripts python3 -m governor --validate-yaml` | 0 | YAML validation PASS: 65 rules, 19 dimensions |
+| 9 | `PYTHONPATH=scripts python3 -m governor --phase preflight` | 0 | exit=0; verdict=DRIFT_RISK с названными флагами (target bloat, hardcoded URL, 2 stale artifacts) |
+| 10 | `PYTHONPATH=scripts python3 -m governor architecture` | 0 | ARCHITECTURE GATE: PASS; GATE_RC=0 (16 шагов, 1216 s) |
+
+Кросс-поверхностные census-пробы (10 штук) добавлены в
+`scripts/tests/test_scholarly_parse_governance.py` и переиспользуют существующие
+helper'ы: каждый binding политики резолвится и хэшируется на диске; зеркальные
+пины позитивной фикстуры равны политике и диску; три замковые поверхности
+согласованы и не допускают permissive- или потерянный замок; ни одна
+unresolved-стадия обоих реестров не несёт `implementation_pass` /
+`verification_pass`; релизный пакет остаётся `pending_human_review`
+(`reviewer=null`, `decision=pending`, все 5 авторизаций blocked); строки
+parity-реестра равны числу capabilities, а компоненты лицензионного инвентаря —
+объявленному счёту и статус-разбиению 7 verified / 15 blocked; ревизия из
+строки привязки квалификации входит в `reviewed_source` roadmap (машинное
+равенство, без вызова git); `revision_label_resolution` типизирован тремя
+разными `kind` при авторитете `content_sha256`. У каждой census-пробы есть
+парная негативная (инъекция permissive-замка или PASS-клейма) — вакуумных проб
+нет.
+
+Прибор диска: preflight до прогона назвал `resource_target_bloat [high]`
+(`target/` 106.4 GB при 26 GB свободных) и рекомендовал прибрать `incremental` и
+`examples`; применены обе рекомендации (освобождено ~70 GB, 73 GB свободно),
+поэтому нехватка диска не могла быть спутана с падением теста. После пересборки
+примеров архитектурным гейтом `target/` снова 86.6 GB при 44 GB свободных —
+флаг остаётся названным остатком, а не замазан.
+
 **Census замок (ни один не изменён).** `import_eligible=false`,
 `deployed=false`, `production_route=forbidden`, `graph_write=forbidden`,
 `auto_promote=forbidden` согласованы по поверхностям:
@@ -888,6 +934,9 @@ canonical-path: канонический замер требует `--report <pa
 | cargo test -p da-parse --tests (S07/T05) | 112 suites / 1489 passed / 0 failed / 0 ignored; ledger-контракт 14 passed, мутационная матрица 20/20 обнаружено, 0 выживших |
 | cargo test -p da-parse --tests (S09/T02, ревизия квалификации) | 114 suites / 1508 passed / 0 failed / 0 ignored |
 | PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q (S09/T02) | 469 passed |
+| PYTHONPATH=scripts python3 -m pytest scripts/tests/test_scholarly_parse_governance.py -q (S09/T04, ревизия финального гейта) | 479 passed (+10 кросс-поверхностных census-проб) |
+| cargo test -p da-cli --features pdf-layout --tests (S09/T04) | 41 suites / 635 passed / 0 failed / 0 ignored |
+| PYTHONPATH=scripts python3 -m governor architecture (S09/T04) | ARCHITECTURE GATE: PASS, GATE_RC=0 (16 шагов, 1216 s) |
 | governor review: horizon, GAR | exit=0; H05/GAR-015 остаются открытыми |
 | Публичный Rust composition probe + независимый XML parser | 2 класса дефектов воспроизведены |
 
