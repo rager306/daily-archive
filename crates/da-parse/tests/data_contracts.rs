@@ -724,6 +724,12 @@ struct ExternalHoldoutReleaseProbe {
     // S08/T02 frozen reference binding (plan-named keys).
     declared_release: ExternalHoldoutDeclaredRelease,
     reference_tei: Vec<ExternalHoldoutReferenceTei>,
+    // S02/T05 partition: the frozen reference population is `reference_tei`
+    // (the MEASURABLE subset) plus `reference_exceptions` (the typed, named
+    // documents this lane cannot measure). The partition is DATA, never a
+    // silent filter, and the two halves must cover exactly the source manifest.
+    reference_exception_reasons: Vec<ExternalHoldoutReferenceExceptionReason>,
+    reference_exceptions: Vec<ExternalHoldoutReferenceException>,
     source_manifest_sha256: String,
     reference_endpoint: String,
     reference_java_version: String,
@@ -759,6 +765,29 @@ struct ExternalHoldoutReferenceTei {
     path: String,
     sha256: String,
     size_bytes: u64,
+}
+
+/// One typed reference exception: a frozen holdout document this lane cannot
+/// measure at all, named once with its own byte pins and a reason drawn from
+/// the declared closed vocabulary (`reference_exception_reasons`). An exception
+/// is a named row, never a silently dropped document.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutReferenceException {
+    article_id: String,
+    path: String,
+    sha256: String,
+    size_bytes: u64,
+    reason: String,
+}
+
+/// One declared exception reason (the closed vocabulary the exception rows must
+/// draw from).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalHoldoutReferenceExceptionReason {
+    reason: String,
+    detail: String,
 }
 
 /// D204 effective-input identity of the frozen reference (profile and
@@ -3853,6 +3882,118 @@ fn validate_external_holdout_release_probe(
                 "[external-holdout-reference] pin `{}` names a missing fixture",
                 row.article_id
             ));
+        }
+    }
+
+    // S02/T05: the frozen reference population is a PARTITION — the measurable
+    // pins (`reference_tei`) plus the typed exceptions (`reference_exceptions`)
+    // must cover exactly the article identities of the declared source
+    // manifest. The partition is DATA: a partial, overlapping or undeclared
+    // partition is refused by name, never silently truncated to the shorter
+    // list. The independent hermetic oracle in `external_holdout_probe_contract.rs`
+    // owns the semantic refusal-by-name; this validator refuses shape drift.
+    if p.reference_exception_reasons.is_empty() {
+        errs.push("[external-holdout-reference-exceptions] reason vocabulary missing".into());
+    }
+    let mut declared_reasons: HashSet<String> = HashSet::new();
+    for row in &p.reference_exception_reasons {
+        if row.reason.trim().is_empty()
+            || row.detail.trim().is_empty()
+            || !declared_reasons.insert(row.reason.clone())
+        {
+            errs.push("[external-holdout-reference-exceptions] reason vocabulary malformed".into());
+        }
+    }
+    if p.reference_exceptions.is_empty() {
+        errs.push("[external-holdout-reference-exceptions] typed exceptions missing".into());
+    }
+    let mut exception_ids: HashSet<String> = HashSet::new();
+    let mut exception_hashes: HashSet<String> = HashSet::new();
+    for row in &p.reference_exceptions {
+        if row.reason.trim().is_empty() || !declared_reasons.contains(&row.reason) {
+            errs.push(format!(
+                "[external-holdout-reference-exceptions] exception `{}` names an undeclared reason",
+                row.article_id
+            ));
+        }
+        check_fixture_path_shape(
+            &row.path,
+            &format!("release_probe.reference_exceptions[{}]", row.article_id),
+            &mut errs,
+        );
+        if !row.sha256.starts_with("sha256:") || row.sha256.len() != 71 || row.size_bytes == 0 {
+            errs.push(format!(
+                "[external-holdout-reference-exceptions] exception `{}` is malformed",
+                row.article_id
+            ));
+        }
+        if row.article_id.is_empty() || !repo_root().join(&row.path).is_file() {
+            errs.push(format!(
+                "[external-holdout-reference-exceptions] exception `{}` names a missing fixture",
+                row.article_id
+            ));
+        }
+        if !exception_ids.insert(row.article_id.clone()) {
+            errs.push(format!(
+                "[external-holdout-reference-exceptions] exception `{}` duplicates another exception article_id",
+                row.article_id
+            ));
+        }
+        if !exception_hashes.insert(row.sha256.clone()) {
+            errs.push(format!(
+                "[external-holdout-reference-exceptions] exception `{}` duplicates another exception sha256",
+                row.article_id
+            ));
+        }
+    }
+    // Disjointness: a document is either measured or typed as an exception,
+    // never both. `reference_hashes` already holds every measurable pin sha256.
+    for row in &p.reference_tei {
+        if exception_ids.contains(&row.article_id) {
+            errs.push(format!(
+                "[external-holdout-reference-exceptions] `{}` is both a measurable pin and a typed exception",
+                row.article_id
+            ));
+        }
+    }
+    if exception_hashes
+        .iter()
+        .any(|hash| reference_hashes.contains(hash))
+    {
+        errs.push(
+            "[external-holdout-reference-exceptions] a typed exception shares a sha256 with a measurable pin"
+                .into(),
+        );
+    }
+    // Coverage: the partition must cover exactly the declared source population.
+    // The expected count is read from DATA (`source_manifest#articles`), never a
+    // literal. An unreadable or malformed manifest is already reported by the
+    // identity check above, so it is not double-reported here.
+    if let Ok(text) = std::fs::read_to_string(repo_root().join(&p.source_manifest)) {
+        match serde_yaml::from_str::<serde_yaml::Value>(&text) {
+            Ok(source) => match source
+                .get("articles")
+                .and_then(serde_yaml::Value::as_sequence)
+            {
+                Some(articles) => {
+                    let covered = p.reference_tei.len() + p.reference_exceptions.len();
+                    if covered != articles.len() {
+                        errs.push(format!(
+                            "[external-holdout-reference-exceptions] partition drift: {} measurable + {} exceptions != {} declared articles",
+                            p.reference_tei.len(),
+                            p.reference_exceptions.len(),
+                            articles.len()
+                        ));
+                    }
+                }
+                None => errs.push(
+                    "[external-holdout-reference-exceptions] source manifest declares no articles"
+                        .into(),
+                ),
+            },
+            Err(e) => errs.push(format!(
+                "[external-holdout-reference-exceptions] source manifest malformed: {e}"
+            )),
         }
     }
     errs
