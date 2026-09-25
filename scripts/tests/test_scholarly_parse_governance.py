@@ -236,6 +236,16 @@ def test_fixtures_negative_schema_is_yaml_policy_compatible():
     assert policy["redaction"]["forbidden"]
 
 
+def _ref(mapping, ref: str):
+    """Read a dotted reference out of a nested mapping, None when absent."""
+    node = mapping
+    for part in str(ref).split("."):
+        if not isinstance(node, dict):
+            return None
+        node = node.get(part)
+    return node
+
+
 def _copy_checker_surface(destination: Path) -> None:
     """Build a tracked-only synthetic root for report-level mutations."""
     policy = _load(POLICY_PATH)
@@ -248,11 +258,39 @@ def _copy_checker_surface(destination: Path) -> None:
     }
     for binding in _source_bindings(policy):
         paths.add(binding["path"])
+    # M511/S08/T05: the release-probe lane reads the frozen holdout manifest and
+    # the pinned reference bytes, so the synthetic root carries them too.
+    lane_spec = policy.get("release_probe_lane") or {}
+    if lane_spec:
+        holdout_rel = str(lane_spec.get("holdout_manifest") or "")
+        if holdout_rel:
+            paths.add(holdout_rel)
+        lane = _ref(_load(ROOT / str(lane_spec.get("manifest") or "")), str(lane_spec.get("lane_ref") or "")) or {}
+        for entry in lane.get("reference_tei") or []:
+            if isinstance(entry, dict) and entry.get("path"):
+                paths.add(str(entry["path"]))
     for relative in paths:
         source = ROOT / relative
         target = destination / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
+
+
+def _release_probe_flags(flags, suffix: str = ""):
+    return [
+        item
+        for item in flags
+        if item.flag.startswith("scholarly_parse_plane_release_probe")
+        and item.flag.endswith(suffix)
+    ]
+
+
+def _probe_lane_path(root: Path) -> Path:
+    return root / "data/parse/acceptance_manifest.yaml"
+
+
+def _probe_artifact_path(root: Path) -> Path:
+    return root / "artifacts/parse_compat/external_holdout_release_probe.json"
 
 
 def test_canonical_shadow_report_uses_closed_snake_case_taxonomy():
@@ -2882,3 +2920,201 @@ def test_checker_reports_an_absent_parity_ledger_as_a_named_flag(tmp_path: Path)
         "scholarly_parse_plane_parity_ledger_missing"
     ], flags
     assert "data/parse/grobid_compatibility.yaml#parity_ledger" in flags[0].evidence
+
+
+# --- M511/S08/T05: frozen external release-probe lane -------------------------
+
+PROBE_ARTIFACT = "artifacts/parse_compat/external_holdout_release_probe.json"
+PROBE_IDENTITY = "external-holdout-release-probe.v1"
+
+
+def test_release_probe_pin_matches_disk_on_both_surfaces():
+    policy = _load(POLICY_PATH)
+    fixture = _load(POSITIVE_PATH)
+    disk = _sha256(ROOT / PROBE_ARTIFACT)
+    canonical = {item["path"]: item for item in policy["bindings"]["canonical_artifacts"]}
+    evidence = {(item["path"], item["identity"]) for item in policy["bindings"]["integration_evidence"]}
+    assert canonical[PROBE_ARTIFACT]["sha256"] == disk
+    assert (PROBE_ARTIFACT, PROBE_IDENTITY) in evidence
+    fixture_canonical = {item["path"]: item for item in fixture["canonical_artifacts"]}
+    fixture_evidence = {(item["path"], item["identity"]) for item in fixture["integration_evidence"]}
+    assert fixture_canonical[PROBE_ARTIFACT]["sha256"] == disk
+    assert fixture_canonical[PROBE_ARTIFACT]["identity"] == PROBE_IDENTITY
+    assert (PROBE_ARTIFACT, PROBE_IDENTITY) in fixture_evidence
+
+
+def test_release_probe_clean_root_has_no_probe_flags():
+    assert _release_probe_flags(_check_scholarly_parse_plane(ROOT)) == []
+
+
+def test_release_probe_lane_failure_anchors_are_declared():
+    spec = _load(POLICY_PATH)["release_probe_lane"]
+    assert spec["artifact_identity"] == PROBE_IDENTITY
+    assert spec["manifest"] == "data/parse/acceptance_manifest.yaml"
+    assert spec["holdout_manifest"] == "data/parse/holdout_manifests.yaml"
+    assert spec["expected_values"]["release_decision_package.human_release_review.decision"] == "pending"
+    assert set(spec["blocked_authorizations"]) == {
+        "redistribution",
+        "production_use",
+        "model_distribution",
+        "external_downloads",
+        "graph_write_or_import",
+    }
+    assert set(spec["blocked_authorizations"].values()) == {"blocked"}
+
+
+def test_release_probe_artifact_missing_is_named(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    _probe_artifact_path(tmp_path).unlink()
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "lane_missing")
+    assert any(PROBE_ARTIFACT in item.evidence for item in flags), flags
+
+
+def test_release_probe_artifact_mutation_names_the_artifact(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = _probe_artifact_path(tmp_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["measured_scope"] = "mutated"
+    path.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    flags = _check_scholarly_parse_plane(tmp_path)
+    # The live identity loop must traverse the new artifact by its
+    # artifact-relative path and name it on substitution.
+    assert any(
+        item.flag == "scholarly_parse_plane_evidence_substitution" and PROBE_ARTIFACT in item.evidence
+        for item in flags
+    ), [item.flag for item in flags]
+
+
+def test_release_probe_lane_absent_is_named(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = _probe_lane_path(tmp_path)
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert manifest["external_holdout_contract"].pop("release_probe"), "the removal anchor did not land"
+    path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "lane_missing")
+    assert any("external_holdout_contract.release_probe" in item.evidence for item in flags), flags
+
+
+def test_release_probe_unmapped_artifact_is_named(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = tmp_path / "scripts/governor/checks/scholarly_parse_plane.yaml"
+    policy = yaml.safe_load(path.read_text(encoding="utf-8"))
+    before = len(policy["bindings"]["integration_evidence"])
+    policy["bindings"]["integration_evidence"] = [
+        item
+        for item in policy["bindings"]["integration_evidence"]
+        if item.get("identity") != PROBE_IDENTITY
+    ]
+    assert len(policy["bindings"]["integration_evidence"]) == before - 1
+    path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "lane_missing")
+    assert any(PROBE_IDENTITY in item.evidence for item in flags), flags
+
+
+def test_release_probe_counter_drift_reports_expected_and_observed(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = _probe_lane_path(tmp_path)
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    lane = manifest["external_holdout_contract"]["release_probe"]
+    lane["identity_digest"] = "sha256:" + "0" * 64
+    path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
+    assert any(
+        "release_probe.identity_digest" in item.evidence
+        and "22df1b7e" in item.evidence
+        and "0000000000000000" in item.evidence
+        for item in flags
+    ), flags
+
+
+def test_release_probe_document_counter_drift_is_flagged(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = _probe_artifact_path(tmp_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["evaluated_population"]["aggregate"]["documents"] = 4
+    path.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
+    assert any(
+        "evaluated_population.aggregate.documents" in item.evidence
+        and "expected=5" in item.evidence
+        and "observed=4" in item.evidence
+        for item in flags
+    ), flags
+
+
+def test_release_probe_identity_drift_is_flagged(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = _probe_artifact_path(tmp_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["schema_version"] = "external-holdout-release-probe.v2"
+    path.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
+    assert any(
+        PROBE_ARTIFACT in item.evidence and "external-holdout-release-probe.v2" in item.evidence
+        for item in flags
+    ), flags
+
+
+def test_release_probe_citation_unlock_while_pending_is_flagged(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = _probe_lane_path(tmp_path)
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    manifest["external_holdout_contract"]["citation_rule"]["citation_without_release_decision"] = "allowed"
+    path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "citation_state")
+    assert any(
+        "external_holdout_contract.citation_rule.citation_without_release_decision" in item.evidence
+        for item in flags
+    ), flags
+
+
+def test_release_probe_prohibited_authorization_unblocked_is_flagged(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = _probe_lane_path(tmp_path)
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    manifest["release_decision_package"]["prohibited_authorizations"]["redistribution"] = "authorized"
+    path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "citation_state")
+    assert any(
+        "release_decision_package.prohibited_authorizations.redistribution" in item.evidence
+        for item in flags
+    ), flags
+
+
+def test_release_probe_pending_decision_flip_is_flagged(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = _probe_lane_path(tmp_path)
+    manifest = yaml.safe_load(path.read_text(encoding="utf-8"))
+    manifest["release_decision_package"]["human_release_review"]["decision"] = "recorded"
+    path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "citation_state")
+    assert any("human_release_review.decision" in item.evidence for item in flags), flags
+
+
+def test_release_probe_external_band_flip_is_flagged(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    path = _probe_artifact_path(tmp_path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["external_holdout_band"]["external_bytes"] = "bytes_present"
+    path.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
+    assert any(
+        "external_holdout_band.external_bytes" in item.evidence and "bytes_present" in item.evidence
+        for item in flags
+    ), flags
+
+
+def test_release_probe_reference_byte_drift_is_flagged(tmp_path: Path):
+    _copy_checker_surface(tmp_path)
+    lane = _load(_probe_lane_path(tmp_path))["external_holdout_contract"]["release_probe"]
+    tei = tmp_path / lane["reference_tei"][0]["path"]
+    tei.write_bytes(tei.read_bytes() + b"\n")
+    flags = _release_probe_flags(_check_scholarly_parse_plane(tmp_path), "denominator")
+    assert any("reference_tei" in item.evidence for item in flags), flags
+
+
+def test_governor_validate_yaml_passes_for_the_probe_lane_surface():
+    from governor.__main__ import _validate_yaml
+    from governor.adapters.yaml_rule_repository import YAMLRuleRepository
+
+    assert _validate_yaml(YAMLRuleRepository(ROOT / "scripts/governor/checks")) == 0

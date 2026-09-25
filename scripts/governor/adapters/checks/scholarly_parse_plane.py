@@ -1281,6 +1281,239 @@ def _check_parity_ledger_denominators(
             )
 
 
+def _probe_dotted(mapping: Any, ref: str) -> Any:
+    """Read a dotted reference out of a nested mapping, None when absent."""
+    node: Any = mapping
+    for part in str(ref).split("."):
+        if not isinstance(node, dict):
+            return None
+        node = node.get(part)
+    return node
+
+
+def _release_probe_digest(articles: list[dict[str, Any]], lane: dict[str, Any]) -> str:
+    """Recompute the frozen identity digest from the declared handles.
+
+    The lane declares its own input fields, order and separators, so the digest
+    is re-derived from the frozen holdout manifest rather than trusted from the
+    artifact's declared value.
+    """
+    fields = [str(field) for field in (lane.get("digest_input_fields") or [])]
+    field_separator = str(lane.get("digest_field_separator") or "")
+    record_separator = str(lane.get("digest_record_separator") or "")
+    payload = record_separator.join(
+        field_separator.join(str(article.get(field)) for field in fields)
+        for article in articles
+    )
+    return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _check_release_probe_lane(root: Path, contract: dict[str, Any], flag: Any) -> None:
+    """Hold the frozen external release-probe lane, its counters and its citation state.
+
+    Three failure modes stay three named flags: a lane or its artifact mapping
+    that is absent, unreadable or not byte-bound is `release_probe_lane_missing`;
+    a counter or identity that no longer reproduces from the frozen inputs is
+    `release_probe_denominator` (with the expected and observed value); and a
+    citation or authorization state that unlocks while the human release review
+    is still `pending` is `release_probe_citation_state` (with the exact key).
+    """
+    spec = contract.get("release_probe_lane")
+    if not isinstance(spec, dict):
+        flag(
+            "release_probe_lane_missing",
+            "integration",
+            "scripts/governor/checks/scholarly_parse_plane.yaml#release_probe_lane",
+            "declared release_probe_lane contract",
+            None if spec is None else type(spec).__name__,
+        )
+        return
+    identity = str(spec.get("artifact_identity") or "")
+    manifest_rel = str(spec.get("manifest") or "data/parse/acceptance_manifest.yaml")
+    holdout_rel = str(spec.get("holdout_manifest") or "data/parse/holdout_manifests.yaml")
+    lane_ref = str(spec.get("lane_ref") or "external_holdout_contract.release_probe")
+
+    # The artifact is only held when it is declared on both binding surfaces:
+    # byte-pinned in canonical_artifacts and identity-mapped in
+    # integration_evidence. One without the other is an unmapped lane, not a
+    # pass.
+    bindings = contract.get("bindings") or {}
+    canonical_paths = [
+        str(item.get("path"))
+        for item in (bindings.get("canonical_artifacts") or [])
+        if isinstance(item, dict)
+    ]
+    evidence = [
+        (str(item.get("path")), str(item.get("identity")))
+        for item in (bindings.get("integration_evidence") or [])
+        if isinstance(item, dict)
+    ]
+    mapped = [path for path, declared_identity in evidence if declared_identity == identity]
+    if not mapped or mapped[0] not in canonical_paths:
+        flag(
+            "release_probe_lane_missing",
+            "integration",
+            f"scholarly_parse_plane.yaml#bindings.integration_evidence[{identity}]",
+            {"mapped": True, "byte_bound": True},
+            {"mapped": mapped, "canonical_artifacts": canonical_paths},
+        )
+        return
+    artifact_rel = mapped[0]
+
+    try:
+        manifest = yaml.safe_load((root / manifest_rel).read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as error:
+        flag("release_probe_lane_missing", "integration", manifest_rel, "readable YAML", str(error))
+        return
+    lane = _probe_dotted(manifest, lane_ref)
+    if not isinstance(lane, dict):
+        flag(
+            "release_probe_lane_missing",
+            "integration",
+            f"{manifest_rel}#{lane_ref}",
+            "declared release probe lane",
+            None if lane is None else type(lane).__name__,
+        )
+        return
+
+    try:
+        artifact = json.loads((root / artifact_rel).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        flag("release_probe_lane_missing", "integration", artifact_rel, "readable probe artifact", str(error))
+        return
+    if not isinstance(artifact, dict):
+        flag("release_probe_lane_missing", "integration", artifact_rel, "typed probe artifact", type(artifact).__name__)
+        return
+
+    # Live identity: artifact and lane must both carry the declared identity, so
+    # a self-consistent byte swap cannot pass as the frozen lane.
+    if artifact.get("schema_version") != identity or lane.get("schema_version") != identity:
+        flag(
+            "release_probe_denominator",
+            "integration",
+            artifact_rel,
+            {"artifact.schema_version": identity, "lane.schema_version": identity},
+            {
+                "artifact.schema_version": artifact.get("schema_version"),
+                "lane.schema_version": lane.get("schema_version"),
+            },
+        )
+
+    try:
+        holdout = yaml.safe_load((root / holdout_rel).read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as error:
+        flag("release_probe_lane_missing", "integration", holdout_rel, "readable holdout manifest", str(error))
+        return
+    articles = [article for article in (holdout.get("articles") or []) if isinstance(article, dict)]
+    documents = len(articles)
+    digest = _release_probe_digest(articles, lane)
+    manifest_sha = "sha256:" + _sha256(root / holdout_rel)
+
+    declared_counts = {
+        "reference_population.documents": _probe_dotted(artifact, "reference_population.documents"),
+        "evaluated_population.documents": _probe_dotted(artifact, "evaluated_population.documents"),
+        "evaluated_population.aggregate.documents": _probe_dotted(artifact, "evaluated_population.aggregate.documents"),
+        "executed_population.documents": _probe_dotted(artifact, "executed_population.documents"),
+        "production_catalog_overlap.documents": _probe_dotted(artifact, "production_catalog_overlap.documents"),
+    }
+    for key, observed in declared_counts.items():
+        if observed != documents:
+            flag("release_probe_denominator", "integration", f"{artifact_rel}#{key}", documents, observed)
+    lane_tei = [entry for entry in (lane.get("reference_tei") or []) if isinstance(entry, dict)]
+    if len(lane_tei) != documents:
+        flag(
+            "release_probe_denominator",
+            "integration",
+            f"{manifest_rel}#{lane_ref}.reference_tei",
+            documents,
+            len(lane_tei),
+        )
+    if lane.get("identity_digest") != digest or _probe_dotted(artifact, "reference_population.identity_sha256") != digest:
+        flag(
+            "release_probe_denominator",
+            "integration",
+            f"{manifest_rel}#{lane_ref}.identity_digest",
+            digest,
+            {
+                "lane": lane.get("identity_digest"),
+                "artifact": _probe_dotted(artifact, "reference_population.identity_sha256"),
+            },
+        )
+    if (
+        lane.get("source_manifest_sha256") != manifest_sha
+        or _probe_dotted(artifact, "reference_population.source_manifest_sha256") != manifest_sha
+    ):
+        flag(
+            "release_probe_denominator",
+            "integration",
+            f"{manifest_rel}#{lane_ref}.source_manifest_sha256",
+            manifest_sha,
+            {
+                "lane": lane.get("source_manifest_sha256"),
+                "artifact": _probe_dotted(artifact, "reference_population.source_manifest_sha256"),
+            },
+        )
+
+    pins = {
+        str(pin.get("document_id")): pin
+        for pin in (_probe_dotted(artifact, "reference_population.byte_pins") or [])
+        if isinstance(pin, dict)
+    }
+    for entry in lane_tei:
+        article_id = str(entry.get("article_id"))
+        tei_rel = str(entry.get("path"))
+        declared_sha = str(entry.get("sha256") or "")
+        declared_size = entry.get("size_bytes")
+        tei_path = root / tei_rel
+        if not tei_path.is_file():
+            flag("release_probe_denominator", "integration", tei_rel, declared_sha, "missing")
+            continue
+        observed_sha = "sha256:" + _sha256(tei_path)
+        observed_size = tei_path.stat().st_size
+        if observed_sha != declared_sha or observed_size != declared_size:
+            flag(
+                "release_probe_denominator",
+                "integration",
+                f"{manifest_rel}#{lane_ref}.reference_tei[{article_id}]",
+                {"sha256": declared_sha, "size_bytes": declared_size},
+                {"sha256": observed_sha, "size_bytes": observed_size},
+            )
+        pin = pins.get(article_id) or {}
+        pin_sha = declared_sha[len("sha256:") :] if declared_sha.startswith("sha256:") else declared_sha
+        if pin.get("identity_sha256") != pin_sha or pin.get("size_bytes") != declared_size:
+            flag(
+                "release_probe_denominator",
+                "integration",
+                f"{artifact_rel}#reference_population.byte_pins[{article_id}]",
+                {"identity_sha256": pin_sha, "size_bytes": declared_size},
+                {"identity_sha256": pin.get("identity_sha256"), "size_bytes": pin.get("size_bytes")},
+            )
+
+    # Citation state: while the release decision remains with a real human,
+    # every citation guard stays closed and every GAR-015 authorization stays
+    # blocked. Each drift names the exact key that unlocked.
+    for ref, expected in (spec.get("expected_values") or {}).items():
+        observed = _probe_dotted(manifest, str(ref))
+        if observed != expected:
+            flag("release_probe_citation_state", "promotion_quarantine", f"{manifest_rel}#{ref}", expected, observed)
+    prohibited = _probe_dotted(manifest, "release_decision_package.prohibited_authorizations")
+    prohibited = prohibited if isinstance(prohibited, dict) else {}
+    for key, expected in (spec.get("blocked_authorizations") or {}).items():
+        observed = prohibited.get(key)
+        if observed != expected:
+            flag(
+                "release_probe_citation_state",
+                "promotion_quarantine",
+                f"{manifest_rel}#release_decision_package.prohibited_authorizations.{key}",
+                expected,
+                observed,
+            )
+    for ref, expected in (spec.get("artifact_expectations") or {}).items():
+        observed = _probe_dotted(artifact, str(ref))
+        if observed != expected:
+            flag("release_probe_denominator", "integration", f"{artifact_rel}#{ref}", expected, observed)
+
+
 def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     """Validate the source-bound scholarly parse policy and its fixtures.
 
@@ -1395,6 +1628,7 @@ def _check_scholarly_parse_plane(root: Path) -> list[DriftFlag]:
     _check_funding_sequence_quarantine(root, registry, registry_path, flag)
     _check_visual_heads_quarantine(root, registry, registry_path, flag)
     _check_rest_batch_asset_quarantine(root, contract, flag)
+    _check_release_probe_lane(root, contract, flag)
     header_ids = (
         "rest.processDate",
         "rest.processHeaderNames",

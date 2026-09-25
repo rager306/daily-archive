@@ -163,6 +163,11 @@ bindings:
       sha256: 99f98a22365c2d28d7d3550b14ab07b7140de6c41c3b2944e4f01ba5096ef164
     - path: artifacts/parse_compat/parse_batch_budget_shadow.json
       sha256: 015a2cca82fc7983d5c93b65af1bc85ef721ddb69e592cfe3e216087e84db12b
+    # M511/S08/T05: the frozen external release-probe artifact. Byte-pinned
+    # here so the existing identity loop covers it by artifact-relative path; a
+    # mutated artifact is named, never silently read as the frozen one.
+    - path: artifacts/parse_compat/external_holdout_release_probe.json
+      sha256: 30479a606720bcd03cd87348ec9f16b13a75dfbd4e32376dda64a7c1fed6eefa
   shared_promotion_contract: scripts/governor/checks/promotion_evidence_contract.yaml
   rollback_target: java-grobid-http@0.9.0-crf
   integration_evidence:
@@ -184,6 +189,52 @@ bindings:
       identity: feature-tagger-training-shadow.v1
     - path: artifacts/parse_compat/parse_batch_budget_shadow.json
       identity: parse-batch-budget-shadow.v1
+    - path: artifacts/parse_compat/external_holdout_release_probe.json
+      identity: external-holdout-release-probe.v1
+release_probe_lane:
+  # M511/S08/T05: the frozen external release-probe lane is held in DATA so its
+  # three failure modes stay distinct named flags — an absent or unmapped lane
+  # (`release_probe_lane_missing`), a counter or identity that no longer
+  # reproduces from the frozen inputs (`release_probe_denominator`, with the
+  # expected and observed number), and a citation or authorization state that
+  # unlocks while the human release review is still pending
+  # (`release_probe_citation_state`, with the exact key). Counters are
+  # recomputed from the frozen holdout manifest and the on-disk reference bytes,
+  # never trusted from the artifact's own declaration.
+  artifact_identity: external-holdout-release-probe.v1
+  manifest: data/parse/acceptance_manifest.yaml
+  lane_ref: external_holdout_contract.release_probe
+  holdout_manifest: data/parse/holdout_manifests.yaml
+  # The release decision stays with a real human: every citation guard stays
+  # closed until that decision is recorded.
+  expected_values:
+    release_decision_package.human_release_review.decision: pending
+    external_holdout_contract.citation_rule.requires_executed_state: true
+    external_holdout_contract.citation_rule.requires_recorded_human_release_decision: true
+    external_holdout_contract.citation_rule.citation_without_release_decision: forbidden
+    external_holdout_contract.citation_rule.citation_of_unexecuted_external_rows: forbidden
+    external_holdout_contract.citation_rule.unexecuted_external_rows_are_evidence: false
+    external_holdout_contract.citation_rule.bytes_absent_rows_are_evidence: false
+    external_holdout_contract.release_probe.citation_requires_recorded_human_release_decision: true
+    external_holdout_contract.release_probe.citation_without_release_decision: forbidden
+  # GAR-015 authorizations stay blocked until a recorded human release decision.
+  blocked_authorizations:
+    redistribution: blocked
+    production_use: blocked
+    model_distribution: blocked
+    external_downloads: blocked
+    graph_write_or_import: blocked
+  # The artifact's own external band and locks are part of the frozen identity.
+  artifact_expectations:
+    external_holdout_band.execution_status: not_executed
+    external_holdout_band.external_bytes: bytes_absent
+    external_holdout_band.citation_without_release_decision: forbidden
+    external_holdout_band.external_rows_are_evidence: false
+    policy_locks.import_eligible: false
+    policy_locks.graph_write: forbidden
+    policy_locks.auto_promote: forbidden
+    policy_locks.production_route: forbidden
+    policy_locks.deployed: false
 locks:
   import_eligible: false
   production_route: forbidden
